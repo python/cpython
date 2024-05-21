@@ -12,6 +12,7 @@ class Properties:
     error_without_pop: bool
     deopts: bool
     oparg: bool
+    operand: bool
     jumps: bool
     eval_breaker: bool
     ends_with_eval_breaker: bool
@@ -41,6 +42,7 @@ class Properties:
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
+            operand=any(p.operand for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
             ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
@@ -67,6 +69,7 @@ SKIP_PROPERTIES = Properties(
     error_without_pop=False,
     deopts=False,
     oparg=False,
+    operand=False,
     jumps=False,
     eval_breaker=False,
     ends_with_eval_breaker=False,
@@ -350,6 +353,9 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
         or variable_used(op, "resume_with_error")
     )
 
+def uses_operand(op: parser.InstDef) -> bool:
+    return any(isinstance(cache, parser.CacheEffect) and cache.name != "unused" for cache in op.inputs)
+
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
@@ -549,6 +555,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
+        operand=uses_operand(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),

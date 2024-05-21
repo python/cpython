@@ -62,7 +62,7 @@ def _load_metadata_from_source():
                     continue
                 line = line[len(start) :]
                 name, val = line.split()
-                defines[int(val.strip())].append(name.strip())
+                defines[int(val.strip().strip("()"))].append(name.strip())
         return defines
 
     import opcode
@@ -75,6 +75,9 @@ def _load_metadata_from_source():
             Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
         ),
         "_defines": get_defines(Path("Python") / "specialize.c"),
+        "_flag_defines": get_defines(
+            Path("Include") / "internal" / "pycore_opcode_metadata.h", "HAS"
+        ),
     }
 
 
@@ -119,6 +122,34 @@ def load_raw_data(input: Path) -> RawData:
 
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
+
+@functools.cache
+def _get_uop_flags_from_file(
+    flag_names: tuple[str] = None,
+    filepath: str | Path = "Include/internal/pycore_uop_metadata.h",
+) -> dict[str, list[str]]:
+    flags = {}
+    with open(SOURCE_DIR / filepath) as spec_src:
+        #pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ('0',))})(\s\|)?)+).?"
+        for line in spec_src:
+            if line.startswith("    [_"):
+                if name :=  re.search("\[[_A-Z0-9]+\]", line):
+                    uop = name.group().strip("[]")
+                    possible_flags = [f.strip() for f in line.strip().split("=")[1].strip(", ").split("|")]
+                    if all(f.removeprefix("HAS_") in flag_names for f in possible_flags):
+                        flags[uop] = [
+                            f.strip() for f in possible_flags
+                        ]
+                    elif possible_flags[0] == "0":
+                        flags[uop] = []
+                    else:
+                        pass#print(f"Unmatched possible flags {possible_flags}")
+                    pass#print(f"flags[{uop}] = {flags[uop]}")
+                else:
+                    pass#print("Could not find \[(a-zA-Z0-9_)+\] in", line)
+            else:
+                pass#print(f"'{line}' does not match pattern")
+    return flags
 
 
 @dataclass(frozen=True)
@@ -735,8 +766,34 @@ def execution_count_section() -> Section:
         """,
     )
 
+def opcode_input_overlap(
+    uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
+) -> str:
+    def flag_compatible(*flags: str):
+        return not (
+            any(f in uop_flags[opcode_i] for f in flags)
+            and any(f in uop_flags[opcode_j] for f in flags)
+        )
 
-def pair_count_section(prefix: str, title=None) -> Section:
+    results = (
+        flag_compatible(
+            "HAS_ARG_FLAG",
+        ),
+        flag_compatible(
+            "HAS_OPERAND_FLAG",
+        ),
+        flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
+    )
+    result_names = ("Oparg", "Operand", "Target")
+
+    if results.count(False) == 0:
+        return "No Overlap"
+    if results.count(False) == 1:
+        return f"Single overlap: {result_names[results.index(False)]}"
+    return f"Multiple Overlaps: {','.join(result_names[r] for r in range(3) if not results[r])}"
+
+
+def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
@@ -748,22 +805,32 @@ def pair_count_section(prefix: str, title=None) -> Section:
             sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
         ):
             cumulative += count
-            rows.append(
-                (
-                    f"{opcode_i} {opcode_j}",
-                    Count(count),
-                    Ratio(count, total),
-                    Ratio(cumulative, total),
+            next_row = [
+                f"{opcode_i} {opcode_j}",
+                Count(count),
+                Ratio(count, total),
+                Ratio(cumulative, total),
+            ]
+            if compat_data:
+                uop_flags = _get_uop_flags_from_file(
+                    tuple(v[0] for v in stats._data["_flag_defines"].values())
                 )
-            )
+                # for k, v in sorted(uop_flags.items()):
+                #    print(f"{k}:{v}")
+                # exit()
+                next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
+            rows.append(next_row)
         return rows
+
+    table_headers = ["Pair", "Count:", "Self:", "Cumulative:"]
+    if compat_data: table_headers.append("Compatibility")
 
     return Section(
         "Pair counts",
         f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
-                ("Pair", "Count:", "Self:", "Cumulative:"),
+                table_headers,
                 calc_pair_count_table,
             )
         ],
@@ -1232,7 +1299,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield pair_count_section(prefix="uop", title="Non-JIT uop")
+        yield pair_count_section(prefix="uop", title="Non-JIT uop", compat_data=True)
         yield Section(
             "Unsupported opcodes",
             "",
