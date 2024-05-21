@@ -42,7 +42,6 @@ from collections import deque
 
 # types
 if False:
-    from .console import Event
     from .types import EventTuple
 
 
