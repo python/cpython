@@ -413,7 +413,7 @@ def compare(
     compare_attributes affects whether AST attributes are considered
     in the comparison. If compare_attributes is False (default), then
     attributes are ignored. Otherwise they must all be equal. This
-    option is useful to look for asts that are structurally equal but
+    option is useful to check whether the ASTs are structurally equal but
     might differ in whitespace or similar details.
     """
 
