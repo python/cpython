@@ -1974,20 +1974,20 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, s)\n"
+PyDoc_STRVAR(os__path_exists__doc__,
+"_path_exists($module, path, /)\n"
 "--\n"
 "\n"
-"Return true if the pathname refers to an existing directory.");
+"Test whether a path exists.  Returns False for broken symbolic links.");
 
-#define OS__PATH_ISDIR_METHODDEF    \
-    {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
+#define OS__PATH_EXISTS_METHODDEF    \
+    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
 
 static PyObject *
 os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
-os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_exists(PyObject *module, PyObject *path)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2033,20 +2033,20 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__path_isfile__doc__,
-"_path_isfile($module, /, path)\n"
+PyDoc_STRVAR(os__path_isdir__doc__,
+"_path_isdir($module, /, s)\n"
 "--\n"
 "\n"
-"Test whether a path is a regular file");
+"Return true if the pathname refers to an existing directory.");
 
-#define OS__PATH_ISFILE_METHODDEF    \
-    {"_path_isfile", _PyCFunction_CAST(os__path_isfile), METH_FASTCALL|METH_KEYWORDS, os__path_isfile__doc__},
+#define OS__PATH_ISDIR_METHODDEF    \
+    {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static PyObject *
 os__path_isfile_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -2058,7 +2058,7 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2067,15 +2067,16 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"s", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "_path_isfile",
+        .fname = "_path_isdir",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -2135,6 +2136,7 @@ os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -2194,6 +2196,7 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -11472,6 +11475,14 @@ exit:
     #define OS__PATH_SPLITROOT_METHODDEF
 #endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
+#ifndef OS__PATH_EXISTS_METHODDEF
+    #define OS__PATH_EXISTS_METHODDEF
+#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
+
+#ifndef OS__PATH_LEXISTS_METHODDEF
+    #define OS__PATH_LEXISTS_METHODDEF
+#endif /* !defined(OS__PATH_LEXISTS_METHODDEF) */
+
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -11480,13 +11491,13 @@ exit:
     #define OS__PATH_ISFILE_METHODDEF
 #endif /* !defined(OS__PATH_ISFILE_METHODDEF) */
 
-#ifndef OS__PATH_EXISTS_METHODDEF
-    #define OS__PATH_EXISTS_METHODDEF
-#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
-
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
+
+#ifndef OS__PATH_ISJUNCTION_METHODDEF
+    #define OS__PATH_ISJUNCTION_METHODDEF
+#endif /* !defined(OS__PATH_ISJUNCTION_METHODDEF) */
 
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
