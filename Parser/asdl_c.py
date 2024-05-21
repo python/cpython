@@ -487,7 +487,7 @@ class PickleVisitor(EmitVisitor):
 
 class Obj2ModPrototypeVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
-        code = "static int obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena);"
+        code = "static int obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena);"
         self.emit(code % (name, get_c_type(name)), 0)
 
     visitSum = visitProduct
@@ -511,7 +511,7 @@ class Obj2ModVisitor(PickleVisitor):
     def funcHeader(self, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
-        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
+        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("int isinstance;", 1)
         self.emit("", 0)
@@ -547,6 +547,18 @@ class Obj2ModVisitor(PickleVisitor):
     def buildArgs(self, fields):
         return ", ".join(fields + ["arena"])
 
+    def typeCheck(self, name):
+        self.emit("tp = state->%s_type;" % name, 1)
+        self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
+        self.emit("if (isinstance == -1) {", 1)
+        self.emit("return 1;", 2)
+        self.emit("}", 1)
+        self.emit("if (!isinstance && field != NULL) {", 1)
+        error = "field '%%s' was expecting node of type '%s', got '%%s'" % name
+        self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, _PyType_Name(Py_TYPE(obj)));" % error, 2, reflow=False)
+        self.emit("return 1;", 2)
+        self.emit("}", 1)
+
     def complexSum(self, sum, name):
         self.funcHeader(name)
         self.emit("PyObject *tmp = NULL;", 1)
@@ -559,6 +571,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("*out = NULL;", 2)
         self.emit("return 0;", 2)
         self.emit("}", 1)
+        self.typeCheck(name)
         for a in sum.attributes:
             self.visitField(a, name, sum=sum, depth=1)
         for t in sum.types:
@@ -593,7 +606,7 @@ class Obj2ModVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
-        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
+        self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, const char* field, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
         for f in prod.fields:
@@ -694,8 +707,8 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("%s val;" % ctype, depth+2)
             self.emit("PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));", depth+2)
             with self.recursive_call(name, depth+2):
-                self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
-                          field.type, depth+2, reflow=False)
+                self.emit("res = obj2ast_%s(state, tmp2, &val, \"%s\", arena);" %
+                          (field.type, field.name), depth+2, reflow=False)
             self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
@@ -709,8 +722,8 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("}", depth+1)
         else:
             with self.recursive_call(name, depth+1):
-                self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
-                          (field.type, field.name), depth+1)
+                self.emit("res = obj2ast_%s(state, tmp, &%s, \"%s\", arena);" %
+                          (field.type, field.name, field.name), depth+1)
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
@@ -1261,7 +1274,9 @@ static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), struct validato
 
 /* Conversion Python -> AST */
 
-static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                          PyObject** out,
+                          const char* Py_UNUSED(field), PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
@@ -1278,7 +1293,9 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     return 0;
 }
 
-static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj,
+                            PyObject** out,
+                            const char* Py_UNUSED(field), PyArena* arena)
 {
     if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
@@ -1288,29 +1305,29 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
     return 0;
 }
 
-static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object", field);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object", field);
         return -1;
     }
-    return obj2ast_object(state, obj, out, arena);
+    return obj2ast_object(state, obj, out, field, arena);
 }
 
-static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, PyArena* arena)
+static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* out, const char* field, PyArena* arena)
 {
     int i;
     if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
+        PyErr_Format(PyExc_ValueError, "field \\"%s\\" got an invalid integer value: %R", field, obj);
         return -1;
     }
 
@@ -1685,7 +1702,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     }
 
     mod_ty res = NULL;
-    if (obj2ast_mod(state, ast, &res, arena) != 0)
+    if (obj2ast_mod(state, ast, &res, NULL, arena) != 0)
         return NULL;
     else
         return res;
