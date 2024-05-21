@@ -135,6 +135,14 @@ class Symbolic:
     def __repr__(self):
         return f'{self.__class__.__name__}({self.value!r})'
 
+class SymbolicReal(Symbolic):
+    pass
+numbers.Real.register(SymbolicReal)
+
+class SymbolicComplex(Symbolic):
+    pass
+numbers.Complex.register(SymbolicComplex)
+
 class Rat:
     """Simple Rational class for testing mixed arithmetic."""
     def __init__(self, n, d):
@@ -273,6 +281,8 @@ class Rect:
         return f'{self.__class__.__name__}({self.x!r}, {self.y!r})'
 numbers.Complex.register(Rect)
 
+class RectComplex(Rect, complex):
+    pass
 
 class FractionTest(unittest.TestCase):
 
@@ -790,12 +800,17 @@ class FractionTest(unittest.TestCase):
 
         self.assertTypedEquals(F(3, 2) * Root(4), Root(F(9, 1)))
         self.assertTypedEquals(Root(4) * F(3, 2), 3.0)
+        self.assertEqual(F(3, 2) * SymbolicReal('X'), SymbolicReal('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, SymbolicReal('X'), F(3, 2))
 
         self.assertTypedEquals(F(3, 2) * Polar(4, 2), Polar(F(6, 1), 2))
         self.assertTypedEquals(F(3, 2) * Polar(4.0, 2), Polar(6.0, 2))
         self.assertTypedEquals(F(3, 2) * Rect(4, 3), Rect(F(6, 1), F(9, 2)))
+        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0+0j, 4.5+0j))
         self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
         self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
+        self.assertEqual(F(3, 2) * SymbolicComplex('X'), SymbolicComplex('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, SymbolicComplex('X'), F(3, 2))
 
         self.assertEqual(F(3, 2) * Symbolic('X'), Symbolic('3/2 * X'))
         self.assertRaises(TypeError, operator.mul, Symbolic('X'), F(3, 2))
@@ -815,12 +830,16 @@ class FractionTest(unittest.TestCase):
 
         self.assertTypedEquals(F(2, 3) / Root(4), Root(F(1, 9)))
         self.assertTypedEquals(Root(4) / F(2, 3), 3.0)
+        self.assertEqual(F(3, 2) / SymbolicReal('X'), SymbolicReal('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, SymbolicReal('X'), F(3, 2))
 
         self.assertTypedEquals(F(3, 2) / Polar(4, 2), Polar(F(3, 8), -2))
         self.assertTypedEquals(F(3, 2) / Polar(4.0, 2), Polar(0.375, -2))
         self.assertTypedEquals(F(3, 2) / Rect(4, 3), Rect(0.24, 0.18))
         self.assertRaises(TypeError, operator.truediv, Polar(4, 2), F(2, 3))
         self.assertTypedEquals(Rect(4, 3) / F(2, 3), 6.0 + 4.5j)
+        self.assertEqual(F(3, 2) / SymbolicComplex('X'), SymbolicComplex('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, SymbolicComplex('X'), F(3, 2))
 
         self.assertEqual(F(3, 2) / Symbolic('X'), Symbolic('3/2 / X'))
         self.assertRaises(TypeError, operator.truediv, Symbolic('X'), F(2, 3))
@@ -857,9 +876,14 @@ class FractionTest(unittest.TestCase):
 
         self.assertRaises(TypeError, operator.mod, F(2, 3), Root(4))
         self.assertTypedEquals(Root(4) % F(3, 2), 0.5)
+        self.assertEqual(F(3, 2) % SymbolicReal('X'), SymbolicReal('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, SymbolicReal('X'), F(3, 2))
 
         self.assertRaises(TypeError, operator.mod, F(3, 2), Polar(4, 2))
+        self.assertRaises(TypeError, operator.mod, F(3, 2), RectComplex(4, 3))
         self.assertRaises(TypeError, operator.mod, Rect(4, 3), F(2, 3))
+        self.assertEqual(F(3, 2) % SymbolicComplex('X'), SymbolicComplex('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, SymbolicComplex('X'), F(3, 2))
 
         self.assertEqual(F(3, 2) % Symbolic('X'), Symbolic('3/2 % X'))
         self.assertRaises(TypeError, operator.mod, Symbolic('X'), F(2, 3))
@@ -888,7 +912,6 @@ class FractionTest(unittest.TestCase):
         self.assertIsInstance(F(4, 9) ** Rat(-3, 2), float)
         self.assertAlmostEqual(F(4, 9) ** Rat(-3, 2), 3.375)
         self.assertAlmostEqual(F(-4, 9) ** Rat(-3, 2), 3.375j)
-
         self.assertTypedEquals(Rat(9, 4) ** F(3, 2), 3.375)
         self.assertTypedEquals(Rat(3, 2) ** F(3, 1), Rat(27, 8))
         self.assertTypedEquals(Rat(3, 2) ** F(-3, 1), F(8, 27))
@@ -899,16 +922,22 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(Root(4) ** F(2, 1), Root(4, F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 1), Root(4, -F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 3), Root(4, -3.0))
+        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('1.5 ** X'))
+        self.assertEqual(SymbolicReal('X') ** F(3, 2), SymbolicReal('X ** 1.5'))
 
         self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(2.25, 0.0))
         self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(1.0, 0.0))
+        self.assertTypedEquals(F(3, 2) ** RectComplex(2, 0), Polar(2.25, 0.0))
+        self.assertTypedEquals(F(1, 1) ** RectComplex(2, 3), Polar(1.0, 0.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 2), Polar(8.0, 3.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 1), Polar(64, 6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
+        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('1.5 ** X'))
+        self.assertEqual(SymbolicComplex('X') ** F(3, 2), SymbolicComplex('X ** 1.5'))
 
-        self.assertTypedEquals(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
-        self.assertTypedEquals(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
+        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
+        self.assertEqual(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):
         # Decimal refuses mixed arithmetic (but not mixed comparisons)
