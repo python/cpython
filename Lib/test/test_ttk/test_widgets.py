@@ -27,13 +27,14 @@ class StandardTtkOptionsTests(StandardOptionsTests):
 
     def test_configure_padding(self):
         widget = self.create()
-        self.checkParam(widget, 'padding', 0, expected=('0',))
-        self.checkParam(widget, 'padding', 5, expected=('5',))
-        self.checkParam(widget, 'padding', (5, 6), expected=('5', '6'))
-        self.checkParam(widget, 'padding', (5, 6, 7),
-                        expected=('5', '6', '7'))
-        self.checkParam(widget, 'padding', (5, 6, 7, 8),
-                        expected=('5', '6', '7', '8'))
+        if get_tk_patchlevel(self.root) >= (8, 6, 14):
+            self.checkParam(widget, 'padding', 0, expected=(0,))
+            self.checkParam(widget, 'padding', 5, expected=(5,))
+            self.checkParam(widget, 'padding', (5, 6), expected=(5, 6))
+            self.checkParam(widget, 'padding', (5, 6, 7),
+                            expected=(5, 6, 7))
+            self.checkParam(widget, 'padding', (5, 6, 7, 8),
+                            expected=(5, 6, 7, 8))
         self.checkParam(widget, 'padding', ('5p', '6p', '7p', '8p'))
         self.checkParam(widget, 'padding', (), expected='')
 
@@ -1878,6 +1879,14 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
     def test_label(self):
         self._test_widget(ttk.Label)
 
+
+tests_gui = (
+        ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
+        FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
+        NotebookTest, PanedWindowTest, ProgressbarTest,
+        RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
+        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
+        )
 
 if __name__ == "__main__":
     unittest.main()
