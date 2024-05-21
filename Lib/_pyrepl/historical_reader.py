@@ -349,7 +349,8 @@ class HistoricalReader(Reader):
             del self.history[i]
             if i < self.historyi:
                 self.historyi -= 1
-        if ret and ret != self.history[-1] and should_auto_add_history:
+        is_repeated = not self.history == [] and ret == self.history[-1]
+        if ret and not is_repeated and should_auto_add_history:
             self.history.append(ret)
 
 
