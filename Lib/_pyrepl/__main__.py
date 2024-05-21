@@ -1,12 +1,10 @@
 import os
 import sys
 
-CAN_USE_PYREPL = sys.platform != "win32"
-
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
-    global CAN_USE_PYREPL
-    if not CAN_USE_PYREPL:
+    from _pyrepl import env
+    if not env.IS_PYREPL_SUPPORTED_PLATFORM:
         return sys._baserepl()
 
     startup_path = os.getenv("PYTHONSTARTUP")
@@ -23,7 +21,6 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not hasattr(sys, "ps2"):
         sys.ps2 = "... "
 
-    run_interactive = None
     try:
         import errno
         if not os.isatty(sys.stdin.fileno()):
@@ -32,16 +29,15 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
         if err := check():
             raise RuntimeError(err)
         from .simple_interact import run_multiline_interactive_console
-        run_interactive = run_multiline_interactive_console
+        return run_multiline_interactive_console(mainmodule)
     except Exception as e:
         from .trace import trace
         msg = f"warning: can't use pyrepl: {e}"
         trace(msg)
         print(msg, file=sys.stderr)
-        CAN_USE_PYREPL = False
-    if run_interactive is None:
+        env.CAN_USE_PYREPL = False
         return sys._baserepl()
-    return run_interactive(mainmodule)
+
 
 if __name__ == "__main__":
     interactive_console()

@@ -34,8 +34,9 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
     # test.support.script_helper.
-    env = kw.setdefault('env', dict(os.environ))
-    env['TERM'] = 'vt100'
+    if "env" not in kw:
+        env = kw.setdefault('env', dict(os.environ))
+        env['TERM'] = 'vt100'
     return subprocess.Popen(cmd_line,
                             executable=sys.executable,
                             text=True,
@@ -198,6 +199,15 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_asyncio_repl_is_ok(self):
         assert_python_ok("-m", "asyncio")
 
+    def test_repl_with_dumb_term_exits_cleanly(self):
+        env = dict(os.environ)
+        env.update({"TERM": "dumb"})
+        p = spawn_repl(env=env)
+        p.stdin.write("quit()\n")
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
 
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
