@@ -2439,7 +2439,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int32_t 
         PyErr_SetString(PyExc_ValueError, "offset must be non-negative");
         return -1;
     }
-    if (nargs > 2) {
+    if (event != PY_MONITORING_EVENT_LINE) {
         PyObject *offset_obj = PyLong_FromLong(offset);
         if (offset_obj == NULL) {
             return -1;
