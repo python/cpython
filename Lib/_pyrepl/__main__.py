@@ -3,7 +3,7 @@ import sys
 
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
-    from _pyrepl import env
+    from . import env
     if not env.IS_PYREPL_SUPPORTED_PLATFORM:
         return sys._baserepl()
 
