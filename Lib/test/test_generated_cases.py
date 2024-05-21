@@ -908,8 +908,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
         case OP2: {
             _Py_UopsSymbol *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
@@ -933,8 +932,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             _Py_UopsSymbol *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }

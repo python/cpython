@@ -296,8 +296,9 @@ class _ExecutorManagerThread(threading.Thread):
         # if there is no pending work item.
         def weakref_cb(_,
                        thread_wakeup=self.thread_wakeup,
-                       shutdown_lock=self.shutdown_lock):
-            mp.util.debug('Executor collected: triggering callback for'
+                       shutdown_lock=self.shutdown_lock,
+                       mp_util_debug=mp.util.debug):
+            mp_util_debug('Executor collected: triggering callback for'
                           ' QueueManager wakeup')
             with shutdown_lock:
                 thread_wakeup.wakeup()

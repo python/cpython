@@ -1,13 +1,12 @@
-
-:mod:`pathlib` --- Object-oriented filesystem paths
-===================================================
+:mod:`!pathlib` --- Object-oriented filesystem paths
+====================================================
 
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths
 
 .. versionadded:: 3.4
 
-**Source code:** :source:`Lib/pathlib.py`
+**Source code:** :source:`Lib/pathlib/`
 
 .. index:: single: path; operations
 
@@ -303,10 +302,10 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. attribute:: PurePath.pathmod
+.. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   operations: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
 
    .. versionadded:: 3.13
 
@@ -628,8 +627,8 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   When *walk_up* is False (the default), the path must start with *other*.
-   When the argument is True, ``..`` entries may be added to form the
+   When *walk_up* is false (the default), the path must start with *other*.
+   When the argument is true, ``..`` entries may be added to form the
    relative path. In all other cases, such as the paths referencing
    different drives, :exc:`ValueError` is raised.::
 
@@ -874,7 +873,7 @@ Methods
 ^^^^^^^
 
 Concrete paths provide the following methods in addition to pure paths
-methods.  Many of these methods can raise an :exc:`OSError` if a system
+methods.  Some of these methods can raise an :exc:`OSError` if a system
 call fails (for example because the path doesn't exist).
 
 .. versionchanged:: 3.8
@@ -885,6 +884,15 @@ call fails (for example because the path doesn't exist).
    :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
+
+.. versionchanged:: 3.14
+
+   The methods given above now return ``False`` instead of raising any
+   :exc:`OSError` exception from the operating system. In previous versions,
+   some kinds of :exc:`OSError` exception are raised, and others suppressed.
+   The new behaviour is consistent with :func:`os.path.exists`,
+   :func:`os.path.isdir`, etc. Use :meth:`~Path.stat` to retrieve the file
+   status without suppressing exceptions.
 
 
 .. classmethod:: Path.cwd()
@@ -952,6 +960,8 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
+   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
    the argument ``follow_symlinks=False``.
@@ -985,7 +995,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern, *, case_sensitive=None, follow_symlinks=None)
+.. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -1004,23 +1014,14 @@ call fails (for example because the path doesn't exist).
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
-   This method calls :meth:`Path.is_dir` on the top-level directory and
-   propagates any :exc:`OSError` exception that is raised. Subsequent
-   :exc:`OSError` exceptions from scanning directories are suppressed.
-
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
    typically, case-sensitive on POSIX, and case-insensitive on Windows.
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   By default, or when the *follow_symlinks* keyword-only argument is set to
-   ``None``, this method follows symlinks except when expanding "``**``"
-   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
-   ``False`` to treat all symlinks as files.
-
-   .. tip::
-      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
-      of recursive globbing.
+   By default, or when the *recurse_symlinks* keyword-only argument is set to
+   ``False``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
@@ -1028,13 +1029,18 @@ call fails (for example because the path doesn't exist).
       The *case_sensitive* parameter was added.
 
    .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
+      The *recurse_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.13
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. In previous versions, such exceptions are suppressed in many
+      cases, but not all.
 
-.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
+
+.. method:: Path.rglob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
@@ -1048,7 +1054,7 @@ call fails (for example because the path doesn't exist).
       The *case_sensitive* parameter was added.
 
    .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
+      The *recurse_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
@@ -1072,11 +1078,10 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory, ``False`` if it points
-   to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a directory. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
+   between these cases.
 
    This method normally follows symlinks; to exclude symlinks to directories,
    add the argument ``follow_symlinks=False``.
@@ -1087,11 +1092,10 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_file(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a regular file, ``False`` if it
-   points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a regular file. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a regular file. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
    This method normally follows symlinks; to exclude symlinks, add the
    argument ``follow_symlinks=False``.
@@ -1127,46 +1131,42 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_symlink()
 
-   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
-
-   ``False`` is also returned if the path doesn't exist; other errors (such
-   as permission errors) are propagated.
+   Return ``True`` if the path points to a symbolic link, even if that symlink
+   is broken. ``False`` will be returned if the path is invalid, inaccessible
+   or missing, or if it points to something other than a symbolic link. Use
+   :meth:`Path.stat` to distinguish between these cases.
 
 
 .. method:: Path.is_socket()
 
-   Return ``True`` if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a Unix socket. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a Unix socket. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_fifo()
 
-   Return ``True`` if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a FIFO. ``False`` will be returned if
+   the path is invalid, inaccessible or missing, or if it points to something
+   other than a FIFO. Use :meth:`Path.stat` to distinguish between these
+   cases.
 
 
 .. method:: Path.is_block_device()
 
-   Return ``True`` if the path points to a block device (or a symbolic link
-   pointing to a block device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a block device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a block device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_char_device()
 
-   Return ``True`` if the path points to a character device (or a symbolic link
-   pointing to a character device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a character device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a character device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.iterdir()
@@ -1664,7 +1664,7 @@ the pattern to match only directories.
 
 
 Comparison to the :mod:`glob` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 
 The patterns accepted and results generated by :meth:`Path.glob` and
 :meth:`Path.rglob` differ slightly from those by the :mod:`glob` module:
@@ -1675,34 +1675,68 @@ The patterns accepted and results generated by :meth:`Path.glob` and
    passing ``recursive=True`` to :func:`glob.glob`.
 3. "``**``" pattern components do not follow symlinks by default in pathlib.
    This behaviour has no equivalent in :func:`glob.glob`, but you can pass
-   ``follow_symlinks=True`` to :meth:`Path.glob` for compatible behaviour.
+   ``recurse_symlinks=True`` to :meth:`Path.glob` for compatible behaviour.
 4. Like all :class:`PurePath` and :class:`Path` objects, the values returned
    from :meth:`Path.glob` and :meth:`Path.rglob` don't include trailing
    slashes.
 5. The values returned from pathlib's ``path.glob()`` and ``path.rglob()``
    include the *path* as a prefix, unlike the results of
    ``glob.glob(root_dir=path)``.
-6. ``bytes``-based paths and :ref:`paths relative to directory descriptors
-   <dir_fd>` are not supported by pathlib.
+6. The values returned from pathlib's ``path.glob()`` and ``path.rglob()``
+   may include *path* itself, for example when globbing "``**``", whereas the
+   results of ``glob.glob(root_dir=path)`` never include an empty string that
+   would correspond to *path*.
 
 
-Correspondence to tools in the :mod:`os` module
------------------------------------------------
+Comparison to the :mod:`os` and :mod:`os.path` modules
+------------------------------------------------------
+
+pathlib implements path operations using :class:`PurePath` and :class:`Path`
+objects, and so it's said to be *object-oriented*. On the other hand, the
+:mod:`os` and :mod:`os.path` modules supply functions that work with low-level
+``str`` and ``bytes`` objects, which is a more *procedural* approach. Some
+users consider the object-oriented style to be more readable.
+
+Many functions in :mod:`os` and :mod:`os.path` support ``bytes`` paths and
+:ref:`paths relative to directory descriptors <dir_fd>`. These features aren't
+available in pathlib.
+
+Python's ``str`` and ``bytes`` types, and portions of the :mod:`os` and
+:mod:`os.path` modules, are written in C and are very speedy. pathlib is
+written in pure Python and is often slower, but rarely slow enough to matter.
+
+pathlib's path normalization is slightly more opinionated and consistent than
+:mod:`os.path`. For example, whereas :func:`os.path.abspath` eliminates
+"``..``" segments from a path, which may change its meaning if symlinks are
+involved, :meth:`Path.absolute` preserves these segments for greater safety.
+
+pathlib's path normalization may render it unsuitable for some applications:
+
+1. pathlib normalizes ``Path("my_folder/")`` to ``Path("my_folder")``, which
+   changes a path's meaning when supplied to various operating system APIs and
+   command-line utilities. Specifically, the absence of a trailing separator
+   may allow the path to be resolved as either a file or directory, rather
+   than a directory only.
+2. pathlib normalizes ``Path("./my_program")`` to ``Path("my_program")``,
+   which changes a path's meaning when used as an executable search path, such
+   as in a shell or when spawning a child process. Specifically, the absence
+   of a separator in the path may force it to be looked up in :envvar:`PATH`
+   rather than the current directory.
+
+As a consequence of these differences, pathlib is not a drop-in replacement
+for :mod:`os.path`.
+
+
+Corresponding tools
+^^^^^^^^^^^^^^^^^^^
 
 Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
-.. note::
-
-   Not all pairs of functions/methods below are equivalent. Some of them,
-   despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.absolute`,
-   :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
-
 ====================================   ==============================
 :mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
+:func:`os.path.abspath`                :meth:`Path.absolute`
 :func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
@@ -1723,7 +1757,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.path.relpath`                :meth:`PurePath.relative_to` [#]_
+:func:`os.path.relpath`                :meth:`PurePath.relative_to`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1735,8 +1769,3 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.splitext`               :attr:`PurePath.stem` and
                                        :attr:`PurePath.suffix`
 ====================================   ==============================
-
-.. rubric:: Footnotes
-
-.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
-.. [#] :meth:`PurePath.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
