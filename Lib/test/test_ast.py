@@ -1155,7 +1155,7 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(ast.Add(), ast.Add()))
         self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
 
-    def test_compare_tests(self):
+    def test_compare_modes(self):
         for mode, sources in (
             ("exec", exec_tests),
             ("eval", eval_tests),
