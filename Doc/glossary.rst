@@ -889,12 +889,12 @@ Glossary
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
 
-   optimised scope
+   optimized scope
       A scope where target local variable names are reliably known to the
-      compiler when the code is compiled, allowing optimisation of read and
+      compiler when the code is compiled, allowing optimization of read and
       write access to these names. The local namespaces for functions,
       generators, coroutines, comprehensions, and generator expressions are
-      optimised.
+      optimized in this fashion.
 
    package
       A Python :term:`module` which can contain submodules or recursively,

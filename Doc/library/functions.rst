@@ -1090,7 +1090,7 @@ are always available.  They are listed here in alphabetical order.
     deleting local variables will immediately affect the contents of the
     returned mapping object.
 
-    In an :term:`optimised scope` (including functions, generators, and
+    In an :term:`optimized scope` (including functions, generators, and
     coroutines), each call to ``locals()`` instead returns a fresh dictionary
     containing the current bindings of the function's local variables and any
     nonlocal cell references. In this case, name binding changes made via the
@@ -1115,7 +1115,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.13
       As part of :pep:`667`, the semantics of mutating the mapping objects
       returned from this function are now defined. The behavior in
-      :term:`optimised scopes <optimised scope>` is now as described above.
+      :term:`optimized scopes <optimized scope>` is now as described above.
       Aside from being defined, the behaviour in other scopes remains
       unchanged from previous versions.
 

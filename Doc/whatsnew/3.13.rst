@@ -258,7 +258,7 @@ has been left to individual Python implementations to define.
 
 Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
 for most code execution scopes, but changes
-:term:`optimised scopes <optimised scope>` (functions, generators, coroutines,
+:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
 comprehensions, and generator expressions) to explicitly return independent
 snapshots of the currently assigned local variables, including locally
 referenced nonlocal variables captured in closures.
@@ -2206,7 +2206,7 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
-* Calling :func:`locals` in an :term:`optimised scope` now produces an
+* Calling :func:`locals` in an :term:`optimized scope` now produces an
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
   requires explicit calls to update the initially returned dictionary with the
@@ -2220,7 +2220,7 @@ Changes in the Python API
   :pep:`709`. (Changed as part of :pep:`667`.)
 
 * Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
-  :term:`optimised scope` now returns a write-through proxy rather than a
+  :term:`optimized scope` now returns a write-through proxy rather than a
   snapshot that gets updated at ill-specified times. If a snapshot is desired,
   it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
   (Changed as part of :pep:`667`.)

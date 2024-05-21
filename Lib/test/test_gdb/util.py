@@ -246,7 +246,7 @@ class DebuggerTests(unittest.TestCase):
                 print(line, file=sys.stderr)
 
         # bpo-34007: Sometimes some versions of the shared libraries that
-        # are part of the traceback are compiled in optimised mode and the
+        # are part of the traceback are compiled in optimized mode and the
         # Program Counter (PC) is not present, not allowing gdb to walk the
         # frames back. When this happens, the Python bindings of gdb raise
         # an exception, making the test impossible to succeed.

@@ -396,7 +396,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals whenever the .f_locals accessor was called, so it was
         # cached here to ensure that modifications were not overwritten. While
         # the caching is no longer required now that f_locals is a direct proxy
-        # on optimised frames, it's also harmless, so the code structure has
+        # on optimized frames, it's also harmless, so the code structure has
         # been left unchanged.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
