@@ -2476,7 +2476,6 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
         VISIT_QUIT(st, 0);
     }
     else {
-        printf("enter block %p\n", key);
         if (st->st_cur->ste_annotation_block == NULL) {
             if (!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                                       key, LOCATION(annotation))) {
