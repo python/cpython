@@ -4591,7 +4591,7 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's keys.  See the :ref:`documentation
       of view objects <dict-views>`.
 
-   .. method:: pop(key, default=None)
+   .. method:: pop(key[, default])
 
       If *key* is in the dictionary, remove it and return its value, else return
       *default*.  If *default* is not given and *key* is not in the dictionary,
