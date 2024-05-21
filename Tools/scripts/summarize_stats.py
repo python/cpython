@@ -1498,5 +1498,6 @@ def main():
 
     output_stats(args.inputs, json_output=args.json_output)
 
+
 if __name__ == "__main__":
     main()
