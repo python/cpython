@@ -7,6 +7,7 @@
 #include "pycore_dict.h"          // _PyDict_HasOnlyStringKeys()
 #include "pycore_modsupport.h"    // export _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 
@@ -1947,9 +1948,23 @@ _parser_init(void *arg)
     int owned;
     PyObject *kwtuple = parser->kwtuple;
     if (kwtuple == NULL) {
-        // XXX This potentially leaks an object outside the lifetime
-        // of the current interpreter.
+        /* We may temporarily switch to the main interpreter to avoid
+         * creating a tuple that could outlive its owning interpreter. */
+        PyThreadState *save_tstate = NULL;
+        PyThreadState *temp_tstate = NULL;
+        if (!_Py_IsMainInterpreter(PyInterpreterState_Get())) {
+            temp_tstate = PyThreadState_New(_PyInterpreterState_Main());
+            if (temp_tstate == NULL) {
+                return -1;
+            }
+            save_tstate = PyThreadState_Swap(temp_tstate);
+        }
         kwtuple = new_kwtuple(keywords, len, pos);
+        if (temp_tstate != NULL) {
+            PyThreadState_Clear(temp_tstate);
+            (void)PyThreadState_Swap(save_tstate);
+            PyThreadState_Delete(temp_tstate);
+        }
         if (kwtuple == NULL) {
             return -1;
         }
