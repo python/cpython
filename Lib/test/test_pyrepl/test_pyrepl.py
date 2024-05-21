@@ -317,14 +317,13 @@ class TestPyReplOutput(TestCase):
             [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
                 Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
                 Event(evt="key", data="g", raw=bytearray(b"g")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
