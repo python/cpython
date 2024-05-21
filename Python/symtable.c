@@ -2470,10 +2470,11 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
                           struct _symtable_entry *parent_ste, void *key)
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
-    if (future_annotations &&
-        !symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
-                              key, LOCATION(annotation))) {
-        VISIT_QUIT(st, 0);
+    if (future_annotations) {
+        if(!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
+                                 key, LOCATION(annotation))) {
+            VISIT_QUIT(st, 0);
+        }
     }
     else {
         if (st->st_cur->ste_annotation_block == NULL) {

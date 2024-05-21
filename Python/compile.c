@@ -1759,10 +1759,16 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 {
 
     /* Set current line number to the line number of first statement.
+       This way line number for SETUP_ANNOTATIONS will always
+       coincide with the line number of first "real" statement in module.
        If body is empty, then lineno will be set later in optimize_and_assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
         loc = LOC(st);
+    }
+    /* Every annotated class and module should have __annotations__. */
+    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && find_ann(stmts)) {
+        ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
         return SUCCESS;
@@ -1788,7 +1794,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     }
-    if (c->u->u_ste->ste_annotation_block != NULL) {
+    if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
+         c->u->u_ste->ste_annotation_block != NULL) {
         NEW_JUMP_TARGET_LABEL(c, raise_notimp);
         void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
         RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key, raise_notimp));
@@ -2167,8 +2174,10 @@ compiler_visit_annotations(struct compiler *c, location loc,
         compiler_visit_argannotation(c, &_Py_ID(return), returns, &annotations_len, loc));
 
     if (future_annotations) {
-        ADDOP_I(c, loc, BUILD_TUPLE, annotations_len * 2);
-        return MAKE_FUNCTION_ANNOTATIONS;
+        if (annotations_len) {
+            ADDOP_I(c, loc, BUILD_TUPLE, annotations_len * 2);
+            return MAKE_FUNCTION_ANNOTATIONS;
+        }
     }
     else {
         assert(ste != NULL);
@@ -4403,7 +4412,6 @@ compiler_nameop(struct compiler *c, location loc,
     }
 
     /* XXX Leave assert here, but handle __doc__ and the like better */
-    printf("name %s %s\n", PyUnicode_AsUTF8(name), PyUnicode_AsUTF8(c->u->u_ste->ste_name));
     assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
     switch (optype) {
@@ -6625,7 +6633,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    PyObject *mangled;
+    PyObject* mangled;
 
     assert(s->kind == AnnAssign_kind);
 
@@ -6648,7 +6656,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-          ADDOP(c, loc, STORE_SUBSCR);
+            ADDOP(c, loc, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
