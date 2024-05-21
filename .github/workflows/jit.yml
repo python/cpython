@@ -144,6 +144,7 @@ jobs:
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations ' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
           ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          
   jit-with-no-gil:
     runs-on: x86_64-unknown-linux-gnu/gcc
     strategy:
@@ -164,8 +165,4 @@ jobs:
           make all --jobs 4
       - name: Run Test Suite
         run: |
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      
-
-      
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3      
