@@ -938,10 +938,19 @@
             _Py_UopsSymbol *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand;
-            if (sym_matches_type_version(owner, type_version, ctx->latest_escape_offset)) {
+            if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                // add watcher so that whenever the type changes we invalide this
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                // if the type is null, it was not found in the cache (there was a conflict)
+                // with the key, in which case we can't trust the version
+                if (type) {
+                    sym_set_type_version(owner, type_version);
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
             }
-            sym_set_type_version(owner, type_version, i);
             break;
         }
 

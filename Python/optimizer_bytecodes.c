@@ -27,7 +27,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
-#define sym_set_type_version(SYM, VERSION, OFFSET) _Py_uop_sym_set_type_version(ctx, SYM, VERSION, OFFSET)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
@@ -116,10 +116,20 @@ dummy_func(void) {
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
-        if (sym_matches_type_version(owner, type_version, ctx->latest_escape_offset)) {
+        if (sym_matches_type_version(owner, type_version)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
+        } else {
+            // add watcher so that whenever the type changes we invalide this
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            // if the type is null, it was not found in the cache (there was a conflict)
+            // with the key, in which case we can't trust the version
+            if (type) {
+                sym_set_type_version(owner, type_version);
+                PyType_Watch(TYPE_WATCHER_ID, type);
+                _Py_BloomFilter_Add(dependencies, type);
+            }
+
         }
-        sym_set_type_version(owner, type_version, i);
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {

@@ -79,6 +79,7 @@ increment_mutations(PyObject* dict) {
  * so we don't need to check that they haven't been used */
 #define BUILTINS_WATCHER_ID 0
 #define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
 
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
@@ -89,6 +90,14 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict, 1);
     increment_mutations(dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
+    return 0;
+}
+
+static int
+type_watcher_callback(PyTypeObject* type)
+{
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
+    PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
     return 0;
 }
 
@@ -166,6 +175,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
+    }
+    if (interp->type_watchers[TYPE_WATCHER_ID] == NULL) {
+        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
@@ -314,7 +326,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
-#define sym_set_type_version(SYM, VERSION, OFFSET) _Py_uop_sym_set_type_version(ctx, SYM, VERSION, OFFSET)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
@@ -406,7 +418,6 @@ optimize_uops(
     ctx->done = false;
     ctx->out_of_space = false;
     ctx->contradiction = false;
-    ctx->latest_escape_offset = 0;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
@@ -416,10 +427,6 @@ optimize_uops(
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
-
-        if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
-            ctx->latest_escape_offset = i; // i is the offset we're looping on
-        }
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {

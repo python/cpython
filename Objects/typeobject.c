@@ -787,7 +787,8 @@ PyType_AddWatcher(PyType_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+    // start at 1, 0 is reserved for cpython optimizer
+    for (int i = 1; i < TYPE_MAX_WATCHERS; i++) {
         if (!interp->type_watchers[i]) {
             interp->type_watchers[i] = callback;
             return i;
@@ -1043,6 +1044,82 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
 }
 
+/*
+The Tier 2 interpreter requires looking up the type object by the type version, so it can install
+watchers to understand when they change.
+
+So we add a global cache from type version to weak references of type objects.
+
+This is similar to how the cache used with function objects and versions.
+*/
+
+void
+_PyType_SetVersion(PyTypeObject *tp, unsigned int version)
+{
+#ifndef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // lookup the old version and set to null
+    if (tp->tp_version_tag != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
+        *slot = NULL;
+    }
+#endif
+    tp->tp_version_tag = version;
+#ifndef Py_GIL_DISABLED
+    if (version != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (version % TYPE_VERSION_CACHE_SIZE);
+        *slot = tp;
+    }
+#endif
+}
+
+void
+_PyType_ClearCodeByVersion(unsigned int version)
+{
+#ifndef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyTypeObject **slot =
+        interp->types.type_version_cache
+        + (version % TYPE_VERSION_CACHE_SIZE);
+    if (*slot) {
+        assert(PyType_Check(*slot));
+        if ((*slot)->tp_version_tag == version) {
+            *slot = NULL;
+        }
+    }
+#endif
+}
+
+PyTypeObject *
+_PyType_LookupByVersion(unsigned int version)
+{
+#ifdef Py_GIL_DISABLED
+    return NULL;
+#else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyTypeObject **slot =
+        interp->types.type_version_cache
+        + (version % TYPE_VERSION_CACHE_SIZE);
+    printf("slot: %p\n", slot);
+    if (*slot && (*slot)->tp_version_tag == version) {
+        return *slot;
+    }
+    return NULL;
+#endif
+}
+
+unsigned int
+_PyType_GetVersionForCurrentState(PyTypeObject *tp)
+{
+    return tp->tp_version_tag;
+}
+
+
+
 #define MAX_VERSIONS_PER_CLASS 1000
 
 static int
@@ -1071,8 +1148,9 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-                                       NEXT_GLOBAL_VERSION_TAG++);
+        _PyType_SetVersion(type, NEXT_GLOBAL_VERSION_TAG++);
+        // FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
+        //                                NEXT_GLOBAL_VERSION_TAG++);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -1081,8 +1159,9 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-                                       NEXT_VERSION_TAG(interp)++);
+        _PyType_SetVersion(type, NEXT_VERSION_TAG(interp)++);
+        // FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
+        //                                NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
 
@@ -5605,7 +5684,7 @@ type_dealloc(PyObject *self)
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     _PyObject_GC_UNTRACK(type);
-
+    _PyType_ClearCodeByVersion(type->tp_version_tag);
     type_dealloc_common(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
