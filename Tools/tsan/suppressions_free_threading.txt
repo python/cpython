@@ -11,34 +11,85 @@ race:set_allocator_unlocked
 
 ## Free-threaded suppressions
 
-race:_add_to_weak_set
-race:_in_weak_set
-race:_mi_heap_delayed_free_partial
-race:_PyEval_EvalFrameDefault
-race:_PyImport_AcquireLock
-race:_PyImport_ReleaseLock
-race:_PyInterpreterState_SetNotRunningMain
-race:_PyInterpreterState_IsRunningMain
-race:_PyObject_GC_IS_SHARED
-race:_PyObject_GC_SET_SHARED
-race:_PyObject_GC_TRACK
-# https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
+
+# These entries are for warnings that trigger in a library function, as called
+# by a CPython function.
+
+# https://gist.github.com/swtaarrs/9d41251e603fa6dedd604191a6da820d
+race:park_detached_threads
+# https://gist.github.com/swtaarrs/8e0e365e1d9cecece3269a2fb2f2b8b8
+race:sock_recv_impl
+# https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
+race:free_threadstate
+# https://gist.github.com/swtaarrs/cd6aec2006e0c1b561b68d65e9f1a872
 race:_PyParkingLot_Park
-race:_PyType_HasFeature
-race:assign_version_tag
-race:gc_restore_tid
-race:initialize_new_array
-race:insertdict
-race:lookup_tp_dict
-race:mi_heap_visit_pages
-race:PyMember_GetOne
-race:PyMember_SetOne
-race:new_reference
-race:set_contains_key
-race:set_inheritable
-race:start_the_world
-race:tstate_set_detached
-race:unicode_hash
+
+
+# These warnings trigger directly in a CPython function.
+
+race_top:_add_to_weak_set
+race_top:_in_weak_set
+race_top:_mi_heap_delayed_free_partial
+race_top:_PyEval_EvalFrameDefault
+race_top:_PyImport_AcquireLock
+race_top:_PyImport_ReleaseLock
+# https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
+race_top:_PyParkingLot_Park
+race_top:_PyType_HasFeature
+race_top:assign_version_tag
+race_top:gc_restore_tid
+race_top:insertdict
+race_top:lookup_tp_dict
+race_top:mi_heap_visit_pages
+race_top:PyMember_GetOne
+race_top:PyMember_SetOne
+race_top:new_reference
+race_top:set_contains_key
+race_top:set_inheritable
+race_top:start_the_world
+race_top:tstate_set_detached
+race_top:unicode_hash
+race_top:Py_SET_TYPE
+race_top:_PyDict_CheckConsistency
+race_top:_PyImport_AcquireLock
+race_top:_Py_dict_lookup_threadsafe
+race_top:_imp_release_lock
+race_top:_multiprocessing_SemLock_acquire_impl
+race_top:builtin_compile_impl
+race_top:count_next
+race_top:dictiter_new
+race_top:dictresize
+race_top:insert_to_emptydict
+race_top:insertdict
+race_top:list_get_item_ref
+race_top:make_pending_calls
+race_top:set_add_entry
+race_top:should_intern_string
+race_top:worklist_pop
+race_top:_PyEval_IsGILEnabled
+race_top:llist_insert_tail
+race_top:_Py_slot_tp_getattr_hook
+race_top:add_threadstate
+race_top:dump_traceback
+race_top:fatal_error
+race_top:mi_page_decode_padding
+race_top:_multiprocessing_SemLock_release_impl
+race_top:_PyFrame_GetCode
+race_top:_PyFrame_Initialize
+race_top:PyInterpreterState_ThreadHead
+race_top:_PyObject_TryGetInstanceAttribute
+race_top:_Py_qsbr_unregister
+race_top:_Py_qsbr_poll
+race_top:PyThreadState_Next
+race_top:Py_TYPE
+race_top:PyUnstable_InterpreterFrame_GetLine
+race_top:sock_close
+race_top:tstate_delete_common
+race_top:tstate_is_freed
+race_top:type_modified_unlocked
+race_top:update_refs
+race_top:write_thread_id
+race_top:PyThreadState_Clear
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create

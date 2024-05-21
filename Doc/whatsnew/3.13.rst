@@ -94,15 +94,19 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
-* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
-  a function now returns a write-through proxy to the frame's locals,
-  rather than a ``dict``. See the PEP for corresponding C API changes
-  and deprecations.
+* :pep:`667`: The :func:`locals` builtin now has
+  :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
+  returned mapping. Python debuggers and similar tools may now more reliably
+  update local variables in optimized frames even during concurrent code
+  execution.
 
 New typing features:
 
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
+
+* :pep:`702`: Support for marking deprecations in the type system using the
+  new :func:`warnings.deprecated` decorator.
 
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
@@ -243,6 +247,34 @@ Improved Error Messages
   with a tuple of names of attributes of this class which are accessed
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
+
+.. _whatsnew313-locals-semantics:
+
+Defined mutation semantics for ``locals()``
+-------------------------------------------
+
+Historically, the expected result of mutating the return value of :func:`locals`
+has been left to individual Python implementations to define.
+
+Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
+for most code execution scopes, but changes
+:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
+comprehensions, and generator expressions) to explicitly return independent
+snapshots of the currently assigned local variables, including locally
+referenced nonlocal variables captured in closures.
+
+To ensure debuggers and similar tools can reliably update local variables in
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared  ``dict`` instance with undefined runtime semantics.
+
+See :pep:`667` for more details, including related C API changes and
+deprecations.
+
+(PEP and implementation contributed by Mark Shannon and Tian Gao in
+:gh:`74929`. Documentation updates provided by Guido van Rossum and
+Alyssa Coghlan.)
 
 Incremental Garbage Collection
 ------------------------------
@@ -521,8 +553,10 @@ ast
 
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
-  if a list field is omitted, that field will now be set to an empty list.
-  (Previously, in both cases, the attribute would be missing on the newly
+  if a list field is omitted, that field will now be set to an empty list,
+  and if a :class:`!ast.expr_context` field is omitted, it defaults to
+  :class:`Load() <ast.Load>`.
+  (Previously, in all cases, the attribute would be missing on the newly
   constructed AST node instance.)
 
   If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
@@ -534,7 +568,7 @@ ast
   unless the class opts in to the new behavior by setting the attribute
   :attr:`ast.AST._field_types`.
 
-  (Contributed by Jelle Zijlstra in :gh:`105858` and :gh:`117486`.)
+  (Contributed by Jelle Zijlstra in :gh:`105858`, :gh:`117486`, and :gh:`118851`.)
 
 * :func:`ast.parse` now accepts an optional argument *optimize*
   which is passed on to the :func:`compile` built-in. This makes it
@@ -794,6 +828,9 @@ mmap
 * :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
   the file descriptor specified by *fileno* will not be duplicated.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
+* :class:`mmap.mmap` is now protected from crashing on Windows when the mapped memory
+  is inaccessible due to file system errors or access violations.
+  (Contributed by Jannis Weigend in :gh:`118209`.)
 
 opcode
 ------
@@ -846,6 +883,12 @@ os
   use in ``file_actions=`` on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
+
+* :func:`os.mkdir` and :func:`os.makedirs` on Windows now support passing a
+  *mode* value of ``0o700`` to apply access control to the new directory. This
+  implicitly affects :func:`tempfile.mkdtemp` and is a mitigation for
+  :cve:`2024-4030`. Other values for *mode* continue to be ignored.
+  (Contributed by Steve Dower in :gh:`118486`.)
 
 os.path
 -------
@@ -988,6 +1031,14 @@ sys
 * Add the :func:`sys._is_interned` function to test if the string was interned.
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
+
+tempfile
+--------
+
+* On Windows, the default mode ``0o700`` used by :func:`tempfile.mkdtemp` now
+  limits access to the new directory due to changes to :func:`os.mkdir`. This
+  is a mitigation for :cve:`2024-4030`.
+  (Contributed by Steve Dower in :gh:`118486`.)
 
 time
 ----
@@ -1559,7 +1610,7 @@ Pending Removal in Python 3.14
   Use :class:`ast.Constant` instead.
   (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
-* :mod:`collections.abc`: Deprecated :class:`~collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``,
   or :class:`collections.abc.Buffer`.
@@ -1617,7 +1668,7 @@ Pending Removal in Python 3.14
 
 * :mod:`sqlite3`:
 
-  * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
+  * :data:`!version` and :data:`!version_info`.
 
   * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
     if :ref:`named placeholders <sqlite3-placeholders>` are used and
@@ -1633,7 +1684,7 @@ Pending Removal in Python 3.14
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
-* :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
+* :mod:`typing`: :class:`!typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
 * :mod:`urllib`:
@@ -2155,16 +2206,24 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
-* Callbacks registered in the :mod:`tkinter` module now take arguments as
-  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-  not just ``str``.
-  To restore the previous behavior set :mod:`!tkinter` module global
-  :data:`!wantobject` to ``1`` before creating the
-  :class:`!Tk` object or call the :meth:`!wantobject`
-  method of the :class:`!Tk` object with argument ``1``.
-  Calling it with argument ``2`` restores the current default behavior.
-  (Contributed by Serhiy Storchaka in :gh:`66410`.)
+* Calling :func:`locals` in an :term:`optimized scope` now produces an
+  independent snapshot on each call, and hence no longer implicitly updates
+  previously returned references. Obtaining the legacy CPython behaviour now
+  requires explicit calls to update the initially returned dictionary with the
+  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
 
+* Calling :func:`locals` from a comprehension at module or class scope
+  (including via ``exec`` or ``eval``) once more behaves as if the comprehension
+  were running as an independent nested function (i.e. the local variables from
+  the containing scope are not included). In Python 3.12, this had changed
+  to include the local variables from the containing scope when implementing
+  :pep:`709`. (Changed as part of :pep:`667`.)
+
+* Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
+  :term:`optimized scope` now returns a write-through proxy rather than a
+  snapshot that gets updated at ill-specified times. If a snapshot is desired,
+  it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
+  (Changed as part of :pep:`667`.)
 
 Changes in the C API
 --------------------

@@ -170,9 +170,12 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
-   it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
-   It will raise a :exc:`TypeError` in a future version of Python.
+   Evaluating :data:`NotImplemented` in a boolean context was deprecated.
+
+.. versionchanged:: 3.14
+   Evaluating :data:`NotImplemented` in a boolean context now raises a :exc:`TypeError`.
+   It previously evaluated to :const:`True` and emitted a :exc:`DeprecationWarning`
+   since Python 3.9.
 
 
 Ellipsis
@@ -1346,7 +1349,7 @@ Special read-only attributes
    * - .. attribute:: frame.f_locals
      - The dictionary used by the frame to look up
        :ref:`local variables <naming>`.
-       If the frame refers to a function or comprehension,
+       If the frame refers to an :term:`optimized scope`,
        this may return a write-through proxy object.
 
        .. versionchanged:: 3.13
