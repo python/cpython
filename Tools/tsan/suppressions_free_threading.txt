@@ -56,7 +56,6 @@ race_top:_Py_dict_lookup_threadsafe
 race_top:_imp_release_lock
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:builtin_compile_impl
-race_top:count_next
 race_top:dictiter_new
 race_top:dictresize
 race_top:insert_to_emptydict
