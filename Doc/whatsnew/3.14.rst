@@ -115,6 +115,8 @@ symtable
 Optimizations
 =============
 
+* Set the default protocol version on the :mod:`pickle` module to 5.
+  For more details, please see :ref:`pickle protocols <pickle-protocols>`.
 
 
 
