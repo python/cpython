@@ -3260,11 +3260,9 @@
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(value);
             stack_pointer += -1;
@@ -3281,11 +3279,9 @@
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
             stack_pointer[-2] = value;

@@ -101,7 +101,7 @@ PyAPI_FUNC(int)
 _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset);
 
 PyAPI_FUNC(int)
-_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset);
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *value);
 
 
 #define _PYMONITORING_IF_ACTIVE(STATE, X)  \
@@ -240,11 +240,11 @@ PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, int
 }
 
 static inline int
-PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *value)
 {
     _PYMONITORING_IF_ACTIVE(
         state,
-        _PyMonitoring_FireStopIterationEvent(state, codelike, offset));
+        _PyMonitoring_FireStopIterationEvent(state, codelike, offset, value));
 }
 
 #undef _PYMONITORING_IF_ACTIVE
