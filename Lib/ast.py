@@ -406,18 +406,9 @@ def compare(
     b,
     /,
     *,
-    compare_types=True,
     compare_attributes=False,
 ):
     """Recursively compares two ast nodes.
-
-    There are two options that control how the comparison is done.
-
-    compare_types affects how Constant objects are compared. If
-    compare_types is True (default), then Constant objects must have
-    the same type and value to be equal. If compare_type is False,
-    then Constant objects must only have the same value,
-    e.g. Constant(1.0) equals Constant(1).
 
     compare_attributes affects whether AST attributes are considered
     in the comparison. If compare_attributes is False (default), then
@@ -435,7 +426,7 @@ def compare(
                 a,
                 b,
                 compare_attributes=compare_attributes,
-                compare_types=compare_types,
+
             )
         elif isinstance(a, list):
             # If a field is repeated, then both objects will represent
@@ -448,12 +439,7 @@ def compare(
             else:
                 return True
         else:
-            # The only case where the type comparison matters is
-            # Constant() notes that could have different objects with
-            # the same value, e.g. Constant(1) and Constant(1.0).
-            if compare_types and type(a) is not type(b):
-                return False
-            return a == b
+            return type(a) is type(b) and a == b
 
     def _compare_fields():
         for field in a._fields:

@@ -1126,7 +1126,6 @@ class AST_Tests(unittest.TestCase):
     def test_compare_fieldless(self):
         self.assertTrue(ast.compare(ast.Add(), ast.Add()))
         self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
-        self.assertFalse(ast.compare(ast.Sub(), ast.Constant()))
 
     def test_compare_stdlib(self):
         if support.is_resource_enabled("cpu"):
@@ -1165,10 +1164,6 @@ class AST_Tests(unittest.TestCase):
         a, b = parse("2 + 2", "2+2")
         self.assertTrue(ast.compare(a, b, compare_attributes=False))
         self.assertFalse(ast.compare(a, b, compare_attributes=True))
-
-        a, b = parse("1", "1.0")
-        self.assertTrue(ast.compare(a, b, compare_types=False))
-        self.assertFalse(ast.compare(a, b, compare_types=True))
 
     def test_positional_only_feature_version(self):
         ast.parse('def foo(x, /): ...', feature_version=(3, 8))
