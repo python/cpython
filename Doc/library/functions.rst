@@ -614,9 +614,19 @@ are always available.  They are listed here in alphabetical order.
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary. If
-   ``exec`` gets two separate objects as *globals* and *locals*, the code will
-   be executed as if it were embedded in a class definition.
+   that at the module level, globals and locals are the same dictionary.
+
+   .. note::
+
+      When ``exec`` gets two separate objects as *globals* and *locals*, the
+      code will be executed as if it were embedded in a class definition. This
+      means functions defined in the executed code will not be able to access
+      variables assigned at the top level (as the "top level" variables are
+      treated as class variables in a class definition).
+      Passing a :class:`collections.ChainMap` instance as *globals* allows name
+      lookups to be chained across multiple mappings without triggering this
+      behaviour. Values assigned to top-level names in the executed code can be
+      retrieved by passing an empty dictionary as the first entry in the chain.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
