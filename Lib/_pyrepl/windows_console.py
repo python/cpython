@@ -30,8 +30,9 @@ import ctypes
 from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR, SHORT
 from ctypes import Structure, POINTER, Union
 from ctypes import windll
+from typing import TYPE_CHECKING
 
-if False:
+if TYPE_CHECKING:
     from typing import IO
 
 class CONSOLE_SCREEN_BUFFER_INFO(Structure):
@@ -180,6 +181,7 @@ VK_MAP: dict[int, str] = {
 }
 
 ENABLE_PROCESSED_OUTPUT = 0x01
+ENABLE_WRAP_AT_EOL_OUTPUT  = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
 class _error(Exception):
@@ -197,7 +199,7 @@ class WindowsConsole(Console):
         encoding: str = "",
     ):
 
-        SetConsoleMode(OutHandle, ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+        SetConsoleMode(OutHandle, ENABLE_WRAP_AT_EOL_OUTPUT  | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         self.encoding = encoding or sys.getdefaultencoding()
 
         if isinstance(f_in, int):
@@ -211,7 +213,7 @@ class WindowsConsole(Console):
             self.output_fd = f_out.fileno()
 
 
-    def refresh(self, screen, c_xy):
+    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
         Refresh the console screen.
 
@@ -224,13 +226,11 @@ class WindowsConsole(Console):
         trace('!!Refresh {}', screen)
         while len(self.screen) < min(len(screen), self.height):
             trace("...")
-            cur_x, cur_y = self.get_abs_position(0, len(self.screen) - 1)
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
             self.__write("\n")
             self.__posxy = 0, len(self.screen)
             self.screen.append("")
-
 
         px, py = self.__posxy
         old_offset = offset = self.__offset
@@ -265,7 +265,7 @@ class WindowsConsole(Console):
         elif offset > 0 and len(screen) < offset + height:
             trace("Adding extra line")
             offset = max(len(screen) - height, 0)
-            #screen.append("")
+            screen.append("")
 
         oldscr = self.screen[old_offset : old_offset + height]
         newscr = screen[offset : offset + height]
@@ -303,7 +303,6 @@ class WindowsConsole(Console):
         scroll_rect.Bottom = SHORT(bottom)
         scroll_rect.Left = SHORT(0 if left is None else left)
         scroll_rect.Right = SHORT(self.getheightwidth()[1] - 1 if right is None else right)
-        trace(f"Scrolling {scroll_rect.Top} {scroll_rect.Bottom}")
         destination_origin = _COORD()
         fill_info = CHAR_INFO()
         fill_info.UnicodeChar = ' '
@@ -331,7 +330,6 @@ class WindowsConsole(Console):
 
     def __write(self, text):
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
-        #self.__buffer.append((text, 0))
 
     def __move(self, x, y):
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -452,9 +450,15 @@ class WindowsConsole(Console):
         return cur_x, cur_y
 
     def __move_relative(self, x, y):
+        """Moves relative to the start of the current input line"""
         trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
         cur_x, cur_y = self.get_abs_position(x, y)
         trace('move is {} {}', cur_x, cur_y)
+        if cur_y < 0:
+            # We're scrolling above the current buffer, we need to refresh
+            self.__posxy = self.__posxy[0], self.__posxy[1] + cur_y
+            self.refresh(self.screen, self.__posxy)
+            cur_y = 0
         self.__move_absolute(cur_x, cur_y)
 
     def __move_absolute(self, x, y):
