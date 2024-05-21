@@ -89,7 +89,7 @@ Improved Modules
 ast
 ---
 
-Added :func:`ast.compare` for comparing 2 AST node.
+Added :func:`ast.compare` for comparing 2 ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`)
 
 
