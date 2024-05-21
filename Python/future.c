@@ -37,9 +37,7 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
-            // For now, we ignore this future. We may make it stringify again
-            // in the future.
-            // ff->ff_features |= CO_FUTURE_ANNOTATIONS;
+            ff->ff_features |= CO_FUTURE_ANNOTATIONS;
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");

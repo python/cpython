@@ -4403,6 +4403,7 @@ compiler_nameop(struct compiler *c, location loc,
     }
 
     /* XXX Leave assert here, but handle __doc__ and the like better */
+    printf("name %s %s\n", PyUnicode_AsUTF8(name), PyUnicode_AsUTF8(c->u->u_ste->ste_name));
     assert(scope || PyUnicode_READ_CHAR(name, 0) == '_');
 
     switch (optype) {
@@ -6624,6 +6625,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
+    PyObject *mangled;
 
     assert(s->kind == AnnAssign_kind);
 
@@ -6636,6 +6638,17 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     case Name_kind:
         if (forbidden_name(c, loc, targ->v.Name.id, Store)) {
             return ERROR;
+        }
+        /* If we have a simple name in a module or class, store annotation. */
+        if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS &&
+            s->v.AnnAssign.simple &&
+            (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+             c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
+            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
+          ADDOP(c, loc, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
