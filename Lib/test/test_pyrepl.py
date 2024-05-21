@@ -499,7 +499,6 @@ class TestPyReplOutput(TestCase):
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
