@@ -177,9 +177,12 @@ def _parse_key1(key, s):
             ret = key[s]
             s += 1
     if ctrl:
-        if len(ret) > 1:
-            raise KeySpecError("\\C- must be followed by a character")
-        ret = chr(ord(ret) & 0x1F)  # curses.ascii.ctrl()
+        if len(ret) == 1:
+            ret = chr(ord(ret) & 0x1F)  # curses.ascii.ctrl()
+        elif ret in {"left", "right"}:
+            ret = f"ctrl {ret}"
+        else:
+            raise KeySpecError("\\C- followed by invalid key")
     if meta:
         ret = ["\033", ret]
     else:
