@@ -146,7 +146,7 @@ class TestReader(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
-                # go to the end of the first line 
+                # go to the end of the first line
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
