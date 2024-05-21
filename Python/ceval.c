@@ -9,7 +9,6 @@
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"
 #include "pycore_code.h"
-#include "pycore_compile.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"

@@ -1,2 +1,2 @@
-Rename :opcode:`!LOAD_ASSERTION_ERROR` opcode to :opcode:`LOAD_COMMON_CONSTANT`
+Replace :opcode:`!LOAD_ASSERTION_ERROR` opcode with :opcode:`LOAD_COMMON_CONSTANT`
 and add support for :exc:`NotImplementedError`.

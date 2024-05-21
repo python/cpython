@@ -1198,9 +1198,7 @@ dummy_func(
                 value = PyExc_NotImplementedError;
                 break;
             default:
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad LOAD_COMMON_CONSTANT oparg");
-                ERROR_NO_POP();
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
             }
         }
 

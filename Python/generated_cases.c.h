@@ -4258,9 +4258,7 @@
                 value = PyExc_NotImplementedError;
                 break;
                 default:
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad LOAD_COMMON_CONSTANT oparg");
-                goto error;
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
