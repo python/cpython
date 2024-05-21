@@ -1,2 +1,2 @@
-- If the user hits enter twice, they are able to exit out of the block, even if there's trailing whitespace.
-- Trim trailing whitespace in the HistoricalReader to match IPython's behavior
+To match IPython's behaviour, updated `maybe-accept`'s logic so that if the user hits enter twice, they are able to terminate the block even if there's trailing whitespace.
+Also, trimming trailing whitespace in HistoricalReader so that when the user hits arrow up, the cursor is on the last functional line. This matches IPython's behavior.
