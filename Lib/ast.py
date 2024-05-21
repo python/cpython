@@ -441,7 +441,9 @@ def compare(
         else:
             return type(a) is type(b) and a == b
 
-    def _compare_fields():
+    def _compare_fields(a, b):
+        if a._fields != b._fields:
+            return False
         for field in a._fields:
             a_field = getattr(a, field)
             b_field = getattr(b, field)
@@ -450,7 +452,9 @@ def compare(
         else:
             return True
 
-    def _compare_attributes():
+    def _compare_attributes(a, b):
+        if a._attributes != b._attributes:
+            return False
         # Attributes are always strings.
         for attr in a._attributes:
             a_attr = getattr(a, attr)
@@ -462,11 +466,9 @@ def compare(
 
     if type(a) is not type(b):
         return False
-    # a and b are guaranteed to have the same type, so they must also
-    # have identical values for _fields and _attributes.
-    if not _compare_fields():
+    if not _compare_fields(a, b):
         return False
-    if compare_attributes and not _compare_attributes():
+    if compare_attributes and not _compare_attributes(a, b):
         return False
     return True
 
