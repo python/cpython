@@ -360,8 +360,10 @@ class backward_word(MotionCommand):
 class self_insert(EditCommand):
     def do(self) -> None:
         r = self.reader
-        r.insert(self.event * r.get_arg())
-        r.calc_screen_method = CalcScreen.CALC_APPEND_SCREEN
+        text = self.event * r.get_arg()
+        r.insert(text)
+        if len(text) == 1 and r.pos == len(r.buffer):
+            r.calc_screen_method = CalcScreen.CALC_APPEND_SCREEN
 
 
 class insert_nl(EditCommand):
