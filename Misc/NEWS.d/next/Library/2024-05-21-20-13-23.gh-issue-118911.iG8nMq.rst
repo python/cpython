@@ -1,0 +1,2 @@
+- If the user hits enter twice, they are able to exit out of the block, even if there's trailing whitespace.
+- Trim trailing whitespace in the HistoricalReader to match IPython's behavior
