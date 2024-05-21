@@ -1,0 +1,1 @@
+Fix error being thrown on quit() in REPL when TERM is set to dumb
