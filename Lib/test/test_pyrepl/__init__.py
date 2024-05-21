@@ -7,7 +7,6 @@ from test.support.import_helper import import_module
 # option.  Additionally, we need to attempt to import curses and readline.
 requires("curses")
 curses = import_module("curses")
-readline = import_module("readline")
 
 
 def load_tests(*args):
