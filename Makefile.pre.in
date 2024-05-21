@@ -2447,6 +2447,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_pydoc \
+		test/test_pyrepl \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
