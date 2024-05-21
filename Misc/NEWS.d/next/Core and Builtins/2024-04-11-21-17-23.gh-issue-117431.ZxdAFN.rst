@@ -1,1 +1,1 @@
-Improve performance of :func:`str.startswith`, :func:`str.endswith`, :func:`str.removeprefix` and :func:`str.removesuffix`.
+Improve performance of :meth:`str.startswith`, :meth:`str.endswith`, :meth:`str.removeprefix` and :meth:`str.removesuffix`.
