@@ -426,7 +426,6 @@ def compare(
                 a,
                 b,
                 compare_attributes=compare_attributes,
-
             )
         elif isinstance(a, list):
             # If a field is repeated, then both objects will represent
