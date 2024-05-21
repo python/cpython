@@ -214,7 +214,7 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
+    def refresh(self, screen, c_xy):
         """
         Refresh the console screen.
 

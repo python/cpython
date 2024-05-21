@@ -1,4 +1,3 @@
-from typing import Self
 from collections.abc import Callable, Iterator
 
 Callback = Callable[[], object]

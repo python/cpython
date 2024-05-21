@@ -1,7 +1,13 @@
 import re
 import unicodedata
+from enum import Enum
 
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+
+
+class CalcScreen(Enum):
+    CALC_COMPLETE_SCREEN = 1
+    CALC_APPEND_SCREEN = 2
 
 
 def str_width(c: str) -> int:

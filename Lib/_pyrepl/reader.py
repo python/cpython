@@ -28,14 +28,14 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 
 from . import commands, console, input
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen, CalcScreen
 from .trace import trace
 
 
 # types
 Command = commands.Command
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName, Callable, Self
+    from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:
@@ -233,7 +233,7 @@ class Reader:
     screeninfo: list[tuple[int, list[int]]] = field(init=False)
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
-    calc_screen: Callable[[Self], list[str]] = field(init=False)
+    calc_screen_method: CalcScreen = CalcScreen.CALC_COMPLETE_SCREEN
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -246,7 +246,6 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
-        self.calc_screen = self.calc_complete_screen
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
@@ -269,7 +268,7 @@ class Reader:
         self.cxy = self.pos2xy()
 
         # Reset the function that is used for completing the screen
-        self.calc_screen = self.calc_complete_screen
+        self.calc_screen_method = CalcScreen.CALC_COMPLETE_SCREEN
         return new_screen
 
     def calc_complete_screen(self) -> list[str]:
@@ -326,6 +325,15 @@ class Reader:
                 screen.append(mline)
                 screeninfo.append((0, []))
         return screen
+
+    def calc_screen(self) -> list[str]:
+        match self.calc_screen_method:
+            case CalcScreen.CALC_COMPLETE_SCREEN:
+                return self.calc_complete_screen()
+            case CalcScreen.CALC_APPEND_SCREEN:
+                return self.append_to_screen()
+            case _:
+                assert False, "No valid calc_screen"
 
     def process_prompt(self, prompt: str) -> tuple[str, int]:
         """Process the prompt.
