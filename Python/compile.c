@@ -1635,10 +1635,11 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
 
 static int
 compiler_setup_annotations_scope(struct compiler *c, location loc,
-                                 void *key, jump_target_label label)
+                                 void *key, jump_target_label label,
+                                 PyObject *name)
 {
     PyObject *annotations_name = PyUnicode_FromFormat(
-        "<annotations of %U>", c->u->u_ste->ste_name);
+        "<annotations of %U>", name);
     if (!annotations_name) {
         return ERROR;
     }
@@ -1798,7 +1799,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
          c->u->u_ste->ste_annotation_block != NULL) {
         NEW_JUMP_TARGET_LABEL(c, raise_notimp);
         void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
-        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key, raise_notimp));
+        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key, raise_notimp,
+                                                         c->u->u_ste->ste_name));
         int annotations_len = 0;
         RETURN_IF_ERROR(
             compiler_collect_annotations(c, stmts, &annotations_len)
@@ -2145,7 +2147,8 @@ compiler_visit_annotations(struct compiler *c, location loc,
 
     if (!future_annotations && ste->ste_annotations_used) {
         RETURN_IF_ERROR(
-            compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp)
+            compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
+                                             ste->ste_name)
         );
     }
 

@@ -2478,7 +2478,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
     }
     else {
         if (st->st_cur->ste_annotation_block == NULL) {
-            if (!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
+            if (!symtable_enter_block(st, parent_ste->ste_name, AnnotationBlock,
                                       key, LOCATION(annotation))) {
                 VISIT_QUIT(st, 0);
             }
