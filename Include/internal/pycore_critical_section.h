@@ -124,8 +124,9 @@ extern "C" {
                                      &_orig_seq->ob_mutex)  \
 
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()                        \
-        if (_should_lock_cs)                                            \
+        if (_should_lock_cs) {                                          \
             _PyCriticalSection_End(&_cs);                               \
+        }                                                               \
     }
 
 // Asserts that the mutex is locked.  The mutex must be held by the
