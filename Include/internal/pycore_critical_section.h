@@ -114,7 +114,7 @@ extern "C" {
 // For performance, the argument *to* PySequence_Fast is provided to the
 // macro, not the *result* of PySequence_Fast (which would require an extra
 // test to determine if the lock must be held)
-# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)            	\
+# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)              \
     {                                                                   \
         PyObject *_orig_seq = _PyObject_CAST(original);                 \
         const bool _should_lock_cs = PyList_CheckExact(_orig_seq);      \

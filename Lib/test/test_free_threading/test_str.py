@@ -1,0 +1,74 @@
+import sys
+import unittest
+
+from itertools import cycle
+from threading import Thread
+from unittest import TestCase
+
+from test.support import threading_helper
+
+@threading_helper.requires_working_threading()
+class TestStr(TestCase):
+    def test_racing_join_extend(self):
+        '''Test joining a string being extended by another thread'''
+        l = []
+        OBJECT_COUNT = 100_000
+
+        def writer_func():
+            l.extend(map(str, range(OBJECT_COUNT, OBJECT_COUNT*2)))
+
+        def reader_func():
+            while True:
+                count = len(l)
+                ''.join(l)
+                if count == OBJECT_COUNT:
+                    break
+
+        writer = Thread(target=writer_func)
+        readers = []
+        for x in range(30):
+            reader = Thread(target=reader_func)
+            readers.append(reader)
+            reader.start()
+
+        writer.start()
+        writer.join()
+        for reader in readers:
+            reader.join()
+
+    def test_racing_join_replace(self):
+        '''
+        Test joining a string of characters being replaced with ephemeral
+        strings by another thread.
+        '''
+        l = [*'abcdefg']
+        MAX_ORDINAL = 10_000
+
+        def writer_func():
+            for i, c in zip(cycle(range(len(l))),
+                            map(chr, range(128, MAX_ORDINAL))):
+                l[i] = c
+            del l[:]  # Empty list to tell readers to exit
+
+        def reader_func():
+            while True:
+                empty = not l
+                ''.join(l)
+                if empty:
+                    break
+
+        writer = Thread(target=writer_func)
+        readers = []
+        for x in range(30):
+            reader = Thread(target=reader_func)
+            readers.append(reader)
+            reader.start()
+
+        writer.start()
+        writer.join()
+        for reader in readers:
+            reader.join()
+
+
+if __name__ == "__main__":
+    unittest.main()
