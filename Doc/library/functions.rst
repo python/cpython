@@ -2012,8 +2012,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.13
 
-      The semantics of calling this function without an argument have been
-      adjusted as described for the :func:`locals` builtin.
+      The result of calling this function without an argument has been
+      updated as described for the :func:`locals` builtin.
 
 
 .. function:: zip(*iterables, strict=False)

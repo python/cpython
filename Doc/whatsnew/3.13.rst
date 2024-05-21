@@ -94,9 +94,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
-* :pep:`667`: The :func:`locals` builtin now has defined semantics when mutating
-  the returned mapping. Python debuggers and similar tools may now more reliably
-  update local variables in optimised frames even during concurrent code
+* :pep:`667`: The :func:`locals` builtin now has
+  :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
+  returned mapping. Python debuggers and similar tools may now more reliably
+  update local variables in optimized frames even during concurrent code
   execution.
 
 New typing features:
@@ -247,12 +248,13 @@ Improved Error Messages
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
 
+.. _whatsnew313-locals-semantics:
 
 Defined mutation semantics for ``locals()``
 -------------------------------------------
 
-Historically, the semantics for mutating the return value of :func:`locals` have
-been left to individual Python implementations to define.
+Historically, the expected result of mutating the return value of :func:`locals`
+has been left to individual Python implementations to define.
 
 Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
 for most code execution scopes, but changes
