@@ -554,6 +554,7 @@ extern "C" {
     INIT_STR(dot, "."), \
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
+    INIT_STR(format, ".format"), \
     INIT_STR(generic_base, ".generic_base"), \
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \

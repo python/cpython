@@ -132,7 +132,7 @@ enum {
     COMPILER_SCOPE_ASYNC_FUNCTION,
     COMPILER_SCOPE_LAMBDA,
     COMPILER_SCOPE_COMPREHENSION,
-    COMPILER_SCOPE_TYPEPARAMS,
+    COMPILER_SCOPE_ANNOTATIONS,
 };
 
 
@@ -623,8 +623,8 @@ compiler_set_qualname(struct compiler *c)
         capsule = PyList_GET_ITEM(c->c_stack, stack_size - 1);
         parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(parent);
-        if (parent->u_scope_type == COMPILER_SCOPE_TYPEPARAMS) {
-            /* The parent is a type parameter scope, so we need to
+        if (parent->u_scope_type == COMPILER_SCOPE_ANNOTATIONS) {
+            /* The parent is an annotation scope, so we need to
                look at the grandparent. */
             if (stack_size == 2) {
                 // If we're immediately within the module, we can skip
@@ -1822,14 +1822,14 @@ compiler_make_closure(struct compiler *c, location loc,
     if (flags & MAKE_FUNCTION_ANNOTATIONS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATIONS);
     }
+    if (flags & MAKE_FUNCTION_ANNOTATE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATE);
+    }
     if (flags & MAKE_FUNCTION_KWDEFAULTS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
     }
     if (flags & MAKE_FUNCTION_DEFAULTS) {
         ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
-    }
-    if (flags & MAKE_FUNCTION_ANNOTATE) {
-        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATE);
     }
     return SUCCESS;
 }
@@ -1956,7 +1956,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
             VISIT(c, expr, annotation);
         }
     }
-    *annotations_len += 2;
+    *annotations_len += 1;
     return SUCCESS;
 }
 
@@ -1990,6 +1990,32 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
     int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
+    PySTEntryObject *ste;
+    int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
+    if (result == -1) {
+        return ERROR;
+    }
+    assert(ste != NULL);
+
+    if (!future_annotations && ste->ste_annotations_used) {
+        PyObject *annotations_name = PyUnicode_FromFormat("<annotations of %U>", ste->ste_name);
+        if (!annotations_name) {
+            return ERROR;
+        }
+        if (compiler_enter_scope(c, annotations_name, COMPILER_SCOPE_ANNOTATIONS,
+                                 (void *)args, loc.lineno) == -1) {
+            Py_DECREF(annotations_name);
+            return ERROR;
+        }
+        Py_DECREF(annotations_name);
+        c->u->u_metadata.u_posonlyargcount = 1;
+        _Py_DECLARE_STR(format, ".format");
+        // RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(format), Load));
+        // ADDOP(c, loc, POP_TOP);
+        // ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
+        // TODO: emit "if .format != 1: raise NotImplementedError()"
+    }
+
     RETURN_IF_ERROR(
         compiler_visit_argannotations(c, args->args, &annotations_len, loc));
 
@@ -2014,9 +2040,27 @@ compiler_visit_annotations(struct compiler *c, location loc,
     RETURN_IF_ERROR(
         compiler_visit_argannotation(c, &_Py_ID(return), returns, &annotations_len, loc));
 
-    if (annotations_len) {
-        ADDOP_I(c, loc, BUILD_TUPLE, annotations_len);
+    if (future_annotations) {
+        ADDOP_I(c, loc, BUILD_TUPLE, annotations_len * 2);
         return MAKE_FUNCTION_ANNOTATIONS;
+    }
+    else {
+        assert(ste != NULL);
+        if (ste->ste_annotations_used) {
+            ADDOP_I(c, loc, BUILD_MAP, annotations_len);
+            ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+            PyCodeObject *co = optimize_and_assemble(c, 1);
+            compiler_exit_scope(c);
+            if (co == NULL) {
+                return ERROR;
+            }
+            if (compiler_make_closure(c, loc, co, 0) < 0) {
+                Py_DECREF(co);
+                return ERROR;
+            }
+            Py_DECREF(co);
+            return MAKE_FUNCTION_ANNOTATE;
+        }
     }
 
     return 0;
@@ -2125,7 +2169,7 @@ compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
                                      identifier name, void *key,
                                      bool allow_starred)
 {
-    if (compiler_enter_scope(c, name, COMPILER_SCOPE_TYPEPARAMS,
+    if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
                              key, e->lineno) == -1) {
         return ERROR;
     }
@@ -2398,7 +2442,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
                                  (void *)type_params, firstlineno) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
@@ -2633,7 +2677,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
                                  (void *)type_params, firstlineno) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
@@ -2752,7 +2796,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
                                  (void *)type_params, loc.lineno) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
@@ -6504,20 +6548,20 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
-        if (s->v.AnnAssign.simple &&
-            (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
-             c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
-                VISIT(c, annexpr, s->v.AnnAssign.annotation)
-            }
-            else {
-                VISIT(c, expr, s->v.AnnAssign.annotation);
-            }
-            ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            ADDOP(c, loc, STORE_SUBSCR);
-        }
+        // if (s->v.AnnAssign.simple &&
+        //     (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+        //      c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+        //     if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
+        //         VISIT(c, annexpr, s->v.AnnAssign.annotation)
+        //     }
+        //     else {
+        //         VISIT(c, expr, s->v.AnnAssign.annotation);
+        //     }
+        //     ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
+        //     mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+        //     ADDOP_LOAD_CONST_NEW(c, loc, mangled);
+        //     ADDOP(c, loc, STORE_SUBSCR);
+        // }
         break;
     case Attribute_kind:
         if (forbidden_name(c, loc, targ->v.Attribute.attr, Store)) {
@@ -6542,9 +6586,9 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if (!s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
-        return ERROR;
-    }
+    // if (!s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+    //     return ERROR;
+    // }
     return SUCCESS;
 }
 
