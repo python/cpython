@@ -78,7 +78,7 @@ class KeymapTranslator(InputTranslator):
         self.results = deque()
         self.stack = []
 
-    def push(self, evt: Event):
+    def push(self, evt):
         if self.verbose:
             print("pushed", evt.data, end="")
         key = evt.data
