@@ -44,8 +44,8 @@ printing space-separated values. There are several ways to format output.
   ::
 
      >>> yes_votes = 42_572_654
-     >>> total_votes = 43_132_495
-     >>> percentage = yes_votes / (yes_votes + total_votes)
+     >>> total_votes = 85_705_149
+     >>> percentage = yes_votes / total_votes
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
 
