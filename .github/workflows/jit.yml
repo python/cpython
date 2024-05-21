@@ -85,7 +85,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11' 
 
       - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
@@ -144,3 +144,28 @@ jobs:
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations ' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
           ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+  jit-with-no-gil:
+    runs-on: x86_64-unknown-linux-gnu/gcc
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build with JIT and No GIL
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ./configure --enable-experimental-jit --with-pydebug --disable-gil
+          make all --jobs 4
+      - name: Run Test Suite
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      
+
+      
