@@ -119,9 +119,9 @@ extern "C" {
         PyObject *_orig_seq = _PyObject_CAST(original);                 \
         const bool _should_lock_cs = PyList_CheckExact(_orig_seq);      \
         _PyCriticalSection _cs;                                         \
-        if (_should_lock_cs)                                            \
-            _PyCriticalSection_Begin(&_cs,                              \
-                                     &_orig_seq->ob_mutex)  \
+        if (_should_lock_cs) {                                          \
+            _PyCriticalSection_Begin(&_cs, &_orig_seq->ob_mutex);       \
+        }
 
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()                        \
         if (_should_lock_cs) {                                          \
