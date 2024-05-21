@@ -1,1 +1,1 @@
-Add new ``LOAD_COMMON_CONSTANT`` opcode.
+Add new :opcode:`LOAD_COMMON_CONSTANT` opcode.
