@@ -130,7 +130,6 @@ def _get_uop_flags_from_file(
 ) -> dict[str, list[str]]:
     flags = {}
     with open(SOURCE_DIR / filepath) as spec_src:
-        #pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ('0',))})(\s\|)?)+).?"
         for line in spec_src:
             if line.startswith("    [_"):
                 if name :=  re.search(r"\[[_A-Z0-9]+\]", line):
@@ -142,13 +141,6 @@ def _get_uop_flags_from_file(
                         ]
                     elif possible_flags[0] == "0":
                         flags[uop] = []
-                    else:
-                        pass#print(f"Unmatched possible flags {possible_flags}")
-                    pass#print(f"flags[{uop}] = {flags[uop]}")
-                else:
-                    pass#print("Could not find \[(a-zA-Z0-9_)+\] in", line)
-            else:
-                pass#print(f"'{line}' does not match pattern")
     return flags
 
 
