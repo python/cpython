@@ -1066,7 +1066,7 @@ _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
         *slot = NULL;
     }
 #endif
-    tp->tp_version_tag = version;
+    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
 #ifndef Py_GIL_DISABLED
     if (version != 0) {
         PyTypeObject **slot =
@@ -1104,7 +1104,6 @@ _PyType_LookupByVersion(unsigned int version)
     PyTypeObject **slot =
         interp->types.type_version_cache
         + (version % TYPE_VERSION_CACHE_SIZE);
-    printf("slot: %p\n", slot);
     if (*slot && (*slot)->tp_version_tag == version) {
         return *slot;
     }
@@ -1149,8 +1148,6 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             return 0;
         }
         _PyType_SetVersion(type, NEXT_GLOBAL_VERSION_TAG++);
-        // FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-        //                                NEXT_GLOBAL_VERSION_TAG++);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -1160,8 +1157,6 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             return 0;
         }
         _PyType_SetVersion(type, NEXT_VERSION_TAG(interp)++);
-        // FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-        //                                NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
 
