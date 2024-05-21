@@ -1508,7 +1508,7 @@ def main():
 
 """ TESTS (Run with pytest) """
 
-def test_opcode_input_overlap():    
+def test_opcode_input_overlap():
     opcode_flags = {
         'CODE_ONE': ['HAS_OPARG_AND_1_FLAG', 'HAS_OPERAND_FLAG', 'HAS_JUMP_FLAG'],
         'CODE_TWO': ['HAS_OPERAND_FLAG', 'HAS_JUMP_FLAG'],
@@ -1518,7 +1518,7 @@ def test_opcode_input_overlap():
     assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_TWO') == 'Conflict. Both Use: Operand,Target'
     assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_THREE') == 'Conflict. Both Use: Target'
     assert opcode_input_overlap(opcode_flags, 'CODE_ONE', 'CODE_FOUR') == 'No Conflict'
-    
+
 
 if __name__ == "__main__":
     main()
