@@ -1188,8 +1188,8 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
-            value = Py_NewRef(PyExc_AssertionError);
+        inst(LOAD_COMMON_CONSTANT, ( -- value)) {
+            value = Py_NewRef(*common_constants[oparg]);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

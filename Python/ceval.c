@@ -9,6 +9,7 @@
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_compile.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"
@@ -2988,4 +2989,17 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
+}
+
+PyObject *
+_PyCompile_GetCommonConstantsList(void)
+{
+    PyObject *lst = PyList_New(NUM_COMMON_CONSTANTS);
+    if (lst == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
+        PyList_SET_ITEM(lst, i, Py_NewRef(*common_constants[i]));
+    }
+    return lst;
 }

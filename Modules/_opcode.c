@@ -296,6 +296,20 @@ _opcode_get_nb_ops_impl(PyObject *module)
 
 /*[clinic input]
 
+_opcode.get_common_constants
+
+Return a list of the common constants.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_common_constants_impl(PyObject *module)
+/*[clinic end generated code: output=0f3c68232c7d665e input=4e68ea6467d67b3b]*/
+{
+    return _PyCompile_GetCommonConstantsList();
+}
+
+/*[clinic input]
+
 _opcode.get_intrinsic1_descs
 
 Return a list of names of the unary intrinsics.
@@ -391,6 +405,7 @@ opcode_functions[] =  {
     _OPCODE_GET_NB_OPS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
+    _OPCODE_GET_COMMON_CONSTANTS_METHODDEF
     _OPCODE_GET_EXECUTOR_METHODDEF
     {NULL, NULL, 0, NULL}
 };

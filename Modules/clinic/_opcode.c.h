@@ -633,6 +633,24 @@ _opcode_get_nb_ops(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _opcode_get_nb_ops_impl(module);
 }
 
+PyDoc_STRVAR(_opcode_get_common_constants__doc__,
+"get_common_constants($module, /)\n"
+"--\n"
+"\n"
+"Return a list of the common constants.");
+
+#define _OPCODE_GET_COMMON_CONSTANTS_METHODDEF    \
+    {"get_common_constants", (PyCFunction)_opcode_get_common_constants, METH_NOARGS, _opcode_get_common_constants__doc__},
+
+static PyObject *
+_opcode_get_common_constants_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_common_constants(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_common_constants_impl(module);
+}
+
 PyDoc_STRVAR(_opcode_get_intrinsic1_descs__doc__,
 "get_intrinsic1_descs($module, /)\n"
 "--\n"
@@ -728,4 +746,4 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2dbb31b041b49c8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba3c10523e925623 input=a9049054013a1b77]*/

@@ -3699,17 +3699,6 @@
             DISPATCH();
         }
 
-        TARGET(LOAD_ASSERTION_ERROR) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(LOAD_ASSERTION_ERROR);
-            PyObject *value;
-            value = Py_NewRef(PyExc_AssertionError);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            DISPATCH();
-        }
-
         TARGET(LOAD_ATTR) {
             frame->instr_ptr = next_instr;
             next_instr += 10;
@@ -4251,6 +4240,17 @@
                 if (true) goto error;
             }
             stack_pointer[0] = bc;
+            stack_pointer += 1;
+            DISPATCH();
+        }
+
+        TARGET(LOAD_COMMON_CONSTANT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
+            PyObject *value;
+            value = Py_NewRef(*common_constants[oparg]);
+            stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
         }

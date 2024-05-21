@@ -1162,9 +1162,10 @@
             break;
         }
 
-        case _LOAD_ASSERTION_ERROR: {
+        case _LOAD_COMMON_CONSTANT: {
             PyObject *value;
-            value = Py_NewRef(PyExc_AssertionError);
+            oparg = CURRENT_OPARG();
+            value = Py_NewRef(*common_constants[oparg]);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
