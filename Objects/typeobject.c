@@ -65,20 +65,20 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define BEGIN_TYPE_LOCK()                                               \
     {                                                                   \
         _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, TYPE_LOCK);                      \
+        _PyCriticalSection_BeginInline(&_cs, TYPE_LOCK);                \
 
 #define END_TYPE_LOCK()                                                 \
-        _PyCriticalSection_End(&_cs);                                   \
+        _PyCriticalSection_EndInline(&_cs);                             \
     }
 
 #define BEGIN_TYPE_DICT_LOCK(d)                                         \
     {                                                                   \
         _PyCriticalSection2 _cs;                                        \
-        _PyCriticalSection2_Begin(&_cs, TYPE_LOCK,                      \
-                                  &_PyObject_CAST(d)->ob_mutex);        \
+        _PyCriticalSection2_BeginInline(&_cs, TYPE_LOCK,                \
+                                        &_PyObject_CAST(d)->ob_mutex);  \
 
 #define END_TYPE_DICT_LOCK()                                            \
-        _PyCriticalSection2_End(&_cs);                                  \
+        _PyCriticalSection2_EndInline(&_cs);                            \
     }
 
 #define ASSERT_TYPE_LOCK_HELD() \
