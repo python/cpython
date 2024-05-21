@@ -1,4 +1,3 @@
-
 #ifndef Py_INTERNAL_DICT_H
 #define Py_INTERNAL_DICT_H
 #ifdef __cplusplus
@@ -9,9 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
-#include "pycore_identifier.h"    // _Py_Identifier
-#include "pycore_object.h"        // PyManagedDictPointer
+#include "pycore_freelist.h"             // _PyFreeListState
+#include "pycore_identifier.h"           // _Py_Identifier
+#include "pycore_object.h"               // PyManagedDictPointer
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
@@ -105,7 +105,10 @@ PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObjec
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
-extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
+extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
+extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,
@@ -218,8 +221,25 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
 #ifdef Py_GIL_DISABLED
-#define DICT_NEXT_VERSION(INTERP) \
-    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#define THREAD_LOCAL_DICT_VERSION_COUNT 256
+#define THREAD_LOCAL_DICT_VERSION_BATCH THREAD_LOCAL_DICT_VERSION_COUNT * DICT_VERSION_INCREMENT
+
+static inline uint64_t
+dict_next_version(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    uint64_t cur_progress = (tstate->dict_global_version &
+                            (THREAD_LOCAL_DICT_VERSION_BATCH - 1));
+    if (cur_progress == 0) {
+        uint64_t next = _Py_atomic_add_uint64(&interp->dict_state.global_version,
+                                              THREAD_LOCAL_DICT_VERSION_BATCH);
+        tstate->dict_global_version = next;
+    }
+    return tstate->dict_global_version += DICT_VERSION_INCREMENT;
+}
+
+#define DICT_NEXT_VERSION(INTERP) dict_next_version(INTERP)
 
 #else
 #define DICT_NEXT_VERSION(INTERP) \
@@ -249,7 +269,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
-extern PyDictObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj);
+extern PyDictObject *_PyObject_MaterializeManagedDict(PyObject *obj);
 
 PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
@@ -277,7 +297,6 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
 static inline size_t
 shared_keys_usable_size(PyDictKeysObject *keys)
 {
-#ifdef Py_GIL_DISABLED
     // dk_usable will decrease for each instance that is created and each
     // value that is added.  dk_nentries will increase for each value that
     // is added.  We want to always return the right value or larger.
@@ -285,11 +304,9 @@ shared_keys_usable_size(PyDictKeysObject *keys)
     // second, and conversely here we read dk_usable first and dk_entries
     // second (to avoid the case where we read entries before the increment
     // and read usable after the decrement)
-    return (size_t)(_Py_atomic_load_ssize_acquire(&keys->dk_usable) +
-                    _Py_atomic_load_ssize_acquire(&keys->dk_nentries));
-#else
-    return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
-#endif
+    Py_ssize_t dk_usable = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(keys->dk_usable);
+    Py_ssize_t dk_nentries = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(keys->dk_nentries);
+    return dk_nentries + dk_usable;
 }
 
 static inline size_t

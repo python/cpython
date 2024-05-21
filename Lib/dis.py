@@ -216,7 +216,7 @@ def _get_code_array(co, adaptive):
             if op == ENTER_EXECUTOR:
                 try:
                     ex = get_executor(co, i)
-                except ValueError:
+                except (ValueError, RuntimeError):
                     ex = None
 
                 if ex:

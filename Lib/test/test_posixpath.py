@@ -56,6 +56,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(fn(b"/foo", b"bar", b"baz"),          b"/foo/bar/baz")
         self.assertEqual(fn(b"/foo/", b"bar/", b"baz/"),       b"/foo/bar/baz/")
 
+        self.assertEqual(fn("a", ""),          "a/")
+        self.assertEqual(fn("a", "", ""),      "a/")
         self.assertEqual(fn("a", "b"),         "a/b")
         self.assertEqual(fn("a", "b/"),        "a/b/")
         self.assertEqual(fn("a/", "b"),        "a/b")
@@ -342,6 +344,18 @@ class PosixPathTest(unittest.TestCase):
                 for path in ('~', '~/.local', '~vstinner/'):
                     self.assertEqual(posixpath.expanduser(path), path)
 
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
+    def test_expanduser_pwd2(self):
+        pwd = import_helper.import_module('pwd')
+        for e in pwd.getpwall():
+            name = e.pw_name
+            home = e.pw_dir
+            home = home.rstrip('/') or '/'
+            self.assertEqual(posixpath.expanduser('~' + name), home)
+            self.assertEqual(posixpath.expanduser(os.fsencode('~' + name)),
+                             os.fsencode(home))
+
     NORMPATH_CASES = [
         ("", "."),
         ("/", "/"),
@@ -484,7 +498,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN+"1/../x"), dirname(ABSTFN) + "/x")
             os.symlink(ABSTFN+"x", ABSTFN+"y")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "y"),
-                             ABSTFN + "y")
+                             ABSTFN + "x")
             self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "1"),
                              ABSTFN + "1")
 
@@ -645,6 +659,24 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN + "link")
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
+    @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
+    def test_realpath_unreadable_symlink(self):
+        try:
+            os.symlink(ABSTFN+"1", ABSTFN)
+            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
+            self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
+            with self.assertRaises(PermissionError):
+                realpath(ABSTFN, strict=True)
+        finally:
+            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
+            os.unlink(ABSTFN)
 
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")

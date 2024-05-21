@@ -100,6 +100,7 @@ typedef struct _gc_stats {
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
+    uint64_t pair_count[MAX_UOP_ID + 1];
 } UOpStats;
 
 #define _Py_UOP_HIST_SIZE 32

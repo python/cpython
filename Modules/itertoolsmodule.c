@@ -93,15 +93,6 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 #undef clinic_state_by_cls
 #undef clinic_state
 
-/* Deprecation of pickle support:  GH-101588 *********************************/
-
-#define ITERTOOL_PICKLE_DEPRECATION                                           \
-    if (PyErr_WarnEx(                                                         \
-            PyExc_DeprecationWarning,                                         \
-            "Pickle, copy, and deepcopy support will be "                     \
-            "removed from itertools in Python 3.14.", 1) < 0) {               \
-        return NULL;                                                          \
-    }
 
 /* batched object ************************************************************/
 
@@ -270,6 +261,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *old;
+    PyObject *result;
 } pairwiseobject;
 
 /*[clinic input]
@@ -301,6 +293,11 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
+    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    if (po->result == NULL) {
+        Py_DECREF(po);
+        return NULL;
+    }
     return (PyObject *)po;
 }
 
@@ -311,6 +308,7 @@ pairwise_dealloc(pairwiseobject *po)
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
     Py_XDECREF(po->old);
+    Py_XDECREF(po->result);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -321,6 +319,7 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
+    Py_VISIT(po->result);
     return 0;
 }
 
@@ -355,8 +354,30 @@ pairwise_next(pairwiseobject *po)
         Py_DECREF(old);
         return NULL;
     }
-    /* Future optimization: Reuse the result tuple as we do in enumerate() */
-    result = PyTuple_Pack(2, old, new);
+
+    result = po->result;
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        PyObject *last_old = PyTuple_GET_ITEM(result, 0);
+        PyObject *last_new = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        Py_DECREF(last_old);
+        Py_DECREF(last_new);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result != NULL) {
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
+        }
+    }
+
     Py_XSETREF(po->old, new);
     Py_DECREF(old);
     return result;
@@ -524,57 +545,6 @@ groupby_next(groupbyobject *gbo)
     return r;
 }
 
-static PyObject *
-groupby_reduce(groupbyobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    /* reduce as a 'new' call with an optional 'setstate' if groupby
-     * has started
-     */
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *value;
-    if (lz->tgtkey && lz->currkey && lz->currvalue)
-        value = Py_BuildValue("O(OO)(OOO)", Py_TYPE(lz),
-            lz->it, lz->keyfunc, lz->currkey, lz->currvalue, lz->tgtkey);
-    else
-        value = Py_BuildValue("O(OO)", Py_TYPE(lz),
-            lz->it, lz->keyfunc);
-
-    return value;
-}
-
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
-
-static PyObject *
-groupby_setstate(groupbyobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *currkey, *currvalue, *tgtkey;
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(state, "OOO", &currkey, &currvalue, &tgtkey)) {
-        return NULL;
-    }
-    Py_INCREF(currkey);
-    Py_XSETREF(lz->currkey, currkey);
-    Py_INCREF(currvalue);
-    Py_XSETREF(lz->currvalue, currvalue);
-    Py_INCREF(tgtkey);
-    Py_XSETREF(lz->tgtkey, tgtkey);
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
-
-static PyMethodDef groupby_methods[] = {
-    {"__reduce__",      (PyCFunction)groupby_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)groupby_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}           /* sentinel */
-};
-
 static PyType_Slot groupby_slots[] = {
     {Py_tp_dealloc, groupby_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -582,7 +552,6 @@ static PyType_Slot groupby_slots[] = {
     {Py_tp_traverse, groupby_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, groupby_next},
-    {Py_tp_methods, groupby_methods},
     {Py_tp_new, itertools_groupby},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -683,29 +652,12 @@ _grouper_next(_grouperobject *igo)
     return r;
 }
 
-static PyObject *
-_grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
-    }
-    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
-}
-
-static PyMethodDef _grouper_methods[] = {
-    {"__reduce__",      (PyCFunction)_grouper_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot _grouper_slots[] = {
     {Py_tp_dealloc, _grouper_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_traverse, _grouper_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, _grouper_next},
-    {Py_tp_methods, _grouper_methods},
     {Py_tp_new, itertools__grouper},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -850,25 +802,6 @@ teedataobject_dealloc(teedataobject *tdo)
     Py_DECREF(tp);
 }
 
-static PyObject *
-teedataobject_reduce(teedataobject *tdo, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    int i;
-    /* create a temporary list of already iterated values */
-    PyObject *values = PyList_New(tdo->numread);
-
-    if (!values)
-        return NULL;
-    for (i=0 ; i<tdo->numread ; i++) {
-        Py_INCREF(tdo->values[i]);
-        PyList_SET_ITEM(values, i, tdo->values[i]);
-    }
-    return Py_BuildValue("O(ONO)", Py_TYPE(tdo), tdo->it,
-                         values,
-                         tdo->nextlink ? tdo->nextlink : Py_None);
-}
-
 /*[clinic input]
 @classmethod
 itertools.teedataobject.__new__
@@ -923,19 +856,12 @@ err:
     return NULL;
 }
 
-static PyMethodDef teedataobject_methods[] = {
-    {"__reduce__",      (PyCFunction)teedataobject_reduce, METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}           /* sentinel */
-};
-
 static PyType_Slot teedataobject_slots[] = {
     {Py_tp_dealloc, teedataobject_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)itertools_teedataobject__doc__},
     {Py_tp_traverse, teedataobject_traverse},
     {Py_tp_clear, teedataobject_clear},
-    {Py_tp_methods, teedataobject_methods},
     {Py_tp_new, itertools_teedataobject},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -1064,41 +990,8 @@ tee_dealloc(teeobject *to)
     Py_DECREF(tp);
 }
 
-static PyObject *
-tee_reduce(teeobject *to, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    return Py_BuildValue("O(())(Oi)", Py_TYPE(to), to->dataobj, to->index);
-}
-
-static PyObject *
-tee_setstate(teeobject *to, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    teedataobject *tdo;
-    int index;
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    PyTypeObject *tdo_type = to->state->teedataobject_type;
-    if (!PyArg_ParseTuple(state, "O!i", tdo_type, &tdo, &index)) {
-        return NULL;
-    }
-    if (index < 0 || index > LINKCELLS) {
-        PyErr_SetString(PyExc_ValueError, "Index out of range");
-        return NULL;
-    }
-    Py_INCREF(tdo);
-    Py_XSETREF(to->dataobj, tdo);
-    to->index = index;
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef tee_methods[] = {
     {"__copy__",        (PyCFunction)tee_copy,     METH_NOARGS, teecopy_doc},
-    {"__reduce__",      (PyCFunction)tee_reduce,   METH_NOARGS, reduce_doc},
-    {"__setstate__",    (PyCFunction)tee_setstate, METH_O,      setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1300,59 +1193,6 @@ cycle_next(cycleobject *lz)
     return Py_NewRef(item);
 }
 
-static PyObject *
-cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    /* Create a new cycle with the iterator tuple, then set the saved state */
-    if (lz->it == NULL) {
-        PyObject *it = PyObject_GetIter(lz->saved);
-        if (it == NULL)
-            return NULL;
-        if (lz->index != 0) {
-            PyObject *res = _PyObject_CallMethod(it, &_Py_ID(__setstate__),
-                                                 "n", lz->index);
-            if (res == NULL) {
-                Py_DECREF(it);
-                return NULL;
-            }
-            Py_DECREF(res);
-        }
-        return Py_BuildValue("O(N)(OO)", Py_TYPE(lz), it, lz->saved, Py_True);
-    }
-    return Py_BuildValue("O(O)(OO)", Py_TYPE(lz), lz->it, lz->saved,
-                         lz->firstpass ? Py_True : Py_False);
-}
-
-static PyObject *
-cycle_setstate(cycleobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *saved=NULL;
-    int firstpass;
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    // The second item can be 1/0 in old pickles and True/False in new pickles
-    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass)) {
-        return NULL;
-    }
-    Py_INCREF(saved);
-    Py_XSETREF(lz->saved, saved);
-    lz->firstpass = firstpass != 0;
-    lz->index = 0;
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef cycle_methods[] = {
-    {"__reduce__",      (PyCFunction)cycle_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)cycle_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot cycle_slots[] = {
     {Py_tp_dealloc, cycle_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1360,7 +1200,6 @@ static PyType_Slot cycle_slots[] = {
     {Py_tp_traverse, cycle_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, cycle_next},
-    {Py_tp_methods, cycle_methods},
     {Py_tp_new, itertools_cycle},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -1473,32 +1312,6 @@ dropwhile_next(dropwhileobject *lz)
     }
 }
 
-static PyObject *
-dropwhile_reduce(dropwhileobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->start);
-}
-
-static PyObject *
-dropwhile_setstate(dropwhileobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    int start = PyObject_IsTrue(state);
-    if (start < 0)
-        return NULL;
-    lz->start = start;
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef dropwhile_methods[] = {
-    {"__reduce__",      (PyCFunction)dropwhile_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)dropwhile_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot dropwhile_slots[] = {
     {Py_tp_dealloc, dropwhile_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1506,7 +1319,6 @@ static PyType_Slot dropwhile_slots[] = {
     {Py_tp_traverse, dropwhile_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, dropwhile_next},
-    {Py_tp_methods, dropwhile_methods},
     {Py_tp_new, itertools_dropwhile},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -1613,33 +1425,6 @@ takewhile_next(takewhileobject *lz)
     return NULL;
 }
 
-static PyObject *
-takewhile_reduce(takewhileobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->stop);
-}
-
-static PyObject *
-takewhile_reduce_setstate(takewhileobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    int stop = PyObject_IsTrue(state);
-
-    if (stop < 0)
-        return NULL;
-    lz->stop = stop;
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef takewhile_reduce_methods[] = {
-    {"__reduce__",      (PyCFunction)takewhile_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)takewhile_reduce_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot takewhile_slots[] = {
     {Py_tp_dealloc, takewhile_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1647,7 +1432,6 @@ static PyType_Slot takewhile_slots[] = {
     {Py_tp_traverse, takewhile_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, takewhile_next},
-    {Py_tp_methods, takewhile_reduce_methods},
     {Py_tp_new, itertools_takewhile},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -1817,59 +1601,6 @@ empty:
     return NULL;
 }
 
-static PyObject *
-islice_reduce(isliceobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    /* When unpickled, generate a new object with the same bounds,
-     * then 'setstate' with the next and count
-     */
-    PyObject *stop;
-
-    if (lz->it == NULL) {
-        PyObject *empty_list;
-        PyObject *empty_it;
-        empty_list = PyList_New(0);
-        if (empty_list == NULL)
-            return NULL;
-        empty_it = PyObject_GetIter(empty_list);
-        Py_DECREF(empty_list);
-        if (empty_it == NULL)
-            return NULL;
-        return Py_BuildValue("O(Nn)n", Py_TYPE(lz), empty_it, 0, 0);
-    }
-    if (lz->stop == -1) {
-        stop = Py_NewRef(Py_None);
-    } else {
-        stop = PyLong_FromSsize_t(lz->stop);
-        if (stop == NULL)
-            return NULL;
-    }
-    return Py_BuildValue("O(OnNn)n", Py_TYPE(lz),
-        lz->it, lz->next, stop, lz->step,
-        lz->cnt);
-}
-
-static PyObject *
-islice_setstate(isliceobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    Py_ssize_t cnt = PyLong_AsSsize_t(state);
-
-    if (cnt == -1 && PyErr_Occurred())
-        return NULL;
-    lz->cnt = cnt;
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef islice_methods[] = {
-    {"__reduce__",      (PyCFunction)islice_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)islice_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(islice_doc,
 "islice(iterable, stop) --> islice object\n\
 islice(iterable, start, stop[, step]) --> islice object\n\
@@ -1888,7 +1619,6 @@ static PyType_Slot islice_slots[] = {
     {Py_tp_traverse, islice_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, islice_next},
-    {Py_tp_methods, islice_methods},
     {Py_tp_new, islice_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -1986,20 +1716,6 @@ starmap_next(starmapobject *lz)
     return result;
 }
 
-static PyObject *
-starmap_reduce(starmapobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    /* Just pickle the iterator */
-    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
-}
-
-static PyMethodDef starmap_methods[] = {
-    {"__reduce__",      (PyCFunction)starmap_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot starmap_slots[] = {
     {Py_tp_dealloc, starmap_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -2007,7 +1723,6 @@ static PyType_Slot starmap_slots[] = {
     {Py_tp_traverse, starmap_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, starmap_next},
-    {Py_tp_methods, starmap_methods},
     {Py_tp_new, itertools_starmap},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -2143,53 +1858,9 @@ chain_next(chainobject *lz)
     return NULL;
 }
 
-static PyObject *
-chain_reduce(chainobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (lz->source) {
-        /* we can't pickle function objects (itertools.from_iterable) so
-         * we must use setstate to replace the iterable.  One day we
-         * will fix pickling of functions
-         */
-        if (lz->active) {
-            return Py_BuildValue("O()(OO)", Py_TYPE(lz), lz->source, lz->active);
-        } else {
-            return Py_BuildValue("O()(O)", Py_TYPE(lz), lz->source);
-        }
-    } else {
-        return Py_BuildValue("O()", Py_TYPE(lz)); /* exhausted */
-    }
-    return NULL;
-}
-
-static PyObject *
-chain_setstate(chainobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *source, *active=NULL;
-
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(state, "O|O", &source, &active)) {
-        return NULL;
-    }
-    if (!PyIter_Check(source) || (active != NULL && !PyIter_Check(active))) {
-        PyErr_SetString(PyExc_TypeError, "Arguments must be iterators.");
-        return NULL;
-    }
-
-    Py_INCREF(source);
-    Py_XSETREF(lz->source, source);
-    Py_XINCREF(active);
-    Py_XSETREF(lz->active, active);
-    Py_RETURN_NONE;
-}
-
 PyDoc_STRVAR(chain_doc,
-"chain(*iterables) --> chain object\n\
+"chain(*iterables)\n\
+--\n\
 \n\
 Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
@@ -2197,10 +1868,6 @@ iterable, until all of the iterables are exhausted.");
 
 static PyMethodDef chain_methods[] = {
     ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
-    {"__reduce__",      (PyCFunction)chain_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
-     setstate_doc},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -2439,96 +2106,15 @@ empty:
     return NULL;
 }
 
-static PyObject *
-product_reduce(productobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (lz->stopped) {
-        return Py_BuildValue("O(())", Py_TYPE(lz));
-    } else if (lz->result == NULL) {
-        return Py_BuildValue("OO", Py_TYPE(lz), lz->pools);
-    } else {
-        PyObject *indices;
-        Py_ssize_t n, i;
-
-        /* we must pickle the indices use them for setstate, and
-         * additionally indicate that the iterator has started
-         */
-        n = PyTuple_GET_SIZE(lz->pools);
-        indices = PyTuple_New(n);
-        if (indices == NULL)
-            return NULL;
-        for (i=0; i<n; i++){
-            PyObject* index = PyLong_FromSsize_t(lz->indices[i]);
-            if (!index) {
-                Py_DECREF(indices);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(indices, i, index);
-        }
-        return Py_BuildValue("OON", Py_TYPE(lz), lz->pools, indices);
-    }
-}
-
-static PyObject *
-product_setstate(productobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *result;
-    Py_ssize_t n, i;
-
-    n = PyTuple_GET_SIZE(lz->pools);
-    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != n) {
-        PyErr_SetString(PyExc_ValueError, "invalid arguments");
-        return NULL;
-    }
-    for (i=0; i<n; i++)
-    {
-        PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
-        PyObject* pool;
-        Py_ssize_t poolsize;
-        if (index < 0 && PyErr_Occurred())
-            return NULL; /* not an integer */
-        pool = PyTuple_GET_ITEM(lz->pools, i);
-        poolsize = PyTuple_GET_SIZE(pool);
-        if (poolsize == 0) {
-            lz->stopped = 1;
-            Py_RETURN_NONE;
-        }
-        /* clamp the index */
-        if (index < 0)
-            index = 0;
-        else if (index > poolsize-1)
-            index = poolsize-1;
-        lz->indices[i] = index;
-    }
-
-    result = PyTuple_New(n);
-    if (!result)
-        return NULL;
-    for (i=0; i<n; i++) {
-        PyObject *pool = PyTuple_GET_ITEM(lz->pools, i);
-        PyObject *element = PyTuple_GET_ITEM(pool, lz->indices[i]);
-        Py_INCREF(element);
-        PyTuple_SET_ITEM(result, i, element);
-    }
-    Py_XSETREF(lz->result, result);
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef product_methods[] = {
-    {"__reduce__",      (PyCFunction)product_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)product_setstate,    METH_O,
-     setstate_doc},
     {"__sizeof__",      (PyCFunction)product_sizeof,      METH_NOARGS,
      sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables, repeat=1) --> product object\n\
+"product(*iterables, repeat=1)\n\
+--\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
@@ -2749,83 +2335,7 @@ empty:
     return NULL;
 }
 
-static PyObject *
-combinations_reduce(combinationsobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (lz->result == NULL) {
-        return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
-    } else if (lz->stopped) {
-        return Py_BuildValue("O(()n)", Py_TYPE(lz), lz->r);
-    } else {
-        PyObject *indices;
-        Py_ssize_t i;
-
-        /* we must pickle the indices and use them for setstate */
-        indices = PyTuple_New(lz->r);
-        if (!indices)
-            return NULL;
-        for (i=0; i<lz->r; i++)
-        {
-            PyObject* index = PyLong_FromSsize_t(lz->indices[i]);
-            if (!index) {
-                Py_DECREF(indices);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(indices, i, index);
-        }
-
-        return Py_BuildValue("O(On)N", Py_TYPE(lz), lz->pool, lz->r, indices);
-    }
-}
-
-static PyObject *
-combinations_setstate(combinationsobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *result;
-    Py_ssize_t i;
-    Py_ssize_t n = PyTuple_GET_SIZE(lz->pool);
-
-    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != lz->r) {
-        PyErr_SetString(PyExc_ValueError, "invalid arguments");
-        return NULL;
-    }
-
-    for (i=0; i<lz->r; i++) {
-        Py_ssize_t max;
-        PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
-
-        if (index == -1 && PyErr_Occurred())
-            return NULL; /* not an integer */
-        max = i + n - lz->r;
-        /* clamp the index (beware of negative max) */
-        if (index > max)
-            index = max;
-        if (index < 0)
-            index = 0;
-        lz->indices[i] = index;
-    }
-
-    result = PyTuple_New(lz->r);
-    if (result == NULL)
-        return NULL;
-    for (i=0; i<lz->r; i++) {
-        PyObject *element = PyTuple_GET_ITEM(lz->pool, lz->indices[i]);
-        Py_INCREF(element);
-        PyTuple_SET_ITEM(result, i, element);
-    }
-
-    Py_XSETREF(lz->result, result);
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef combinations_methods[] = {
-    {"__reduce__",      (PyCFunction)combinations_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)combinations_setstate,    METH_O,
-     setstate_doc},
     {"__sizeof__",      (PyCFunction)combinations_sizeof,      METH_NOARGS,
      sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -3059,79 +2569,7 @@ empty:
     return NULL;
 }
 
-static PyObject *
-cwr_reduce(cwrobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (lz->result == NULL) {
-        return Py_BuildValue("O(On)", Py_TYPE(lz), lz->pool, lz->r);
-    } else if (lz->stopped) {
-        return Py_BuildValue("O(()n)", Py_TYPE(lz), lz->r);
-    } else {
-        PyObject *indices;
-        Py_ssize_t i;
-
-        /* we must pickle the indices and use them for setstate */
-        indices = PyTuple_New(lz->r);
-        if (!indices)
-            return NULL;
-        for (i=0; i<lz->r; i++) {
-            PyObject* index = PyLong_FromSsize_t(lz->indices[i]);
-            if (!index) {
-                Py_DECREF(indices);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(indices, i, index);
-        }
-
-        return Py_BuildValue("O(On)N", Py_TYPE(lz), lz->pool, lz->r, indices);
-    }
-}
-
-static PyObject *
-cwr_setstate(cwrobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *result;
-    Py_ssize_t n, i;
-
-    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != lz->r)
-    {
-        PyErr_SetString(PyExc_ValueError, "invalid arguments");
-        return NULL;
-    }
-
-    n = PyTuple_GET_SIZE(lz->pool);
-    for (i=0; i<lz->r; i++) {
-        PyObject* indexObject = PyTuple_GET_ITEM(state, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
-
-        if (index < 0 && PyErr_Occurred())
-            return NULL; /* not an integer */
-        /* clamp the index */
-        if (index < 0)
-            index = 0;
-        else if (index > n-1)
-            index = n-1;
-        lz->indices[i] = index;
-    }
-    result = PyTuple_New(lz->r);
-    if (result == NULL)
-        return NULL;
-    for (i=0; i<lz->r; i++) {
-        PyObject *element = PyTuple_GET_ITEM(lz->pool, lz->indices[i]);
-        Py_INCREF(element);
-        PyTuple_SET_ITEM(result, i, element);
-    }
-    Py_XSETREF(lz->result, result);
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef cwr_methods[] = {
-    {"__reduce__",      (PyCFunction)cwr_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)cwr_setstate,    METH_O,
-     setstate_doc},
     {"__sizeof__",      (PyCFunction)cwr_sizeof,      METH_NOARGS,
      sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -3396,113 +2834,7 @@ empty:
     return NULL;
 }
 
-static PyObject *
-permutations_reduce(permutationsobject *po, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (po->result == NULL) {
-        return Py_BuildValue("O(On)", Py_TYPE(po), po->pool, po->r);
-    } else if (po->stopped) {
-        return Py_BuildValue("O(()n)", Py_TYPE(po), po->r);
-    } else {
-        PyObject *indices=NULL, *cycles=NULL;
-        Py_ssize_t n, i;
-
-        /* we must pickle the indices and cycles and use them for setstate */
-        n = PyTuple_GET_SIZE(po->pool);
-        indices = PyTuple_New(n);
-        if (indices == NULL)
-            goto err;
-        for (i=0; i<n; i++) {
-            PyObject* index = PyLong_FromSsize_t(po->indices[i]);
-            if (!index)
-                goto err;
-            PyTuple_SET_ITEM(indices, i, index);
-        }
-
-        cycles = PyTuple_New(po->r);
-        if (cycles == NULL)
-            goto err;
-        for (i=0 ; i<po->r ; i++) {
-            PyObject* index = PyLong_FromSsize_t(po->cycles[i]);
-            if (!index)
-                goto err;
-            PyTuple_SET_ITEM(cycles, i, index);
-        }
-        return Py_BuildValue("O(On)(NN)", Py_TYPE(po),
-                             po->pool, po->r,
-                             indices, cycles);
-    err:
-        Py_XDECREF(indices);
-        Py_XDECREF(cycles);
-        return NULL;
-    }
-}
-
-static PyObject *
-permutations_setstate(permutationsobject *po, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    PyObject *indices, *cycles, *result;
-    Py_ssize_t n, i;
-
-    if (!PyTuple_Check(state)) {
-        PyErr_SetString(PyExc_TypeError, "state is not a tuple");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(state, "O!O!",
-                          &PyTuple_Type, &indices,
-                          &PyTuple_Type, &cycles)) {
-        return NULL;
-    }
-
-    n = PyTuple_GET_SIZE(po->pool);
-    if (PyTuple_GET_SIZE(indices) != n || PyTuple_GET_SIZE(cycles) != po->r) {
-        PyErr_SetString(PyExc_ValueError, "invalid arguments");
-        return NULL;
-    }
-
-    for (i=0; i<n; i++) {
-        PyObject* indexObject = PyTuple_GET_ITEM(indices, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
-        if (index < 0 && PyErr_Occurred())
-            return NULL; /* not an integer */
-        /* clamp the index */
-        if (index < 0)
-            index = 0;
-        else if (index > n-1)
-            index = n-1;
-        po->indices[i] = index;
-    }
-
-    for (i=0; i<po->r; i++) {
-        PyObject* indexObject = PyTuple_GET_ITEM(cycles, i);
-        Py_ssize_t index = PyLong_AsSsize_t(indexObject);
-        if (index < 0 && PyErr_Occurred())
-            return NULL; /* not an integer */
-        if (index < 1)
-            index = 1;
-        else if (index > n-i)
-            index = n-i;
-        po->cycles[i] = index;
-    }
-    result = PyTuple_New(po->r);
-    if (result == NULL)
-        return NULL;
-    for (i=0; i<po->r; i++) {
-        PyObject *element = PyTuple_GET_ITEM(po->pool, po->indices[i]);
-        Py_INCREF(element);
-        PyTuple_SET_ITEM(result, i, element);
-    }
-    Py_XSETREF(po->result, result);
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef permuations_methods[] = {
-    {"__reduce__",      (PyCFunction)permutations_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)permutations_setstate,    METH_O,
-     setstate_doc},
     {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
      sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -3637,59 +2969,6 @@ accumulate_next(accumulateobject *lz)
     return newtotal;
 }
 
-static PyObject *
-accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    itertools_state *state = lz->state;
-
-    if (lz->initial != Py_None) {
-        PyObject *it;
-
-        assert(lz->total == NULL);
-        it = PyObject_CallFunction((PyObject *)(state->chain_type), "(O)O",
-                                   lz->initial, lz->it);
-        if (it == NULL)
-            return NULL;
-        return Py_BuildValue("O(NO)O", Py_TYPE(lz),
-                            it, lz->binop?lz->binop:Py_None, Py_None);
-    }
-    if (lz->total == Py_None) {
-        PyObject *it;
-
-        it = PyObject_CallFunction((PyObject *)(state->chain_type), "(O)O",
-                                   lz->total, lz->it);
-        if (it == NULL)
-            return NULL;
-        it = PyObject_CallFunction((PyObject *)Py_TYPE(lz), "NO",
-                                   it, lz->binop ? lz->binop : Py_None);
-        if (it == NULL)
-            return NULL;
-
-        return Py_BuildValue("O(NiO)", state->islice_type, it, 1, Py_None);
-    }
-    return Py_BuildValue("O(OO)O", Py_TYPE(lz),
-                            lz->it, lz->binop?lz->binop:Py_None,
-                            lz->total?lz->total:Py_None);
-}
-
-static PyObject *
-accumulate_setstate(accumulateobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    Py_INCREF(state);
-    Py_XSETREF(lz->total, state);
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef accumulate_methods[] = {
-    {"__reduce__",      (PyCFunction)accumulate_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)accumulate_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot accumulate_slots[] = {
     {Py_tp_dealloc, accumulate_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -3697,7 +2976,6 @@ static PyType_Slot accumulate_slots[] = {
     {Py_tp_traverse, accumulate_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, accumulate_next},
-    {Py_tp_methods, accumulate_methods},
     {Py_tp_new, itertools_accumulate},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -3822,20 +3100,6 @@ compress_next(compressobject *lz)
     }
 }
 
-static PyObject *
-compress_reduce(compressobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    return Py_BuildValue("O(OO)", Py_TYPE(lz),
-        lz->data, lz->selectors);
-}
-
-static PyMethodDef compress_methods[] = {
-    {"__reduce__",      (PyCFunction)compress_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot compress_slots[] = {
     {Py_tp_dealloc, compress_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -3843,7 +3107,6 @@ static PyType_Slot compress_slots[] = {
     {Py_tp_traverse, compress_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, compress_next},
-    {Py_tp_methods, compress_methods},
     {Py_tp_new, itertools_compress},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -3955,19 +3218,6 @@ filterfalse_next(filterfalseobject *lz)
     }
 }
 
-static PyObject *
-filterfalse_reduce(filterfalseobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
-}
-
-static PyMethodDef filterfalse_methods[] = {
-    {"__reduce__",      (PyCFunction)filterfalse_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot filterfalse_slots[] = {
     {Py_tp_dealloc, filterfalse_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -3975,7 +3225,6 @@ static PyType_Slot filterfalse_slots[] = {
     {Py_tp_traverse, filterfalse_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, filterfalse_next},
-    {Py_tp_methods, filterfalse_methods},
     {Py_tp_new, itertools_filterfalse},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -4183,21 +3432,6 @@ count_repr(countobject *lz)
                                 lz->long_cnt, lz->long_step);
 }
 
-static PyObject *
-count_reduce(countobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    if (lz->cnt == PY_SSIZE_T_MAX)
-        return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->long_cnt, lz->long_step);
-    return Py_BuildValue("O(n)", Py_TYPE(lz), lz->cnt);
-}
-
-static PyMethodDef count_methods[] = {
-    {"__reduce__",      (PyCFunction)count_reduce,      METH_NOARGS,
-     reduce_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 static PyType_Slot count_slots[] = {
     {Py_tp_dealloc, count_dealloc},
     {Py_tp_repr, count_repr},
@@ -4206,7 +3440,6 @@ static PyType_Slot count_slots[] = {
     {Py_tp_traverse, count_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, count_next},
-    {Py_tp_methods, count_methods},
     {Py_tp_new, itertools_count},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -4307,22 +3540,8 @@ repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
-static PyObject *
-repeat_reduce(repeatobject *ro, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    /* unpickle this so that a new repeat iterator is constructed with an
-     * object, then call __setstate__ on it to set cnt
-     */
-    if (ro->cnt >= 0)
-        return Py_BuildValue("O(On)", Py_TYPE(ro), ro->element, ro->cnt);
-    else
-        return Py_BuildValue("O(O)", Py_TYPE(ro), ro->element);
-}
-
 static PyMethodDef repeat_methods[] = {
     {"__length_hint__", (PyCFunction)repeat_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__",      (PyCFunction)repeat_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -4528,52 +3747,9 @@ zip_longest_next(ziplongestobject *lz)
     return result;
 }
 
-static PyObject *
-zip_longest_reduce(ziplongestobject *lz, PyObject *Py_UNUSED(ignored))
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    /* Create a new tuple with empty sequences where appropriate to pickle.
-     * Then use setstate to set the fillvalue
-     */
-    int i;
-    PyObject *args = PyTuple_New(PyTuple_GET_SIZE(lz->ittuple));
-
-    if (args == NULL)
-        return NULL;
-    for (i=0; i<PyTuple_GET_SIZE(lz->ittuple); i++) {
-        PyObject *elem = PyTuple_GET_ITEM(lz->ittuple, i);
-        if (elem == NULL) {
-            elem = PyTuple_New(0);
-            if (elem == NULL) {
-                Py_DECREF(args);
-                return NULL;
-            }
-        } else
-            Py_INCREF(elem);
-        PyTuple_SET_ITEM(args, i, elem);
-    }
-    return Py_BuildValue("ONO", Py_TYPE(lz), args, lz->fillvalue);
-}
-
-static PyObject *
-zip_longest_setstate(ziplongestobject *lz, PyObject *state)
-{
-    ITERTOOL_PICKLE_DEPRECATION;
-    Py_INCREF(state);
-    Py_XSETREF(lz->fillvalue, state);
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef zip_longest_methods[] = {
-    {"__reduce__",      (PyCFunction)zip_longest_reduce,      METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)zip_longest_setstate,    METH_O,
-     setstate_doc},
-    {NULL,              NULL}   /* sentinel */
-};
-
 PyDoc_STRVAR(zip_longest_doc,
-"zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
+"zip_longest(*iterables, fillvalue=None)\n\
+--\n\
 \n\
 Return a zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
@@ -4590,7 +3766,6 @@ static PyType_Slot ziplongest_slots[] = {
     {Py_tp_traverse, zip_longest_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, zip_longest_next},
-    {Py_tp_methods, zip_longest_methods},
     {Py_tp_new, zip_longest_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
@@ -4748,6 +3923,7 @@ itertoolsmodule_exec(PyObject *mod)
 static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
     {Py_mod_exec, itertoolsmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

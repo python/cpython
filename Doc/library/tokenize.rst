@@ -1,5 +1,5 @@
-:mod:`tokenize` --- Tokenizer for Python source
-===============================================
+:mod:`!tokenize` --- Tokenizer for Python source
+================================================
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.

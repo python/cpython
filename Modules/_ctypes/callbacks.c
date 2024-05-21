@@ -136,6 +136,8 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
  * Call the python object with all arguments
  *
  */
+
+// BEWARE: The GIL needs to be held throughout the function
 static void _CallPythonObject(ctypes_state *st,
                               void *mem,
                               ffi_type *restype,
@@ -149,7 +151,6 @@ static void _CallPythonObject(ctypes_state *st,
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
-    PyGILState_STATE state = PyGILState_Ensure();
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
@@ -294,7 +295,6 @@ static void _CallPythonObject(ctypes_state *st,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
-    PyGILState_Release(state);
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -302,8 +302,10 @@ static void closure_fcn(ffi_cif *cif,
                         void **args,
                         void *userdata)
 {
+    PyGILState_STATE state = PyGILState_Ensure();
+
     CThunkObject *p = (CThunkObject *)userdata;
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(p));
 
     _CallPythonObject(st,
                       resp,
@@ -313,6 +315,8 @@ static void closure_fcn(ffi_cif *cif,
                       p->converters,
                       p->flags,
                       args);
+
+    PyGILState_Release(state);
 }
 
 static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)

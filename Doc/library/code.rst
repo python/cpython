@@ -1,5 +1,5 @@
-:mod:`code` --- Interpreter base classes
-========================================
+:mod:`!code` --- Interpreter base classes
+=========================================
 
 .. module:: code
    :synopsis: Facilities to implement read-eval-print loops.
@@ -18,16 +18,16 @@ build applications which provide an interactive interpreter prompt.
    This class deals with parsing and interpreter state (the user's namespace); it
    does not deal with input buffering or prompting or input file naming (the
    filename is always passed in explicitly). The optional *locals* argument
-   specifies the dictionary in which code will be executed; it defaults to a newly
-   created dictionary with key ``'__name__'`` set to ``'__console__'`` and key
-   ``'__doc__'`` set to ``None``.
+   specifies a mapping to use as the namespace in which code will be executed;
+   it defaults to a newly created dictionary with key ``'__name__'`` set to
+   ``'__console__'`` and key ``'__doc__'`` set to ``None``.
 
 
 .. class:: InteractiveConsole(locals=None, filename="<console>", local_exit=False)
 
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar
-   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is True,
+   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is true,
    ``exit()`` and ``quit()`` in the console will not raise :exc:`SystemExit`, but
    instead return to the calling code.
 
