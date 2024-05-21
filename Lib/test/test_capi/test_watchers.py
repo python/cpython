@@ -625,10 +625,7 @@ class TestContextObjectWatchers(unittest.TestCase):
                 ctx.run(int, 0)
                 self.assertEqual(
                     cm.unraisable.object,
-                    ctx
-                    # For main branch
-                    # f"PY_CONTEXT_EVENT_ENTER watcher callback for {ctx!r}"
-                    #
+                    f"PY_CONTEXT_EVENT_ENTER watcher callback for {ctx!r}"
                 )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 

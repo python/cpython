@@ -124,12 +124,9 @@ static void notify_context_watchers(PyContextEvent event, PyContext *ctx)
             PyContext_WatchCallback cb = interp->context_watchers[i];
             assert(cb != NULL);
             if (cb(event, ctx) < 0) {
-                PyErr_WriteUnraisable((PyObject *) ctx);
-                /* For upstream pull req on main
-                 * PyErr_FormatUnraisable(
-                 *   "Exception ignored in %s watcher callback for %R",
-                 *   context_event_name(event), ctx);
-                 */
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for %R",
+                    context_event_name(event), ctx);
             }
         }
         i++;
