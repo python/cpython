@@ -53,7 +53,8 @@ static PyTypeObject placeholder_type = {
     .tp_doc = PyDoc_STR("placeholder for partial arguments"),
     .tp_basicsize = sizeof(placeholderobject),
     .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+                Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_new = PyType_GenericNew,
 };
 
