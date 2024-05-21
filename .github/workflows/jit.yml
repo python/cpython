@@ -146,12 +146,7 @@ jobs:
   #         ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   jit-with-no-gil:
-    runs-on: x86_64-unknown-linux-gnu/gcc
-    strategy:
-      fail-fast: false
-      matrix:
-        llvm:
-          - 18
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -159,8 +154,8 @@ jobs:
           python-version: '3.11'
       - name: Build with JIT and No GIL
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 18
+          export PATH="$(llvm-config-18 --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug --disable-gil
           make all --jobs 4
       - name: Run Test Suite
