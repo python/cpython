@@ -950,6 +950,7 @@ class _InvalidEwError(errors.HeaderParseError):
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
 ListSeparator.as_ew_allowed = False
+ListSeparator.syntactic_break = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
@@ -2821,7 +2822,9 @@ def _refold_parse_tree(parse_tree, *, policy):
             if not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
                 parts = list(part) + parts
-            else:
+                want_encoding = False
+                continue
+            elif part.as_ew_allowed:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
                 if (last_ew is not None and
@@ -2832,8 +2835,15 @@ def _refold_parse_tree(parse_tree, *, policy):
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
                                       part.ew_combine_allowed, charset)
                 last_charset = charset
-            want_encoding = False
-            continue
+                want_encoding = False
+                continue
+            else:
+                # It's a terminal which should be kept non-encoded
+                # (e.g. a ListSeparator).
+                last_ew = None
+                want_encoding = False
+                # fall through
+
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
             continue
