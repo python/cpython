@@ -2006,38 +2006,6 @@ exit:
 
 #if defined(MS_WINDOWS)
 
-PyDoc_STRVAR(os__path_lexists__doc__,
-"_path_lexists($module, path, /)\n"
-"--\n"
-"\n"
-"Test whether a path exists.  Returns True for broken symbolic links.");
-
-#define OS__PATH_LEXISTS_METHODDEF    \
-    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
-
-static int
-os__path_lexists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_lexists(PyObject *module, PyObject *path)
-{
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = os__path_lexists_impl(module, path);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
 PyDoc_STRVAR(os__path_isdir__doc__,
 "_path_isdir($module, /, s)\n"
 "--\n"
@@ -2217,70 +2185,6 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     path = args[0];
     _return_value = os__path_islink_impl(module, path);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_isjunction__doc__,
-"_path_isjunction($module, /, path)\n"
-"--\n"
-"\n"
-"Test whether a path is a junction");
-
-#define OS__PATH_ISJUNCTION_METHODDEF    \
-    {"_path_isjunction", _PyCFunction_CAST(os__path_isjunction), METH_FASTCALL|METH_KEYWORDS, os__path_isjunction__doc__},
-
-static int
-os__path_isjunction_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_isjunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_isjunction",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *path;
-    int _return_value;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    path = args[0];
-    _return_value = os__path_isjunction_impl(module, path);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11560,10 +11464,6 @@ exit:
     #define OS__PATH_EXISTS_METHODDEF
 #endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
 
-#ifndef OS__PATH_LEXISTS_METHODDEF
-    #define OS__PATH_LEXISTS_METHODDEF
-#endif /* !defined(OS__PATH_LEXISTS_METHODDEF) */
-
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -11575,10 +11475,6 @@ exit:
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
-
-#ifndef OS__PATH_ISJUNCTION_METHODDEF
-    #define OS__PATH_ISJUNCTION_METHODDEF
-#endif /* !defined(OS__PATH_ISJUNCTION_METHODDEF) */
 
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
@@ -12091,4 +11987,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=f2bc5f91048a6a84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46e87bace3cc07b6 input=a9049054013a1b77]*/

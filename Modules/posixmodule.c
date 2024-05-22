@@ -5166,25 +5166,6 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 
 
 /*[clinic input]
-os._path_lexists -> bool
-
-    path: object
-    /
-
-Test whether a path exists.  Returns True for broken symbolic links.
-
-[clinic start generated code]*/
-
-static int
-os__path_lexists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=fec4a91cf4ffccf1 input=8843d4d6d4e7c779]*/
-{
-    path_t _path = PATH_T_INITIALIZE("_path_lexists", "path", 0, 1);
-    return _testFileExists(&_path, path, FALSE);
-}
-
-
-/*[clinic input]
 os._path_isdir -> bool
 
     s as path: object
@@ -5235,24 +5216,6 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 {
     path_t _path = PATH_T_INITIALIZE("_path_islink", "path", 0, 1);
     return _testFileType(&_path, path, PY_IFLNK);
-}
-
-
-/*[clinic input]
-os._path_isjunction -> bool
-
-    path: object
-
-Test whether a path is a junction
-
-[clinic start generated code]*/
-
-static int
-os__path_isjunction_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=f1d51682a077654d input=103ccedcdb714f11]*/
-{
-    path_t _path = PATH_T_INITIALIZE("_path_isjunction", "path", 0, 1);
-    return _testFileType(&_path, path, PY_IFMNT);
 }
 
 #undef PY_IFREG
@@ -16046,9 +16009,7 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISDIR_METHODDEF
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
-    OS__PATH_ISJUNCTION_METHODDEF
     OS__PATH_EXISTS_METHODDEF
-    OS__PATH_LEXISTS_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
