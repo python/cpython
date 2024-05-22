@@ -44,6 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
@@ -9559,13 +9560,14 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         return NULL;
     }
 
-    /* NOTE: the following code can't call back into Python code,
-     * so we are sure that fseq won't be mutated.
-     */
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
 
     items = PySequence_Fast_ITEMS(fseq);
     seqlen = PySequence_Fast_GET_SIZE(fseq);
     res = _PyUnicode_JoinArray(separator, items, seqlen);
+
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+
     Py_DECREF(fseq);
     return res;
 }
