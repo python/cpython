@@ -35,7 +35,9 @@ from .trace import trace
 # types
 Command = commands.Command
 if False:
+    from typing import Callable
     from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    CalcScreen = Callable[[], list[str]]
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:
@@ -231,9 +233,11 @@ class Reader:
     keymap: tuple[tuple[str, str], ...] = ()
     input_trans: input.KeymapTranslator = field(init=False)
     input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
+    screen: list[str] = field(default_factory=list)
     screeninfo: list[tuple[int, list[int]]] = field(init=False)
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
+    calc_screen: CalcScreen = field(init=False)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -243,14 +247,36 @@ class Reader:
         self.input_trans = input.KeymapTranslator(
             self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
         )
-        self.screeninfo = [(0, [0])]
+        self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
+        self.calc_screen = self.calc_complete_screen
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
-    def calc_screen(self) -> list[str]:
+    def append_to_screen(self) -> list[str]:
+        new_screen = self.screen.copy() or ['']
+
+        new_character = self.buffer[-1]
+        new_character_len = wlen(new_character)
+
+        last_line_len = wlen(new_screen[-1])
+        if last_line_len + new_character_len >= self.console.width:  # We need to wrap here
+            new_screen[-1] += '\\'
+            self.screeninfo[-1][1].append(1)
+            new_screen.append(self.buffer[-1])
+            self.screeninfo.append((0, [new_character_len]))
+        else:
+            new_screen[-1] += self.buffer[-1]
+            self.screeninfo[-1][1].append(new_character_len)
+        self.cxy = self.pos2xy()
+
+        # Reset the function that is used for completing the screen
+        self.calc_screen = self.calc_complete_screen
+        return new_screen
+
+    def calc_complete_screen(self) -> list[str]:
         """The purpose of this method is to translate changes in
         self.buffer into changes in self.screen.  Currently it rips
         everything down and starts from scratch, which whilst not
@@ -563,8 +589,8 @@ class Reader:
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
         # this call sets up self.cxy, so call it first.
-        screen = self.calc_screen()
-        self.console.refresh(screen, self.cxy)
+        self.screen = self.calc_screen()
+        self.console.refresh(self.screen, self.cxy)
         self.dirty = False
 
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:

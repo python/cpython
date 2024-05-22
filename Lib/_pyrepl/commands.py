@@ -358,7 +358,10 @@ class backward_word(MotionCommand):
 class self_insert(EditCommand):
     def do(self) -> None:
         r = self.reader
-        r.insert(self.event * r.get_arg())
+        text = self.event * r.get_arg()
+        r.insert(text)
+        if len(text) == 1 and r.pos == len(r.buffer):
+            r.calc_screen = r.append_to_screen
 
 
 class insert_nl(EditCommand):
