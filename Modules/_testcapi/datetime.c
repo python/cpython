@@ -6,26 +6,21 @@
 static int test_run_counter = 0;
 
 static PyObject *
-test_datetime_capi(PyObject *self, PyObject *args)
+setup_capi(PyObject *self, PyObject *args)
 {
-    if (PyDateTimeAPI) {
-        if (test_run_counter) {
-            /* Probably regrtest.py -R */
-            Py_RETURN_NONE;
-        }
-        else {
-            PyErr_SetString(PyExc_AssertionError,
-                            "PyDateTime_CAPI somehow initialized");
-            return NULL;
-        }
+    if (!test_run_counter++) {
+        PyDateTime_IMPORT;
     }
-    test_run_counter++;
-    PyDateTime_IMPORT;
+    assert(PyDateTimeAPI);
+    Py_RETURN_NONE;
+}
 
-    if (PyDateTimeAPI) {
-        Py_RETURN_NONE;
-    }
-    return NULL;
+static PyObject *
+teardown_capi(PyObject *self, PyObject *args)
+{
+    test_run_counter--;
+    assert(test_run_counter >= 0);
+    Py_RETURN_NONE;
 }
 
 /* Functions exposing the C API type checking for testing */
@@ -467,7 +462,8 @@ static PyMethodDef test_methods[] = {
     {"get_timezone_utc_capi",       get_timezone_utc_capi,          METH_VARARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,      METH_NOARGS},
     {"make_timezones_capi",         make_timezones_capi,            METH_NOARGS},
-    {"test_datetime_capi",          test_datetime_capi,             METH_NOARGS},
+    {"setup_capi",                  setup_capi,                     METH_NOARGS},
+    {"teardown_capi",               teardown_capi,                  METH_NOARGS},
     {NULL},
 };
 
