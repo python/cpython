@@ -427,13 +427,7 @@ struct basespec {
     char *adr;
 };
 
-extern char basespec_string[];
-
 extern ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj);
-
-extern char *_ctypes_conversion_encoding;
-extern char *_ctypes_conversion_errors;
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
