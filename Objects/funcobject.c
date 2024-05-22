@@ -516,21 +516,16 @@ func_get_annotation_dict(PyFunctionObject *op)
 {
     if (op->func_annotations == NULL) {
         if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
-            return NULL;
+            Py_RETURN_NONE;
         }
         PyObject *one = _PyLong_GetOne();
         PyObject *ann_dict = _PyObject_CallOneArg(op->func_annotate, one);
         if (ann_dict == NULL) {
             return NULL;
         }
-        if (op->func_annotations != NULL) {
-            Py_DECREF(ann_dict);
-            assert(PyDict_Check(op->func_annotations));
-            return op->func_annotations;
-        }
         if (!PyDict_Check(ann_dict)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "__annotate__ returned a non-dict");
+            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                         Py_TYPE(ann_dict)->tp_name);
             Py_DECREF(ann_dict);
             return NULL;
         }

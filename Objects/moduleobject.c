@@ -1159,8 +1159,7 @@ module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
     PyObject *annotate;
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) == 0) {
         annotate = Py_None;
-        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
-        if (result == -1) {
+        if (PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate) == -1) {
             Py_CLEAR(annotate);
         }
     }
@@ -1225,7 +1224,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_SetString(PyExc_TypeError, "__annotate__ returned a non-dict");
+                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                             Py_TYPE(annotations)->tp_name);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);
@@ -1272,10 +1272,8 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
             ret = 0;
         }
     }
-    if (ret == 0) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
-            ret = -1;
-        }
+    if (ret == 0 && PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
+        ret = -1;
     }
 
     Py_DECREF(dict);
