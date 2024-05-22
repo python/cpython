@@ -1623,7 +1623,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
                                          current_item_separator) < 0)
                 goto bail;
         }
-        Py_END_CRITICAL_SECTION(dct);
+        Py_END_CRITICAL_SECTION();
     }
 
     if (ident != NULL) {
