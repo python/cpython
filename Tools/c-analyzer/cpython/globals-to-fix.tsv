@@ -354,9 +354,6 @@ Modules/_testclinic.c	-	TestClass	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
-Modules/_ctypes/ctypes.h	-	basespec_string	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_DateType	-
