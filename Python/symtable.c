@@ -2540,12 +2540,13 @@ static int
 symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_ty returns,
                            struct _symtable_entry *function_ste)
 {
+    int is_in_class = st->st_cur->ste_can_see_class_scope;
     _Py_block_ty current_type = st->st_cur->ste_type;
     if (!symtable_enter_block(st, function_ste->ste_name, AnnotationBlock,
                               (void *)a, LOCATION(o))) {
         VISIT_QUIT(st, 0);
     }
-    if (current_type == ClassBlock) {
+    if (is_in_class || current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
             return 0;
