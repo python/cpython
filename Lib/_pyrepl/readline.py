@@ -99,6 +99,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
     # Instance fields
     config: ReadlineConfig
     more_lines: MoreLinesCallable | None = None
+    last_used_indentation: str | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -157,6 +158,11 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             cut = 0
         return self.history[cut:]
 
+    def update_last_used_indentation(self) -> None:
+        indentation = _get_first_indentation(self.buffer)
+        if indentation is not None:
+            self.last_used_indentation = indentation
+
     # --- simplified support for reading multiline Python statements ---
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
@@ -211,6 +217,28 @@ def _get_previous_line_indent(buffer: list[str], pos: int) -> tuple[int, int | N
     return prevlinestart, indent
 
 
+def _get_first_indentation(buffer: list[str]) -> str | None:
+    indented_line_start = None
+    for i in range(len(buffer)):
+        if (i < len(buffer) - 1
+            and buffer[i] == "\n"
+            and buffer[i + 1] in " \t"
+        ):
+            indented_line_start = i + 1
+        elif indented_line_start is not None and buffer[i] not in " \t\n":
+            return ''.join(buffer[indented_line_start : i])
+    return None
+
+
+def _is_last_char_colon(buffer: list[str]) -> bool:
+    i = len(buffer)
+    while i > 0:
+        i -= 1
+        if buffer[i] not in " \t\n":  # ignore whitespaces
+            return buffer[i] == ":"
+    return False
+
+
 class maybe_accept(commands.Command):
     def do(self) -> None:
         r: ReadlineAlikeReader
@@ -227,9 +255,18 @@ class maybe_accept(commands.Command):
             # auto-indent the next line like the previous line
             prevlinestart, indent = _get_previous_line_indent(r.buffer, r.pos)
             r.insert("\n")
-            if not self.reader.paste_mode and indent:
-                for i in range(prevlinestart, prevlinestart + indent):
-                    r.insert(r.buffer[i])
+            if not self.reader.paste_mode:
+                if indent:
+                    for i in range(prevlinestart, prevlinestart + indent):
+                        r.insert(r.buffer[i])
+                r.update_last_used_indentation()
+                if _is_last_char_colon(r.buffer):
+                    if r.last_used_indentation is not None:
+                        indentation = r.last_used_indentation
+                    else:
+                        # default
+                        indentation = " " * 4
+                    r.insert(indentation)
         elif not self.reader.paste_mode:
             self.finish = True
         else:
