@@ -54,7 +54,7 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     b: list[int] = []
     s: list[str] = []
     for c in buffer:
-        if unicodedata.category(c).startswith("C"):
+        if ord(c) > 128 and unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
         s.append(c)
         b.append(wlen(c))
@@ -225,7 +225,7 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
-    was_paste_mode_activated: bool = False
+    in_bracketed_paste: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
@@ -448,7 +448,7 @@ class Reader:
         elif "\n" in self.buffer:
             if lineno == 0:
                 prompt = self.ps2
-            elif lineno == self.buffer.count("\n"):
+            elif self.ps4 and lineno == self.buffer.count("\n"):
                 prompt = self.ps4
             else:
                 prompt = self.ps3
@@ -611,7 +611,7 @@ class Reader:
 
         self.after_command(command)
 
-        if self.dirty:
+        if self.dirty and not self.in_bracketed_paste:
             self.refresh()
         else:
             self.update_cursor()
