@@ -259,7 +259,7 @@ class HistoricalReader(Reader):
         self.transient_history[self.historyi] = self.get_unicode()
         buf = self.transient_history.get(i)
         if buf is None:
-            buf = self.history[i]
+            buf = self.history[i].rstrip()
         self.buffer = list(buf)
         self.historyi = i
         self.pos = len(self.buffer)

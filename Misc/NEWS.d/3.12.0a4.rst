@@ -830,7 +830,7 @@ Reduced the memory usage of :func:`urllib.parse.unquote` and
 .. section: Library
 
 ``inspect.signature`` was raising ``TypeError`` on call with mock objects.
-Now it correctly returns ``(*args, **kwargs)`` as infered signature.
+Now it correctly returns ``(*args, **kwargs)`` as inferred signature.
 
 ..
 
