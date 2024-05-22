@@ -509,11 +509,6 @@ class _BinaryPlistParser:
         return tokenL
 
     def _read(self, size):
-        if 0:
-            data = self._fp.read(size)
-            if len(data) != size:
-                raise InvalidFileException
-            return data
         cursize = min(size, 1 << 20)
         data = self._fp.read(cursize)
         while True:
@@ -527,8 +522,6 @@ class _BinaryPlistParser:
 
     def _read_ints(self, n, size):
         data = self._read(size * n)
-        #print('XXX', n, size)
-        #assert n < 100
         if size in _BINARY_FORMAT:
             return struct.unpack(f'>{n}{_BINARY_FORMAT[size]}', data)
         else:
