@@ -104,7 +104,7 @@ class FunctionTestCase(unittest.TestCase):
             with self.assertRaises(ArgumentError) as cm:
                 f(1, "\U0001f40d", 3, 4, 5.0, 6.0)
             self.assertEqual(str(cm.exception),
-                             "argument 2: TypeError: string '\\U0001f40d' "
+                             "argument 2: TypeError: the string '\\U0001f40d' "
                              "cannot be converted to a single wchar_t character")
 
     def test_c_char_p_parm(self):

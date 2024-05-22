@@ -110,7 +110,7 @@ class SimpleTypesTestCase(unittest.TestCase):
             with self.assertRaises(TypeError) as cm:
                 c_wchar.from_param('\U0001f40d')
             self.assertEqual(str(cm.exception),
-                             "string '\\U0001f40d' cannot be converted to "
+                             "the string '\\U0001f40d' cannot be converted to "
                              "a single wchar_t character")
 
 
