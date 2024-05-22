@@ -1,7 +1,8 @@
 import itertools
+import functools
 from unittest import TestCase
 
-from .support import handle_all_events, handle_events_narrow_console, code_to_events
+from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
 from _pyrepl.console import Event
 
 
@@ -133,3 +134,45 @@ class TestReader(TestCase):
 
         reader, _ = handle_all_events(events)
         self.assert_screen_equals(reader, "")
+
+    def test_newline_within_block_trailing_whitespace(self):
+        # fmt: off
+        code = (
+            "def foo():\n"
+                 "a = 1\n"
+        )
+        # fmt: on
+
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                # go to the end of the first line
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # new lines in-block shouldn't terminate the block
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                # end of line 2
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # a double new line in-block should terminate the block
+                # even if its followed by whitespace
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        no_paste_reader = functools.partial(prepare_reader, paste_mode=False)
+        reader, _ = handle_all_events(events, prepare_reader=no_paste_reader)
+
+        expected = (
+            "def foo():\n"
+            "\n"
+            "\n"
+            "    a = 1\n"
+            "    \n"
+            "    "    # HistoricalReader will trim trailing whitespace
+        )
+        self.assert_screen_equals(reader, expected)
+        self.assertTrue(reader.finished)

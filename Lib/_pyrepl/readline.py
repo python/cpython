@@ -244,14 +244,27 @@ class maybe_accept(commands.Command):
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
-        #
+
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
         text = r.get_unicode()
+
         if "\n" in r.buffer[r.pos :] or (
             r.more_lines is not None and r.more_lines(text)
         ):
-            #
+            def _newline_before_pos():
+                before_idx = r.pos - 1
+                while before_idx > 0 and text[before_idx].isspace():
+                    before_idx -= 1
+                return text[before_idx : r.pos].count("\n") > 0
+
+            # if there's already a new line before the cursor then
+            # even if the cursor is followed by whitespace, we assume
+            # the user is trying to terminate the block
+            if _newline_before_pos() and text[r.pos:].isspace():
+                self.finish = True
+                return
+
             # auto-indent the next line like the previous line
             prevlinestart, indent = _get_previous_line_indent(r.buffer, r.pos)
             r.insert("\n")
