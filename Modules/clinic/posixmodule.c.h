@@ -1974,6 +1974,38 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_exists__doc__,
+"_path_exists($module, path, /)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns False for broken symbolic links.");
+
+#define OS__PATH_EXISTS_METHODDEF    \
+    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
+
+static int
+os__path_exists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_exists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_exists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__path_isdir__doc__,
 "_path_isdir($module, /, s)\n"
 "--\n"
@@ -1983,8 +2015,8 @@ PyDoc_STRVAR(os__path_isdir__doc__,
 #define OS__PATH_ISDIR_METHODDEF    \
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
-static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *s);
+static int
+os__path_isdir_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2016,14 +2048,19 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *s;
+    PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    s = args[0];
-    return_value = os__path_isdir_impl(module, s);
+    path = args[0];
+    _return_value = os__path_isdir_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2042,7 +2079,7 @@ PyDoc_STRVAR(os__path_isfile__doc__,
 #define OS__PATH_ISFILE_METHODDEF    \
     {"_path_isfile", _PyCFunction_CAST(os__path_isfile), METH_FASTCALL|METH_KEYWORDS, os__path_isfile__doc__},
 
-static PyObject *
+static int
 os__path_isfile_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2076,72 +2113,18 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_isfile_impl(module, path);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, /, path)\n"
-"--\n"
-"\n"
-"Test whether a path exists.  Returns False for broken symbolic links");
-
-#define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
-
-static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_exists",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *path;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
+    _return_value = os__path_isfile_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_exists_impl(module, path);
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2160,7 +2143,7 @@ PyDoc_STRVAR(os__path_islink__doc__,
 #define OS__PATH_ISLINK_METHODDEF    \
     {"_path_islink", _PyCFunction_CAST(os__path_islink), METH_FASTCALL|METH_KEYWORDS, os__path_islink__doc__},
 
-static PyObject *
+static int
 os__path_islink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2194,13 +2177,18 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_islink_impl(module, path);
+    _return_value = os__path_islink_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -11472,6 +11460,10 @@ exit:
     #define OS__PATH_SPLITROOT_METHODDEF
 #endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
+#ifndef OS__PATH_EXISTS_METHODDEF
+    #define OS__PATH_EXISTS_METHODDEF
+#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
+
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -11479,10 +11471,6 @@ exit:
 #ifndef OS__PATH_ISFILE_METHODDEF
     #define OS__PATH_ISFILE_METHODDEF
 #endif /* !defined(OS__PATH_ISFILE_METHODDEF) */
-
-#ifndef OS__PATH_EXISTS_METHODDEF
-    #define OS__PATH_EXISTS_METHODDEF
-#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
 
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
@@ -11999,4 +11987,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=56e83d6b7cac0d58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46e87bace3cc07b6 input=a9049054013a1b77]*/
