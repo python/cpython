@@ -950,14 +950,15 @@ class Differ:
                 if (cmp(crqr(), best_ratio)
                       and cmp(cqr(), best_ratio)
                       and cmp((ratio := cr()), best_ratio)):
-                    search_equal = False
                     if ratio > best_ratio:
                         best_ratio = ratio
                         max_pairs.clear()
                     else:
-                        assert best_ratio == ratio
+                        assert best_ratio == ratio and search_equal
+                        assert i > maxi
                     max_pairs.append((i, j))
                     maxi = i
+                    search_equal = False
         if best_ratio < cutoff:
             assert not max_pairs
             # no non-identical "pretty close" pair
