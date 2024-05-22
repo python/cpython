@@ -27,14 +27,14 @@ PyAPI_FUNC(PyObject *) PyContext_CopyCurrent(void);
 PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
-#define PY_FOREACH_CONTEXT_EVENT(V) \
+#define Py_FOREACH_CONTEXT_EVENT(V) \
    V(ENTER)                      \
    V(EXIT)
 
 typedef enum {
-   #define PY_DEF_EVENT(op) PY_CONTEXT_EVENT_##op,
-   PY_FOREACH_CONTEXT_EVENT(PY_DEF_EVENT)
-   #undef PY_DEF_EVENT
+   #define Py_DEF_EVENT(op) PY_CONTEXT_EVENT_##op,
+   Py_FOREACH_CONTEXT_EVENT(Py_DEF_EVENT)
+   #undef Py_DEF_EVENT
 } PyContextEvent;
 
 /*

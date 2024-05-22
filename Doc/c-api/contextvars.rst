@@ -127,11 +127,11 @@ Context object management functions:
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContecxt_WatchCallback)(PyContextEvent event, PyContext* ctx)
+.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
 
    Type of a context object watcher callback function.
    If *event* is ``PY_CONTEXT_EVENT_ENTER``, then the callback is invoked
-   after `ctx` has been set as the current context for the current thread.
+   after *ctx* has been set as the current context for the current thread.
    Otherwise, the callback is invoked before the deactivation of *ctx* as the current context
    and the restoration of the previous contex object for the current thread.
 

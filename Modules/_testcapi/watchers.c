@@ -625,7 +625,7 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
 
 // Test contexct object watchers
 #define NUM_CONTEXT_WATCHERS 2
-static context_watcher_ids[NUM_CONTEXT_WATCHERS] = {-1, -1};
+static int context_watcher_ids[NUM_CONTEXT_WATCHERS] = {-1, -1};
 static int num_context_object_enter_events[NUM_CONTEXT_WATCHERS] = {0, 0};
 static int num_context_object_exit_events[NUM_CONTEXT_WATCHERS] = {0, 0};
 
