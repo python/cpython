@@ -24,6 +24,7 @@ from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
+import inspect
 import operator
 import sys
 import types
@@ -2973,7 +2974,7 @@ class NamedTupleMeta(type):
         if "__annotations__" in ns:
             types = ns["__annotations__"]
         elif "__annotate__" in ns:
-            types = ns["__annotate__"](1)
+            types = ns["__annotate__"](inspect.VALUE)
         else:
             types = {}
         default_names = []
@@ -3139,7 +3140,7 @@ class _TypedDictMeta(type):
         if "__annotations__" in ns:
             own_annotations = ns["__annotations__"]
         elif "__annotate__" in ns:
-            own_annotations = ns["__annotate__"](1)
+            own_annotations = ns["__annotate__"](inspect.VALUE)
         else:
             own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"

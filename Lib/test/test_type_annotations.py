@@ -1,3 +1,4 @@
+import inspect
 import textwrap
 import types
 import unittest
@@ -350,7 +351,7 @@ class DeferredEvaluationTests(unittest.TestCase):
                 self.assertIsInstance(annotate, types.FunctionType)
                 self.assertEqual(annotate.__name__, f"<annotations of {obj.__name__}>")
                 with self.assertRaises(AssertionError):  # TODO NotImplementedError
-                    annotate(2)
+                    annotate(inspect.FORWARDREF)
                 with self.assertRaises(AssertionError):  # TODO NotImplementedError
                     annotate(None)
-                self.assertEqual(annotate(1), {"x": int})
+                self.assertEqual(annotate(inspect.VALUE), {"x": int})
