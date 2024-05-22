@@ -59,7 +59,11 @@ class next_history(commands.Command):
         if r.historyi == len(r.history):
             r.error("end of history list")
             return
-        r.select_item(r.historyi + 1)
+        nexti = r.historyi + 1
+        # if there are repeated items, skip to the last one
+        while nexti + 1 < len(r.history) and r.history[nexti] == r.history[nexti + 1]:
+            nexti += 1
+        r.select_item(nexti)
 
 
 class previous_history(commands.Command):
@@ -68,7 +72,12 @@ class previous_history(commands.Command):
         if r.historyi == 0:
             r.error("start of history list")
             return
-        r.select_item(r.historyi - 1)
+        nexti = r.historyi - 1
+        if r.historyi < len(r.history):
+            # skip to the first different item encountered
+            while nexti > 0 and r.history[nexti] == r.history[r.historyi]:
+                nexti -= 1
+        r.select_item(nexti)
 
 
 class restore_history(commands.Command):
@@ -93,7 +102,12 @@ class last_history(commands.Command):
 
 class operate_and_get_next(commands.FinishCommand):
     def do(self) -> None:
-        self.reader.next_history = self.reader.historyi + 1
+        r = self.reader
+        nexti = r.historyi + 1
+        # if there are repeated items, skip to the last one
+        while nexti + 1 < len(r.history) and r.history[nexti] == r.history[nexti + 1]:
+            nexti += 1
+        r.next_history = nexti
 
 
 class yank_arg(commands.Command):
@@ -335,22 +349,10 @@ class HistoricalReader(Reader):
     def finish(self) -> None:
         super().finish()
         ret = self.get_unicode()
-        remove: set[int] = set()
         for i, t in self.transient_history.items():
             if i < len(self.history) and i != self.historyi:
                 self.history[i] = t
-                # look either side of the current index
-                for k in (i - 1, i + 1):
-                    # dedupe repeated history entries
-                    if 0 <= k < len(self.history) and t == self.history[k]:
-                        remove.add(i)
-                        break
-        for i in sorted(remove, reverse=True):
-            del self.history[i]
-            if i < self.historyi:
-                self.historyi -= 1
-        is_repeated = not self.history == [] and ret == self.history[-1]
-        if ret and not is_repeated and should_auto_add_history:
+        if ret and should_auto_add_history:
             self.history.append(ret)
 
 

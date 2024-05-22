@@ -493,31 +493,35 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
 
-    def test_transient_history_deduplication(self):
+    def test_transient_history(self):
         events = itertools.chain(
-            code_to_events("a\nab\nabc\nabcd\n"),
+            code_to_events("1+1\n2+2\n2+2\n2+2\n"),
             [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events("3-3"),
+            #   primary | transient history
+            #     1+1   |
+            #     2+2   |
+            #     2+2   |
+            #     2+2   |    3-3  <-- current position
+            [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="c", raw=bytearray(b"c")),
+                # should skip over duplicates in the underlying history
+                #   primary | transient history
+                #     1+1   |         <-- current position
+                #     2+2   |
+                #     2+2   |
+                #     2+2   |    3-3
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="\n", raw=bytearray(b"\n")),
-                # At this point, transient history is committed to
-                # permanent history and deduplicated:
-                #       a
-                #       abc     <-- changed line is deduplicated
-                #       abc
-                #       abcd
-                # Leaving history in this state:
-                #       a
-                #       abc
-                #       abcd
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                #   primary | transient history
+                #     1+1   |
+                #     2+2   |
+                #     2+2   |
+                #     2+2   |    3-3  <-- current position
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
@@ -525,17 +529,15 @@ class TestPyReplOutput(TestCase):
         reader = self.prepare_reader(events)
 
         output = multiline_input(reader)
-        self.assertEqual(output, "a")
+        self.assertEqual(output, "1+1")
         output = multiline_input(reader)
-        self.assertEqual(output, "ab")
+        self.assertEqual(output, "2+2")
         output = multiline_input(reader)
-        self.assertEqual(output, "abc")
+        self.assertEqual(output, "2+2")
         output = multiline_input(reader)
-        self.assertEqual(output, "abcd")
+        self.assertEqual(output, "2+2")
         output = multiline_input(reader)
-        self.assertEqual(output, "")
-        output = multiline_input(reader)
-        self.assertEqual(output, "a")
+        self.assertEqual(output, "3-3")
 
     def test_history_search(self):
         events = itertools.chain(
