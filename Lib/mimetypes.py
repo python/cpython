@@ -116,7 +116,7 @@ class MimeTypes:
         mapped to '.tar.gz'.  (This is table-driven too, using the
         dictionary suffix_map.)
 
-        Optional `strict' argument when False adds a bunch of commonly found,
+        Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
         # TODO: Deprecate accepting file paths (in particular path-like objects).
@@ -185,9 +185,9 @@ class MimeTypes:
         Return value is a list of strings giving the possible filename
         extensions, including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data stream,
-        but would be mapped to the MIME type `type' by guess_type().
+        but would be mapped to the MIME type 'type' by guess_type().
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         type = type.lower()
@@ -204,11 +204,11 @@ class MimeTypes:
         Return value is a string giving a filename extension,
         including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data
-        stream, but would be mapped to the MIME type `type' by
-        guess_type().  If no extension can be guessed for `type', None
+        stream, but would be mapped to the MIME type 'type' by
+        guess_type().  If no extension can be guessed for 'type', None
         is returned.
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         extensions = self.guess_all_extensions(type, strict)
@@ -314,7 +314,7 @@ def guess_type(url, strict=True):
     to ".tar.gz".  (This is table-driven too, using the dictionary
     suffix_map).
 
-    Optional `strict' argument when false adds a bunch of commonly found, but
+    Optional 'strict' argument when false adds a bunch of commonly found, but
     non-standard types.
     """
     if _db is None:
@@ -338,11 +338,11 @@ def guess_all_extensions(type, strict=True):
     Return value is a list of strings giving the possible filename
     extensions, including the leading dot ('.').  The extension is not
     guaranteed to have been associated with any particular data
-    stream, but would be mapped to the MIME type `type' by
-    guess_type().  If no extension can be guessed for `type', None
+    stream, but would be mapped to the MIME type 'type' by
+    guess_type().  If no extension can be guessed for 'type', None
     is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
@@ -355,10 +355,10 @@ def guess_extension(type, strict=True):
     Return value is a string giving a filename extension, including the
     leading dot ('.').  The extension is not guaranteed to have been
     associated with any particular data stream, but would be mapped to the
-    MIME type `type' by guess_type().  If no extension can be guessed for
-    `type', None is returned.
+    MIME type 'type' by guess_type().  If no extension can be guessed for
+    'type', None is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
