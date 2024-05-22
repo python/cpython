@@ -1688,7 +1688,8 @@ compiler_collect_annotations(struct compiler *c, asdl_stmt_seq *stmts,
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, i);
         switch (st->kind) {
         case AnnAssign_kind:
-            if (st->v.AnnAssign.target->kind == Name_kind) {
+            // Only "simple" names (i.e., unparenthesized names) are stored.
+            if (st->v.AnnAssign.simple) {
                 PyObject *mangled = _Py_Mangle(c->u->u_private, st->v.AnnAssign.target->v.Name.id);
                 ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
                 VISIT(c, expr, st->v.AnnAssign.annotation);
@@ -6651,7 +6652,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
-        if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS &&
+        if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
             s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
