@@ -225,12 +225,12 @@ class WindowsConsole(Console):
 
         trace('!!Refresh {}', screen)
         while len(self.screen) < min(len(screen), self.height):
-            trace("...")
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
             self.__write("\n")
             self.__posxy = 0, len(self.screen)
             self.screen.append("")
+            trace(f"... {self.__posxy} {len(self.screen)} {self.height}")
 
         px, py = self.__posxy
         old_offset = offset = self.__offset
@@ -328,17 +328,8 @@ class WindowsConsole(Console):
         if not SetConsoleCursorInfo(OutHandle, info):
              raise ctypes.WinError(ctypes.GetLastError())
 
-    def __write(self, text):
+    def __write(self, text: str):
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
-
-    def __move(self, x, y):
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
-        x += info.dwCursorPosition.X
-        y += info.dwCursorPosition.Y
-        trace('..', x, y)
-        self.move_cursor(x, y)
 
     @property
     def screen_xy(self):
@@ -372,7 +363,7 @@ class WindowsConsole(Console):
 
         # if we need to insert a single character right after the first detected change
         if oldline[x_pos:] == newline[x_pos + 1 :]:
-            trace('insert single')
+            trace('insert single {} {}', y, self.__posxy)
             if (
                 y == self.__posxy[1]
                 and x_coord > self.__posxy[0]
@@ -380,14 +371,16 @@ class WindowsConsole(Console):
             ):
                 x_pos = px_pos
                 x_coord = px_coord
+
             character_width = wlen(newline[x_pos])
 
+            # Scroll any text to the right if we're inserting
             ins_x, ins_y = self.get_abs_position(x_coord + 1, y)
             ins_x -= 1
             scroll_rect = SMALL_RECT()
             scroll_rect.Top = scroll_rect.Bottom = SHORT(ins_y)
-            scroll_rect.Left = ins_x
-            scroll_rect.Right = self.getheightwidth()[1] - 1
+            scroll_rect.Left = SHORT(ins_x)
+            scroll_rect.Right = SHORT(self.getheightwidth()[1] - 1)
             destination_origin = _COORD(X = scroll_rect.Left + 1, Y = scroll_rect.Top)
             fill_info = CHAR_INFO()
             fill_info.UnicodeChar = ' '
@@ -397,26 +390,36 @@ class WindowsConsole(Console):
 
             self.__move_relative(x_coord, y)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
-
+            if x_coord + character_width == self.width:
+                self.move_next_line(y)
+            else:
+                self.__posxy = x_coord + character_width, y
         else:
-            trace("Rewrite all {!r} {} {} {} {} {}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
+            trace("Rewrite all {!r} {} {} y={} {} posxy={}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
             self.__hide_cursor()
             self.__move_relative(x_coord, y)
             if wlen(oldline) > wlen(newline):
                 self.erase_to_end()
-            #os.write(self.output_fd, newline[x_pos:].encode(self.encoding, "replace"))
             self.__write(newline[x_pos:])
-            self.__posxy = wlen(newline), y
+            if len(newline[x_pos:]) == self.width:
+                self.move_next_line(y)
+            else:
+                self.__posxy = wlen(newline), y
 
 
-        if "\x1b" in newline:
+        if "\x1b" in newline or y != self.__posxy[1]:
             # ANSI escape characters are present, so we can't assume
             # anything about the position of the cursor.  Moving the cursor
             # to the left margin should work to get to a known position.
             _, cur_y = self.get_abs_position(0, y)
             self.__move_absolute(0, cur_y)
             self.__posxy = 0, y
+
+    def move_next_line(self, y: int):
+        self.__posxy = 0, y
+        _, cur_y = self.get_abs_position(0, y)
+        self.__move_absolute(0, cur_y)
+        self.__posxy = 0, y
 
     def erase_to_end(self):
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -428,6 +431,7 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def prepare(self) -> None:
+        trace("prepare")
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
@@ -450,7 +454,7 @@ class WindowsConsole(Console):
         return cur_x, cur_y
 
     def __move_relative(self, x, y):
-        """Moves relative to the start of the current input line"""
+        """Moves relative to the current __posxy"""
         trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
         cur_x, cur_y = self.get_abs_position(x, y)
         trace('move is {} {}', cur_x, cur_y)
@@ -465,6 +469,9 @@ class WindowsConsole(Console):
         """Moves to an absolute location in the screen buffer"""
         if y < 0:
             trace(f"Negative offset: {self.__posxy} {self.screen_xy}")
+        if x < 0:
+            trace("Negative move {}", self.getheightwidth())
+        #    return
         cord = _COORD()
         cord.X = x
         cord.Y = y
