@@ -155,7 +155,7 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     return list(te.format(chain=chain, colorize=colorize))
 
 
-def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
+def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs):
     """Format the exception part of a traceback.
 
     The return value is a list of strings, each ending in a newline.
@@ -170,10 +170,11 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
     :exc:`BaseExceptionGroup`, the nested exceptions are included as
     well, recursively, with indentation relative to their nesting depth.
     """
+    colorize = kwargs.get("colorize", False)
     if value is _sentinel:
         value = exc
     te = TracebackException(type(value), value, None, compact=True)
-    return list(te.format_exception_only(show_group=show_group))
+    return list(te.format_exception_only(show_group=show_group, colorize=colorize))
 
 
 # -- not official API but folk probably use these two functions.
