@@ -2399,19 +2399,18 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
 
     if (width < 0) {
         return unicode_decode_utf8_writer(writer, str, length,
-                                          _Py_ERROR_UNKNOWN, "replace", NULL);
+                                          _Py_ERROR_REPLACE, "replace", NULL);
     }
-    else {
-        PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
-                                                         "replace", NULL);
-        if (unicode == NULL)
-            return -1;
 
-        int res = unicode_fromformat_write_str(writer, unicode,
-                                               width, -1, flags);
-        Py_DECREF(unicode);
-        return res;
-    }
+    PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
+                                                     "replace", NULL);
+    if (unicode == NULL)
+        return -1;
+
+    int res = unicode_fromformat_write_str(writer, unicode,
+                                           width, -1, flags);
+    Py_DECREF(unicode);
+    return res;
 }
 
 static int
