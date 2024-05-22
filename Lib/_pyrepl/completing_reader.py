@@ -30,7 +30,7 @@ from .reader import Reader
 # types
 Command = commands.Command
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    from .types import KeySpec, CommandName
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
