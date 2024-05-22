@@ -79,6 +79,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__all__)
         STRUCT_FOR_ID(__and__)
         STRUCT_FOR_ID(__anext__)
+        STRUCT_FOR_ID(__annotate__)
         STRUCT_FOR_ID(__annotations__)
         STRUCT_FOR_ID(__args__)
         STRUCT_FOR_ID(__asyncio_running_event_loop__)
