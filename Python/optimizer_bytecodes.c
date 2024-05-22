@@ -125,7 +125,7 @@ dummy_func(void) {
             // with the key, in which case we can't trust the version
             if (type) {
                 sym_set_type_version(owner, type_version);
-                PyType_Watch(TYPE_WATCHER_ID, type);
+                PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                 _Py_BloomFilter_Add(dependencies, type);
             }
 
