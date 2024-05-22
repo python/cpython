@@ -1,0 +1,2 @@
+Fix bug where any names appearing after a generic class were mangled as if
+they were part of the generic class.
