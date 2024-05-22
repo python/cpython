@@ -1351,7 +1351,7 @@ before creating the :class:`~tkinter.Tk` object or call the
 :meth:`~tkinter.Tk.wantobject` method of the :class:`!Tk` object with argument
 ``2`` makes now arguments to callbacks registered in the :mod:`tkinter` module
 to be passed as various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-depending on their internal represenation in Tcl, instead of always ``str``.
+depending on their internal representation in Tcl, instead of always ``str``.
 :data:`!tkinter.wantobject` is now set to ``2`` by default.
 
 ..
