@@ -1,0 +1,46 @@
+on:
+  workflow_call:
+    inputs:
+      config_hash:
+        required: true
+        type: string
+      free-threading:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build_macos:
+    name: 'build and test'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - uses: actions/checkout@v4
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ inputs.config_hash }}
+    - name: Install Homebrew dependencies
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
+    - name: Configure CPython
+      run: |
+        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
+        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
+        ./configure \
+          --config-cache \
+          --with-pydebug \
+          ${{ inputs.free-threading && '--disable-gil' || '' }} \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@3.0)"
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: make test
