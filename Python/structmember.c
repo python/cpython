@@ -78,7 +78,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case Py_T_OBJECT_EX:
 #ifndef Py_GIL_DISABLED
-        v = FT_ATOMIC_LOAD_PTR(*addr);
+        v = *(PyObject **)addr;
         if (v == NULL) {
             PyObject *obj = (PyObject *)obj_addr;
             PyTypeObject *tp = Py_TYPE(obj);
