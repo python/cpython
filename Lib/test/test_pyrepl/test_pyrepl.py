@@ -28,8 +28,8 @@ class TestCursorPosition(TestCase):
     def test_up_arrow_simple(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  ...\n'
+            "def f():\n"
+            "  ...\n"
         )
         # fmt: on
         events = itertools.chain(
@@ -46,8 +46,8 @@ class TestCursorPosition(TestCase):
     def test_down_arrow_end_of_input(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  ...\n'
+            "def f():\n"
+            "  ...\n"
         )
         # fmt: on
         events = itertools.chain(
@@ -315,14 +315,14 @@ class TestCursorPosition(TestCase):
     def test_auto_indent_default(self):
         # fmt: off
         input_code = (
-            'def f():\n'
-                'pass\n\n'
+            "def f():\n"
+                "pass\n\n"
         )
 
         output_code = (
-            'def f():\n'
-            '    pass\n'
-            '    '
+            "def f():\n"
+            "    pass\n"
+            "    "
         )
         # fmt: on
 
@@ -342,10 +342,10 @@ class TestCursorPosition(TestCase):
         )
 
         output_code = (
-            'def f():\n'
-            '  pass\n'
-            '  pass\n'
-            '  '
+            "def f():\n"
+            "  pass\n"
+            "  pass\n"
+            "  "
         )
         # fmt: on
 
@@ -367,16 +367,16 @@ class TestCursorPosition(TestCase):
                 "pass\n\n"
             ),
             code_to_events(
-                'def g():\n'
-                  'pass\n\n'
+                "def g():\n"
+                  "pass\n\n"
             ),
         )
 
 
         output_code = (
-            'def g():\n'
-            '  pass\n'
-            '  '
+            "def g():\n"
+            "  pass\n"
+            "  "
         )
         # fmt: on
 
@@ -568,6 +568,7 @@ class TestPyReplCompleter(TestCase):
             @property
             def test_func(self):
                 import warnings
+
                 warnings.warn("warnings\n")
                 return None
 
@@ -591,12 +592,12 @@ class TestPasteEvent(TestCase):
     def test_paste(self):
         # fmt: off
         code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "    else:\n"
+            "      pass\n"
         )
         # fmt: on
 
@@ -617,10 +618,10 @@ class TestPasteEvent(TestCase):
     def test_paste_mid_newlines(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  x = y\n'
-            '  \n'
-            '  y = z\n'
+            "def f():\n"
+            "  x = y\n"
+            "  \n"
+            "  y = z\n"
         )
         # fmt: on
 
@@ -641,16 +642,16 @@ class TestPasteEvent(TestCase):
     def test_paste_mid_newlines_not_in_paste_mode(self):
         # fmt: off
         code = (
-            'def f():\n'
-                'x = y\n'
-                '\n'
-                'y = z\n\n'
+            "def f():\n"
+                "x = y\n"
+                "\n"
+                "y = z\n\n"
         )
 
         expected = (
-            'def f():\n'
-            '    x = y\n'
-            '    '
+            "def f():\n"
+            "    x = y\n"
+            "    "
         )
         # fmt: on
 
@@ -662,20 +663,20 @@ class TestPasteEvent(TestCase):
     def test_paste_not_in_paste_mode(self):
         # fmt: off
         input_code = (
-            'def a():\n'
-                'for x in range(10):\n'
-                    'if x%2:\n'
-                        'print(x)\n'
-                    'else:\n'
-                        'pass\n\n'
+            "def a():\n"
+                "for x in range(10):\n"
+                    "if x%2:\n"
+                        "print(x)\n"
+                    "else:\n"
+                        "pass\n\n"
         )
 
         output_code = (
-            'def a():\n'
-            '    for x in range(10):\n'
-            '        if x%2:\n'
-            '            print(x)\n'
-            '            else:'
+            "def a():\n"
+            "    for x in range(10):\n"
+            "        if x%2:\n"
+            "            print(x)\n"
+            "            else:"
         )
         # fmt: on
 
@@ -688,25 +689,25 @@ class TestPasteEvent(TestCase):
         """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
         # fmt: off
         input_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "\n"
+            "    else:\n"
+            "      pass\n"
         )
 
         output_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "\n"
+            "    else:\n"
+            "      pass\n"
         )
         # fmt: on
 
