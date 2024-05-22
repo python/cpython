@@ -583,16 +583,12 @@ dummy_func(void) {
             argcount++;
         }
 
-        _Py_UopsSymbol **localsplus_start = ctx->n_consumed;
-        int n_locals_already_filled = 0;
-        // Can determine statically, so we interleave the new locals
-        // and make the current stack the new locals.
-        // This also sets up for true call inlining.
-        if (sym_is_null(self_or_null)) {
-            localsplus_start = args;
-            n_locals_already_filled = argcount;
+        if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+            new_frame = frame_new(ctx, co, 0, args, argcount);
+        } else {
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
+
         }
-        new_frame = frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {

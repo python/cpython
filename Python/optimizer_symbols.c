@@ -332,9 +332,9 @@ _Py_UOpsAbstractFrame *
 _Py_uop_frame_new(
     _Py_UOpsContext *ctx,
     PyCodeObject *co,
-    _Py_UopsSymbol **localsplus_start,
-    int n_locals_already_filled,
-    int curr_stackentries)
+    int curr_stackentries,
+    _Py_UopsSymbol **args,
+    int arg_len)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
@@ -342,19 +342,22 @@ _Py_uop_frame_new(
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
 
-    frame->locals = localsplus_start;
+    frame->locals = ctx->n_consumed;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
-    ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
+    ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         ctx->done = true;
         ctx->out_of_space = true;
         return NULL;
     }
 
-
     // Initialize with the initial state of all local variables
-    for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
+    for (int i = 0; i < arg_len; i++) {
+        frame->locals[i] = args[i];
+    }
+
+    for (int i = arg_len; i < co->co_nlocalsplus; i++) {
         _Py_UopsSymbol *local = _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }
