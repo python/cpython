@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_runtime.h"         // _PyRuntime
 
 #include "pycore_global_strings.h"  // _Py_ID()
@@ -1615,12 +1616,14 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     } else {
         Py_ssize_t pos = 0;
+        Py_BEGIN_CRITICAL_SECTION(dct);
         while (PyDict_Next(dct, &pos, &key, &value)) {
             if (encoder_encode_key_value(s, writer, &first, key, value,
                                          new_newline_indent,
                                          current_item_separator) < 0)
                 goto bail;
         }
+        Py_END_CRITICAL_SECTION(dct);
     }
 
     if (ident != NULL) {
@@ -1661,6 +1664,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
+
     if (s_fast == NULL)
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
@@ -1713,6 +1718,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
         if (encoder_listencode_obj(s, writer, obj, new_newline_indent))
             goto bail;
     }
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
             goto bail;
