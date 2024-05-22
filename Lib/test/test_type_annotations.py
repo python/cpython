@@ -1,7 +1,7 @@
 import textwrap
 import types
 import unittest
-from test.support import run_code
+from test.support import run_code, check_syntax_error
 
 
 class TypeAnnotationTests(unittest.TestCase):
@@ -327,3 +327,9 @@ class DeferredEvaluationTests(unittest.TestCase):
 
         self.assertEqual(Outer.meth.__annotations__, {"x": Outer.Nested})
         self.assertEqual(Outer.__annotations__, {"x": Outer.Nested})
+
+    def test_no_exotic_expressions(self):
+        check_syntax_error(self, "def func(x: (yield)): ...", "yield expression cannot be used within an annotation")
+        check_syntax_error(self, "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
+        check_syntax_error(self, "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
+        check_syntax_error(self, "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
