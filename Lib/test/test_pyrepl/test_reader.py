@@ -139,7 +139,7 @@ class TestReader(TestCase):
         # fmt: off
         code = (
             "def foo():\n"
-            "  a = 1\n"
+                 "a = 1\n"
         )
         # fmt: on
 
@@ -170,9 +170,9 @@ class TestReader(TestCase):
             "def foo():\n"
             "\n"
             "\n"
-            "  a = 1\n"
-            "  \n"
-            "  "    # HistoricalReader will trim trailing whitespace
+            "    a = 1\n"
+            "    \n"
+            "    "    # HistoricalReader will trim trailing whitespace
         )
         self.assert_screen_equals(reader, expected)
         self.assertTrue(reader.finished)

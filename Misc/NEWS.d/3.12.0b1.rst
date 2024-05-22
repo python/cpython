@@ -1446,7 +1446,7 @@ Adapt the :mod:`winsound` extension module to :pep:`687`.
 .. nonce: jurMzv
 .. section: Library
 
-Remove deprecation of enum ``memmber.member`` access.
+Remove deprecation of enum ``member.member`` access.
 
 ..
 
