@@ -6384,7 +6384,6 @@ class IranTest(ZoneInfoTest):
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')
 class CapiTest(unittest.TestCase):
-
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests
         if self.__class__.__name__.endswith('Pure'):
@@ -6392,10 +6391,7 @@ class CapiTest(unittest.TestCase):
 
         # This *must* be called, and it must be called first, so until either
         # restriction is loosened, we'll call it as part of test setup
-        _testcapi.setup_capi()
-
-    def tearDown(self):
-        _testcapi.teardown_capi()
+        _testcapi.test_datetime_capi()
 
     def test_utc_capi(self):
         for use_macro in (True, False):
