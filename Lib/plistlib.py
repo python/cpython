@@ -73,6 +73,9 @@ from xml.parsers.expat import ParserCreate
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_SAFE_BUF_SIZE = 1 << 20
 
 class UID:
     def __init__(self, data):
@@ -509,7 +512,7 @@ class _BinaryPlistParser:
         return tokenL
 
     def _read(self, size):
-        cursize = min(size, 1 << 20)
+        cursize = min(size, _SAFE_BUF_SIZE)
         data = self._fp.read(cursize)
         while True:
             if len(data) != cursize:
