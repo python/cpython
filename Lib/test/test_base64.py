@@ -22,8 +22,8 @@ def altchars(draw):
     reserved_chars = (string.digits + string.ascii_letters + "=").encode()
     allowed_chars = hypothesis.strategies.sampled_from(
         [n for n in range(256) if n not in reserved_chars])
-    return bytes(draw(hypothesis.strategies.lists(allowed_chars, min_size=2,
-                                                  max_size=2, unique=True)))
+    return hypothesis.strategies.lists(
+        allowed_chars, min_size=2, max_size=2, unique=True).map(bytes)
 
 class LegacyBase64TestCase(unittest.TestCase):
 
