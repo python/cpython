@@ -644,7 +644,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       The ``'.'`` entry no longer added to tar arhives and the ``'./'`` prefix
       no longer added to tar entries unless ``base_dir='.'`` is
       explicitly specified.
