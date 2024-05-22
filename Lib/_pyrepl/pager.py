@@ -76,10 +76,14 @@ def tty_pager(text: str, title: str = '') -> None:
         fd = sys.stdin.fileno()
         old = termios.tcgetattr(fd)
         tty.setcbreak(fd)
-        getchar = lambda: sys.stdin.read(1)
         has_tty = True
+
+        def getchar() -> str:
+            return sys.stdin.read(1)
+
     except (ImportError, AttributeError, io.UnsupportedOperation):
-        getchar = lambda: sys.stdin.readline()[:-1][:1]
+        def getchar() -> str:
+            return sys.stdin.readline()[:-1][:1]
 
     try:
         try:
