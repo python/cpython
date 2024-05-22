@@ -822,7 +822,7 @@ and to indicate when it became late-bound.
 .. nonce: 7KinCV
 .. section: Tests
 
-The Python test suite now fails wit exit code 4 if no tests ran. It should
+The Python test suite now fails with exit code 4 if no tests ran. It should
 help detecting typos in test names and test methods.
 
 ..
@@ -968,7 +968,7 @@ if :option:`--with-system-expat` is passed to :program:`configure`.
 .. nonce: 0f6e_N
 .. section: Windows
 
-Update Windows builds to zlib v1.2.13.  v1.2.12 has CVE-2022-37434, but the
+Update Windows builds to zlib v1.2.13.  v1.2.12 has :cve:`2022-37434`, but the
 vulnerable ``inflateGetHeader`` API is not used by Python.
 
 ..

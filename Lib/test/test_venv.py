@@ -23,7 +23,8 @@ from test.support import (captured_stdout, captured_stderr,
                           is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
+                                    TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -124,12 +125,12 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
@@ -571,7 +572,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -743,6 +744,36 @@ class BasicTest(BaseTest):
 
         with self.assertRaises(FileNotFoundError):
             self.get_text_file_contents('.gitignore')
+
+    def test_venv_same_path(self):
+        same_path = venv.EnvBuilder._same_path
+        if sys.platform == 'win32':
+            # Case-insensitive, and handles short/long names
+            tests = [
+                (True, TESTFN, TESTFN),
+                (True, TESTFN.lower(), TESTFN.upper()),
+            ]
+            import _winapi
+            # ProgramFiles is the most reliable path that will have short/long
+            progfiles = os.getenv('ProgramFiles')
+            if progfiles:
+                tests = [
+                    *tests,
+                    (True, progfiles, progfiles),
+                    (True, _winapi.GetShortPathName(progfiles), _winapi.GetLongPathName(progfiles)),
+                ]
+        else:
+            # Just a simple case-sensitive comparison
+            tests = [
+                (True, TESTFN, TESTFN),
+                (False, TESTFN.lower(), TESTFN.upper()),
+            ]
+        for r, path1, path2 in tests:
+            with self.subTest(f"{path1}-{path2}"):
+                if r:
+                    self.assertTrue(same_path(path1, path2))
+                else:
+                    self.assertFalse(same_path(path1, path2))
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):

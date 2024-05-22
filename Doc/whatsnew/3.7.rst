@@ -669,8 +669,8 @@ include:
 * The new :func:`asyncio.current_task` function returns the currently running
   :class:`~asyncio.Task` instance, and the new :func:`asyncio.all_tasks`
   function returns a set of all existing ``Task`` instances in a given loop.
-  The :meth:`Task.current_task() <asyncio.Task.current_task>` and
-  :meth:`Task.all_tasks() <asyncio.Task.all_tasks>` methods have been deprecated.
+  The :meth:`!Task.current_task` and
+  :meth:`!Task.all_tasks` methods have been deprecated.
   (Contributed by Andrew Svetlov in :issue:`32250`.)
 
 * The new *provisional* :class:`~asyncio.BufferedProtocol` class allows
@@ -1969,7 +1969,7 @@ asynchronous context manager must be used in order to acquire and release
 the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
 
-The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
+The :meth:`!asyncio.Task.current_task` and :meth:`!asyncio.Task.all_tasks`
 methods have been deprecated.
 (Contributed by Andrew Svetlov in :issue:`32250`.)
 
@@ -2609,8 +2609,7 @@ Converting between :class:`int` and :class:`str` in bases other than 2
 (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
 now raises a :exc:`ValueError` if the number of digits in string form is
 above a limit to avoid potential denial of service attacks due to the
-algorithmic complexity. This is a mitigation for `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
 This limit can be configured or disabled by environment variable, command
 line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
 length limitation <int_max_str_digits>` documentation.  The default limit

@@ -115,8 +115,11 @@ check by comparing the reference count field to the immortality reference count.
 // Kept for backward compatibility. It was needed by Py_TRACE_REFS build.
 #define _PyObject_EXTRA_INIT
 
-// Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
-// C-API expectation that the refcnt will be set to 1.
+/* Make all uses of PyObject_HEAD_INIT immortal.
+ *
+ * Statically allocated objects might be shared between
+ * interpreters, so must be marked as immortal.
+ */
 #if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
     {                               \
@@ -128,19 +131,13 @@ check by comparing the reference count field to the immortality reference count.
         0,                          \
         (type),                     \
     },
-#elif defined(Py_BUILD_CORE)
+#else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         { _Py_IMMORTAL_REFCNT },    \
         (type)                      \
     },
-#else
-#define PyObject_HEAD_INIT(type) \
-    {                            \
-        { 1 },                   \
-        (type)                   \
-    },
-#endif /* Py_BUILD_CORE */
+#endif
 
 #define PyVarObject_HEAD_INIT(type, size) \
     {                                     \
@@ -306,7 +303,11 @@ _Py_ThreadId(void)
 static inline Py_ALWAYS_INLINE int
 _Py_IsOwnedByCurrentThread(PyObject *ob)
 {
+#ifdef _Py_THREAD_SANITIZER
+    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
+#else
     return ob->ob_tid == _Py_ThreadId();
+#endif
 }
 #endif
 
@@ -352,7 +353,8 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
-    return (op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL);
+    return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
+            _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
     return (_Py_CAST(PY_INT32_T, op->ob_refcnt) < 0);
 #else

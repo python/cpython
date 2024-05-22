@@ -191,6 +191,7 @@ Dictionary Objects
    to both *default_value* and *\*result* (if it's not ``NULL``).
    These may refer to the same object: in that case you hold two separate
    references to it.
+
    .. versionadded:: 3.13
 
 

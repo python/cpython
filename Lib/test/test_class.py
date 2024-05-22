@@ -873,6 +873,34 @@ class TestInlineValues(unittest.TestCase):
         obj.foo = None # Aborted here
         self.assertEqual(obj.__dict__, {"foo":None})
 
+    def test_store_attr_deleted_dict(self):
+        class Foo:
+            pass
+
+        f = Foo()
+        del f.__dict__
+        f.a = 3
+        self.assertEqual(f.a, 3)
+
+    def test_store_attr_type_cache(self):
+        """Verifies that the type cache doesn't provide a value which  is
+        inconsistent from the dict."""
+        class X:
+            def __del__(inner_self):
+                v = C.a
+                self.assertEqual(v, C.__dict__['a'])
+
+        class C:
+            a = X()
+
+        # prime the cache
+        C.a
+        C.a
+
+        # destructor shouldn't be able to see inconsisent state
+        C.a = X()
+        C.a = X()
+
 
 if __name__ == '__main__':
     unittest.main()
