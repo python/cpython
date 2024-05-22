@@ -1430,6 +1430,27 @@ class TestUopsOptimization(unittest.TestCase):
         Foo.attr = 0
         self.assertFalse(ex.is_valid())
 
+    def test_type_version_doesnt_segfault(self):
+        """
+        Tests that setting a type version doesn't cause a segfault when later looking at the stack.
+        """
+
+        # Minimized from mdp.py benchmark
+
+        class A:
+            def __init__(self):
+                self.attr = {}
+
+            def method(self, arg):
+                self.attr[arg] = None
+
+        def fn(a):
+            for _ in range(100):
+                (_ for _ in [])
+                (_ for _ in [a.method(None)])
+
+        fn(A())
+
 
 if __name__ == "__main__":
     unittest.main()
