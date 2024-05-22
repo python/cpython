@@ -20,7 +20,7 @@ JSON = 'glossary.json'
 
 
 def process_glossary_nodes(app, doctree, fromdocname):
-    if app.builder.format != 'html':
+    if app.builder.format != 'html' or app.builder.embedded:
         return
 
     terms = {}

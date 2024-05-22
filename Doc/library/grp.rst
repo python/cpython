@@ -1,5 +1,5 @@
-:mod:`grp` --- The group database
-=================================
+:mod:`!grp` --- The group database
+==================================
 
 .. module:: grp
    :platform: Unix

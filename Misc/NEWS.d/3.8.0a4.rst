@@ -13,7 +13,7 @@ Fixes mishandling of pre-normalization characters in urlsplit().
 .. nonce: 51E-DA
 .. section: Security
 
-Address CVE-2019-9740 by disallowing URL paths with embedded whitespace or
+Address :cve:`2019-9740` by disallowing URL paths with embedded whitespace or
 control characters through into the underlying http client request.  Such
 potentially malicious header injection URLs now cause an
 http.client.InvalidURL exception to be raised.
@@ -600,7 +600,7 @@ exceptions.
 .. nonce: 9sjd38
 .. section: Library
 
-Add time module support and fix test_time faiures for VxWorks.
+Add time module support and fix test_time failures for VxWorks.
 
 ..
 
@@ -843,7 +843,7 @@ Using the code of the ``Tools/scripts/serve.py`` script as an example in the
 .. nonce: nF1pP1
 .. section: Documentation
 
-Added Documention for  PyInterpreterState_Main().
+Added documentation for PyInterpreterState_Main().
 
 ..
 

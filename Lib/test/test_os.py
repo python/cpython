@@ -57,8 +57,10 @@ try:
 except (ImportError, AttributeError):
     all_users = []
 try:
+    import _testcapi
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
+    _testcapi = None
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 try:
@@ -1809,6 +1811,18 @@ class MakedirTests(unittest.TestCase):
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
         os.remove(path)
 
+    @unittest.skipUnless(os.name == 'nt', "requires Windows")
+    def test_win32_mkdir_700(self):
+        base = os_helper.TESTFN
+        path = os.path.abspath(os.path.join(os_helper.TESTFN, 'dir'))
+        os.mkdir(path, mode=0o700)
+        out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
+        os.rmdir(path)
+        self.assertEqual(
+            out.strip(),
+            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+        )
+
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')
@@ -2363,6 +2377,7 @@ class TestInvalidFD(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
@@ -3204,9 +3219,8 @@ class Win32NtTests(unittest.TestCase):
             self.skipTest("Unable to create inaccessible file")
 
         def cleanup():
-            # Give delete permission. We are the file owner, so we can do this
-            # even though we removed all permissions earlier.
-            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+            # Give delete permission to the owner (us)
+            subprocess.check_output([ICACLS, filename, "/grant", "*WD:(D)"],
                                     stderr=subprocess.STDOUT)
             os.unlink(filename)
 
@@ -3932,7 +3946,12 @@ class TermsizeTests(unittest.TestCase):
         try:
             size = os.get_terminal_size()
         except OSError as e:
-            if sys.platform == "win32" or e.errno in (errno.EINVAL, errno.ENOTTY):
+            known_errnos = [errno.EINVAL, errno.ENOTTY]
+            if sys.platform == "android":
+                # The Android testbed redirects the native stdout to a pipe,
+                # which returns a different error code.
+                known_errnos.append(errno.EACCES)
+            if sys.platform == "win32" or e.errno in known_errnos:
                 # Under win32 a generic OSError can be thrown if the
                 # handle cannot be retrieved
                 self.skipTest("failed to query terminal size")
@@ -5338,6 +5357,7 @@ class ForkTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:
             import os, threading, warnings

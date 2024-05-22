@@ -246,8 +246,9 @@ PLATFORM_TRIPLET=i386-gnu
 # endif
 #elif defined(__APPLE__)
 #  include "TargetConditionals.h"
-#  if TARGET_OS_IOS
-#    if TARGET_OS_SIMULATOR
+// Older macOS SDKs do not define TARGET_OS_*
+#  if defined(TARGET_OS_IOS) && TARGET_OS_IOS
+#    if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
 #      if __x86_64__
 PLATFORM_TRIPLET=x86_64-iphonesimulator
 #      else
@@ -256,7 +257,8 @@ PLATFORM_TRIPLET=arm64-iphonesimulator
 #    else
 PLATFORM_TRIPLET=arm64-iphoneos
 #    endif
-#  elif TARGET_OS_OSX
+// Older macOS SDKs do not define TARGET_OS_OSX
+#  elif !defined(TARGET_OS_OSX) || TARGET_OS_OSX
 PLATFORM_TRIPLET=darwin
 #  else
 #    error unknown Apple platform

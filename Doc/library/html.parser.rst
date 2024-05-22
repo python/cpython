@@ -1,5 +1,5 @@
-:mod:`html.parser` --- Simple HTML and XHTML parser
-===================================================
+:mod:`!html.parser` --- Simple HTML and XHTML parser
+====================================================
 
 .. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.

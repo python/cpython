@@ -473,15 +473,6 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.hunt_refleak.runs, 10)
         self.assertFalse(regrtest.output_on_failure)
 
-    def test_xml_huntrleaks(self):
-        args = ['-R', '3:12', '--junit-xml', 'output.xml']
-        with support.captured_stderr():
-            regrtest = self.create_regrtest(args)
-        self.assertIsNotNone(regrtest.hunt_refleak)
-        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
-        self.assertEqual(regrtest.hunt_refleak.runs, 12)
-        self.assertIsNone(regrtest.junit_filename)
-
 
 @dataclasses.dataclass(slots=True)
 class Rerun:
@@ -1742,6 +1733,10 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
+        try:
+            import _testcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -2124,6 +2119,10 @@ class ArgsTestCase(BaseTestCase):
 
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+        try:
+            import _testinternalcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testinternalcapi")
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2283,6 +2282,7 @@ class TestUtils(unittest.TestCase):
         for exitcode, expected in (
             (-int(signal.SIGINT), 'SIGINT'),
             (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
         ):

@@ -1173,7 +1173,7 @@ implemented.
 .. section: Library
 
 Add an Barrier object in synchronization primitives of *asyncio* Lib in
-order to be consistant with Barrier from *threading* and *multiprocessing*
+order to be consistent with Barrier from *threading* and *multiprocessing*
 libs*
 
 ..
@@ -1211,7 +1211,7 @@ Update PEP URLs to :pep:`676`'s new canonical form.
 .. nonce: 4Dn48U
 .. section: Documentation
 
-Clarified the old Python versions compatiblity note of
+Clarified the old Python versions compatibility note of
 :func:`binascii.crc32` / :func:`zlib.adler32` / :func:`zlib.crc32`
 functions.
 
@@ -1421,7 +1421,7 @@ Patch by Victor Stinner.
 .. nonce: IB0XL4
 .. section: Windows
 
-Update ``zlib`` to v1.2.12 to resolve CVE-2018-25032.
+Update ``zlib`` to v1.2.12 to resolve :cve:`2018-25032`.
 
 ..
 
@@ -1472,8 +1472,8 @@ Update Windows installer to use SQLite 3.38.1.
 .. nonce: SPrGS9
 .. section: Windows
 
-Update bzip2 to 1.0.8 in Windows builds to mitigate CVE-2016-3189 and
-CVE-2019-12900
+Update bzip2 to 1.0.8 in Windows builds to mitigate :cve:`2016-3189` and
+:cve:`2019-12900`.
 
 ..
 
@@ -1482,7 +1482,7 @@ CVE-2019-12900
 .. nonce: Ufd4tG
 .. section: Windows
 
-Prevent CVE-2022-26488 by ensuring the Add to PATH option in the Windows
+Prevent :cve:`2022-26488` by ensuring the Add to PATH option in the Windows
 installer uses the correct path when being repaired.
 
 ..

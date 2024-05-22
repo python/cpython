@@ -11,13 +11,16 @@ import threading
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
+
 class Error(Exception):
     pass
+
 
 _lock = threading.RLock()
 _browsers = {}                  # Dictionary of available browser controllers
 _tryorder = None                # Preference order of available browsers
 _os_preferred_browser = None    # The preferred browser
+
 
 def register(name, klass, instance=None, *, preferred=False):
     """Register a browser connector."""
@@ -33,6 +36,7 @@ def register(name, klass, instance=None, *, preferred=False):
             _tryorder.insert(0, name)
         else:
             _tryorder.append(name)
+
 
 def get(using=None):
     """Return a browser launcher instance appropriate for the environment."""
@@ -64,6 +68,7 @@ def get(using=None):
                 return command[0]()
     raise Error("could not locate runnable browser")
 
+
 # Please note: the following definition hides a builtin function.
 # It is recommended one does "import webbrowser" and uses webbrowser.open(url)
 # instead of "from webbrowser import *".
@@ -87,12 +92,14 @@ def open(url, new=0, autoraise=True):
             return True
     return False
 
+
 def open_new(url):
     """Open url in a new window of the default browser.
 
     If not possible, then open url in the only browser window.
     """
     return open(url, 1)
+
 
 def open_new_tab(url):
     """Open url in a new page ("tab") of the default browser.
@@ -136,7 +143,7 @@ def _synthesize(browser, *, preferred=False):
 
 # General parent classes
 
-class BaseBrowser(object):
+class BaseBrowser:
     """Parent class for all browsers. Do not use directly."""
 
     args = ['%s']
@@ -197,7 +204,7 @@ class BackgroundBrowser(GenericBrowser):
             else:
                 p = subprocess.Popen(cmdline, close_fds=True,
                                      start_new_session=True)
-            return (p.poll() is None)
+            return p.poll() is None
         except OSError:
             return False
 
@@ -225,7 +232,8 @@ class UnixBrowser(BaseBrowser):
             # use autoraise argument only for remote invocation
             autoraise = int(autoraise)
             opt = self.raise_opts[autoraise]
-            if opt: raise_opt = [opt]
+            if opt:
+                raise_opt = [opt]
 
         cmdline = [self.name] + raise_opt + args
 
@@ -266,8 +274,8 @@ class UnixBrowser(BaseBrowser):
             else:
                 action = self.remote_action_newtab
         else:
-            raise Error("Bad 'new' parameter to open(); " +
-                        "expected 0, 1, or 2, got %s" % new)
+            raise Error("Bad 'new' parameter to open(); "
+                        f"expected 0, 1, or 2, got {new}")
 
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
@@ -302,7 +310,7 @@ class Epiphany(UnixBrowser):
 
 
 class Chrome(UnixBrowser):
-    "Launcher class for Google Chrome browser."
+    """Launcher class for Google Chrome browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -310,11 +318,12 @@ class Chrome(UnixBrowser):
     remote_action_newtab = ""
     background = True
 
+
 Chromium = Chrome
 
 
 class Opera(UnixBrowser):
-    "Launcher class for Opera browser."
+    """Launcher class for Opera browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -324,7 +333,7 @@ class Opera(UnixBrowser):
 
 
 class Elinks(UnixBrowser):
-    "Launcher class for Elinks browsers."
+    """Launcher class for Elinks browsers."""
 
     remote_args = ['-remote', 'openURL(%s%action)']
     remote_action = ""
@@ -387,11 +396,11 @@ class Konqueror(BaseBrowser):
         except OSError:
             return False
         else:
-            return (p.poll() is None)
+            return p.poll() is None
 
 
 class Edge(UnixBrowser):
-    "Launcher class for Microsoft Edge browser."
+    """Launcher class for Microsoft Edge browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -461,7 +470,6 @@ def register_X_browsers():
     if shutil.which("opera"):
         register("opera", None, Opera("opera"))
 
-
     if shutil.which("microsoft-edge"):
         register("microsoft-edge", None, Edge("microsoft-edge"))
 
@@ -514,7 +522,8 @@ def register_standard_browsers():
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError, NotADirectoryError) :
+            except (FileNotFoundError, subprocess.CalledProcessError,
+                    PermissionError, NotADirectoryError):
                 pass
             else:
                 global _os_preferred_browser
@@ -584,15 +593,16 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            url = url.replace('"', '%22')
             if self.name == 'default':
-                script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
+                script = f'open location "{url}"'  # opens in default browser
             else:
                 script = f'''
-                   tell application "%s"
+                   tell application "{self.name}"
                        activate
-                       open location "%s"
+                       open location "{url}"
                    end
-                   '''%(self.name, url.replace('"', '%22'))
+                   '''
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
@@ -667,33 +677,31 @@ if sys.platform == "ios":
             return True
 
 
-def main():
-    import getopt
-    usage = """Usage: %s [-n | -t | -h] url
-    -n: open new window
-    -t: open new tab
-    -h, --help: show help""" % sys.argv[0]
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
-    except getopt.error as msg:
-        print(msg, file=sys.stderr)
-        print(usage, file=sys.stderr)
-        sys.exit(1)
-    new_win = 0
-    for o, a in opts:
-        if o == '-n': new_win = 1
-        elif o == '-t': new_win = 2
-        elif o == '-h' or o == '--help':
-            print(usage, file=sys.stderr)
-            sys.exit()
-    if len(args) != 1:
-        print(usage, file=sys.stderr)
-        sys.exit(1)
+def parse_args(arg_list: list[str] | None):
+    import argparse
+    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser.add_argument("url", help="URL to open")
 
-    url = args[0]
-    open(url, new_win)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-n", "--new-window", action="store_const",
+                       const=1, default=0, dest="new_win",
+                       help="open new window")
+    group.add_argument("-t", "--new-tab", action="store_const",
+                       const=2, default=0, dest="new_win",
+                       help="open new tab")
+
+    args = parser.parse_args(arg_list)
+
+    return args
+
+
+def main(arg_list: list[str] | None = None):
+    args = parse_args(arg_list)
+
+    open(args.url, args.new_win)
 
     print("\a")
+
 
 if __name__ == "__main__":
     main()

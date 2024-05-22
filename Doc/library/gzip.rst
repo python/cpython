@@ -1,5 +1,5 @@
-:mod:`gzip` --- Support for :program:`gzip` files
-=================================================
+:mod:`!gzip` --- Support for :program:`gzip` files
+==================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
@@ -102,7 +102,7 @@ The module defines the following items:
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
    is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
-   If *mtime* is omitted or None, the current time is used. Use *mtime* = 0
+   If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
    to generate a compressed stream that does not depend on creation time.
 
    See below for the :attr:`mtime` attribute that is set when decompressing.
@@ -132,6 +132,13 @@ The module defines the following items:
          *fileobj* parameter).
 
       .. versionadded:: 3.2
+
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionchanged:: 3.13
+         In previous versions it was an integer ``1`` or ``2``.
 
    .. attribute:: mtime
 
@@ -168,13 +175,13 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
-      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
-      attribute instead.
-
    .. deprecated:: 3.9
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
+
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
 
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)
