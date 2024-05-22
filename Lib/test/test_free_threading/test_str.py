@@ -42,20 +42,21 @@ class TestStr(TestCase):
         '''
         l = [*'abcdefg']
         MAX_ORDINAL = 1_000
-        READERS = 20
+        READERS = 10
+        done_event = Event()
 
         def writer_func():
             for i, c in zip(cycle(range(len(l))),
                             map(chr, range(128, MAX_ORDINAL))):
                 l[i] = c
-            del l[:]  # Empty list to tell readers to exit
+            done_event.set()
 
         def reader_func():
-            while True:
-                empty = not l
+            while not done_event.is_set():
                 ''.join(l)
-                if empty:
-                    break
+                ''.join(l)
+                ''.join(l)
+                ''.join(l)
 
         writer = Thread(target=writer_func)
         readers = []
