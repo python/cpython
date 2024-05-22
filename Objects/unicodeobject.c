@@ -2325,6 +2325,57 @@ PyUnicode_AsUCS4Copy(PyObject *string)
     return as_ucs4(string, NULL, 0, 1);
 }
 
+
+static int
+unicode_writer_write_object_str(_PyUnicodeWriter *writer, PyObject *obj)
+{
+    // Fast paths for specific types
+    PyTypeObject *type = Py_TYPE(obj);
+    if (type == &PyUnicode_Type) {
+        return _PyUnicodeWriter_WriteStr(writer, obj);
+    }
+    else if (type == &PyLong_Type) {
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
+    }
+    else if (type == &PyFloat_Type) {
+        return _PyFloat_FormatAdvancedWriter(writer, obj,
+                                             NULL, 0, 0);
+    }
+
+    // Default implementation
+    PyObject *str = PyObject_Str(obj);
+    if (!str) {
+        return -1;
+    }
+    int res = _PyUnicodeWriter_WriteStr(writer, str);
+    Py_DECREF(str);
+    return res;
+}
+
+static int
+unicode_writer_write_object_repr(_PyUnicodeWriter *writer, PyObject *obj)
+{
+    // Fast paths for specific types
+    PyTypeObject *type = Py_TYPE(obj);
+    if (type == &PyLong_Type) {
+        return _PyLong_FormatWriter(writer, obj, 10, 0);
+    }
+    else if (type == &PyFloat_Type) {
+        return _PyFloat_FormatAdvancedWriter(writer, obj,
+                                             NULL, 0, 0);
+    }
+
+    // Default implementation
+    PyObject *repr = PyObject_Repr(obj);
+    if (!repr) {
+        return -1;
+    }
+    int res = _PyUnicodeWriter_WriteStr(writer, repr);
+    Py_DECREF(repr);
+    return res;
+}
+
+
 /* maximum number of characters required for output of %jo or %jd or %p.
    We need at most ceil(log8(256)*sizeof(intmax_t)) digits,
    plus 1 for the sign, plus 2 for the 0x prefix (for %p),
@@ -2747,32 +2798,45 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'S':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyObject *str;
         assert(obj);
-        str = PyObject_Str(obj);
-        if (!str)
-            return NULL;
-        if (unicode_fromformat_write_str(writer, str, width, precision, flags) == -1) {
-            Py_DECREF(str);
-            return NULL;
+        if (precision < 0 && width < 0) {
+            if (unicode_writer_write_object_str(writer, obj) < 0) {
+                return NULL;
+            }
         }
-        Py_DECREF(str);
+        else {
+            PyObject *str = PyObject_Str(obj);
+            if (!str)
+                return NULL;
+            if (unicode_fromformat_write_str(writer, str, width, precision, flags) == -1) {
+                Py_DECREF(str);
+                return NULL;
+            }
+            Py_DECREF(str);
+        }
         break;
     }
 
     case 'R':
     {
         PyObject *obj = va_arg(*vargs, PyObject *);
-        PyObject *repr;
         assert(obj);
-        repr = PyObject_Repr(obj);
-        if (!repr)
-            return NULL;
-        if (unicode_fromformat_write_str(writer, repr, width, precision, flags) == -1) {
-            Py_DECREF(repr);
-            return NULL;
+        if (precision < 0 && width < 0) {
+            if (unicode_writer_write_object_repr(writer, obj) < 0) {
+                return NULL;
+            }
         }
-        Py_DECREF(repr);
+        else {
+            PyObject *repr = PyObject_Repr(obj);
+            if (!repr) {
+                return NULL;
+            }
+            if (unicode_fromformat_write_str(writer, repr, width, precision, flags) == -1) {
+                Py_DECREF(repr);
+                return NULL;
+            }
+            Py_DECREF(repr);
+        }
         break;
     }
 
