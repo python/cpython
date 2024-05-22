@@ -1181,6 +1181,7 @@ extern "C" {
     INIT_ID(sound), \
     INIT_ID(source), \
     INIT_ID(source_traceback), \
+    INIT_ID(spam), \
     INIT_ID(src), \
     INIT_ID(src_dir_fd), \
     INIT_ID(stacklevel), \
