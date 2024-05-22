@@ -1658,7 +1658,7 @@ compiler_leave_annotations_scope(struct compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     USE_LABEL(c, label);
-    ADDOP_IN_SCOPE(c, loc, LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);

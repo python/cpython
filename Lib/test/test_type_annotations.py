@@ -315,7 +315,7 @@ class DeferredEvaluationTests(unittest.TestCase):
     def test_module(self):
         ns = run_code("x: undefined = 1")
         anno = ns["__annotate__"]
-        with self.assertRaises(AssertionError):  # TODO NotImplementedError
+        with self.assertRaises(NotImplementedError):
             anno(2)
 
         with self.assertRaises(NameError):
@@ -350,8 +350,8 @@ class DeferredEvaluationTests(unittest.TestCase):
                 annotate = obj.__annotate__
                 self.assertIsInstance(annotate, types.FunctionType)
                 self.assertEqual(annotate.__name__, f"<annotations of {obj.__name__}>")
-                with self.assertRaises(AssertionError):  # TODO NotImplementedError
+                with self.assertRaises(NotImplementedError):
                     annotate(inspect.FORWARDREF)
-                with self.assertRaises(AssertionError):  # TODO NotImplementedError
+                with self.assertRaises(NotImplementedError):
                     annotate(None)
                 self.assertEqual(annotate(inspect.VALUE), {"x": int})
