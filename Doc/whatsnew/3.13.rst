@@ -94,10 +94,11 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
-* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
-  a function now returns a write-through proxy to the frame's locals,
-  rather than a ``dict``. See the PEP for corresponding C API changes
-  and deprecations.
+* :pep:`667`: The :func:`locals` builtin now has
+  :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
+  returned mapping. Python debuggers and similar tools may now more reliably
+  update local variables in optimized frames even during concurrent code
+  execution.
 
 New typing features:
 
@@ -247,6 +248,34 @@ Improved Error Messages
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
 
+.. _whatsnew313-locals-semantics:
+
+Defined mutation semantics for ``locals()``
+-------------------------------------------
+
+Historically, the expected result of mutating the return value of :func:`locals`
+has been left to individual Python implementations to define.
+
+Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
+for most code execution scopes, but changes
+:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
+comprehensions, and generator expressions) to explicitly return independent
+snapshots of the currently assigned local variables, including locally
+referenced nonlocal variables captured in closures.
+
+To ensure debuggers and similar tools can reliably update local variables in
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared  ``dict`` instance with undefined runtime semantics.
+
+See :pep:`667` for more details, including related C API changes and
+deprecations.
+
+(PEP and implementation contributed by Mark Shannon and Tian Gao in
+:gh:`74929`. Documentation updates provided by Guido van Rossum and
+Alyssa Coghlan.)
+
 Incremental Garbage Collection
 ------------------------------
 
@@ -339,7 +368,8 @@ CPython will run with the :term:`global interpreter lock` (GIL) disabled when
 configured using the ``--disable-gil`` option at build time. This is an
 experimental feature and therefore isn't used by default. Users need to
 either compile their own interpreter, or install one of the experimental
-builds that are marked as *free-threaded*.
+builds that are marked as *free-threaded*. See :pep:`703` "Making the Global
+Interpreter Lock Optional in CPython" for more detail.
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
@@ -2177,16 +2207,24 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
-* Callbacks registered in the :mod:`tkinter` module now take arguments as
-  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-  not just ``str``.
-  To restore the previous behavior set :mod:`!tkinter` module global
-  :data:`!wantobject` to ``1`` before creating the
-  :class:`!Tk` object or call the :meth:`!wantobject`
-  method of the :class:`!Tk` object with argument ``1``.
-  Calling it with argument ``2`` restores the current default behavior.
-  (Contributed by Serhiy Storchaka in :gh:`66410`.)
+* Calling :func:`locals` in an :term:`optimized scope` now produces an
+  independent snapshot on each call, and hence no longer implicitly updates
+  previously returned references. Obtaining the legacy CPython behaviour now
+  requires explicit calls to update the initially returned dictionary with the
+  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
 
+* Calling :func:`locals` from a comprehension at module or class scope
+  (including via ``exec`` or ``eval``) once more behaves as if the comprehension
+  were running as an independent nested function (i.e. the local variables from
+  the containing scope are not included). In Python 3.12, this had changed
+  to include the local variables from the containing scope when implementing
+  :pep:`709`. (Changed as part of :pep:`667`.)
+
+* Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
+  :term:`optimized scope` now returns a write-through proxy rather than a
+  snapshot that gets updated at ill-specified times. If a snapshot is desired,
+  it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
+  (Changed as part of :pep:`667`.)
 
 Changes in the C API
 --------------------
