@@ -459,9 +459,9 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_module_semantics(self):
         self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
+                     {'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
         self.assertEqual(ann_module.M.__annotations__,
-                              {'123': 123, 'o': type})
+                              {'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
 
     def test_var_annot_in_module(self):
@@ -476,13 +476,12 @@ class GrammarTests(unittest.TestCase):
             ann_module3.D_bad_ann(5)
 
     def test_var_annot_simple_exec(self):
-        gns = {}; lns= {}
+        gns = {}; lns = {}
         exec("'docstring'\n"
-             "__annotations__[1] = 2\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotations__"], {1: 2, 'x': int})
+        self.assertEqual(lns["__annotate__"](inspect.VALUE), {'x': int})
         with self.assertRaises(KeyError):
-            gns['__annotations__']
+            gns['__annotate__']
 
     def test_var_annot_custom_maps(self):
         # tests with custom locals() and __annotations__
