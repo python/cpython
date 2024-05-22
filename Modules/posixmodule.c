@@ -5307,12 +5307,12 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
 }
 
 
-static int
+static BOOL
 _testFileExists(path_t *path, BOOL followLinks)
 {
     BOOL result = FALSE;
     if (path->value_error) {
-        return -1;
+        return FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -5333,12 +5333,12 @@ _testFileExists(path_t *path, BOOL followLinks)
 }
 
 
-static int
+static BOOL
 _testFileType(path_t *path, int testedType)
 {
     BOOL result = FALSE;
     if (path->value_error) {
-        return -1;
+        return FALSE;
     }
 
     Py_BEGIN_ALLOW_THREADS
