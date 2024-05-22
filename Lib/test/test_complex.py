@@ -73,6 +73,10 @@ class ComplexTest(unittest.TestCase):
                 msg += ': zeros have different signs'
         self.fail(msg.format(x, y))
 
+    def assertComplexesAreIdentical(self, x, y):
+        self.assertFloatsAreIdentical(x.real, y.real)
+        self.assertFloatsAreIdentical(x.imag, y.imag)
+
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close"."""
         self.assertCloseAbs(x.real, y.real, eps)
@@ -117,6 +121,23 @@ class ComplexTest(unittest.TestCase):
             z = complex(0, 0) / complex(denom_real, denom_imag)
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
+
+        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(0+1j)'), complex('(nan-infj)'))
+
+        # test recover of infs if numerator has infinities and denominator is finite
+        self.assertComplexesAreIdentical(complex('(inf-infj)')/(1+0j), complex('(inf-infj)'))
+        self.assertComplexesAreIdentical(complex('(inf+infj)')/(0.0+1j), complex('(inf-infj)'))
+        self.assertComplexesAreIdentical(complex('(nan+infj)')/complex(2**1000, 2**-1000), complex('(inf+infj)'))
+        self.assertComplexesAreIdentical(complex('(inf+nanj)')/complex(2**1000, 2**-1000), complex('(inf-infj)'))
+
+        # test recover of zeros if denominator is infinite
+        self.assertComplexesAreIdentical((1+1j)/complex('(inf+infj)'), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex('(inf-infj)'), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex('(-inf+infj)'), complex('(0.0-0j)'))
+        self.assertComplexesAreIdentical((1+1j)/complex('(-inf-infj)'), complex('(-0+0j)'))
+        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(inf+infj)'), complex('(nan+nanj)'))
+        self.assertComplexesAreIdentical(complex('(1+infj)')/complex('(inf+infj)'), complex('(nan+nanj)'))
+        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(1+infj)'), complex('(nan+nanj)'))
 
     def test_truediv_zero_division(self):
         for a, b in ZERO_DIVISION:
