@@ -1,2 +1,0 @@
-Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
-OpenSSL APIs. Patch by Dong-hee Na.

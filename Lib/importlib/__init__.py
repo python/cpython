@@ -54,8 +54,6 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
 
-import warnings
-
 
 # Public API #########################################################
 
@@ -68,40 +66,6 @@ def invalidate_caches():
     for finder in sys.meta_path:
         if hasattr(finder, 'invalidate_caches'):
             finder.invalidate_caches()
-
-
-def find_loader(name, path=None):
-    """Return the loader for the specified module.
-
-    This is a backward-compatible wrapper around find_spec().
-
-    This function is deprecated in favor of importlib.util.find_spec().
-
-    """
-    warnings.warn('Deprecated since Python 3.4 and slated for removal in '
-                  'Python 3.12; use importlib.util.find_spec() instead',
-                  DeprecationWarning, stacklevel=2)
-    try:
-        loader = sys.modules[name].__loader__
-        if loader is None:
-            raise ValueError(f'{name}.__loader__ is None')
-        else:
-            return loader
-    except KeyError:
-        pass
-    except AttributeError:
-        raise ValueError(f'{name}.__loader__ is not set') from None
-
-    spec = _bootstrap._find_spec(name, path)
-    # We won't worry about malformed specs (missing attributes).
-    if spec is None:
-        return None
-    if spec.loader is None:
-        if spec.submodule_search_locations is None:
-            raise ImportError(f'spec for {name} missing loader', name=name)
-        raise ImportError('namespace packages do not have loaders',
-                          name=name)
-    return spec.loader
 
 
 def import_module(name, package=None):

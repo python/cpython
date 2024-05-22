@@ -31,11 +31,13 @@ if sys.platform != 'win32':
     WINSERVICE = False
 else:
     WINEXE = getattr(sys, 'frozen', False)
-    WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
+    WINSERVICE = sys.executable and sys.executable.lower().endswith("pythonservice.exe")
 
 def set_executable(exe):
     global _python_exe
-    if sys.platform == 'win32':
+    if exe is None:
+        _python_exe = exe
+    elif sys.platform == 'win32':
         _python_exe = os.fsdecode(exe)
     else:
         _python_exe = os.fsencode(exe)
@@ -148,7 +150,11 @@ def _check_not_importing_main():
                 ...
 
         The "freeze_support()" line can be omitted if the program
-        is not going to be frozen to produce an executable.''')
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        ''')
 
 
 def get_preparation_data(name):

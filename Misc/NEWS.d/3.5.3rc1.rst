@@ -1048,7 +1048,7 @@ certs.
 .. section: Library
 
 Remove 3DES from ssl module's default cipher list to counter measure sweet32
-attack (CVE-2016-2183).
+attack (:cve:`2016-2183`).
 
 ..
 
@@ -1251,7 +1251,7 @@ Fix possible integer overflow in the _csv module for large record lengths.
 .. nonce: OnuO9s
 .. section: Library
 
-Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the HTTP_PROXY variable
+Prevent HTTPoxy attack (:cve:`2016-1000110`). Ignore the HTTP_PROXY variable
 when REQUEST_METHOD environment is set, which indicates that the script is
 in CGI mode.
 

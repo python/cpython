@@ -1,2 +1,0 @@
-Speed up :class:`pathlib.Path` construction by omitting the path anchor from
-the internal list of path parts.

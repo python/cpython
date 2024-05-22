@@ -40,10 +40,12 @@ BaseException
       ├── ReferenceError
       ├── RuntimeError
       │    ├── NotImplementedError
+      │    ├── PythonFinalizationError
       │    └── RecursionError
       ├── StopAsyncIteration
       ├── StopIteration
       ├── SyntaxError
+      │    └── IncompleteInputError
       │    └── IndentationError
       │         └── TabError
       ├── SystemError

@@ -29,6 +29,8 @@ class ModuleLockAsRLockTests:
     test_timeout = None
     # _release_save() unsupported
     test_release_save_unacquired = None
+    # _recursion_count() unsupported
+    test_recursion_count = None
     # lock status in repr unsupported
     test_repr = None
     test_locked_repr = None
@@ -91,7 +93,8 @@ class DeadlockAvoidanceTests:
                 b.release()
             if ra:
                 a.release()
-        lock_tests.Bunch(f, NTHREADS).wait_for_finished()
+        with lock_tests.Bunch(f, NTHREADS):
+            pass
         self.assertEqual(len(results), NTHREADS)
         return results
 

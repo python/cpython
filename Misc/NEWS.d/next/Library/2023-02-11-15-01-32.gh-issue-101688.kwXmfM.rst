@@ -1,2 +1,0 @@
-Implement :func:`types.get_original_bases` to provide further introspection
-for types.

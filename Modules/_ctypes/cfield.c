@@ -44,7 +44,7 @@ static void pymem_destructor(PyObject *ptr)
  * prev_desc points to the type of the previous bitfield, if any.
  */
 PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
@@ -54,31 +54,37 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     Py_ssize_t size, align;
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
-    StgDictObject *dict;
     int fieldtype;
 #define NO_BITFIELD 0
 #define NEW_BITFIELD 1
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
+    PyTypeObject *tp = st->PyCField_Type;
+    self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
-    dict = PyType_stgdict(desc);
-    if (!dict) {
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
         Py_DECREF(self);
         return NULL;
     }
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
         /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
+        && info->size * 8 == *pfield_size
 #else
         /* GCC */
-        && dict->size * 8 <= *pfield_size
+        && info->size * 8 <= *pfield_size
 #endif
         && (*pbitofs + bitsize) <= *pfield_size) {
         /* continue bit field */
@@ -86,8 +92,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #ifndef MS_WIN32
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        && info->size * 8 >= *pfield_size
+        && (*pbitofs + bitsize) <= info->size * 8) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -95,7 +101,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
@@ -103,29 +109,37 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         *pfield_size = 0;
     }
 
-    size = dict->size;
+    size = info->size;
     proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
     */
-    if (PyCArrayTypeObject_Check(proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
+    if (PyCArrayTypeObject_Check(st, proto)) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
                 Py_DECREF(self);
                 return NULL;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
@@ -149,9 +163,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* fall through */
     case NO_BITFIELD:
         if (pack)
-            align = min(pack, dict->align);
+            align = min(pack, info->align);
         else
-            align = dict->align;
+            align = info->align;
         if (align && *poffset % align) {
             Py_ssize_t delta = align - (*poffset % align);
             *psize += delta;
@@ -169,10 +183,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        *poffset += info->size - *pfield_size/8;
+        *psize += info->size - *pfield_size/8;
 
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
@@ -202,7 +216,8 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
-    if (!CDataObject_Check(inst)) {
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return -1;
@@ -214,7 +229,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
                         "can't delete attribute");
         return -1;
     }
-    return PyCData_set(inst, self->proto, self->setfunc, value,
+    return PyCData_set(st, inst, self->proto, self->setfunc, value,
                      self->index, self->size, ptr);
 }
 
@@ -225,13 +240,14 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
     if (inst == NULL) {
         return Py_NewRef(self);
     }
-    if (!CDataObject_Check(inst)) {
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return NULL;
     }
     src = (CDataObject *)inst;
-    return PyCData_get(self->proto, self->getfunc, inst,
+    return PyCData_get(st, self->proto, self->getfunc, inst,
                      self->index, self->size, src->b_ptr + self->offset);
 }
 
@@ -248,14 +264,15 @@ PyCField_get_size(PyObject *self, void *data)
 }
 
 static PyGetSetDef PyCField_getset[] = {
-    { "offset", PyCField_get_offset, NULL, "offset in bytes of this field" },
-    { "size", PyCField_get_size, NULL, "size in bytes of this field" },
+    { "offset", PyCField_get_offset, NULL, PyDoc_STR("offset in bytes of this field") },
+    { "size", PyCField_get_size, NULL, PyDoc_STR("size in bytes of this field") },
     { NULL, NULL, NULL, NULL },
 };
 
 static int
 PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
     return 0;
 }
@@ -270,9 +287,11 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PyCField_clear((CFieldObject *)self);
+    (void)PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -296,46 +315,24 @@ PyCField_repr(CFieldObject *self)
     return result;
 }
 
-PyTypeObject PyCField_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.CField",                                   /* tp_name */
-    sizeof(CFieldObject),                       /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    PyCField_dealloc,                                   /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)PyCField_repr,                            /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("Structure/Union member"),        /* tp_doc */
-    (traverseproc)PyCField_traverse,                    /* tp_traverse */
-    (inquiry)PyCField_clear,                            /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    PyCField_getset,                                    /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    (descrgetfunc)PyCField_get,                 /* tp_descr_get */
-    (descrsetfunc)PyCField_set,                 /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot cfield_slots[] = {
+    {Py_tp_dealloc, PyCField_dealloc},
+    {Py_tp_repr, PyCField_repr},
+    {Py_tp_doc, (void *)PyDoc_STR("Structure/Union member")},
+    {Py_tp_traverse, PyCField_traverse},
+    {Py_tp_clear, PyCField_clear},
+    {Py_tp_getset, PyCField_getset},
+    {Py_tp_descr_get, PyCField_get},
+    {Py_tp_descr_set, PyCField_set},
+    {0, NULL},
+};
+
+PyType_Spec cfield_spec = {
+    .name = "_ctypes.CField",
+    .basicsize = sizeof(CFieldObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = cfield_slots,
 };
 
 

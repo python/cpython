@@ -1,11 +1,10 @@
 # See <https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>
 # for reference.
+#
+# Tests also work on POSIX
 
 import unittest
-
-# also work on POSIX
-
-from ctypes import *
+from ctypes import POINTER, cast, c_int16
 from ctypes import wintypes
 
 

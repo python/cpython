@@ -1,8 +1,10 @@
 import sys
 import os
 import marshal
+import glob
 import importlib
 import importlib.util
+import re
 import struct
 import time
 import unittest
@@ -54,6 +56,7 @@ TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
 TEMP_DIR = os.path.abspath("junk95142")
 TEMP_ZIP = os.path.abspath("junk95142.zip")
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "zipimport_data")
 
 pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
 pyc_ext = '.pyc'
@@ -128,9 +131,15 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 f.write(stuff)
                 f.write(data)
 
+    def getZip64Files(self):
+        # This is the simplest way to make zipfile generate the zip64 EOCD block
+        return {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+
     def doTest(self, expected_ext, files, *modules, **kw):
         self.makeZip(files, **kw)
+        self.doTestWithPreBuiltZip(expected_ext, *modules, **kw)
 
+    def doTestWithPreBuiltZip(self, expected_ext, *modules, **kw):
         sys.path.insert(0, TEMP_ZIP)
 
         mod = importlib.import_module(".".join(modules))
@@ -520,10 +529,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         # Check that the file information remains accurate after reloading
         zi.invalidate_caches()
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -535,16 +544,53 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
         # Check that we can detect the new file after invalidating the cache
         zi.invalidate_caches()
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
         # Check that the cached data is removed if the file is deleted
         os.remove(TEMP_ZIP)
         zi.invalidate_caches()
-        self.assertFalse(zi._files)
+        self.assertFalse(zi._get_files())
         self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
         self.assertIsNone(zi.find_spec("name_does_not_matter"))
+
+    def testInvalidateCachesWithMultipleZipimports(self):
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
+                 "spam" + pyc_ext: (NOW, test_pyc)}
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
+            for name, (mtime, data) in files.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        self.assertEqual(zi._get_files().keys(), files.keys())
+        # Zipimporter for the same path.
+        zi2 = zipimport.zipimporter(TEMP_ZIP)
+        self.assertEqual(zi2._get_files().keys(), files.keys())
+        # Add a new file to the ZIP archive to make the cache wrong.
+        newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
+        files.update(newfile)
+        with ZipFile(TEMP_ZIP, "a") as z:
+            for name, (mtime, data) in newfile.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+        # Invalidate the cache of the first zipimporter.
+        zi.invalidate_caches()
+        # Check that the second zipimporter detects the new file and isn't using a stale cache.
+        self.assertEqual(zi2._get_files().keys(), files.keys())
+        spec = zi2.find_spec('spam2')
+        self.assertIsNotNone(spec)
+        self.assertIsInstance(spec.loader, zipimport.zipimporter)
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
@@ -761,6 +807,130 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, test_src)}
         self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
+    def testZip64(self):
+        files = self.getZip64Files()
+        self.doTest(".py", files, "f6")
+
+    def testZip64CruftAndComment(self):
+        files = self.getZip64Files()
+        self.doTest(".py", files, "f65536", comment=b"c" * ((1 << 16) - 1))
+
+    def testZip64LargeFile(self):
+        support.requires(
+            "largefile",
+            f"test generates files >{0xFFFFFFFF} bytes and takes a long time "
+            "to run"
+        )
+
+        # N.B.: We do alot of gymnastics below in the ZIP_STORED case to save
+        # and reconstruct a sparse zip on systems that support sparse files.
+        # Instead of creating a ~8GB zip file mainly consisting of null bytes
+        # for every run of the test, we create the zip once and save off the
+        # non-null portions of the resulting file as data blobs with offsets
+        # that allow re-creating the zip file sparsely. This drops disk space
+        # usage to ~9KB for the ZIP_STORED case and drops that test time by ~2
+        # orders of magnitude. For the ZIP_DEFLATED case, however, we bite the
+        # bullet. The resulting zip file is ~8MB of non-null data; so the sparse
+        # trick doesn't work and would result in that full ~8MB zip data file
+        # being checked in to source control.
+        parts_glob = f"sparse-zip64-c{self.compression:d}-0x*.part"
+        full_parts_glob = os.path.join(TEST_DATA_DIR, parts_glob)
+        pre_built_zip_parts = glob.glob(full_parts_glob)
+
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        if not pre_built_zip_parts:
+            if self.compression != ZIP_STORED:
+                support.requires(
+                    "cpu",
+                    "test requires a lot of CPU for compression."
+                )
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+            with open(os_helper.TESTFN, "wb") as f:
+                f.write(b"data")
+                f.write(os.linesep.encode())
+                f.seek(0xffff_ffff, os.SEEK_CUR)
+                f.write(os.linesep.encode())
+            os.utime(os_helper.TESTFN, (0.0, 0.0))
+            with ZipFile(
+                TEMP_ZIP,
+                "w",
+                compression=self.compression,
+                strict_timestamps=False
+            ) as z:
+                z.write(os_helper.TESTFN, "data1")
+                z.writestr(
+                    ZipInfo("module.py", (1980, 1, 1, 0, 0, 0)), test_src
+                )
+                z.write(os_helper.TESTFN, "data2")
+
+            # This "works" but relies on the zip format having a non-empty
+            # final page due to the trailing central directory to wind up with
+            # the correct length file.
+            def make_sparse_zip_parts(name):
+                empty_page = b"\0" * 4096
+                with open(name, "rb") as f:
+                    part = None
+                    try:
+                        while True:
+                            offset = f.tell()
+                            data = f.read(len(empty_page))
+                            if not data:
+                                break
+                            if data != empty_page:
+                                if not part:
+                                    part_fullname = os.path.join(
+                                        TEST_DATA_DIR,
+                                        f"sparse-zip64-c{self.compression:d}-"
+                                        f"{offset:#011x}.part",
+                                    )
+                                    os.makedirs(
+                                        os.path.dirname(part_fullname),
+                                        exist_ok=True
+                                    )
+                                    part = open(part_fullname, "wb")
+                                    print("Created", part_fullname)
+                                part.write(data)
+                            else:
+                                if part:
+                                    part.close()
+                                part = None
+                    finally:
+                        if part:
+                            part.close()
+
+            if self.compression == ZIP_STORED:
+                print(f"Creating sparse parts to check in into {TEST_DATA_DIR}:")
+                make_sparse_zip_parts(TEMP_ZIP)
+
+        else:
+            def extract_offset(name):
+                if m := re.search(r"-(0x[0-9a-f]{9})\.part$", name):
+                    return int(m.group(1), base=16)
+                raise ValueError(f"{name=} does not fit expected pattern.")
+            offset_parts = [(extract_offset(n), n) for n in pre_built_zip_parts]
+            with open(TEMP_ZIP, "wb") as f:
+                for offset, part_fn in sorted(offset_parts):
+                    with open(part_fn, "rb") as part:
+                        f.seek(offset, os.SEEK_SET)
+                        f.write(part.read())
+            # Confirm that the reconstructed zip file works and looks right.
+            with ZipFile(TEMP_ZIP, "r") as z:
+                self.assertEqual(
+                    z.getinfo("module.py").date_time, (1980, 1, 1, 0, 0, 0)
+                )
+                self.assertEqual(
+                    z.read("module.py"), test_src.encode(),
+                    msg=f"Recreate {full_parts_glob}, unexpected contents."
+                )
+                def assertDataEntry(name):
+                    zinfo = z.getinfo(name)
+                    self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+                    self.assertGreater(zinfo.file_size, 0xffff_ffff)
+                assertDataEntry("data1")
+                assertDataEntry("data2")
+
+        self.doTestWithPreBuiltZip(".py", "module")
+
 
 @support.requires_zlib()
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
@@ -836,7 +1006,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
             self.assertRaises(TypeError, z.get_source, None)
 
             error = zipimport.ZipImportError
-            self.assertIsNone(z.find_module('abc'))
             self.assertIsNone(z.find_spec('abc'))
 
             with warnings.catch_warnings():
