@@ -10,21 +10,6 @@ from test.support import script_helper
 from test.support.hypothesis_helper import hypothesis
 
 
-@hypothesis.strategies.composite
-def altchars(draw):
-    """Generate 'altchars' for base64 encoding.
-
-    Via https://docs.python.org/3/library/base64.html#base64.b64encode :
-
-    "Optional *altchars* must be a :term:`bytes-like object` of length 2 which
-    specifies an alternative alphabet for the ``+`` and ``/`` characters."
-    """
-    reserved_chars = (string.digits + string.ascii_letters + "=").encode()
-    allowed_chars = hypothesis.strategies.sampled_from(
-        [n for n in range(256) if n not in reserved_chars])
-    return hypothesis.strategies.lists(
-        allowed_chars, min_size=2, max_size=2, unique=True).map(bytes)
-
 class LegacyBase64TestCase(unittest.TestCase):
 
     # Legacy API is not as permissive as the modern API
@@ -306,12 +291,21 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(base64.b64decode(b'++[[//]]', b'[]'), res)
         self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
 
+
+    def _altchars_strategy():
+        """Generate 'altchars' for base64 encoding."""
+        reserved_chars = (string.digits + string.ascii_letters + "=").encode()
+        allowed_chars = hypothesis.strategies.sampled_from(
+            [n for n in range(256) if n not in reserved_chars])
+        two_bytes_strategy = hypothesis.strategies.lists(
+            allowed_chars, min_size=2, max_size=2, unique=True).map(bytes)
+        return (hypothesis.strategies.none()
+                | hypothesis.strategies.just(b"_-")
+                | two_bytes_strategy)
+
     @hypothesis.given(
         payload=hypothesis.strategies.binary(),
-        altchars=(
-            hypothesis.strategies.none()
-            | hypothesis.strategies.just(b"_-")
-            | altchars()),
+        altchars=_altchars_strategy(),
         validate=hypothesis.strategies.booleans())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", False)
