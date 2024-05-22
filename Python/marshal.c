@@ -75,6 +75,7 @@ module marshal
 #define TYPE_UNKNOWN            '?'
 #define TYPE_SET                '<'
 #define TYPE_FROZENSET          '>'
+#define TYPE_SLICE              ':'
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 #define TYPE_ASCII              'a'
@@ -611,6 +612,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         W_TYPE(TYPE_STRING, p);
         w_pstring(view.buf, view.len, p);
         PyBuffer_Release(&view);
+    }
+    else if (PySlice_Check(v)) {
+        PySliceObject *slice = (PySliceObject *)v;
+        W_TYPE(TYPE_SLICE, p);
+        w_object(slice->start, p);
+        w_object(slice->stop, p);
+        w_object(slice->step, p);
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
@@ -1524,6 +1532,30 @@ r_object(RFILE *p)
         }
         retval = Py_NewRef(v);
         break;
+
+    case TYPE_SLICE:
+    {
+        PyObject *stop = NULL;
+        PyObject *step = NULL;
+        PyObject *start = r_object(p);
+        if (start == NULL) {
+            goto cleanup;
+        }
+        stop = r_object(p);
+        if (stop == NULL) {
+            goto cleanup;
+        }
+        step = r_object(p);
+        if (step == NULL) {
+            goto cleanup;
+        }
+        retval = PySlice_New(start, stop, step);
+    cleanup:
+        Py_XDECREF(start);
+        Py_XDECREF(stop);
+        Py_XDECREF(step);
+        break;
+    }
 
     default:
         /* Bogus data got written, which isn't ideal.
