@@ -623,10 +623,6 @@ are always available.  They are listed here in alphabetical order.
       means functions and classes defined in the executed code will not be able
       to access variables assigned at the top level (as the "top level"
       variables are treated as class variables in a class definition).
-      As *globals* is required to be a ``dict`` instance, it isn't possible to
-      use :class:`collections.ChainMap` to work around this restriction.
-      Instead, any namespaces to be used for lookups must be merged into a
-      single ``dict`` before calling ``exec``.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
