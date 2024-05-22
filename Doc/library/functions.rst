@@ -623,10 +623,6 @@ are always available.  They are listed here in alphabetical order.
       means functions and classes defined in the executed code will not be able
       to access variables assigned at the top level (as the "top level"
       variables are treated as class variables in a class definition).
-      Passing a :class:`collections.ChainMap` instance as *globals* allows name
-      lookups to be chained across multiple mappings without triggering this
-      behaviour. Values assigned to top level names in the executed code can be
-      retrieved by passing an empty dictionary as the first entry in the chain.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
