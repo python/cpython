@@ -35,29 +35,29 @@ Python Library Reference.
 
 General:
 
-* :ref:`Annotations Best Practices <annotations-howto>`
-* :ref:`Argparse tutorial <argparse-tutorial>`
-* :ref:`Descriptor Guide <descriptorhowto>`
-* :ref:`Enum HOWTO <enum-howto>`
-* :ref:`Functional Programming HOWTO <functional-howto>`
-* :ref:`An introduction to the ipaddress module <ipaddress-howto>`
-* :ref:`Logging HOWTO <logging-howto>`
-* :ref:`Logging Cookbook <logging-cookbook>`
-* :ref:`Regular Expression HOWTO <regex-howto>`
-* :ref:`Sorting Techniques <sortinghowto>`
-* :ref:`Unicode HOWTO <unicode-howto>`
-* :ref:`HOWTO Fetch Internet Resources Using The urllib Package <urllib-howto>`
+* :ref:`annotations-howto`
+* :ref:`argparse-tutorial`
+* :ref:`descriptorhowto`
+* :ref:`enum-howto`
+* :ref:`functional-howto`
+* :ref:`ipaddress-howto`
+* :ref:`logging-howto`
+* :ref:`logging-cookbook`
+* :ref:`regex-howto`
+* :ref:`sortinghowto`
+* :ref:`unicode-howto`
+* :ref:`urllib-howto`
 
 Advanced development:
 
-* :ref:`Curses Programming with Python <curses-howto>`
-* :ref:`Isolating Extension Modules <isolating-extensions-howto>`
-* :ref:`The Python 2.3 Method Resolution Order <python_2.3_mro>`
-* :ref:`Socket Programming HOWTO <socket-howto>`
-* :ref:`Timer file descriptor <timerfd-howto>`
+* :ref:`curses-howto`
+* :ref:`isolating-extensions-howto`
+* :ref:`python_2.3_mro`
+* :ref:`socket-howto`
+* :ref:`timerfd-howto`
 
 Debugging and profiling:
 
-* :ref:`Debugging C API extensions and CPython Internals with GDB <gdb>`
-* :ref:`Instrumenting CPython with DTrace and SystemTap <instrumentation>`
-* :ref:`Python support for the Linux perf profiler <perf_profiling>`
+* :ref:`gdb`
+* :ref:`instrumentation`
+* :ref:`perf_profiling`
