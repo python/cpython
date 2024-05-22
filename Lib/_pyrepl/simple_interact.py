@@ -95,7 +95,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = compile(item, filename, the_symbol)
+                code = self.compile.compiler(item, filename, the_symbol)
             except (OverflowError, ValueError):
                     self.showsyntaxerror(filename)
                     return False
@@ -108,14 +108,19 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None= None, future_flags: int = 0
+    mainmodule: ModuleType | None = None,
+    future_flags: int = 0,
+    console: code.InteractiveConsole | None = None,
 ) -> None:
     import __main__
     from .readline import _setup
     _setup()
 
     mainmodule = mainmodule or __main__
-    console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
+    if console is None:
+        console = InteractiveColoredConsole(
+            mainmodule.__dict__, filename="<stdin>"
+        )
     if future_flags:
         console.compile.compiler.flags |= future_flags
 

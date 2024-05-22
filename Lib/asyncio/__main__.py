@@ -1,21 +1,24 @@
 import ast
 import asyncio
-import code
 import concurrent.futures
 import inspect
+import os
 import site
 import sys
 import threading
 import types
 import warnings
 
+from _pyrepl.simple_interact import InteractiveColoredConsole, check
+from _pyrepl.simple_interact import run_multiline_interactive_console
+
 from . import futures
 
 
-class AsyncIOInteractiveConsole(code.InteractiveConsole):
+class AsyncIOInteractiveConsole(InteractiveColoredConsole):
 
     def __init__(self, locals, loop):
-        super().__init__(locals)
+        super().__init__(locals, filename="<stdin>")
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
 
         self.loop = loop
@@ -75,12 +78,30 @@ class REPLThread(threading.Thread):
                 f'Use "await" directly instead of "asyncio.run()".\n'
                 f'Type "help", "copyright", "credits" or "license" '
                 f'for more information.\n'
-                f'{getattr(sys, "ps1", ">>> ")}import asyncio'
             )
+            exit_message = 'exiting asyncio REPL...'
 
-            console.interact(
-                banner=banner,
-                exitmsg='exiting asyncio REPL...')
+            console.write(banner)
+            if startup_path := os.getenv("PYTHONSTARTUP"):
+                import tokenize
+                with tokenize.open(startup_path) as f:
+                    startup_code = compile(f.read(), startup_path, "exec")
+                    exec(startup_code, console.locals)
+
+            try:
+                import errno
+                if not os.isatty(sys.stdin.fileno()):
+                    raise OSError(errno.ENOTTY, "tty required", "stdin")
+                if err := check():
+                    raise RuntimeError(err)
+            except Exception as e:
+                console.interact(banner="", exitmsg=exit_message)
+            else:
+                try:
+                    run_multiline_interactive_console(console=console)
+                except BaseException:
+                    console.showtraceback()
+                console.write(exit_message + '\n')
         finally:
             warnings.filterwarnings(
                 'ignore',
@@ -126,7 +147,7 @@ if __name__ == '__main__':
                 completer = rlcompleter.Completer(console.locals)
                 readline.set_completer(completer.complete)
 
-    repl_thread = REPLThread()
+    repl_thread = REPLThread(name="Interactive thread")
     repl_thread.daemon = True
     repl_thread.start()
 
