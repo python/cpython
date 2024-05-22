@@ -1,0 +1,2 @@
+Add a new option ``aware_datetime`` in :mod:`plistlib` to loads or dumps
+aware datetime.

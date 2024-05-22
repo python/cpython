@@ -1,0 +1,2 @@
+Deprecate :func:`sys._enablelegacywindowsfsencoding`. Use
+:envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead. Patch by Inada Naoki.

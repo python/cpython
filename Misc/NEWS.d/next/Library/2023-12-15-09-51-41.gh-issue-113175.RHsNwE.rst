@@ -1,0 +1,5 @@
+Sync with importlib_metadata 7.0, including improved type annotations, fixed
+issue with symlinked packages in ``package_distributions``, added
+``EntryPoints.__repr__``, introduced the ``diagnose`` script, added
+``Distribution.origin`` property, and removed deprecated ``EntryPoint``
+access by numeric index (tuple behavior).

@@ -1,0 +1,1 @@
+Fix the "Help -> IDLE Doc" menu bug in 3.11.7 and 3.12.1.

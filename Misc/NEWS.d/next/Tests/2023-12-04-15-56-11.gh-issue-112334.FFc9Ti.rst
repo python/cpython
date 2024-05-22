@@ -1,0 +1,2 @@
+Adds a regression test to verify that ``vfork()`` is used when expected by
+:mod:`subprocess` on vfork enabled POSIX systems (Linux).

@@ -1,0 +1,2 @@
+[Enum] Make ``EnumDict``, ``EnumDict.member_names``,
+``EnumType._add_alias_`` and ``EnumType._add_value_alias_`` public.

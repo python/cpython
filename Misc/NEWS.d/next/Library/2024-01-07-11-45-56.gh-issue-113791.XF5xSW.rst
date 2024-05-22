@@ -1,0 +1,2 @@
+Add ``CLOCK_MONOTONIC_RAW_APPROX`` and ``CLOCK_UPTIME_RAW_APPROX`` to
+:mod:`time` on macOS. These are clocks available on macOS 10.12 or later.

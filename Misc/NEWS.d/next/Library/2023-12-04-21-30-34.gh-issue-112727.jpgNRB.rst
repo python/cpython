@@ -1,0 +1,1 @@
+Speed up :meth:`pathlib.Path.absolute`. Patch by Barney Gale.

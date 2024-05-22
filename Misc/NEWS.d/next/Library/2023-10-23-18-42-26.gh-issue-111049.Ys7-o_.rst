@@ -1,0 +1,2 @@
+Fix crash during garbage collection of the :class:`io.BytesIO` buffer
+object.

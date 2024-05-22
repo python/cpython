@@ -1,0 +1,2 @@
+Fixed bug where a redundant NOP is not removed, causing an assertion to fail
+in the compiler in debug mode.

@@ -1,0 +1,3 @@
+webbrowser: Don't look for X11 browsers on macOS. Those are generally not
+used and probing for them can result in starting XQuartz even if it isn't
+used otherwise.

@@ -1,0 +1,4 @@
+When creating a :class:`typing.NamedTuple` class, ensure
+:func:`~object.__set_name__` is called on all objects that define
+``__set_name__`` and exist in the values of the ``NamedTuple`` class's class
+dictionary. Patch by Alex Waygood.

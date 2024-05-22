@@ -1,0 +1,2 @@
+Fixed a class inheritance issue that can cause segfaults when deriving two or more levels of subclasses from a base class of Structure or Union.
+

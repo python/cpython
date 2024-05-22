@@ -1,0 +1,1 @@
+Reduce overhead to connect sockets with :mod:`asyncio` SelectorEventLoop.

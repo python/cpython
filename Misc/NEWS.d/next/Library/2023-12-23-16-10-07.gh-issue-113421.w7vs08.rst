@@ -1,0 +1,1 @@
+Fix multiprocessing logger for ``%(filename)s``.

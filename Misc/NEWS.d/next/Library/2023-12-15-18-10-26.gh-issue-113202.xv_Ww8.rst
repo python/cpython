@@ -1,0 +1,1 @@
+Add a ``strict`` option to ``batched()`` in the ``itertools`` module.

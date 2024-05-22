@@ -1,0 +1,3 @@
+Use ``/dev/fd`` on macOS to determine the number of open files in
+``test.support.os_helper.fd_count`` to avoid a crash with "guarded" file
+descriptors when probing for open files.

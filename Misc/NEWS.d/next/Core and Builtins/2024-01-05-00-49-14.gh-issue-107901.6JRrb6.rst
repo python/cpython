@@ -1,0 +1,1 @@
+Compiler changed so that synthetic jumps which are not at loop end no longer check the eval breaker.
