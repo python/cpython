@@ -48,8 +48,12 @@ extern void _PyEval_SignalReceived(void);
 #define _Py_PENDING_MAINTHREADONLY 1
 #define _Py_PENDING_RAWFREE 2
 
+typedef int _Py_add_pending_call_result;
+#define _Py_ADD_PENDING_SUCCESS 0
+#define _Py_ADD_PENDING_FULL -1
+
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(int) _PyEval_AddPendingCall(
+PyAPI_FUNC(_Py_add_pending_call_result) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     _Py_pending_call_func func,
     void *arg,
@@ -104,6 +108,7 @@ extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
+extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
 #endif
 
 static inline PyObject*
@@ -126,8 +131,53 @@ extern int _PyEval_ThreadsInitialized(void);
 extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-extern void _PyEval_AcquireLock(PyThreadState *tstate);
+// Acquire the GIL and return 1. In free-threaded builds, this function may
+// return 0 to indicate that the GIL was disabled and therefore not acquired.
+extern int _PyEval_AcquireLock(PyThreadState *tstate);
+
 extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+
+#ifdef Py_GIL_DISABLED
+// Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or
+// enabled, respectively.
+//
+// The enabled state of the GIL will not change while one or more threads are
+// attached.
+static inline int
+_PyEval_IsGILEnabled(PyThreadState *tstate)
+{
+    return tstate->interp->ceval.gil->enabled != 0;
+}
+
+// Enable or disable the GIL used by the interpreter that owns tstate, which
+// must be the current thread. This may affect other interpreters, if the GIL
+// is shared. All three functions will be no-ops (and return 0) if the
+// interpreter's `enable_gil' config is not _PyConfig_GIL_DEFAULT.
+//
+// Every call to _PyEval_EnableGILTransient() must be paired with exactly one
+// call to either _PyEval_EnableGILPermanent() or
+// _PyEval_DisableGIL(). _PyEval_EnableGILPermanent() and _PyEval_DisableGIL()
+// must only be called while the GIL is enabled from a call to
+// _PyEval_EnableGILTransient().
+//
+// _PyEval_EnableGILTransient() returns 1 if it enabled the GIL, or 0 if the
+// GIL was already enabled, whether transiently or permanently. The caller will
+// hold the GIL upon return.
+//
+// _PyEval_EnableGILPermanent() returns 1 if it permanently enabled the GIL
+// (which must already be enabled), or 0 if it was already permanently
+// enabled. Once _PyEval_EnableGILPermanent() has been called once, all
+// subsequent calls to any of the three functions will be no-ops.
+//
+// _PyEval_DisableGIL() returns 1 if it disabled the GIL, or 0 if the GIL was
+// kept enabled because of another request, whether transient or permanent.
+//
+// All three functions must be called by an attached thread (this implies that
+// if the GIL is enabled, the current thread must hold it).
+extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
+extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
+extern int _PyEval_DisableGIL(PyThreadState *state);
+#endif
 
 extern void _PyEval_DeactivateOpCache(void);
 
@@ -182,7 +232,7 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
-extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

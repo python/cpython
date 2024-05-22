@@ -56,11 +56,6 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
-struct _py_trashcan {
-    int delete_nesting;
-    PyObject *delete_later;
-};
-
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -152,7 +147,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    struct _py_trashcan trash;
+    PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
@@ -193,19 +188,12 @@ struct _ts {
 
     PyObject *previous_executor;
 
+    uint64_t dict_global_version;
 };
 
 #ifdef Py_DEBUG
    // A debug build is likely built with low optimization level which implies
    // higher stack memory usage than a release build: use a lower limit.
-#  if defined(__wasi__)
-     // Based on wasmtime 16.
-#    define Py_C_RECURSION_LIMIT 150
-#  else
-#    define Py_C_RECURSION_LIMIT 500
-#  endif
-#elif defined(__wasi__)
-   // Based on wasmtime 16.
 #  define Py_C_RECURSION_LIMIT 500
 #elif defined(__s390x__)
 #  define Py_C_RECURSION_LIMIT 800
@@ -219,6 +207,9 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__wasi__)
+   // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 10000

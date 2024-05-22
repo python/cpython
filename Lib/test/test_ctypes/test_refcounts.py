@@ -4,6 +4,7 @@ import sys
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import script_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -108,6 +109,19 @@ class AnotherLeak(unittest.TestCase):
                 # Check that calling func does not affect None's refcount.
                 for _ in range(10000):
                     func()
+
+
+class ModuleIsolationTest(unittest.TestCase):
+    def test_finalize(self):
+        # check if gc_decref() succeeds
+        script = (
+            "import ctypes;"
+            "import sys;"
+            "del sys.modules['_ctypes'];"
+            "import _ctypes;"
+            "exit()"
+        )
+        script_helper.assert_python_ok("-c", script)
 
 
 if __name__ == '__main__':

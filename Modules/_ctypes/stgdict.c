@@ -94,7 +94,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
     if (fieldlist == NULL)
         return -1;
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(descr));
     PyTypeObject *cfield_tp = st->PyCField_Type;
     for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
         PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
@@ -175,7 +175,7 @@ MakeAnonFields(PyObject *type)
     if (anon_names == NULL)
         return -1;
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     PyTypeObject *cfield_tp = st->PyCField_Type;
     for (i = 0; i < PySequence_Fast_GET_SIZE(anon_names); ++i) {
         PyObject *fname = PySequence_Fast_GET_ITEM(anon_names, i); /* borrowed */
@@ -318,7 +318,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     StgInfo *stginfo;
     if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
         return -1;
