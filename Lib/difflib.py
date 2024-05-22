@@ -922,7 +922,7 @@ class Differ:
         # List of index pairs achieving best_ratio. Strictly increasing
         # in both index positions.
         max_pairs = []
-        maxi = -1 # `i` indox of last pair in max_pairs
+        maxi = -1 # `i` index of last pair in max_pairs
 
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch
@@ -934,7 +934,7 @@ class Differ:
             bj = b[j]
             cruncher.set_seq2(bj)
             # Find new best, if possible. Else search for the smallest i
-            # (if any) > maxi that matches the best.
+            # (if any) > maxi that equals the best ratio
             search_equal = True
             for i in range(alo, ahi):
                 ai = a[i]
@@ -947,12 +947,15 @@ class Differ:
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
                 cmp = ge if search_equal and i > maxi else gt
-                if (cmp(crqr(), best_ratio) and cmp(cqr(), best_ratio)
+                if (cmp(crqr(), best_ratio)
+                      and cmp(cqr(), best_ratio)
                       and cmp((ratio := cr()), best_ratio)):
                     search_equal = False
                     if ratio > best_ratio:
                         best_ratio = ratio
                         max_pairs.clear()
+                    else:
+                        assert best_ratio == ratio
                     max_pairs.append((i, j))
                     maxi = i
         if best_ratio < cutoff:
