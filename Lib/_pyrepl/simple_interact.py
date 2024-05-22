@@ -62,6 +62,7 @@ REPL_COMMANDS = {
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
+    "clear": "clear_screen",
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -163,7 +164,7 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement, contains_pasted_code = multiline_input(more_lines, ps1, ps2)
+                statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
 

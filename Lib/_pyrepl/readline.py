@@ -328,7 +328,7 @@ class _ReadlineWrapper:
         reader.ps1 = str(prompt)
         return reader.readline(startup_hook=self.startup_hook)
 
-    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> tuple[str, bool]:
+    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
@@ -337,14 +337,15 @@ class _ReadlineWrapper:
         saved = reader.more_lines
         try:
             reader.more_lines = more_lines
-            reader.ps1 = reader.ps2 = ps1
-            reader.ps3 = reader.ps4 = ps2
+            reader.ps1 = ps1
+            reader.ps2 = ps1
+            reader.ps3 = ps2
+            reader.ps4 = ""
             with warnings.catch_warnings(action="ignore"):
-                return reader.readline(), reader.was_paste_mode_activated
+                return reader.readline()
         finally:
             reader.more_lines = saved
             reader.paste_mode = False
-            reader.was_paste_mode_activated = False
 
     def parse_and_bind(self, string: str) -> None:
         pass  # XXX we don't support parsing GNU-readline-style init files
