@@ -5,14 +5,26 @@ import rlcompleter
 from unittest import TestCase
 from unittest.mock import patch
 
-from .support import FakeConsole, handle_all_events, handle_events_narrow_console
-from .support import more_lines, multiline_input, code_to_events
+from .support import (
+    FakeConsole,
+    handle_all_events,
+    handle_events_narrow_console,
+    more_lines,
+    multiline_input,
+    code_to_events,
+)
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 
 class TestCursorPosition(TestCase):
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
     def test_up_arrow_simple(self):
         # fmt: off
         code = (
@@ -300,6 +312,79 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 10)
         self.assertEqual(reader.cxy, (1, 1))
 
+    def test_auto_indent_default(self):
+        # fmt: off
+        input_code = (
+            'def f():\n'
+                'pass\n\n'
+        )
+
+        output_code = (
+            'def f():\n'
+            '    pass\n'
+            '    '
+        )
+        # fmt: on
+
+    def test_auto_indent_continuation(self):
+        # auto indenting according to previous user indentation
+        # fmt: off
+        events = itertools.chain(
+            code_to_events("def f():\n"),
+            # add backspace to delete default auto-indent
+            [
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events(
+                "  pass\n"
+                  "pass\n\n"
+            ),
+        )
+
+        output_code = (
+            'def f():\n'
+            '  pass\n'
+            '  pass\n'
+            '  '
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_prev_block(self):
+        # auto indenting according to indentation in different block
+        # fmt: off
+        events = itertools.chain(
+            code_to_events("def f():\n"),
+            # add backspace to delete default auto-indent
+            [
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events(
+                "  pass\n"
+                "pass\n\n"
+            ),
+            code_to_events(
+                'def g():\n'
+                  'pass\n\n'
+            ),
+        )
+
+
+        output_code = (
+            'def g():\n'
+            '  pass\n'
+            '  '
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output1 = multiline_input(reader)
+        output2 = multiline_input(reader)
+        self.assertEqual(output2, output_code)
+
 
 class TestPyReplOutput(TestCase):
     def prepare_reader(self, events):
@@ -316,13 +401,11 @@ class TestPyReplOutput(TestCase):
 
     def test_multiline_edit(self):
         events = itertools.chain(
-            code_to_events("def f():\n  ...\n\n"),
+            code_to_events("def f():\n...\n\n"),
             [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
                 Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
                 Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
                 Event(evt="key", data="g", raw=bytearray(b"g")),
@@ -334,9 +417,9 @@ class TestPyReplOutput(TestCase):
         reader = self.prepare_reader(events)
 
         output = multiline_input(reader)
-        self.assertEqual(output, "def f():\n  ...\n  ")
+        self.assertEqual(output, "def f():\n    ...\n    ")
         output = multiline_input(reader)
-        self.assertEqual(output, "def g():\n  ...\n  ")
+        self.assertEqual(output, "def g():\n    ...\n    ")
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -559,14 +642,14 @@ class TestPasteEvent(TestCase):
         # fmt: off
         code = (
             'def f():\n'
-            '  x = y\n'
-            '  \n'
-            '  y = z\n\n'
+                'x = y\n'
+                '\n'
+                'y = z\n\n'
         )
 
         expected = (
             'def f():\n'
-            '  x = y\n'
+            '    x = y\n'
             '    '
         )
         # fmt: on
@@ -580,19 +663,19 @@ class TestPasteEvent(TestCase):
         # fmt: off
         input_code = (
             'def a():\n'
-            '  for x in range(10):\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '    else:\n'
-            '      pass\n\n'
+                'for x in range(10):\n'
+                    'if x%2:\n'
+                        'print(x)\n'
+                    'else:\n'
+                        'pass\n\n'
         )
 
         output_code = (
             'def a():\n'
-            '  for x in range(10):\n'
-            '      if x%2:\n'
+            '    for x in range(10):\n'
+            '        if x%2:\n'
             '            print(x)\n'
-            '                else:'
+            '            else:'
         )
         # fmt: on
 
