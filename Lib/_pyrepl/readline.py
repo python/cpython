@@ -28,12 +28,13 @@ extensions for multiline input.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 
 import os
-import readline
 from site import gethistoryfile   # type: ignore[attr-defined]
 import sys
+from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
@@ -46,6 +47,9 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 Command = commands.Command
 from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
+
+
+MoreLinesCallable = Callable[[str], bool]
 
 
 __all__ = [
@@ -81,7 +85,7 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = readline.get_completer()
+    readline_completer: Completer | None = RLCompleter().complete
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
 
 
@@ -94,7 +98,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
 
     # Instance fields
     config: ReadlineConfig
-    more_lines: Callable[[str], bool] | None = None
+    more_lines: MoreLinesCallable | None = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -300,7 +304,7 @@ class _ReadlineWrapper:
         reader.ps1 = str(prompt)
         return reader.readline(startup_hook=self.startup_hook)
 
-    def multiline_input(self, more_lines, ps1, ps2):
+    def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> tuple[str, bool]:
         """Read an input on possibly multiple lines, asking for more
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
@@ -311,7 +315,8 @@ class _ReadlineWrapper:
             reader.more_lines = more_lines
             reader.ps1 = reader.ps2 = ps1
             reader.ps3 = reader.ps4 = ps2
-            return reader.readline(), reader.was_paste_mode_activated
+            with warnings.catch_warnings(action="ignore"):
+                return reader.readline(), reader.was_paste_mode_activated
         finally:
             reader.more_lines = saved
             reader.paste_mode = False
