@@ -413,8 +413,10 @@ as part of the stack trace.
 
    .. note::
 
-      It is considered good practice to not use :keyword:`assert` statements in critical code logic while writing library code as enabling optimization will cause the statements to be ignored.
-      Evaluating function variables using :keyword:`assert` statements can also lead to unexpected behavior.
+      It is considered good practice to not use :keyword:`assert` statements in
+      critical code logic while writing library code as enabling optimization will
+      cause the statements to be ignored. Evaluating function variables using
+      :keyword:`assert` statements can also lead to unexpected behavior.
 
 Assignments to :const:`__debug__` are illegal.  The value for the built-in variable
 is determined when the interpreter starts.
