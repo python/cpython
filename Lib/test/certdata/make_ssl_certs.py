@@ -219,9 +219,12 @@ def make_ca():
     shutil.copy('capath/ceff1710.0', 'capath/b1930218.0')
 
 
-def print_cert(path):
+def write_cert_reference(path):
     import _ssl
-    pprint.pprint(_ssl._test_decode_cert(path))
+    refdata = pprint.pformat(_ssl._test_decode_cert(path))
+    print(refdata)
+    with open(path + '.reference', 'w') as f:
+        f.write(refdata)
 
 
 if __name__ == '__main__':
@@ -308,6 +311,6 @@ if __name__ == '__main__':
         f.write(cert)
 
     unmake_ca()
-    print("update Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
-    print_cert('keycert.pem')
-    print_cert('keycert3.pem')
+    print("Writing out reference data for Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
+    write_cert_reference('keycert.pem')
+    write_cert_reference('keycert3.pem')
