@@ -359,7 +359,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
-   *dklen* is the length of the derived key.
+   *dklen* is the length of the derived key in bytes.
 
    .. versionadded:: 3.6
 
