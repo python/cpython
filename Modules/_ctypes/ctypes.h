@@ -508,6 +508,19 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
+/* A variant of PyStgInfo_FromType that doesn't need the state,
+ * so it can be called from finalization functions when the module
+ * state is torn down. Does no checks; cannot fail.
+ * This inlines the current implementation PyObject_GetTypeData,
+ * so it might break in the future.
+ */
+static inline StgInfo *
+_PyStgInfo_FromType_NoState(PyObject *type)
+{
+    assert(PyType_Type.tp_basicsize % ALIGNOF_MAX_ALIGN_T == 0);
+    return (StgInfo *)((char *)type + PyType_Type.tp_basicsize);
+}
+
 // Initialize StgInfo on a newly created type
 static inline StgInfo *
 PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
