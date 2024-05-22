@@ -565,12 +565,11 @@ def test_import():
         except ImportError:
             pass
 
-    import importlib
-    for modname in ('array', 'hashlib', 'does_not_exist'):
-        try:
-            module = importlib.import_module(modname)
-        except ModuleNotFoundError:
-            module = None
+    for modname, module in [
+        ('array', array),
+        ('hashlib', hashlib),
+        ('does_not_exist', None),
+    ]:
         events = [
             ev for ev in hook.seen
             if ev[0].startswith('import') and ev[1][0] == modname
