@@ -1750,7 +1750,7 @@ unittest
 
   * Undocumented :meth:`TestLoader.loadTestsFromModule
     <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
-    (deprecated and ignored since Python 3.2).
+    (deprecated and ignored since Python 3.5).
 
   * An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
