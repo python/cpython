@@ -3723,6 +3723,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     }
     if (_PySys_Audit(tstate, "import/module", "OO", abs_name,
                      mod ? mod : Py_None) < 0) {
+        Py_XDECREF(mod);
         return NULL;
     }
 
