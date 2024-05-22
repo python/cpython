@@ -863,7 +863,7 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 
 static const uint8_t assert0[6] = {
     RESUME, RESUME_AT_FUNC_START,
-    LOAD_ASSERTION_ERROR, 0,
+    LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR,
     RAISE_VARARGS, 1
 };
 

@@ -1184,8 +1184,18 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
-            value = Py_NewRef(PyExc_AssertionError);
+        inst(LOAD_COMMON_CONSTANT, ( -- value)) {
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+            case CONSTANT_ASSERTIONERROR:
+                value = PyExc_AssertionError;
+                break;
+            case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyExc_NotImplementedError;
+                break;
+            default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
