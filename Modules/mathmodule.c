@@ -1253,7 +1253,7 @@ FUNC1(tanh, tanh, 0,
       "Return the hyperbolic tangent of x.")
 
 /* Precision summation function as msum() by Raymond Hettinger in
-   <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/393090>,
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
    enhanced with the exact partials sum and roundoff from Mark
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.
@@ -4177,6 +4177,7 @@ static PyMethodDef math_methods[] = {
 static PyModuleDef_Slot math_slots[] = {
     {Py_mod_exec, math_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

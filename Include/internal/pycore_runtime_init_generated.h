@@ -588,6 +588,7 @@ extern "C" {
     INIT_ID(__all__), \
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
+    INIT_ID(__annotate__), \
     INIT_ID(__annotations__), \
     INIT_ID(__args__), \
     INIT_ID(__asyncio_running_event_loop__), \
@@ -622,6 +623,7 @@ extern "C" {
     INIT_ID(__eq__), \
     INIT_ID(__exit__), \
     INIT_ID(__file__), \
+    INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \

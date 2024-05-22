@@ -8,19 +8,11 @@ on:
   push:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
   pull_request:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
 
 permissions:
   contents: read
@@ -218,7 +210,7 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # macos-14 is M1
+      # macos-14-large is Intel with 12 cores (most parallelism)
       os-matrix: '["macos-14"]'
 
   build_ubuntu:
@@ -250,7 +242,7 @@ jobs:
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -316,7 +308,7 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -429,7 +421,7 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -494,6 +486,7 @@ jobs:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
       suppressions_path: Tools/tsan/supressions.txt
+      tsan_logs_artifact_name: tsan-logs-default
 
   build_tsan_free_threading:
     name: 'Thread sanitizer (free-threading)'
@@ -504,6 +497,7 @@ jobs:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
       suppressions_path: Tools/tsan/suppressions_free_threading.txt
+      tsan_logs_artifact_name: tsan-logs-free-threading
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:

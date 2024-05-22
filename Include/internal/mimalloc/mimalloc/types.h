@@ -21,7 +21,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
-#include "mimalloc/atomic.h"  // _Atomic
+#include "atomic.h"   // _Atomic
 
 #ifdef _MSC_VER
 #pragma warning(disable:4214) // bitfield is not int

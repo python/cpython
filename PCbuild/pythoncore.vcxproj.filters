@@ -789,6 +789,9 @@
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1398,6 +1401,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
