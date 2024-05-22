@@ -1508,7 +1508,6 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
-        st->st_private = name;
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
@@ -1673,6 +1672,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
+        PyObject *old_st_private = st->st_private;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.type_params,
@@ -1680,6 +1680,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                 LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
+            st->st_private = s->v.ClassDef.name;
             VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
         }
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
@@ -1709,6 +1710,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
+        st->st_private = old_st_private;
         break;
     }
     case TypeAlias_kind: {

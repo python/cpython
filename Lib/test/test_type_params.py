@@ -823,6 +823,39 @@ class TypeParamsManglingTest(unittest.TestCase):
 
         self.assertEqual(Foo.Alias.__value__, (T, V))
 
+    def test_no_leaky_mangling_in_module(self):
+        ns = run_code("""
+            __before = "before"
+            class X[T]: pass
+            __after = "after"
+        """)
+        self.assertEqual(ns["__before"], "before")
+        self.assertEqual(ns["__after"], "after")
+
+    def test_no_leaky_mangling_in_function(self):
+        ns = run_code("""
+            def f():
+                class X[T]: pass
+                _X_foo = 2
+                __foo = 1
+                assert locals()['__foo'] == 1
+                return __foo
+        """)
+        self.assertEqual(ns["f"](), 1)
+
+    def test_no_leaky_mangling_in_class(self):
+        ns = run_code("""
+            class Outer:
+                __before = "before"
+                class Inner[T]:
+                    __x = "inner"
+                __after = "after"
+        """)
+        Outer = ns["Outer"]
+        self.assertEqual(Outer._Outer__before, "before")
+        self.assertEqual(Outer.Inner._Inner__x, "inner")
+        self.assertEqual(Outer._Outer__after, "after")
+
 
 class TypeParamsComplexCallsTest(unittest.TestCase):
     def test_defaults(self):
