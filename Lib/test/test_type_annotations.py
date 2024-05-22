@@ -108,6 +108,13 @@ class TypeAnnotationTests(unittest.TestCase):
         self.assertEqual(D.__annotations__, {})
 
 
+def build_module(code: str, name: str = "top") -> types.ModuleType:
+    ns = run_code(code)
+    mod = types.ModuleType(name)
+    mod.__dict__.update(ns)
+    return mod
+
+
 class TestSetupAnnotations(unittest.TestCase):
     def check(self, code: str):
         code = textwrap.dedent(code)
@@ -115,13 +122,10 @@ class TestSetupAnnotations(unittest.TestCase):
             with self.subTest(scope=scope):
                 if scope == "class":
                     code = f"class C:\n{textwrap.indent(code, '    ')}"
-                ns = run_code(code)
-                if scope == "class":
+                    ns = run_code(code)
                     annotations = ns["C"].__annotations__
                 else:
-                    mod = types.ModuleType("mod")
-                    mod.__dict__.update(ns)
-                    annotations = mod.__annotations__
+                    annotations = build_module(code).__annotations__
                 self.assertEqual(annotations, {"x": int})
 
     def test_top_level(self):
@@ -333,3 +337,20 @@ class DeferredEvaluationTests(unittest.TestCase):
         check_syntax_error(self, "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
         check_syntax_error(self, "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
         check_syntax_error(self, "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
+
+    def test_generated_annotate(self):
+        def func(x: int):
+            pass
+        class X:
+            x: int
+        mod = build_module("x: int")
+        for obj in (func, X, mod):
+            with self.subTest(obj=obj):
+                annotate = obj.__annotate__
+                self.assertIsInstance(annotate, types.FunctionType)
+                self.assertEqual(annotate.__name__, f"<annotations of {obj.__name__}>")
+                with self.assertRaises(AssertionError):  # TODO NotImplementedError
+                    annotate(2)
+                with self.assertRaises(AssertionError):  # TODO NotImplementedError
+                    annotate(None)
+                self.assertEqual(annotate(1), {"x": int})
