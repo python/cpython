@@ -91,7 +91,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         do {
             v = FT_ATOMIC_LOAD_PTR(*addr);
             if (v == NULL) {
-                PyObject * obj = (PyObject *) obj_addr;
+                PyObject *obj = (PyObject *)obj_addr;
                 PyTypeObject *tp = Py_TYPE(obj);
                 PyErr_Format(PyExc_AttributeError,
                              "'%.200s' object has no attribute '%s'",
@@ -302,7 +302,9 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         oldv = *(PyObject **)addr;
         *(PyObject **)addr = Py_XNewRef(v);
 #else
-        _PyObject_SetMaybeWeakref(v);  // without setting _Py_REF_MAYBE_WEAKREF,
+        if (v != NULL)
+            _PyObject_SetMaybeWeakref(v);
+        // without setting _Py_REF_MAYBE_WEAKREF,
         // we may get an infinite loop in PyMember_GetOne
         oldv = FT_ATOMIC_EXCHANGE_PTR(addr, Py_XNewRef(v));
 #endif
