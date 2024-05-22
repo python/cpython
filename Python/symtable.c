@@ -2479,11 +2479,18 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
     }
     else {
         if (st->st_cur->ste_annotation_block == NULL) {
-            _Py_block_ty current_type = st->st_cur->ste_type;
-            if (!symtable_enter_block(st, parent_ste->ste_name, AnnotationBlock,
-                                      key, LOCATION(annotation))) {
+            PyObject *annotations_name = PyUnicode_FromFormat(
+                "<annotations of %U>", parent_ste->ste_name);
+            if (!annotations_name) {
                 VISIT_QUIT(st, 0);
             }
+            _Py_block_ty current_type = st->st_cur->ste_type;
+            if (!symtable_enter_block(st, annotations_name, AnnotationBlock,
+                                      key, LOCATION(annotation))) {
+                Py_DECREF(annotations_name);
+                VISIT_QUIT(st, 0);
+            }
+            Py_DECREF(annotations_name);
             parent_ste->ste_annotation_block =
                 (struct _symtable_entry *)Py_NewRef(st->st_cur);
             if (current_type == ClassBlock) {
@@ -2540,12 +2547,19 @@ static int
 symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_ty returns,
                            struct _symtable_entry *function_ste)
 {
-    int is_in_class = st->st_cur->ste_can_see_class_scope;
-    _Py_block_ty current_type = st->st_cur->ste_type;
-    if (!symtable_enter_block(st, function_ste->ste_name, AnnotationBlock,
-                              (void *)a, LOCATION(o))) {
+    PyObject *annotations_name = PyUnicode_FromFormat(
+        "<annotations of %U>", function_ste->ste_name);
+    if (!annotations_name) {
         VISIT_QUIT(st, 0);
     }
+    int is_in_class = st->st_cur->ste_can_see_class_scope;
+    _Py_block_ty current_type = st->st_cur->ste_type;
+    if (!symtable_enter_block(st, annotations_name, AnnotationBlock,
+                              (void *)a, LOCATION(o))) {
+        Py_DECREF(annotations_name);
+        VISIT_QUIT(st, 0);
+    }
+    Py_DECREF(annotations_name);
     if (is_in_class || current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
