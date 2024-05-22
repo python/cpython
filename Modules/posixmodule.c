@@ -5371,7 +5371,7 @@ static int
 os__path_exists_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=8da13acf666e16ba input=29198507a6082a57]*/
 {
-    return _testFileExists(&path, TRUE);
+    return _testFileExists(path, TRUE);
 }
 
 
@@ -5389,7 +5389,7 @@ static int
 os__path_lexists_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=e7240ed5fc45bff3 input=03d9fed8bc6ce96f]*/
 {
-    return _testFileExists(&path, FALSE);
+    return _testFileExists(path, FALSE);
 }
 
 
@@ -5406,7 +5406,7 @@ static int
 os__path_isdir_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=d5786196f9e2fa7a input=132a3b5301aecf79]*/
 {
-    return _testFileType(&path, PY_IFDIR);
+    return _testFileType(path, PY_IFDIR);
 }
 
 
@@ -5423,7 +5423,7 @@ static int
 os__path_isfile_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=5c3073bc212b9863 input=4ac1fd350b30a39e]*/
 {
-    return _testFileType(&path, PY_IFREG);
+    return _testFileType(path, PY_IFREG);
 }
 
 
@@ -5440,7 +5440,7 @@ static int
 os__path_islink_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=30da7bda8296adcc input=7510ce05b547debb]*/
 {
-    return _testFileType(&path, PY_IFLNK);
+    return _testFileType(path, PY_IFLNK);
 }
 
 
@@ -5457,7 +5457,7 @@ static int
 os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=e1d17a9dd18a9945 input=7dcb8bc4e972fcaf]*/
 {
-    return _testFileType(&path, PY_IFMNT);
+    return _testFileType(path, PY_IFMNT);
 }
 
 #undef PY_IFREG
