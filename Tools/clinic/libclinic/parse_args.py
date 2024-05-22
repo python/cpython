@@ -51,6 +51,8 @@ def declare_parser(
             #endif
         """
     else:
+        # XXX Why do we not statically allocate the tuple
+        # for non-builtin modules?
         declarations = """
             #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
