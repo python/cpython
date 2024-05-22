@@ -43,8 +43,8 @@ def body_line_iterator(msg, decode=False):
 def typed_subpart_iterator(msg, maintype='text', subtype=None):
     """Iterate over the subparts with a given MIME type.
 
-    Use `maintype' as the main MIME type to match against; this defaults to
-    "text".  Optional `subtype' is the MIME subtype to match against; if
+    Use 'maintype' as the main MIME type to match against; this defaults to
+    "text".  Optional 'subtype' is the MIME subtype to match against; if
     omitted, only the main type is matched.
     """
     for subpart in msg.walk():

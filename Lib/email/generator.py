@@ -41,7 +41,7 @@ class Generator:
 
         Optional mangle_from_ is a flag that, when True (the default if policy
         is not set), escapes From_ lines in the body of the message by putting
-        a `>' in front of them.
+        a '>' in front of them.
 
         Optional maxheaderlen specifies the longest length for a non-continued
         header.  When a header line is longer (in characters, with tabs
@@ -74,7 +74,7 @@ class Generator:
 
         unixfrom is a flag that forces the printing of a Unix From_ delimiter
         before the first object in the message tree.  If the original message
-        has no From_ delimiter, a `standard' one is crafted.  By default, this
+        has no From_ delimiter, a 'standard' one is crafted.  By default, this
         is False to inhibit the printing of any From_ delimiter.
 
         Note that for subobjects, no From_ line is printed.
@@ -456,7 +456,7 @@ class DecodedGenerator(Generator):
         argument is allowed.
 
         Walks through all subparts of a message.  If the subpart is of main
-        type `text', then it prints the decoded payload of the subpart.
+        type 'text', then it prints the decoded payload of the subpart.
 
         Otherwise, fmt is a format string that is used instead of the message
         payload.  fmt is expanded with the following keywords (in

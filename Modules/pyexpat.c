@@ -754,13 +754,13 @@ pyexpat.xmlparser.Parse
 
 Parse XML data.
 
-`isfinal' should be true at end of input.
+'isfinal' should be true at end of input.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
-/*[clinic end generated code: output=8faffe07fe1f862a input=d0eb2a69fab3b9f1]*/
+/*[clinic end generated code: output=8faffe07fe1f862a input=053e0f047e55c05a]*/
 {
     const char *s;
     Py_ssize_t slen;
