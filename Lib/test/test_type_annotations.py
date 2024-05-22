@@ -3,6 +3,7 @@ import types
 import unittest
 from test.support import run_code
 
+
 class TypeAnnotationTests(unittest.TestCase):
 
     def test_lazy_create_annotations(self):
@@ -49,6 +50,7 @@ class TypeAnnotationTests(unittest.TestCase):
         class C:
             a:int=3
             b:str=4
+        self.assertEqual(C.__annotations__, {"a": int, "b": str})
         self.assertTrue("__annotations__" in C.__dict__)
         del C.__annotations__
         self.assertFalse("__annotations__" in C.__dict__)
@@ -117,7 +119,9 @@ class TestSetupAnnotations(unittest.TestCase):
                 if scope == "class":
                     annotations = ns["C"].__annotations__
                 else:
-                    annotations = ns["__annotations__"]
+                    mod = types.ModuleType("mod")
+                    mod.__dict__.update(ns)
+                    annotations = mod.__annotations__
                 self.assertEqual(annotations, {"x": int})
 
     def test_top_level(self):
@@ -256,3 +260,22 @@ class AnnotateTests(unittest.TestCase):
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
+
+
+class DeferredEvaluationTests(unittest.TestCase):
+    def test_function(self):
+        def func(x: undefined, /, y: undefined, *args: undefined, z: undefined, **kwargs: undefined) -> undefined:
+            pass
+
+        with self.assertRaises(NameError):
+            func.__annotations__
+
+        undefined = 1
+        self.assertEqual(func.__annotations__, {
+            "x": 1,
+            "y": 1,
+            "args": 1,
+            "z": 1,
+            "kwargs": 1,
+            "return": 1,
+        })
