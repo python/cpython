@@ -86,6 +86,13 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+Added :func:`ast.compare` for comparing two ASTs.
+(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`)
+
+
 
 Optimizations
 =============
