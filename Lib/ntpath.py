@@ -279,19 +279,11 @@ def dirname(p):
 
 # Is a path a junction?
 
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
-else:
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        os.fspath(path)
-        return False
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not supported on the current platform"""
+    os.fspath(path)
+    return False
 
 
 # Being true for dangling symbolic links is also useful.
@@ -875,9 +867,11 @@ try:
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
-    # Use genericpath.* as imported above
+    # Use Python version or genericpath.* as imported above
     pass
 
 
