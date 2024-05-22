@@ -542,6 +542,7 @@ int
 _PyST_IsFunctionLike(PySTEntryObject *ste)
 {
     return ste->ste_type == FunctionBlock
+        || ste->ste_type == AnnotationBlock
         || ste->ste_type == TypeVarBoundBlock
         || ste->ste_type == TypeAliasBlock
         || ste->ste_type == TypeParamBlock;
@@ -2478,12 +2479,20 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
     }
     else {
         if (st->st_cur->ste_annotation_block == NULL) {
+            _Py_block_ty current_type = st->st_cur->ste_type;
             if (!symtable_enter_block(st, parent_ste->ste_name, AnnotationBlock,
                                       key, LOCATION(annotation))) {
                 VISIT_QUIT(st, 0);
             }
             parent_ste->ste_annotation_block =
                 (struct _symtable_entry *)Py_NewRef(st->st_cur);
+            if (current_type == ClassBlock) {
+                st->st_cur->ste_can_see_class_scope = 1;
+                if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
+                    return 0;
+                }
+            }
+
             _Py_DECLARE_STR(format, ".format");
             // We need to insert code that reads this "parameter" to the function.
             if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM,
@@ -2531,9 +2540,16 @@ static int
 symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_ty returns,
                            struct _symtable_entry *function_ste)
 {
+    _Py_block_ty current_type = st->st_cur->ste_type;
     if (!symtable_enter_block(st, function_ste->ste_name, AnnotationBlock,
                               (void *)a, LOCATION(o))) {
         VISIT_QUIT(st, 0);
+    }
+    if (current_type == ClassBlock) {
+        st->st_cur->ste_can_see_class_scope = 1;
+        if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
+            return 0;
+        }
     }
     _Py_DECLARE_STR(format, ".format");
     // We need to insert code that reads this "parameter" to the function.
@@ -2793,7 +2809,7 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 static int
 symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_ty e)
 {
-    enum _block_type type = st->st_cur->ste_type;
+    _Py_block_ty type = st->st_cur->ste_type;
     if (type == AnnotationBlock)
         PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
     else if (type == TypeVarBoundBlock)

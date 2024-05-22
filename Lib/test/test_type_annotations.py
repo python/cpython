@@ -279,3 +279,51 @@ class DeferredEvaluationTests(unittest.TestCase):
             "kwargs": 1,
             "return": 1,
         })
+
+    def test_async_function(self):
+        async def func(x: undefined, /, y: undefined, *args: undefined, z: undefined, **kwargs: undefined) -> undefined:
+            pass
+
+        with self.assertRaises(NameError):
+            func.__annotations__
+
+        undefined = 1
+        self.assertEqual(func.__annotations__, {
+            "x": 1,
+            "y": 1,
+            "args": 1,
+            "z": 1,
+            "kwargs": 1,
+            "return": 1,
+        })
+
+    def test_class(self):
+        class X:
+            a: undefined
+
+        with self.assertRaises(NameError):
+            X.__annotations__
+
+        undefined = 1
+        self.assertEqual(X.__annotations__, {"a": 1})
+
+    def test_module(self):
+        ns = run_code("x: undefined = 1")
+        anno = ns["__annotate__"]
+        with self.assertRaises(AssertionError):  # TODO NotImplementedError
+            anno(2)
+
+        with self.assertRaises(NameError):
+            anno(1)
+
+        ns["undefined"] = 1
+        self.assertEqual(anno(1), {"x": 1})
+
+    def test_class_scoping(self):
+        class Outer:
+            def meth(self, x: Nested): ...
+            x: Nested
+            class Nested: ...
+
+        self.assertEqual(Outer.meth.__annotations__, {"x": Outer.Nested})
+        self.assertEqual(Outer.__annotations__, {"x": Outer.Nested})
