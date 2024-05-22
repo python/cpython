@@ -578,7 +578,7 @@ class TestPyReplCompleter(TestCase):
         reader = self.prepare_reader(events, namespace)
         mock_get_reader.return_value = reader
         output = readline_multiline_input(more_lines, ">>>", "...")
-        self.assertEqual(output[0], "dummy.test_func.__")
+        self.assertEqual(output, "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
 
 

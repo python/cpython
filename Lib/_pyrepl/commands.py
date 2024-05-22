@@ -461,8 +461,6 @@ class show_history(Command):
 class paste_mode(Command):
 
     def do(self) -> None:
-        if not self.reader.paste_mode:
-            self.reader.was_paste_mode_activated = True
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
@@ -470,9 +468,10 @@ class paste_mode(Command):
 class enable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = True
-        self.reader.was_paste_mode_activated = True
+        self.reader.in_bracketed_paste = True
 
 class disable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = False
+        self.reader.in_bracketed_paste = False
         self.reader.dirty = True
