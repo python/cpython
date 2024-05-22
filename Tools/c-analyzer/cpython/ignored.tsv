@@ -395,8 +395,6 @@ Python/optimizer.c	-	cold_exits_initialized	-
 ##-----------------------
 ## test code
 
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
 Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
 Modules/_ctypes/_ctypes_test.c	-	an_integer	-
 Modules/_ctypes/_ctypes_test.c	-	bottom	-
@@ -404,7 +402,6 @@ Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
 Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
 Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
 Modules/_ctypes/_ctypes_test.c	-	left	-
-Modules/_ctypes/_ctypes_test.c	-	module_methods	-
 Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
 Modules/_ctypes/_ctypes_test.c	-	my_spams	-
 Modules/_ctypes/_ctypes_test.c	-	right	-
