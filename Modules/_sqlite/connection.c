@@ -35,6 +35,7 @@
 #include "util.h"
 
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
@@ -75,16 +76,10 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
         *result = NULL;
     }
     else if (PyUnicode_Check(str_or_none)) {
-        Py_ssize_t sz;
-        const char *str = PyUnicode_AsUTF8AndSize(str_or_none, &sz);
+        const char *str = _PyUnicode_AsUTF8NoNUL(str_or_none);
         if (str == NULL) {
             return 0;
         }
-        if (strlen(str) != (size_t)sz) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
-            return 0;
-        }
-
         const char *level = get_isolation_level(str);
         if (level == NULL) {
             return 0;

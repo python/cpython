@@ -139,6 +139,23 @@ def _round_to_figures(n, d, figures):
     return sign, significand, exponent
 
 
+# Pattern for matching non-float-style format specifications.
+_GENERAL_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+    (?:
+        (?P<fill>.)?
+        (?P<align>[<>=^])
+    )?
+    (?P<sign>[-+ ]?)
+    # Alt flag forces a slash and denominator in the output, even for
+    # integer-valued Fraction objects.
+    (?P<alt>\#)?
+    # We don't implement the zeropad flag since there's no single obvious way
+    # to interpret it.
+    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<thousands_sep>[,_])?
+""", re.DOTALL | re.VERBOSE).fullmatch
+
+
 # Pattern for matching float-style format specifications;
 # supports 'e', 'E', 'f', 'F', 'g', 'G' and '%' presentation types.
 _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
@@ -414,27 +431,42 @@ class Fraction(numbers.Rational):
         else:
             return '%s/%s' % (self._numerator, self._denominator)
 
-    def __format__(self, format_spec, /):
-        """Format this fraction according to the given format specification."""
+    def _format_general(self, match):
+        """Helper method for __format__.
 
-        # Backwards compatiblility with existing formatting.
-        if not format_spec:
-            return str(self)
-
+        Handles fill, alignment, signs, and thousands separators in the
+        case of no presentation type.
+        """
         # Validate and parse the format specifier.
-        match = _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec)
-        if match is None:
-            raise ValueError(
-                f"Invalid format specifier {format_spec!r} "
-                f"for object of type {type(self).__name__!r}"
-            )
-        elif match["align"] is not None and match["zeropad"] is not None:
-            # Avoid the temptation to guess.
-            raise ValueError(
-                f"Invalid format specifier {format_spec!r} "
-                f"for object of type {type(self).__name__!r}; "
-                "can't use explicit alignment when zero-padding"
-            )
+        fill = match["fill"] or " "
+        align = match["align"] or ">"
+        pos_sign = "" if match["sign"] == "-" else match["sign"]
+        alternate_form = bool(match["alt"])
+        minimumwidth = int(match["minimumwidth"] or "0")
+        thousands_sep = match["thousands_sep"] or ''
+
+        # Determine the body and sign representation.
+        n, d = self._numerator, self._denominator
+        if d > 1 or alternate_form:
+            body = f"{abs(n):{thousands_sep}}/{d:{thousands_sep}}"
+        else:
+            body = f"{abs(n):{thousands_sep}}"
+        sign = '-' if n < 0 else pos_sign
+
+        # Pad with fill character if necessary and return.
+        padding = fill * (minimumwidth - len(sign) - len(body))
+        if align == ">":
+            return padding + sign + body
+        elif align == "<":
+            return sign + body + padding
+        elif align == "^":
+            half = len(padding) // 2
+            return padding[:half] + sign + body + padding[half:]
+        else:  # align == "="
+            return sign + padding + body
+
+    def _format_float_style(self, match):
+        """Helper method for __format__; handles float presentation types."""
         fill = match["fill"] or " "
         align = match["align"] or ">"
         pos_sign = "" if match["sign"] == "-" else match["sign"]
@@ -529,6 +561,23 @@ class Fraction(numbers.Rational):
             return padding[:half] + sign + body + padding[half:]
         else:  # align == "="
             return sign + padding + body
+
+    def __format__(self, format_spec, /):
+        """Format this fraction according to the given format specification."""
+
+        if match := _GENERAL_FORMAT_SPECIFICATION_MATCHER(format_spec):
+            return self._format_general(match)
+
+        if match := _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec):
+            # Refuse the temptation to guess if both alignment _and_
+            # zero padding are specified.
+            if match["align"] is None or match["zeropad"] is None:
+                return self._format_float_style(match)
+
+        raise ValueError(
+            f"Invalid format specifier {format_spec!r} "
+            f"for object of type {type(self).__name__!r}"
+        )
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational

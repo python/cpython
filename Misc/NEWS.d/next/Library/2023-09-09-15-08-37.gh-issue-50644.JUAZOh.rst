@@ -1,4 +1,0 @@
-Attempts to pickle or create a shallow or deep copy of :mod:`codecs` streams
-now raise a TypeError. Previously, copying failed with a RecursionError,
-while pickling produced wrong results that eventually caused unpickling
-to fail with a RecursionError.

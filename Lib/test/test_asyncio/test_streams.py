@@ -37,8 +37,7 @@ class StreamTests(test_utils.TestCase):
         # just in case if we have transport close callbacks
         test_utils.run_briefly(self.loop)
 
-        self.loop.close()
-        gc.collect()
+        # set_event_loop() takes care of closing self.loop in a safe way
         super().tearDown()
 
     def _basetest_open_connection(self, open_connection_fut):
@@ -1083,10 +1082,11 @@ os.close(fd)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            with self.assertWarns(ResourceWarning):
+            with self.assertWarns(ResourceWarning) as cm:
                 del wr
                 gc.collect()
-
+                self.assertEqual(len(cm.warnings), 1)
+                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1096,6 +1096,75 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
+    def test_loop_is_closed_resource_warnings(self):
+        async def inner(httpd):
+            rd, wr = await asyncio.open_connection(*httpd.address)
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await rd.readline()
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            data = await rd.read()
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+
+            # Make "loop is closed" occur first before "del wr" for this test.
+            self.loop.stop()
+            wr.close()
+            while not self.loop.is_closed():
+                await asyncio.sleep(0.0)
+
+            with self.assertWarns(ResourceWarning) as cm:
+                del wr
+                gc.collect()
+                self.assertEqual(len(cm.warnings), 1)
+                self.assertEqual("loop is closed", str(cm.warnings[0].message))
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            with self.assertRaises(RuntimeError):
+                # This exception is caused by `self.loop.stop()` as expected.
+                self.loop.run_until_complete(inner(httpd))
+            gc.collect()
+
+        self.assertEqual(messages, [])
+
+    def _basetest_unhandled_exceptions(self, handle_echo):
+        port = socket_helper.find_unused_port()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client():
+            rd, wr = await asyncio.open_connection('localhost', port)
+            wr.write(b'test msg')
+            await wr.drain()
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            server = await asyncio.start_server(
+                handle_echo, 'localhost', port)
+            await server.start_serving()
+            await client()
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+        return messages
+
+    def test_unhandled_exception(self):
+        async def handle_echo(reader, writer):
+            raise Exception('test')
+        messages = self._basetest_unhandled_exceptions(handle_echo)
+        self.assertEqual(messages[0]['message'],
+                    'Unhandled exception in client_connected_cb')
+
+    def test_unhandled_cancel(self):
+        async def handle_echo(reader, writer):
+            asyncio.current_task().cancel()
+        messages = self._basetest_unhandled_exceptions(handle_echo)
+        self.assertEqual(messages, [])
 
 
 if __name__ == '__main__':

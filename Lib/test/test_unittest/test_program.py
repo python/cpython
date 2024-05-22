@@ -167,6 +167,18 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
+    def test_ExitSkippedSuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["foobar", "-k", "testSkipped"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.FooBar))
+        self.assertEqual(cm.exception.code, 0)
+        out = stream.getvalue()
+        expected = '\n\nOK (skipped=1)\n'
+        self.assertTrue(out.endswith(expected))
+
     def test_ExitEmptySuite(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit) as cm:

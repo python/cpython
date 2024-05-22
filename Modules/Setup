@@ -155,6 +155,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #math mathmodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
+#_sysconfig _sysconfig.c
 
 # XML
 #_elementtree _elementtree.c
@@ -272,6 +273,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #_xxsubinterpreters _xxsubinterpretersmodule.c
 #_xxinterpchannels _xxinterpchannelsmodule.c
+#_xxinterpqueues _xxinterpqueuesmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c

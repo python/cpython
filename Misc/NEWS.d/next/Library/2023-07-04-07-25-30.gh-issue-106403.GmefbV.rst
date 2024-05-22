@@ -1,4 +1,0 @@
-Instances of :class:`typing.TypeVar`, :class:`typing.ParamSpec`,
-:class:`typing.ParamSpecArgs`, :class:`typing.ParamSpecKwargs`, and
-:class:`typing.TypeVarTuple` once again support weak references, fixing a
-regression introduced in Python 3.12.0 beta 1. Patch by Jelle Zijlstra.

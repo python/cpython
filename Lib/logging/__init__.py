@@ -159,12 +159,9 @@ def addLevelName(level, levelName):
 
     This is used when converting levels to text during message formatting.
     """
-    _acquireLock()
-    try:    #unlikely to cause an exception, but you never know...
+    with _lock:
         _levelToName[level] = levelName
         _nameToLevel[levelName] = level
-    finally:
-        _releaseLock()
 
 if hasattr(sys, "_getframe"):
     currentframe = lambda: sys._getframe(1)
@@ -231,25 +228,27 @@ def _checkLevel(level):
 #
 _lock = threading.RLock()
 
-def _acquireLock():
+def _prepareFork():
     """
-    Acquire the module-level lock for serializing access to shared data.
+    Prepare to fork a new child process by acquiring the module-level lock.
 
-    This should be released with _releaseLock().
+    This should be used in conjunction with _afterFork().
     """
-    if _lock:
-        try:
-            _lock.acquire()
-        except BaseException:
-            _lock.release()
-            raise
-
-def _releaseLock():
-    """
-    Release the module-level lock acquired by calling _acquireLock().
-    """
-    if _lock:
+    # Wrap the lock acquisition in a try-except to prevent the lock from being
+    # abandoned in the event of an asynchronous exception. See gh-106238.
+    try:
+        _lock.acquire()
+    except BaseException:
         _lock.release()
+        raise
+
+def _afterFork():
+    """
+    After a new child process has been forked, release the module-level lock.
+
+    This should be used in conjunction with _prepareFork().
+    """
+    _lock.release()
 
 
 # Prevent a held logging lock from blocking a child from logging.
@@ -264,23 +263,20 @@ else:
     _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
     def _register_at_fork_reinit_lock(instance):
-        _acquireLock()
-        try:
+        with _lock:
             _at_fork_reinit_lock_weakset.add(instance)
-        finally:
-            _releaseLock()
 
     def _after_at_fork_child_reinit_locks():
         for handler in _at_fork_reinit_lock_weakset:
             handler._at_fork_reinit()
 
-        # _acquireLock() was called in the parent before forking.
+        # _prepareFork() was called in the parent before forking.
         # The lock is reinitialized to unlocked state.
         _lock._at_fork_reinit()
 
-    os.register_at_fork(before=_acquireLock,
+    os.register_at_fork(before=_prepareFork,
                         after_in_child=_after_at_fork_child_reinit_locks,
-                        after_in_parent=_releaseLock)
+                        after_in_parent=_afterFork)
 
 
 #---------------------------------------------------------------------------
@@ -883,25 +879,20 @@ def _removeHandlerRef(wr):
     # set to None. It can also be called from another thread. So we need to
     # pre-emptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
-    acquire, release, handlers = _acquireLock, _releaseLock, _handlerList
-    if acquire and release and handlers:
-        acquire()
-        try:
-            handlers.remove(wr)
-        except ValueError:
-            pass
-        finally:
-            release()
+    handlers, lock = _handlerList, _lock
+    if lock and handlers:
+        with lock:
+            try:
+                handlers.remove(wr)
+            except ValueError:
+                pass
 
 def _addHandlerRef(handler):
     """
     Add a handler to the internal cleanup list using a weak reference.
     """
-    _acquireLock()
-    try:
+    with _lock:
         _handlerList.append(weakref.ref(handler, _removeHandlerRef))
-    finally:
-        _releaseLock()
 
 
 def getHandlerByName(name):
@@ -946,15 +937,12 @@ class Handler(Filterer):
         return self._name
 
     def set_name(self, name):
-        _acquireLock()
-        try:
+        with _lock:
             if self._name in _handlers:
                 del _handlers[self._name]
             self._name = name
             if name:
                 _handlers[name] = self
-        finally:
-            _releaseLock()
 
     name = property(get_name, set_name)
 
@@ -1026,11 +1014,8 @@ class Handler(Filterer):
         if isinstance(rv, LogRecord):
             record = rv
         if rv:
-            self.acquire()
-            try:
+            with self.lock:
                 self.emit(record)
-            finally:
-                self.release()
         return rv
 
     def setFormatter(self, fmt):
@@ -1058,13 +1043,10 @@ class Handler(Filterer):
         methods.
         """
         #get the module data lock, as we're updating a shared structure.
-        _acquireLock()
-        try:    #unlikely to raise an exception, but you never know...
+        with _lock:
             self._closed = True
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
-        finally:
-            _releaseLock()
 
     def handleError(self, record):
         """
@@ -1141,12 +1123,9 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        self.acquire()
-        try:
+        with self.lock:
             if self.stream and hasattr(self.stream, "flush"):
                 self.stream.flush()
-        finally:
-            self.release()
 
     def emit(self, record):
         """
@@ -1182,12 +1161,9 @@ class StreamHandler(Handler):
             result = None
         else:
             result = self.stream
-            self.acquire()
-            try:
+            with self.lock:
                 self.flush()
                 self.stream = stream
-            finally:
-                self.release()
         return result
 
     def __repr__(self):
@@ -1237,8 +1213,7 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        self.acquire()
-        try:
+        with self.lock:
             try:
                 if self.stream:
                     try:
@@ -1254,8 +1229,6 @@ class FileHandler(StreamHandler):
                 # Also see Issue #42378: we also rely on
                 # self._closed being set to True there
                 StreamHandler.close(self)
-        finally:
-            self.release()
 
     def _open(self):
         """
@@ -1391,8 +1364,7 @@ class Manager(object):
         rv = None
         if not isinstance(name, str):
             raise TypeError('A logger name must be a string')
-        _acquireLock()
-        try:
+        with _lock:
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
                 if isinstance(rv, PlaceHolder):
@@ -1407,8 +1379,6 @@ class Manager(object):
                 rv.manager = self
                 self.loggerDict[name] = rv
                 self._fixupParents(rv)
-        finally:
-            _releaseLock()
         return rv
 
     def setLoggerClass(self, klass):
@@ -1471,12 +1441,11 @@ class Manager(object):
         Called when level changes are made
         """
 
-        _acquireLock()
-        for logger in self.loggerDict.values():
-            if isinstance(logger, Logger):
-                logger._cache.clear()
-        self.root._cache.clear()
-        _releaseLock()
+        with _lock:
+            for logger in self.loggerDict.values():
+                if isinstance(logger, Logger):
+                    logger._cache.clear()
+            self.root._cache.clear()
 
 #---------------------------------------------------------------------------
 #   Logger classes and functions
@@ -1701,23 +1670,17 @@ class Logger(Filterer):
         """
         Add the specified handler to this logger.
         """
-        _acquireLock()
-        try:
+        with _lock:
             if not (hdlr in self.handlers):
                 self.handlers.append(hdlr)
-        finally:
-            _releaseLock()
 
     def removeHandler(self, hdlr):
         """
         Remove the specified handler from this logger.
         """
-        _acquireLock()
-        try:
+        with _lock:
             if hdlr in self.handlers:
                 self.handlers.remove(hdlr)
-        finally:
-            _releaseLock()
 
     def hasHandlers(self):
         """
@@ -1795,16 +1758,13 @@ class Logger(Filterer):
         try:
             return self._cache[level]
         except KeyError:
-            _acquireLock()
-            try:
+            with _lock:
                 if self.manager.disable >= level:
                     is_enabled = self._cache[level] = False
                 else:
                     is_enabled = self._cache[level] = (
                         level >= self.getEffectiveLevel()
                     )
-            finally:
-                _releaseLock()
             return is_enabled
 
     def getChild(self, suffix):
@@ -1834,16 +1794,13 @@ class Logger(Filterer):
             return 1 + logger.name.count('.')
 
         d = self.manager.loggerDict
-        _acquireLock()
-        try:
+        with _lock:
             # exclude PlaceHolders - the last check is to ensure that lower-level
             # descendants aren't returned - if there are placeholders, a logger's
             # parent field might point to a grandparent or ancestor thereof.
             return set(item for item in d.values()
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
-        finally:
-            _releaseLock()
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
@@ -2102,8 +2059,7 @@ def basicConfig(**kwargs):
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
-    _acquireLock()
-    try:
+    with _lock:
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
         errors = kwargs.pop('errors', 'backslashreplace')
@@ -2152,8 +2108,6 @@ def basicConfig(**kwargs):
             if kwargs:
                 keys = ', '.join(kwargs.keys())
                 raise ValueError('Unrecognised argument(s): %s' % keys)
-    finally:
-        _releaseLock()
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.

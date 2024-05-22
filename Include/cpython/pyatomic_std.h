@@ -854,6 +854,23 @@ _Py_atomic_store_ptr_release(void *obj, void *value)
                           memory_order_release);
 }
 
+static inline void
+_Py_atomic_store_int_release(int *obj, int value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(int)*)obj, value,
+                          memory_order_release);
+}
+
+static inline int
+_Py_atomic_load_int_acquire(const int *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(int)*)obj,
+                                memory_order_acquire);
+}
+
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

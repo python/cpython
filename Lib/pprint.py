@@ -128,6 +128,9 @@ class PrettyPrinter:
         sort_dicts
             If true, dict keys are sorted.
 
+        underscore_numbers
+            If true, digit groups are separated with underscores.
+
         """
         indent = int(indent)
         width = int(width)

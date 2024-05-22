@@ -296,7 +296,7 @@ An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table
 descriptors that are used at runtime is that any attribute defined this way can
 have an associated doc string simply by providing the text in the table.  An
 application can use the introspection API to retrieve the descriptor from the
-class object, and get the doc string using its :attr:`__doc__` attribute.
+class object, and get the doc string using its :attr:`!__doc__` attribute.
 
 As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :c:member:`~PyMethodDef.ml_name` value
 of ``NULL`` is required.

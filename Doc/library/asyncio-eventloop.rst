@@ -243,9 +243,9 @@ Scheduling callbacks
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-.. versionchanged:: 3.7
-   The *context* keyword-only parameter was added. See :pep:`567`
-   for more details.
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. _asyncio-pass-keywords:
 
@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :py:const:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :ref:`socket.SO_REUSEPORT <socket-unix-constants>` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -607,7 +607,8 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:const:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
+      poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,7 +617,8 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:const:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :ref:`socket.SO_REUSEPORT <socket-unix-constants>`
+      is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
@@ -661,12 +663,15 @@ Opening network connections
 Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _loop_create_server:
+
 .. coroutinemethod:: loop.create_server(protocol_factory, \
                         host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
                         reuse_address=None, reuse_port=None, \
+                        keep_alive=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
@@ -731,6 +736,13 @@ Creating network servers
      set this flag when being created. This option is not supported on
      Windows.
 
+   * *keep_alive* set to ``True`` keeps connections active by enabling the
+     periodic transmission of messages.
+
+   .. versionchanged:: 3.13
+
+      Added the *keep_alive* parameter.
+
    * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
      for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
@@ -756,7 +768,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
@@ -774,7 +786,7 @@ Creating network servers
                           *, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          start_serving=True)
+                          start_serving=True, cleanup_socket=True)
 
    Similar to :meth:`loop.create_server` but works with the
    :py:const:`~socket.AF_UNIX` socket family.
@@ -783,6 +795,10 @@ Creating network servers
    unless a *sock* argument is provided.  Abstract Unix sockets,
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
+
+   If *cleanup_socket* is True then the Unix socket will automatically
+   be removed from the filesystem when the server is closed, unless the
+   socket has been replaced after the server has been created.
 
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
@@ -797,6 +813,10 @@ Creating network servers
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+
+      Added the *cleanup_socket* parameter.
 
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
@@ -1191,6 +1211,8 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
+.. _loop_add_signal_handler:
+
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
@@ -1391,6 +1413,14 @@ Enabling debug mode
       The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
+.. attribute:: loop.slow_callback_duration
+
+   This attribute can be used to set the
+   minimum execution duration in seconds that is considered "slow".
+   When debug mode is enabled, "slow" callbacks are logged.
+
+   Default value is 100 milliseconds.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1410,6 +1440,8 @@ async/await code consider using the high-level
    subprocesses, whereas :class:`SelectorEventLoop` does not. See
    :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
    details.
+
+.. _loop_subprocess_exec:
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1605,8 +1637,9 @@ Do not instantiate the :class:`Server` class directly.
       The sockets that represent existing incoming client connections
       are left open.
 
-      The server is closed asynchronously, use the :meth:`wait_closed`
-      coroutine to wait until the server is closed.
+      The server is closed asynchronously; use the :meth:`wait_closed`
+      coroutine to wait until the server is closed (and no more
+      connections are active).
 
    .. method:: get_loop()
 
@@ -1664,7 +1697,8 @@ Do not instantiate the :class:`Server` class directly.
 
    .. coroutinemethod:: wait_closed()
 
-      Wait until the :meth:`close` method completes.
+      Wait until the :meth:`close` method completes and all active
+      connections have finished.
 
    .. attribute:: sockets
 
@@ -1686,13 +1720,13 @@ Event Loop Implementations
 asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
-By default asyncio is configured to use :class:`SelectorEventLoop`
-on Unix and :class:`ProactorEventLoop` on Windows.
+By default asyncio is configured to use :class:`EventLoop`.
 
 
 .. class:: SelectorEventLoop
 
-   An event loop based on the :mod:`selectors` module.
+   A subclass of :class:`AbstractEventLoop` based on the
+   :mod:`selectors` module.
 
    Uses the most efficient *selector* available for the given
    platform.  It is also possible to manually configure the
@@ -1714,7 +1748,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
 .. class:: ProactorEventLoop
 
-   An event loop for Windows that uses "I/O Completion Ports" (IOCP).
+   A subclass of :class:`AbstractEventLoop` for Windows that uses "I/O Completion Ports" (IOCP).
 
    .. availability:: Windows.
 
@@ -1723,6 +1757,14 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       `MSDN documentation on I/O Completion Ports
       <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
 
+.. class:: EventLoop
+
+    An alias to the most efficient available subclass of :class:`AbstractEventLoop` for the given
+    platform.
+
+    It is an alias to :class:`SelectorEventLoop` on Unix and :class:`ProactorEventLoop` on Windows.
+
+   .. versionadded:: 3.13
 
 .. class:: AbstractEventLoop
 
@@ -1872,7 +1914,7 @@ Set signal handlers for SIGINT and SIGTERM
 
 (This ``signals`` example only works on Unix.)
 
-Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
+Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
 
     import asyncio

@@ -49,5 +49,21 @@ class MethodWrapper:
         'method_with_doctest'
         """
 
+    @classmethod
+    def classmethod_with_doctest(cls):
+        """
+        This has a doctest!
+        >>> MethodWrapper.classmethod_with_doctest.__name__
+        'classmethod_with_doctest'
+        """
+
+    @property
+    def property_with_doctest(self):
+        """
+        This has a doctest!
+        >>> MethodWrapper.property_with_doctest.__name__
+        'property_with_doctest'
+        """
+
 # https://github.com/python/cpython/issues/99433
 str_wrapper = object().__str__

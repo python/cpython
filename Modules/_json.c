@@ -24,7 +24,6 @@ typedef struct _PyScannerObject {
     PyObject *parse_float;
     PyObject *parse_int;
     PyObject *parse_constant;
-    PyObject *memo;
 } PyScannerObject;
 
 static PyMemberDef scanner_members[] = {
@@ -70,7 +69,7 @@ ascii_escape_unicode(PyObject *pystr);
 static PyObject *
 py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 static PyObject *
-scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
+scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
 static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx);
 static PyObject *
@@ -631,7 +630,6 @@ scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
-    Py_VISIT(self->memo);
     return 0;
 }
 
@@ -643,12 +641,11 @@ scanner_clear(PyScannerObject *self)
     Py_CLEAR(self->parse_float);
     Py_CLEAR(self->parse_int);
     Py_CLEAR(self->parse_constant);
-    Py_CLEAR(self->memo);
     return 0;
 }
 
 static PyObject *
-_parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
+_parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
 {
     /* Read a JSON object from PyUnicode pystr.
     idx is the index of the first character after the opening curly brace.
@@ -665,6 +662,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     PyObject *key = NULL;
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
     Py_ssize_t next_idx;
+    Py_ssize_t comma_idx;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -693,7 +691,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_SetDefault(s->memo, key, key);
+            memokey = PyDict_SetDefault(memo, key, key);
             if (memokey == NULL) {
                 goto bail;
             }
@@ -710,7 +708,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* read any JSON term */
-            val = scan_once_unicode(s, pystr, idx, &next_idx);
+            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
@@ -744,10 +742,16 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
+            comma_idx = idx;
             idx++;
 
             /* skip whitespace after , delimiter */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
+
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}') {
+                raise_errmsg("Illegal trailing comma before end of object", pystr, comma_idx);
+                goto bail;
+            }
         }
     }
 
@@ -774,7 +778,7 @@ bail:
 }
 
 static PyObject *
-_parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
+_parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
     /* Read a JSON array from PyUnicode pystr.
     idx is the index of the first character after the opening brace.
     *next_idx_ptr is a return-by-reference index to the first character after
@@ -788,6 +792,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     PyObject *val = NULL;
     PyObject *rval;
     Py_ssize_t next_idx;
+    Py_ssize_t comma_idx;
 
     rval = PyList_New(0);
     if (rval == NULL)
@@ -805,7 +810,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
         while (1) {
 
             /* read any JSON term  */
-            val = scan_once_unicode(s, pystr, idx, &next_idx);
+            val = scan_once_unicode(s, memo, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
@@ -825,10 +830,16 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
+            comma_idx = idx;
             idx++;
 
             /* skip whitespace after , */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
+
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']') {
+                raise_errmsg("Illegal trailing comma before end of array", pystr, comma_idx);
+                goto bail;
+            }
         }
     }
 
@@ -986,7 +997,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 }
 
 static PyObject *
-scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
+scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
 {
     /* Read one JSON term (of any kind) from PyUnicode pystr.
     idx is the index of the first character of the term
@@ -1022,7 +1033,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             if (_Py_EnterRecursiveCall(" while decoding a JSON object "
                                        "from a unicode string"))
                 return NULL;
-            res = _parse_object_unicode(s, pystr, idx + 1, next_idx_ptr);
+            res = _parse_object_unicode(s, memo, pystr, idx + 1, next_idx_ptr);
             _Py_LeaveRecursiveCall();
             return res;
         case '[':
@@ -1030,7 +1041,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             if (_Py_EnterRecursiveCall(" while decoding a JSON array "
                                        "from a unicode string"))
                 return NULL;
-            res = _parse_array_unicode(s, pystr, idx + 1, next_idx_ptr);
+            res = _parse_array_unicode(s, memo, pystr, idx + 1, next_idx_ptr);
             _Py_LeaveRecursiveCall();
             return res;
         case 'n':
@@ -1106,16 +1117,19 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:scan_once", kwlist, &pystr, &idx))
         return NULL;
 
-    if (PyUnicode_Check(pystr)) {
-        rval = scan_once_unicode(self, pystr, idx, &next_idx);
-    }
-    else {
+    if (!PyUnicode_Check(pystr)) {
         PyErr_Format(PyExc_TypeError,
-                 "first argument must be a string, not %.80s",
-                 Py_TYPE(pystr)->tp_name);
+                     "first argument must be a string, not %.80s",
+                     Py_TYPE(pystr)->tp_name);
         return NULL;
     }
-    PyDict_Clear(self->memo);
+
+    PyObject *memo = PyDict_New();
+    if (memo == NULL) {
+        return NULL;
+    }
+    rval = scan_once_unicode(self, memo, pystr, idx, &next_idx);
+    Py_DECREF(memo);
     if (rval == NULL)
         return NULL;
     return _build_rval_index_tuple(rval, next_idx);
@@ -1136,10 +1150,6 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (s == NULL) {
         return NULL;
     }
-
-    s->memo = PyDict_New();
-    if (s->memo == NULL)
-        goto bail;
 
     /* All of these will fail "gracefully" so we don't need to verify them */
     strict = PyObject_GetAttrString(ctx, "strict");

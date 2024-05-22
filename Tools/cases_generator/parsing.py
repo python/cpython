@@ -105,8 +105,7 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
-    override: bool
-    register: bool
+    annotations: list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -115,8 +114,7 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    override: bool
-    register: bool
+    annotations: list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -140,20 +138,22 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    targets: list[str]  # opcodes this can be replaced by
+    flags: list[str]   # instr flags to set on the pseudo instruction
+    targets: list[str] # opcodes this can be replaced by
 
+AstNode = InstDef | Macro | Pseudo | Family
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Macro | Pseudo | Family | None:
-        if inst := self.inst_def():
-            return inst
+    def definition(self) -> AstNode | None:
         if macro := self.macro_def():
             return macro
         if family := self.family_def():
             return family
         if pseudo := self.pseudo_def():
             return pseudo
+        if inst := self.inst_def():
+            return inst
         return None
 
     @contextual
@@ -161,8 +161,7 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.override,
-                    hdr.register,
+                    hdr.annotations,
                     hdr.kind,
                     hdr.name,
                     hdr.inputs,
@@ -174,13 +173,15 @@ class Parser(PLexer):
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # [override] inst(NAME)
-        #   | [override] [register] inst(NAME, (inputs -- outputs))
-        #   | [override] [register] op(NAME, (inputs -- outputs))
-        # TODO: Make INST a keyword in the lexer.
-        override = bool(self.expect(lx.OVERRIDE))
-        register = bool(self.expect(lx.REGISTER))
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text in ("inst", "op"):
+        # annotation* inst(NAME, (inputs -- outputs))
+        # | annotation* op(NAME, (inputs -- outputs))
+        annotations = []
+        while anno := self.expect(lx.ANNOTATION):
+            annotations.append(anno.text)
+        tkn = self.expect(lx.INST)
+        if not tkn:
+            tkn = self.expect(lx.OP)
+        if tkn:
             kind = cast(Literal["inst", "op"], tkn.text)
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
@@ -188,7 +189,7 @@ class Parser(PLexer):
                     inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
-                            return InstHeader(override, register, kind, name, inp, outp)
+                            return InstHeader(annotations, kind, name, inp, outp)
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
@@ -312,7 +313,7 @@ class Parser(PLexer):
 
     @contextual
     def macro_def(self) -> Macro | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "macro":
+        if tkn := self.expect(lx.MACRO):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
@@ -375,19 +376,39 @@ class Parser(PLexer):
                                     )
         return None
 
+    def flags(self) -> list[str]:
+        here = self.getpos()
+        if self.expect(lx.LPAREN):
+            if tkn := self.expect(lx.IDENTIFIER):
+                flags = [tkn.text]
+                while self.expect(lx.COMMA):
+                    if tkn := self.expect(lx.IDENTIFIER):
+                        flags.append(tkn.text)
+                    else:
+                        break
+                if not self.expect(lx.RPAREN):
+                    raise self.make_syntax_error("Expected comma or right paren")
+                return flags
+        self.setpos(here)
+        return []
+
     @contextual
     def pseudo_def(self) -> Pseudo | None:
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "pseudo":
             size = None
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.COMMA):
+                        flags = self.flags()
+                    else:
+                        flags = []
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):
                                 raise self.make_syntax_error("Expected {")
                             if members := self.members():
                                 if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(tkn.text, members)
+                                    return Pseudo(tkn.text, flags, members)
         return None
 
     def members(self) -> list[str] | None:

@@ -131,6 +131,12 @@ to start a process.  These *start methods* are
        Code that requires *fork* should explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
+    .. versionchanged:: 3.12
+       If Python is able to detect that your process has multiple threads, the
+       :func:`os.fork` function that this start method calls internally will
+       raise a :exc:`DeprecationWarning`. Use a different start method.
+       See the :func:`os.fork` documentation for further explanation.
+
   *forkserver*
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
@@ -990,13 +996,20 @@ Miscellaneous
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
+   :func:`os.process_cpu_count` (or ``len(os.sched_getaffinity(0))``).
 
    When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
 
    .. seealso::
       :func:`os.cpu_count`
+      :func:`os.process_cpu_count`
+
+   .. versionchanged:: 3.13
+
+      The return value can also be overridden using the
+      :option:`-X cpu_count <-X>` flag or :envvar:`PYTHON_CPU_COUNT` as this is
+      merely a wrapper around the :mod:`os` cpu count APIs.
 
 .. function:: current_process()
 
@@ -2208,7 +2221,7 @@ with the :class:`Pool` class.
    callbacks and has a parallel map implementation.
 
    *processes* is the number of worker processes to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
@@ -2242,6 +2255,10 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.4
       *context*
+
+   .. versionchanged:: 3.13
+      *processes* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
 
    .. note::
 
@@ -2565,7 +2582,7 @@ multiple connections at the same time.
    **Windows**: An item in *object_list* must either be an integer
    handle which is waitable (according to the definition used by the
    documentation of the Win32 function ``WaitForMultipleObjects()``)
-   or it can be an object with a :meth:`fileno` method which returns a
+   or it can be an object with a :meth:`~io.IOBase.fileno` method which returns a
    socket handle or pipe handle.  (Note that pipe handles and socket
    handles are **not** waitable handles.)
 
@@ -2613,7 +2630,6 @@ server::
 The following code uses :func:`~multiprocessing.connection.wait` to
 wait for messages from multiple processes at once::
 
-   import time, random
    from multiprocessing import Process, Pipe, current_process
    from multiprocessing.connection import wait
 
@@ -2769,27 +2785,27 @@ worker threads rather than worker processes.
    :meth:`~multiprocessing.pool.Pool.terminate` manually.
 
    *processes* is the number of worker threads to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
 
    Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
 
-    .. note::
+   .. note::
 
-        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
-        is designed around a pool of processes and predates the introduction of
-        the :class:`concurrent.futures` module.  As such, it inherits some
-        operations that don't make sense for a pool backed by threads, and it
-        has its own type for representing the status of asynchronous jobs,
-        :class:`AsyncResult`, that is not understood by any other libraries.
+      A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+      is designed around a pool of processes and predates the introduction of
+      the :class:`concurrent.futures` module.  As such, it inherits some
+      operations that don't make sense for a pool backed by threads, and it
+      has its own type for representing the status of asynchronous jobs,
+      :class:`AsyncResult`, that is not understood by any other libraries.
 
-        Users should generally prefer to use
-        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
-        interface that was designed around threads from the start, and which
-        returns :class:`concurrent.futures.Future` instances that are
-        compatible with many other libraries, including :mod:`asyncio`.
+      Users should generally prefer to use
+      :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+      interface that was designed around threads from the start, and which
+      returns :class:`concurrent.futures.Future` instances that are
+      compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:

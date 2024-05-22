@@ -1,2 +1,0 @@
-Enum: raise :exc:`TypeError` if ``super().__new__()`` is called from a
-custom ``__new__``.

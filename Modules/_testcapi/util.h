@@ -25,7 +25,8 @@
     } while (0)
 
 /* Marker to check that pointer value was set. */
-#define UNINITIALIZED_PTR ((void *)"uninitialized")
+static const char uninitialized[] = "uninitialized";
+#define UNINITIALIZED_PTR ((void *)uninitialized)
 /* Marker to check that Py_ssize_t value was set. */
 #define UNINITIALIZED_SIZE ((Py_ssize_t)236892191)
 /* Marker to check that integer value was set. */

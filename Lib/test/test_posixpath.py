@@ -47,18 +47,26 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(os_helper.TESTFN + suffix)
 
     def test_join(self):
-        self.assertEqual(posixpath.join("/foo", "bar", "/bar", "baz"),
-                         "/bar/baz")
-        self.assertEqual(posixpath.join("/foo", "bar", "baz"), "/foo/bar/baz")
-        self.assertEqual(posixpath.join("/foo/", "bar/", "baz/"),
-                         "/foo/bar/baz/")
+        fn = posixpath.join
+        self.assertEqual(fn("/foo", "bar", "/bar", "baz"), "/bar/baz")
+        self.assertEqual(fn("/foo", "bar", "baz"),         "/foo/bar/baz")
+        self.assertEqual(fn("/foo/", "bar/", "baz/"),      "/foo/bar/baz/")
 
-        self.assertEqual(posixpath.join(b"/foo", b"bar", b"/bar", b"baz"),
-                         b"/bar/baz")
-        self.assertEqual(posixpath.join(b"/foo", b"bar", b"baz"),
-                         b"/foo/bar/baz")
-        self.assertEqual(posixpath.join(b"/foo/", b"bar/", b"baz/"),
-                         b"/foo/bar/baz/")
+        self.assertEqual(fn(b"/foo", b"bar", b"/bar", b"baz"), b"/bar/baz")
+        self.assertEqual(fn(b"/foo", b"bar", b"baz"),          b"/foo/bar/baz")
+        self.assertEqual(fn(b"/foo/", b"bar/", b"baz/"),       b"/foo/bar/baz/")
+
+        self.assertEqual(fn("a", "b"),         "a/b")
+        self.assertEqual(fn("a", "b/"),        "a/b/")
+        self.assertEqual(fn("a/", "b"),        "a/b")
+        self.assertEqual(fn("a/", "b/"),       "a/b/")
+        self.assertEqual(fn("a", "b/c", "d"),  "a/b/c/d")
+        self.assertEqual(fn("a", "b//c", "d"), "a/b//c/d")
+        self.assertEqual(fn("a", "b/c/", "d"), "a/b/c/d")
+        self.assertEqual(fn("/a", "b"),        "/a/b")
+        self.assertEqual(fn("/a/", "b"),       "/a/b")
+        self.assertEqual(fn("a", "/b", "c"),   "/b/c")
+        self.assertEqual(fn("a", "/b", "/c"),  "/c")
 
     def test_split(self):
         self.assertEqual(posixpath.split("/foo/bar"), ("/foo", "bar"))

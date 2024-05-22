@@ -1,4 +1,0 @@
-Raise an exception when setting a non-local event (``RAISE``, ``EXCEPTION_HANDLED``,
-etc.) in ``sys.monitoring.set_local_events``.
-
-Fixes crash when tracing in recursive calls to Python classes.

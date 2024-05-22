@@ -237,7 +237,7 @@ implementation used by the asyncio event loop:
 
    It works reliably even when the asyncio event loop is run in a non-main OS thread.
 
-   There is no noticeable overhead when handling a big number of children (*O(1)* each
+   There is no noticeable overhead when handling a big number of children (*O*\ (1) each
    time a child terminates), but starting a thread per process requires extra memory.
 
    This watcher is used by default.
@@ -257,7 +257,7 @@ implementation used by the asyncio event loop:
    watcher is installed.
 
    The solution is safe but it has a significant overhead when
-   handling a big number of processes (*O(n)* each time a
+   handling a big number of processes (*O*\ (*n*) each time a
    :py:data:`SIGCHLD` is received).
 
    .. versionadded:: 3.8
@@ -273,7 +273,7 @@ implementation used by the asyncio event loop:
    The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
 
-   This solution is as safe as :class:`MultiLoopChildWatcher` and has the same *O(N)*
+   This solution is as safe as :class:`MultiLoopChildWatcher` and has the same *O*\ (*n*)
    complexity but requires a running event loop in the main thread to work.
 
    .. deprecated:: 3.12
@@ -285,7 +285,7 @@ implementation used by the asyncio event loop:
    processes and waiting for their termination.
 
    There is no noticeable overhead when handling a big number of
-   children (*O(1)* each time a child terminates).
+   children (*O*\ (1) each time a child terminates).
 
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.

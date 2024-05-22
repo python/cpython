@@ -4,8 +4,9 @@ import unittest
 
 from test import support
 
+from .filter import match_test, set_match_tests
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    StrPath, TestName, TestTuple, TestList, TestFilter,
     abs_module_name, count, printlist)
 
 
@@ -19,6 +20,8 @@ SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
     "test_future_stmt",
+    "test_gdb",
+    "test_inspect",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
@@ -77,15 +80,14 @@ def _list_cases(suite):
         if isinstance(test, unittest.TestSuite):
             _list_cases(test)
         elif isinstance(test, unittest.TestCase):
-            if support.match_test(test):
+            if match_test(test):
                 print(test.id())
 
 def list_cases(tests: TestTuple, *,
-               match_tests: FilterTuple | None = None,
-               ignore_tests: FilterTuple | None = None,
+               match_tests: TestFilter | None = None,
                test_dir: StrPath | None = None):
     support.verbose = False
-    support.set_match_tests(match_tests, ignore_tests)
+    set_match_tests(match_tests)
 
     skipped = []
     for test_name in tests:

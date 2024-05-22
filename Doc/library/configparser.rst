@@ -208,7 +208,7 @@ converters and customize the provided ones. [1]_
 Fallback Values
 ---------------
 
-As with a dictionary, you can use a section's :meth:`get` method to
+As with a dictionary, you can use a section's :meth:`~ConfigParser.get` method to
 provide fallback values:
 
 .. doctest::
@@ -232,7 +232,7 @@ even if we specify a fallback:
    >>> topsecret.get('CompressionLevel', '3')
    '9'
 
-One more thing to be aware of is that the parser-level :meth:`get` method
+One more thing to be aware of is that the parser-level :meth:`~ConfigParser.get` method
 provides a custom, more complex interface, maintained for backwards
 compatibility.  When using this method, a fallback value can be provided via
 the ``fallback`` keyword-only argument:
@@ -271,7 +271,7 @@ out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
 
-By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
 Configuration files may include comments, prefixed by specific
@@ -481,7 +481,7 @@ historical background and it's very likely that you will want to customize some
 of the features.
 
 The most common way to change the way a specific config parser works is to use
-the :meth:`__init__` options:
+the :meth:`!__init__` options:
 
 * *defaults*, default value: ``None``
 
@@ -491,7 +491,7 @@ the :meth:`__init__` options:
   the documented default.
 
   Hint: if you want to specify default values for a specific section, use
-  :meth:`read_dict` before you read the actual file.
+  :meth:`~ConfigParser.read_dict` before you read the actual file.
 
 * *dict_type*, default value: :class:`dict`
 
@@ -635,8 +635,8 @@ the :meth:`__init__` options:
 * *strict*, default value: ``True``
 
   When set to ``True``, the parser will not allow for any section or option
-  duplicates while reading from a single source (using :meth:`read_file`,
-  :meth:`read_string` or :meth:`read_dict`).  It is recommended to use strict
+  duplicates while reading from a single source (using :meth:`~ConfigParser.read_file`,
+  :meth:`~ConfigParser.read_string` or :meth:`~ConfigParser.read_dict`).  It is recommended to use strict
   parsers in new applications.
 
   .. versionchanged:: 3.2
@@ -697,7 +697,7 @@ the :meth:`__init__` options:
   desirable, users may define them in a subclass or pass a dictionary where each
   key is a name of the converter and each value is a callable implementing said
   conversion.  For instance, passing ``{'decimal': decimal.Decimal}`` would add
-  :meth:`getdecimal` on both the parser object and all section proxies.  In
+  :meth:`!getdecimal` on both the parser object and all section proxies.  In
   other words, it will be possible to write both
   ``parser_instance.getdecimal('section', 'key', fallback=0)`` and
   ``parser_instance['section'].getdecimal('key', 0)``.
@@ -955,7 +955,7 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
    .. versionchanged:: 3.1
@@ -1062,11 +1062,11 @@ ConfigParser Objects
       yielding Unicode strings (for example files opened in text mode).
 
       Optional argument *source* specifies the name of the file being read.  If
-      not given and *f* has a :attr:`name` attribute, that is used for
+      not given and *f* has a :attr:`!name` attribute, that is used for
       *source*; the default is ``'<???>'``.
 
       .. versionadded:: 3.2
-         Replaces :meth:`readfp`.
+         Replaces :meth:`!readfp`.
 
    .. method:: read_string(string, source='<string>')
 
@@ -1214,7 +1214,7 @@ ConfigParser Objects
 
 .. data:: MAX_INTERPOLATION_DEPTH
 
-   The maximum depth for recursive interpolation for :meth:`get` when the *raw*
+   The maximum depth for recursive interpolation for :meth:`~configparser.ConfigParser.get` when the *raw*
    parameter is false.  This is relevant only when the default *interpolation*
    is used.
 
@@ -1287,13 +1287,13 @@ Exceptions
 
 .. exception:: DuplicateSectionError
 
-   Exception raised if :meth:`add_section` is called with the name of a section
+   Exception raised if :meth:`~ConfigParser.add_section` is called with the name of a section
    that is already present or in strict parsers when a section if found more
    than once in a single input file, string or dictionary.
 
    .. versionadded:: 3.2
       Optional ``source`` and ``lineno`` attributes and arguments to
-      :meth:`__init__` were added.
+      :meth:`!__init__` were added.
 
 
 .. exception:: DuplicateOptionError
@@ -1345,9 +1345,9 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
-.. versionchanged:: 3.12
-   The ``filename`` attribute and :meth:`__init__` constructor argument were
-   removed.  They have been available using the name ``source`` since 3.2.
+   .. versionchanged:: 3.12
+      The ``filename`` attribute and :meth:`!__init__` constructor argument were
+      removed.  They have been available using the name ``source`` since 3.2.
 
 .. rubric:: Footnotes
 

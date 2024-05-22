@@ -2648,7 +2648,7 @@ module.
 .. nonce: THJSYB
 .. section: Library
 
-Changed FeedParser feed() to avoid O(N\ :sup:`2`) behavior when parsing long line.
+Changed FeedParser feed() to avoid *O*\ (*n*\ :sup:`2`) behavior when parsing long line.
 Original patch by Raymond Hettinger.
 
 ..

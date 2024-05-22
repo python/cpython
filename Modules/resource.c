@@ -1,3 +1,10 @@
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
+// Need limited C API version 3.13 for PySys_Audit()
+#define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "Python.h"
 #include <errno.h>                // errno
 #include <string.h>
@@ -116,24 +123,24 @@ resource_getrusage_impl(PyObject *module, int who)
     if (!result)
         return NULL;
 
-    PyStructSequence_SET_ITEM(result, 0,
+    PyStructSequence_SetItem(result, 0,
                     PyFloat_FromDouble(doubletime(ru.ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
+    PyStructSequence_SetItem(result, 1,
                     PyFloat_FromDouble(doubletime(ru.ru_stime)));
-    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(ru.ru_maxrss));
-    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(ru.ru_ixrss));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(ru.ru_idrss));
-    PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(ru.ru_isrss));
-    PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(ru.ru_minflt));
-    PyStructSequence_SET_ITEM(result, 7, PyLong_FromLong(ru.ru_majflt));
-    PyStructSequence_SET_ITEM(result, 8, PyLong_FromLong(ru.ru_nswap));
-    PyStructSequence_SET_ITEM(result, 9, PyLong_FromLong(ru.ru_inblock));
-    PyStructSequence_SET_ITEM(result, 10, PyLong_FromLong(ru.ru_oublock));
-    PyStructSequence_SET_ITEM(result, 11, PyLong_FromLong(ru.ru_msgsnd));
-    PyStructSequence_SET_ITEM(result, 12, PyLong_FromLong(ru.ru_msgrcv));
-    PyStructSequence_SET_ITEM(result, 13, PyLong_FromLong(ru.ru_nsignals));
-    PyStructSequence_SET_ITEM(result, 14, PyLong_FromLong(ru.ru_nvcsw));
-    PyStructSequence_SET_ITEM(result, 15, PyLong_FromLong(ru.ru_nivcsw));
+    PyStructSequence_SetItem(result, 2, PyLong_FromLong(ru.ru_maxrss));
+    PyStructSequence_SetItem(result, 3, PyLong_FromLong(ru.ru_ixrss));
+    PyStructSequence_SetItem(result, 4, PyLong_FromLong(ru.ru_idrss));
+    PyStructSequence_SetItem(result, 5, PyLong_FromLong(ru.ru_isrss));
+    PyStructSequence_SetItem(result, 6, PyLong_FromLong(ru.ru_minflt));
+    PyStructSequence_SetItem(result, 7, PyLong_FromLong(ru.ru_majflt));
+    PyStructSequence_SetItem(result, 8, PyLong_FromLong(ru.ru_nswap));
+    PyStructSequence_SetItem(result, 9, PyLong_FromLong(ru.ru_inblock));
+    PyStructSequence_SetItem(result, 10, PyLong_FromLong(ru.ru_oublock));
+    PyStructSequence_SetItem(result, 11, PyLong_FromLong(ru.ru_msgsnd));
+    PyStructSequence_SetItem(result, 12, PyLong_FromLong(ru.ru_msgrcv));
+    PyStructSequence_SetItem(result, 13, PyLong_FromLong(ru.ru_nsignals));
+    PyStructSequence_SetItem(result, 14, PyLong_FromLong(ru.ru_nvcsw));
+    PyStructSequence_SetItem(result, 15, PyLong_FromLong(ru.ru_nivcsw));
 
     if (PyErr_Occurred()) {
         Py_DECREF(result);
@@ -153,13 +160,13 @@ py2rlimit(PyObject *limits, struct rlimit *rl_out)
         /* Here limits is a borrowed reference */
         return -1;
 
-    if (PyTuple_GET_SIZE(limits) != 2) {
+    if (PyTuple_Size(limits) != 2) {
         PyErr_SetString(PyExc_ValueError,
                         "expected a tuple of 2 integers");
         goto error;
     }
-    curobj = PyTuple_GET_ITEM(limits, 0);
-    maxobj = PyTuple_GET_ITEM(limits, 1);
+    curobj = PyTuple_GetItem(limits, 0);  // borrowed
+    maxobj = PyTuple_GetItem(limits, 1);  // borrowed
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     rl_out->rlim_cur = PyLong_AsLong(curobj);
     if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())

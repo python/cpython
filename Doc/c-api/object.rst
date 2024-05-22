@@ -47,9 +47,8 @@ Object Protocol
 
 .. c:function:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
+   This function always succeeds.
 
    .. note::
 
@@ -489,3 +488,21 @@ Object Protocol
    :c:macro:`Py_TPFLAGS_ITEMS_AT_END` set.
 
    .. versionadded:: 3.12
+
+.. c:function:: int PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
+
+   Visit the managed dictionary of *obj*.
+
+   This function must only be called in a traverse function of the type which
+   has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyObject_ClearManagedDict(PyObject *obj)
+
+   Clear the managed dictionary of *obj*.
+
+   This function must only be called in a traverse function of the type which
+   has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
+
+   .. versionadded:: 3.13

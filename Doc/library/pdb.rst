@@ -570,9 +570,26 @@ can be overridden by the local file.
 
    Start an interactive interpreter (using the :mod:`code` module) whose global
    namespace contains all the (global and local) names found in the current
-   scope.
+   scope. Use ``exit()`` or ``quit()`` to exit the interpreter and return to
+   the debugger.
+
+   .. note::
+
+      Because interact creates a new global namespace with the current global
+      and local namespace for execution, assignment to variables will not
+      affect the original namespaces.
+      However, modification to the mutable objects will be reflected in the
+      original namespaces.
 
    .. versionadded:: 3.2
+
+   .. versionadded:: 3.13
+      ``exit()`` and ``quit()`` can be used to exit :pdbcmd:`interact`
+      command.
+
+   .. versionchanged:: 3.13
+      :pdbcmd:`interact` directs its output to the debugger's
+      output channel rather than :data:`sys.stderr`.
 
 .. _debugger-aliases:
 
@@ -580,7 +597,7 @@ can be overridden by the local file.
 
    Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
-   ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
+   ``%1``, ``%2``, ... and ``%9``, while ``%*`` is replaced by all the parameters.
    If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 

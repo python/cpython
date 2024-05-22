@@ -44,13 +44,14 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a
+:meth:`~object.__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
 * constants defined to be false: ``None`` and ``False``
 
@@ -197,7 +198,7 @@ exception.
 
 Two more operations with the same syntactic priority, :keyword:`in` and
 :keyword:`not in`, are supported by types that are :term:`iterable` or
-implement the :meth:`__contains__` method.
+implement the :meth:`~object.__contains__` method.
 
 .. _typesnumeric:
 
@@ -717,7 +718,7 @@ that's defined for any rational number, and hence applies to all instances of
 :class:`int` and :class:`fractions.Fraction`, and all finite instances of
 :class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
 given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
-made available to Python as the :attr:`modulus` attribute of
+made available to Python as the :attr:`~sys.hash_info.modulus` attribute of
 :data:`sys.hash_info`.
 
 .. impl-detail::
@@ -804,6 +805,7 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
+.. _bltin-boolean-values:
 .. _typebool:
 
 Boolean Type - :class:`bool`
@@ -905,9 +907,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -1621,20 +1623,12 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased. For example::
-
-      >>> 'PYTHON IS AMAZING'.capitalize()
-      'Python is amazing'
-      >>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
-      'ǋemačka starts with a non-english digraph'
-
-   See also :meth:`title`.
+   rest lowercased.
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
       This means that characters like digraphs will only have their first
       letter capitalized, instead of the full character.
-
 
 .. method:: str.casefold()
 
@@ -1645,16 +1639,11 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``, as follows. For example::
-
-      >>> 'ß'.casefold()
-      'ss'
-      >>> 'ß'.lower()
-      'ß'
+   converts it to ``"ss"``.
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1663,14 +1652,8 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``. For example::
+   returned if *width* is less than or equal to ``len(s)``.
 
-      >>> 'Python'.center(10)
-      '  Python  '
-      >>> 'Python'.center(10, '-')
-      '--Python--'
-      >>> 'Python'.center(4)
-      'Python'
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1680,18 +1663,7 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one. For example::
-
-      >>> 'spam, spam, spam'.count('spam')
-      3
-      >>> 'spam, spam, spam'.count('spam', 5)
-      2
-      >>> 'spam, spam, spam'.count('spam', 5, 10)
-      1
-      >>> 'spam, spam, spam'.count('eggs')
-      0
-      >>> 'spam, spam, spam'.count('')
-      17
+   which is the length of the string plus one.
 
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
@@ -1711,13 +1683,7 @@ expression support in the :mod:`re` module).
    For performance reasons, the value of *errors* is not checked for validity
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
-   or a :ref:`debug build <debug-build>` is used. For example::
-
-      >>> encoded_str_to_byte = 'Python'.encode()
-      >>> type(encoded_str_to_byte)
-      <class 'bytes'>
-      >>> encoded_str_to_byte
-      b'Python'
+   or a :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1732,19 +1698,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position. Use the *start* and *end* is equivalent to
-   ``str[start:end].endswith(suffix)``. For example::
-
-      >>> 'Python'.endswith('on')
-      True
-      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
-      False
-      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
-      True
-      >>> 'Python is amazing'.endswith('is', 0, 9)
-      True
-
-   See also :meth:`startswith` and :meth:`removesuffix`.
+   at that position.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1760,36 +1714,25 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed. For example::
+   printed.
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
-      >>> print('01\t012\n0123\t01234'.expandtabs(4))
-      01  012
-      0123    01234
 
 
 .. method:: str.find(sub[, start[, end]])
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
-   interpreted as in slice notation.  Return ``-1`` if *sub* is not found. For
-   example::
-
-      >>> 'spam, spam, spam'.find('sp')
-      0
-      >>> 'spam, spam, spam'.find('sp', 5)
-      6
-
-   See also :meth:`rfind` and :meth:`index`.
+   interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
 
    .. note::
 
       The :meth:`~str.find` method should be used only if you need to know the
       position of *sub*.  To check if *sub* is a substring or not, use the
-      :keyword:`in` operator. For example::
+      :keyword:`in` operator::
 
          >>> 'Py' in 'Python'
          True
@@ -1802,7 +1745,7 @@ expression support in the :mod:`re` module).
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument. For example::
+   the corresponding argument.
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
@@ -1830,14 +1773,14 @@ expression support in the :mod:`re` module).
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
-   if for example ``mapping`` is a dict subclass. For example::
+   if for example ``mapping`` is a dict subclass:
 
-      >>> class Default(dict):
-      ...     def __missing__(self, key):
-      ...         return key
-      ...
-      >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
-      'Guido was born in country'
+   >>> class Default(dict):
+   ...     def __missing__(self, key):
+   ...         return key
+   ...
+   >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
+   'Guido was born in country'
 
    .. versionadded:: 3.2
 
@@ -1845,14 +1788,7 @@ expression support in the :mod:`re` module).
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found. For example::
-
-      >>> 'spam, spam, spam'.index('eggs')
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      ValueError: substring not found
-
-   See also :meth:`rindex`.
+   not found.
 
 
 .. method:: str.isalnum()
@@ -1860,16 +1796,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``. For example::
-
-      >>> ''.isalnum()
-      False
-      >>> 'abc123'.isalnum()
-      True
-      >>> 'abc123!@#'.isalnum()
-      False
-      >>> ' '.isalnum()
-      False
+   ``c.isdigit()``, or ``c.isnumeric()``.
 
 
 .. method:: str.isalpha()
@@ -1880,38 +1807,14 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_. For example::
-
-      >>> 'a commom word'.isalpha()
-      False
-      >>> 'acommomword'.isalpha()
-      True
-      >>> 'µ'.isalpha()
-      True
-      >>> 'æ'.isalpha()
-      True
-      >>> 'Ŧ'.isalpha()
-      True
-
-   See Unicode Properties section in :ref:`unicode-howto`.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F. For example::
-
-      >>> 'a commom word'.isascii()
-      True
-      >>> 'acommomword'.isascii()
-      True
-      >>> 'µ'.isascii()
-      False
-      >>> 'æ'.isascii()
-      False
-      >>> 'Ŧ'.isascii()
-      False
+   ASCII characters have code points in the range U+0000-U+007F.
 
    .. versionadded:: 3.7
 
@@ -1923,16 +1826,7 @@ expression support in the :mod:`re` module).
    otherwise. Decimal characters are those that can be used to form
    numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd". For example::
-
-      >>> '0123456789'.isdecimal()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '²'.isdecimal(), '²'.isdigit()
-      (False, True)
-
-   See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
+   General Category "Nd".
 
 
 .. method:: str.isdigit()
@@ -1942,16 +1836,7 @@ expression support in the :mod:`re` module).
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
-   property value Numeric_Type=Digit or Numeric_Type=Decimal. For example::
-
-      >>> '0123456789'.isdigit()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '²'.isdigit(), '²'.isdecimal()
-      (True, False)
-
-   See also :meth:`isdecimal`. Digit numbers is a decimal numbers superset.
+   property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
 
 .. method:: str.isidentifier()
@@ -1960,7 +1845,10 @@ expression support in the :mod:`re` module).
    definition, section :ref:`identifiers`.
 
    :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
-   identifier, such as :keyword:`def` and :keyword:`class`. For example::
+   identifier, such as :keyword:`def` and :keyword:`class`.
+
+   Example:
+   ::
 
       >>> from keyword import iskeyword
 
@@ -1973,20 +1861,7 @@ expression support in the :mod:`re` module).
 .. method:: str.islower()
 
    Return ``True`` if all cased characters [4]_ in the string are lowercase and
-   there is at least one cased character, ``False`` otherwise. For example::
-
-      >>> 'BANANA'.islower()
-      False
-      >>> 'banana'.islower()
-      True
-      >>> 'baNana'.islower()
-      False
-      >>> ' '.islower()
-      False
-      >>> ''.islower()
-      False
-
-   See also :meth:`isupper`.
+   there is at least one cased character, ``False`` otherwise.
 
 
 .. method:: str.isnumeric()
@@ -1996,19 +1871,7 @@ expression support in the :mod:`re` module).
    otherwise. Numeric characters include digit characters, and all characters
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
-   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric. For example::
-
-      >>> '0123456789'.isnumeric()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '⅕'.isnumeric()  # VULGAR FRACTION ONE FIFTH
-      True
-      >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
-      (True, False, True)
-
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters is a
-   decimal numbers superset.
+   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
 
 .. method:: str.isprintable()
@@ -2019,18 +1882,7 @@ expression support in the :mod:`re` module).
    ASCII space (0x20) which is considered printable.  (Note that printable
    characters in this context are those which should not be escaped when
    :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.) For example::
-
-      >>> ''.isprintable()
-      True
-      >>> ' '.isprintable()
-      True
-      >>> '\t\n'.isprintable()  # TAB and BREAK LINE
-      False
-      >>> '\u3000'.isprintable()  # IDEOGRAPHIC SPACE
-      False
-
-   See also :meth:`isspace`.
+   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
 
 
 .. method:: str.isspace()
@@ -2041,41 +1893,20 @@ expression support in the :mod:`re` module).
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
-   ``B``, or ``S``. For example::
-
-      >>> ''.isspace()
-      False
-      >>> ' '.isspace()
-      True
-      >>> '\t\n'.isspace()  # TAB and BREAK LINE
-      True
-      >>> '\u3000'.isspace()  # IDEOGRAPHIC SPACE
-      True
-
-   See also :meth:`isprintable`.
+   ``B``, or ``S``.
 
 
 .. method:: str.istitle()
 
    Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
-   and lowercase characters only cased ones.  Return ``False`` otherwise. For
-   example::
-
-      >>> 'Spam, Spam, Spam'.istitle()
-      True
-      >>> 'spam, spam, spam'.istitle()
-      False
-      >>> 'SPAM, SPAM, SPAM'.istitle()
-      False
-
-   See also :meth:`title`.
+   and lowercase characters only cased ones.  Return ``False`` otherwise.
 
 
 .. method:: str.isupper()
 
    Return ``True`` if all cased characters [4]_ in the string are uppercase and
-   there is at least one cased character, ``False`` otherwise. For example::
+   there is at least one cased character, ``False`` otherwise.
 
       >>> 'BANANA'.isupper()
       True
@@ -2085,10 +1916,7 @@ expression support in the :mod:`re` module).
       False
       >>> ' '.isupper()
       False
-      >>> ''.isupper()
-      False
 
-   See also :meth:`islower`.
 
 
 .. _meth-str-join:
@@ -2098,12 +1926,7 @@ expression support in the :mod:`re` module).
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method. For example::
-
-      >>> ', '.join(['spam', 'spam', 'spam'])
-      'spam, spam, spam'
-      >>> '-'.join('Python')
-      'P-y-t-h-o-n'
+   elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -2111,27 +1934,16 @@ expression support in the :mod:`re` module).
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
-   For example::
-
-      >>> 'Python'.ljust(10)
-      'Python    '
-      >>> 'Python'.ljust(10, '.')
-      'Python....'
-
-   See also :meth:`rjust`.
 
 
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase. For example::
-
-      >>> 'Lower Method Example'.lower()
-      'lower method example'
+   lowercase.
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2139,8 +1951,7 @@ expression support in the :mod:`re` module).
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a prefix; rather, all combinations of its values are stripped.
-   For example::
+   argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
       'spacious   '
@@ -2155,8 +1966,6 @@ expression support in the :mod:`re` module).
       >>> 'Arthur: three!'.removeprefix('Arthur: ')
       'three!'
 
-   See also :meth:`rstrip`.
-
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -2165,19 +1974,12 @@ expression support in the :mod:`re` module).
    If there is only one argument, it must be a dictionary mapping Unicode
    ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
    strings (of arbitrary lengths) or ``None``.  Character keys will then be
-   converted to ordinals. For example::
-
-      >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
-      {97: 'A', 98: 'Boo', 99: None}
+   converted to ordinals.
 
    If there are two arguments, they must be strings of equal length, and in the
-   resulting dictionary, each character in *x* will be mapped to the character
-   at the same position in *y*.  If there is a third argument, it must be a
-   string, whose characters will be mapped to ``None`` in the result. For
-   example::
-
-      >>> str.maketrans('ab', 'AB', 'c')
-      {97: 65, 98: 66, 99: None}
+   resulting dictionary, each character in x will be mapped to the character at
+   the same position in y.  If there is a third argument, it must be a string,
+   whose characters will be mapped to ``None`` in the result.
 
 
 .. method:: str.partition(sep)
@@ -2185,21 +1987,14 @@ expression support in the :mod:`re` module).
    Split the string at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
-   the string itself, followed by two empty strings. For example::
-
-      >>> 'Monty Python'.partition(' ')
-      ('Monty', ' ', 'Python')
-      >>> 'Monty Python'.partition('-')
-      ('Monty Python', '', '')
-
-   See also :meth:`rpartition`.
+   the string itself, followed by two empty strings.
 
 
 .. method:: str.removeprefix(prefix, /)
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string. For example::
+   string::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -2213,7 +2008,7 @@ expression support in the :mod:`re` module).
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
    return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string. For example::
+   original string::
 
       >>> 'MiscTests'.removesuffix('Tests')
       'Misc'
@@ -2228,12 +2023,6 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
    If *count* is not specified or ``-1``, then all occurrences are replaced.
-   For example::
-
-      >>> 'spam, spam, spam'.replace('spam', 'eggs')
-      'eggs, eggs, eggs'
-      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
-      'eggs, spam, spam'
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
@@ -2244,27 +2033,12 @@ expression support in the :mod:`re` module).
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
-   For example::
-
-      >>> 'spam, spam, spam'.rfind('sp')
-      12
-      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
-      6
-
-   See also :meth:`find`.
 
 
 .. method:: str.rindex(sub[, start[, end]])
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
-   found. For example::
-
-      >>> 'spam, spam, spam'.rindex('eggs')
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      ValueError: substring not found
-
-   See also :meth:`index`.
+   found.
 
 
 .. method:: str.rjust(width[, fillchar])
@@ -2272,14 +2046,6 @@ expression support in the :mod:`re` module).
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
-   For example::
-
-      >>> 'Python'.rjust(10)
-      '    Python'
-      >>> 'Python'.rjust(10, '.')
-      '....Python'
-
-   See also :meth:`ljust`.
 
 
 .. method:: str.rpartition(sep)
@@ -2287,12 +2053,7 @@ expression support in the :mod:`re` module).
    Split the string at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
-   two empty strings, followed by the string itself. For example::
-
-      >>> "Monty Python's Flying Circus".rpartition(' ')
-      ("Monty Python's Flying", ' ', 'Circus')
-
-   See also :meth:`partition`.
+   two empty strings, followed by the string itself.
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
@@ -2301,10 +2062,7 @@ expression support in the :mod:`re` module).
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
    ones.  If *sep* is not specified or ``None``, any whitespace string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
-   :meth:`split` which is described in detail below. For example::
-
-      >>> '1,2,3'.rsplit(',', maxsplit=1)
-      ['1,2', '3']
+   :meth:`split` which is described in detail below.
 
 
 .. method:: str.rstrip([chars])
@@ -2312,8 +2070,7 @@ expression support in the :mod:`re` module).
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
-   argument is not a suffix; rather, all combinations of its values are stripped.
-   For example::
+   argument is not a suffix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.rstrip()
       '   spacious'
@@ -2321,15 +2078,12 @@ expression support in the :mod:`re` module).
       'mississ'
 
    See :meth:`str.removesuffix` for a method that will remove a single suffix
-   string rather than all of a set of characters. For example::
+   string rather than all of a set of characters.  For example::
 
       >>> 'Monty Python'.rstrip(' Python')
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
-
-   See also :meth:`lstrip`.
-
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2344,6 +2098,7 @@ expression support in the :mod:`re` module).
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
    (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
    Splitting an empty string with a specified separator returns ``['']``.
+
    For example::
 
       >>> '1,2,3'.split(',')
@@ -2358,7 +2113,9 @@ expression support in the :mod:`re` module).
    and the result will contain no empty strings at the start or end if the
    string has leading or trailing whitespace.  Consequently, splitting an empty
    string or a string consisting of just whitespace with a ``None`` separator
-   returns ``[]``. For example::
+   returns ``[]``.
+
+   For example::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2366,8 +2123,6 @@ expression support in the :mod:`re` module).
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
-
-   See also :meth:`rsplit`.
 
 
 .. index::
@@ -2441,18 +2196,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
    *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
    test string beginning at that position.  With optional *end*, stop comparing
-   string at that position. For example::
-
-      >>> 'Python'.startswith('Py')
-      True
-      >>> 'a tuple of prefixes'.startswith(('at', 'in'))
-      False
-      >>> 'a tuple of suffixes'.startswith(('at', 'a'))
-      True
-      >>> 'Python is amazing'.startswith('is', 7)
-      True
-
-   See also :meth:`endswith` and :meth:`removeprefix`.
+   string at that position.
 
 
 .. method:: str.strip([chars])
@@ -2461,7 +2205,7 @@ expression support in the :mod:`re` module).
    The *chars* argument is a string specifying the set of characters to be removed.
    If omitted or ``None``, the *chars* argument defaults to removing whitespace.
    The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped. For example::
+   values are stripped::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -2483,18 +2227,15 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with uppercase characters converted to lowercase and
    vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``. For example::
-
-      >>> 'Monty Python'.swapcase()
-      'mONTY pYTHON'
-
-   See also :meth:`upper` and :meth:`lower`.
+   ``s.swapcase().swapcase() == s``.
 
 
 .. method:: str.title()
 
    Return a titlecased version of the string where words start with an uppercase
-   character and the remaining characters are lowercase. For example::
+   character and the remaining characters are lowercase.
+
+   For example::
 
       >>> 'Hello world'.title()
       'Hello World'
@@ -2502,7 +2243,7 @@ expression support in the :mod:`re` module).
    The algorithm uses a simple language-independent definition of a word as
    groups of consecutive letters.  The definition works in many contexts but
    it means that apostrophes in contractions and possessives form word
-   boundaries, which may not be the desired result. For example::
+   boundaries, which may not be the desired result::
 
         >>> "they're bill's friends from the UK".title()
         "They'Re Bill'S Friends From The Uk"
@@ -2511,7 +2252,7 @@ expression support in the :mod:`re` module).
    splits words on spaces only.
 
    Alternatively, a workaround for apostrophes can be constructed using regular
-   expressions. For example::
+   expressions::
 
         >>> import re
         >>> def titlecase(s):
@@ -2522,14 +2263,12 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   See also :meth:`istitle`.
-
 
 .. method:: str.translate(table)
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
@@ -2537,12 +2276,7 @@ expression support in the :mod:`re` module).
    :exc:`LookupError` exception, to map the character to itself.
 
    You can use :meth:`str.maketrans` to create a translation map from
-   character-to-character mappings in different formats. For example::
-
-      >>> str.maketrans('to', '70')
-      {116: 55, 111: 48}
-      >>> 'Python'.translate({116:55, 111:48})
-      'Py7h0n'
+   character-to-character mappings in different formats.
 
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
@@ -2554,18 +2288,11 @@ expression support in the :mod:`re` module).
    uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
-   titlecase). For example::
-
-      >>> 'Monty Python'.upper()
-      'MONTY PYTHON'
-      >>> '𐊠'.upper().isupper()  # 'CARIAN LETTER A'
-      False
+   titlecase).
 
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
-
-   See also :meth:`swapcase` and :meth:`lower`.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -2574,12 +2301,15 @@ expression support in the :mod:`re` module).
    make a string of length *width*. A leading sign prefix (``'+'``/``'-'``)
    is handled by inserting the padding *after* the sign character rather
    than before. The original string is returned if *width* is less than
-   or equal to ``len(s)``. For example::
+   or equal to ``len(s)``.
+
+   For example::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
 
 
 .. _old-string-formatting:
@@ -3943,7 +3673,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'b'``    | Bytes (any object that follows the                  | \(5)  |
 |            | :ref:`buffer protocol <bufferobjects>` or has       |       |
-|            | :meth:`__bytes__`).                                 |       |
+|            | :meth:`~object.__bytes__`).                         |       |
 +------------+-----------------------------------------------------+-------+
 | ``'s'``    | ``'s'`` is an alias for ``'b'`` and should only     | \(6)  |
 |            | be used for Python2/3 code bases.                   |       |
@@ -4681,7 +4411,8 @@ The constructors for both classes work the same:
    :meth:`symmetric_difference_update` methods will accept any iterable as an
    argument.
 
-   Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+   Note, the *elem* argument to the :meth:`~object.__contains__`,
+   :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
    frozenset, a temporary one is created from *elem*.
 
@@ -5026,14 +4757,17 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and :term:`hashable`.  If all
-values are hashable, so that ``(key, value)`` pairs are unique and hashable,
-then the items view is also set-like.  (Values views are not treated as set-like
+Keys views are set-like since their entries are unique and :term:`hashable`.
+Items views also have set-like operations since the (key, value) pairs
+are unique and the keys are hashable.
+If all values in an items view are hashable as well,
+then the items view can interoperate with other sets.
+(Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
 available (for example, ``==``, ``<``, or ``^``).  While using set operators,
-set-like views accept any iterable as the other operand, unlike sets which only
-accept sets as the input.
+set-like views accept any iterable as the other operand,
+unlike sets which only accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -5128,7 +4862,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,
@@ -5504,9 +5238,11 @@ instantiated from the type::
    TypeError: cannot create 'types.UnionType' instances
 
 .. note::
-   The :meth:`__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
-   override it::
+   The :meth:`!__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
+   override it:
+
+   .. doctest::
 
       >>> class M(type):
       ...     def __or__(self, other):
@@ -5518,7 +5254,7 @@ instantiated from the type::
       >>> C | int
       'Hello'
       >>> int | C
-      int | __main__.C
+      int | C
 
 .. seealso::
 
@@ -5592,25 +5328,30 @@ Methods
 .. index:: pair: object; method
 
 Methods are functions that are called using the attribute notation. There are
-two flavors: built-in methods (such as :meth:`append` on lists) and class
-instance methods.  Built-in methods are described with the types that support
-them.
+two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
+on lists) and :ref:`class instance method <instance-methods>`.
+Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
 instance, you get a special object: a :dfn:`bound method` (also called
-:dfn:`instance method`) object. When called, it will add the ``self`` argument
+:ref:`instance method <instance-methods>`) object. When called, it will add
+the ``self`` argument
 to the argument list.  Bound methods have two special read-only attributes:
-``m.__self__`` is the object on which the method operates, and ``m.__func__`` is
+:attr:`m.__self__ <method.__self__>` is the object on which the method
+operates, and :attr:`m.__func__ <method.__func__>` is
 the function implementing the method.  Calling ``m(arg-1, arg-2, ..., arg-n)``
 is completely equivalent to calling ``m.__func__(m.__self__, arg-1, arg-2, ...,
 arg-n)``.
 
-Like function objects, bound method objects support getting arbitrary
+Like :ref:`function objects <user-defined-funcs>`, bound method objects support
+getting arbitrary
 attributes.  However, since method attributes are actually stored on the
-underlying function object (``meth.__func__``), setting method attributes on
+underlying function object (:attr:`method.__func__`), setting method attributes on
 bound methods is disallowed.  Attempting to set an attribute on a method
 results in an :exc:`AttributeError` being raised.  In order to set a method
-attribute, you need to explicitly set it on the underlying function object::
+attribute, you need to explicitly set it on the underlying function object:
+
+.. doctest::
 
    >>> class C:
    ...     def method(self):
@@ -5625,7 +5366,7 @@ attribute, you need to explicitly set it on the underlying function object::
    >>> c.method.whoami
    'my name is method'
 
-See :ref:`types` for more information.
+See :ref:`instance-methods` for more information.
 
 
 .. index:: object; code, code object
@@ -5643,10 +5384,10 @@ Code objects are used by the implementation to represent "pseudo-compiled"
 executable Python code such as a function body. They differ from function
 objects because they don't contain a reference to their global execution
 environment.  Code objects are returned by the built-in :func:`compile` function
-and can be extracted from function objects through their :attr:`__code__`
-attribute. See also the :mod:`code` module.
+and can be extracted from function objects through their
+:attr:`~function.__code__` attribute. See also the :mod:`code` module.
 
-Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+Accessing :attr:`~function.__code__` raises an :ref:`auditing event <auditing>`
 ``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
@@ -5720,8 +5461,9 @@ It is written as ``NotImplemented``.
 Internal Objects
 ----------------
 
-See :ref:`types` for this information.  It describes stack frame objects,
-traceback objects, and slice objects.
+See :ref:`types` for this information.  It describes
+:ref:`stack frame objects <frame-objects>`,
+:ref:`traceback objects <traceback-objects>`, and slice objects.
 
 
 .. _specialattrs:

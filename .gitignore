@@ -42,6 +42,7 @@ gmon.out
 .coverage
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .DS_Store
 
 *.exe
@@ -124,6 +125,7 @@ Tools/unicode/data/
 /config.status.lineno
 # hendrikmuhs/ccache-action@v1
 /.ccache
+/cross-build/
 /platform
 /profile-clean-stamp
 /profile-run-stamp

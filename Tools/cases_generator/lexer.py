@@ -80,10 +80,11 @@ opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.item
 
 # Macros
 macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
-MACRO = "MACRO"
+CMACRO = "CMACRO"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
 IDENTIFIER = "IDENTIFIER"
+
 
 suffix = r"([uU]?[lL]?[lL]?)"
 octal = r"0[0-7]+" + suffix
@@ -111,7 +112,7 @@ STRING = "STRING"
 char = r"\'.\'"  # TODO: escape sequence
 CHARACTER = "CHARACTER"
 
-comment_re = r"//.*|/\*([^*]|\*[^/])*\*/"
+comment_re = r"(//.*)|/\*([^*]|\*[^/])*\*/"
 COMMENT = "COMMENT"
 
 newline = r"\n"
@@ -173,10 +174,6 @@ INT = "INT"
 kwds.append(INT)
 LONG = "LONG"
 kwds.append(LONG)
-OVERRIDE = "OVERRIDE"
-kwds.append(OVERRIDE)
-REGISTER = "REGISTER"
-kwds.append(REGISTER)
 OFFSETOF = "OFFSETOF"
 kwds.append(OFFSETOF)
 RESTRICT = "RESTRICT"
@@ -207,7 +204,19 @@ VOLATILE = "VOLATILE"
 kwds.append(VOLATILE)
 WHILE = "WHILE"
 kwds.append(WHILE)
+# An instruction in the DSL
+INST = "INST"
+kwds.append(INST)
+# A micro-op in the DSL
+OP = "OP"
+kwds.append(OP)
+# A macro in the DSL
+MACRO = "MACRO"
+kwds.append(MACRO)
 keywords = {name.lower(): name for name in kwds}
+
+ANNOTATION = "ANNOTATION"
+annotations = {"specializing", "guard", "override", "register", "replaced"}
 
 __all__ = []
 __all__.extend(kwds)
@@ -225,6 +234,7 @@ def make_syntax_error(
 
 @dataclass(slots=True)
 class Token:
+    filename: str
     kind: str
     text: str
     begin: tuple[int, int]
@@ -252,7 +262,7 @@ class Token:
 
     def replaceText(self, txt: str) -> "Token":
         assert isinstance(txt, str)
-        return Token(self.kind, txt, self.begin, self.end)
+        return Token(self.filename, self.kind, txt, self.begin, self.end)
 
     def __repr__(self) -> str:
         b0, b1 = self.begin
@@ -263,13 +273,15 @@ class Token:
             return f"{self.kind}({self.text!r}, {b0}:{b1}, {e0}:{e1})"
 
 
-def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[Token]:
+def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
     linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()
         text = m.group(0)
         if text in keywords:
             kind = keywords[text]
+        elif text in annotations:
+            kind = ANNOTATION
         elif letter.match(text):
             kind = IDENTIFIER
         elif text == "...":
@@ -289,7 +301,7 @@ def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[T
         elif text[0] == "'":
             kind = CHARACTER
         elif text[0] == "#":
-            kind = MACRO
+            kind = CMACRO
         elif text[0] == "/" and text[1] in "/*":
             kind = COMMENT
         else:
@@ -312,7 +324,7 @@ def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[T
         else:
             begin = line, start - linestart
         if kind != "\n":
-            yield Token(kind, text, begin, (line, start - linestart + len(text)))
+            yield Token(filename, kind, text, begin, (line, start - linestart + len(text)))
 
 
 def to_text(tkns: list[Token], dedent: int = 0) -> str:

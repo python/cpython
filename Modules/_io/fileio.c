@@ -5,20 +5,23 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // lseek()
+#endif
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif
 #ifdef HAVE_IO_H
-#include <io.h>
+#  include <io.h>
 #endif
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+#  include <fcntl.h>              // open()
 #endif
-#include <stddef.h> /* For offsetof */
+
 #include "_iomodule.h"
 
 /*
@@ -35,21 +38,22 @@
  */
 
 #ifdef MS_WINDOWS
-/* can simulate truncate with Win32 API functions; see file_truncate */
-#define HAVE_FTRUNCATE
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
+   // can simulate truncate with Win32 API functions; see file_truncate
+#  define HAVE_FTRUNCATE
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
 #endif
 
 #if BUFSIZ < (8*1024)
-#define SMALLCHUNK (8*1024)
+#  define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64 MiB defined"
+#  error "unreasonable BUFSIZ > 64 MiB defined"
 #else
-#define SMALLCHUNK BUFSIZ
+#  define SMALLCHUNK BUFSIZ
 #endif
+
 
 /*[clinic input]
 module _io
@@ -1096,31 +1100,32 @@ static PyObject *
 fileio_repr(fileio *self)
 {
     PyObject *nameobj, *res;
+    const char *type_name = Py_TYPE((PyObject *) self)->tp_name;
 
-    if (self->fd < 0)
-        return PyUnicode_FromFormat("<_io.FileIO [closed]>");
+    if (self->fd < 0) {
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
+    }
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
-            "<_io.FileIO fd=%d mode='%s' closefd=%s>",
-            self->fd, mode_string(self), self->closefd ? "True" : "False");
+            "<%.100s fd=%d mode='%s' closefd=%s>",
+            type_name, self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
         int status = Py_ReprEnter((PyObject *)self);
         res = NULL;
         if (status == 0) {
             res = PyUnicode_FromFormat(
-                "<_io.FileIO name=%R mode='%s' closefd=%s>",
-                nameobj, mode_string(self), self->closefd ? "True" : "False");
+                "<%.100s name=%R mode='%s' closefd=%s>",
+                type_name, nameobj, mode_string(self), self->closefd ? "True" : "False");
             Py_ReprLeave((PyObject *)self);
         }
         else if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
-                         Py_TYPE(self)->tp_name);
+                         "reentrant call inside %.100s.__repr__", type_name);
         }
         Py_DECREF(nameobj);
     }

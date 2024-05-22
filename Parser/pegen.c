@@ -3,7 +3,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errcode.h>
 
-#include "tokenizer.h"
+#include "lexer/lexer.h"
+#include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
 // Internal parser functions
@@ -18,12 +19,8 @@ _PyPegen_interactive_exit(Parser *p)
 }
 
 Py_ssize_t
-_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+_PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
 {
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return -1;
-    }
     Py_ssize_t len = strlen(str);
     if (col_offset > len + 1) {
         col_offset = len + 1;
@@ -36,6 +33,16 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
     Py_DECREF(text);
     return size;
+}
+
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    return _PyPegen_byte_offset_to_character_offset_raw(str, col_offset);
 }
 
 // Here, mark is the start of the node, while p->mark is the end.
@@ -877,7 +884,8 @@ _PyPegen_run_parser(Parser *p)
 mod_ty
 _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
                              const char *enc, const char *ps1, const char *ps2,
-                             PyCompilerFlags *flags, int *errcode, PyArena *arena)
+                             PyCompilerFlags *flags, int *errcode,
+                             PyObject **interactive_src, PyArena *arena)
 {
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
@@ -906,6 +914,15 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     result = _PyPegen_run_parser(p);
     _PyPegen_Parser_Free(p);
+
+    if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
+        *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
+        if (!interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
+            Py_XDECREF(interactive_src);
+            result = NULL;
+            goto error;
+        }
+    }
 
 error:
     _PyTokenizer_Free(tok);

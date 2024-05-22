@@ -11,7 +11,9 @@ sphinx==6.2.1
 
 blurb
 
+sphinx-autobuild
 sphinxext-opengraph==0.7.5
+sphinx-notfound-page==1.0.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.

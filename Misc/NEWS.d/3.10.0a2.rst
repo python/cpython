@@ -185,7 +185,7 @@ Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
 
 Micro optimization when compute :c:member:`~PySequenceMethods.sq_item` and
 :c:member:`~PyMappingMethods.mp_subscript` of :class:`range`. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -205,7 +205,7 @@ error message using the current locale's encoding.
 .. nonce: iLoMVF
 .. section: Core and Builtins
 
-Micro optimization for range.index if step is 1. Patch by Dong-hee Na.
+Micro optimization for range.index if step is 1. Patch by Donghee Na.
 
 ..
 

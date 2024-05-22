@@ -396,6 +396,33 @@ class TestSuper(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
             C().method()
 
+    def test_supercheck_fail(self):
+        class C:
+            def method(self, type_, obj):
+                return super(type_, obj).method()
+
+        c = C()
+        err_msg = (
+            r"super\(type, obj\): obj \({} {}\) is not "
+            r"an instance or subtype of type \({}\)."
+        )
+
+        cases = (
+            (int, c, int.__name__, C.__name__, "instance of"),
+            # obj is instance of type
+            (C, list(), C.__name__, list.__name__, "instance of"),
+            # obj is type itself
+            (C, list, C.__name__, list.__name__, "type"),
+        )
+
+        for case in cases:
+            with self.subTest(case=case):
+                type_, obj, type_str, obj_str, instance_or_type = case
+                regex = err_msg.format(instance_or_type, obj_str, type_str)
+
+                with self.assertRaisesRegex(TypeError, regex):
+                    c.method(type_, obj)
+
     def test_super___class__(self):
         class C:
             def method(self):

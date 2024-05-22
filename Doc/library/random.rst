@@ -34,10 +34,8 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
+basic generator of your own devising: see the documentation on that class for
+more details.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
@@ -88,7 +86,7 @@ Bookkeeping functions
 
    .. versionchanged:: 3.11
       The *seed* must be one of the following types:
-      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. function:: getstate()
@@ -220,8 +218,8 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
-   .. deprecated-removed:: 3.9 3.11
-      The optional parameter *random*.
+   .. versionchanged:: 3.11
+      Removed the optional parameter *random*.
 
 
 .. function:: sample(population, k, *, counts=None)
@@ -407,10 +405,41 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. versionchanged:: 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
+
+   Subclasses of :class:`!Random` should override the following methods if they
+   wish to make use of a different basic generator:
+
+   .. method:: Random.seed(a=None, version=2)
+
+      Override this method in subclasses to customise the :meth:`~random.seed`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.getstate()
+
+      Override this method in subclasses to customise the :meth:`~random.getstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.setstate(state)
+
+      Override this method in subclasses to customise the :meth:`~random.setstate`
+      behaviour of :class:`!Random` instances.
+
+   .. method:: Random.random()
+
+      Override this method in subclasses to customise the :meth:`~random.random`
+      behaviour of :class:`!Random` instances.
+
+   Optionally, a custom generator subclass can also supply the following method:
+
+   .. method:: Random.getrandbits(k)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
+
 
 .. class:: SystemRandom([seed])
 
@@ -445,30 +474,30 @@ Examples
 
 Basic examples::
 
-   >>> random()                             # Random float:  0.0 <= x < 1.0
+   >>> random()                          # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x <= 10.0
+   >>> uniform(2.5, 10.0)                # Random float:  2.5 <= x <= 10.0
    3.1800146073117523
 
-   >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
+   >>> expovariate(1 / 5)                # Interval between arrivals averaging 5 seconds
    5.148957571865031
 
-   >>> randrange(10)                        # Integer from 0 to 9 inclusive
+   >>> randrange(10)                     # Integer from 0 to 9 inclusive
    7
 
-   >>> randrange(0, 101, 2)                 # Even integer from 0 to 100 inclusive
+   >>> randrange(0, 101, 2)              # Even integer from 0 to 100 inclusive
    26
 
-   >>> choice(['win', 'lose', 'draw'])      # Single random element from a sequence
+   >>> choice(['win', 'lose', 'draw'])   # Single random element from a sequence
    'draw'
 
    >>> deck = 'ace two three four'.split()
-   >>> shuffle(deck)                        # Shuffle a list
+   >>> shuffle(deck)                     # Shuffle a list
    >>> deck
    ['four', 'two', 'ace', 'three']
 
-   >>> sample([10, 20, 30, 40, 50], k=4)    # Four samples without replacement
+   >>> sample([10, 20, 30, 40, 50], k=4) # Four samples without replacement
    [40, 10, 50, 30]
 
 Simulations::
@@ -572,14 +601,14 @@ Simulation of arrival times and service deliveries for a multiserver queue::
    including simulation, sampling, shuffling, and cross-validation.
 
    `Economics Simulation
-   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   <https://nbviewer.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
    `Peter Norvig <https://norvig.com/bio.html>`_ that shows effective
    use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
-   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   <https://nbviewer.org/url/norvig.com/ipython/Probability.ipynb>`_
    a tutorial by `Peter Norvig <https://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.

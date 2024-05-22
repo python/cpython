@@ -97,10 +97,12 @@ class TestResult(object):
 
             sys.stdout = self._original_stdout
             sys.stderr = self._original_stderr
-            self._stdout_buffer.seek(0)
-            self._stdout_buffer.truncate()
-            self._stderr_buffer.seek(0)
-            self._stderr_buffer.truncate()
+            if self._stdout_buffer is not None:
+                self._stdout_buffer.seek(0)
+                self._stdout_buffer.truncate()
+            if self._stderr_buffer is not None:
+                self._stderr_buffer.seek(0)
+                self._stderr_buffer.truncate()
 
     def stopTestRun(self):
         """Called once after all tests are executed.

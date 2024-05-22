@@ -26,6 +26,11 @@ from unittest import mock
 from test import lock_tests
 from test import support
 
+try:
+    from test.support import interpreters
+except ImportError:
+    interpreters = None
+
 threading_helper.requires_working_threading(module=True)
 
 # Between fork() and exec(), only async-safe functions are allowed (issues
@@ -33,6 +38,22 @@ threading_helper.requires_working_threading(module=True)
 # problems with some operating systems (issue #3863): skip problematic tests
 # on platforms known to behave badly.
 platforms_to_skip = ('netbsd5', 'hp-ux11')
+
+
+def skip_unless_reliable_fork(test):
+    if not support.has_fork_support:
+        return unittest.skip("requires working os.fork()")(test)
+    if sys.platform in platforms_to_skip:
+        return unittest.skip("due to known OS bug related to thread+fork")(test)
+    if support.HAVE_ASAN_FORK_BUG:
+        return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
+    return test
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def restore_default_excepthook(testcase):
@@ -355,8 +376,8 @@ class ThreadTests(BaseTestCase):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
         def fail_new_thread(*args):
             raise threading.ThreadError()
-        _start_new_thread = threading._start_new_thread
-        threading._start_new_thread = fail_new_thread
+        _start_joinable_thread = threading._start_joinable_thread
+        threading._start_joinable_thread = fail_new_thread
         try:
             t = threading.Thread(target=lambda: None)
             self.assertRaises(threading.ThreadError, t.start)
@@ -364,7 +385,7 @@ class ThreadTests(BaseTestCase):
                 t in threading._limbo,
                 "Failed to cleanup _limbo map on failure of Thread.start().")
         finally:
-            threading._start_new_thread = _start_new_thread
+            threading._start_joinable_thread = _start_joinable_thread
 
     def test_finalize_running_thread(self):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
@@ -461,6 +482,47 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
+    def test_join_from_multiple_threads(self):
+        # Thread.join() should be thread-safe
+        errors = []
+
+        def worker():
+            time.sleep(0.005)
+
+        def joiner(thread):
+            try:
+                thread.join()
+            except Exception as e:
+                errors.append(e)
+
+        for N in range(2, 20):
+            threads = [threading.Thread(target=worker)]
+            for i in range(N):
+                threads.append(threading.Thread(target=joiner,
+                                                args=(threads[0],)))
+            for t in threads:
+                t.start()
+            time.sleep(0.01)
+            for t in threads:
+                t.join()
+            if errors:
+                raise errors[0]
+
+    def test_join_with_timeout(self):
+        lock = _thread.allocate_lock()
+        lock.acquire()
+
+        def worker():
+            lock.acquire()
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=0.01)
+        assert thread.is_alive()
+        lock.release()
+        thread.join()
+        assert not thread.is_alive()
+
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):
             def __init__(self, should_raise):
@@ -539,7 +601,7 @@ class ThreadTests(BaseTestCase):
         t = threading.Thread(daemon=True)
         self.assertTrue(t.daemon)
 
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
@@ -571,7 +633,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     def test_is_alive_after_fork(self):
         # Try hard to trigger #18418: is_alive() could sometimes be True on
         # threads that vanished after a fork.
@@ -607,7 +669,7 @@ class ThreadTests(BaseTestCase):
         th.start()
         th.join()
 
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork(self):
         code = """if 1:
@@ -628,8 +690,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "MainThread\nTrue\nTrue\n")
 
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_nonmain_thread(self):
         code = """if 1:
@@ -1076,8 +1137,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         self._run_and_join(script)
 
-    @support.requires_fork()
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
+    @skip_unless_reliable_fork
     def test_2_join_in_forked_process(self):
         # Like the test above, but from a forked interpreter
         script = """if 1:
@@ -1097,8 +1157,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         self._run_and_join(script)
 
-    @support.requires_fork()
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
+    @skip_unless_reliable_fork
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
@@ -1168,8 +1227,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         rc, out, err = assert_python_ok('-c', script)
         self.assertFalse(err)
 
-    @support.requires_fork()
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
+    @skip_unless_reliable_fork
     def test_reinit_tls_after_fork(self):
         # Issue #13817: fork() would deadlock in a multithreaded program with
         # the ad-hoc TLS implementation.
@@ -1195,7 +1253,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             for t in threads:
                 t.join()
 
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     def test_clear_threads_states_after_fork(self):
         # Issue #17094: check that threads states are cleared after fork()
 
@@ -1297,6 +1355,44 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(ret, 0)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
+
+    @requires_subinterpreters
+    def test_threads_join_with_no_main(self):
+        r_interp, w_interp = self.pipe()
+
+        INTERP = b'I'
+        FINI = b'F'
+        DONE = b'D'
+
+        interp = interpreters.create()
+        interp.exec_sync(f"""if True:
+            import os
+            import threading
+            import time
+
+            done = False
+
+            def notify_fini():
+                global done
+                done = True
+                os.write({w_interp}, {FINI!r})
+                t.join()
+            threading._register_atexit(notify_fini)
+
+            def task():
+                while not done:
+                    time.sleep(0.1)
+                os.write({w_interp}, {DONE!r})
+            t = threading.Thread(target=task)
+            t.start()
+
+            os.write({w_interp}, {INTERP!r})
+            """)
+        interp.close()
+
+        self.assertEqual(os.read(r_interp, 1), INTERP)
+        self.assertEqual(os.read(r_interp, 1), FINI)
+        self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
     def test_daemon_threads_fatal_error(self):
@@ -1778,6 +1874,9 @@ class EventTests(lock_tests.EventTests):
 class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
+
+    def test_recursion_count(self):
+        self.skipTest("Condition does not expose _recursion_count()")
 
 class ConditionTests(lock_tests.ConditionTests):
     condtype = staticmethod(threading.Condition)

@@ -342,8 +342,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     tz = -1
     gmtoff = None
     gmtoff_fraction = 0
-    # Default to -1 to signify that values not known; not critical to have,
-    # though
     iso_week = week_of_year = None
     week_of_year_start = None
     # weekday and julian defaulted to None so as to signal need to calculate
@@ -470,17 +468,17 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
-    if year is None and iso_year is not None:
-        if iso_week is None or weekday is None:
-            raise ValueError("ISO year directive '%G' must be used with "
-                             "the ISO week directive '%V' and a weekday "
-                             "directive ('%A', '%a', '%w', or '%u').")
+    if iso_year is not None:
         if julian is not None:
             raise ValueError("Day of the year directive '%j' is not "
                              "compatible with ISO year directive '%G'. "
                              "Use '%Y' instead.")
-    elif week_of_year is None and iso_week is not None:
-        if weekday is None:
+        elif iso_week is None or weekday is None:
+            raise ValueError("ISO year directive '%G' must be used with "
+                             "the ISO week directive '%V' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+    elif iso_week is not None:
+        if year is None or weekday is None:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
@@ -490,11 +488,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "instead.")
 
     leap_year_fix = False
-    if year is None and month == 2 and day == 29:
-        year = 1904  # 1904 is first leap year of 20th century
-        leap_year_fix = True
-    elif year is None:
-        year = 1900
+    if year is None:
+        if month == 2 and day == 29:
+            year = 1904  # 1904 is first leap year of 20th century
+            leap_year_fix = True
+        else:
+            year = 1900
 
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.

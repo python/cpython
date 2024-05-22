@@ -1,3 +1,0 @@
-Add the ability for venv to create a ``.gitignore`` file which causes the
-created environment to be ignored by Git. It is on by default when venv is
-called via its CLI.

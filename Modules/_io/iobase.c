@@ -265,7 +265,7 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    int rc, closed = iobase_is_closed(self);
+    int rc1, rc2, closed = iobase_is_closed(self);
 
     if (closed < 0) {
         return NULL;
@@ -274,19 +274,14 @@ _io__IOBase_close_impl(PyObject *self)
         Py_RETURN_NONE;
     }
 
-    PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(flush));
-
+    rc1 = _PyFile_Flush(self);
     PyObject *exc = PyErr_GetRaisedException();
-    rc = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
+    rc2 = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
     _PyErr_ChainExceptions1(exc);
-    if (rc < 0) {
-        Py_CLEAR(res);
+    if (rc1 < 0 || rc2 < 0) {
+        return NULL;
     }
 
-    if (res == NULL)
-        return NULL;
-
-    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 

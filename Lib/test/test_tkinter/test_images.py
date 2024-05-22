@@ -357,13 +357,18 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, image.get, 15, 16)
 
     def test_write(self):
+        filename = os_helper.TESTFN
+        import locale
+        if locale.getlocale()[0] is None:
+            # Tcl uses Latin1 in the C locale
+            filename = os_helper.TESTFN_ASCII
         image = self.create()
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, filename)
 
-        image.write(os_helper.TESTFN)
+        image.write(filename)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
                                     format='ppm',
-                                    file=os_helper.TESTFN)
+                                    file=filename)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
@@ -371,10 +376,10 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(15, 8), image.get(15, 8))
 
-        image.write(os_helper.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(filename, format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif',
-                                    file=os_helper.TESTFN)
+                                    file=filename)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)

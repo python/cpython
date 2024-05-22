@@ -695,31 +695,49 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
-#define MAX_STRUCT_SIZE 16
+/*
+ * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
+ */
+#if defined(__aarch64__) || defined(__arm__)
+#  define MAX_STRUCT_SIZE 32
+#elif defined(__powerpc64__)
+#  define MAX_STRUCT_SIZE 64
+#else
+#  define MAX_STRUCT_SIZE 16
+#endif
 
     if (arrays_seen && (size <= MAX_STRUCT_SIZE)) {
         /*
-         * See bpo-22273. Arrays are normally treated as pointers, which is
-         * fine when an array name is being passed as parameter, but not when
-         * passing structures by value that contain arrays. On 64-bit Linux,
-         * small structures passed by value are passed in registers, and in
+         * See bpo-22273 and gh-110190. Arrays are normally treated as
+         * pointers, which is fine when an array name is being passed as
+         * parameter, but not when passing structures by value that contain
+         * arrays.
+         * Small structures passed by value are passed in registers, and in
          * order to do this, libffi needs to know the true type of the array
          * members of structs. Treating them as pointers breaks things.
          *
-         * By small structures, we mean ones that are 16 bytes or less. In that
-         * case, there can't be more than 16 elements after unrolling arrays,
-         * as we (will) disallow bitfields. So we can collect the true ffi_type
-         * values in a fixed-size local array on the stack and, if any arrays
-         * were seen, replace the ffi_type_pointer.elements with a more
-         * accurate set, to allow libffi to marshal them into registers
-         * correctly. It means one more loop over the fields, but if we got
-         * here, the structure is small, so there aren't too many of those.
+         * Small structures have different sizes depending on the platform
+         * where Python is running on:
          *
-         * Although the passing in registers is specific to 64-bit Linux, the
-         * array-in-struct vs. pointer problem is general. But we restrict the
-         * type transformation to small structs nonetheless.
+         *      * x86-64: 16 bytes or less
+         *      * Arm platforms (both 32 and 64 bit): 32 bytes or less
+         *      * PowerPC 64 Little Endian: 64 bytes or less
+         *
+         * In that case, there can't be more than 16, 32 or 64 elements after
+         * unrolling arrays, as we (will) disallow bitfields.
+         * So we can collect the true ffi_type values in a fixed-size local
+         * array on the stack and, if any arrays were seen, replace the
+         * ffi_type_pointer.elements with a more accurate set, to allow
+         * libffi to marshal them into registers correctly.
+         * It means one more loop over the fields, but if we got here,
+         * the structure is small, so there aren't too many of those.
+         *
+         * Although the passing in registers is specific to the above
+         * platforms, the array-in-struct vs. pointer problem is general.
+         * But we restrict the type transformation to small structs
+         * nonetheless.
          *
          * Note that although a union may be small in terms of memory usage, it
          * could contain many overlapping declarations of arrays, e.g.
@@ -744,6 +762,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          *     struct { int_32 e1; int_32 e2; ... int_32 e_4; } f5;
          *     struct { uint_32 e1; uint_32 e2; ... uint_32 e_4; } f6;
          * }
+         *
+         * The same principle applies for a struct 32 or 64 bytes in size.
          *
          * So the struct/union needs setting up as follows: all non-array
          * elements copied across as is, and all array elements replaced with

@@ -11,6 +11,7 @@ faulthandler faulthandler.c
 posix posixmodule.c
 _signal signalmodule.c
 _tracemalloc _tracemalloc.c
+_suggestions _suggestions.c
 
 # modules used by importlib, deepfreeze, freeze, runpy, and sysconfig
 _codecs _codecsmodule.c
@@ -19,6 +20,7 @@ errno errnomodule.c
 _io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 itertools itertoolsmodule.c
 _sre _sre/sre.c
+_sysconfig _sysconfig.c
 _thread _threadmodule.c
 time timemodule.c
 _typing _typingmodule.c

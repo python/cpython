@@ -1,5 +1,4 @@
 import builtins
-import contextlib
 import errno
 import glob
 import json
@@ -22,7 +21,6 @@ import time
 import types
 import unittest
 from unittest import mock
-import _testinternalcapi
 import _imp
 
 from test.support import os_helper
@@ -30,9 +28,10 @@ from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
+    forget, make_legacy_pyc, unlink, unload, ready_to_import,
+    DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
-    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
+    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
@@ -49,6 +48,10 @@ try:
     import _xxsubinterpreters as _interpreters
 except ModuleNotFoundError:
     _interpreters = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -123,27 +126,6 @@ def no_rerun(reason):
             _has_run = True
         return wrapper
     return deco
-
-
-@contextlib.contextmanager
-def _ready_to_import(name=None, source=""):
-    # sets up a temporary directory and removes it
-    # creates the module file
-    # temporarily clears the module from sys.modules (if any)
-    # reverts or removes the module when cleaning up
-    name = name or "spam"
-    with temp_dir() as tempdir:
-        path = script_helper.make_script(tempdir, name, source)
-        old_module = sys.modules.pop(name, None)
-        try:
-            sys.path.insert(0, tempdir)
-            yield name, path
-            sys.path.remove(tempdir)
-        finally:
-            if old_module is not None:
-                sys.modules[name] = old_module
-            elif name in sys.modules:
-                del sys.modules[name]
 
 
 if _testsinglephase is not None:
@@ -401,7 +383,7 @@ class ImportTests(unittest.TestCase):
 
     def test_from_import_star_invalid_type(self):
         import re
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
@@ -410,7 +392,7 @@ class ImportTests(unittest.TestCase):
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
@@ -427,9 +409,12 @@ class ImportTests(unittest.TestCase):
             import RAnDoM
 
     def test_double_const(self):
-        # Another brief digression to test the accuracy of manifest float
-        # constants.
-        from test import double_const  # don't blink -- that *was* the test
+        # Importing double_const checks that float constants
+        # serialiazed by marshal as PYC files don't lose precision
+        # (SF bug 422177).
+        from test.test_import.data import double_const
+        unload('test.test_import.data.double_const')
+        from test.test_import.data import double_const
 
     def test_import(self):
         def test_with_extension(ext):
@@ -818,7 +803,7 @@ class FilePermissionTests(unittest.TestCase):
     )
     def test_creation_mode(self):
         mask = 0o022
-        with temp_umask(mask), _ready_to_import() as (name, path):
+        with temp_umask(mask), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             module = __import__(name)
             if not os.path.exists(cached_path):
@@ -837,7 +822,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_cached_mode_issue_2051(self):
         # permissions of .pyc should match those of .py, regardless of mask
         mode = 0o600
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -853,7 +838,7 @@ class FilePermissionTests(unittest.TestCase):
     @os_helper.skip_unless_working_chmod
     def test_cached_readonly(self):
         mode = 0o400
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -868,7 +853,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_pyc_always_writable(self):
         # Initially read-only .pyc files on Windows used to cause problems
         # with later updates, see issue #6074 for details
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             # Write a Python file, make it read-only and import it
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("x = 'original'\n")
@@ -1647,6 +1632,14 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_circular_import(self):
+        with self.assertRaisesRegex(
+            AttributeError,
+            r"partially initialized module 'test.test_import.data.circular_imports.import_cycle' "
+            r"from '.*' has no attribute 'some_attribute' \(most likely due to a circular import\)"
+        ):
+            import test.test_import.data.circular_imports.import_cycle
+
     def test_absolute_circular_submodule(self):
         with self.assertRaises(AttributeError) as cm:
             import test.test_import.data.circular_imports.subpkg2.parent
@@ -1986,10 +1979,13 @@ class SubinterpImportTests(unittest.TestCase):
             print(_testsinglephase)
             ''')
         interpid = _interpreters.create()
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
@@ -2118,12 +2114,18 @@ class SinglephaseInitTests(unittest.TestCase):
 
     def add_subinterpreter(self):
         interpid = _interpreters.create(isolated=False)
-        _interpreters.run_string(interpid, textwrap.dedent('''
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        _interpreters.exec(interpid, textwrap.dedent('''
             import sys
             import _testinternalcapi
             '''))
         def clean_up():
-            _interpreters.run_string(interpid, textwrap.dedent(f'''
+            _interpreters.exec(interpid, textwrap.dedent(f'''
                 name = {self.NAME!r}
                 if name in sys.modules:
                     sys.modules.pop(name)._clear_globals()

@@ -21,6 +21,14 @@ authentication, redirections, cookies and more.
     The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
+.. warning::
+
+   On macOS it is unsafe to use this module in programs using
+   :func:`os.fork` because the :func:`getproxies` implementation for
+   macOS uses a higher-level system API. Set the environment variable
+   ``no_proxy`` to ``*`` to avoid this problem
+   (e.g. ``os.environ["no_proxy"] = "*"``).
+
 .. include:: ../includes/wasm-notavail.rst
 
 The :mod:`urllib.request` module defines the following functions:
@@ -304,10 +312,10 @@ The following classes are provided:
    list of hostname suffixes, optionally with ``:port`` appended, for example
    ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
-    .. note::
+   .. note::
 
-       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
-       see the documentation on :func:`~urllib.request.getproxies`.
+      ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
+      see the documentation on :func:`~urllib.request.getproxies`.
 
 
 .. class:: HTTPPasswordMgr()
@@ -712,8 +720,8 @@ The following attribute and methods should only be used by classes derived from
 .. note::
 
    The convention has been adopted that subclasses defining
-   :meth:`<protocol>_request` or :meth:`<protocol>_response` methods are named
-   :class:`\*Processor`; all others are named :class:`\*Handler`.
+   :meth:`!<protocol>_request` or :meth:`!<protocol>_response` methods are named
+   :class:`!\*Processor`; all others are named :class:`!\*Handler`.
 
 
 .. attribute:: BaseHandler.parent
@@ -833,9 +841,9 @@ HTTPRedirectHandler Objects
 .. method:: HTTPRedirectHandler.redirect_request(req, fp, code, msg, hdrs, newurl)
 
    Return a :class:`Request` or ``None`` in response to a redirect. This is called
-   by the default implementations of the :meth:`http_error_30\*` methods when a
+   by the default implementations of the :meth:`!http_error_30\*` methods when a
    redirection is received from the server.  If a redirection should take place,
-   return a new :class:`Request` to allow :meth:`http_error_30\*` to perform the
+   return a new :class:`Request` to allow :meth:`!http_error_30\*` to perform the
    redirect to *newurl*.  Otherwise, raise :exc:`~urllib.error.HTTPError` if
    no other handler should try to handle this URL, or return ``None`` if you
    can't but another handler might.
@@ -1525,9 +1533,9 @@ some point in the future.
 :mod:`urllib.request` Restrictions
 ----------------------------------
 
-  .. index::
-     pair: HTTP; protocol
-     pair: FTP; protocol
+.. index::
+   pair: HTTP; protocol
+   pair: FTP; protocol
 
 * Currently, only the following protocols are supported: HTTP (versions 0.9 and
   1.0), FTP, local files, and data URLs.

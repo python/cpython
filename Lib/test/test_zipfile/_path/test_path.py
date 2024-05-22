@@ -577,3 +577,15 @@ class TestPath(unittest.TestCase):
         zipfile.Path(alpharep)
         with self.assertRaises(KeyError):
             alpharep.getinfo('does-not-exist')
+
+    def test_root_folder_in_zipfile(self):
+        """
+        gh-112795: Some tools or self constructed codes will add '/' folder to
+        the zip file, this is a strange behavior, but we should support it.
+        """
+        in_memory_file = io.BytesIO()
+        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf.mkdir('/')
+        zf.writestr('./a.txt', 'aaa')
+        tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
+        zf.extractall(tmpdir)

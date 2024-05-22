@@ -164,7 +164,6 @@ _b32tab2 = {}
 _b32rev = {}
 
 def _b32encode(alphabet, s):
-    global _b32tab2
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32tab2:
@@ -200,7 +199,6 @@ def _b32encode(alphabet, s):
     return bytes(encoded)
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
-    global _b32rev
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32rev:

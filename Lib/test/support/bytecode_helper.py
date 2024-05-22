@@ -7,6 +7,18 @@ from _testinternalcapi import compiler_codegen, optimize_cfg, assemble_code_obje
 
 _UNSPECIFIED = object()
 
+def instructions_with_positions(instrs, co_positions):
+    # Return (instr, positions) pairs from the instrs list and co_positions
+    # iterator. The latter contains items for cache lines and the former
+    # doesn't, so those need to be skipped.
+
+    co_positions = co_positions or iter(())
+    for instr in instrs:
+        yield instr, next(co_positions, ())
+        for _, size, _ in (instr.cache_info or ()):
+            for i in range(size):
+                next(co_positions, ())
+
 class BytecodeTestCase(unittest.TestCase):
     """Custom assertion methods for inspecting bytecode."""
 

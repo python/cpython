@@ -113,7 +113,7 @@ in f-strings. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 Speed up calls to ``map()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -240,7 +240,7 @@ of processes that don't use sigaltstack.
 .. section: Core and Builtins
 
 Speed up calls to ``filter()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -274,7 +274,7 @@ Co-authored-by: Tim Peters <tim.peters@gmail.com>
 
 Only handle asynchronous exceptions and requests to drop the GIL when
 returning from a call or on the back edges of loops. Makes sure that
-:meth:`__exit__` is always called in with statements, even for interrupts.
+:meth:`~object.__exit__` is always called in with statements, even for interrupts.
 
 ..
 

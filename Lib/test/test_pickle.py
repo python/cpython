@@ -122,6 +122,7 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
+    persistent_load_error = pickle.UnpicklingError
 
     @support.cpython_only
     def test_pickler_reference_cycle(self):
@@ -176,7 +177,6 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
         support.gc_collect()
         self.assertIsNone(table_ref())
 
-
     @support.cpython_only
     def test_unpickler_reference_cycle(self):
         def check(Unpickler):
@@ -206,6 +206,28 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
                 return pid
         check(PersUnpickler)
 
+    def test_pickler_super(self):
+        class PersPickler(self.pickler):
+            def persistent_id(subself, obj):
+                self.assertIsNone(super().persistent_id(obj))
+                return obj
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = PersPickler(f, proto)
+            pickler.dump('abc')
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+
+    def test_unpickler_super(self):
+        class PersUnpickler(self.unpickler):
+            def persistent_load(subself, pid):
+                with self.assertRaises(self.persistent_load_error):
+                    super().persistent_load(pid)
+                return pid
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
+            self.assertEqual(unpickler.load(), 'abc')
 
 class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
 
@@ -256,6 +278,7 @@ if has_c_implementation:
     class CIdPersPicklerTests(PyIdPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
+        persistent_load_error = _pickle.UnpicklingError
 
     class CDumpPickle_LoadPickle(PyPicklerTests):
         pickler = _pickle.Pickler
@@ -326,7 +349,7 @@ if has_c_implementation:
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('7P2n3i2n3i2P')
+            basesize = support.calcobjsize('6P2n3i2n3i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -343,7 +366,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2nP 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.

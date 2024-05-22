@@ -172,10 +172,6 @@ typedef uint64_t ULLong;
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef union { double d; ULong L[2]; } U;
 
 #ifdef IEEE_8087
@@ -313,7 +309,7 @@ BCinfo {
 // struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
-#ifndef Py_USING_MEMORY_DEBUGGER
+#if !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER)
 
 /* Memory management: memory is allocated from, and returned to, Kmax+1 pools
    of memory, where pool k (0 <= k <= Kmax) is for Bigints b with b->maxwds ==
@@ -432,7 +428,7 @@ Bfree(Bigint *v)
     }
 }
 
-#endif /* Py_USING_MEMORY_DEBUGGER */
+#endif /* !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER) */
 
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
@@ -677,9 +673,16 @@ mult(Bigint *a, Bigint *b)
 static Bigint *
 pow5mult(Bigint *b, int k)
 {
-    Bigint *b1, *p5, *p51;
+    Bigint *b1, *p5, **p5s;
     int i;
     static const int p05[3] = { 5, 25, 125 };
+
+    // For double-to-string conversion, the maximum value of k is limited by
+    // DBL_MAX_10_EXP (308), the maximum decimal base-10 exponent for binary64.
+    // For string-to-double conversion, the extreme case is constrained by our
+    // hardcoded exponent limit before we underflow of -512, adjusted by
+    // STRTOD_DIGLIM-DBL_DIG-1, giving a maximum of k=535.
+    assert(0 <= k && k < 1024);
 
     if ((i = k & 3)) {
         b = multadd(b, p05[i-1], 0);
@@ -690,18 +693,11 @@ pow5mult(Bigint *b, int k)
     if (!(k >>= 2))
         return b;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    p5 = interp->dtoa.p5s;
-    if (!p5) {
-        /* first time */
-        p5 = i2b(625);
-        if (p5 == NULL) {
-            Bfree(b);
-            return NULL;
-        }
-        interp->dtoa.p5s = p5;
-        p5->next = 0;
-    }
+    p5s = interp->dtoa.p5s;
     for(;;) {
+        assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
+        p5 = *p5s;
+        p5s++;
         if (k & 1) {
             b1 = mult(b, p5);
             Bfree(b);
@@ -711,17 +707,6 @@ pow5mult(Bigint *b, int k)
         }
         if (!(k >>= 1))
             break;
-        p51 = p5->next;
-        if (!p51) {
-            p51 = mult(p5,p5);
-            if (p51 == NULL) {
-                Bfree(b);
-                return NULL;
-            }
-            p51->next = 0;
-            p5->next = p51;
-        }
-        p5 = p51;
     }
     return b;
 }
@@ -2813,8 +2798,44 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         _Py_dg_freedtoa(s0);
     return NULL;
 }
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _PY_SHORT_FLOAT_REPR == 1
+
+PyStatus
+_PyDtoa_Init(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+
+    // 5**4 = 625
+    Bigint *p5 = i2b(625);
+    if (p5 == NULL) {
+        return PyStatus_NoMemory();
+    }
+    p5s[0] = p5;
+
+    // compute 5**8, 5**16, 5**32, ..., 5**512
+    for (Py_ssize_t i = 1; i < Bigint_Pow5size; i++) {
+        p5 = mult(p5, p5);
+        if (p5 == NULL) {
+            return PyStatus_NoMemory();
+        }
+        p5s[i] = p5;
+    }
+
+#endif
+    return PyStatus_Ok();
+}
+
+void
+_PyDtoa_Fini(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+    for (Py_ssize_t i = 0; i < Bigint_Pow5size; i++) {
+        Bigint *p5 = p5s[i];
+        p5s[i] = NULL;
+        Bfree(p5);
+    }
+#endif
+}

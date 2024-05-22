@@ -646,7 +646,7 @@ float_rem(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(w, wx);
     if (wx == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "float modulo");
+                        "float modulo by zero");
         return NULL;
     }
     mod = fmod(vx, wx);

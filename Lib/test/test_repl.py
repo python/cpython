@@ -131,6 +131,69 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(process.returncode, 0)
         self.assertIn('before close', output)
 
+    def test_interactive_traceback_reporting(self):
+        user_input = "1 / 0 / 3 / 4"
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+
+        traceback_lines = output.splitlines()[-6:-1]
+        expected_lines = [
+            "Traceback (most recent call last):",
+            "  File \"<stdin>\", line 1, in <module>",
+            "    1 / 0 / 3 / 4",
+            "    ~~^~~",
+            "ZeroDivisionError: division by zero",
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
+
+    def test_interactive_traceback_reporting_multiple_input(self):
+        user_input1 = dedent("""
+        def foo(x):
+            1 / x
+
+        """)
+        p = spawn_repl()
+        p.stdin.write(user_input1)
+        user_input2 = "foo(0)"
+        p.stdin.write(user_input2)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+
+        traceback_lines = output.splitlines()[-8:-1]
+        expected_lines = [
+            '  File "<stdin>", line 1, in <module>',
+            '    foo(0)',
+            '    ~~~^^^',
+            '  File "<stdin>", line 2, in foo',
+            '    1 / x',
+            '    ~~^~~',
+            'ZeroDivisionError: division by zero'
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
+
+    def test_interactive_source_is_in_linecache(self):
+        user_input = dedent("""
+        def foo(x):
+            return x + 1
+
+        def bar(x):
+            return foo(x) + 2
+        """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        user_input2 = dedent("""
+        import linecache
+        print(linecache.cache['<stdin>-1'])
+        """)
+        p.stdin.write(user_input2)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
+        self.assertIn(expected, output, expected)
+
+
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 

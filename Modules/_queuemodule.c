@@ -214,6 +214,8 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
     PY_TIMEOUT_T microseconds;
     PyThreadState *tstate = PyThreadState_Get();
 
+    // XXX Use PyThread_ParseTimeoutArg().
+
     if (block == 0) {
         /* Non-blocking */
         microseconds = 0;

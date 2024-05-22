@@ -1,1 +1,0 @@
-Add ``--exclude`` option to Argument Clinic CLI.

@@ -83,9 +83,9 @@
 //       # release
 //       ...
 
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
-
+#ifndef Py_CPYTHON_ATOMIC_H
+#  error "this header file must not be included directly"
+#endif
 
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
@@ -463,6 +463,12 @@ _Py_atomic_load_ptr_acquire(const void *obj);
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
 
+static inline void
+_Py_atomic_store_int_release(int *obj, int value);
+
+static inline int
+_Py_atomic_load_int_acquire(const int *obj);
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 
@@ -502,5 +508,27 @@ static inline void _Py_atomic_fence_release(void);
 #  error "no available pyatomic implementation for this platform/compiler"
 #endif
 
-#endif  /* Py_ATOMIC_H */
 
+// --- aliases ---------------------------------------------------------------
+
+#if SIZEOF_LONG == 8
+# define _Py_atomic_load_ulong(p) \
+    _Py_atomic_load_uint64((uint64_t *)p)
+# define _Py_atomic_load_ulong_relaxed(p) \
+    _Py_atomic_load_uint64_relaxed((uint64_t *)p)
+# define _Py_atomic_store_ulong(p, v) \
+    _Py_atomic_store_uint64((uint64_t *)p, v)
+# define _Py_atomic_store_ulong_relaxed(p, v) \
+    _Py_atomic_store_uint64_relaxed((uint64_t *)p, v)
+#elif SIZEOF_LONG == 4
+# define _Py_atomic_load_ulong(p) \
+    _Py_atomic_load_uint32((uint32_t *)p)
+# define _Py_atomic_load_ulong_relaxed(p) \
+    _Py_atomic_load_uint32_relaxed((uint32_t *)p)
+# define _Py_atomic_store_ulong(p, v) \
+    _Py_atomic_store_uint32((uint32_t *)p, v)
+# define _Py_atomic_store_ulong_relaxed(p, v) \
+    _Py_atomic_store_uint32_relaxed((uint32_t *)p, v)
+#else
+# error "long must be 4 or 8 bytes in size"
+#endif  // SIZEOF_LONG

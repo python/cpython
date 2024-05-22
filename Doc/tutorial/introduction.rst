@@ -428,7 +428,7 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`~list.append` *method* (we will see more about methods later)::
+the :meth:`!list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
@@ -480,7 +480,7 @@ First Steps Towards Programming
 
 Of course, we can use Python for more complicated tasks than adding two and two
 together.  For instance, we can write an initial sub-sequence of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_sequence>`_
 as follows::
 
    >>> # Fibonacci series:

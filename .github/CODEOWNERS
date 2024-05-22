@@ -28,14 +28,19 @@ Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval.c                @markshannon
+Python/ceval*.c               @markshannon @gvanrossum
+Python/ceval*.h               @markshannon @gvanrossum
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
+Python/bytecodes.c            @markshannon @gvanrossum
+Python/optimizer*.c           @markshannon @gvanrossum
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
+Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -102,6 +107,9 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Lib/tokenize.py              @pablogsal @lysnikolaou
 /Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
 
+# Code generator
+/Tools/cases_generator/        @gvanrossum
+
 # AST
 Python/ast.c                  @isidentical
 Parser/asdl.py                @isidentical
@@ -149,9 +157,11 @@ Doc/c-api/stable.rst          @encukou
 
 **/*dataclasses*              @ericvsmith
 
+**/*ensurepip*                @pfmoore @pradyunsg
+
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
+**/*typing*                   @JelleZijlstra @AlexWaygood
 
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
@@ -181,5 +191,14 @@ Doc/c-api/stable.rst          @encukou
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
 Doc/howto/clinic.rst          @erlend-aasland
 
+# Subinterpreters
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
+
 # WebAssembly
 /Tools/wasm/                  @brettcannon
+
+# SBOM
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson

@@ -1989,7 +1989,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         ns = {}
         exec(code, ns)
         number_attrs = ns["number_attrs"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
@@ -5003,6 +5003,21 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del Child
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
+
+    def test_instance_method_get_behavior(self):
+        # test case for gh-113157
+
+        class A:
+            def meth(self):
+                return self
+
+        class B:
+            pass
+
+        a = A()
+        b = B()
+        b.meth = a.meth.__get__(b, B)
+        self.assertEqual(b.meth(), a)
 
     def test_attr_raise_through_property(self):
         # test case for gh-103272

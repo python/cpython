@@ -294,7 +294,7 @@ The :mod:`bdb` module also defines two classes:
    .. method:: set_quit()
 
       Set the :attr:`quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
-      the next call to one of the :meth:`dispatch_\*` methods.
+      the next call to one of the :meth:`!dispatch_\*` methods.
 
 
    Derived classes and clients can call the following methods to manipulate

@@ -24,5 +24,7 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
 </dict>
 </plist>

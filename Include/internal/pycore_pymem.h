@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_PYMEM_H
 #define Py_INTERNAL_PYMEM_H
+
+#include "pycore_lock.h"            // PyMutex
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,7 +33,7 @@ typedef struct {
 } debug_alloc_api_t;
 
 struct _pymem_allocators {
-    PyThread_type_lock mutex;
+    PyMutex mutex;
     struct {
         PyMemAllocatorEx raw;
         PyMemAllocatorEx mem;

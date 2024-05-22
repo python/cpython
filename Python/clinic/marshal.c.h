@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(marshal_dump__doc__,
 "dump($module, value, file, version=version, /)\n"
 "--\n"
@@ -141,10 +143,6 @@ marshal_loads(PyObject *module, PyObject *arg)
     if (PyObject_GetBuffer(arg, &bytes, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bytes, 'C')) {
-        _PyArg_BadArgument("loads", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = marshal_loads_impl(module, &bytes);
 
 exit:
@@ -155,4 +153,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=23091e077319f596 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92d2d47aac9128ee input=a9049054013a1b77]*/
