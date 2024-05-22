@@ -406,9 +406,33 @@ class TestDiscovery(unittest.TestCase):
         top_level_dir = os.path.abspath('/foo/bar')
         start_dir = os.path.abspath('/foo/bar/baz')
         self.assertEqual(suite, "['tests']")
-        self.assertEqual(loader._top_level_dir, top_level_dir)
+        self.assertEqual(loader._top_level_dir, os.path.abspath('/foo'))
         self.assertEqual(_find_tests_args, [(start_dir, 'pattern')])
         self.assertIn(top_level_dir, sys.path)
+
+    def test_discover_should_not_persist_top_level_dir_between_calls(self):
+        original_isfile = os.path.isfile
+        original_isdir = os.path.isdir
+        original_sys_path = sys.path[:]
+        def restore():
+            os.path.isfile = original_isfile
+            os.path.isdir = original_isdir
+            sys.path[:] = original_sys_path
+        self.addCleanup(restore)
+
+        os.path.isfile = lambda path: True
+        os.path.isdir = lambda path: True
+        loader = unittest.TestLoader()
+        loader.suiteClass = str
+        dir = '/foo/bar'
+        top_level_dir = '/foo'
+
+        loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertEqual(loader._top_level_dir, None)
+
+        loader._top_level_dir = dir2 = '/previous/dir'
+        loader.discover(dir, top_level_dir=top_level_dir)
+        self.assertEqual(loader._top_level_dir, dir2)
 
     def test_discover_start_dir_is_package_calls_package_load_tests(self):
         # This test verifies that the package load_tests in a package is indeed

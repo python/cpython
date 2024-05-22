@@ -84,15 +84,15 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
     return;
 #endif
 
-    int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
-        &interp->ceval.pending.calls_to_do);
-    if (calls_to_do) {
+    int32_t npending = _Py_atomic_load_int32_relaxed(
+        &interp->ceval.pending.npending);
+    if (npending) {
         _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
     }
     else if (_Py_IsMainThread()) {
-        calls_to_do = _Py_atomic_load_int32_relaxed(
-            &_PyRuntime.ceval.pending_mainthread.calls_to_do);
-        if (calls_to_do) {
+        npending = _Py_atomic_load_int32_relaxed(
+            &_PyRuntime.ceval.pending_mainthread.npending);
+        if (npending) {
             _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         }
     }
@@ -206,6 +206,16 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 #endif
 
 static void
+drop_gil_impl(struct _gil_runtime_state *gil)
+{
+    MUTEX_LOCK(gil->mutex);
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
+    COND_SIGNAL(gil->cond);
+    MUTEX_UNLOCK(gil->mutex);
+}
+
+static void
 drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 {
     struct _ceval_state *ceval = &interp->ceval;
@@ -220,11 +230,11 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 
     struct _gil_runtime_state *gil = ceval->gil;
 #ifdef Py_GIL_DISABLED
-    if (!gil->enabled) {
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
         return;
     }
 #endif
-    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
@@ -236,11 +246,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
-    MUTEX_LOCK(gil->mutex);
-    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_int_relaxed(&gil->locked, 0);
-    COND_SIGNAL(gil->cond);
-    MUTEX_UNLOCK(gil->mutex);
+    drop_gil_impl(gil);
 
 #ifdef FORCE_SWITCHING
     /* We check tstate first in case we might be releasing the GIL for
@@ -275,8 +281,10 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 
    The function saves errno at entry and restores its value at exit.
 
-   tstate must be non-NULL. */
-static void
+   tstate must be non-NULL.
+
+   Returns 1 if the GIL was acquired, or 0 if not. */
+static int
 take_gil(PyThreadState *tstate)
 {
     int err = errno;
@@ -300,8 +308,8 @@ take_gil(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     struct _gil_runtime_state *gil = interp->ceval.gil;
 #ifdef Py_GIL_DISABLED
-    if (!gil->enabled) {
-        return;
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
+        return 0;
     }
 #endif
 
@@ -346,6 +354,17 @@ take_gil(PyThreadState *tstate)
         }
     }
 
+#ifdef Py_GIL_DISABLED
+    if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
+        // Another thread disabled the GIL between our check above and
+        // now. Don't take the GIL, signal any other waiting threads, and
+        // return 0.
+        COND_SIGNAL(gil->cond);
+        MUTEX_UNLOCK(gil->mutex);
+        return 0;
+    }
+#endif
+
 #ifdef FORCE_SWITCHING
     /* This mutex must be taken before modifying gil->last_holder:
        see drop_gil(). */
@@ -387,6 +406,7 @@ take_gil(PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
     errno = err;
+    return 1;
 }
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
@@ -451,9 +471,8 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
     assert(!gil_created(gil));
 #ifdef Py_GIL_DISABLED
-    // gh-116329: Once it is safe to do so, change this condition to
-    // (enable_gil == _PyConfig_GIL_ENABLE), so the GIL is disabled by default.
-    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil != _PyConfig_GIL_DISABLE;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    gil->enabled = config->enable_gil == _PyConfig_GIL_ENABLE ? INT_MAX : 0;
 #endif
     create_gil(gil);
     assert(gil_created(gil));
@@ -512,8 +531,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-// Function removed in the Python 3.13 API but kept in the stable ABI.
-PyAPI_FUNC(void)
+void
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -548,11 +566,11 @@ PyEval_ReleaseLock(void)
     drop_gil(tstate->interp, tstate);
 }
 
-void
+int
 _PyEval_AcquireLock(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    take_gil(tstate);
+    return take_gil(tstate);
 }
 
 void
@@ -625,6 +643,34 @@ PyEval_RestoreThread(PyThreadState *tstate)
 }
 
 
+void
+_PyEval_SignalReceived(void)
+{
+    _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
+}
+
+
+#ifndef Py_GIL_DISABLED
+static void
+signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
+{
+    struct _gil_runtime_state *gil = interp->ceval.gil;
+
+    // If a thread from the targeted interpreter is holding the GIL, signal
+    // that thread. Otherwise, the next thread to run from the targeted
+    // interpreter will have its bit set as part of taking the GIL.
+    MUTEX_LOCK(gil->mutex);
+    if (_Py_atomic_load_int_relaxed(&gil->locked)) {
+        PyThreadState *holder = (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
+        if (holder->interp == interp) {
+            _Py_set_eval_breaker_bit(holder, bit);
+        }
+    }
+    MUTEX_UNLOCK(gil->mutex);
+}
+#endif
+
+
 /* Mechanism whereby asynchronously executing callbacks (e.g. UNIX
    signal handlers or Mac I/O completion routines) can schedule calls
    to a function to be called synchronously.
@@ -647,29 +693,31 @@ PyEval_RestoreThread(PyThreadState *tstate)
    threadstate.
 */
 
-void
-_PyEval_SignalReceived(void)
-{
-    _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
-}
-
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
-    int i = pending->last;
-    int j = (i + 1) % NPENDINGCALLS;
-    if (j == pending->first) {
-        return -1; /* Queue full */
+    if (pending->npending == pending->max) {
+        return _Py_ADD_PENDING_FULL;
     }
+    assert(pending->npending < pending->max);
+
+    int i = pending->next;
+    assert(pending->calls[i].func == NULL);
+
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
     pending->calls[i].flags = flags;
-    pending->last = j;
-    assert(pending->calls_to_do < NPENDINGCALLS);
-    _Py_atomic_add_int32(&pending->calls_to_do, 1);
-    return 0;
+
+    assert(pending->npending < PENDINGCALLSARRAYSIZE);
+    _Py_atomic_add_int32(&pending->npending, 1);
+
+    pending->next = (i + 1) % PENDINGCALLSARRAYSIZE;
+    assert(pending->next != pending->first
+            || pending->npending == pending->max);
+
+    return _Py_ADD_PENDING_SUCCESS;
 }
 
 static int
@@ -677,8 +725,9 @@ _next_pending_call(struct _pending_calls *pending,
                    int (**func)(void *), void **arg, int *flags)
 {
     int i = pending->first;
-    if (i == pending->last) {
+    if (pending->npending == 0) {
         /* Queue empty */
+        assert(i == pending->next);
         assert(pending->calls[i].func == NULL);
         return -1;
     }
@@ -696,38 +745,18 @@ _pop_pending_call(struct _pending_calls *pending,
     int i = _next_pending_call(pending, func, arg, flags);
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
-        pending->first = (i + 1) % NPENDINGCALLS;
-        assert(pending->calls_to_do > 0);
-        _Py_atomic_add_int32(&pending->calls_to_do, -1);
+        pending->first = (i + 1) % PENDINGCALLSARRAYSIZE;
+        assert(pending->npending > 0);
+        _Py_atomic_add_int32(&pending->npending, -1);
     }
 }
-
-#ifndef Py_GIL_DISABLED
-static void
-signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
-{
-    struct _gil_runtime_state *gil = interp->ceval.gil;
-
-    // If a thread from the targeted interpreter is holding the GIL, signal
-    // that thread. Otherwise, the next thread to run from the targeted
-    // interpreter will have its bit set as part of taking the GIL.
-    MUTEX_LOCK(gil->mutex);
-    if (_Py_atomic_load_int_relaxed(&gil->locked)) {
-        PyThreadState *holder = (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
-        if (holder->interp == interp) {
-            _Py_set_eval_breaker_bit(holder, bit);
-        }
-    }
-    MUTEX_UNLOCK(gil->mutex);
-}
-#endif
 
 /* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
    callback.
  */
 
-int
+_Py_add_pending_call_result
 _PyEval_AddPendingCall(PyInterpreterState *interp,
                        _Py_pending_call_func func, void *arg, int flags)
 {
@@ -740,7 +769,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
-    int result = _push_pending_call(pending, func, arg, flags);
+    _Py_add_pending_call_result result =
+        _push_pending_call(pending, func, arg, flags);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -763,7 +793,15 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    _Py_add_pending_call_result r =
+        _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
+    if (r == _Py_ADD_PENDING_FULL) {
+        return -1;
+    }
+    else {
+        assert(r == _Py_ADD_PENDING_SUCCESS);
+        return 0;
+    }
 }
 
 static int
@@ -783,10 +821,21 @@ handle_signals(PyThreadState *tstate)
 }
 
 static int
-_make_pending_calls(struct _pending_calls *pending)
+_make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
+    int res = 0;
+    int32_t npending = -1;
+
+    assert(sizeof(pending->max) <= sizeof(size_t)
+            && ((size_t)pending->max) <= Py_ARRAY_LENGTH(pending->calls));
+    int32_t maxloop = pending->maxloop;
+    if (maxloop == 0) {
+        maxloop = pending->max;
+    }
+    assert(maxloop > 0 && maxloop <= pending->max);
+
     /* perform a bounded number of calls, in case of recursion */
-    for (int i=0; i<NPENDINGCALLS; i++) {
+    for (int i=0; i<maxloop; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
@@ -794,21 +843,29 @@ _make_pending_calls(struct _pending_calls *pending)
         /* pop one item off the queue while holding the lock */
         PyMutex_Lock(&pending->mutex);
         _pop_pending_call(pending, &func, &arg, &flags);
+        npending = pending->npending;
         PyMutex_Unlock(&pending->mutex);
 
-        /* having released the lock, perform the callback */
+        /* Check if there are any more pending calls. */
         if (func == NULL) {
+            assert(npending == 0);
             break;
         }
-        int res = func(arg);
+
+        /* having released the lock, perform the callback */
+        res = func(arg);
         if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
             PyMem_RawFree(arg);
         }
         if (res != 0) {
-            return -1;
+            res = -1;
+            goto finally;
         }
     }
-    return 0;
+
+finally:
+    *p_npending = npending;
+    return res;
 }
 
 static void
@@ -841,46 +898,55 @@ make_pending_calls(PyThreadState *tstate)
     /* Only one thread (per interpreter) may run the pending calls
        at once.  In the same way, we don't do recursive pending calls. */
     PyMutex_Lock(&pending->mutex);
-    if (pending->busy) {
+    if (pending->handling_thread != NULL) {
         /* A pending call was added after another thread was already
            handling the pending calls (and had already "unsignaled").
            Once that thread is done, it may have taken care of all the
            pending calls, or there might be some still waiting.
-           Regardless, this interpreter's pending calls will stay
-           "signaled" until that first thread has finished.  At that
-           point the next thread to trip the eval breaker will take
-           care of any remaining pending calls.  Until then, though,
-           all the interpreter's threads will be tripping the eval
-           breaker every time it's checked. */
+           To avoid all threads constantly stopping on the eval breaker,
+           we clear the bit for this thread and make sure it is set
+           for the thread currently handling the pending call. */
+        _Py_set_eval_breaker_bit(pending->handling_thread, _PY_CALLS_TO_DO_BIT);
+        _Py_unset_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         PyMutex_Unlock(&pending->mutex);
         return 0;
     }
-    pending->busy = 1;
+    pending->handling_thread = tstate;
     PyMutex_Unlock(&pending->mutex);
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
     unsignal_pending_calls(tstate, interp);
 
-    if (_make_pending_calls(pending) != 0) {
-        pending->busy = 0;
+    int32_t npending;
+    if (_make_pending_calls(pending, &npending) != 0) {
+        pending->handling_thread = NULL;
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
     }
+    if (npending > 0) {
+        /* We hit pending->maxloop. */
+        signal_pending_calls(tstate, interp);
+    }
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
-        if (_make_pending_calls(pending_main) != 0) {
-            pending->busy = 0;
+        if (_make_pending_calls(pending_main, &npending) != 0) {
+            pending->handling_thread = NULL;
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
         }
+        if (npending > 0) {
+            /* We hit pending_main->maxloop. */
+            signal_pending_calls(tstate, interp);
+        }
     }
 
-    pending->busy = 0;
+    pending->handling_thread = NULL;
     return 0;
 }
+
 
 void
 _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
@@ -965,6 +1031,117 @@ _PyEval_InitState(PyInterpreterState *interp)
 {
     _gil_initialize(&interp->_gil);
 }
+
+#ifdef Py_GIL_DISABLED
+int
+_PyEval_EnableGILTransient(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        // The GIL is already enabled permanently.
+        return 0;
+    }
+    if (enabled == INT_MAX - 1) {
+        Py_FatalError("Too many transient requests to enable the GIL");
+    }
+    if (enabled > 0) {
+        // If enabled is nonzero, we know we hold the GIL. This means that no
+        // other threads are attached, and nobody else can be concurrently
+        // mutating it.
+        _Py_atomic_store_int_relaxed(&gil->enabled, enabled + 1);
+        return 0;
+    }
+
+    // Enabling the GIL changes what it means to be an "attached" thread. To
+    // safely make this transition, we:
+    // 1. Detach the current thread.
+    // 2. Stop the world to detach (and suspend) all other threads.
+    // 3. Enable the GIL, if nobody else did between our check above and when
+    //    our stop-the-world begins.
+    // 4. Start the world.
+    // 5. Attach the current thread. Other threads may attach and hold the GIL
+    //    before this thread, which is harmless.
+    _PyThreadState_Detach(tstate);
+
+    // This could be an interpreter-local stop-the-world in situations where we
+    // know that this interpreter's GIL is not shared, and that it won't become
+    // shared before the stop-the-world begins. For now, we always stop all
+    // interpreters for simplicity.
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+
+    enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    int this_thread_enabled = enabled == 0;
+    _Py_atomic_store_int_relaxed(&gil->enabled, enabled + 1);
+
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    _PyThreadState_Attach(tstate);
+
+    return this_thread_enabled;
+}
+
+int
+_PyEval_EnableGILPermanent(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    assert(current_thread_holds_gil(gil, tstate));
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        return 0;
+    }
+
+    _Py_atomic_store_int_relaxed(&gil->enabled, INT_MAX);
+    return 1;
+}
+
+int
+_PyEval_DisableGIL(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil != _PyConfig_GIL_DEFAULT) {
+        return 0;
+    }
+
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    assert(current_thread_holds_gil(gil, tstate));
+
+    int enabled = _Py_atomic_load_int_relaxed(&gil->enabled);
+    if (enabled == INT_MAX) {
+        return 0;
+    }
+
+    assert(enabled >= 1);
+    enabled--;
+
+    // Disabling the GIL is much simpler than enabling it, since we know we are
+    // the only attached thread. Other threads may start free-threading as soon
+    // as this store is complete, if it sets gil->enabled to 0.
+    _Py_atomic_store_int_relaxed(&gil->enabled, enabled);
+
+    if (enabled == 0) {
+        // We're attached, so we know the GIL will remain disabled until at
+        // least the next time we detach, which must be after this function
+        // returns.
+        //
+        // Drop the GIL, which will wake up any threads waiting in take_gil()
+        // and let them resume execution without the GIL.
+        drop_gil_impl(gil);
+        return 1;
+    }
+    return 0;
+}
+#endif
 
 
 /* Do periodic things, like check for signals and async I/0.

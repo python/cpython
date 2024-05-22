@@ -5,9 +5,6 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
-import sys
-import os
-
 __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
 
@@ -67,6 +64,11 @@ def checkcache(filename=None):
         if mtime is None:
             continue   # no-op for files loaded via a __loader__
         try:
+            # This import can fail if the interpreter is shutting down
+            import os
+        except ImportError:
+            return
+        try:
             stat = os.stat(fullname)
         except OSError:
             cache.pop(filename, None)
@@ -80,6 +82,11 @@ def updatecache(filename, module_globals=None):
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
 
+    # These imports are not at top level because linecache is in the critical
+    # path of the interpreter startup and importing os and sys take a lot of time
+    # and slows down the startup sequence.
+    import os
+    import sys
     import tokenize
 
     if filename in cache:
