@@ -184,7 +184,114 @@ class AnnotationsFormat(enum.IntEnum):
     SOURCE = 3
 
 
-def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
+class _ForwardRef:
+    def __init__(self, name):
+        self.name = name
+
+
+class _ForwardReffer(dict):
+    def __missing__(self, key):
+        return _ForwardRef(key)
+
+
+class Stringifier:
+    def __init__(self, node):
+        self.node = node
+
+    def _convert(self, other):
+        if isinstance(other, Stringifier):
+            return other.node
+        else:
+            return ast.Name(id=repr(other))
+
+    def _make_binop(op):
+        def binop(self, other):
+            return Stringifier(ast.BinOp(self.node, op, self._convert(other)))
+        return binop
+
+    __add__ = _make_binop(ast.Add())
+    __sub__ = _make_binop(ast.Sub())
+    __mul__ = _make_binop(ast.Mult())
+    __matmul__ = _make_binop(ast.MatMult())
+    __div__ = _make_binop(ast.Div())
+    __mod__ = _make_binop(ast.Mod())
+    __lshift__ = _make_binop(ast.LShift())
+    __rshift__ = _make_binop(ast.RShift())
+    __or__ = _make_binop(ast.BitOr())
+    __xor__ = _make_binop(ast.BitXor())
+    __and__ = _make_binop(ast.And())
+    __floordiv__ = _make_binop(ast.FloorDiv())
+    __pow__ = _make_binop(ast.Pow())
+
+    def _make_unary_op(op):
+        def unary_op(self):
+            return Stringifier(ast.UnaryOp(self.node, op))
+        return unary_op
+
+    __invert__ = _make_unary_op(ast.Invert())
+    __pos__ = _make_binop(ast.UAdd())
+    __neg__ = _make_binop(ast.USub())
+
+    def __getitem__(self, other):
+        if isinstance(other, tuple):
+            elts = [self._convert(elt) for elt in other]
+            other = ast.Tuple(elts)
+        else:
+            other = self._convert(other)
+        return Stringifier(ast.Subscript(self.node, other))
+
+    def __getattr__(self, attr):
+        return Stringifier(ast.Attribute(self.node, attr))
+
+    def __call__(self, *args, **kwargs):
+        return Stringifier(ast.Call(
+            self.node,
+            [self._convert(arg) for arg in args],
+            [ast.keyword(key, self._convert(value)) for key, value in kwargs.items()]
+        ))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return Stringifier(ast.Starred(self.node))
+
+
+class _StringifierDict(dict):
+    def __missing__(self, key):
+        return Stringifier(ast.Name(key))
+
+
+def _call_dunder_annotate(annotate, format):
+    try:
+        return annotate(format)
+    except AssertionError:
+        pass
+    if format == FORWARDREF:
+        globals = {**annotate.__builtins__, **annotate.__globals__}
+        globals = _ForwardReffer(globals)
+        func = types.FunctionType(
+            annotate.__code__,
+            globals,
+            closure=annotate.__closure__
+        )
+        return func(VALUE)
+    elif format == SOURCE:
+        globals = _StringifierDict()
+        func = types.FunctionType(
+            annotate.__code__,
+            globals,
+            # TODO: also replace the closure with stringifiers
+            closure=annotate.__closure__
+        )
+        annos = func(VALUE)
+        return {
+            key: ast.unparse(val.node) if isinstance(val, Stringifier) else repr(val)
+            for key, val in annos.items()
+        }
+
+
+def get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=VALUE):
     """Compute the annotations dict for an object.
 
     obj may be a callable, class, or module.
@@ -229,7 +336,11 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
         although if obj is a wrapped function (using
         functools.update_wrapper()) it is first unwrapped.
     """
-    if isinstance(obj, type):
+    annotate = getattr(obj, "__annotate__", None)
+    # TODO remove format != VALUE condition
+    if annotate is not None and format != VALUE:
+        ann = _call_dunder_annotate(annotate, format)
+    elif isinstance(obj, type):
         # class
         ann = obj.__annotations__
 
