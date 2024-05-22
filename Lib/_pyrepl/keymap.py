@@ -19,38 +19,32 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """
-functions for parsing keyspecs
+Keymap contains functions for parsing keyspecs and turning keyspecs into
+appropriate sequences.
 
-Support for turning keyspecs into appropriate sequences.
+A keyspec is a string representing a sequence of key presses that can
+be bound to a command. All characters other than the backslash represent
+themselves. In the traditional manner, a backslash introduces an escape
+sequence.
 
-pyrepl uses it's own bastardized keyspec format, which is meant to be
-a strict superset of readline's \"KEYSEQ\" format (which is to say
-that if you can come up with a spec readline accepts that this
-doesn't, you've found a bug and should tell me about it).
-
-Note that this is the `\\C-o' style of readline keyspec, not the
-`Control-o' sort.
-
-A keyspec is a string representing a sequence of keypresses that can
-be bound to a command.
-
-All characters other than the backslash represent themselves.  In the
-traditional manner, a backslash introduces a escape sequence.
+pyrepl uses its own keyspec format that is meant to be a strict superset of
+readline's KEYSEQ format. This means that if a spec is found that readline
+accepts that this doesn't, it should be logged as a bug. Note that this means
+we're using the `\\C-o' style of readline's keyspec, not the `Control-o' sort.
 
 The extension to readline is that the sequence \\<KEY> denotes the
-sequence of charaters produced by hitting KEY.
+sequence of characters produced by hitting KEY.
 
 Examples:
-
-`a'     - what you get when you hit the `a' key
+`a'      - what you get when you hit the `a' key
 `\\EOA'  - Escape - O - A (up, on my terminal)
 `\\<UP>' - the up arrow key
-`\\<up>' - ditto (keynames are case insensitive)
+`\\<up>' - ditto (keynames are case-insensitive)
 `\\C-o', `\\c-o'  - control-o
 `\\M-.'  - meta-period
 `\\E.'   - ditto (that's how meta works for pyrepl)
 `\\<tab>', `\\<TAB>', `\\t', `\\011', '\\x09', '\\X09', '\\C-i', '\\C-I'
-   - all of these are the tab character.  Can you think of any more?
+   - all of these are the tab character.
 """
 
 _escapes = {
@@ -111,7 +105,17 @@ class KeySpecError(Exception):
     pass
 
 
-def _parse_key1(key, s):
+def parse_keys(keys: str) -> list[str]:
+    """Parse keys in keyspec format to a sequence of keys."""
+    s = 0
+    r: list[str] = []
+    while s < len(keys):
+        k, s = _parse_single_key_sequence(keys, s)
+        r.extend(k)
+    return r
+
+
+def _parse_single_key_sequence(key: str, s: int) -> tuple[list[str], int]:
     ctrl = 0
     meta = 0
     ret = ""
@@ -177,23 +181,17 @@ def _parse_key1(key, s):
             ret = key[s]
             s += 1
     if ctrl:
-        if len(ret) > 1:
-            raise KeySpecError("\\C- must be followed by a character")
-        ret = chr(ord(ret) & 0x1F)  # curses.ascii.ctrl()
+        if len(ret) == 1:
+            ret = chr(ord(ret) & 0x1F)  # curses.ascii.ctrl()
+        elif ret in {"left", "right"}:
+            ret = f"ctrl {ret}"
+        else:
+            raise KeySpecError("\\C- followed by invalid key")
+
+    result = [ret], s
     if meta:
-        ret = ["\033", ret]
-    else:
-        ret = [ret]
-    return ret, s
-
-
-def parse_keys(key):
-    s = 0
-    r = []
-    while s < len(key):
-        k, s = _parse_key1(key, s)
-        r.extend(k)
-    return r
+        result[0].insert(0, "\033")
+    return result
 
 
 def compile_keymap(keymap, empty=b""):
