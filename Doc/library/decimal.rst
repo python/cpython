@@ -1,5 +1,5 @@
-:mod:`decimal` --- Decimal fixed point and floating point arithmetic
-====================================================================
+:mod:`!decimal` --- Decimal fixed point and floating point arithmetic
+=====================================================================
 
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.
@@ -1396,10 +1396,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
-         - ``y`` must be nonnegative
-         - at least one of ``x`` or ``y`` must be nonzero
-         - ``modulo`` must be nonzero and have at most 'precision' digits
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
       The value resulting from ``Context.power(x, y, modulo)`` is
       equal to the value that would be obtained by computing ``(x**y)
@@ -1517,7 +1517,7 @@ are also included in the pure Python version for compatibility.
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
-.. versionadded:: 3.9 backported to 3.7 and 3.8.
+   .. versionadded:: 3.8.3
 
 
 Rounding modes

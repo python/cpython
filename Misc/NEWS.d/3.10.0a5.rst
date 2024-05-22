@@ -667,4 +667,4 @@ exception (if an exception is set). Patch by Victor Stinner.
 .. section: C API
 
 Fixed a compiler warning in :c:func:`Py_UNICODE_ISSPACE()` on platforms with
-signed ``wchar_t``.
+signed :c:type:`wchar_t`.

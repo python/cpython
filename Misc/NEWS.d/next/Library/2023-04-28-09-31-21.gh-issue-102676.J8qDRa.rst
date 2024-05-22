@@ -1,3 +1,0 @@
-Add fields ``start_offset``, ``cache_offset``, ``end_offset``,
-``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg`` to
-:class:`dis.Instruction`.

@@ -13,9 +13,7 @@ from test import support
 from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
-_py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
-_pgo_flag = sysconfig.get_config_var("PGO_PROF_USE_FLAG")
-if _pgo_flag and _py_cflags_nodist and _pgo_flag in _py_cflags_nodist:
+if support.check_cflags_pgo():
     raise unittest.SkipTest("peg_generator test disabled under PGO build")
 
 test_tools.skip_if_missing("peg_generator")
@@ -404,7 +402,7 @@ class TestCParser(unittest.TestCase):
             a='[' b=NAME c=for_if_clauses d=']' { _PyAST_ListComp(b, c, EXTRA) }
         )
         for_if_clauses[asdl_comprehension_seq*]: (
-            a[asdl_comprehension_seq*]=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
+            a[asdl_comprehension_seq*]=(y=['async'] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
                 { _PyAST_comprehension(_PyAST_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """

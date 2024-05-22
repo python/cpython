@@ -46,7 +46,6 @@ import time
 import struct
 import copy
 import re
-import warnings
 
 try:
     import pwd
@@ -331,10 +330,11 @@ class _LowLevelFile:
 class _Stream:
     """Class that serves as an adapter between TarFile and
        a stream-like object.  The stream-like object only
-       needs to have a read() or write() method and is accessed
-       blockwise.  Use of gzip or bzip2 compression is possible.
-       A stream-like object could be for example: sys.stdin,
-       sys.stdout, a socket, a tape device etc.
+       needs to have a read() or write() method that works with bytes,
+       and the method is accessed blockwise.
+       Use of gzip or bzip2 compression is possible.
+       A stream-like object could be for example: sys.stdin.buffer,
+       sys.stdout.buffer, a socket, a tape device etc.
 
        _Stream is intended to be used only internally.
     """
@@ -372,8 +372,8 @@ class _Stream:
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
-                    self._init_read_gz()
                     self.exception = zlib.error
+                    self._init_read_gz()
                 else:
                     self._init_write_gz(compresslevel)
 
@@ -636,6 +636,10 @@ class _FileInFile(object):
     def flush(self):
         pass
 
+    @property
+    def mode(self):
+        return 'rb'
+
     def readable(self):
         return True
 
@@ -742,7 +746,7 @@ class SpecialFileError(FilterError):
 class AbsoluteLinkError(FilterError):
     def __init__(self, tarinfo):
         self.tarinfo = tarinfo
-        super().__init__(f'{tarinfo.name!r} is a symlink to an absolute path')
+        super().__init__(f'{tarinfo.name!r} is a link to an absolute path')
 
 class LinkOutsideDestinationError(FilterError):
     def __init__(self, tarinfo, path):
@@ -802,7 +806,14 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            target_path = os.path.realpath(os.path.join(dest_path, member.linkname))
+            if member.issym():
+                target_path = os.path.join(dest_path,
+                                           os.path.dirname(name),
+                                           member.linkname)
+            else:
+                target_path = os.path.join(dest_path,
+                                           member.linkname)
+            target_path = os.path.realpath(target_path)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs
@@ -865,7 +876,7 @@ class TarInfo(object):
         pax_headers = ('A dictionary containing key-value pairs of an '
                        'associated pax extended header.'),
         sparse = 'Sparse member information.',
-        tarfile = None,
+        _tarfile = None,
         _sparse_structs = None,
         _link_target = None,
         )
@@ -893,6 +904,24 @@ class TarInfo(object):
 
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
+
+    @property
+    def tarfile(self):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        return self._tarfile
+
+    @tarfile.setter
+    def tarfile(self, tarfile):
+        import warnings
+        warnings.warn(
+            'The undocumented "tarfile" attribute of TarInfo objects '
+            + 'is deprecated and will be removed in Python 3.16',
+            DeprecationWarning, stacklevel=2)
+        self._tarfile = tarfile
 
     @property
     def path(self):
@@ -2023,7 +2052,7 @@ class TarFile(object):
         # Now, fill the TarInfo object with
         # information specific for the file.
         tarinfo = self.tarinfo()
-        tarinfo.tarfile = self  # Not needed
+        tarinfo._tarfile = self  # To be removed in 3.16.
 
         # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
@@ -2100,6 +2129,10 @@ class TarFile(object):
            output is produced. `members' is optional and must be a subset of the
            list returned by getmembers().
         """
+        # Convert tarinfo type to stat type.
+        type2mode = {REGTYPE: stat.S_IFREG, SYMTYPE: stat.S_IFLNK,
+                     FIFOTYPE: stat.S_IFIFO, CHRTYPE: stat.S_IFCHR,
+                     DIRTYPE: stat.S_IFDIR, BLKTYPE: stat.S_IFBLK}
         self._check()
 
         if members is None:
@@ -2109,7 +2142,8 @@ class TarFile(object):
                 if tarinfo.mode is None:
                     _safe_print("??????????")
                 else:
-                    _safe_print(stat.filemode(tarinfo.mode))
+                    modetype = type2mode.get(tarinfo.type, 0)
+                    _safe_print(stat.filemode(modetype | tarinfo.mode))
                 _safe_print("%s/%s" % (tarinfo.uname or tarinfo.uid,
                                        tarinfo.gname or tarinfo.gid))
                 if tarinfo.ischr() or tarinfo.isblk():
@@ -2184,12 +2218,15 @@ class TarFile(object):
             self.addfile(tarinfo)
 
     def addfile(self, tarinfo, fileobj=None):
-        """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
-           given, it should be a binary file, and tarinfo.size bytes are read
-           from it and added to the archive. You can create TarInfo objects
-           directly, or by using gettarinfo().
+        """Add the TarInfo object `tarinfo' to the archive. If `tarinfo' represents
+           a non zero-size regular file, the `fileobj' argument should be a binary file,
+           and tarinfo.size bytes are read from it and added to the archive.
+           You can create TarInfo objects directly, or by using gettarinfo().
         """
         self._check("awx")
+
+        if fileobj is None and tarinfo.isreg() and tarinfo.size != 0:
+            raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
 
@@ -2212,11 +2249,12 @@ class TarFile(object):
         if filter is None:
             filter = self.extraction_filter
             if filter is None:
+                import warnings
                 warnings.warn(
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
                     + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
+                    DeprecationWarning, stacklevel=3)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(
@@ -2398,7 +2436,7 @@ class TarFile(object):
         if upperdirs and not os.path.exists(upperdirs):
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
@@ -2443,7 +2481,8 @@ class TarFile(object):
                 # later in _extract_member().
                 os.mkdir(targetpath, 0o700)
         except FileExistsError:
-            pass
+            if not os.path.isdir(targetpath):
+                raise
 
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.
@@ -2550,7 +2589,8 @@ class TarFile(object):
                     os.lchown(targetpath, u, g)
                 else:
                     os.chown(targetpath, u, g)
-            except OSError as e:
+            except (OSError, OverflowError) as e:
+                # OverflowError can be raised if an ID doesn't fit in `id_t`
                 raise ExtractError("could not change owner") from e
 
     def chmod(self, tarinfo, targetpath):

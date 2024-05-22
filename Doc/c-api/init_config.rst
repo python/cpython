@@ -82,6 +82,8 @@ PyWideStringList
    If *length* is non-zero, *items* must be non-``NULL`` and all strings must be
    non-``NULL``.
 
+   .. c:namespace:: NULL
+
    Methods:
 
    .. c:function:: PyStatus PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
@@ -100,6 +102,8 @@ PyWideStringList
       *index* must be greater than or equal to ``0``.
 
       Python must be preinitialized to call this function.
+
+   .. c:namespace:: PyWideStringList
 
    Structure fields:
 
@@ -134,6 +138,8 @@ PyStatus
    .. c:member:: const char *func
 
       Name of the function which created an error, can be ``NULL``.
+
+   .. c:namespace:: NULL
 
    Functions to create a status:
 
@@ -210,6 +216,8 @@ PyPreConfig
 
    Structure used to preinitialize Python.
 
+   .. c:namespace:: NULL
+
    Function to initialize a preconfiguration:
 
    .. c:function:: void PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
@@ -221,6 +229,8 @@ PyPreConfig
 
       Initialize the preconfiguration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
+
+   .. c:namespace:: PyPreConfig
 
    Structure fields:
 
@@ -243,10 +253,20 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+        malloc replacement.
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+        malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
+
 
       ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-pymalloc
       <--without-pymalloc>`.
+
+      ``PYMEM_ALLOCATOR_MIMALLOC`` and ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` are
+      not supported if Python is :option:`configured using --without-mimalloc
+      <--without-mimalloc>` or if the underlying atomic support isn't
+      available.
 
       See :ref:`Memory Management <memory>`.
 
@@ -429,6 +449,8 @@ PyConfig
    When done, the :c:func:`PyConfig_Clear` function must be used to release the
    configuration memory.
 
+   .. c:namespace:: NULL
+
    Structure methods:
 
    .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
@@ -522,10 +544,12 @@ PyConfig
    Moreover, if :c:func:`PyConfig_SetArgv` or :c:func:`PyConfig_SetBytesArgv`
    is used, this method must be called before other methods, since the
    preinitialization configuration depends on command line arguments (if
-   :c:member:`parse_argv` is non-zero).
+   :c:member:`~PyConfig.parse_argv` is non-zero).
 
    The caller of these methods is responsible to handle exceptions (error or
    exit) using ``PyStatus_Exception()`` and ``Py_ExitStatusException()``.
+
+   .. c:namespace:: PyConfig
 
    Structure fields:
 
@@ -702,7 +726,7 @@ PyConfig
 
       Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
 
-      Need a special build of Python with the ``Py_TRACE_REFS`` macro defined:
+      Needs a special build of Python with the ``Py_TRACE_REFS`` macro defined:
       see the :option:`configure --with-trace-refs option <--with-trace-refs>`.
 
       Default: ``0``.
@@ -864,6 +888,19 @@ PyConfig
 
       .. versionadded:: 3.12
 
+   .. c:member:: int cpu_count
+
+      If the value of :c:member:`~PyConfig.cpu_count` is not ``-1`` then it will
+      override the return values of :func:`os.cpu_count`,
+      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
+
+      Configured by the :samp:`-X cpu_count={n|default}` command line
+      flag or the :envvar:`PYTHON_CPU_COUNT` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.13
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:
@@ -889,7 +926,7 @@ PyConfig
    .. c:member:: int legacy_windows_stdio
 
       If non-zero, use :class:`io.FileIO` instead of
-      :class:`io.WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
+      :class:`!io._WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
       and :data:`sys.stderr`.
 
       Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
@@ -938,7 +975,7 @@ PyConfig
    .. c:member:: wchar_t* pythonpath_env
 
       Module search paths (:data:`sys.path`) as a string separated by ``DELIM``
-      (:data:`os.path.pathsep`).
+      (:data:`os.pathsep`).
 
       Set by the :envvar:`PYTHONPATH` environment variable.
 
@@ -1021,7 +1058,7 @@ PyConfig
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
 
-      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
       must be defined).
 
       Default: ``0``.
@@ -1073,6 +1110,7 @@ PyConfig
 
       Set by the :option:`-X pycache_prefix=PATH <-X>` command line option and
       the :envvar:`PYTHONPYCACHEPREFIX` environment variable.
+      The command-line option takes precedence.
 
       If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
@@ -1116,13 +1154,27 @@ PyConfig
 
       Default: ``NULL``.
 
+   .. c:member:: wchar_t* run_presite
+
+      ``package.module`` path to module that should be imported before
+      ``site.py`` is run.
+
+      Set by the :option:`-X presite=package.module <-X>` command-line
+      option and the :envvar:`PYTHON_PRESITE` environment variable.
+      The command-line option takes precedence.
+
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
+
+      Default: ``NULL``.
+
    .. c:member:: int show_ref_count
 
-      Show total reference count at exit?
+      Show total reference count at exit (excluding :term:`immortal` objects)?
 
       Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 
-      Need a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
       macro must be defined).
 
       Default: ``0``.
@@ -1139,7 +1191,7 @@ PyConfig
 
       Set to ``0`` by the :option:`-S` command line option.
 
-      :data:`sys.flags.no_site` is set to the inverted value of
+      :data:`sys.flags.no_site <sys.flags>` is set to the inverted value of
       :c:member:`~PyConfig.site_import`.
 
       Default: ``1``.
@@ -1198,8 +1250,11 @@ PyConfig
       If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
       for more information.
 
-      Set by :option:`-X perf <-X>` command line option and by the
-      :envvar:`PYTHONPERFSUPPORT` environment variable.
+      Set by :option:`-X perf <-X>` command-line option and by the
+      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
+      with stack pointers and :option:`-X perf_jit <-X>` command-line option
+      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
+      support with DWARF JIT information.
 
       Default: ``-1``.
 

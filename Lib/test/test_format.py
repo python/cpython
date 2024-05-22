@@ -4,6 +4,7 @@ import sys
 import re
 import test.support as support
 import unittest
+from test.support.import_helper import import_module
 
 maxsize = support.MAX_Py_ssize_t
 
@@ -478,7 +479,8 @@ class FormatTest(unittest.TestCase):
 
     @support.cpython_only
     def test_precision_c_limits(self):
-        from _testcapi import INT_MAX
+        _testcapi = import_module("_testcapi")
+        INT_MAX = _testcapi.INT_MAX
 
         f = 1.2
         with self.assertRaises(ValueError) as cm:
