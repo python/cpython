@@ -171,7 +171,7 @@ class Reader:
       * console:
         Hopefully encapsulates the OS dependent stuff.
       * pos:
-        A 0-based index into `buffer' for where the insertion point
+        A 0-based index into 'buffer' for where the insertion point
         is.
       * screeninfo:
         Ahem.  This list contains some info needed to move the
@@ -179,7 +179,7 @@ class Reader:
       * cxy, lxy:
         the position of the insertion point in screen ...
       * syntax_table:
-        Dictionary mapping characters to `syntax class'; read the
+        Dictionary mapping characters to 'syntax class'; read the
         emacs docs to see what this means :-)
       * commands:
         Dictionary mapping command names to command classes.
@@ -307,7 +307,8 @@ class Reader:
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
             else:
-                for i in range(wrapcount + 1):
+                i = 0
+                while l:
                     prelen = lp if i == 0 else 0
                     index_to_wrap_before = 0
                     column = 0
@@ -317,12 +318,17 @@ class Reader:
                         index_to_wrap_before += 1
                         column += character_width
                     pre = prompt if i == 0 else ""
-                    post = "\\" if i != wrapcount else ""
-                    after = [1] if i != wrapcount else []
+                    if len(l) > index_to_wrap_before:
+                        post = "\\"
+                        after = [1]
+                    else:
+                        post = ""
+                        after = []
                     screen.append(pre + l[:index_to_wrap_before] + post)
                     screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
                     l = l[index_to_wrap_before:]
                     l2 = l2[index_to_wrap_before:]
+                    i += 1
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg and self.msg_at_bottom:
@@ -431,7 +437,7 @@ class Reader:
 
     def get_arg(self, default: int = 1) -> int:
         """Return any prefix argument that the user has supplied,
-        returning `default' if there is None.  Defaults to 1.
+        returning 'default' if there is None.  Defaults to 1.
         """
         if self.arg is None:
             return default
@@ -440,7 +446,7 @@ class Reader:
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
-        `lineno'."""
+        'lineno'."""
         if self.arg is not None and cursor_on_line:
             prompt = "(arg: %s) " % self.arg
         elif self.paste_mode:

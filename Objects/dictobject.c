@@ -2003,7 +2003,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
-            oldvalues->valid = 0;
+            FT_ATOMIC_STORE_UINT8(oldvalues->valid, 0);
         }
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
