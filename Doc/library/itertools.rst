@@ -401,7 +401,7 @@ loops that truncate the stream.
    that are false. Roughly equivalent to::
 
       def filterfalse(predicate, iterable):
-          # filterfalse(lambda x: x%2, range(10)) → 0 2 4 6 8
+          # filterfalse(str.isupper, 'AbCdEf') → b d f
           if predicate is None:
               predicate = bool
           for x in iterable:
