@@ -706,7 +706,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
-        self.range = self.get_range()
+        self.range = self.parse_range()
         if os.path.isdir(path):
             parts = urllib.parse.urlsplit(self.path)
             if not parts.path.endswith('/'):
@@ -944,7 +944,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return guess
         return 'application/octet-stream'
 
-    def get_range(self):
+    def parse_range(self):
         """Return a tuple of (start, end) representing the range header in
         the HTTP request. If the range header is missing or not resolvable,
         None is returned. This only supports single part ranges.
@@ -956,11 +956,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         m = re.match(r'bytes=(\d+)-(\d*)$', range_header)
         if not m:
             return None
-        start = m.group(1)
+        start = int(m.group(1))
         if not m.group(2):
-            return int(start), None
-        end = m.group(2)
-        return int(start), int(end)
+            return start, None
+        end = int(m.group(2))
+        if start > end:
+            return None
+        return start, end
 
 
 # Utilities for CGIHTTPRequestHandler

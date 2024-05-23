@@ -557,6 +557,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(self.base_url + '/test', headers={'Range': 'bytes=100-200'})
         self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=4-3'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
         response = self.request(self.base_url + '/test', headers={'Range': 'bytes=wrong format'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
