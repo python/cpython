@@ -1181,7 +1181,7 @@ configure.ac.
 .. nonce: XcEXEZ
 .. section: Build
 
-configure and Makefile were refactored to accomodate framework builds on
+configure and Makefile were refactored to accommodate framework builds on
 Apple platforms other than macOS.
 
 ..
