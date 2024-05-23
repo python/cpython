@@ -1422,24 +1422,38 @@ class WalkTests(unittest.TestCase):
 
     def test_walk_bottom_up(self):
         # Walk bottom-up.
-        all = list(self.walk(self.walk_path, topdown=False))
-
-        self.assertEqual(len(all), 4, all)
-        # We can't know which order SUB1 and SUB2 will appear in.
-        # Not flipped:  SUB11, SUB1, SUB2, TESTFN
-        #     flipped:  SUB2, SUB11, SUB1, TESTFN
-        flipped = all[3][1][0] != "SUB1"
-        all[3][1].sort()
-        all[2 - 2 * flipped][-1].sort()
-        all[2 - 2 * flipped][1].sort()
-        self.assertEqual(all[3],
-                         (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[flipped],
-                         (self.sub11_path, [], []))
-        self.assertEqual(all[flipped + 1],
-                         (self.sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 - 2 * flipped],
-                         self.sub2_tree)
+        sub2_path = os.path.join(self.walk_path, "SUB2")
+        seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
+        for path, dirnames, filenames in self.walk(self.walk_path, topdown=False):
+            if path == self.walk_path:
+                self.assertFalse(seen_testfn)
+                self.assertTrue(seen_sub1)
+                self.assertTrue(seen_sub2)
+                self.assertEqual(sorted(dirnames), ["SUB1", "SUB2"])
+                self.assertEqual(filenames, ["tmp1"])
+                seen_testfn = True
+            elif path == self.sub1_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub1)
+                self.assertTrue(seen_sub11)
+                self.assertEqual(dirnames, ["SUB11"])
+                self.assertEqual(filenames, ["tmp2"])
+                seen_sub1 = True
+            elif path == self.sub11_path:
+                self.assertFalse(seen_sub1)
+                self.assertFalse(seen_sub11)
+                self.assertEqual(dirnames, [])
+                self.assertEqual(filenames, [])
+                seen_sub11 = True
+            elif path == sub2_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub2)
+                self.assertEqual(sorted(dirnames), sorted(self.sub2_tree[1]))
+                self.assertEqual(sorted(filenames), sorted(self.sub2_tree[2]))
+                seen_sub2 = True
+            else:
+                raise AssertionError(f"Unexpected path: {path}")
+        self.assertTrue(seen_testfn)
 
     def test_walk_symlink(self):
         if not os_helper.can_symlink():

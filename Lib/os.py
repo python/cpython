@@ -429,8 +429,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield after sub-directory traversal if going bottom up
             stack.append((top, dirs, nondirs))
             # Traverse into sub-directories
-            for new_path in reversed(walk_dirs):
-                stack.append(new_path)
+            stack.extend(walk_dirs)
 
 __all__.append("walk")
 
