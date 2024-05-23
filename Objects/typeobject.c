@@ -1077,23 +1077,6 @@ _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 #endif
 }
 
-void
-_PyType_ClearCodeByVersion(unsigned int version)
-{
-#ifndef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyTypeObject **slot =
-        interp->types.type_version_cache
-        + (version % TYPE_VERSION_CACHE_SIZE);
-    if (*slot) {
-        assert(PyType_Check(*slot));
-        if ((*slot)->tp_version_tag == version) {
-            *slot = NULL;
-        }
-    }
-#endif
-}
-
 PyTypeObject *
 _PyType_LookupByVersion(unsigned int version)
 {
@@ -5786,7 +5769,6 @@ type_dealloc(PyObject *self)
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     _PyObject_GC_UNTRACK(type);
-    _PyType_ClearCodeByVersion(type->tp_version_tag);
     type_dealloc_common(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
