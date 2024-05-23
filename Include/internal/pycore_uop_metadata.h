@@ -93,7 +93,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
-    [_LOAD_ASSERTION_ERROR] = 0,
+    [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -400,7 +400,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_LIST_APPEND] = "_LIST_APPEND",
     [_LIST_EXTEND] = "_LIST_EXTEND",
-    [_LOAD_ASSERTION_ERROR] = "_LOAD_ASSERTION_ERROR",
     [_LOAD_ATTR] = "_LOAD_ATTR",
     [_LOAD_ATTR_CLASS] = "_LOAD_ATTR_CLASS",
     [_LOAD_ATTR_CLASS_0] = "_LOAD_ATTR_CLASS_0",
@@ -419,6 +418,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_SLOT_1] = "_LOAD_ATTR_SLOT_1",
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
+    [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
     [_LOAD_CONST] = "_LOAD_CONST",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
@@ -662,7 +662,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _POP_EXCEPT:
             return 1;
-        case _LOAD_ASSERTION_ERROR:
+        case _LOAD_COMMON_CONSTANT:
             return 0;
         case _LOAD_BUILD_CLASS:
             return 0;
