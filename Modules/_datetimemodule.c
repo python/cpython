@@ -6771,45 +6771,38 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
+
+/* The C-API is process-global.  This violates interpreter isolation
+ * due to the objects stored here.  Thus each of those objects must
+ * be managed carefully. */
+// XXX Can we make this const?
+static PyDateTime_CAPI capi = {
+    .DateType = &PyDateTime_DateType,
+    .DateTimeType = &PyDateTime_DateTimeType,
+    .TimeType = &PyDateTime_TimeType,
+    .DeltaType = &PyDateTime_DeltaType,
+    .TZInfoType = &PyDateTime_TZInfoType,
+
+    .TimeZone_UTC = (PyObject *)&utc_timezone,
+
+    .Date_FromDate = new_date_ex,
+    .DateTime_FromDateAndTime = new_datetime_ex,
+    .Time_FromTime = new_time_ex,
+    .Delta_FromDelta = new_delta_ex,
+    .TimeZone_FromTimeZone = new_timezone,
+    .DateTime_FromTimestamp = datetime_fromtimestamp,
+    .Date_FromTimestamp = datetime_date_fromtimestamp_capi,
+    .DateTime_FromDateAndTimeAndFold = new_datetime_ex2,
+    .Time_FromTimeAndFold = new_time_ex2,
+};
+
 /* Get a new C API by calling this function.
  * Clients get at C API via PyDateTime_IMPORT, defined in datetime.h.
  */
 static inline PyDateTime_CAPI *
 get_datetime_capi(void)
 {
-    datetime_state *st = get_datetime_state();
-
-    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->DateType = st->date_type;
-    capi->DateTimeType = st->datetime_type;
-    capi->TimeType = st->time_type;
-    capi->DeltaType = st->delta_type;
-    capi->TZInfoType = st->tzinfo_type;
-    capi->Date_FromDate = new_date_ex;
-    capi->DateTime_FromDateAndTime = new_datetime_ex;
-    capi->Time_FromTime = new_time_ex;
-    capi->Delta_FromDelta = new_delta_ex;
-    capi->TimeZone_FromTimeZone = new_timezone;
-    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
-    capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
-    capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
-    capi->Time_FromTimeAndFold = new_time_ex2;
-    // Make sure this function is called after utc has
-    // been initialized.
-    assert(st->utc != NULL);
-    capi->TimeZone_UTC = st->utc; // borrowed ref
-    return capi;
-}
-
-static void
-datetime_destructor(PyObject *op)
-{
-    void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    PyMem_Free(ptr);
+    return &capi;
 }
 
 static int
@@ -7007,8 +7000,7 @@ _datetime_exec(PyObject *module)
     if (capi == NULL) {
         goto error;
     }
-    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME,
-                                      datetime_destructor);
+    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, NULL);
     if (capsule == NULL) {
         PyMem_Free(capi);
         goto error;
