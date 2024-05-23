@@ -2624,9 +2624,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     int is_generic = asdl_seq_LEN(type_params) > 0;
-    PyObject *old_u_private = Py_XNewRef(c->u->u_private);
     if (is_generic) {
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
         if (!type_params_name) {
@@ -2637,6 +2635,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             Py_DECREF(type_params_name);
             return ERROR;
         }
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
@@ -2702,7 +2701,6 @@ compiler_class(struct compiler *c, stmt_ty s)
                                             s->v.ClassDef.bases,
                                             s->v.ClassDef.keywords));
     }
-    Py_XSETREF(c->u->u_private, old_u_private);
 
     /* 6. apply decorators */
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));

@@ -1667,12 +1667,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     case ClassDef_kind: {
-        PyObject *tmp;
         if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
-        PyObject *old_st_private = st->st_private;
+        PyObject *tmp = st->st_private;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.type_params,
@@ -1689,7 +1688,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
             VISIT_QUIT(st, 0);
-        tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_add_def(st, &_Py_ID(__type_params__),
@@ -1703,14 +1701,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
-        st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
-        st->st_private = old_st_private;
+        st->st_private = tmp;
         break;
     }
     case TypeAlias_kind: {
