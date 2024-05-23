@@ -9,8 +9,7 @@ import threading
 import types
 import warnings
 
-from _pyrepl.simple_interact import InteractiveColoredConsole, check
-from _pyrepl.simple_interact import run_multiline_interactive_console
+from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
 
@@ -92,6 +91,12 @@ class REPLThread(threading.Thread):
                 import errno
                 if not os.isatty(sys.stdin.fileno()):
                     raise OSError(errno.ENOTTY, "tty required", "stdin")
+
+                # This import will fail on operating systems with no termios.
+                from _pyrepl.simple_interact import (
+                    check,
+                    run_multiline_interactive_console,
+                )
                 if err := check():
                     raise RuntimeError(err)
             except Exception as e:

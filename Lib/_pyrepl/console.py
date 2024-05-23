@@ -19,7 +19,10 @@
 
 from __future__ import annotations
 
+import _colorize  # type: ignore[import-not-found]
 from abc import ABC, abstractmethod
+import ast
+import code
 from dataclasses import dataclass, field
 
 
@@ -110,3 +113,45 @@ class Console(ABC):
     @abstractmethod
     def repaint(self) -> None:
         ...
+
+
+class InteractiveColoredConsole(code.InteractiveConsole):
+    def __init__(
+        self,
+        locals: dict[str, object] | None = None,
+        filename: str = "<console>",
+        *,
+        local_exit: bool = False,
+    ) -> None:
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
+        self.can_colorize = _colorize.can_colorize()
+
+    def showsyntaxerror(self, filename=None):
+        super().showsyntaxerror(colorize=self.can_colorize)
+
+    def showtraceback(self):
+        super().showtraceback(colorize=self.can_colorize)
+
+    def runsource(self, source, filename="<input>", symbol="single"):
+        try:
+            tree = ast.parse(source)
+        except (OverflowError, SyntaxError, ValueError):
+            self.showsyntaxerror(filename)
+            return False
+        if tree.body:
+            *_, last_stmt = tree.body
+        for stmt in tree.body:
+            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
+            the_symbol = symbol if stmt is last_stmt else "exec"
+            item = wrapper([stmt])
+            try:
+                code = self.compile.compiler(item, filename, the_symbol)
+            except (OverflowError, ValueError):
+                    self.showsyntaxerror(filename)
+                    return False
+
+            if code is None:
+                return True
+
+            self.runcode(code)
+        return False
