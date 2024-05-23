@@ -23,9 +23,11 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         self.loop = loop
 
     def runcode(self, code):
+        global return_code
         future = concurrent.futures.Future()
 
         def callback():
+            global return_code
             global repl_future
             global repl_future_interrupted
 
@@ -35,8 +37,10 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             func = types.FunctionType(code, self.locals)
             try:
                 coro = func()
-            except SystemExit:
-                raise
+            except SystemExit as se:
+                return_code = se.code
+                self.loop.stop()
+                return
             except KeyboardInterrupt as ex:
                 repl_future_interrupted = True
                 future.set_exception(ex)
@@ -59,8 +63,10 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
 
         try:
             return future.result()
-        except SystemExit:
-            raise
+        except SystemExit as se:
+            return_code = se.code
+            self.loop.stop()
+            return
         except BaseException:
             if repl_future_interrupted:
                 self.write("\nKeyboardInterrupt\n")
@@ -71,6 +77,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
 class REPLThread(threading.Thread):
 
     def run(self):
+        global return_code
+
         try:
             banner = (
                 f'asyncio REPL {sys.version} on {sys.platform}\n'
@@ -78,7 +86,6 @@ class REPLThread(threading.Thread):
                 f'Type "help", "copyright", "credits" or "license" '
                 f'for more information.\n'
             )
-            exit_message = 'exiting asyncio REPL...'
 
             console.write(banner)
             if startup_path := os.getenv("PYTHONSTARTUP"):
@@ -89,6 +96,8 @@ class REPLThread(threading.Thread):
 
             try:
                 import errno
+                if os.getenv("PYTHON_BASIC_REPL"):
+                    raise RuntimeError("user environment requested basic REPL")
                 if not os.isatty(sys.stdin.fileno()):
                     raise OSError(errno.ENOTTY, "tty required", "stdin")
 
@@ -104,9 +113,14 @@ class REPLThread(threading.Thread):
             else:
                 try:
                     run_multiline_interactive_console(console=console)
+                except SystemExit:
+                    # expected via the `exit` and `quit` commands
+                    pass
                 except BaseException:
+                    # unexpected issue
                     console.showtraceback()
-                console.write(exit_message + '\n')
+                    console.write("Internal error, ")
+                    return_code = 1
         finally:
             warnings.filterwarnings(
                 'ignore',
@@ -117,6 +131,7 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
+    return_code = 0
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -166,3 +181,6 @@ if __name__ == '__main__':
             continue
         else:
             break
+
+    console.write('exiting asyncio REPL...\n')
+    sys.exit(return_code)
