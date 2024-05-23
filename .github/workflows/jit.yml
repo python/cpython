@@ -165,6 +165,7 @@ jobs:
 
   jit-with-disabled-gil:
     name: Free-Threaded (Debug)
+    needs: interpreter
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
