@@ -1227,6 +1227,8 @@ typedef struct
     PyObject *name;
 } PyDateTime_TimeZone;
 
+static PyDateTime_TimeZone * look_up_timezone(PyObject *offset, PyObject *name);
+
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
    that offset is a timedelta instance and name is either NULL
@@ -1241,6 +1243,12 @@ create_timezone(PyObject *offset, PyObject *name)
     assert(offset != NULL);
     assert(PyDelta_Check(offset));
     assert(name == NULL || PyUnicode_Check(name));
+
+    self = look_up_timezone(offset, name);
+    if (self != NULL) {
+        return (PyObject *)self;
+    }
+    assert(!PyErr_Occurred());
 
     self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
     if (self == NULL) {
@@ -4210,6 +4218,23 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_alloc */
     timezone_new,                     /* tp_new */
 };
+
+// XXX Can we make this const?
+static PyDateTime_TimeZone utc_timezone = {
+    PyObject_HEAD_INIT(&PyDateTime_TimeZoneType)
+    .offset = (PyObject *)&zero_delta,
+    .name = NULL,
+};
+
+static PyDateTime_TimeZone *
+look_up_timezone(PyObject *offset, PyObject *name)
+{
+    if (offset == utc_timezone.offset && name == NULL) {
+        return &utc_timezone;
+    }
+    return NULL;
+}
+
 
 /*
  * PyDateTime_Time implementation.
