@@ -112,17 +112,18 @@ class TestConsole(TestCase):
     def test_simple_addition(self, _os_write):
         code = "12+34"
         events = code_to_events(code)
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, b"2")
         _os_write.assert_any_call(ANY, b"+")
         _os_write.assert_any_call(ANY, b"3")
         _os_write.assert_any_call(ANY, b"4")
+        con.restore()
 
     def test_wrap(self, _os_write):
         code = "12+34"
         events = code_to_events(code)
-        _, _ = handle_events_narrow_unix_console(events)
+        _, con = handle_events_narrow_unix_console(events)
         _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, b"2")
         _os_write.assert_any_call(ANY, b"+")
@@ -130,6 +131,8 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"\\")
         _os_write.assert_any_call(ANY, b"\n")
         _os_write.assert_any_call(ANY, b"4")
+        con.restore()
+
 
     def test_cursor_left(self, _os_write):
         code = "1"
@@ -137,8 +140,9 @@ class TestConsole(TestCase):
             code_to_events(code),
             [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
         )
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
+        con.restore()
 
     def test_cursor_left_right(self, _os_write):
         code = "1"
@@ -149,9 +153,10 @@ class TestConsole(TestCase):
                 Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
             ],
         )
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cuf"] + b":1")
+        con.restore()
 
     def test_cursor_up(self, _os_write):
         code = "1\n2+3"
@@ -159,8 +164,9 @@ class TestConsole(TestCase):
             code_to_events(code),
             [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
         )
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cuu"] + b":1")
+        con.restore()
 
     def test_cursor_up_down(self, _os_write):
         code = "1\n2+3"
@@ -171,9 +177,10 @@ class TestConsole(TestCase):
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
         )
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cuu"] + b":1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cud"] + b":1")
+        con.restore()
 
     def test_cursor_back_write(self, _os_write):
         events = itertools.chain(
@@ -181,10 +188,11 @@ class TestConsole(TestCase):
             [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
             code_to_events("2"),
         )
-        _, _ = handle_events_unix_console(events)
+        _, con = handle_events_unix_console(events)
         _os_write.assert_any_call(ANY, b"1")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["cub"] + b":1")
         _os_write.assert_any_call(ANY, b"2")
+        con.restore()
 
     def test_multiline_function_move_up_short_terminal(self, _os_write):
         # fmt: off
@@ -201,8 +209,9 @@ class TestConsole(TestCase):
                 Event(evt="scroll", data=None),
             ],
         )
-        _, _ = handle_events_short_unix_console(events)
+        _, con = handle_events_short_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["ri"] + b":")
+        con.restore()
 
     def test_multiline_function_move_up_down_short_terminal(self, _os_write):
         # fmt: off
@@ -221,9 +230,10 @@ class TestConsole(TestCase):
                 Event(evt="scroll", data=None),
             ],
         )
-        _, _ = handle_events_short_unix_console(events)
+        _, con = handle_events_short_unix_console(events)
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["ri"] + b":")
         _os_write.assert_any_call(ANY, TERM_CAPABILITIES["ind"] + b":")
+        con.restore()
 
     def test_resize_bigger_on_multiline_function(self, _os_write):
         # fmt: off
@@ -246,7 +256,7 @@ class TestConsole(TestCase):
             console.get_event = MagicMock(side_effect=events)
             return console
 
-        _, _ = handle_all_events(
+        _, con = handle_all_events(
             [Event(evt="resize", data=None)],
             prepare_reader=same_reader,
             prepare_console=same_console,
@@ -258,6 +268,8 @@ class TestConsole(TestCase):
                 call(ANY, b"def f():"),
             ]
         )
+        console.restore()
+        con.restore()
 
     def test_resize_smaller_on_multiline_function(self, _os_write):
         # fmt: off
@@ -280,7 +292,7 @@ class TestConsole(TestCase):
             console.get_event = MagicMock(side_effect=events)
             return console
 
-        _, _ = handle_all_events(
+        _, con = handle_all_events(
             [Event(evt="resize", data=None)],
             prepare_reader=same_reader,
             prepare_console=same_console,
@@ -292,3 +304,5 @@ class TestConsole(TestCase):
                 call(ANY, b"  foo"),
             ]
         )
+        console.restore()
+        con.restore()
