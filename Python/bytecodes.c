@@ -292,11 +292,9 @@ dummy_func(
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     ERROR_NO_POP();
                 }
-                PyErr_SetRaisedException(NULL);
             }
             DECREF_INPUTS();
         }
@@ -307,11 +305,9 @@ dummy_func(
 
         tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     ERROR_NO_POP();
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
         }
@@ -1188,8 +1184,18 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
-            value = Py_NewRef(PyExc_AssertionError);
+        inst(LOAD_COMMON_CONSTANT, ( -- value)) {
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+            case CONSTANT_ASSERTIONERROR:
+                value = PyExc_AssertionError;
+                break;
+            case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyExc_NotImplementedError;
+                break;
+            default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
