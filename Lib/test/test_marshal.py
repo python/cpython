@@ -18,6 +18,11 @@ except ImportError:
 class HelperMixin:
     def helper(self, sample, *extra):
         new = marshal.loads(marshal.dumps(sample, *extra))
+        if sample != new:
+            print("Sample")
+            print(sample)
+            print("New")
+            print(new)
         self.assertEqual(sample, new)
         try:
             with open(os_helper.TESTFN, "wb") as f:
