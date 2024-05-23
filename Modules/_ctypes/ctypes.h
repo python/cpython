@@ -503,8 +503,9 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
 static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
-    assert(PyType_Type.tp_basicsize % ALIGNOF_MAX_ALIGN_T == 0);
-    return (StgInfo *)((char *)type + PyType_Type.tp_basicsize);
+    size_t type_basicsize =_Py_SIZE_ROUND_UP(PyType_Type.tp_basicsize,
+                                             ALIGNOF_MAX_ALIGN_T);
+    return (StgInfo *)((char *)type + type_basicsize);
 }
 
 // Initialize StgInfo on a newly created type
