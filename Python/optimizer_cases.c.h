@@ -255,32 +255,56 @@
         }
 
         case _BINARY_OP_TABLE_NN: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)this_instr->operand;
+            (void)type_version;
+            optimize_binary_op(this_instr, ctx, left, right, &res);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _BINARY_OP_TABLE_ND: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)this_instr->operand;
+            (void)type_version;
+            optimize_binary_op(this_instr, ctx, left, right, &res);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _BINARY_OP_TABLE_DN: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)this_instr->operand;
+            (void)type_version;
+            optimize_binary_op(this_instr, ctx, left, right, &res);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _BINARY_OP_TABLE_DD: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t type_version = (uint16_t)this_instr->operand;
+            (void)type_version;
+            optimize_binary_op(this_instr, ctx, left, right, &res);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -1729,22 +1753,7 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            PyTypeObject *ltype = sym_get_type(left);
-            PyTypeObject *rtype = sym_get_type(right);
-            if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
-                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
-            {
-                if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
-                    ltype == &PyLong_Type && rtype == &PyLong_Type) {
-                    /* If both inputs are ints and the op is not division the result is an int */
-                    res = sym_new_type(ctx, &PyLong_Type);
-                }
-                else {
-                    /* For any other op combining ints/floats the result is a float */
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                }
-            }
-            res = sym_new_unknown(ctx);
+            optimize_binary_op(this_instr, ctx, left, right, &res);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;

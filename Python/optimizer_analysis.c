@@ -13,6 +13,7 @@
  * */
 #include "Python.h"
 #include "opcode.h"
+#include "pycore_ceval.h"
 #include "pycore_dict.h"
 #include "pycore_interp.h"
 #include "pycore_opcode_metadata.h"
@@ -342,6 +343,54 @@ optimize_to_bool(
 }
 
 static void
+optimize_binary_op(
+    _PyUOpInstruction *this_instr,
+    _Py_UOpsContext *ctx,
+    _Py_UopsSymbol *left,
+    _Py_UopsSymbol *right,
+    _Py_UopsSymbol **result_ptr)
+{
+    PyTypeObject *ltype = sym_get_type(left);
+    PyTypeObject *rtype = sym_get_type(right);
+    int oparg = this_instr->oparg;
+    if ((ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
+        (rtype == &PyLong_Type || rtype == &PyFloat_Type))
+    {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            PyObject *lhs = sym_get_const(left);
+            PyObject *rhs = sym_get_const(right);
+            assert(_PyEval_BinaryOps[oparg]);
+            PyObject *temp = _PyEval_BinaryOps[oparg](lhs, rhs);
+            if (temp != NULL) {
+                *result_ptr = sym_new_const(ctx, temp);
+                Py_DECREF(temp);
+                return;
+            }
+            else {
+                PyErr_Clear();
+            }
+        }
+        if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
+            ltype == &PyLong_Type && rtype == &PyLong_Type) {
+            /* If both inputs are ints and the op is not division the result is an int */
+            *result_ptr = sym_new_type(ctx, &PyLong_Type);
+        }
+        else {
+            /* For any other op combining ints/floats the result is a float */
+            *result_ptr = sym_new_type(ctx, &PyFloat_Type);
+        }
+    }
+    else if ((oparg == NB_ADD || oparg == NB_INPLACE_ADD) &&
+             ltype == &PyUnicode_Type && rtype == &PyUnicode_Type)
+    {
+        *result_ptr = sym_new_type(ctx, &PyUnicode_Type);
+    }
+    else {
+        *result_ptr = sym_new_unknown(ctx);
+    }
+}
+
+static void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 {
     REPLACE_OP(this_instr, _POP_TOP, 0, 0);
@@ -463,15 +512,6 @@ optimize_uops(
         first_valid_check_stack->operand = max_space;
     }
     return trace_len;
-
-error:
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Encountered error in abstract interpreter\n");
-    if (opcode <= MAX_UOP_ID) {
-        OPT_ERROR_IN_OPCODE(opcode);
-    }
-    _Py_uop_abstractcontext_fini(ctx);
-    return -1;
 
 }
 
