@@ -676,10 +676,9 @@ loops that truncate the stream.
       def takewhile(predicate, iterable):
           # takewhile(lambda x: x<5, [1,4,6,4,1]) → 1 4
           for x in iterable:
-              if predicate(x):
-                  yield x
-              else:
+              if not predicate(x):
                   break
+              yield x
 
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
