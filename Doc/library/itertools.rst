@@ -279,12 +279,12 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   The combination tuples are emitted in lexicographic ordering according to
+   The combination tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, the generated combinations
+   value.  So, if the input elements are unique, the generated combinations
    will also be unique.
 
    Roughly equivalent to::
