@@ -25,6 +25,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
+    PyObject *placeholder;
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -66,6 +67,7 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
+    PyObject *placeholder;
     Py_ssize_t np;         /* Number of placeholders */
     vectorcallfunc vectorcall;
 } partialobject;
@@ -141,6 +143,8 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
+
+    pto->placeholder = state->placeholder;
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
@@ -148,7 +152,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_ssize_t i;
         for (i=nnargs; i > 0;) {
             item = PyTuple_GET_ITEM(nargs, i-1);
-            if (!Py_Is(item, (PyObject *) &placeholder_type))
+            if (!Py_Is(item, pto->placeholder))
                 break;
             i--;
         }
@@ -158,7 +162,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (nnargs > 0){
             for (Py_ssize_t i=0; i < nnargs; i++){
                 item = PyTuple_GET_ITEM(nargs, i);
-                if (Py_Is(item, (PyObject *) &placeholder_type))
+                if (Py_Is(item, pto->placeholder))
                     nnp++;
             }
         }
@@ -173,7 +177,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         for (Py_ssize_t i=0; i < anargs; i++) {
             if (i < pnargs) {
                 item = PyTuple_GET_ITEM(pargs, i);
-                if ((j < nnargs) & Py_Is(item, (PyObject *) &placeholder_type)){
+                if ((j < nnargs) & Py_Is(item, pto->placeholder)){
                     item = PyTuple_GET_ITEM(nargs, j);
                     j++;
                     pnp--;
@@ -348,7 +352,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         nargs_new = pto_nargs + nargs - np;
         Py_ssize_t j = 0;   // Placeholder counter
         for (Py_ssize_t i=0; i < pto_nargs; i++) {
-            if (Py_Is(pto_args[i], (PyObject *) &placeholder_type)){
+            if (Py_Is(pto_args[i], pto->placeholder)){
                 memcpy(stack + i, args + j, 1 * sizeof(PyObject*));
                 j += 1;
             } else {
@@ -438,7 +442,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         Py_ssize_t j = 0;   // Placeholder counter
         for (Py_ssize_t i=0; i < pto_nargs; i++) {
             item = PyTuple_GET_ITEM(pto_args, i);
-            if (Py_Is(item, (PyObject *) &placeholder_type)){
+            if (Py_Is(item, pto->placeholder)){
                 item = PyTuple_GET_ITEM(args, j);
                 j += 1;
             }
@@ -1616,15 +1620,20 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
+    state->placeholder = (PyObject *)&placeholder_type;
+    if (state->placeholder == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, &placeholder_type) < 0) {
+        return -1;
+    }
+
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
         return -1;
     }
     if (PyModule_AddType(module, state->partial_type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddType(module, &placeholder_type) < 0) {
         return -1;
     }
 
@@ -1663,6 +1672,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
+    Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1674,6 +1684,7 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
+    Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
