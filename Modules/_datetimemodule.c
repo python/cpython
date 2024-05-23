@@ -1178,6 +1178,8 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
     return t;
 }
 
+static PyDateTime_Delta * look_up_delta(int, int, int, PyTypeObject *);
+
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
  * that seconds and microseconds are already in their proper ranges.  In any
@@ -1197,6 +1199,12 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
 
     if (check_delta_day_range(days) < 0)
         return NULL;
+
+    self = look_up_delta(days, seconds, microseconds, type);
+    if (self != NULL) {
+        return (PyObject *)self;
+    }
+    assert(!PyErr_Occurred());
 
     self = (PyDateTime_Delta *) (type->tp_alloc(type, 0));
     if (self != NULL) {
@@ -2891,6 +2899,25 @@ static PyTypeObject PyDateTime_DeltaType = {
     delta_new,                                          /* tp_new */
     0,                                                  /* tp_free */
 };
+
+// XXX Can we make this const?
+static PyDateTime_Delta zero_delta = {
+    PyObject_HEAD_INIT(&PyDateTime_DeltaType)
+    /* Letting this be set lazily is a benign race. */
+    .hashcode = -1,
+};
+
+static PyDateTime_Delta *
+look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
+{
+    if (days == 0 && seconds == 0 && microseconds == 0
+            && type == zero_delta.ob_base.ob_type)
+    {
+        return &zero_delta;
+    }
+    return NULL;
+}
+
 
 /*
  * PyDateTime_Date implementation.
