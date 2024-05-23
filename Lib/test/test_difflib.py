@@ -272,6 +272,26 @@ class TestSFpatches(unittest.TestCase):
         self.assertIn('content="text/html; charset=us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
+class TestDiffer(unittest.TestCase):
+    def test_close_matches_aligned(self):
+        # Of the 4 closely matching pairs, we want 1 to match with 3,
+        # and 2 with 4, to align with a "top to bottom" mental model.
+        a = ["cat\n", "dog\n", "close match 1\n", "close match 2\n"]
+        b = ["close match 3\n", "close match 4\n", "kitten\n", "puppy\n"]
+        m = difflib.Differ().compare(a, b)
+        self.assertEqual(list(m),
+                           ['- cat\n',
+                            '- dog\n',
+                            '- close match 1\n',
+                            '?             ^\n',
+                            '+ close match 3\n',
+                            '?             ^\n',
+                            '- close match 2\n',
+                            '?             ^\n',
+                            '+ close match 4\n',
+                            '?             ^\n',
+                            '+ kitten\n',
+                            '+ puppy\n'])
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
