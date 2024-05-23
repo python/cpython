@@ -502,6 +502,7 @@ loops that truncate the stream.
           step = 1 if s.step is None else s.step
           if start < 0 or (stop is not None and stop < 0) or step <= 0:
               raise ValueError
+
           indices = count() if stop is None else range(max(start, stop))
           next_i = start
           for i, element in zip(indices, iterable):
@@ -729,10 +730,12 @@ loops that truncate the stream.
 
       def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
+
           iterators = [iter(it) for it in iterables]
           num_active = len(iterators)
           if not num_active:
               return
+
           while True:
               values = []
               for i, iterator in enumerate(iterators):
