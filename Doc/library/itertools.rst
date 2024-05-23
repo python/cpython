@@ -544,7 +544,7 @@ loops that truncate the stream.
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeated
+   value.  So, if the input elements are unique, there will be no repeated
    values within a permutation.
 
    Roughly equivalent to::
@@ -552,6 +552,7 @@ loops that truncate the stream.
         def permutations(iterable, r=None):
             # permutations('ABCD', 2) → AB AC AD BA BC BD CA CB CD DA DB DC
             # permutations(range(3)) → 012 021 102 120 201 210
+
             pool = tuple(iterable)
             n = len(pool)
             r = n if r is None else r
@@ -575,7 +576,7 @@ loops that truncate the stream.
                     return
 
    The code for :func:`permutations` can be also expressed as a subsequence of
-   :func:`product`, filtered to exclude entries with repeated elements (those
+   :func:`product` filtered to exclude entries with repeated elements (those
    from the same position in the input pool)::
 
         def permutations(iterable, r=None):
@@ -669,7 +670,7 @@ loops that truncate the stream.
    predicate is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
-          # takewhile(lambda x: x<5, [1,4,6,4,1]) → 1 4
+          # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
           for x in iterable:
               if not predicate(x):
                   break
