@@ -31,6 +31,7 @@ from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD,
 from ctypes import Structure, POINTER, Union
 from ctypes import windll
 from typing import TYPE_CHECKING
+from .utils import wlen
 
 if TYPE_CHECKING:
     from typing import IO
@@ -118,11 +119,17 @@ class KeyEvent(ctypes.Structure):
         ("dwControlKeyState", DWORD),
     ]
 
+class WindowsBufferSizeEvent(ctypes.Structure):
+    _fields_ = [
+        ('dwSize', _COORD)
+    ]
+
+
 class ConsoleEvent(ctypes.Union):
     _fields_ = [
         ("KeyEvent", KeyEvent),
 #        ("MouseEvent", ),
-#        ("WindowsBufferSizeEvent", ),
+        ("WindowsBufferSizeEvent", WindowsBufferSizeEvent),
 #        ("MenuEvent", )
 #        ("FocusEvent", )
     ]
@@ -187,9 +194,6 @@ ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 class _error(Exception):
     pass
 
-def wlen(s: str) -> int:
-    return len(s)
-
 class WindowsConsole(Console):
     def __init__(
         self,
@@ -223,7 +227,7 @@ class WindowsConsole(Console):
         """
         cx, cy = c_xy
 
-        trace('!!Refresh {}', screen)
+        trace('!!Refresh {} {} {}', c_xy, self.__offset, screen)
         while len(self.screen) < min(len(screen), self.height):
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
@@ -275,6 +279,7 @@ class WindowsConsole(Console):
         trace('new offset {} {}', offset, px)
         self.__offset = offset
 
+        self.__hide_cursor()
         for (
             y,
             oldline,
@@ -285,7 +290,6 @@ class WindowsConsole(Console):
 
         y = len(newscr)
         while y < len(oldscr):
-            self.__hide_cursor()
             self.__move_relative(0, y)
             self.__posxy = 0, y
             self.erase_to_end()
@@ -389,20 +393,34 @@ class WindowsConsole(Console):
                 raise ctypes.WinError(ctypes.GetLastError())
 
             self.__move_relative(x_coord, y)
+            pos = self.__posxy
+            coord = self.screen_xy
+
             self.__write(newline[x_pos])
             if x_coord + character_width == self.width:
-                self.move_next_line(y)
+
+                # If we wrapped we need to get back to a known good position,
+                # and the starting position was known good.
+                self.__move_absolute(*coord)
+                self.__posxy = pos
             else:
                 self.__posxy = x_coord + character_width, y
         else:
             trace("Rewrite all {!r} {} {} y={} {} posxy={}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
             self.__hide_cursor()
             self.__move_relative(x_coord, y)
-            if wlen(oldline) > wlen(newline):
-                self.erase_to_end()
+            pos = self.__posxy
+            coord = self.screen_xy
+            #if wlen(oldline) > wlen(newline):
+            self.erase_to_end()
+            trace(f"Writing {newline[x_pos:]}")
             self.__write(newline[x_pos:])
-            if len(newline[x_pos:]) == self.width:
-                self.move_next_line(y)
+
+            if wlen(newline[x_pos:]) == self.width:
+                # If we wrapped we need to get back to a known good position,
+                # and the starting position was known good.
+                self.__move_absolute(*coord)
+                self.__posxy = pos
             else:
                 self.__posxy = wlen(newline), y
 
@@ -411,15 +429,10 @@ class WindowsConsole(Console):
             # ANSI escape characters are present, so we can't assume
             # anything about the position of the cursor.  Moving the cursor
             # to the left margin should work to get to a known position.
-            _, cur_y = self.get_abs_position(0, y)
-            self.__move_absolute(0, cur_y)
+            #_, cur_y = self.get_abs_position(0, y)
+            #self.__move_absolute(0, cur_y)
+            self.__move_absolute(0, self.screen_xy[1])
             self.__posxy = 0, y
-
-    def move_next_line(self, y: int):
-        self.__posxy = 0, y
-        _, cur_y = self.get_abs_position(0, y)
-        self.__move_absolute(0, cur_y)
-        self.__posxy = 0, y
 
     def erase_to_end(self):
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -457,7 +470,6 @@ class WindowsConsole(Console):
         """Moves relative to the current __posxy"""
         trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
         cur_x, cur_y = self.get_abs_position(x, y)
-        trace('move is {} {}', cur_x, cur_y)
         if cur_y < 0:
             # We're scrolling above the current buffer, we need to refresh
             self.__posxy = self.__posxy[0], self.__posxy[1] + cur_y
@@ -467,6 +479,7 @@ class WindowsConsole(Console):
 
     def __move_absolute(self, x, y):
         """Moves to an absolute location in the screen buffer"""
+        trace(f"move absolute {x} {y}")
         if y < 0:
             trace(f"Negative offset: {self.__posxy} {self.screen_xy}")
         if x < 0:
@@ -487,7 +500,6 @@ class WindowsConsole(Console):
         self.__move_relative(x, y)
         self.__posxy = x, y
 
-
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:
             self.__show_cursor()
@@ -503,21 +515,67 @@ class WindowsConsole(Console):
         return (info.srWindow.Bottom - info.srWindow.Top + 1,
                 info.srWindow.Right - info.srWindow.Left + 1)
 
+    def __read_input(self) -> INPUT_RECORD | None:
+        rec = INPUT_RECORD()
+        read = DWORD()
+        if not ReadConsoleInput(InHandle, rec, 1, read):
+            raise ctypes.WinError(ctypes.GetLastError())
+        
+        if read.value == 0:
+            return None
+        
+        return rec
+
     def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
         while True:
-            rec = INPUT_RECORD()
-            read = DWORD()
-            if not ReadConsoleInput(InHandle, rec, 1, read):
-                raise ctypes.WinError(ctypes.GetLastError())
-            
-            if read.value == 0:
+            rec = self.__read_input()
+            if rec is None:
                 if block:
                     continue
                 return None
             
+            if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
+                old_height, old_width = self.height, self.width
+                self.height, self.width = self.getheightwidth()
+                delta = self.width - old_width
+                # Windows will fix up the wrapping for us, but we
+                # need to sync __posxy with those changes.
+                
+                new_x, new_y = self.__posxy
+                y = self.__posxy[1]
+                trace("Cur screen {}", self.screen)
+                #last_len = -1
+                new_lines = 0
+                while y >= 0:
+                    line = self.screen[y]
+                    line_len = wlen(line)
+                    trace(f"XX {wlen(line)} {self.width} {old_width} {wlen(line) <= self.width} {old_width > wlen(line)} {line}")
+                    if (line_len >= self.width and line_len < old_width) and line[-1] != "\\":
+                        # This line is turning into 2 lines
+                        trace("Lines wrap")
+                        new_y += 1
+                        new_lines += 1
+                    #elif line_len >= old_width and line_len < self.width and line[-1] == "\\" and last_len == 1:
+                    #    # This line is turning into 1 line
+                    #    trace("Lines join")
+                    #    #new_y -= 1
+                    #last_len = line_len
+                    y -= 1
+
+                trace(f"RESIZE {self.screen_xy} {self.__posxy} ({new_x}, {new_y}) ({self.width}, {self.height})")
+                # Force redraw of current input, the wrapping can corrupt our state with \
+                self.screen = [' ' * self.width] * (len(self.screen) + new_lines)
+
+                # We could have "unwrapped" things which weren't really wrapped, shifting our x position,
+                # get back to something neutral.
+                self.__move_absolute(0, self.screen_xy[1])
+                self.__posxy = 0, new_y
+
+                return Event("resize", "")
+
             if rec.EventType != KEY_EVENT or not rec.Event.KeyEvent.bKeyDown:
                 # Only process keys and keydown events
                 if block:
@@ -566,7 +624,7 @@ class WindowsConsole(Console):
         if not FillConsoleOutputAttribute(OutHandle, 0,  size, _COORD(), DWORD()):
             raise ctypes.WinError(ctypes.GetLastError())
         y = info.srWindow.Bottom - info.srWindow.Top + 1
-        self.__move_absolute(0, y - info.dwSize.Y)
+        self.__move_absolute(0, 0)
         self.__posxy = 0, 0
         self.screen = [""]
 
