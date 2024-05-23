@@ -1905,6 +1905,7 @@ expression support in the :mod:`re` module).
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise::
+
       >>> 'a commom word'.isascii()
       True
       >>> 'acommomword'.isascii()
@@ -1930,9 +1931,7 @@ expression support in the :mod:`re` module).
       >>> '0123456789'.isdecimal()
       True
 
-   Decimal characters are those that can be used to form
-      numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
-      ZERO::
+   Decimal characters are those that can be used to form numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT ZERO::
 
       >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
       True
@@ -2028,6 +2027,7 @@ expression support in the :mod:`re` module).
    empty, ``False`` otherwise.  Nonprintable characters are those characters defined
    in the Unicode character database as "Other" or "Separator", excepting the
    ASCII space (0x20) which is considered printable.
+
    ::
       >>> ''.isprintable()
       True
@@ -2309,8 +2309,7 @@ If the separator is not found, return a 3-tuple containing
 
    If *sep* is not specified or ``None``, any whitespace string is a
    separator.
-   Except for splitting from the right, :meth:`rsplit` behaves like
-      :meth:`split` which is described in detail below.
+   Except for splitting from the right, :meth:`rsplit` behaves like :meth:`split` which is described in detail below.
 
 .. method:: str.rstrip([chars])
 
