@@ -437,36 +437,37 @@ loops that truncate the stream.
 
    :func:`groupby` is roughly equivalent to::
 
-      class groupby:
+      def groupby(iterable, key=None):
           # [k for k, g in groupby('AAAABBBCCDAABBB')] → A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] → AAAA BBB CC D
 
-          def __init__(self, iterable, key=None):
-              if key is None:
-                  key = lambda x: x
-              self.keyfunc = key
-              self.it = iter(iterable)
-              self.tgtkey = self.currkey = self.currvalue = object()
+          keyfunc = (lambda x: x) if key is None else key
+          iterator = iter(iterable)
+          exhausted = False
 
-          def __iter__(self):
-              return self
-
-          def __next__(self):
-              self.id = object()
-              while self.currkey == self.tgtkey:
-                  self.currvalue = next(self.it)    # Exit on StopIteration
-                  self.currkey = self.keyfunc(self.currvalue)
-              self.tgtkey = self.currkey
-              return (self.currkey, self._grouper(self.tgtkey, self.id))
-
-          def _grouper(self, tgtkey, id):
-              while self.id is id and self.currkey == tgtkey:
-                  yield self.currvalue
-                  try:
-                      self.currvalue = next(self.it)
-                  except StopIteration:
+          def _grouper(target_key):
+              nonlocal curr_value, curr_key, exhausted
+              yield curr_value
+              for curr_value in iterator:
+                  curr_key = keyfunc(curr_value)
+                  if curr_key != target_key:
                       return
-                  self.currkey = self.keyfunc(self.currvalue)
+                  yield curr_value
+              exhausted = True
+
+          try:
+              curr_value = next(iterator)
+          except StopIteration:
+              return
+          curr_key = keyfunc(curr_value)
+
+          while not exhausted:
+              target_key = curr_key
+              curr_group = _grouper(target_key)
+              yield curr_key, curr_group
+              if curr_key == target_key:
+                  for _ in curr_group:
+                      pass
 
 
 .. function:: islice(iterable, stop)
