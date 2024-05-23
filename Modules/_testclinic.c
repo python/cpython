@@ -1243,7 +1243,7 @@ _testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
                                                   PyObject *arg)
 /*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
 {
-    return Py_BuildValue("(OO)", cls, arg);
+    return PyTuple_Pack(2, cls, arg);
 }
 
 static struct PyMethodDef test_class_methods[] = {
@@ -1955,6 +1955,9 @@ PyInit__testclinic(void)
     if (m == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
     if (PyModule_AddType(m, &TestClass) < 0) {
         goto error;
     }
