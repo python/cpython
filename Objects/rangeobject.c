@@ -1149,7 +1149,7 @@ range_iter(PyObject *seq)
         goto long_range;
     }
 
-    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne() ) {
+    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne()) {
         /* fast path for one argument range */
         return fast_range_iter(0, lstop, 1, Py_MAX(0, lstop));
     }
