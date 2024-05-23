@@ -25,7 +25,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
-    PyTypeObject *placeholder;
+    PyTypeObject *placeholder_type;
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -150,7 +150,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->placeholder = (PyObject *) state->placeholder;
+    pto->placeholder = (PyObject *) state->placeholder_type;
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
@@ -1626,12 +1626,12 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->placeholder = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &placeholder_type_spec, NULL);
-    if (state->placeholder == NULL) {
+    if (state->placeholder_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->placeholder) < 0) {
+    if (PyModule_AddType(module, state->placeholder_type) < 0) {
         return -1;
     }
 
@@ -1679,7 +1679,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
-    Py_VISIT(state->placeholder);
+    Py_VISIT(state->placeholder_type);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1691,7 +1691,7 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
-    Py_CLEAR(state->placeholder);
+    Py_CLEAR(state->placeholder_type);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
