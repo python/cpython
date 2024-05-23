@@ -25,7 +25,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
-    PyObject *placeholder;
+    PyTypeObject *placeholder;
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -48,15 +48,21 @@ typedef struct {
 } placeholderobject;
 
 
-PyTypeObject placeholder_type = {
-    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "functools.Placeholder",
-    .tp_doc = PyDoc_STR("placeholder for partial arguments"),
-    .tp_basicsize = sizeof(placeholderobject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-                Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_new = PyType_GenericNew,
+PyDoc_STRVAR(placeholder_doc, "placeholder for partial class");
+
+
+static PyType_Slot placeholder_type_slots[] = {
+    {Py_tp_doc, (void *)placeholder_doc},
+    {0, 0}
+};
+
+static PyType_Spec placeholder_type_spec = {
+    .name = "partial2.Placeholder",
+    .basicsize = sizeof(placeholderobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+             Py_TPFLAGS_IMMUTABLETYPE |
+             Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = placeholder_type_slots
 };
 
 
@@ -144,7 +150,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->placeholder = state->placeholder;
+    pto->placeholder = (PyObject *) state->placeholder;
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
@@ -1620,11 +1626,12 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->placeholder = (PyObject *)&placeholder_type;
+    state->placeholder = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+        &placeholder_type_spec, NULL);
     if (state->placeholder == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, &placeholder_type) < 0) {
+    if (PyModule_AddType(module, state->placeholder) < 0) {
         return -1;
     }
 
