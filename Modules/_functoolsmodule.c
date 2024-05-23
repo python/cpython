@@ -48,7 +48,7 @@ typedef struct {
 } placeholderobject;
 
 
-static PyTypeObject placeholder_type = {
+PyTypeObject placeholder_type = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "functools.Placeholder",
     .tp_doc = PyDoc_STR("placeholder for partial arguments"),
