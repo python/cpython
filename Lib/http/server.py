@@ -132,6 +132,7 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
+RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$')
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -775,10 +776,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 start, end = self.range
                 if start is None:
                     # `end` here means suffix length
-                    start = fs.st_size - end
+                    start = max(0, fs.st_size - end)
                     end = fs.st_size - 1
-                    if start < 0:
-                        start = 0
                 if start >= fs.st_size:
                     # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that none of the range values overlap the extent of the resource
                     f.close()
@@ -788,7 +787,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     end = fs.st_size - 1
                 self.send_response(HTTPStatus.PARTIAL_CONTENT)
                 self.send_header("Content-Range", "bytes %s-%s/%s" % (start, end, fs.st_size))
-                self.send_header("Content-Length", str(end-start+1))
+                self.send_header("Content-Length", str(end - start + 1))
 
                 # Update range to be sent to be used later in copyfile
                 self.range = (start, end)
@@ -959,7 +958,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         range_header = self.headers.get('range')
         if not range_header:
             return None
-        m = re.match(r'bytes=(\d*)-(\d*)$', range_header)
+        m = re.match(RANGE_REGEX_PATTERN, range_header)
         if not m:
             return None
 
