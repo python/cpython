@@ -83,6 +83,8 @@ struct _ts {
         unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
+        /* Currently holds the GIL. */
+        unsigned int holds_gil:1;
 
         /* various stages of finalization */
         unsigned int finalizing:1;
@@ -90,7 +92,7 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :24;
+        unsigned int :23;
     } _status;
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
