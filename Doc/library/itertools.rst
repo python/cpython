@@ -385,7 +385,7 @@ loops that truncate the stream.
    start-up time.  Roughly equivalent to::
 
       def dropwhile(predicate, iterable):
-          # dropwhile(lambda x: x<5, [1,4,6,4,1]) → 6 4 1
+          # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
           iterable = iter(iterable)
           for x in iterable:
               if not predicate(x):
