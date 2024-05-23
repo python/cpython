@@ -1178,6 +1178,8 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
     return t;
 }
 
+static PyDateTime_Delta * look_up_delta(int, int, int, PyTypeObject *);
+
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
  * that seconds and microseconds are already in their proper ranges.  In any
@@ -1197,6 +1199,12 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
 
     if (check_delta_day_range(days) < 0)
         return NULL;
+
+    self = look_up_delta(days, seconds, microseconds, type);
+    if (self != NULL) {
+        return (PyObject *)self;
+    }
+    assert(!PyErr_Occurred());
 
     self = (PyDateTime_Delta *) (type->tp_alloc(type, 0));
     if (self != NULL) {
@@ -1219,6 +1227,8 @@ typedef struct
     PyObject *name;
 } PyDateTime_TimeZone;
 
+static PyDateTime_TimeZone * look_up_timezone(PyObject *offset, PyObject *name);
+
 /* Create new timezone instance checking offset range.  This
    function does not check the name argument.  Caller must assure
    that offset is a timedelta instance and name is either NULL
@@ -1233,6 +1243,12 @@ create_timezone(PyObject *offset, PyObject *name)
     assert(offset != NULL);
     assert(PyDelta_Check(offset));
     assert(name == NULL || PyUnicode_Check(name));
+
+    self = look_up_timezone(offset, name);
+    if (self != NULL) {
+        return (PyObject *)self;
+    }
+    assert(!PyErr_Occurred());
 
     self = (PyDateTime_TimeZone *)(type->tp_alloc(type, 0));
     if (self == NULL) {
@@ -2892,6 +2908,25 @@ static PyTypeObject PyDateTime_DeltaType = {
     0,                                                  /* tp_free */
 };
 
+// XXX Can we make this const?
+static PyDateTime_Delta zero_delta = {
+    PyObject_HEAD_INIT(&PyDateTime_DeltaType)
+    /* Letting this be set lazily is a benign race. */
+    .hashcode = -1,
+};
+
+static PyDateTime_Delta *
+look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
+{
+    if (days == 0 && seconds == 0 && microseconds == 0
+            && type == zero_delta.ob_base.ob_type)
+    {
+        return &zero_delta;
+    }
+    return NULL;
+}
+
+
 /*
  * PyDateTime_Date implementation.
  */
@@ -4183,6 +4218,23 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_alloc */
     timezone_new,                     /* tp_new */
 };
+
+// XXX Can we make this const?
+static PyDateTime_TimeZone utc_timezone = {
+    PyObject_HEAD_INIT(&PyDateTime_TimeZoneType)
+    .offset = (PyObject *)&zero_delta,
+    .name = NULL,
+};
+
+static PyDateTime_TimeZone *
+look_up_timezone(PyObject *offset, PyObject *name)
+{
+    if (offset == utc_timezone.offset && name == NULL) {
+        return &utc_timezone;
+    }
+    return NULL;
+}
+
 
 /*
  * PyDateTime_Time implementation.
@@ -6719,45 +6771,42 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
+
+/* The C-API is process-global.  This violates interpreter isolation
+ * due to the objects stored here.  Thus each of those objects must
+ * be managed carefully. */
+// XXX Can we make this const?
+static PyDateTime_CAPI capi = {
+    /* The classes must be readied before used here.
+     * That will happen the first time the module is loaded.
+     * They aren't safe to be shared between interpreters,
+     * but that's okay as long as the module is single-phase init. */
+    .DateType = &PyDateTime_DateType,
+    .DateTimeType = &PyDateTime_DateTimeType,
+    .TimeType = &PyDateTime_TimeType,
+    .DeltaType = &PyDateTime_DeltaType,
+    .TZInfoType = &PyDateTime_TZInfoType,
+
+    .TimeZone_UTC = (PyObject *)&utc_timezone,
+
+    .Date_FromDate = new_date_ex,
+    .DateTime_FromDateAndTime = new_datetime_ex,
+    .Time_FromTime = new_time_ex,
+    .Delta_FromDelta = new_delta_ex,
+    .TimeZone_FromTimeZone = new_timezone,
+    .DateTime_FromTimestamp = datetime_fromtimestamp,
+    .Date_FromTimestamp = datetime_date_fromtimestamp_capi,
+    .DateTime_FromDateAndTimeAndFold = new_datetime_ex2,
+    .Time_FromTimeAndFold = new_time_ex2,
+};
+
 /* Get a new C API by calling this function.
  * Clients get at C API via PyDateTime_IMPORT, defined in datetime.h.
  */
 static inline PyDateTime_CAPI *
 get_datetime_capi(void)
 {
-    datetime_state *st = get_datetime_state();
-
-    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->DateType = st->date_type;
-    capi->DateTimeType = st->datetime_type;
-    capi->TimeType = st->time_type;
-    capi->DeltaType = st->delta_type;
-    capi->TZInfoType = st->tzinfo_type;
-    capi->Date_FromDate = new_date_ex;
-    capi->DateTime_FromDateAndTime = new_datetime_ex;
-    capi->Time_FromTime = new_time_ex;
-    capi->Delta_FromDelta = new_delta_ex;
-    capi->TimeZone_FromTimeZone = new_timezone;
-    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
-    capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
-    capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
-    capi->Time_FromTimeAndFold = new_time_ex2;
-    // Make sure this function is called after utc has
-    // been initialized.
-    assert(st->utc != NULL);
-    capi->TimeZone_UTC = st->utc; // borrowed ref
-    return capi;
-}
-
-static void
-datetime_destructor(PyObject *op)
-{
-    void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    PyMem_Free(ptr);
+    return &capi;
 }
 
 static int
@@ -6955,8 +7004,7 @@ _datetime_exec(PyObject *module)
     if (capi == NULL) {
         goto error;
     }
-    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME,
-                                      datetime_destructor);
+    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, NULL);
     if (capsule == NULL) {
         PyMem_Free(capi);
         goto error;
