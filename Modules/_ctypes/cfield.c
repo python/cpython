@@ -1118,7 +1118,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
     }
   error:
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or integer expected");
+                 "character bytes, bytearray or integer expected");
     return NULL;
 }
 
@@ -1147,7 +1147,7 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (len != 1) {
         Py_DECREF(value);
         PyErr_SetString(PyExc_TypeError,
-                        "one character unicode string expected");
+                        "character unicode string expected");
         return NULL;
     }
 

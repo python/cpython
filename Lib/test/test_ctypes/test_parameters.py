@@ -87,13 +87,13 @@ class SimpleTypesTestCase(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             c_char.from_param(b"abc")
         self.assertEqual(str(cm.exception),
-                         "one character bytes, bytearray or integer expected")
+                         "character bytes, bytearray or integer expected")
 
     def test_c_wchar(self):
         with self.assertRaises(TypeError) as cm:
             c_wchar.from_param("abc")
         self.assertEqual(str(cm.exception),
-                         "one character unicode string expected")
+                         "character unicode string expected")
 
 
         with self.assertRaises(TypeError) as cm:
