@@ -307,7 +307,8 @@ class Reader:
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
             else:
-                for i in range(wrapcount + 1):
+                i = 0
+                while l:
                     prelen = lp if i == 0 else 0
                     index_to_wrap_before = 0
                     column = 0
@@ -317,12 +318,17 @@ class Reader:
                         index_to_wrap_before += 1
                         column += character_width
                     pre = prompt if i == 0 else ""
-                    post = "\\" if i != wrapcount else ""
-                    after = [1] if i != wrapcount else []
+                    if len(l) > index_to_wrap_before:
+                        post = "\\"
+                        after = [1]
+                    else:
+                        post = ""
+                        after = []
                     screen.append(pre + l[:index_to_wrap_before] + post)
                     screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
                     l = l[index_to_wrap_before:]
                     l2 = l2[index_to_wrap_before:]
+                    i += 1
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg and self.msg_at_bottom:
