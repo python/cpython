@@ -2023,6 +2023,24 @@ type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+gh_119213_getargs
+
+    spam: object = None
+
+Test _PyArg_Parser.kwtuple
+[clinic start generated code]*/
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam)
+/*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
+{
+    // It must never have been called in the main interprer
+    assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
+    return Py_NewRef(spam);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2116,6 +2134,7 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
+    GH_119213_GETARGS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 

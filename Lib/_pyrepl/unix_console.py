@@ -293,7 +293,7 @@ class UnixConsole(Console):
 
         self.__show_cursor()
 
-        self.screen = screen
+        self.screen = screen.copy()
         self.move_cursor(cx, cy)
         self.flushoutput()
 
