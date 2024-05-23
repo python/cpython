@@ -895,7 +895,7 @@ type_modification_starting_unlocked(PyTypeObject *type)
     }
 
     /* 0 is not a valid version tag */
-    _Py_atomic_store_uint32_release(&type->tp_version_tag, 0);
+    _PyType_SetVersion(type, 0);
 }
 
 #endif
@@ -959,7 +959,7 @@ type_modified_unlocked(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
+    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1036,7 +1036,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
+    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -5661,7 +5661,7 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
     if (_Py_IsMainInterpreter(interp)) {
         type->tp_flags &= ~Py_TPFLAGS_READY;
         type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-        type->tp_version_tag = 0;
+        _PyType_SetVersion(type, 0);
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
@@ -8244,7 +8244,7 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
         self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     }
     else {
