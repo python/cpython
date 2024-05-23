@@ -353,7 +353,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
         dirs = []
         nondirs = []
-        walk_dirs = []
+        if not topdown:
+            # Yield after sub-directory traversal if going bottom up
+            stack.append((top, dirs, nondirs))
 
         # We may not have read permission for top, in which case we can't
         # get a list of the files the directory contains.
@@ -363,40 +365,31 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         try:
             with scandir(top) as entries:
                 for entry in entries:
+                    is_dir = False
                     try:
-                        is_dir = entry.is_dir()
+                        if entry.is_dir():
+                            is_dir = True
+                            # Bottom-up: traverse into sub-directory, but exclude
+                            # symlinks to directories if followlinks is False
+                            if not topdown and (followlinks or not entry.is_symlink()):
+                                stack.append(entry.path)
                     except OSError:
                         # If is_dir() raises an OSError, consider the entry not to
                         # be a directory, same behaviour as os.path.isdir().
-                        is_dir = False
+                        pass
 
                     if is_dir:
                         dirs.append(entry.name)
                     else:
                         nondirs.append(entry.name)
-                        continue
-                    if topdown:
-                        continue
 
-                    # Bottom-up: traverse into sub-directory, but exclude
-                    # symlinks to directories if followlinks is False
-                    if followlinks:
-                        walk_into = True
-                    else:
-                        try:
-                            is_symlink = entry.is_symlink()
-                        except OSError:
-                            # If is_symlink() raises an OSError, consider the
-                            # entry not to be a symbolic link, same behaviour
-                            # as os.path.islink().
-                            is_symlink = False
-                        walk_into = not is_symlink
-
-                    if walk_into:
-                        walk_dirs.append(entry.path)
         except OSError as error:
             if onerror is not None:
                 onerror(error)
+            if not topdown:
+                # Undo additions to stack.
+                while not isinstance(stack.pop(), tuple):
+                    pass
             continue
 
         if topdown:
@@ -413,12 +406,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     # above.
                     if followlinks or not islink(new_path):
                         stack.append(new_path)
-        else:
-            # Yield after sub-directory traversal if going bottom up
-            stack.append((top, dirs, nondirs))
-            # Traverse into sub-directories
-            for new_path in reversed(walk_dirs):
-                stack.append(new_path)
 
 __all__.append("walk")
 
