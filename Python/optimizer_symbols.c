@@ -76,8 +76,43 @@ sym_new(_Py_UOpsContext *ctx)
     self->flags = 0;
     self->typ = NULL;
     self->const_val = NULL;
+    self->tuple_val = NULL;
 
     return self;
+}
+
+static _Py_UopsSymbol **
+sym_new_array(_Py_UOpsContext *ctx, int count)
+{
+    _Py_UopsSymbol **start = &ctx->tup_arena.arena[ctx->tup_arena.tup_curr_number];
+    if (ctx->tup_arena.tup_curr_number >= ctx->tup_arena.tup_max_number - count) {
+        OPT_STAT_INC(optimizer_failure_reason_no_memory);
+        DPRINTF(1, "out of space for symbolic expression type\n");
+        return NULL;
+    }
+    ctx->tup_arena.tup_curr_number += count;
+    return start;
+}
+
+_Py_UopsSymbol *
+_Py_uop_sym_new_tuple(_Py_UOpsContext *ctx, int count)
+{
+    _Py_UopsSymbol *self = _Py_uop_sym_new_unknown(ctx);
+    if (self == NULL) {
+        return out_of_space(ctx);
+    }
+    _Py_uop_sym_set_type(ctx, self, &PyTuple_Type);
+    _Py_UopsSymbol **items = sym_new_array(ctx, count);
+    if (items == NULL) {
+        return out_of_space(ctx);
+    }
+    self->tuple_val = items;
+    return self;
+}
+
+_Py_UopsSymbol *
+_Py_uop_sym_tuple_at(_Py_UopsSymbol *sym, int idx) {
+    return sym->tuple_val[idx];
 }
 
 static inline void
@@ -375,6 +410,10 @@ _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
     // Setup the arena for sym expressions.
     ctx->t_arena.ty_curr_number = 0;
     ctx->t_arena.ty_max_number = TY_ARENA_SIZE;
+
+    // Setup the arena for sym expressions.
+    ctx->tup_arena.tup_curr_number = 0;
+    ctx->tup_arena.tup_max_number = TY_ARENA_SIZE;
 
     // Frame setup
     ctx->curr_frame_depth = 0;

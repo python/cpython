@@ -599,6 +599,24 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         return res, ex
 
+    def test_tuple_type_propagation(self):
+        def testfunc(loops):
+            a = 0
+            b = 1
+            for i in range(loops):
+                x = (a, b)
+                x[0] + x[1]
+                a + b
+            return
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, None)
+        print("\n".join(list(iter_opnames(ex))))
+        binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertGreaterEqual(len(binop_count), 2)
+        self.assertLessEqual(len(guard_both_int_count), 1)
 
     def test_int_type_propagation(self):
         def testfunc(loops):
