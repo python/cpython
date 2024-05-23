@@ -134,7 +134,7 @@ loops that truncate the stream.
                 total = func(total, element)
                 yield total
 
-    There are a number of uses for the *func* argument.  It can be set to
+    The *func* argument can be set to
     :func:`min` for a running minimum, :func:`max` for a running maximum, or
     :func:`operator.mul` for a running product.  Amortization tables can be
     built by accumulating interest and applying payments:
