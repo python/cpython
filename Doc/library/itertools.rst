@@ -731,7 +731,7 @@ loops that truncate the stream.
       def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
 
-          iterators = [iter(it) for it in iterables]
+          iterators = list(map(iter, iterables))
           num_active = len(iterators)
           if not num_active:
               return
