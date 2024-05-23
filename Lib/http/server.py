@@ -773,6 +773,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             if self.range:
                 start, end = self.range
+                if start is None:
+                    # `end` here means suffix length
+                    start = fs.st_size - end
+                    end = fs.st_size - 1
+                    if start < 0:
+                        start = 0
                 if start >= fs.st_size:
                     # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that none of the range values overlap the extent of the resource
                     f.close()
@@ -953,15 +959,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         range_header = self.headers.get('range')
         if not range_header:
             return None
-        m = re.match(r'bytes=(\d+)-(\d*)$', range_header)
+        m = re.match(r'bytes=(\d*)-(\d*)$', range_header)
         if not m:
             return None
-        start = int(m.group(1))
-        if not m.group(2):
-            return start, None
-        end = int(m.group(2))
-        if start > end:
+
+        start = int(m.group(1)) if m.group(1) else None
+        end = int(m.group(2)) if m.group(2) else None
+
+        if start is None and end is None:
             return None
+
+        if start is not None and end is not None and start > end:
+            return None
+
         return start, end
 
 

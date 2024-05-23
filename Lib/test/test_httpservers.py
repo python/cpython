@@ -554,6 +554,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader('content-length'), '27')
         self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:])
 
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=-5'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 25-29/30')
+        self.assertEqual(response.getheader('content-length'), '5')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[25:])
+
         response = self.request(self.base_url + '/test', headers={'Range': 'bytes=100-200'})
         self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
