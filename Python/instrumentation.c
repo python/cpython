@@ -2724,5 +2724,6 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
     }
     PyObject *args[4] = { NULL, NULL, NULL, exc };
     int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
+    Py_DECREF(exc);
     return exception_event_teardown(err, NULL);
 }
