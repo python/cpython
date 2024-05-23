@@ -34,7 +34,7 @@ struct _Py_UopsSymbol {
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
     int tuple_count;
-    struct _Py_UopsSymbol** tuple_val;
+    struct _Py_UopsSymbol **tuple_val;
 };
 
 #define UOP_FORMAT_TARGET 0
@@ -97,7 +97,7 @@ typedef struct ty_arena {
 typedef struct tup_arena {
     int tup_curr_number;
     int tup_max_number;
-    _Py_UopsSymbol* arena[TY_ARENA_SIZE];
+    _Py_UopsSymbol *arena[TY_ARENA_SIZE];
 } tup_arena;
 
 struct _Py_UOpsContext {
