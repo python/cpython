@@ -39,6 +39,9 @@ from tkinter import filedialog
 from tkinter import simpledialog
 
 
+if sys.platform == 'win32':
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 
 ##############################################################################
