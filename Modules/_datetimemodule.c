@@ -6777,6 +6777,10 @@ static PyMethodDef module_methods[] = {
  * be managed carefully. */
 // XXX Can we make this const?
 static PyDateTime_CAPI capi = {
+    /* The classes must be readied before used here.
+     * That will happen the first time the module is loaded.
+     * They aren't safe to be shared between interpreters,
+     * but that's okay as long as the module is single-phase init. */
     .DateType = &PyDateTime_DateType,
     .DateTimeType = &PyDateTime_DateTimeType,
     .TimeType = &PyDateTime_TimeType,
