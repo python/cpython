@@ -122,22 +122,32 @@ class ComplexTest(unittest.TestCase):
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
 
-        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(0+1j)'), complex('(nan-infj)'))
+        self.assertComplexesAreIdentical(complex(INF, 1)/(0.0+1j),
+                                         complex(NAN, -INF))
 
-        # test recover of infs if numerator has infinities and denominator is finite
-        self.assertComplexesAreIdentical(complex('(inf-infj)')/(1+0j), complex('(inf-infj)'))
-        self.assertComplexesAreIdentical(complex('(inf+infj)')/(0.0+1j), complex('(inf-infj)'))
-        self.assertComplexesAreIdentical(complex('(nan+infj)')/complex(2**1000, 2**-1000), complex('(inf+infj)'))
-        self.assertComplexesAreIdentical(complex('(inf+nanj)')/complex(2**1000, 2**-1000), complex('(inf-infj)'))
+        # test recover of infs if numerator has infs and denominator is finite
+        self.assertComplexesAreIdentical(complex(INF, -INF)/(1+0j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(INF, INF)/(0.0+1j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(NAN, INF)/complex(2**1000, 2**-1000),
+                                         complex(INF, INF))
+        self.assertComplexesAreIdentical(complex(INF, NAN)/complex(2**1000, 2**-1000),
+                                         complex(INF, -INF))
 
         # test recover of zeros if denominator is infinite
-        self.assertComplexesAreIdentical((1+1j)/complex('(inf+infj)'), (0.0+0j))
-        self.assertComplexesAreIdentical((1+1j)/complex('(inf-infj)'), (0.0+0j))
-        self.assertComplexesAreIdentical((1+1j)/complex('(-inf+infj)'), complex('(0.0-0j)'))
-        self.assertComplexesAreIdentical((1+1j)/complex('(-inf-infj)'), complex('(-0+0j)'))
-        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(inf+infj)'), complex('(nan+nanj)'))
-        self.assertComplexesAreIdentical(complex('(1+infj)')/complex('(inf+infj)'), complex('(nan+nanj)'))
-        self.assertComplexesAreIdentical(complex('(inf+1j)')/complex('(1+infj)'), complex('(nan+nanj)'))
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, -INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, INF),
+                                         complex(0.0, -0.0))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, -INF),
+                                         complex(-0.0, 0))
+        self.assertComplexesAreIdentical((INF+1j)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(1, INF)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(INF, 1)/complex(1, INF),
+                                         complex(NAN, NAN))
 
     def test_truediv_zero_division(self):
         for a, b in ZERO_DIVISION:
