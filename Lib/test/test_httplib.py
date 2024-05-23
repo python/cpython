@@ -1436,6 +1436,39 @@ class BasicTest(TestCase):
         thread.join()
         self.assertEqual(result, b"proxied data\n")
 
+    def test_large_content_length(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            while True:
+                [conn, address] = serv.accept()
+                with conn:
+                    conn.recv(1024)
+                    if not size:
+                        break
+                    body = b"HTTP/1.1 200 Ok\r\nContent-Length: %d\r\n\r\nText" % size
+                    conn.sendall(body)
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(18, 65):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertRaises(client.IncompleteRead, response.read)
+                conn.close()
+        finally:
+            conn.close()
+            size = 0
+            conn.request("GET", "/")
+            conn.close()
+            thread.join()
+
     def test_putrequest_override_domain_validation(self):
         """
         It should be possible to override the default validation
