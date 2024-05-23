@@ -131,6 +131,8 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
+    CAN_USE_PYREPL = True
+
     return_code = 0
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
