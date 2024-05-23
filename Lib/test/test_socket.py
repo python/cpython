@@ -520,7 +520,7 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 @unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipIf(get_cid() in (2, socket.VMADDR_CID_ANY),
+@unittest.skipIf(get_cid() in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY),
           "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
