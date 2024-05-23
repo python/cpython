@@ -899,6 +899,24 @@ class TypeParamsManglingTest(unittest.TestCase):
         base3 = Y.__bases__[3]
         self.assertEqual(list(base3.__arg__), [ns["__X"]])
 
+    def test_type_params_are_mangled(self):
+        ns = run_code("""
+            from test.test_type_params import make_base
+
+            class Foo[__T, __U: __T](make_base(__T), make_base(lambda: __T)):
+                param = __T
+        """)
+        Foo = ns["Foo"]
+        T, U = Foo.__type_params__
+        self.assertEqual(T.__name__, "__T")
+        self.assertEqual(U.__name__, "__U")
+        self.assertIs(U.__bound__, T)
+        self.assertIs(Foo.param, T)
+
+        base1, base2, *_ = Foo.__bases__
+        self.assertIs(base1.__arg__, T)
+        self.assertIs(base2.__arg__(), T)
+
 
 class TypeParamsComplexCallsTest(unittest.TestCase):
     def test_defaults(self):
