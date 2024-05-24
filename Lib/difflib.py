@@ -913,55 +913,59 @@ class Differ:
         # and if there are many pairs with the best ratio, recursion
         # could grow very deep, and runtime cubic. See:
         # https://github.com/python/cpython/issues/119105
+        #
+        # Later, more pathological cases prompted removing recursion
+        # entirely.
         cutoff = 0.74999
         cruncher = SequenceMatcher(self.charjunk)
-        # List of index pairs achieving best_ratio. Strictly increasing
-        # in both index positions.
-        max_pairs = []
 
-        # search for the pair that matches best without being identical
-        # (identical lines must be junk lines, & we don't want to synch
-        # up on junk -- unless we have to)
+        WINDOW = 10
         crqr = cruncher.real_quick_ratio
         cqr = cruncher.quick_ratio
         cr = cruncher.ratio
-        for j in range(blo, bhi):
-            bj = b[j]
-            cruncher.set_seq2(bj)
-            # Find new best, if possible. Else search for the smallest i
-            # (if any) > maxi that equals the best ratio
+        dump_i, dump_j = alo, blo
+        start_i, start_j = alo, blo
+        while start_i < ahi and start_j < bhi:
+            # Search for the pair in the next WINDOW i's and j's that
+            # scores better than `cutoff` without being identical
+            # (identical lines must be junk lines, & we don't want to
+            # synch up on junk -- unless we have to)
             best_ratio = cutoff
-            best_i = None
-            for i in range(alo, ahi):
-                ai = a[i]
-                if ai == bj:
-                    if best_i is None:
-                        best_i = i
-                    continue
-                cruncher.set_seq1(ai)
-                # computing similarity is expensive, so use the quick
-                # upper bounds first -- have seen this speed up messy
-                # compares by a factor of 3.
-                if (crqr() > best_ratio
-                      and cqr() > best_ratio
-                      and (ratio := cr()) > best_ratio):
-                    best_ratio = ratio
-                    best_i = i
-            if best_i is not None:
-                #assert not max_pairs or best_i > max_pairs[-1][0], (max_pairs, i, j)
-                if not max_pairs or best_i > max_pairs[-1][0]:
-                    max_pairs.append((best_i, j))
-        if not max_pairs:
-            yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
+            best_i = best_j = None
+            for j in range(start_j, min(start_j + WINDOW, bhi)):
+                bj = b[j]
+                cruncher.set_seq2(bj)
+                for i in range(start_i, min(start_i + WINDOW, ahi)):
+                    ai = a[i]
+                    if ai == bj:
+                        if best_i is None:
+                            best_i, best_j = i, j
+                        continue
+                    cruncher.set_seq1(ai)
+                    if (crqr() > best_ratio
+                          and cqr() > best_ratio
+                          and (ratio := cr()) > best_ratio):
+                        best_ratio = ratio
+                        best_i, best_j = i, j
+                        break
+                if best_ratio > cutoff:
+                    # if best_ratio <= cutoff, we don't yet have a
+                    # non-identical pair, so keep searching in the
+                    # window
+                    break
 
-        print(max_pairs)
-        last_i, last_j = alo, blo
-        for this_i, this_j in max_pairs:
-            # pump out diffs from before the synch point
-            yield from self._fancy_helper(a, last_i, this_i,
-                                          b, last_j, this_j)
+            if best_i is None:
+                # found nothing to synch on - move to next window
+                start_i += WINDOW
+                start_j += WINDOW
+                continue
+
+            yield from self._fancy_helper(a, dump_i, best_i,
+                                          b, dump_j, best_j)
+            start_i, start_j = best_i + 1, best_j + 1
+            dump_i, dump_j = start_i, start_j
             # do intraline marking on the synch pair
-            aelt, belt = a[this_i], b[this_j]
+            aelt, belt = a[best_i], b[best_j]
             if aelt != belt:
                 # pump out a '-', '?', '+', '?' quad for the synched lines
                 atags = btags = ""
@@ -984,17 +988,16 @@ class Differ:
             else:
                 # the synch pair is identical
                 yield '  ' + aelt
-            last_i, last_j = this_i + 1, this_j + 1
 
         # pump out diffs from after the last synch point
-        yield from self._fancy_helper(a, last_i, ahi,
-                                      b, last_j, bhi)
+        yield from self._fancy_helper(a, dump_i, ahi,
+                                      b, dump_j, bhi)
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
         g = []
         if alo < ahi:
             if blo < bhi:
-                g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
+                g = self._plain_replace(a, alo, ahi, b, blo, bhi)
             else:
                 g = self._dump('-', a, alo, ahi)
         elif blo < bhi:
