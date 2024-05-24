@@ -897,25 +897,26 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
-   .. method:: __round__(n=None)
+   .. describe:: round(number, n=None)
 
-      If *n* is ``None``, returns the nearest :class:`int` to ``self``, rounding
-      ties to even, ignoring the rounding mode of the :class:`Decimal` context.
-      Raises :exc:`OverflowError` if ``self`` is an infinity or :exc:`ValueError`
-      if ``self`` is a (quiet or signaling) NaN.
+      If *n* is ``None``, returns the nearest :class:`int` to ``number``,
+      rounding ties to even, ignoring the rounding mode of the :class:`Decimal`
+      context.  Raises :exc:`OverflowError` if ``number`` is an infinity or
+      :exc:`ValueError` if ``number`` is a (quiet or signaling) NaN.
 
       If *n* is an :class:`int`, the context's rounding mode is respected and
-      a :class:`Decimal` representing ``self`` rounded to the nearest multiple
-      of ``Decimal('1E-n')`` is returned; ``round(self, n)`` is exactly equivalent
-      to ``self.quantize(Decimal('1E-n'))``. Returns ``Decimal('NaN')`` if ``self``
-      is a quiet NaN. Raises :class:`InvalidOperation` if ``self`` is an
-      infinity, a signaling NaN, or if the length of the coefficient after the
-      quantize operation would be greater than the current context's precision.
-      In other words, for the non-corner cases:
+      a :class:`Decimal` representing ``number`` rounded to the nearest multiple
+      of ``Decimal('1E-n')`` is returned; ``round(number, n)`` is exactly
+      equivalent to ``self.quantize(Decimal('1E-n'))``.  Returns
+      ``Decimal('NaN')`` if ``number`` is a quiet NaN.  Raises
+      :class:`InvalidOperation` if ``number`` is an infinity, a signaling NaN,
+      or if the length of the coefficient after the quantize operation would be
+      greater than the current context's precision.  In other words, for the
+      non-corner cases:
 
-      * if *n* is positive, return ``self`` rounded to *n* decimal places;
-      * if *n* is zero, return ``self`` rounded to the nearest integer;
-      * if *n* is negative, return ``self`` rounded to the nearest multiple of
+      * if *n* is positive, return ``number`` rounded to *n* decimal places;
+      * if *n* is zero, return ``number`` rounded to the nearest integer;
+      * if *n* is negative, return ``number`` rounded to the nearest multiple of
         ``10**abs(n)``.
 
       For example::
