@@ -549,6 +549,7 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             code = f.read()
         if __file__.endswith(".py"):
             code = compile(code, __file__, "exec")
+        self.helper(code)
         self.helper3(code)
 
     def testRecursion(self):
