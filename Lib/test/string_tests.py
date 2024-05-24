@@ -217,6 +217,19 @@ class BaseTest:
                 if loc != -1:
                     self.assertEqual(i[loc:loc+len(j)], j)
 
+        # test tuple arguments
+        self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'))
+        self.checkequal(2, '__aa__bb__', 'find', ('bb', 'aa'))
+        self.checkequal(-1, '__aa__bb__', 'find', ('cc', 'dd'))
+        self.checkequal(-1, '__aa__bb__', 'find', ())
+        self.checkequal(6, '__aa__bb__', 'find', ('aa', 'bb'), 3)
+        self.checkequal(-1, '__aa__bb__', 'find', ('aa', 'cc'), 3)
+        self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 10)
+        self.checkequal(-1, '__aa__bb__', 'find', ('aa', 'bb'), 0, 3)
+        self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 4)
+
+        self.checkraises(TypeError, 'hello', 'find', (42,))
+
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
         self.checkequal(12, 'abcdefghiabc', 'rfind', '')
@@ -269,6 +282,18 @@ class BaseTest:
 
         # issue #15534
         self.checkequal(0, '<......\u043c...', "rfind", "<")
+
+        # test tuple arguments
+        self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'))
+        self.checkequal(6, '__aa__bb__', 'rfind', ('bb', 'aa'))
+        self.checkequal(-1, '__aa__bb__', 'rfind', ('cc', 'dd'))
+        self.checkequal(-1, '__aa__bb__', 'rfind', ())
+        self.checkequal(-1, '__aa__bb__', 'rfind', ('aa', 'cc'), 3)
+        self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 0, 10)
+        self.checkequal(-1, '__aa__bb__', 'rfind', ('aa', 'bb'), 7, 10)
+        self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 6, 10)
+
+        self.checkraises(TypeError, 'hello', 'rfind', (42,))
 
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
