@@ -926,27 +926,26 @@ class Differ:
         best_i = best_j = None
         dump_i, dump_j = alo, blo # smallest indices not yet resolved
         for j in range(blo, bhi):
-            bj = b[j]
-            cruncher.set_seq2(bj)
+            cruncher.set_seq2(b[j])
             # Search the corresponding i's within WINDOW for rhe highest
             # ratio greater than `cutoff`.
-            aequiv = alo + j - blo
+            aequiv = alo + (j - blo)
             arange = range(max(aequiv - WINDOW, dump_i),
                            min(aequiv + WINDOW + 1, ahi))
             if not arange: # likely exit if `a` is shorter than `b`
                 break
             best_ratio = cutoff
             for i in arange:
-                ai = a[i]
-                cruncher.set_seq1(ai)
+                cruncher.set_seq1(a[i])
+                # Ordering by cheapest to most expensive ratio is very
+                # valuable, most often getting out early.
                 if (crqr() > best_ratio
                       and cqr() > best_ratio
                       and cr() > best_ratio):
-                    best_ratio = cr()
-                    best_i, best_j = i, j
+                    best_i, best_j, best_ratio = i, j, cr()
 
             if best_i is None:
-                # found nothing to synch on yet
+                # found nothing to synch on yet - move to next j
                 continue
 
             # pump out straight replace from before this synch pair
