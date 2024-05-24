@@ -918,11 +918,11 @@ class Differ:
         # entirely.
         cutoff = 0.74999
         cruncher = SequenceMatcher(self.charjunk)
-
-        WINDOW = 10
         crqr = cruncher.real_quick_ratio
         cqr = cruncher.quick_ratio
         cr = cruncher.ratio
+
+        WINDOW = 10
         dump_i, dump_j = alo, blo
         start_i, start_j = alo, blo
         while start_i < ahi and start_j < bhi:
@@ -960,6 +960,7 @@ class Differ:
                 start_j += WINDOW
                 continue
 
+            # pump out straight replace from before this synch pair
             yield from self._fancy_helper(a, dump_i, best_i,
                                           b, dump_j, best_j)
             start_i, start_j = best_i + 1, best_j + 1
@@ -989,7 +990,7 @@ class Differ:
                 # the synch pair is identical
                 yield '  ' + aelt
 
-        # pump out diffs from after the last synch point
+        # pump out straight replace from after the last synch pair
         yield from self._fancy_helper(a, dump_i, ahi,
                                       b, dump_j, bhi)
 
