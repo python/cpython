@@ -265,7 +265,7 @@ class _StringifierDict(dict):
 def _call_dunder_annotate(annotate, format):
     try:
         return annotate(format)
-    except AssertionError:
+    except NotImplementedError:
         pass
     if format == FORWARDREF:
         globals = {**annotate.__builtins__, **annotate.__globals__}
