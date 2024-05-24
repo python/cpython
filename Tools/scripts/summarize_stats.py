@@ -817,9 +817,6 @@ def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
                 uop_flags = _get_uop_flags_from_file(
                     tuple(v[0] for v in stats._data["_flag_defines"].values())
                 )
-                # for k, v in sorted(uop_flags.items()):
-                #    print(f"{k}:{v}")
-                # exit()
                 next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
             rows.append(next_row)
         return rows
