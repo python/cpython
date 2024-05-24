@@ -135,18 +135,12 @@ def splitdrive(p):
 
 
 try:
-    from posix import _path_splitroot_ex
+    from posix import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'/'
@@ -164,23 +158,6 @@ except ImportError:
             # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
             # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
             return empty, p[:2], p[2:]
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
-
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            # Optimisation: the drive is always empty
-            _, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return b'', os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
@@ -363,7 +340,7 @@ def expandvars(path):
 # if it contains symbolic links!
 
 try:
-    from posix import _path_normpath
+    from posix import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -393,14 +370,6 @@ except ImportError:
         comps = new_comps
         path = initial_slashes + sep.join(comps)
         return path or dot
-
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 
 
 def abspath(path):
