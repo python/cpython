@@ -958,7 +958,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         range_header = self.headers.get('range')
         if not range_header:
             return None
-        m = re.match(RANGE_REGEX_PATTERN, range_header)
+        m = RANGE_REGEX_PATTERN.match(range_header)
         if not m:
             return None
 
