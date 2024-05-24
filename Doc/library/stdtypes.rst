@@ -1623,7 +1623,15 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased.
+   rest lowercased::
+
+      >>> 'PYTHON IS AMAZING'.capitalize()
+      'Python is amazing'
+      >>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
+      'ǋemačka starts with a non-english digraph'
+
+   See also :meth:`title`.
+
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
@@ -1639,7 +1647,12 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``.
+   converts it to ``"ss"``::
+
+      >>> 'ß'.casefold()
+      'ss'
+      >>> 'ß'.lower()
+      'ß'
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
@@ -1652,9 +1665,14 @@ expression support in the :mod:`re` module).
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``.
+   returned if *width* is less than or equal to ``len(s)``::
 
-
+      >>> 'Python'.center(10)
+      '  Python  '
+      >>> 'Python'.center(10, '-')
+      '--Python--'
+      >>> 'Python'.center(4)
+      'Python'
 
 .. method:: str.count(sub[, start[, end]])
 
@@ -1663,8 +1681,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one.
+   which is the length of the string plus one. These are examples of each case::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+      >>> 'spam, spam, spam'.count('')
+      17
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -1683,7 +1711,13 @@ expression support in the :mod:`re` module).
    For performance reasons, the value of *errors* is not checked for validity
    unless an encoding error actually occurs,
    :ref:`devmode` is enabled
-   or a :ref:`debug build <debug-build>` is used.
+   or a :ref:`debug build <debug-build>` is used::
+
+      >>> encoded_str_to_byte = 'Python'.encode()
+      >>> type(encoded_str_to_byte)
+      <class 'bytes'>
+      >>> encoded_str_to_byte
+      b'Python'
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1696,10 +1730,27 @@ expression support in the :mod:`re` module).
 .. method:: str.endswith(suffix[, start[, end]])
 
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
-   ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
-   *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position.
+   ``False``::
 
+      >>> 'Python'.endswith('on')
+      True
+
+   *suffix* can also be a tuple of suffixes to look for::
+
+      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
+      False
+
+   With optional *start*, test beginning at that position::
+
+      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
+      True
+
+   With optional *end*, stop comparin at that position::
+
+      >>> 'Python is amazing'.endswith('is', 0, 9)
+      True
+
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 .. method:: str.expandtabs(tabsize=8)
 
@@ -1710,23 +1761,41 @@ expression support in the :mod:`re` module).
    column is set to zero and the string is examined character by character.  If
    the character is a tab (``\t``), one or more space characters are inserted
    in the result until the current column is equal to the next tab position.
-   (The tab character itself is not copied.)  If the character is a newline
-   (``\n``) or return (``\r``), it is copied and the current column is reset to
-   zero.  Any other character is copied unchanged and the current column is
-   incremented by one regardless of how the character is represented when
-   printed.
+   (The tab character itself is not copied.)::
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
 
+   If the character is a newline (``\n``) or return (``\r``), it is copied and the current column is reset to
+   zero::
+
+      >>> print('01\t012\n0123\t01234'.expandtabs(4))
+      01  012
+      0123    01234
+
+   Any other character is copied unchanged and the current column is
+   incremented by one regardless of how the character is represented when
+   printed.
+
 
 .. method:: str.find(sub[, start[, end]])
 
    Return the lowest index in the string where substring *sub* is found within
-   the slice ``s[start:end]``.  Optional arguments *start* and *end* are
-   interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
+   the slice ``s[start:end]``::
+
+      >>> 'spam, spam, spam'.find('sp')
+      0
+
+   Optional arguments *start* and *end* are interpreted as in slice notation::
+
+      >>> 'spam, spam, spam'.find('sp', 5)
+      6
+
+   Return ``-1`` if *sub* is not found.
+
+   See also :meth:`rfind` and :meth:`index`.
 
    .. note::
 
@@ -1736,7 +1805,6 @@ expression support in the :mod:`re` module).
 
          >>> 'Py' in 'Python'
          True
-
 
 .. method:: str.format(*args, **kwargs)
 
@@ -1773,14 +1841,14 @@ expression support in the :mod:`re` module).
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
-   if for example ``mapping`` is a dict subclass:
+   if for example ``mapping`` is a dict subclass::
 
-   >>> class Default(dict):
-   ...     def __missing__(self, key):
-   ...         return key
-   ...
-   >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
-   'Guido was born in country'
+      >>> class Default(dict):
+      ...     def __missing__(self, key):
+      ...         return key
+      ...
+      >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
+      'Guido was born in country'
 
    .. versionadded:: 3.2
 
@@ -1796,7 +1864,17 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``::
+
+      >>> ''.isalnum()
+      False
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
+
 
 
 .. method:: str.isalpha()
@@ -1804,17 +1882,42 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphabetic and there is at least
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
-   property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
+   property being one of "Lm", "Lt", "Lu", "Ll", or "Lo"::
+
+      >>> 'a commom word'.isalpha()
+      False
+      >>> 'acommomword'.isalpha()
+      True
+      >>> 'µ'.isalpha()
+      True
+      >>> 'æ'.isalpha()
+      True
+      >>> 'Ŧ'.isalpha()
+      True
+
+   Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
-
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_
+   See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
-   ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ``False`` otherwise::
+
+      >>> 'a commom word'.isascii()
+      True
+      >>> 'acommomword'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
+      >>> 'æ'.isascii()
+      False
+      >>> 'Ŧ'.isascii()
+      False
+
+   ASCII characters have code points in the range U+0000-U+007F::
 
    .. versionadded:: 3.7
 
@@ -1823,20 +1926,38 @@ expression support in the :mod:`re` module).
 
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
-   otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
-   ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   otherwise::
 
+      >>> '0123456789'.isdecimal()
+      True
+
+   Decimal characters are those that can be used to form numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT ZERO::
+
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      True
+      >>> '²'.isdecimal(), '²'.isdigit()
+      (False, True)
+
+   Formally a decimal character is a character in the Unicode General Category "Nd".
+   See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
 
 .. method:: str.isdigit()
 
    Return ``True`` if all characters in the string are digits and there is at least one
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
-   special handling, such as the compatibility superscript digits.
+   special handling, such as the compatibility superscript digits::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      True
+      >>> '²'.isdigit(), '²'.isdecimal()
+      (True, False)
+
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+   See also :meth:`isdecimal`. Digit numbers is a decimal numbers superset.
 
 
 .. method:: str.isidentifier()
@@ -1861,7 +1982,20 @@ expression support in the :mod:`re` module).
 .. method:: str.islower()
 
    Return ``True`` if all cased characters [4]_ in the string are lowercase and
-   there is at least one cased character, ``False`` otherwise.
+   there is at least one cased character, ``False`` otherwise::
+
+      >>> 'BANANA'.islower()
+      False
+      >>> 'banana'.islower()
+      True
+      >>> 'baNana'.islower()
+      False
+      >>> ' '.islower()
+      False
+      >>> ''.islower()
+      False
+
+   See also :meth:`isupper`.
 
 
 .. method:: str.isnumeric()
@@ -1873,22 +2007,58 @@ expression support in the :mod:`re` module).
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
+   ::
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      True
+      >>> '⅕'.isnumeric()  # VULGAR FRACTION ONE FIFTH
+      True
+      >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
+      (True, False, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters is a
+   decimal numbers superset.
+
 
 .. method:: str.isprintable()
 
    Return ``True`` if all characters in the string are printable or the string is
    empty, ``False`` otherwise.  Nonprintable characters are those characters defined
    in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.  (Note that printable
+   ASCII space (0x20) which is considered printable.
+
+   ::
+      >>> ''.isprintable()
+      True
+      >>> ' '.isprintable()
+      True
+      >>> '\t\n'.isprintable()  # TAB and BREAK LINE
+      False
+      >>> '\u3000'.isprintable()  # IDEOGRAPHIC SPACE
+      False
+
+   (Note that printable
    characters in this context are those which should not be escaped when
    :func:`repr` is invoked on a string.  It has no bearing on the handling of
    strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
-
+   See also :meth:`isspace`.
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
-   at least one character, ``False`` otherwise.
+   at least one character, ``False`` otherwise::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace()  # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace()  # IDEOGRAPHIC SPACE
+      True
+
+   See also :meth:`isprintable`.
 
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
@@ -1900,13 +2070,23 @@ expression support in the :mod:`re` module).
 
    Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
-   and lowercase characters only cased ones.  Return ``False`` otherwise.
+   and lowercase characters only cased ones.  Return ``False`` otherwise::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 
 .. method:: str.isupper()
 
    Return ``True`` if all cased characters [4]_ in the string are uppercase and
-   there is at least one cased character, ``False`` otherwise.
+   there is at least one cased character, ``False`` otherwise::
 
       >>> 'BANANA'.isupper()
       True
@@ -1917,7 +2097,7 @@ expression support in the :mod:`re` module).
       >>> ' '.isupper()
       False
 
-
+   See also :meth:`islower`.
 
 .. _meth-str-join:
 
@@ -1925,7 +2105,14 @@ expression support in the :mod:`re` module).
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
-   *iterable*, including :class:`bytes` objects.  The separator between
+   *iterable*, including :class:`bytes` objects::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   The separator between
    elements is the string providing this method.
 
 
@@ -1933,13 +2120,22 @@ expression support in the :mod:`re` module).
 
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
-   original string is returned if *width* is less than or equal to ``len(s)``.
+   original string is returned if *width* is less than or equal to ``len(s)``::
 
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+
+   See also :meth:`rjust`.
 
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
@@ -1974,12 +2170,18 @@ expression support in the :mod:`re` module).
    If there is only one argument, it must be a dictionary mapping Unicode
    ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
    strings (of arbitrary lengths) or ``None``.  Character keys will then be
-   converted to ordinals.
+   converted to ordinals::
+
+      >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
+      {97: 'A', 98: 'Boo', 99: None}
 
    If there are two arguments, they must be strings of equal length, and in the
    resulting dictionary, each character in x will be mapped to the character at
    the same position in y.  If there is a third argument, it must be a string,
-   whose characters will be mapped to ``None`` in the result.
+   whose characters will be mapped to ``None`` in the result::
+
+      >>> str.maketrans('ab', 'AB', 'c')
+      {97: 65, 98: 66, 99: None}
 
 
 .. method:: str.partition(sep)
@@ -1987,8 +2189,14 @@ expression support in the :mod:`re` module).
    Split the string at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
-   the string itself, followed by two empty strings.
+   the string itself, followed by two empty strings::
 
+      >>> 'Monty Python'.partition(' ')
+      ('Monty', ' ', 'Python')
+      >>> 'Monty Python'.partition('-')
+      ('Monty Python', '', '')
+
+   See also :meth:`rpartition`.
 
 .. method:: str.removeprefix(prefix, /)
 
@@ -2021,7 +2229,13 @@ expression support in the :mod:`re` module).
 .. method:: str.replace(old, new, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
-   *new*.  If *count* is given, only the first *count* occurrences are replaced.
+   *new*.  If *count* is given, only the first *count* occurrences are replaced::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
+
    If *count* is not specified or ``-1``, then all occurrences are replaced.
 
    .. versionchanged:: 3.13
@@ -2032,38 +2246,70 @@ expression support in the :mod:`re` module).
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
-   and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   and *end* are interpreted as in slice notation::
 
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+
+   Return ``-1`` on failure.
+   See also :meth:`find`.
 
 .. method:: str.rindex(sub[, start[, end]])
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
-   found.
+   found::
 
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ValueError: substring not found
+
+   See also :meth:`index`.
 
 .. method:: str.rjust(width[, fillchar])
 
    Return the string right justified in a string of length *width*. Padding is
-   done using the specified *fillchar* (default is an ASCII space). The
-   original string is returned if *width* is less than or equal to ``len(s)``.
+   done using the specified *fillchar* (default is an ASCII space)::
 
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+
+The original string is returned if *width* is less than or equal to ``len(s)``.
+
+   See also :meth:`ljust`.
 
 .. method:: str.rpartition(sep)
 
    Split the string at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
-   after the separator.  If the separator is not found, return a 3-tuple containing
+   after the separator::
+
+      >>> "Monty Python's Flying Circus".rpartition(' ')
+      ("Monty Python's Flying", ' ', 'Circus')
+
+If the separator is not found, return a 3-tuple containing
    two empty strings, followed by the string itself.
+
+   See also :meth:`partition`.
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
-   ones.  If *sep* is not specified or ``None``, any whitespace string is a
-   separator.  Except for splitting from the right, :meth:`rsplit` behaves like
-   :meth:`split` which is described in detail below.
+   ones::
 
+      >>> '1,2,3'.rsplit(',', maxsplit=1)
+      ['1,2', '3']
+
+   If *sep* is not specified or ``None``, any whitespace string is a
+   separator.
+   Except for splitting from the right, :meth:`rsplit` behaves like :meth:`split` which is described in detail below.
 
 .. method:: str.rstrip([chars])
 
@@ -2084,6 +2330,9 @@ expression support in the :mod:`re` module).
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`lstrip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2124,6 +2373,7 @@ expression support in the :mod:`re` module).
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
 
+   See also :meth:`rsplit`.
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -2194,10 +2444,24 @@ expression support in the :mod:`re` module).
 .. method:: str.startswith(prefix[, start[, end]])
 
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
-   *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
-   test string beginning at that position.  With optional *end*, stop comparing
-   string at that position.
+   *prefix* can also be a tuple of prefixes to look for::
 
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'in'))
+      False
+
+   With optional *start*, test string beginning at that position::
+
+      >>> 'a tuple of suffixes'.startswith(('at', 'a'))
+      True
+
+   With optional *end*, stop comparing string at that position::
+
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith` and :meth:`removeprefix`.
 
 .. method:: str.strip([chars])
 
@@ -2226,16 +2490,19 @@ expression support in the :mod:`re` module).
 .. method:: str.swapcase()
 
    Return a copy of the string with uppercase characters converted to lowercase and
-   vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``.
+   vice versa::
 
+      >>> 'Monty Python'.swapcase()
+      'mONTY pYTHON'
+
+   See also :meth:`upper` and :meth:`lower`.
+
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``
 
 .. method:: str.title()
 
    Return a titlecased version of the string where words start with an uppercase
-   character and the remaining characters are lowercase.
-
-   For example::
+   character and the remaining characters are lowercase::
 
       >>> 'Hello world'.title()
       'Hello World'
@@ -2263,6 +2530,7 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
+   See also :meth:`istitle`.
 
 .. method:: str.translate(table)
 
@@ -2290,10 +2558,18 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
+   ::
+
+      >>> 'Monty Python'.upper()
+      'MONTY PYTHON'
+      >>> '𐊠'.upper().isupper()  # 'CARIAN LETTER A'
+      False
+
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
+   See also :meth:`swapcase` and :meth:`lower`.
 
 .. method:: str.zfill(width)
 
