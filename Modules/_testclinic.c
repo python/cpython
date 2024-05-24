@@ -1214,6 +1214,55 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 
 
 /*[clinic input]
+class _testclinic.TestClass "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class
+    cls: defining_class
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=94f9b0b5f7add930 input=537c59417471dee3]*/
+{
+    return Py_NewRef(cls);
+}
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class_arg
+    cls: defining_class
+    arg: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg)
+/*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
+{
+    return PyTuple_Pack(2, cls, arg);
+}
+
+static struct PyMethodDef test_class_methods[] = {
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
+    {NULL, NULL}
+};
+
+static PyTypeObject TestClass = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.TestClass",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+    .tp_methods = test_class_methods,
+};
+
+
+/*[clinic input]
 output push
 destination deprstar new file '{dirname}/clinic/_testclinic_depr.c.h'
 output everything deprstar
@@ -1905,6 +1954,12 @@ PyInit__testclinic(void)
     PyObject *m = PyModule_Create(&_testclinic_module);
     if (m == NULL) {
         return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
+    if (PyModule_AddType(m, &TestClass) < 0) {
+        goto error;
     }
     if (PyModule_AddType(m, &DeprStarNew) < 0) {
         goto error;

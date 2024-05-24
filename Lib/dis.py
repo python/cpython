@@ -11,11 +11,14 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _common_constants,
     _intrinsic_1_descs,
     _intrinsic_2_descs,
     _specializations,
     _specialized_opmap,
 )
+
+from _opcode import get_executor
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -42,6 +45,7 @@ LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
+LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
@@ -205,7 +209,27 @@ def _deoptop(op):
     return _all_opmap[deoptmap[name]] if name in deoptmap else op
 
 def _get_code_array(co, adaptive):
-    return co._co_code_adaptive if adaptive else co.co_code
+    if adaptive:
+        code = co._co_code_adaptive
+        res = []
+        found = False
+        for i in range(0, len(code), 2):
+            op, arg = code[i], code[i+1]
+            if op == ENTER_EXECUTOR:
+                try:
+                    ex = get_executor(co, i)
+                except (ValueError, RuntimeError):
+                    ex = None
+
+                if ex:
+                    op, arg = ex.get_opcode(), ex.get_oparg()
+                    found = True
+
+            res.append(op.to_bytes())
+            res.append(arg.to_bytes())
+        return code if not found else b''.join(res)
+    else:
+        return co.co_code
 
 def code_info(x):
     """Formatted details of methods, functions, or code."""
@@ -505,6 +529,18 @@ class ArgResolver:
         self.varname_from_oparg = varname_from_oparg
         self.labels_map = labels_map or {}
 
+    def offset_from_jump_arg(self, op, arg, offset):
+        deop = _deoptop(op)
+        if deop in hasjabs:
+            return arg * 2
+        elif deop in hasjrel:
+            signed_arg = -arg if _is_backward_jump(deop) else arg
+            argval = offset + 2 + signed_arg*2
+            caches = _get_cache_size(_all_opname[deop])
+            argval += 2 * caches
+            return argval
+        return None
+
     def get_label_for_offset(self, offset):
         return self.labels_map.get(offset, None)
 
@@ -536,17 +572,11 @@ class ArgResolver:
                         argrepr = f"{argrepr} + NULL|self"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
-            elif deop in hasjabs:
-                argval = arg*2
-                argrepr = f"to L{self.labels_map[argval]}"
-            elif deop in hasjrel:
-                signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
-                caches = _get_cache_size(_all_opname[deop])
-                argval += 2 * caches
-                if deop == ENTER_EXECUTOR:
-                    argval += 2
-                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in hasjump or deop in hasexc:
+                argval = self.offset_from_jump_arg(op, arg, offset)
+                lbl = self.get_label_for_offset(argval)
+                assert lbl is not None
+                argrepr = f"to L{lbl}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -573,6 +603,12 @@ class ArgResolver:
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:
                 argrepr = _intrinsic_2_descs[arg]
+            elif deop == LOAD_COMMON_CONSTANT:
+                obj = _common_constants[arg]
+                if isinstance(obj, type):
+                    argrepr = obj.__name__
+                else:
+                    argrepr = repr(obj)
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
@@ -672,8 +708,7 @@ def _parse_exception_table(code):
 
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
-                          'JUMP_BACKWARD_NO_INTERRUPT',
-                          'ENTER_EXECUTOR')
+                          'JUMP_BACKWARD_NO_INTERRUPT')
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):
@@ -1032,11 +1067,16 @@ def main():
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',
                         help='show instruction offsets')
-    parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
+    parser.add_argument('infile', nargs='?', default='-')
     args = parser.parse_args()
-    with args.infile as infile:
-        source = infile.read()
-    code = compile(source, args.infile.name, "exec")
+    if args.infile == '-':
+        name = '<stdin>'
+        source = sys.stdin.buffer.read()
+    else:
+        name = args.infile
+        with open(args.infile, 'rb') as infile:
+            source = infile.read()
+    code = compile(source, name, "exec")
     dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets)
 
 if __name__ == "__main__":

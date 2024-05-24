@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -481,7 +480,8 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fchdir_impl(module, fd);
@@ -1024,7 +1024,8 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fsync_impl(module, fd);
@@ -1107,7 +1108,8 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fdatasync_impl(module, fd);
@@ -2012,6 +2014,70 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_exists__doc__,
+"_path_exists($module, path, /)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns False for broken symbolic links.");
+
+#define OS__PATH_EXISTS_METHODDEF    \
+    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
+
+static int
+os__path_exists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_exists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_exists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_lexists__doc__,
+"_path_lexists($module, path, /)\n"
+"--\n"
+"\n"
+"Test whether a path exists.  Returns True for broken symbolic links.");
+
+#define OS__PATH_LEXISTS_METHODDEF    \
+    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
+
+static int
+os__path_lexists_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_lexists(PyObject *module, PyObject *path)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = os__path_lexists_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__path_isdir__doc__,
 "_path_isdir($module, /, s)\n"
 "--\n"
@@ -2021,8 +2087,8 @@ PyDoc_STRVAR(os__path_isdir__doc__,
 #define OS__PATH_ISDIR_METHODDEF    \
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
-static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *s);
+static int
+os__path_isdir_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2054,14 +2120,19 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *s;
+    PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    s = args[0];
-    return_value = os__path_isdir_impl(module, s);
+    path = args[0];
+    _return_value = os__path_isdir_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2080,7 +2151,7 @@ PyDoc_STRVAR(os__path_isfile__doc__,
 #define OS__PATH_ISFILE_METHODDEF    \
     {"_path_isfile", _PyCFunction_CAST(os__path_isfile), METH_FASTCALL|METH_KEYWORDS, os__path_isfile__doc__},
 
-static PyObject *
+static int
 os__path_isfile_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2114,72 +2185,18 @@ os__path_isfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_isfile_impl(module, path);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, /, path)\n"
-"--\n"
-"\n"
-"Test whether a path exists.  Returns False for broken symbolic links");
-
-#define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
-
-static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "_path_exists",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *path;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
+    _return_value = os__path_isfile_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_exists_impl(module, path);
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2198,7 +2215,7 @@ PyDoc_STRVAR(os__path_islink__doc__,
 #define OS__PATH_ISLINK_METHODDEF    \
     {"_path_islink", _PyCFunction_CAST(os__path_islink), METH_FASTCALL|METH_KEYWORDS, os__path_islink__doc__},
 
-static PyObject *
+static int
 os__path_islink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
@@ -2232,19 +2249,146 @@ os__path_islink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
+    int _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     path = args[0];
-    return_value = os__path_islink_impl(module, path);
+    _return_value = os__path_islink_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
 }
 
 #endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_isjunction__doc__,
+"_path_isjunction($module, /, path)\n"
+"--\n"
+"\n"
+"Test whether a path is a junction");
+
+#define OS__PATH_ISJUNCTION_METHODDEF    \
+    {"_path_isjunction", _PyCFunction_CAST(os__path_isjunction), METH_FASTCALL|METH_KEYWORDS, os__path_isjunction__doc__},
+
+static int
+os__path_isjunction_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_isjunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isjunction",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    path = args[0];
+    _return_value = os__path_isjunction_impl(module, path);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+PyDoc_STRVAR(os__path_splitroot_ex__doc__,
+"_path_splitroot_ex($module, /, path)\n"
+"--\n"
+"\n");
+
+#define OS__PATH_SPLITROOT_EX_METHODDEF    \
+    {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
+
+static PyObject *
+os__path_splitroot_ex_impl(PyObject *module, PyObject *path);
+
+static PyObject *
+os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_splitroot_ex",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_path_splitroot_ex", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    path = args[0];
+    return_value = os__path_splitroot_ex_impl(module, path);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(os__path_normpath__doc__,
 "_path_normpath($module, /, path)\n"
@@ -4465,6 +4609,159 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETAFFINITY) */
 
+#if defined(HAVE_POSIX_OPENPT)
+
+PyDoc_STRVAR(os_posix_openpt__doc__,
+"posix_openpt($module, oflag, /)\n"
+"--\n"
+"\n"
+"Open and return a file descriptor for a master pseudo-terminal device.\n"
+"\n"
+"Performs a posix_openpt() C function call. The oflag argument is used to\n"
+"set file status flags and file access modes as specified in the manual page\n"
+"of posix_openpt() of your system.");
+
+#define OS_POSIX_OPENPT_METHODDEF    \
+    {"posix_openpt", (PyCFunction)os_posix_openpt, METH_O, os_posix_openpt__doc__},
+
+static int
+os_posix_openpt_impl(PyObject *module, int oflag);
+
+static PyObject *
+os_posix_openpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int oflag;
+    int _return_value;
+
+    oflag = PyLong_AsInt(arg);
+    if (oflag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = os_posix_openpt_impl(module, oflag);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_POSIX_OPENPT) */
+
+#if defined(HAVE_GRANTPT)
+
+PyDoc_STRVAR(os_grantpt__doc__,
+"grantpt($module, fd, /)\n"
+"--\n"
+"\n"
+"Grant access to the slave pseudo-terminal device.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"Performs a grantpt() C function call.");
+
+#define OS_GRANTPT_METHODDEF    \
+    {"grantpt", (PyCFunction)os_grantpt, METH_O, os_grantpt__doc__},
+
+static PyObject *
+os_grantpt_impl(PyObject *module, int fd);
+
+static PyObject *
+os_grantpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
+        goto exit;
+    }
+    return_value = os_grantpt_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GRANTPT) */
+
+#if defined(HAVE_UNLOCKPT)
+
+PyDoc_STRVAR(os_unlockpt__doc__,
+"unlockpt($module, fd, /)\n"
+"--\n"
+"\n"
+"Unlock a pseudo-terminal master/slave pair.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"Performs an unlockpt() C function call.");
+
+#define OS_UNLOCKPT_METHODDEF    \
+    {"unlockpt", (PyCFunction)os_unlockpt, METH_O, os_unlockpt__doc__},
+
+static PyObject *
+os_unlockpt_impl(PyObject *module, int fd);
+
+static PyObject *
+os_unlockpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
+        goto exit;
+    }
+    return_value = os_unlockpt_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_UNLOCKPT) */
+
+#if (defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R))
+
+PyDoc_STRVAR(os_ptsname__doc__,
+"ptsname($module, fd, /)\n"
+"--\n"
+"\n"
+"Return the name of the slave pseudo-terminal device.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"If the ptsname_r() C function is available, it is called;\n"
+"otherwise, performs a ptsname() C function call.");
+
+#define OS_PTSNAME_METHODDEF    \
+    {"ptsname", (PyCFunction)os_ptsname, METH_O, os_ptsname__doc__},
+
+static PyObject *
+os_ptsname_impl(PyObject *module, int fd);
+
+static PyObject *
+os_ptsname(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
+        goto exit;
+    }
+    return_value = os_ptsname_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)) */
+
 #if (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX))
 
 PyDoc_STRVAR(os_openpty__doc__,
@@ -4514,7 +4811,8 @@ os_login_tty(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_login_tty_impl(module, fd);
@@ -5467,7 +5765,7 @@ exit:
 
 #endif /* defined(HAVE_WAIT4) */
 
-#if (defined(HAVE_WAITID) && !defined(__APPLE__))
+#if defined(HAVE_WAITID)
 
 PyDoc_STRVAR(os_waitid__doc__,
 "waitid($module, idtype, id, options, /)\n"
@@ -5510,7 +5808,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_WAITID) && !defined(__APPLE__)) */
+#endif /* defined(HAVE_WAITID) */
 
 #if defined(HAVE_WAITPID)
 
@@ -5731,7 +6029,8 @@ os_setns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6129,8 +6428,8 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
 
 static PyObject *
-os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
-                        double interval);
+os_timerfd_settime_impl(PyObject *module, int fd, int flags,
+                        double initial_double, double interval_double);
 
 static PyObject *
 os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6165,14 +6464,15 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
     int flags = 0;
-    double initial = 0.0;
-    double interval = 0.0;
+    double initial_double = 0.0;
+    double interval_double = 0.0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6189,12 +6489,12 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     }
     if (args[2]) {
         if (PyFloat_CheckExact(args[2])) {
-            initial = PyFloat_AS_DOUBLE(args[2]);
+            initial_double = PyFloat_AS_DOUBLE(args[2]);
         }
         else
         {
-            initial = PyFloat_AsDouble(args[2]);
-            if (initial == -1.0 && PyErr_Occurred()) {
+            initial_double = PyFloat_AsDouble(args[2]);
+            if (initial_double == -1.0 && PyErr_Occurred()) {
                 goto exit;
             }
         }
@@ -6203,17 +6503,17 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
     }
     if (PyFloat_CheckExact(args[3])) {
-        interval = PyFloat_AS_DOUBLE(args[3]);
+        interval_double = PyFloat_AS_DOUBLE(args[3]);
     }
     else
     {
-        interval = PyFloat_AsDouble(args[3]);
-        if (interval == -1.0 && PyErr_Occurred()) {
+        interval_double = PyFloat_AsDouble(args[3]);
+        if (interval_double == -1.0 && PyErr_Occurred()) {
             goto exit;
         }
     }
 skip_optional_kwonly:
-    return_value = os_timerfd_settime_impl(module, fd, flags, initial, interval);
+    return_value = os_timerfd_settime_impl(module, fd, flags, initial_double, interval_double);
 
 exit:
     return return_value;
@@ -6285,7 +6585,8 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6345,7 +6646,8 @@ os_timerfd_gettime(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_timerfd_gettime_impl(module, fd);
@@ -6379,7 +6681,8 @@ os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_timerfd_gettime_ns_impl(module, fd);
@@ -9529,7 +9832,8 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!conv_path_confname(args[1], &name)) {
@@ -10672,7 +10976,8 @@ os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_eventfd_read_impl(module, fd);
@@ -10734,7 +11039,8 @@ os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!_PyLong_UnsignedLongLong_Converter(args[1], &value)) {
@@ -11050,7 +11356,7 @@ os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *c
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
@@ -11863,6 +12169,14 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_SPLITROOT_METHODDEF
 #endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
 
+#ifndef OS__PATH_EXISTS_METHODDEF
+    #define OS__PATH_EXISTS_METHODDEF
+#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
+
+#ifndef OS__PATH_LEXISTS_METHODDEF
+    #define OS__PATH_LEXISTS_METHODDEF
+#endif /* !defined(OS__PATH_LEXISTS_METHODDEF) */
+
 #ifndef OS__PATH_ISDIR_METHODDEF
     #define OS__PATH_ISDIR_METHODDEF
 #endif /* !defined(OS__PATH_ISDIR_METHODDEF) */
@@ -11871,13 +12185,13 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS__PATH_ISFILE_METHODDEF
 #endif /* !defined(OS__PATH_ISFILE_METHODDEF) */
 
-#ifndef OS__PATH_EXISTS_METHODDEF
-    #define OS__PATH_EXISTS_METHODDEF
-#endif /* !defined(OS__PATH_EXISTS_METHODDEF) */
-
 #ifndef OS__PATH_ISLINK_METHODDEF
     #define OS__PATH_ISLINK_METHODDEF
 #endif /* !defined(OS__PATH_ISLINK_METHODDEF) */
+
+#ifndef OS__PATH_ISJUNCTION_METHODDEF
+    #define OS__PATH_ISJUNCTION_METHODDEF
+#endif /* !defined(OS__PATH_ISJUNCTION_METHODDEF) */
 
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
@@ -11978,6 +12292,22 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS_SCHED_GETAFFINITY_METHODDEF
     #define OS_SCHED_GETAFFINITY_METHODDEF
 #endif /* !defined(OS_SCHED_GETAFFINITY_METHODDEF) */
+
+#ifndef OS_POSIX_OPENPT_METHODDEF
+    #define OS_POSIX_OPENPT_METHODDEF
+#endif /* !defined(OS_POSIX_OPENPT_METHODDEF) */
+
+#ifndef OS_GRANTPT_METHODDEF
+    #define OS_GRANTPT_METHODDEF
+#endif /* !defined(OS_GRANTPT_METHODDEF) */
+
+#ifndef OS_UNLOCKPT_METHODDEF
+    #define OS_UNLOCKPT_METHODDEF
+#endif /* !defined(OS_UNLOCKPT_METHODDEF) */
+
+#ifndef OS_PTSNAME_METHODDEF
+    #define OS_PTSNAME_METHODDEF
+#endif /* !defined(OS_PTSNAME_METHODDEF) */
 
 #ifndef OS_OPENPTY_METHODDEF
     #define OS_OPENPTY_METHODDEF
@@ -12410,4 +12740,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=847e5d06f0018fe9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=097cbcf4aed0aa3d input=a9049054013a1b77]*/

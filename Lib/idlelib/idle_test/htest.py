@@ -190,13 +190,6 @@ HelpSource_spec = {
            "<Escape>, [Cancel], or [X] prints None to shell"
     }
 
-_helpwindow_spec = {
-    'file': 'help',
-    'kwds': {},
-    'msg': "If the help text displays, this works.\n"
-           "Text is selectable. Window is scrollable."
-    }
-
 _io_binding_spec = {
     'file': 'iomenu',
     'kwds': {},
@@ -297,6 +290,13 @@ _searchbase_spec = {
     'kwds': {},
     'msg': "Check the appearance of the base search dialog\n"
            "Its only action is to close."
+    }
+
+show_idlehelp_spec = {
+    'file': 'help',
+    'kwds': {},
+    'msg': "If the help text displays, this works.\n"
+           "Text is selectable. Window is scrollable."
     }
 
 _sidebar_number_scrolling_spec = {

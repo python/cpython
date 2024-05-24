@@ -32,6 +32,7 @@ help:
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
+	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
 	@echo "  htmllive   to rebuild and reload HTML files in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
@@ -140,6 +141,11 @@ pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
+.PHONY: gettext
+gettext: BUILDER = gettext
+gettext: SPHINXOPTS += '-d build/doctrees-gettext'
+gettext: build
+
 .PHONY: htmlview
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
@@ -163,6 +169,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		echo "Creating venv in $(VENVDIR)"; \
 		$(PYTHON) -m venv $(VENVDIR); \
 		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
 		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \

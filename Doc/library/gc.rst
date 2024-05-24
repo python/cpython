@@ -1,5 +1,5 @@
-:mod:`gc` --- Garbage Collector interface
-=========================================
+:mod:`!gc` --- Garbage Collector interface
+==========================================
 
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
@@ -69,7 +69,7 @@ The :mod:`gc` module provides the following functions:
 .. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned. If *generation* is not None, return only the objects tracked by
+   returned. If *generation* is not ``None``, return only the objects tracked by
    the collector that are in that generation.
 
    .. versionchanged:: 3.8
@@ -96,7 +96,7 @@ The :mod:`gc` module provides the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: set_threshold(threshold0[, threshold1[, threshold2]])
+.. function:: set_threshold(threshold0, [threshold1, [threshold2]])
 
    Set the garbage collection thresholds (the collection frequency). Setting
    *threshold0* to zero disables collection.

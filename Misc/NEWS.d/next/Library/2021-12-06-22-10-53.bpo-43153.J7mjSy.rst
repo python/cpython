@@ -1,4 +1,0 @@
-On Windows, ``tempfile.TemporaryDirectory`` previously masked a
-``PermissionError`` with ``NotADirectoryError`` during directory cleanup. It
-now correctly raises ``PermissionError`` if errors are not ignored. Patch by
-Andrei Kulakov and Ken Jin.
