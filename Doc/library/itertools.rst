@@ -134,7 +134,7 @@ loops that truncate the stream.
                 total = func(total, element)
                 yield total
 
-    There are a number of uses for the *func* argument.  It can be set to
+    The *func* argument can be set to
     :func:`min` for a running minimum, :func:`max` for a running maximum, or
     :func:`operator.mul` for a running product.  Amortization tables can be
     built by accumulating interest and applying payments:
@@ -181,21 +181,14 @@ loops that truncate the stream.
       >>> unflattened
       [('roses', 'red'), ('violets', 'blue'), ('sugar', 'sweet')]
 
-      >>> for batch in batched('ABCDEFG', 3):
-      ...     print(batch)
-      ...
-      ('A', 'B', 'C')
-      ('D', 'E', 'F')
-      ('G',)
-
    Roughly equivalent to::
 
       def batched(iterable, n):
           # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
-          it = iter(iterable)
-          while batch := tuple(islice(it, n)):
+          iterable = iter(iterable)
+          while batch := tuple(islice(iterable, n)):
               yield batch
 
    .. versionadded:: 3.12
@@ -229,13 +222,13 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
-   The combination tuples are emitted in lexicographic ordering according to
+   The combination tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeated
-   values in each combination.
+   value.  So, if the input elements are unique, there will be no repeated
+   values within each combination.
 
    Roughly equivalent to::
 
@@ -278,12 +271,12 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   The combination tuples are emitted in lexicographic ordering according to
+   The combination tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, the generated combinations
+   value.  So, if the input elements are unique, the generated combinations
    will also be unique.
 
    Roughly equivalent to::
@@ -324,13 +317,13 @@ loops that truncate the stream.
 .. function:: compress(data, selectors)
 
    Make an iterator that filters elements from *data* returning only those that
-   have a corresponding element in *selectors* that evaluates to ``True``.
-   Stops when either the *data* or *selectors* iterables has been exhausted.
+   have a corresponding element in *selectors* is true.
+   Stops when either the *data* or *selectors* iterables have been exhausted.
    Roughly equivalent to::
 
        def compress(data, selectors):
            # compress('ABCDEF', [1,0,1,0,1,1]) → A C E F
-           return (d for d, s in zip(data, selectors) if s)
+           return (datum for datum, selector in zip(data, selectors) if selector)
 
    .. versionadded:: 3.1
 
@@ -384,7 +377,7 @@ loops that truncate the stream.
    start-up time.  Roughly equivalent to::
 
       def dropwhile(predicate, iterable):
-          # dropwhile(lambda x: x<5, [1,4,6,4,1]) → 6 4 1
+          # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
           iterable = iter(iterable)
           for x in iterable:
               if not predicate(x):
@@ -400,7 +393,7 @@ loops that truncate the stream.
    that are false. Roughly equivalent to::
 
       def filterfalse(predicate, iterable):
-          # filterfalse(lambda x: x%2, range(10)) → 0 2 4 6 8
+          # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
           if predicate is None:
               predicate = bool
           for x in iterable:
@@ -436,36 +429,37 @@ loops that truncate the stream.
 
    :func:`groupby` is roughly equivalent to::
 
-      class groupby:
+      def groupby(iterable, key=None):
           # [k for k, g in groupby('AAAABBBCCDAABBB')] → A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] → AAAA BBB CC D
 
-          def __init__(self, iterable, key=None):
-              if key is None:
-                  key = lambda x: x
-              self.keyfunc = key
-              self.it = iter(iterable)
-              self.tgtkey = self.currkey = self.currvalue = object()
+          keyfunc = (lambda x: x) if key is None else key
+          iterator = iter(iterable)
+          exhausted = False
 
-          def __iter__(self):
-              return self
-
-          def __next__(self):
-              self.id = object()
-              while self.currkey == self.tgtkey:
-                  self.currvalue = next(self.it)    # Exit on StopIteration
-                  self.currkey = self.keyfunc(self.currvalue)
-              self.tgtkey = self.currkey
-              return (self.currkey, self._grouper(self.tgtkey, self.id))
-
-          def _grouper(self, tgtkey, id):
-              while self.id is id and self.currkey == tgtkey:
-                  yield self.currvalue
-                  try:
-                      self.currvalue = next(self.it)
-                  except StopIteration:
+          def _grouper(target_key):
+              nonlocal curr_value, curr_key, exhausted
+              yield curr_value
+              for curr_value in iterator:
+                  curr_key = keyfunc(curr_value)
+                  if curr_key != target_key:
                       return
-                  self.currkey = self.keyfunc(self.currvalue)
+                  yield curr_value
+              exhausted = True
+
+          try:
+              curr_value = next(iterator)
+          except StopIteration:
+              return
+          curr_key = keyfunc(curr_value)
+
+          while not exhausted:
+              target_key = curr_key
+              curr_group = _grouper(target_key)
+              yield curr_key, curr_group
+              if curr_key == target_key:
+                  for _ in curr_group:
+                      pass
 
 
 .. function:: islice(iterable, stop)
@@ -493,13 +487,15 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, 4) → C D
           # islice('ABCDEFG', 2, None) → C D E F G
           # islice('ABCDEFG', 0, None, 2) → A C E G
+
           s = slice(*args)
           start = 0 if s.start is None else s.start
           stop = s.stop
           step = 1 if s.step is None else s.step
           if start < 0 or (stop is not None and stop < 0) or step <= 0:
               raise ValueError
-          indices = count() if stop is None else range(max(stop, start))
+
+          indices = count() if stop is None else range(max(start, stop))
           next_i = start
           for i, element in zip(indices, iterable):
               if i == next_i:
@@ -541,7 +537,7 @@ loops that truncate the stream.
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeated
+   value.  So, if the input elements are unique, there will be no repeated
    values within a permutation.
 
    Roughly equivalent to::
@@ -549,14 +545,17 @@ loops that truncate the stream.
         def permutations(iterable, r=None):
             # permutations('ABCD', 2) → AB AC AD BA BC BD CA CB CD DA DB DC
             # permutations(range(3)) → 012 021 102 120 201 210
+
             pool = tuple(iterable)
             n = len(pool)
             r = n if r is None else r
             if r > n:
                 return
+
             indices = list(range(n))
             cycles = list(range(n, n-r, -1))
             yield tuple(pool[i] for i in indices[:r])
+
             while n:
                 for i in reversed(range(r)):
                     cycles[i] -= 1
@@ -572,7 +571,7 @@ loops that truncate the stream.
                     return
 
    The code for :func:`permutations` can be also expressed as a subsequence of
-   :func:`product`, filtered to exclude entries with repeated elements (those
+   :func:`product` filtered to exclude entries with repeated elements (those
    from the same position in the input pool)::
 
         def permutations(iterable, r=None):
@@ -666,17 +665,16 @@ loops that truncate the stream.
    predicate is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
-          # takewhile(lambda x: x<5, [1,4,6,4,1]) → 1 4
+          # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
           for x in iterable:
-              if predicate(x):
-                  yield x
-              else:
+              if not predicate(x):
                   break
+              yield x
 
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
-   input iterator after takewhile has been run to exhaustion.  To work
+   input iterator after *takewhile* has been run to exhaustion.  To work
    around this problem, consider using `more-iterools before_and_after()
    <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
    instead.
@@ -726,10 +724,12 @@ loops that truncate the stream.
 
       def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
-          iterators = [iter(it) for it in iterables]
+
+          iterators = list(map(iter, iterables))
           num_active = len(iterators)
           if not num_active:
               return
+
           while True:
               values = []
               for i, iterator in enumerate(iterators):
