@@ -682,7 +682,7 @@ loops that truncate the stream.
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
-   input iterator after takewhile has been run to exhaustion.  To work
+   input iterator after *takewhile* has been run to exhaustion.  To work
    around this problem, consider using `more-iterools before_and_after()
    <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
    instead.
