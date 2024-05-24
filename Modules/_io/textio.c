@@ -1719,6 +1719,8 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
+    PyObject *pending = self->pending_bytes;
+
     if (self->pending_bytes_count + bytes_len > self->chunk_size) {
         // Prevent to concatenate more than chunk_size data.
         if (_textiowrapper_writeflush(self) < 0) {
@@ -1728,9 +1730,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         if (self->pending_bytes) {
             // gh-119506: call to _textiowrapper_writeflush()
             // can write new data to pending_bytes
-            PyObject *tmp = self->pending_bytes;
+            pending = self->pending_bytes;
             self->pending_bytes = b;
-            b = tmp;
+            b = pending;
         }
     }
 
@@ -1741,6 +1743,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     else if (!PyList_CheckExact(self->pending_bytes)) {
         PyObject *list = PyList_New(2);
         if (list == NULL) {
+            self->pending_bytes = pending;
             Py_DECREF(b);
             return NULL;
         }
@@ -1750,6 +1753,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
     else {
         if (PyList_Append(self->pending_bytes, b) < 0) {
+            self->pending_bytes = pending;
             Py_DECREF(b);
             return NULL;
         }
