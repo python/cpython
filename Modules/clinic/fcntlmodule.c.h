@@ -96,7 +96,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
     {"ioctl", _PyCFunction_CAST(fcntl_ioctl), METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
                  PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
@@ -104,7 +104,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned int code;
+    unsigned long code;
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
@@ -114,10 +114,11 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (code == (unsigned int)-1 && PyErr_Occurred()) {
+    if (!PyLong_Check(args[1])) {
+        _PyArg_BadArgument("ioctl", "argument 2", "int", args[1]);
         goto exit;
     }
+    code = PyLong_AsUnsignedLongMask(args[1]);
     if (nargs < 3) {
         goto skip_optional;
     }
@@ -249,4 +250,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1db859412172dd53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4362fb678c9c5447 input=a9049054013a1b77]*/
