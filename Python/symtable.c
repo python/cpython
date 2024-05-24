@@ -1684,8 +1684,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
 
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
-                                        s->v.FunctionDef.returns, new_ste))
+                                        s->v.FunctionDef.returns, new_ste)) {
+            Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_enter_existing_block(st, new_ste)) {
             Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
