@@ -59,8 +59,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BINARY_OP_SUBTRACT_INT:
             return 2;
-        case BINARY_SLICE:
-            return 3;
         case BINARY_SUBSCR:
             return 2;
         case BINARY_SUBSCR_DICT:
@@ -415,8 +413,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case STORE_NAME:
             return 1;
-        case STORE_SLICE:
-            return 4;
         case STORE_SUBSCR:
             return 3;
         case STORE_SUBSCR_DICT:
@@ -491,8 +487,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BINARY_OP_SUBTRACT_FLOAT:
             return 1;
         case BINARY_OP_SUBTRACT_INT:
-            return 1;
-        case BINARY_SLICE:
             return 1;
         case BINARY_SUBSCR:
             return 1;
@@ -848,8 +842,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case STORE_NAME:
             return 0;
-        case STORE_SLICE:
-            return 0;
         case STORE_SUBSCR:
             return 0;
         case STORE_SUBSCR_DICT:
@@ -975,7 +967,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG },
     [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
-    [BINARY_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SUBSCR] = { true, INSTR_FMT_IXC, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
@@ -1153,7 +1144,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [STORE_FAST_STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [STORE_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_SUBSCR_DICT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
@@ -1208,7 +1198,6 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_OP_MULTIPLY_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_MULTIPLY_INT, 0, 0 } } },
     [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, 0, 0 } } },
     [BINARY_OP_SUBTRACT_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_SUBTRACT_INT, 0, 0 } } },
-    [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, 0, 0 } } },
     [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_DICT, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_LIST_INT, 0, 0 } } },
@@ -1339,7 +1328,6 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_FAST_STORE_FAST] = { .nuops = 2, .uops = { { _STORE_FAST, 5, 0 }, { _STORE_FAST, 6, 0 } } },
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { _STORE_GLOBAL, 0, 0 } } },
     [STORE_NAME] = { .nuops = 1, .uops = { { _STORE_NAME, 0, 0 } } },
-    [STORE_SLICE] = { .nuops = 1, .uops = { { _STORE_SLICE, 0, 0 } } },
     [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, 0, 0 } } },
     [STORE_SUBSCR_DICT] = { .nuops = 1, .uops = { { _STORE_SUBSCR_DICT, 0, 0 } } },
     [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _STORE_SUBSCR_LIST_INT, 0, 0 } } },
@@ -1378,7 +1366,6 @@ const char *_PyOpcode_OpName[268] = {
     [BINARY_OP_MULTIPLY_INT] = "BINARY_OP_MULTIPLY_INT",
     [BINARY_OP_SUBTRACT_FLOAT] = "BINARY_OP_SUBTRACT_FLOAT",
     [BINARY_OP_SUBTRACT_INT] = "BINARY_OP_SUBTRACT_INT",
-    [BINARY_SLICE] = "BINARY_SLICE",
     [BINARY_SUBSCR] = "BINARY_SUBSCR",
     [BINARY_SUBSCR_DICT] = "BINARY_SUBSCR_DICT",
     [BINARY_SUBSCR_GETITEM] = "BINARY_SUBSCR_GETITEM",
@@ -1569,7 +1556,6 @@ const char *_PyOpcode_OpName[268] = {
     [STORE_FAST_STORE_FAST] = "STORE_FAST_STORE_FAST",
     [STORE_GLOBAL] = "STORE_GLOBAL",
     [STORE_NAME] = "STORE_NAME",
-    [STORE_SLICE] = "STORE_SLICE",
     [STORE_SUBSCR] = "STORE_SUBSCR",
     [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
@@ -1633,7 +1619,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_OP_MULTIPLY_INT] = BINARY_OP,
     [BINARY_OP_SUBTRACT_FLOAT] = BINARY_OP,
     [BINARY_OP_SUBTRACT_INT] = BINARY_OP,
-    [BINARY_SLICE] = BINARY_SLICE,
     [BINARY_SUBSCR] = BINARY_SUBSCR,
     [BINARY_SUBSCR_DICT] = BINARY_SUBSCR,
     [BINARY_SUBSCR_GETITEM] = BINARY_SUBSCR,
@@ -1812,7 +1797,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [STORE_FAST_STORE_FAST] = STORE_FAST_STORE_FAST,
     [STORE_GLOBAL] = STORE_GLOBAL,
     [STORE_NAME] = STORE_NAME,
-    [STORE_SLICE] = STORE_SLICE,
     [STORE_SUBSCR] = STORE_SUBSCR,
     [STORE_SUBSCR_DICT] = STORE_SUBSCR,
     [STORE_SUBSCR_LIST_INT] = STORE_SUBSCR,
@@ -1839,6 +1823,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 117: \
+    case 118: \
     case 119: \
     case 120: \
     case 121: \

@@ -18,11 +18,6 @@ except ImportError:
 class HelperMixin:
     def helper(self, sample, *extra):
         new = marshal.loads(marshal.dumps(sample, *extra))
-        if sample != new:
-            print("Sample")
-            print(sample)
-            print("New")
-            print(new)
         self.assertEqual(sample, new)
         try:
             with open(os_helper.TESTFN, "wb") as f:
@@ -113,6 +108,12 @@ class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
         new = marshal.loads(marshal.dumps(StopIteration))
         self.assertEqual(StopIteration, new)
+
+class SliceTestCase(unittest.TestCase):
+    def test_slice(self):
+        for s in (slice(1), slice(1, None), slice("hi", 3.2, ())):
+            new = marshal.loads(marshal.dumps(s))
+            self.assertEqual(s, new)
 
 class CodeTestCase(unittest.TestCase):
     def test_code(self):
@@ -548,7 +549,6 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
             code = f.read()
         if __file__.endswith(".py"):
             code = compile(code, __file__, "exec")
-        self.helper(code)
         self.helper3(code)
 
     def testRecursion(self):

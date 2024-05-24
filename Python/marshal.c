@@ -75,7 +75,7 @@ module marshal
 #define TYPE_UNKNOWN            '?'
 #define TYPE_SET                '<'
 #define TYPE_FROZENSET          '>'
-#define TYPE_SLICE              ':'
+#define TYPE_SLICE              'q'
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 #define TYPE_ASCII              'a'
@@ -1492,6 +1492,7 @@ r_object(RFILE *p)
 
             v = (PyObject *)_PyCode_New(&con);
             if (v == NULL) {
+                assert(0);
                 goto code_error;
             }
 
@@ -1550,6 +1551,7 @@ r_object(RFILE *p)
             goto cleanup;
         }
         retval = PySlice_New(start, stop, step);
+        assert(retval != NULL);
     cleanup:
         Py_XDECREF(start);
         Py_XDECREF(stop);

@@ -466,19 +466,6 @@
             break;
         }
 
-        case _BINARY_SLICE: {
-            _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            break;
-        }
-
-        case _STORE_SLICE: {
-            stack_pointer += -4;
-            break;
-        }
-
         case _BINARY_SUBSCR_LIST_INT: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);

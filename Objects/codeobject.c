@@ -1904,25 +1904,92 @@ code_repr(PyCodeObject *co)
     }
 }
 
-static PyObject *
-code_richcompare(PyObject *self, PyObject *other, int op)
+
+static int
+code_compare(PyObject *self, PyObject *other);
+
+static int
+compare_constants(const void *key1, const void *key2) {
+    PyObject *op1 = (PyObject *)key1;
+    PyObject *op2 = (PyObject *)key2;
+    if (op1 == op2) {
+        return 1;
+    }
+    if (Py_TYPE(op1) != Py_TYPE(op2)) {
+        return 0;
+    }
+    if (PyUnicode_Check(op1)) {
+        // Strings will mostly have been interned
+        return PyObject_RichCompareBool(op1, op2, Py_EQ);
+    }
+    if (PyTuple_CheckExact(op1)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(op1);
+        if (size != PyTuple_GET_SIZE(op2)) {
+            return 0;
+        }
+        for (Py_ssize_t i = 0; i < size; i++) {
+            if (compare_constants(PyTuple_GET_ITEM(op1, i),
+                PyTuple_GET_ITEM(op2, i)) == 0) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PyFrozenSet_CheckExact(op1)) {
+        if (PySet_GET_SIZE(op1) != PySet_GET_SIZE(op2)) {
+            return 0;
+        }
+        Py_ssize_t pos1 = 0, pos2 = 0;
+        PyObject *obj1, *obj2;
+        Py_hash_t hash1, hash2;
+        while ((_PySet_NextEntry(op1, &pos1, &obj1, &hash1)) &&
+               (_PySet_NextEntry(op2, &pos2, &obj2, &hash2)))
+        {
+            if (compare_constants(obj1, obj2) == 0) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PySlice_Check(op1)) {
+        PySliceObject *s1 = (PySliceObject *)op1;
+        PySliceObject *s2 = (PySliceObject *)op2;
+        return compare_constants(s1->start, s2->start) &&
+            compare_constants(s1->stop, s2->stop) &&
+            compare_constants(s1->step, s2->step);
+    }
+    else if (PyBytes_CheckExact(op1) || PyLong_CheckExact(op1)) {
+        return PyObject_RichCompareBool(op1, op2, Py_EQ);
+    }
+    else if (PyFloat_CheckExact(op1)) {
+        // Ensure that, for example, +0.0 and -0.0 are distinct
+        double f1 = PyFloat_AS_DOUBLE(op1);
+        double f2 = PyFloat_AS_DOUBLE(op2);
+        return memcmp(&f1, &f2, sizeof(double)) == 0;
+    }
+    else if (PyComplex_CheckExact(op1)) {
+        Py_complex c1 = ((PyComplexObject *)op1)->cval;
+        Py_complex c2 = ((PyComplexObject *)op2)->cval;
+        return memcmp(&c1, &c2, sizeof(Py_complex)) == 0;
+    }
+    else if (PyCode_Check(op1)) {
+        return code_compare(op1, op2);
+    }
+    _Py_FatalErrorFormat("unexpected type in compare_constants: %s",
+                         Py_TYPE(op1)->tp_name);
+    return 0;
+}
+
+static int
+code_compare(PyObject *self, PyObject *other)
 {
     PyCodeObject *co, *cp;
     int eq;
-    PyObject *consts1, *consts2;
-    PyObject *res;
-
-    if ((op != Py_EQ && op != Py_NE) ||
-        !PyCode_Check(self) ||
-        !PyCode_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
-
     co = (PyCodeObject *)self;
     cp = (PyCodeObject *)other;
 
     eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (!eq) goto unequal;
+    if (eq <= 0) goto unequal;
     eq = co->co_argcount == cp->co_argcount;
     if (!eq) goto unequal;
     eq = co->co_posonlyargcount == cp->co_posonlyargcount;
@@ -1962,23 +2029,12 @@ code_richcompare(PyObject *self, PyObject *other, int op)
         assert(cp_code != ENTER_EXECUTOR);
 
         if (co_code != cp_code || co_arg != cp_arg) {
-            goto unequal;
+            return 0;
         }
         i += _PyOpcode_Caches[co_code];
     }
 
-    /* compare constants */
-    consts1 = _PyCode_ConstantKey(co->co_consts);
-    if (!consts1)
-        return NULL;
-    consts2 = _PyCode_ConstantKey(cp->co_consts);
-    if (!consts2) {
-        Py_DECREF(consts1);
-        return NULL;
-    }
-    eq = PyObject_RichCompareBool(consts1, consts2, Py_EQ);
-    Py_DECREF(consts1);
-    Py_DECREF(consts2);
+    eq = compare_constants(co->co_consts, cp->co_consts);
     if (eq <= 0) goto unequal;
 
     eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
@@ -1990,28 +2046,30 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (eq <= 0) {
         goto unequal;
     }
-    eq = PyObject_RichCompareBool(co->co_exceptiontable,
+    return PyObject_RichCompareBool(co->co_exceptiontable,
                                   cp->co_exceptiontable, Py_EQ);
-    if (eq <= 0) {
-        goto unequal;
-    }
-
-    if (op == Py_EQ)
-        res = Py_True;
-    else
-        res = Py_False;
-    goto done;
 
   unequal:
-    if (eq < 0)
-        return NULL;
-    if (op == Py_NE)
-        res = Py_True;
-    else
-        res = Py_False;
+    return eq;
+}
 
-  done:
-    return Py_NewRef(res);
+
+static PyObject *
+code_richcompare(PyObject *self, PyObject *other, int op)
+{
+    if ((op != Py_EQ && op != Py_NE) ||
+        !PyCode_Check(self) ||
+        !PyCode_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    int eq = code_compare(self, other);
+    if (eq < 0) {
+        return NULL;
+    }
+    if (op == Py_NE) {
+        eq = eq ? 0 : 1;
+    }
+    return eq ? Py_True : Py_False;
 }
 
 static Py_hash_t
@@ -2522,72 +2580,6 @@ intern_one_constant(PyObject *op)
 
     assert(_Py_IsImmortal(entry->value));
     return (PyObject *)entry->value;
-}
-
-static int
-compare_constants(const void *key1, const void *key2) {
-    PyObject *op1 = (PyObject *)key1;
-    PyObject *op2 = (PyObject *)key2;
-    if (op1 == op2) {
-        return 1;
-    }
-    if (Py_TYPE(op1) != Py_TYPE(op2)) {
-        return 0;
-    }
-    // We compare container contents by identity because we have already
-    // internalized the items.
-    if (PyTuple_CheckExact(op1)) {
-        Py_ssize_t size = PyTuple_GET_SIZE(op1);
-        if (size != PyTuple_GET_SIZE(op2)) {
-            return 0;
-        }
-        for (Py_ssize_t i = 0; i < size; i++) {
-            if (PyTuple_GET_ITEM(op1, i) != PyTuple_GET_ITEM(op2, i)) {
-                return 0;
-            }
-        }
-        return 1;
-    }
-    else if (PyFrozenSet_CheckExact(op1)) {
-        if (PySet_GET_SIZE(op1) != PySet_GET_SIZE(op2)) {
-            return 0;
-        }
-        Py_ssize_t pos1 = 0, pos2 = 0;
-        PyObject *obj1, *obj2;
-        Py_hash_t hash1, hash2;
-        while ((_PySet_NextEntry(op1, &pos1, &obj1, &hash1)) &&
-               (_PySet_NextEntry(op2, &pos2, &obj2, &hash2)))
-        {
-            if (obj1 != obj2) {
-                return 0;
-            }
-        }
-        return 1;
-    }
-    else if (PySlice_Check(op1)) {
-        PySliceObject *s1 = (PySliceObject *)op1;
-        PySliceObject *s2 = (PySliceObject *)op2;
-        return (s1->start == s2->start &&
-                s1->stop  == s2->stop  &&
-                s1->step  == s2->step);
-    }
-    else if (PyBytes_CheckExact(op1) || PyLong_CheckExact(op1)) {
-        return PyObject_RichCompareBool(op1, op2, Py_EQ);
-    }
-    else if (PyFloat_CheckExact(op1)) {
-        // Ensure that, for example, +0.0 and -0.0 are distinct
-        double f1 = PyFloat_AS_DOUBLE(op1);
-        double f2 = PyFloat_AS_DOUBLE(op2);
-        return memcmp(&f1, &f2, sizeof(double)) == 0;
-    }
-    else if (PyComplex_CheckExact(op1)) {
-        Py_complex c1 = ((PyComplexObject *)op1)->cval;
-        Py_complex c2 = ((PyComplexObject *)op2)->cval;
-        return memcmp(&c1, &c2, sizeof(Py_complex)) == 0;
-    }
-    _Py_FatalErrorFormat("unexpected type in compare_constants: %s",
-                         Py_TYPE(op1)->tp_name);
-    return 0;
 }
 
 static Py_uhash_t

@@ -387,34 +387,6 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_SLICE) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(BINARY_SLICE);
-            PyObject *stop;
-            PyObject *start;
-            PyObject *container;
-            PyObject *res;
-            stop = stack_pointer[-1];
-            start = stack_pointer[-2];
-            container = stack_pointer[-3];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
-            // Can't use ERROR_IF() here, because we haven't
-            // DECREF'ed container yet, and we still own slice.
-            if (slice == NULL) {
-                res = NULL;
-            }
-            else {
-                res = PyObject_GetItem(container, slice);
-                Py_DECREF(slice);
-            }
-            Py_DECREF(container);
-            if (res == NULL) goto pop_3_error;
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            DISPATCH();
-        }
-
         TARGET(BINARY_SUBSCR) {
             frame->instr_ptr = next_instr;
             next_instr += 2;
@@ -5703,34 +5675,6 @@
             Py_DECREF(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(STORE_SLICE) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(STORE_SLICE);
-            PyObject *stop;
-            PyObject *start;
-            PyObject *container;
-            PyObject *v;
-            stop = stack_pointer[-1];
-            start = stack_pointer[-2];
-            container = stack_pointer[-3];
-            v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
-            int err;
-            if (slice == NULL) {
-                err = 1;
-            }
-            else {
-                err = PyObject_SetItem(container, slice, v);
-                Py_DECREF(slice);
-            }
-            Py_DECREF(v);
-            Py_DECREF(container);
-            if (err) goto pop_4_error;
-            stack_pointer += -4;
             DISPATCH();
         }
 

@@ -6345,13 +6345,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     return res;
 }
 
-static bool
-is_two_element_slice(expr_ty s)
-{
-    return s->kind == Slice_kind &&
-           s->v.Slice.step == NULL;
-}
-
 static int
 compiler_augassign(struct compiler *c, stmt_ty s)
 {
@@ -6369,19 +6362,10 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
-        if (is_two_element_slice(e->v.Subscript.slice)) {
-            RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
-            ADDOP_I(c, loc, COPY, 3);
-            ADDOP_I(c, loc, COPY, 3);
-            ADDOP_I(c, loc, COPY, 3);
-            ADDOP(c, loc, BINARY_SLICE);
-        }
-        else {
-            VISIT(c, expr, e->v.Subscript.slice);
-            ADDOP_I(c, loc, COPY, 2);
-            ADDOP_I(c, loc, COPY, 2);
-            ADDOP(c, loc, BINARY_SUBSCR);
-        }
+        VISIT(c, expr, e->v.Subscript.slice);
+        ADDOP_I(c, loc, COPY, 2);
+        ADDOP_I(c, loc, COPY, 2);
+        ADDOP(c, loc, BINARY_SUBSCR);
         break;
     case Name_kind:
         RETURN_IF_ERROR(compiler_nameop(c, loc, e->v.Name.id, Load));
@@ -6407,17 +6391,9 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        if (is_two_element_slice(e->v.Subscript.slice)) {
-            ADDOP_I(c, loc, SWAP, 4);
-            ADDOP_I(c, loc, SWAP, 3);
-            ADDOP_I(c, loc, SWAP, 2);
-            ADDOP(c, loc, STORE_SLICE);
-        }
-        else {
-            ADDOP_I(c, loc, SWAP, 3);
-            ADDOP_I(c, loc, SWAP, 2);
-            ADDOP(c, loc, STORE_SUBSCR);
-        }
+        ADDOP_I(c, loc, SWAP, 3);
+        ADDOP_I(c, loc, SWAP, 2);
+        ADDOP(c, loc, STORE_SUBSCR);
         break;
     case Name_kind:
         return compiler_nameop(c, loc, e->v.Name.id, Store);
@@ -6624,26 +6600,14 @@ compiler_subscript(struct compiler *c, expr_ty e)
     }
 
     VISIT(c, expr, e->v.Subscript.value);
-    if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
-        if (ctx == Load) {
-            ADDOP(c, loc, BINARY_SLICE);
-        }
-        else {
-            assert(ctx == Store);
-            ADDOP(c, loc, STORE_SLICE);
-        }
+    VISIT(c, expr, e->v.Subscript.slice);
+    switch (ctx) {
+        case Load:    op = BINARY_SUBSCR; break;
+        case Store:   op = STORE_SUBSCR; break;
+        case Del:     op = DELETE_SUBSCR; break;
     }
-    else {
-        VISIT(c, expr, e->v.Subscript.slice);
-        switch (ctx) {
-            case Load:    op = BINARY_SUBSCR; break;
-            case Store:   op = STORE_SUBSCR; break;
-            case Del:     op = DELETE_SUBSCR; break;
-        }
-        assert(op);
-        ADDOP(c, loc, op);
-    }
+    assert(op);
+    ADDOP(c, loc, op);
     return SUCCESS;
 }
 

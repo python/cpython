@@ -73,8 +73,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BOTH_UNICODE] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_STR_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
@@ -277,7 +275,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
     [_BINARY_OP_SUBTRACT_INT] = "_BINARY_OP_SUBTRACT_INT",
-    [_BINARY_SLICE] = "_BINARY_SLICE",
     [_BINARY_SUBSCR] = "_BINARY_SUBSCR",
     [_BINARY_SUBSCR_DICT] = "_BINARY_SUBSCR_DICT",
     [_BINARY_SUBSCR_LIST_INT] = "_BINARY_SUBSCR_LIST_INT",
@@ -488,7 +485,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_STORE_FAST_STORE_FAST] = "_STORE_FAST_STORE_FAST",
     [_STORE_GLOBAL] = "_STORE_GLOBAL",
     [_STORE_NAME] = "_STORE_NAME",
-    [_STORE_SLICE] = "_STORE_SLICE",
     [_STORE_SUBSCR] = "_STORE_SUBSCR",
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
     [_STORE_SUBSCR_LIST_INT] = "_STORE_SUBSCR_LIST_INT",
@@ -622,10 +618,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_SUBSCR:
             return 2;
-        case _BINARY_SLICE:
-            return 3;
-        case _STORE_SLICE:
-            return 4;
         case _BINARY_SUBSCR_LIST_INT:
             return 2;
         case _BINARY_SUBSCR_STR_INT:
