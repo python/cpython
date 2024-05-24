@@ -2120,6 +2120,38 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
+compiler_visit_annotations_in_scope(struct compiler *c, location loc,
+                                    arguments_ty args, expr_ty returns,
+                                    Py_ssize_t *annotations_len)
+{
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->args, annotations_len, loc));
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->posonlyargs, annotations_len, loc));
+
+    if (args->vararg && args->vararg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->vararg->arg,
+                                         args->vararg->annotation, annotations_len, loc));
+    }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->kwonlyargs, annotations_len, loc));
+
+    if (args->kwarg && args->kwarg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->kwarg->arg,
+                                         args->kwarg->annotation, annotations_len, loc));
+    }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+
+    return 0;
+}
+
+static int
 compiler_visit_annotations(struct compiler *c, location loc,
                            arguments_ty args, expr_ty returns)
 {
@@ -2139,8 +2171,9 @@ compiler_visit_annotations(struct compiler *c, location loc,
         return ERROR;
     }
     assert(ste != NULL);
+    bool annotations_used = ste->ste_annotations_used;
 
-    if (!future_annotations && ste->ste_annotations_used) {
+    if (!future_annotations && annotations_used) {
         if (compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
                                              ste->ste_name) < 0) {
             Py_DECREF(ste);
@@ -2149,29 +2182,12 @@ compiler_visit_annotations(struct compiler *c, location loc,
     }
     Py_DECREF(ste);
 
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->args, &annotations_len, loc));
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc));
-
-    if (args->vararg && args->vararg->annotation) {
-        RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->vararg->arg,
-                                         args->vararg->annotation, &annotations_len, loc));
+    if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+        if (!future_annotations && annotations_used) {
+            compiler_exit_scope(c);
+        }
+        return ERROR;
     }
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc));
-
-    if (args->kwarg && args->kwarg->annotation) {
-        RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->kwarg->arg,
-                                         args->kwarg->annotation, &annotations_len, loc));
-    }
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotation(c, &_Py_ID(return), returns, &annotations_len, loc));
 
     if (future_annotations) {
         if (annotations_len) {
@@ -2180,8 +2196,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
         }
     }
     else {
-        assert(ste != NULL);
-        if (ste->ste_annotations_used) {
+        if (annotations_used) {
             RETURN_IF_ERROR(
                 compiler_leave_annotations_scope(c, loc, annotations_len, raise_notimp)
             );
