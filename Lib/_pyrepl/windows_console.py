@@ -23,6 +23,7 @@ import os
 import sys
 
 from abc import ABC, abstractmethod
+from collections import deque
 from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
 from .trace import trace
@@ -211,7 +212,7 @@ class WindowsConsole(Console):
         else:
             self.output_fd = f_out.fileno()
 
-        self.event_queue: deque[Event] = []
+        self.event_queue: deque[Event] = deque()
 
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
@@ -231,7 +232,6 @@ class WindowsConsole(Console):
             self.__write("\n")
             self.__posxy = 0, len(self.screen)
             self.screen.append("")
-            trace(f"... {self.__posxy} {len(self.screen)} {self.height}")
 
         px, py = self.__posxy
         old_offset = offset = self.__offset
@@ -245,36 +245,22 @@ class WindowsConsole(Console):
             offset = cy - height + 1
             scroll_lines = offset - old_offset
 
-            trace(f'adj offset {cy} {height} {offset} {old_offset}')
             # Scrolling the buffer as the current input is greater than the visible
             # portion of the window.  We need to scroll the visible portion and the
             # entire history
-            info = CONSOLE_SCREEN_BUFFER_INFO()
-            if not GetConsoleScreenBufferInfo(OutHandle, info):
-                raise ctypes.WinError(ctypes.GetLastError())
-            
-            bottom = info.srWindow.Bottom
-
-            trace("Scrolling {} {} {} {} {}", scroll_lines, info.srWindow.Bottom, self.height, len(screen) - self.height, self.__posxy)
-            self.scroll(scroll_lines, bottom)
+            self.scroll(scroll_lines, self.getscrollbacksize())
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
         
             for i in range(scroll_lines):
-                self.screen.append("")
-            
+                self.screen.append("")            
         elif offset > 0 and len(screen) < offset + height:
-            trace("Adding extra line")
             offset = max(len(screen) - height, 0)
             screen.append("")
 
         oldscr = self.screen[old_offset : old_offset + height]
         newscr = screen[offset : offset + height]
 
-        trace('old screen {}', oldscr)
-        trace('new screen {}', newscr)
-
-        trace('new offset {} {}', offset, px)
         self.__offset = offset
 
         self.__hide_cursor()
@@ -362,52 +348,13 @@ class WindowsConsole(Console):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
-        # if we need to insert a single character right after the first detected change
-        screen_cord = self.screen_xy
-        if oldline[x_pos:] == newline[x_pos + 1 :]:
-            trace('insert single {} {}', y, self.__posxy)
-            if (
-                y == self.__posxy[1]
-                and x_coord > self.__posxy[0]
-                and oldline[px_pos:x_pos] == newline[px_pos + 1 : x_pos + 1]
-            ):
-                x_pos = px_pos
-                x_coord = px_coord
+        self.__hide_cursor()
+        self.__move_relative(x_coord, y)
+        if wlen(oldline) > wlen(newline):
+            self.erase_to_end()
 
-            character_width = wlen(newline[x_pos])
-
-            # Scroll any text to the right if we're inserting
-            ins_x, ins_y = self.get_abs_position(x_coord + 1, y)
-            ins_x -= 1
-            scroll_rect = SMALL_RECT()
-            scroll_rect.Top = scroll_rect.Bottom = SHORT(ins_y)
-            scroll_rect.Left = SHORT(ins_x)
-            scroll_rect.Right = SHORT(self.getheightwidth()[1] - 1)
-            destination_origin = _COORD(X = scroll_rect.Left + 1, Y = scroll_rect.Top)
-            fill_info = CHAR_INFO()
-            fill_info.UnicodeChar = ' '
-
-            if not ScrollConsoleScreenBuffer(OutHandle, scroll_rect, None, destination_origin, fill_info):
-                raise ctypes.WinError(ctypes.GetLastError())
-
-            self.__move_relative(x_coord, y)
-            pos = self.__posxy
-            coord = self.screen_xy
-
-            self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
-        else:
-            trace("Rewrite all {!r} x_coord={} {} y={} {} posxy={} screen_xy={}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy, self.screen_xy)
-            self.__hide_cursor()
-            self.__move_relative(x_coord, y)
-            pos = self.__posxy
-            coord = self.screen_xy
-            if wlen(oldline) > wlen(newline):
-                self.erase_to_end()
-
-            self.__write(newline[x_pos:])
-            self.__posxy = wlen(newline), y
-
+        self.__write(newline[x_pos:])
+        self.__posxy = wlen(newline), y
 
         if "\x1b" in newline or y != self.__posxy[1]:
             # ANSI escape characters are present, so we can't assume
@@ -488,6 +435,13 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
         return (info.srWindow.Bottom - info.srWindow.Top + 1,
                 info.srWindow.Right - info.srWindow.Left + 1)
+
+    def getscrollbacksize(self) -> int:
+        info = CONSOLE_SCREEN_BUFFER_INFO()
+        if not GetConsoleScreenBufferInfo(OutHandle, info):
+            raise ctypes.WinError(ctypes.GetLastError())
+        
+        return info.srWindow.Bottom
 
     def __read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
