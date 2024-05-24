@@ -244,14 +244,7 @@ def repeat(stmt="pass", setup="pass", timer=default_timer,
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 
-def run(stmt="pass", setup="pass", timer=default_timer,
-        repeat=default_repeat, number=None,
-        time_unit=None, verbose=False):
-    precision = 3
-    if verbose:
-        precision += 1
-
-    t = Timer(stmt, setup, timer)
+def _run(t, repeat=default_repeat, number=None, time_unit=None, verbose=False, precision=3):
     if number == None:
         # determine number so that 0.2 <= total time < 2.0
         callback = None
@@ -289,12 +282,11 @@ def run(stmt="pass", setup="pass", timer=default_timer,
     timings = [dt / number for dt in raw_timings]
 
     best = min(timings)
+    worst = max(timings)
     print("%d loop%s, best of %d: %s per loop"
           % (number, 's' if number != 1 else '',
              repeat, format_time(best)))
 
-    best = min(timings)
-    worst = max(timings)
     if worst >= best * 4:
         import warnings
         warnings.warn_explicit("The test results are likely unreliable. "
@@ -302,6 +294,12 @@ def run(stmt="pass", setup="pass", timer=default_timer,
                                "slower than the best time (%s)."
                                % (format_time(worst), format_time(best)),
                                UserWarning, '', 0)
+
+
+def run(stmt="pass", setup="pass", *, timer=default_timer,
+        repeat=default_repeat, number=None,
+        time_unit=None, verbose=False, precision=3):
+    return _run(Timer(stmt, setup, timer), repeat, number, time_unit, verbose, precision)
 
 
 def main(args=None, *, _wrap_timer=None):
@@ -373,11 +371,13 @@ def main(args=None, *, _wrap_timer=None):
     if _wrap_timer is not None:
         timer = _wrap_timer(timer)
 
+    t = Timer(stmt, setup, timer)
+
     try:
-        run(stmt, setup, timer, repeat, number, time_unit, bool(verbose))
+        _run(t, repeat=repeat, number=number, time_unit=time_unit, verbose=bool(verbose), precision=verbose + 3)
         return 0
     except Exception:
-        timer.print_exc()
+        t.print_exc()
         return 1
 
 if __name__ == "__main__":
