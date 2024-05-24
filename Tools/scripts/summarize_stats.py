@@ -133,8 +133,8 @@ def _get_uop_flags_from_file(
     with open(SOURCE_DIR / filepath) as spec_src:
         for line in spec_src:
             if re.match(r"\s*\[_", line):
-                if name := re.search(r"\[[_A-Z0-9]+\]", line):
-                    uop = name.group().strip("[]")
+                if name := re.search(r"\[(?P<uop_name>[_A-Z0-9]+)\]", line):
+                    uop = name.group("uop_name")
                     possible_flags = [
                         f.strip()
                         for f in line.strip().split("=")[1].strip(", ").split("|")
