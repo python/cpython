@@ -1537,10 +1537,8 @@
             _Py_UopsSymbol *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)this_instr->operand;
             sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
-            (void)func_version;
             break;
         }
 
