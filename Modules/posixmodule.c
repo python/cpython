@@ -5504,8 +5504,17 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
     }
     if (PyBytes_Check(path->object)) {
         Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
+        if (drv == NULL) {
+            goto exit;
+        }
         Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
+        if (root == NULL) {
+            goto exit;
+        }
         Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
+        if (tail == NULL) {
+            goto exit;
+        }
     }
     result = PyTuple_Pack(3, drv, root, tail);
 exit:
