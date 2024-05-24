@@ -5580,8 +5580,7 @@
             value = stack_pointer[-2];
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyTypeObject *tp = Py_TYPE(owner);
-                assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(dict == NULL, STORE_ATTR);
                 assert(PyDict_CheckExact((PyObject *)dict));

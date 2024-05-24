@@ -2286,8 +2286,7 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             if (dict == NULL) {
                 UOP_STAT_INC(uopcode, miss);
