@@ -788,8 +788,8 @@ def opcode_input_overlap(
             "HAS_OPERAND_FLAG",
         ),
         "Target": flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
-    )
-    
+    }
+
     if list(results.values()).count(False) == 0:
         return "No Conflict"
     return f"Conflict. Both Use: {','.join(k for k, v in results.items() if not v)}"
