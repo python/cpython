@@ -123,6 +123,7 @@ def load_raw_data(input: Path) -> RawData:
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
+
 @functools.cache
 def _get_uop_flags_from_file(
     flag_names: tuple[str] = None,
@@ -132,13 +133,16 @@ def _get_uop_flags_from_file(
     with open(SOURCE_DIR / filepath) as spec_src:
         for line in spec_src:
             if re.match(r"\s*\[_", line):
-                if name :=  re.search(r"\[[_A-Z0-9]+\]", line):
+                if name := re.search(r"\[[_A-Z0-9]+\]", line):
                     uop = name.group().strip("[]")
-                    possible_flags = [f.strip() for f in line.strip().split("=")[1].strip(", ").split("|")]
-                    if all(f.removeprefix("HAS_") in flag_names for f in possible_flags):
-                        flags[uop] = [
-                            f.strip() for f in possible_flags
-                        ]
+                    possible_flags = [
+                        f.strip()
+                        for f in line.strip().split("=")[1].strip(", ").split("|")
+                    ]
+                    if all(
+                        f.removeprefix("HAS_") in flag_names for f in possible_flags
+                    ):
+                        flags[uop] = [f.strip() for f in possible_flags]
                     elif possible_flags[0] == "0":
                         flags[uop] = []
     return flags
@@ -758,6 +762,7 @@ def execution_count_section() -> Section:
         """,
     )
 
+
 def opcode_input_overlap(
     uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
 ) -> str:
@@ -813,7 +818,8 @@ def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
         return rows
 
     table_headers = ["Pair", "Count:", "Self:", "Cumulative:"]
-    if compat_data: table_headers.append("Compatibility")
+    if compat_data:
+        table_headers.append("Compatibility")
 
     return Section(
         "Pair counts",
