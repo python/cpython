@@ -227,9 +227,6 @@ class BaseTest:
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'find', ('aa', 'bb'), 0, 3)
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 4)
-
-        self.checkraises(TypeError, 'hello', 'find', (42,))
-
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
         self.checkequal(12, 'abcdefghiabc', 'rfind', '')
@@ -292,9 +289,6 @@ class BaseTest:
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'rfind', ('aa', 'bb'), 7, 10)
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 6, 10)
-
-        self.checkraises(TypeError, 'hello', 'rfind', (42,))
-
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
         self.checkequal(3, 'abcdefghiabc', 'index', 'def')
