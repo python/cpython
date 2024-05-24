@@ -22,8 +22,6 @@ from __future__ import annotations
 import os
 import sys
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
 from .trace import trace
 import ctypes
@@ -103,11 +101,13 @@ SetConsoleMode.use_last_error = True
 SetConsoleMode.argtypes = [HANDLE, DWORD]
 SetConsoleMode.restype = BOOL
 
+
 class Char(Union):
     _fields_ = [
         ("UnicodeChar",WCHAR),
         ("Char", CHAR),
     ]
+
 
 class KeyEvent(ctypes.Structure):
     _fields_ = [
@@ -118,6 +118,7 @@ class KeyEvent(ctypes.Structure):
         ("uChar", Char),
         ("dwControlKeyState", DWORD),
     ]
+
 
 class WindowsBufferSizeEvent(ctypes.Structure):
     _fields_ = [
@@ -151,8 +152,6 @@ ReadConsoleInput = windll.kernel32.ReadConsoleInputW
 ReadConsoleInput.use_last__error = True
 ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
 ReadConsoleInput.restype = BOOL
-
-
 
 OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
 InHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -191,8 +190,10 @@ ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT  = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
+
 class _error(Exception):
     pass
+
 
 class WindowsConsole(Console):
     def __init__(
@@ -215,7 +216,6 @@ class WindowsConsole(Console):
             self.output_fd = f_out
         else:
             self.output_fd = f_out.fileno()
-
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
@@ -255,17 +255,17 @@ class WindowsConsole(Console):
             info = CONSOLE_SCREEN_BUFFER_INFO()
             if not GetConsoleScreenBufferInfo(OutHandle, info):
                 raise ctypes.WinError(ctypes.GetLastError())
-            
+
             bottom = info.srWindow.Bottom
 
             trace("Scrolling {} {} {} {} {}", scroll_lines, info.srWindow.Bottom, self.height, len(screen) - self.height, self.__posxy)
             self.scroll(scroll_lines, bottom)
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
-            
+
             for i in range(scroll_lines):
                 self.screen.append("")
-            
+
         elif offset > 0 and len(screen) < offset + height:
             trace("Adding extra line")
             offset = max(len(screen) - height, 0)
@@ -315,22 +315,16 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def __hide_cursor(self):
-        info = CONSOLE_CURSOR_INFO()
-        if not GetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
-
-        info.bVisible = False
-        if not SetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+        self.__write("\x1b[?25l")
 
     def __show_cursor(self):
-        info = CONSOLE_CURSOR_INFO()
-        if not GetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+        self.__write("\x1b[?25h")
 
-        info.bVisible = True
-        if not SetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+    def __enable_blinking(self):
+        self.__write("\x1b[?12h")
+
+    def __disable_blinking(self):
+        self.__write("\x1b[?12l")
 
     def __write(self, text: str):
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
@@ -484,12 +478,7 @@ class WindowsConsole(Console):
             trace(f"Negative offset: {self.__posxy} {self.screen_xy}")
         if x < 0:
             trace("Negative move {}", self.getheightwidth())
-        #    return
-        cord = _COORD()
-        cord.X = x
-        cord.Y = y
-        if not SetConsoleCursorPosition(OutHandle, cord):
-            raise ctypes.WinError(ctypes.GetLastError())
+        self.__write("\x1b[{};{}H".format(y + 1, x + 1))
 
     def move_cursor(self, x: int, y: int) -> None:
         trace(f'move_cursor {x} {y}')
@@ -520,10 +509,10 @@ class WindowsConsole(Console):
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
             raise ctypes.WinError(ctypes.GetLastError())
-        
+
         if read.value == 0:
             return None
-        
+
         return rec
 
     def get_event(self, block: bool = True) -> Event | None:
@@ -536,14 +525,14 @@ class WindowsConsole(Console):
                 if block:
                     continue
                 return None
-            
+
             if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
                 old_height, old_width = self.height, self.width
                 self.height, self.width = self.getheightwidth()
                 delta = self.width - old_width
                 # Windows will fix up the wrapping for us, but we
                 # need to sync __posxy with those changes.
-                
+
                 new_x, new_y = self.__posxy
                 y = self.__posxy[1]
                 trace("Cur screen {}", self.screen)
@@ -581,9 +570,9 @@ class WindowsConsole(Console):
                 if block:
                     continue
                 return None
-            
+
             key = rec.Event.KeyEvent.uChar.UnicodeChar
-            
+
             if rec.Event.KeyEvent.uChar.UnicodeChar == '\r':
                 # Make enter make unix-like
                 return Event(evt="key", data="\n", raw="\n")
@@ -597,7 +586,7 @@ class WindowsConsole(Console):
                 # Handle special keys like arrow keys and translate them into the appropriate command
                 code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
                 if code:
-                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar) 
+                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar)
                 if block:
                     continue
 
@@ -609,25 +598,18 @@ class WindowsConsole(Console):
         """
         Push a character to the console event queue.
         """
-        trace(f'put_char {char}')
+        ...
 
     def beep(self) -> None: ...
 
-    def clear(self) -> None:
+    def clear(self, clear_scrollback=False) -> None:
         """Wipe the screen"""
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
-        size = info.dwSize.X * info.dwSize.Y
-        if not FillConsoleOutputCharacter(OutHandle, b' ',  size, _COORD(), DWORD()):
-            raise ctypes.WinError(ctypes.GetLastError())
-        if not FillConsoleOutputAttribute(OutHandle, 0,  size, _COORD(), DWORD()):
-            raise ctypes.WinError(ctypes.GetLastError())
-        y = info.srWindow.Bottom - info.srWindow.Top + 1
-        self.__move_absolute(0, 0)
+        self.__write("\x1b[2J")
+        if clear_scrollback:
+            self.__write("\x1b[3J")
+        self.__write("\x1b[H")
         self.__posxy = 0, 0
         self.screen = [""]
-
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
@@ -641,10 +623,10 @@ class WindowsConsole(Console):
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
         buffering going on somewhere).
-        
+
         All output on Windows is unbuffered so this is a nop"""
-        pass
-    
+        ...
+
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
         ...
