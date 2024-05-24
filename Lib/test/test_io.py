@@ -4016,6 +4016,22 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
 
+    def test_issue119506(self):
+        chunk_size = 8192
+
+        class MockIO(self.MockRawIO):
+            def write(self, data):
+                t.write("efg")
+                return super().write(data)
+
+        buf = MockIO()
+        t = self.TextIOWrapper(buf)
+        t.write("a" * (chunk_size - 1))
+        t.write("bcd")
+        t.flush()
+
+        self.assertEqual([b"a" * (chunk_size - 1), b"bcdefg"], buf._write_stack)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
