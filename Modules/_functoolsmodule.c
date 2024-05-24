@@ -157,11 +157,10 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (nnargs > 0){
         /* Trim placeholders from the end if needed */
         Py_ssize_t i;
-        for (i=nnargs; i > 0;) {
+        for (i=nnargs; i > 0; i--) {
             item = PyTuple_GET_ITEM(nargs, i-1);
             if (!Py_Is(item, pto->placeholder))
                 break;
-            i--;
         }
         if (i != nnargs){
             nnargs = i;
