@@ -557,10 +557,26 @@ find_internal(const char *str, Py_ssize_t len,
 }
 
 PyObject *
-_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
+_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
                Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_internal(str, len, "find", sub, start, end, +1);
+    Py_ssize_t result;
+    if (PyTuple_Check(subobj)) {
+        result = -1;
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *subbytes = PyTuple_GET_ITEM(subobj, i);
+            Py_ssize_t new_result = find_internal(str, len, "find", subbytes,
+                                                  start, end, +1);
+            if (new_result == -2) {
+                return NULL;
+            }
+            if (new_result != -1 && (new_result < result || result == -1)) {
+                result = new_result;
+            }
+        }
+        return PyLong_FromSsize_t(result);
+    }
+    result = find_internal(str, len, "find", subobj, start, end, +1);
     if (result == -2)
         return NULL;
     return PyLong_FromSsize_t(result);
@@ -582,10 +598,26 @@ _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
 }
 
 PyObject *
-_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
+_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_internal(str, len, "rfind", sub, start, end, -1);
+    Py_ssize_t result;
+    if (PyTuple_Check(subobj)) {
+        result = -1;
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *subbytes = PyTuple_GET_ITEM(subobj, i);
+            Py_ssize_t new_result = find_internal(str, len, "rfind", subbytes,
+                                                  start, end, -1);
+            if (new_result == -2) {
+                return NULL;
+            }
+            if (new_result > result) {
+                result = new_result;
+            }
+        }
+        return PyLong_FromSsize_t(result);
+    }
+    result = find_internal(str, len, "rfind", subobj, start, end, -1);
     if (result == -2)
         return NULL;
     return PyLong_FromSsize_t(result);

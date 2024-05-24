@@ -11334,7 +11334,13 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
 }
 
 /*[clinic input]
-str.find as unicode_find = str.count
+str.find as unicode_find -> Py_ssize_t
+
+    self as str: self
+    sub as subobj: object
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+    /
 
 Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
 
@@ -11343,11 +11349,36 @@ Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_find_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=51dbe6255712e278 input=4a89d2d68ef57256]*/
+/*[clinic end generated code: output=80175735a6d549d0 input=51e7b530950ab304]*/
 {
-    Py_ssize_t result = any_find_slice(str, substr, start, end, 1);
+    Py_ssize_t result;
+    if (PyTuple_Check(subobj)) {
+        result = -1;
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+            if (!PyUnicode_Check(substr)) {
+                PyErr_Format(PyExc_TypeError,
+                             "tuple for find must only contain str, "
+                             "not %.100s",
+                             Py_TYPE(substr)->tp_name);
+                return -1;
+            }
+            Py_ssize_t new_result = any_find_slice(str, substr, start, end, 1);
+            if (new_result != -1 && (new_result < result || result == -1)) {
+                result = new_result;
+            }
+        }
+        return result;
+    }
+    if (!PyUnicode_Check(subobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "find first arg must be str or "
+                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+        return -1;
+    }
+    result = any_find_slice(str, subobj, start, end, 1);
     if (result < 0) {
         return -1;
     }
@@ -12496,7 +12527,7 @@ unicode_repr(PyObject *unicode)
 }
 
 /*[clinic input]
-str.rfind as unicode_rfind = str.count
+str.rfind as unicode_rfind = str.find
 
 Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
 
@@ -12505,11 +12536,36 @@ Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_rfind_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=880b29f01dd014c8 input=898361fb71f59294]*/
+/*[clinic end generated code: output=9d316eee7b9f9bf0 input=23ae7964e8f70b35]*/
 {
-    Py_ssize_t result = any_find_slice(str, substr, start, end, -1);
+    Py_ssize_t result;
+    if (PyTuple_Check(subobj)) {
+        result = -1;
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+            if (!PyUnicode_Check(substr)) {
+                PyErr_Format(PyExc_TypeError,
+                             "tuple for rfind must only contain str, "
+                             "not %.100s",
+                             Py_TYPE(substr)->tp_name);
+                return -1;
+            }
+            Py_ssize_t new_result = any_find_slice(str, substr, start, end, -1);
+            if (new_result > result) {
+                result = new_result;
+            }
+        }
+        return result;
+    }
+    if (!PyUnicode_Check(subobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "rfind first arg must be str or "
+                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
+        return -1;
+    }
+    result = any_find_slice(str, subobj, start, end, -1);
     if (result < 0) {
         return -1;
     }
