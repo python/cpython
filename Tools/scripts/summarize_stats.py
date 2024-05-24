@@ -129,6 +129,14 @@ def _get_uop_flags_from_file(
     flag_names: tuple[str] = None,
     filepath: str | Path = Path("Include") / "internal" / "pycore_uop_metadata.h",
 ) -> dict[str, list[str]]:
+    """ Looks for lines that look like:
+            [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
+        or:
+            [_MATCH_SEQUENCE] = 0,
+        And extracts the uop name and corresponding flags into a direction.
+        Takes in the list of allowed flag names as `flag_names` and validates that
+        all names are from that allowed list.
+    """
     flags = {}
     with open(SOURCE_DIR / filepath) as spec_src:
         for line in spec_src:
