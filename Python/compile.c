@@ -1653,7 +1653,7 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
 
 static int
 compiler_leave_annotations_scope(struct compiler *c, location loc,
-                                 int annotations_len, jump_target_label label)
+                                 Py_ssize_t annotations_len, jump_target_label label)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
@@ -6596,6 +6596,23 @@ check_ann_expr(struct compiler *c, expr_ty e)
 }
 
 static int
+check_annotation(struct compiler *c, stmt_ty s)
+{
+    /* Annotations of complex targets does not produce anything
+       under annotations future */
+    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
+        return SUCCESS;
+    }
+
+    /* Annotations are only evaluated in a module or class. */
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+        c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
+        return check_ann_expr(c, s->v.AnnAssign.annotation);
+    }
+    return SUCCESS;
+}
+
+static int
 check_ann_subscr(struct compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
@@ -6630,7 +6647,11 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    PyObject* mangled;
+    bool is_interactive = (
+        c->c_st->st_kind == Interactive_kind && c->u->u_scope_type == COMPILER_SCOPE_MODULE
+    );
+    bool future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
+    PyObject *mangled;
 
     assert(s->kind == AnnAssign_kind);
 
@@ -6645,11 +6666,16 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
-        if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
+        if ((future_annotations || is_interactive) &&
             s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            if (future_annotations) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
@@ -6678,7 +6704,10 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                      targ->kind);
         return ERROR;
     }
-    /* For non-simple AnnAssign, the annotation is not evaluated. */
+    /* Annotation is evaluated last. */
+    if ((future_annotations || is_interactive) && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 
