@@ -145,7 +145,6 @@ __all__ = [
 import abc
 from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
-import ast
 import dis
 import collections.abc
 import enum
@@ -153,9 +152,7 @@ import importlib.machinery
 import itertools
 import linecache
 import os
-import re
 import sys
-import tokenize
 import token
 import types
 import functools
@@ -163,7 +160,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
-from weakref import ref as make_weakref
+from _weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -1089,6 +1086,8 @@ class BlockFinder:
         self.body_col0 = None
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
+        import tokenize
+
         if not self.started and not self.indecorator:
             if type in (tokenize.INDENT, tokenize.COMMENT, tokenize.NL):
                 pass
@@ -1139,6 +1138,8 @@ class BlockFinder:
 def getblock(lines):
     """Extract the block of code at the top of the given list of lines."""
     blockfinder = BlockFinder()
+    import tokenize
+
     try:
         tokens = tokenize.generate_tokens(iter(lines).__next__)
         for _token in tokens:
@@ -1367,6 +1368,7 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
         def repl(match):
             text = match.group()
             return text.removeprefix('typing.')
+        import re
         return re.sub(r'[\w\.]+', repl, repr(annotation))
     if isinstance(annotation, types.GenericAlias):
         return str(annotation)
@@ -2116,6 +2118,8 @@ def _signature_strip_non_python_syntax(signature):
 
     lines = [l.encode('ascii') for l in signature.split('\n') if l]
     generator = iter(lines).__next__
+
+    import tokenize
     token_stream = tokenize.tokenize(generator)
 
     text = []
@@ -2151,10 +2155,10 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
+    import ast
+
     Parameter = cls._parameter_cls
-
     clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
-
     program = "def foo" + clean_signature + ": pass"
 
     try:
