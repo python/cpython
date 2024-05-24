@@ -187,7 +187,7 @@ def addpackage(sitedir, name, known_paths):
     try:
         # Accept BOM markers in .pth files as we do in source files
         # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
-        pth_content = pth_content.decode(encoding="utf-8-sig")
+        pth_content = pth_content.decode("utf-8-sig")
     except UnicodeDecodeError:
         # Fallback to locale encoding for backward compatibility.
         # We will deprecate this fallback in the future.
