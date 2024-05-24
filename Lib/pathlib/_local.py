@@ -4,7 +4,6 @@ import operator
 import os
 import posixpath
 import sys
-import warnings
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -405,6 +404,7 @@ class PurePath(PurePathBase):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
+        import warnings
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
@@ -482,13 +482,6 @@ class Path(PathBase, PurePath):
     @classmethod
     def _unsupported_msg(cls, attribute):
         return f"{cls.__name__}.{attribute} is unsupported on this system"
-
-    def __init__(self, *args, **kwargs):
-        if kwargs:
-            msg = ("support for supplying keyword arguments to pathlib.PurePath "
-                   "is deprecated and scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:

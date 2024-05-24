@@ -1396,7 +1396,7 @@ way to :func:`email.message.get`.
 .. section: Library
 
 Deprecated the ``split()`` method in :class:`_tkinter.TkappType` in favour
-of the ``splitlist()`` method which has more consistent and predicable
+of the ``splitlist()`` method which has more consistent and predictable
 behavior.
 
 ..

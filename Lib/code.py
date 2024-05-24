@@ -25,10 +25,10 @@ class InteractiveInterpreter:
     def __init__(self, locals=None):
         """Constructor.
 
-        The optional 'locals' argument specifies the dictionary in
-        which code will be executed; it defaults to a newly created
-        dictionary with key "__name__" set to "__console__" and key
-        "__doc__" set to None.
+        The optional 'locals' argument specifies a mapping to use as the
+        namespace in which code will be executed; it defaults to a newly
+        created dictionary with key "__name__" set to "__console__" and
+        key "__doc__" set to None.
 
         """
         if locals is None:
@@ -94,7 +94,7 @@ class InteractiveInterpreter:
         except:
             self.showtraceback()
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
 
         This doesn't display a stack trace because there isn't one.
@@ -106,6 +106,7 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
+        colorize = kwargs.pop('colorize', False)
         type, value, tb = sys.exc_info()
         sys.last_exc = value
         sys.last_type = type
@@ -123,7 +124,7 @@ class InteractiveInterpreter:
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value)
+            lines = traceback.format_exception_only(type, value, colorize=colorize)
             self.write(''.join(lines))
         else:
             # If someone has set sys.excepthook, we let that take precedence
