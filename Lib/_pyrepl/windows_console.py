@@ -79,10 +79,10 @@ VK_MAP: dict[int, str] = {
 
 # Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
 ERASE_IN_LINE = "\x1b[K"
-MOVE_LEFT = "\x1b{}D"
-MOVE_RIGHT = "\x1b{}C"
-MOVE_UP = "\x1b{}A"
-MOVE_DOWN = "\x1b{}B"
+MOVE_LEFT = "\x1b[{}D"
+MOVE_RIGHT = "\x1b[{}C"
+MOVE_UP = "\x1b[{}A"
+MOVE_DOWN = "\x1b[{}B"
 CLEAR = "\x1b[H\x1b[J"
 
 
@@ -129,14 +129,6 @@ class WindowsConsole(Console):
         """
         cx, cy = c_xy
 
-        trace(
-            "!!Refresh c_xy={} offset={} screen={} posxy={} screen_xy={}",
-            c_xy,
-            self.__offset,
-            screen,
-            self.__posxy,
-            self.screen_xy,
-        )
         while len(self.screen) < min(len(screen), self.height):
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
@@ -195,7 +187,7 @@ class WindowsConsole(Console):
         self.screen = screen
         self.move_cursor(cx, cy)
 
-    def __write_changed_line(self, y: int, oldline: str, newline: str, px_coord):
+    def __write_changed_line(self, y: int, oldline: str, newline: str, px_coord: int) -> None:
         # this is frustrating; there's no reason to test (say)
         # self.dch1 inside the loop -- but alternative ways of
         # structuring this function are equally painful (I'm trying to
@@ -239,7 +231,7 @@ class WindowsConsole(Console):
 
     def scroll(
         self, top: int, bottom: int, left: int | None = None, right: int | None = None
-    ):
+    ) -> None:
         scroll_rect = SMALL_RECT()
         scroll_rect.Top = SHORT(top)
         scroll_rect.Bottom = SHORT(bottom)
@@ -256,7 +248,7 @@ class WindowsConsole(Console):
         ):
             raise ctypes.WinError(ctypes.GetLastError())
 
-    def __hide_cursor(self):
+    def __hide_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
@@ -265,7 +257,7 @@ class WindowsConsole(Console):
         if not SetConsoleCursorInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
 
-    def __show_cursor(self):
+    def __show_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
@@ -274,17 +266,17 @@ class WindowsConsole(Console):
         if not SetConsoleCursorInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
 
-    def __write(self, text: str):
+    def __write(self, text: str) -> None:
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
 
     @property
-    def screen_xy(self):
+    def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
-    def erase_to_end(self):
+    def erase_to_end(self) -> None:
         self.__write(ERASE_IN_LINE)
 
     def prepare(self) -> None:
@@ -300,7 +292,8 @@ class WindowsConsole(Console):
         self.__gone_tall = 0
         self.__offset = 0
 
-    def restore(self) -> None: ...
+    def restore(self) -> None:
+        pass
 
     def get_abs_position(self, x: int, y: int) -> tuple[int, int]:
         cur_x, cur_y = self.screen_xy
@@ -310,14 +303,14 @@ class WindowsConsole(Console):
         cur_y += dy
         return cur_x, cur_y
 
-    def __move_relative(self, x, y):
+    def __move_relative(self, x, y) -> None:
         """Moves relative to the current __posxy"""
         dx = x - self.__posxy[0]
         dy = y - self.__posxy[1]
         if dx < 0:
             self.__write(MOVE_LEFT.format(-dx))
         elif dx > 0:
-            self.__write(MOVE_RIGHT.fomrat(dx))
+            self.__write(MOVE_RIGHT.format(dx))
 
         if dy < 0:
             self.__write(MOVE_UP.format(-dy))
@@ -325,8 +318,6 @@ class WindowsConsole(Console):
             self.__write(MOVE_DOWN.format(dy))
 
     def move_cursor(self, x: int, y: int) -> None:
-        trace(f"move_cursor {x} {y}")
-
         if x < 0 or y < 0:
             raise ValueError(f"Bad cursor position {x}, {y}")
 
