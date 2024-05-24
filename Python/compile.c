@@ -1653,12 +1653,12 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
 
 static int
 compiler_leave_annotations_scope(struct compiler *c, location loc,
-                                 int annotations_len, jump_target_label label)
+                                 Py_ssize_t annotations_len, jump_target_label label)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     USE_LABEL(c, label);
-    ADDOP_IN_SCOPE(c, loc, LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
@@ -2120,6 +2120,38 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
+compiler_visit_annotations_in_scope(struct compiler *c, location loc,
+                                    arguments_ty args, expr_ty returns,
+                                    Py_ssize_t *annotations_len)
+{
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->args, annotations_len, loc));
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->posonlyargs, annotations_len, loc));
+
+    if (args->vararg && args->vararg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->vararg->arg,
+                                         args->vararg->annotation, annotations_len, loc));
+    }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->kwonlyargs, annotations_len, loc));
+
+    if (args->kwarg && args->kwarg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->kwarg->arg,
+                                         args->kwarg->annotation, annotations_len, loc));
+    }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+
+    return 0;
+}
+
+static int
 compiler_visit_annotations(struct compiler *c, location loc,
                            arguments_ty args, expr_ty returns)
 {
@@ -2131,44 +2163,31 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
     int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
+    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
+
     PySTEntryObject *ste;
     int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
     if (result == -1) {
         return ERROR;
     }
     assert(ste != NULL);
-    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
+    bool annotations_used = ste->ste_annotations_used;
 
-    if (!future_annotations && ste->ste_annotations_used) {
-        RETURN_IF_ERROR(
-            compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
-                                             ste->ste_name)
-        );
+    if (!future_annotations && annotations_used) {
+        if (compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
+                                             ste->ste_name) < 0) {
+            Py_DECREF(ste);
+            return ERROR;
+        }
     }
+    Py_DECREF(ste);
 
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->args, &annotations_len, loc));
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc));
-
-    if (args->vararg && args->vararg->annotation) {
-        RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->vararg->arg,
-                                         args->vararg->annotation, &annotations_len, loc));
+    if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+        if (!future_annotations && annotations_used) {
+            compiler_exit_scope(c);
+        }
+        return ERROR;
     }
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc));
-
-    if (args->kwarg && args->kwarg->annotation) {
-        RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->kwarg->arg,
-                                         args->kwarg->annotation, &annotations_len, loc));
-    }
-
-    RETURN_IF_ERROR(
-        compiler_visit_argannotation(c, &_Py_ID(return), returns, &annotations_len, loc));
 
     if (future_annotations) {
         if (annotations_len) {
@@ -2177,8 +2196,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
         }
     }
     else {
-        assert(ste != NULL);
-        if (ste->ste_annotations_used) {
+        if (annotations_used) {
             RETURN_IF_ERROR(
                 compiler_leave_annotations_scope(c, loc, annotations_len, raise_notimp)
             );
@@ -4134,7 +4152,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     }
     NEW_JUMP_TARGET_LABEL(c, end);
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
-    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
@@ -6596,6 +6614,23 @@ check_ann_expr(struct compiler *c, expr_ty e)
 }
 
 static int
+check_annotation(struct compiler *c, stmt_ty s)
+{
+    /* Annotations of complex targets does not produce anything
+       under annotations future */
+    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
+        return SUCCESS;
+    }
+
+    /* Annotations are only evaluated in a module or class. */
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
+        c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
+        return check_ann_expr(c, s->v.AnnAssign.annotation);
+    }
+    return SUCCESS;
+}
+
+static int
 check_ann_subscr(struct compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
@@ -6630,7 +6665,11 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    PyObject* mangled;
+    bool is_interactive = (
+        c->c_st->st_kind == Interactive_kind && c->u->u_scope_type == COMPILER_SCOPE_MODULE
+    );
+    bool future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
+    PyObject *mangled;
 
     assert(s->kind == AnnAssign_kind);
 
@@ -6645,11 +6684,16 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
-        if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
+        if ((future_annotations || is_interactive) &&
             s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            if (future_annotations) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
@@ -6678,7 +6722,10 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                      targ->kind);
         return ERROR;
     }
-    /* For non-simple AnnAssign, the annotation is not evaluated. */
+    /* Annotation is evaluated last. */
+    if ((future_annotations || is_interactive) && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 

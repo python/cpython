@@ -427,6 +427,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     }
 
     st->st_top = st->st_cur;
+    st->st_kind = mod->kind;
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
@@ -1683,8 +1684,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
 
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
-                                        s->v.FunctionDef.returns, new_ste))
+                                        s->v.FunctionDef.returns, new_ste)) {
+            Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_enter_existing_block(st, new_ste)) {
             Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
@@ -2471,13 +2474,16 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
                           struct _symtable_entry *parent_ste, void *key)
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
+    int is_top_level_interactive = (
+        st->st_kind == Interactive_kind && st->st_cur->ste_type == ModuleBlock
+    );
     if (future_annotations) {
         if(!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                                  key, LOCATION(annotation))) {
             VISIT_QUIT(st, 0);
         }
     }
-    else {
+    else if (!is_top_level_interactive) {
         if (st->st_cur->ste_annotation_block == NULL) {
             PyObject *annotations_name = PyUnicode_FromFormat(
                 "<annotations of %U>", parent_ste->ste_name);
@@ -2518,7 +2524,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
         }
     }
     VISIT(st, expr, annotation);
-    if (!symtable_exit_block(st)) {
+    if ((future_annotations || !is_top_level_interactive) && !symtable_exit_block(st)) {
         VISIT_QUIT(st, 0);
     }
     return 1;

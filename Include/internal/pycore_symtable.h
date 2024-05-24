@@ -72,6 +72,7 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
+    int st_kind;                    /* kind of module */
 };
 
 typedef struct _symtable_entry {
