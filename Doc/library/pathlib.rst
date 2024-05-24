@@ -941,20 +941,6 @@ Querying file type and status
       The *follow_symlinks* parameter was added.
 
 
-.. method:: Path.is_dir(*, follow_symlinks=True)
-
-   Return ``True`` if the path points to a directory. ``False`` will be
-   returned if the path is invalid, inaccessible or missing, or if it points
-   to something other than a directory. Use :meth:`Path.stat` to distinguish
-   between these cases.
-
-   This method normally follows symlinks; to exclude symlinks to directories,
-   add the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
 .. method:: Path.is_file(*, follow_symlinks=True)
 
    Return ``True`` if the path points to a regular file. ``False`` will be
@@ -964,6 +950,20 @@ Querying file type and status
 
    This method normally follows symlinks; to exclude symlinks, add the
    argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_dir(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a directory. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
+   between these cases.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
