@@ -564,8 +564,8 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
     if (PyTuple_Check(subobj)) {
         result = -1;
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            PyObject *subbytes = PyTuple_GET_ITEM(subobj, i);
-            Py_ssize_t new_result = find_internal(str, len, "find", subbytes,
+            PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+            Py_ssize_t new_result = find_internal(str, len, "find", subseq,
                                                   start, end, +1);
             if (new_result == -2) {
                 return NULL;
@@ -605,8 +605,8 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
     if (PyTuple_Check(subobj)) {
         result = -1;
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            PyObject *subbytes = PyTuple_GET_ITEM(subobj, i);
-            Py_ssize_t new_result = find_internal(str, len, "rfind", subbytes,
+            PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+            Py_ssize_t new_result = find_internal(str, len, "rfind", subseq,
                                                   start, end, -1);
             if (new_result == -2) {
                 return NULL;
