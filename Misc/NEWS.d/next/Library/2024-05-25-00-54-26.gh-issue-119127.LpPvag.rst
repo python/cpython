@@ -1,0 +1,2 @@
+``partial`` of ``functools`` module now supports placeholders for positional
+arguments.
