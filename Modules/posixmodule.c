@@ -12515,6 +12515,28 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+static PyObject *
+major_minor_conv(unsigned int value)
+{
+#ifdef NODEV
+    if (value == (unsigned int)NODEV) {
+        return PyLong_FromLong((int)NODEV);
+    }
+#endif
+    return PyLong_FromUnsignedLong(value);
+}
+
+static int
+major_minor_check(dev_t value)
+{
+#ifdef NODEV
+    if (value == NODEV) {
+        return 1;
+    }
+#endif
+    return (dev_t)(unsigned int)value == value;
+}
+
 #ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
 os.major
@@ -12529,13 +12551,7 @@ static PyObject *
 os_major_impl(PyObject *module, dev_t device)
 /*[clinic end generated code: output=4071ffee17647891 input=b1a0a14ec9448229]*/
 {
-    unsigned int result = major(device);
-#ifdef NODEV
-    if (result == (unsigned int)NODEV) {
-        return PyLong_FromLong((int)NODEV);
-    }
-#endif
-    return PyLong_FromUnsignedLong(result);
+    return major_minor_conv(major(device));
 }
 
 
@@ -12552,13 +12568,7 @@ static PyObject *
 os_minor_impl(PyObject *module, dev_t device)
 /*[clinic end generated code: output=306cb78e3bc5004f input=2f686e463682a9da]*/
 {
-    unsigned int result = minor(device);
-#ifdef NODEV
-    if (result == (unsigned int)NODEV) {
-        return PyLong_FromLong((int)NODEV);
-    }
-#endif
-    return PyLong_FromUnsignedLong(result);
+    return major_minor_conv(minor(device));
 }
 
 
@@ -12576,14 +12586,7 @@ static dev_t
 os_makedev_impl(PyObject *module, dev_t major, dev_t minor)
 /*[clinic end generated code: output=cad6125c51f5af80 input=2146126ec02e55c1]*/
 {
-#ifdef NODEV
-    if ((major != NODEV && (dev_t)(unsigned int)major != major) ||
-        (minor != NODEV && (dev_t)(unsigned int)minor != minor))
-#else
-    if ((dev_t)(unsigned int)major != major) ||
-        (dev_t)(unsigned int)minor != minor))
-#endif
-    {
+    if (!major_minor_check(major) || !major_minor_check(minor)) {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too large to convert to C unsigned int");
         return (dev_t)-1;
