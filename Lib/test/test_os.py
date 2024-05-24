@@ -1635,6 +1635,18 @@ class MakedirTests(unittest.TestCase):
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
         os.remove(path)
 
+    @unittest.skipUnless(os.name == 'nt', "requires Windows")
+    def test_win32_mkdir_700(self):
+        base = os_helper.TESTFN
+        path = os.path.abspath(os.path.join(os_helper.TESTFN, 'dir'))
+        os.mkdir(path, mode=0o700)
+        out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
+        os.rmdir(path)
+        self.assertEqual(
+            out.strip(),
+            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+        )
+
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')

@@ -1247,6 +1247,13 @@ Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
 and :data:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
+As of 3.10.15, :func:`os.mkdir` and :func:`os.makedirs` on Windows now support
+passing a *mode* value of ``0o700`` to apply access control to the new
+directory. This implicitly affects :func:`tempfile.mkdtemp` and is a
+mitigation for CVE-2024-4030. Other values for *mode* continue to be
+ignored.
+(Contributed by Steve Dower in :gh:`118486`.)
+
 os.path
 -------
 
@@ -1398,6 +1405,14 @@ arguments passed to the Python executable.
 Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names.
 (Contributed by Victor Stinner in :issue:`42955`.)
+
+tempfile
+--------
+
+As of 3.10.15 on Windows, the default mode ``0o700`` used by
+:func:`tempfile.mkdtemp` now limits access to the new directory due to
+changes to :func:`os.mkdir`. This is a mitigation for CVE-2024-4030.
+(Contributed by Steve Dower in :gh:`118486`.)
 
 _thread
 -------
