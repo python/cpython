@@ -4972,7 +4972,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
         return NULL;
     }
     di->di_dict = (PyDictObject*)Py_NewRef(dict);
-    used = FT_ATOMIC_LOAD_SSIZE(dict->ma_used);
+    used = FT_ATOMIC_LOAD_SSIZE_RELAXED(dict->ma_used);
     di->di_used = used;
     di->len = used;
     if (itertype == &PyDictRevIterKey_Type ||
