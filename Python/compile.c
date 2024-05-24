@@ -2131,20 +2131,23 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
     int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
+    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
+
     PySTEntryObject *ste;
     int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
     if (result == -1) {
         return ERROR;
     }
     assert(ste != NULL);
-    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
 
     if (!future_annotations && ste->ste_annotations_used) {
-        RETURN_IF_ERROR(
-            compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
-                                             ste->ste_name)
-        );
+        if (compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
+                                             ste->ste_name) < 0) {
+            Py_DECREF(ste);
+            return ERROR;
+        }
     }
+    Py_DECREF(ste);
 
     RETURN_IF_ERROR(
         compiler_visit_argannotations(c, args->args, &annotations_len, loc));
