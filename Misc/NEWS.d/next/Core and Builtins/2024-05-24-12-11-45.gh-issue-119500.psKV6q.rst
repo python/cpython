@@ -1,0 +1,2 @@
+Remove the `BINARY_SLICE` and `STORE_SLICE` instructions. Make slices
+marshallable, and optimize constant slices in the compiler.
