@@ -30,6 +30,7 @@ import _sitebuiltins
 import linecache
 import sys
 import code
+import ast
 from types import ModuleType
 
 from .readline import _get_reader, multiline_input
@@ -61,6 +62,7 @@ REPL_COMMANDS = {
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
+    "clear": "clear_screen",
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -74,8 +76,35 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
+    def showsyntaxerror(self, filename=None):
+        super().showsyntaxerror(colorize=self.can_colorize)
+
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
+
+    def runsource(self, source, filename="<input>", symbol="single"):
+        try:
+            tree = ast.parse(source)
+        except (OverflowError, SyntaxError, ValueError):
+            self.showsyntaxerror(filename)
+            return False
+        if tree.body:
+            *_, last_stmt = tree.body
+        for stmt in tree.body:
+            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
+            the_symbol = symbol if stmt is last_stmt else "exec"
+            item = wrapper([stmt])
+            try:
+                code = compile(item, filename, the_symbol)
+            except (OverflowError, ValueError):
+                    self.showsyntaxerror(filename)
+                    return False
+
+            if code is None:
+                return True
+
+            self.runcode(code)
+        return False
 
 
 def run_multiline_interactive_console(
@@ -135,7 +164,7 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement, contains_pasted_code = multiline_input(more_lines, ps1, ps2)
+                statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
 
@@ -144,10 +173,7 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
-            symbol = "single" if not contains_pasted_code else "exec"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)  # type: ignore[call-arg]
-            if contains_pasted_code and more:
-                more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:

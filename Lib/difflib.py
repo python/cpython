@@ -908,29 +908,34 @@ class Differ:
         + abcdefGhijkl
         ?    ^  ^  ^
         """
-
-        # don't synch up unless the lines have a similarity score of at
-        # least cutoff; best_ratio tracks the best score seen so far
-        # best_ratio is a tuple storing the best .ratio() seen so far, and
-        # a measure of how far the indices are from their index range
-        # midpoints. The latter is used to resolve ratio ties. Favoring
-        # indices near the midpoints tends to cut the ranges in half. Else,
-        # if there are many pairs with the best ratio, recursion can grow
-        # very deep, and runtime becomes cubic. See:
+        from operator import ge, gt
+        # Don't synch up unless the lines have a similarity score of at
+        # least cutoff; best_ratio tracks the best score seen so far.
+        # Keep track of all index pairs achieving the best ratio and
+        # deal with them here. Previously only the smallest pair was
+        # handled here, and if there are many pairs with the best ratio,
+        # recursion could grow very deep, and runtime cubic. See:
         # https://github.com/python/cpython/issues/119105
-        best_ratio, cutoff = (0.74, 0), 0.75
+        best_ratio, cutoff = 0.74, 0.75
         cruncher = SequenceMatcher(self.charjunk)
         eqi, eqj = None, None   # 1st indices of equal lines (if any)
+        # List of index pairs achieving best_ratio. Strictly increasing
+        # in both index positions.
+        max_pairs = []
+        maxi = -1 # `i` index of last pair in max_pairs
 
         # search for the pair that matches best without being identical
-        # (identical lines must be junk lines, & we don't want to synch up
-        # on junk -- unless we have to)
-        amid = (alo + ahi - 1) / 2
-        bmid = (blo + bhi - 1) / 2
+        # (identical lines must be junk lines, & we don't want to synch
+        # up on junk -- unless we have to)
+        crqr = cruncher.real_quick_ratio
+        cqr = cruncher.quick_ratio
+        cr = cruncher.ratio
         for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
-            weight_j = - abs(j - bmid)
+            # Find new best, if possible. Else search for the smallest i
+            # (if any) > maxi that equals the best ratio
+            search_equal = True
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
@@ -938,65 +943,70 @@ class Differ:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
-                # weight is used to balance the recursion by prioritizing
-                # i and j in the middle of their ranges
-                weight = weight_j - abs(i - amid)
                 # computing similarity is expensive, so use the quick
                 # upper bounds first -- have seen this speed up messy
                 # compares by a factor of 3.
-                # note that ratio() is only expensive to compute the first
-                # time it's called on a sequence pair; the expensive part
-                # of the computation is cached by cruncher
-                if (cruncher.real_quick_ratio(), weight) > best_ratio and \
-                      (cruncher.quick_ratio(), weight) > best_ratio and \
-                      (cruncher.ratio(), weight) > best_ratio:
-                    best_ratio, best_i, best_j = (cruncher.ratio(), weight), i, j
-        best_ratio, _ = best_ratio
+                cmp = ge if search_equal and i > maxi else gt
+                if (cmp(crqr(), best_ratio)
+                      and cmp(cqr(), best_ratio)
+                      and cmp((ratio := cr()), best_ratio)):
+                    if ratio > best_ratio:
+                        best_ratio = ratio
+                        max_pairs.clear()
+                    else:
+                        assert best_ratio == ratio and search_equal
+                        assert i > maxi
+                    max_pairs.append((i, j))
+                    maxi = i
+                    search_equal = False
         if best_ratio < cutoff:
+            assert not max_pairs
             # no non-identical "pretty close" pair
             if eqi is None:
                 # no identical pair either -- treat it as a straight replace
                 yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
                 return
             # no close pair, but an identical pair -- synch up on that
-            best_i, best_j, best_ratio = eqi, eqj, 1.0
+            max_pairs = [(eqi, eqj)]
         else:
             # there's a close pair, so forget the identical pair (if any)
+            assert max_pairs
             eqi = None
 
-        # a[best_i] very similar to b[best_j]; eqi is None iff they're not
-        # identical
+        last_i, last_j = alo, blo
+        for this_i, this_j in max_pairs:
+            # pump out diffs from before the synch point
+            yield from self._fancy_helper(a, last_i, this_i,
+                                          b, last_j, this_j)
+            # do intraline marking on the synch pair
+            aelt, belt = a[this_i], b[this_j]
+            if eqi is None:
+                # pump out a '-', '?', '+', '?' quad for the synched lines
+                atags = btags = ""
+                cruncher.set_seqs(aelt, belt)
+                for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
+                    la, lb = ai2 - ai1, bj2 - bj1
+                    if tag == 'replace':
+                        atags += '^' * la
+                        btags += '^' * lb
+                    elif tag == 'delete':
+                        atags += '-' * la
+                    elif tag == 'insert':
+                        btags += '+' * lb
+                    elif tag == 'equal':
+                        atags += ' ' * la
+                        btags += ' ' * lb
+                    else:
+                        raise ValueError('unknown tag %r' % (tag,))
+                yield from self._qformat(aelt, belt, atags, btags)
+            else:
+                # the synch pair is identical
+                yield '  ' + aelt
+            last_i, last_j = this_i + 1, this_j + 1
 
-        # pump out diffs from before the synch point
-        yield from self._fancy_helper(a, alo, best_i, b, blo, best_j)
-
-        # do intraline marking on the synch pair
-        aelt, belt = a[best_i], b[best_j]
-        if eqi is None:
-            # pump out a '-', '?', '+', '?' quad for the synched lines
-            atags = btags = ""
-            cruncher.set_seqs(aelt, belt)
-            for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
-                la, lb = ai2 - ai1, bj2 - bj1
-                if tag == 'replace':
-                    atags += '^' * la
-                    btags += '^' * lb
-                elif tag == 'delete':
-                    atags += '-' * la
-                elif tag == 'insert':
-                    btags += '+' * lb
-                elif tag == 'equal':
-                    atags += ' ' * la
-                    btags += ' ' * lb
-                else:
-                    raise ValueError('unknown tag %r' % (tag,))
-            yield from self._qformat(aelt, belt, atags, btags)
-        else:
-            # the synch pair is identical
-            yield '  ' + aelt
-
-        # pump out diffs from after the synch point
-        yield from self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi)
+        # pump out diffs from after the last synch point
+        yield from self._fancy_helper(a, last_i, ahi,
+                                      b, last_j, bhi)
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
         g = []
