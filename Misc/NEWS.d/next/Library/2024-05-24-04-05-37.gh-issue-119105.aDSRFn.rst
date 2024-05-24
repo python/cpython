@@ -1,0 +1,1 @@
+``difflib``'s ``DIffer.compare()`` (and so also ``ndiff``) can no longer be provoked into cubic-time behavior, or into unbounded recursion, and should generally be faster in ordinary cases too. Results may change in some cases, although that should be rare.
