@@ -923,48 +923,35 @@ class Differ:
         cr = cruncher.ratio
 
         WINDOW = 10
-        dump_i, dump_j = alo, blo
-        start_i, start_j = alo, blo
-        while start_i < ahi and start_j < bhi:
-            # Search for the pair in the next WINDOW i's and j's that
-            # scores better than `cutoff` without being identical
-            # (identical lines must be junk lines, & we don't want to
-            # synch up on junk -- unless we have to)
+        best_i = best_j = None
+        dump_i, dump_j = alo, blo # smallest indices not yet resolved
+        for j in range(blo, bhi):
+            bj = b[j]
+            cruncher.set_seq2(bj)
+            # Search the corresponding i's within WINDOW for rhe highest
+            # ratio greater than `cutoff`.
+            aequiv = alo + j - blo
+            arange = range(max(aequiv - WINDOW, dump_i),
+                           min(aequiv + WINDOW + 1, ahi))
+            if not arange: # likely exit if `a` is shorter than `b`
+                break
             best_ratio = cutoff
-            best_i = best_j = None
-            for j in range(start_j, min(start_j + WINDOW, bhi)):
-                bj = b[j]
-                cruncher.set_seq2(bj)
-                for i in range(start_i, min(start_i + WINDOW, ahi)):
-                    ai = a[i]
-                    if ai == bj:
-                        if best_i is None:
-                            best_i, best_j = i, j
-                        continue
-                    cruncher.set_seq1(ai)
-                    if (crqr() > best_ratio
-                          and cqr() > best_ratio
-                          and (ratio := cr()) > best_ratio):
-                        best_ratio = ratio
-                        best_i, best_j = i, j
-                        break
-                if best_ratio > cutoff:
-                    # if best_ratio <= cutoff, we don't yet have a
-                    # non-identical pair, so keep searching in the
-                    # window
-                    break
+            for i in arange:
+                ai = a[i]
+                cruncher.set_seq1(ai)
+                if (crqr() > best_ratio
+                      and cqr() > best_ratio
+                      and cr() > best_ratio):
+                    best_ratio = cr()
+                    best_i, best_j = i, j
 
             if best_i is None:
-                # found nothing to synch on - move to next window
-                start_i += WINDOW
-                start_j += WINDOW
+                # found nothing to synch on yet
                 continue
 
             # pump out straight replace from before this synch pair
             yield from self._fancy_helper(a, dump_i, best_i,
                                           b, dump_j, best_j)
-            start_i, start_j = best_i + 1, best_j + 1
-            dump_i, dump_j = start_i, start_j
             # do intraline marking on the synch pair
             aelt, belt = a[best_i], b[best_j]
             if aelt != belt:
@@ -989,6 +976,8 @@ class Differ:
             else:
                 # the synch pair is identical
                 yield '  ' + aelt
+            dump_i, dump_j = best_i + 1, best_j + 1
+            best_i = best_j = None
 
         # pump out straight replace from after the last synch pair
         yield from self._fancy_helper(a, dump_i, ahi,
