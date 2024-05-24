@@ -28,7 +28,17 @@ from dataclasses import dataclass, field
 from _pyrepl.console import Event, Console
 from .trace import trace
 import ctypes
-from ctypes.wintypes import _COORD, WORD, SMALL_RECT, BOOL, HANDLE, CHAR, DWORD, WCHAR, SHORT
+from ctypes.wintypes import (
+    _COORD,
+    WORD,
+    SMALL_RECT,
+    BOOL,
+    HANDLE,
+    CHAR,
+    DWORD,
+    WCHAR,
+    SHORT,
+)
 from ctypes import Structure, POINTER, Union, WinDLL
 from ctypes import windll
 from typing import TYPE_CHECKING
@@ -38,33 +48,33 @@ if TYPE_CHECKING:
     from typing import IO
 
 VK_MAP: dict[int, str] = {
-    0x23: "end", # VK_END
-    0x24: "home", # VK_HOME
-    0x25: "left", # VK_LEFT
-    0x26: "up", # VK_UP
-    0x27: "right", # VK_RIGHT
-    0x28: "down", # VK_DOWN
-    0x2E: "delete", # VK_DELETE
-    0x70: "f1", # VK_F1
-    0x71: "f2", # VK_F2
-    0x72: "f3", # VK_F3
-    0x73: "f4", # VK_F4
-    0x74: "f5", # VK_F5
-    0x75: "f6", # VK_F6
-    0x76: "f7", # VK_F7
-    0x77: "f8", # VK_F8
-    0x78: "f9", # VK_F9
-    0x79: "f10", # VK_F10
-    0x7A: "f11", # VK_F11
-    0x7B: "f12", # VK_F12
-    0x7C: "f13", # VK_F13
-    0x7D: "f14", # VK_F14
-    0x7E: "f15", # VK_F15
-    0x7F: "f16", # VK_F16
-    0x79: "f17", # VK_F17
-    0x80: "f18", # VK_F18
-    0x81: "f19", # VK_F19
-    0x82: "f20", # VK_F20
+    0x23: "end",  # VK_END
+    0x24: "home",  # VK_HOME
+    0x25: "left",  # VK_LEFT
+    0x26: "up",  # VK_UP
+    0x27: "right",  # VK_RIGHT
+    0x28: "down",  # VK_DOWN
+    0x2E: "delete",  # VK_DELETE
+    0x70: "f1",  # VK_F1
+    0x71: "f2",  # VK_F2
+    0x72: "f3",  # VK_F3
+    0x73: "f4",  # VK_F4
+    0x74: "f5",  # VK_F5
+    0x75: "f6",  # VK_F6
+    0x76: "f7",  # VK_F7
+    0x77: "f8",  # VK_F8
+    0x78: "f9",  # VK_F9
+    0x79: "f10",  # VK_F10
+    0x7A: "f11",  # VK_F11
+    0x7B: "f12",  # VK_F12
+    0x7C: "f13",  # VK_F13
+    0x7D: "f14",  # VK_F14
+    0x7E: "f15",  # VK_F15
+    0x7F: "f16",  # VK_F16
+    0x79: "f17",  # VK_F17
+    0x80: "f18",  # VK_F18
+    0x81: "f19",  # VK_F19
+    0x82: "f20",  # VK_F20
 }
 
 # Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
@@ -75,8 +85,10 @@ MOVE_UP = "\x1b{}A"
 MOVE_DOWN = "\x1b{}B"
 CLEAR = "\x1b[H\x1b[J"
 
+
 class _error(Exception):
     pass
+
 
 class WindowsConsole(Console):
     def __init__(
@@ -87,7 +99,12 @@ class WindowsConsole(Console):
         encoding: str = "",
     ):
 
-        SetConsoleMode(OutHandle, ENABLE_WRAP_AT_EOL_OUTPUT  | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+        SetConsoleMode(
+            OutHandle,
+            ENABLE_WRAP_AT_EOL_OUTPUT
+            | ENABLE_PROCESSED_OUTPUT
+            | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+        )
         self.encoding = encoding or sys.getdefaultencoding()
 
         if isinstance(f_in, int):
@@ -102,7 +119,6 @@ class WindowsConsole(Console):
 
         self.event_queue: deque[Event] = deque()
 
-
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
         Refresh the console screen.
@@ -113,7 +129,14 @@ class WindowsConsole(Console):
         """
         cx, cy = c_xy
 
-        trace('!!Refresh c_xy={} offset={} screen={} posxy={} screen_xy={}', c_xy, self.__offset, screen, self.__posxy, self.screen_xy)
+        trace(
+            "!!Refresh c_xy={} offset={} screen={} posxy={} screen_xy={}",
+            c_xy,
+            self.__offset,
+            screen,
+            self.__posxy,
+            self.screen_xy,
+        )
         while len(self.screen) < min(len(screen), self.height):
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
@@ -139,9 +162,9 @@ class WindowsConsole(Console):
             self.scroll(scroll_lines, self.getscrollbacksize())
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
-        
+
             for i in range(scroll_lines):
-                self.screen.append("")            
+                self.screen.append("")
         elif offset > 0 and len(screen) < offset + height:
             offset = max(len(screen) - height, 0)
             screen.append("")
@@ -184,14 +207,19 @@ class WindowsConsole(Console):
         px_pos = 0
         j = 0
         for c in oldline:
-            if j >= px_coord: break
+            if j >= px_coord:
+                break
             j += wlen(c)
             px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
         # sequene
-        while x_coord < minlen and oldline[x_pos] == newline[x_pos] and newline[x_pos] != "\x1b":
+        while (
+            x_coord < minlen
+            and oldline[x_pos] == newline[x_pos]
+            and newline[x_pos] != "\x1b"
+        ):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
@@ -209,36 +237,42 @@ class WindowsConsole(Console):
             # to the left margin should work to get to a known position.
             self.move_cursor(0, y)
 
-    def scroll(self, top: int, bottom: int, left: int | None = None, right: int | None = None):
+    def scroll(
+        self, top: int, bottom: int, left: int | None = None, right: int | None = None
+    ):
         scroll_rect = SMALL_RECT()
-        scroll_rect.Top =  SHORT(top)
+        scroll_rect.Top = SHORT(top)
         scroll_rect.Bottom = SHORT(bottom)
         scroll_rect.Left = SHORT(0 if left is None else left)
-        scroll_rect.Right = SHORT(self.getheightwidth()[1] - 1 if right is None else right)
+        scroll_rect.Right = SHORT(
+            self.getheightwidth()[1] - 1 if right is None else right
+        )
         destination_origin = _COORD()
         fill_info = CHAR_INFO()
-        fill_info.UnicodeChar = ' '
+        fill_info.UnicodeChar = " "
 
-        if not ScrollConsoleScreenBuffer(OutHandle, scroll_rect, None, destination_origin, fill_info):
+        if not ScrollConsoleScreenBuffer(
+            OutHandle, scroll_rect, None, destination_origin, fill_info
+        ):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def __hide_cursor(self):
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+            raise ctypes.WinError(ctypes.GetLastError())
 
         info.bVisible = False
         if not SetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+            raise ctypes.WinError(ctypes.GetLastError())
 
     def __show_cursor(self):
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+            raise ctypes.WinError(ctypes.GetLastError())
 
         info.bVisible = True
         if not SetConsoleCursorInfo(OutHandle, info):
-             raise ctypes.WinError(ctypes.GetLastError())
+            raise ctypes.WinError(ctypes.GetLastError())
 
     def __write(self, text: str):
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
@@ -291,7 +325,7 @@ class WindowsConsole(Console):
             self.__write(MOVE_DOWN.format(dy))
 
     def move_cursor(self, x: int, y: int) -> None:
-        trace(f'move_cursor {x} {y}')
+        trace(f"move_cursor {x} {y}")
 
         if x < 0 or y < 0:
             raise ValueError(f"Bad cursor position {x}, {y}")
@@ -314,14 +348,16 @@ class WindowsConsole(Console):
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
-        return (info.srWindow.Bottom - info.srWindow.Top + 1,
-                info.srWindow.Right - info.srWindow.Left + 1)
+        return (
+            info.srWindow.Bottom - info.srWindow.Top + 1,
+            info.srWindow.Right - info.srWindow.Left + 1,
+        )
 
     def getscrollbacksize(self) -> int:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
-        
+
         return info.srWindow.Bottom
 
     def __read_input(self) -> INPUT_RECORD | None:
@@ -329,10 +365,10 @@ class WindowsConsole(Console):
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
             raise ctypes.WinError(ctypes.GetLastError())
-        
+
         if read.value == 0:
             return None
-        
+
         return rec
 
     def get_event(self, block: bool = True) -> Event | None:
@@ -341,14 +377,14 @@ class WindowsConsole(Console):
         completion of an event."""
         if self.event_queue:
             return self.event_queue.pop()
-        
+
         while True:
             rec = self.__read_input()
             if rec is None:
                 if block:
                     continue
                 return None
-            
+
             if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
                 return Event("resize", "")
 
@@ -357,20 +393,26 @@ class WindowsConsole(Console):
                 if block:
                     continue
                 return None
-            
+
             key = rec.Event.KeyEvent.uChar.UnicodeChar
-            
-            if rec.Event.KeyEvent.uChar.UnicodeChar == '\r':
+
+            if rec.Event.KeyEvent.uChar.UnicodeChar == "\r":
                 # Make enter make unix-like
                 return Event(evt="key", data="\n", raw=b"\n")
             elif rec.Event.KeyEvent.wVirtualKeyCode == 8:
                 # Turn backspace directly into the command
-                return Event(evt="key", data="backspace", raw=rec.Event.KeyEvent.uChar.UnicodeChar)
-            elif rec.Event.KeyEvent.uChar.UnicodeChar == '\x00':
+                return Event(
+                    evt="key",
+                    data="backspace",
+                    raw=rec.Event.KeyEvent.uChar.UnicodeChar,
+                )
+            elif rec.Event.KeyEvent.uChar.UnicodeChar == "\x00":
                 # Handle special keys like arrow keys and translate them into the appropriate command
                 code = VK_MAP.get(rec.Event.KeyEvent.wVirtualKeyCode)
                 if code:
-                    return Event(evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar) 
+                    return Event(
+                        evt="key", data=code, raw=rec.Event.KeyEvent.uChar.UnicodeChar
+                    )
                 if block:
                     continue
 
@@ -405,10 +447,10 @@ class WindowsConsole(Console):
     def flushoutput(self) -> None:
         """Flush all output to the screen (assuming there's some
         buffering going on somewhere).
-        
+
         All output on Windows is unbuffered so this is a nop"""
         pass
-    
+
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
         while self.__read_input() is not None:
@@ -427,35 +469,37 @@ class WindowsConsole(Console):
         raise NotImplementedError("No repaint support")
 
 
-
 # Windows interop
 class CONSOLE_SCREEN_BUFFER_INFO(Structure):
     _fields_ = [
-        ('dwSize', _COORD),
-        ('dwCursorPosition', _COORD),
-        ('wAttributes', WORD),
-        ('srWindow', SMALL_RECT),
-        ('dwMaximumWindowSize', _COORD),
+        ("dwSize", _COORD),
+        ("dwCursorPosition", _COORD),
+        ("wAttributes", WORD),
+        ("srWindow", SMALL_RECT),
+        ("dwMaximumWindowSize", _COORD),
     ]
+
 
 class CONSOLE_CURSOR_INFO(Structure):
     _fields_ = [
-        ('dwSize', DWORD),
-        ('bVisible', BOOL),
+        ("dwSize", DWORD),
+        ("bVisible", BOOL),
     ]
+
 
 class CHAR_INFO(Structure):
     _fields_ = [
-        ('UnicodeChar', WCHAR),
-        ('Attributes', WORD),
+        ("UnicodeChar", WCHAR),
+        ("Attributes", WORD),
     ]
 
 
 class Char(Union):
     _fields_ = [
-        ("UnicodeChar",WCHAR),
+        ("UnicodeChar", WCHAR),
         ("Char", CHAR),
     ]
+
 
 class KeyEvent(ctypes.Structure):
     _fields_ = [
@@ -467,10 +511,9 @@ class KeyEvent(ctypes.Structure):
         ("dwControlKeyState", DWORD),
     ]
 
+
 class WindowsBufferSizeEvent(ctypes.Structure):
-    _fields_ = [
-        ('dwSize', _COORD)
-    ]
+    _fields_ = [("dwSize", _COORD)]
 
 
 class ConsoleEvent(ctypes.Union):
@@ -486,11 +529,10 @@ MENU_EVENT = 0x08
 MOUSE_EVENT = 0x02
 WINDOW_BUFFER_SIZE_EVENT = 0x04
 
+
 class INPUT_RECORD(Structure):
-    _fields_ = [
-        ("EventType", WORD),
-        ("Event", ConsoleEvent)
-    ]
+    _fields_ = [("EventType", WORD), ("Event", ConsoleEvent)]
+
 
 STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
@@ -502,7 +544,10 @@ GetStdHandle.argtypes = [DWORD]
 GetStdHandle.restype = HANDLE
 
 GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
-GetConsoleScreenBufferInfo.argtypes = [HANDLE, ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO)]
+GetConsoleScreenBufferInfo.argtypes = [
+    HANDLE,
+    ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
+]
 GetConsoleScreenBufferInfo.restype = BOOL
 
 SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
@@ -514,7 +559,13 @@ GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
 GetConsoleCursorInfo.restype = BOOL
 
 ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
-ScrollConsoleScreenBuffer.argtypes = [HANDLE, POINTER(SMALL_RECT), POINTER(SMALL_RECT), _COORD, POINTER(CHAR_INFO)]
+ScrollConsoleScreenBuffer.argtypes = [
+    HANDLE,
+    POINTER(SMALL_RECT),
+    POINTER(SMALL_RECT),
+    _COORD,
+    POINTER(CHAR_INFO),
+]
 ScrollConsoleScreenBuffer.restype = BOOL
 
 SetConsoleMode = _KERNEL32.SetConsoleMode
@@ -529,5 +580,5 @@ OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
 InHandle = GetStdHandle(STD_INPUT_HANDLE)
 
 ENABLE_PROCESSED_OUTPUT = 0x01
-ENABLE_WRAP_AT_EOL_OUTPUT  = 0x02
+ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
