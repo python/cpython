@@ -1125,7 +1125,6 @@ static PyMemberDef type_members[] = {
 static int
 check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *name)
 {
-    
     if (!value) {
         PyErr_Format(PyExc_TypeError,
                      "cannot delete '%s' attribute of type '%s'",
