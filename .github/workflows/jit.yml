@@ -26,8 +26,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  interpreter:
+    name: Interpreter (Debug)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build tier two interpreter
+        run: |
+          ./configure --enable-experimental-jit=interpreter --with-pydebug
+          make all --jobs 4
+      - name: Test tier two interpreter
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+    needs: interpreter
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
@@ -153,6 +167,7 @@ jobs:
 
   jit-with-disabled-gil:
     name: Free-Threaded (Debug)
+    needs: interpreter
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
