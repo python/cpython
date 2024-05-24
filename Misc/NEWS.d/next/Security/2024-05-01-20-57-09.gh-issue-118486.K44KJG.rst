@@ -1,0 +1,4 @@
+:func:`os.mkdir` on Windows now accepts *mode* of ``0o700`` to restrict
+the new directory to the current user. This fixes CVE-2024-4030
+affecting :func:`tempfile.mkdtemp` in scenarios where the base temporary
+directory is more permissive than the default.
