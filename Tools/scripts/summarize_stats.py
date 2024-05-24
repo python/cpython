@@ -767,20 +767,19 @@ def opcode_input_overlap(
             and any(f in uop_flags[opcode_j] for f in flags)
         )
 
-    results = (
-        flag_compatible(
+    results = {
+        "Oparg": flag_compatible(
             "HAS_OPARG_AND_1_FLAG",
         ),
-        flag_compatible(
+        "Operand": flag_compatible(
             "HAS_OPERAND_FLAG",
         ),
-        flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
+        "Target": flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
     )
-    result_names = ("Oparg", "Operand", "Target")
-
-    if results.count(False) == 0:
+    
+    if list(results.values()).count(False) == 0:
         return "No Conflict"
-    return f"Conflict. Both Use: {','.join(result_names[r] for r in range(3) if not results[r])}"
+    return f"Conflict. Both Use: {','.join(k for k, v in results.items() if not v)}"
 
 
 def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
