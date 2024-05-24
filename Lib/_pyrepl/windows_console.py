@@ -78,11 +78,6 @@ GetConsoleCursorInfo.use_last_error = True
 GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
 GetConsoleCursorInfo.restype = BOOL
 
-SetConsoleCursorPosition = windll.kernel32.SetConsoleCursorPosition
-SetConsoleCursorPosition.argtypes = [HANDLE, _COORD]
-SetConsoleCursorPosition.restype = BOOL
-SetConsoleCursorPosition.use_last_error = True
-
 FillConsoleOutputCharacter = windll.kernel32.FillConsoleOutputCharacterW
 FillConsoleOutputCharacter.use_last_error = True
 FillConsoleOutputCharacter.argtypes = [HANDLE, CHAR, DWORD, _COORD, POINTER(DWORD)]
@@ -216,6 +211,8 @@ class WindowsConsole(Console):
         else:
             self.output_fd = f_out.fileno()
 
+        self.event_queue: deque[Event] = []
+
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
@@ -227,7 +224,7 @@ class WindowsConsole(Console):
         """
         cx, cy = c_xy
 
-        trace('!!Refresh {} {} {}', c_xy, self.__offset, screen)
+        trace('!!Refresh c_xy={} offset={} screen={} posxy={} screen_xy={}', c_xy, self.__offset, screen, self.__posxy, self.screen_xy)
         while len(self.screen) < min(len(screen), self.height):
             self.__hide_cursor()
             self.__move_relative(0, len(self.screen) - 1)
@@ -262,7 +259,7 @@ class WindowsConsole(Console):
             self.scroll(scroll_lines, bottom)
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
-            
+        
             for i in range(scroll_lines):
                 self.screen.append("")
             
@@ -273,6 +270,7 @@ class WindowsConsole(Console):
 
         oldscr = self.screen[old_offset : old_offset + height]
         newscr = screen[offset : offset + height]
+
         trace('old screen {}', oldscr)
         trace('new screen {}', newscr)
 
@@ -298,7 +296,6 @@ class WindowsConsole(Console):
         self.__show_cursor()
 
         self.screen = screen
-        trace("Done and moving")
         self.move_cursor(cx, cy)
 
     def scroll(self, top: int, bottom: int, left: int | None = None, right: int | None = None):
@@ -366,6 +363,7 @@ class WindowsConsole(Console):
             x_pos += 1
 
         # if we need to insert a single character right after the first detected change
+        screen_cord = self.screen_xy
         if oldline[x_pos:] == newline[x_pos + 1 :]:
             trace('insert single {} {}', y, self.__posxy)
             if (
@@ -397,42 +395,25 @@ class WindowsConsole(Console):
             coord = self.screen_xy
 
             self.__write(newline[x_pos])
-            if x_coord + character_width == self.width:
-
-                # If we wrapped we need to get back to a known good position,
-                # and the starting position was known good.
-                self.__move_absolute(*coord)
-                self.__posxy = pos
-            else:
-                self.__posxy = x_coord + character_width, y
+            self.__posxy = x_coord + character_width, y
         else:
-            trace("Rewrite all {!r} {} {} y={} {} posxy={}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy)
+            trace("Rewrite all {!r} x_coord={} {} y={} {} posxy={} screen_xy={}", newline, x_coord, len(oldline), y, wlen(newline), self.__posxy, self.screen_xy)
             self.__hide_cursor()
             self.__move_relative(x_coord, y)
             pos = self.__posxy
             coord = self.screen_xy
-            #if wlen(oldline) > wlen(newline):
-            self.erase_to_end()
-            trace(f"Writing {newline[x_pos:]}")
-            self.__write(newline[x_pos:])
+            if wlen(oldline) > wlen(newline):
+                self.erase_to_end()
 
-            if wlen(newline[x_pos:]) == self.width:
-                # If we wrapped we need to get back to a known good position,
-                # and the starting position was known good.
-                self.__move_absolute(*coord)
-                self.__posxy = pos
-            else:
-                self.__posxy = wlen(newline), y
+            self.__write(newline[x_pos:])
+            self.__posxy = wlen(newline), y
 
 
         if "\x1b" in newline or y != self.__posxy[1]:
             # ANSI escape characters are present, so we can't assume
             # anything about the position of the cursor.  Moving the cursor
             # to the left margin should work to get to a known position.
-            #_, cur_y = self.get_abs_position(0, y)
-            #self.__move_absolute(0, cur_y)
-            self.__move_absolute(0, self.screen_xy[1])
-            self.__posxy = 0, y
+            self.move_cursor(0, y)
 
     def erase_to_end(self):
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -468,28 +449,18 @@ class WindowsConsole(Console):
 
     def __move_relative(self, x, y):
         """Moves relative to the current __posxy"""
-        trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
-        cur_x, cur_y = self.get_abs_position(x, y)
-        if cur_y < 0:
-            # We're scrolling above the current buffer, we need to refresh
-            self.__posxy = self.__posxy[0], self.__posxy[1] + cur_y
-            self.refresh(self.screen, self.__posxy)
-            cur_y = 0
-        self.__move_absolute(cur_x, cur_y)
+        dx = x - self.__posxy[0]
+        dy = y - self.__posxy[1]
+        if dx < 0:
+            os.write(self.output_fd, f"\x1b[{-dx}D".encode(self.encoding))
+        elif dx > 0:
+            trace(f"Move console right {dx}")
+            os.write(self.output_fd, f"\x1b[{dx}C".encode(self.encoding))
 
-    def __move_absolute(self, x, y):
-        """Moves to an absolute location in the screen buffer"""
-        trace(f"move absolute {x} {y}")
-        if y < 0:
-            trace(f"Negative offset: {self.__posxy} {self.screen_xy}")
-        if x < 0:
-            trace("Negative move {}", self.getheightwidth())
-        #    return
-        cord = _COORD()
-        cord.X = x
-        cord.Y = y
-        if not SetConsoleCursorPosition(OutHandle, cord):
-            raise ctypes.WinError(ctypes.GetLastError())
+        if dy < 0:
+            os.write(self.output_fd, f"\x1b[{-dy}A".encode(self.encoding))
+        elif dy > 0:
+            os.write(self.output_fd, f"\x1b[{dy}B".encode(self.encoding))
 
     def move_cursor(self, x: int, y: int) -> None:
         trace(f'move_cursor {x} {y}')
@@ -497,8 +468,11 @@ class WindowsConsole(Console):
         if x < 0 or y < 0:
             raise ValueError(f"Bad cursor position {x}, {y}")
 
-        self.__move_relative(x, y)
-        self.__posxy = x, y
+        if y < self.__offset or y >= self.__offset + self.height:
+            self.event_queue.insert(0, Event("scroll", ""))
+        else:
+            self.__move_relative(x, y)
+            self.__posxy = x, y
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:
@@ -530,6 +504,9 @@ class WindowsConsole(Console):
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
+        if self.event_queue:
+            return self.event_queue.pop()
+        
         while True:
             rec = self.__read_input()
             if rec is None:
@@ -538,42 +515,6 @@ class WindowsConsole(Console):
                 return None
             
             if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
-                old_height, old_width = self.height, self.width
-                self.height, self.width = self.getheightwidth()
-                delta = self.width - old_width
-                # Windows will fix up the wrapping for us, but we
-                # need to sync __posxy with those changes.
-                
-                new_x, new_y = self.__posxy
-                y = self.__posxy[1]
-                trace("Cur screen {}", self.screen)
-                #last_len = -1
-                new_lines = 0
-                while y >= 0:
-                    line = self.screen[y]
-                    line_len = wlen(line)
-                    trace(f"XX {wlen(line)} {self.width} {old_width} {wlen(line) <= self.width} {old_width > wlen(line)} {line}")
-                    if (line_len >= self.width and line_len < old_width) and line[-1] != "\\":
-                        # This line is turning into 2 lines
-                        trace("Lines wrap")
-                        new_y += 1
-                        new_lines += 1
-                    #elif line_len >= old_width and line_len < self.width and line[-1] == "\\" and last_len == 1:
-                    #    # This line is turning into 1 line
-                    #    trace("Lines join")
-                    #    #new_y -= 1
-                    #last_len = line_len
-                    y -= 1
-
-                trace(f"RESIZE {self.screen_xy} {self.__posxy} ({new_x}, {new_y}) ({self.width}, {self.height})")
-                # Force redraw of current input, the wrapping can corrupt our state with \
-                self.screen = [' ' * self.width] * (len(self.screen) + new_lines)
-
-                # We could have "unwrapped" things which weren't really wrapped, shifting our x position,
-                # get back to something neutral.
-                self.__move_absolute(0, self.screen_xy[1])
-                self.__posxy = 0, new_y
-
                 return Event("resize", "")
 
             if rec.EventType != KEY_EVENT or not rec.Event.KeyEvent.bKeyDown:
@@ -615,20 +556,18 @@ class WindowsConsole(Console):
 
     def clear(self) -> None:
         """Wipe the screen"""
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
-        size = info.dwSize.X * info.dwSize.Y
-        if not FillConsoleOutputCharacter(OutHandle, b' ',  size, _COORD(), DWORD()):
-            raise ctypes.WinError(ctypes.GetLastError())
-        if not FillConsoleOutputAttribute(OutHandle, 0,  size, _COORD(), DWORD()):
-            raise ctypes.WinError(ctypes.GetLastError())
-        y = info.srWindow.Bottom - info.srWindow.Top + 1
-        self.__move_absolute(0, 0)
+        os.write(self.output_fd, f"\x1b[H\x1b[J".encode(self.encoding))
         self.__posxy = 0, 0
         self.screen = [""]
 
-
+    def clear_range(self, x: int, y: int, width: int, height: int) -> None:
+        size = width * height
+        start = _COORD(X = x, Y = y)
+        if not FillConsoleOutputCharacter(OutHandle, b' ',  size, start, DWORD()):
+            raise ctypes.WinError(ctypes.GetLastError())
+        if not FillConsoleOutputAttribute(OutHandle, 0,  size, start, DWORD()):
+            raise ctypes.WinError(ctypes.GetLastError())
+    
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
