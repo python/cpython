@@ -660,6 +660,23 @@ class PosixPathTest(unittest.TestCase):
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
 
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
+    def test_realpath_unreadable_symlink(self):
+        try:
+            os.symlink(ABSTFN+"1", ABSTFN)
+            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
+            self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
+            with self.assertRaises(PermissionError):
+                realpath(ABSTFN, strict=True)
+        finally:
+            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
+            os.unlink(ABSTFN)
+
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
         try:
