@@ -333,7 +333,7 @@ class partial:
             self.np = self.args.count(Placeholder)
         if np := self.np:
             if len(args) < np:
-                raise ValueError("unfilled placeholders in 'partial' call")
+                raise TypeError("unfilled placeholders in 'partial' call")
             f_args = list(self.args)
             j, pos = 0, 0
             while j < np:

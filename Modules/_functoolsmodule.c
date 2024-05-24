@@ -48,7 +48,7 @@ typedef struct {
 } placeholderobject;
 
 
-PyDoc_STRVAR(placeholder_doc, "placeholder for partial class");
+PyDoc_STRVAR(placeholder_doc, "placeholder for partial arguments");
 
 
 static PyType_Slot placeholder_type_slots[] = {
@@ -57,7 +57,7 @@ static PyType_Slot placeholder_type_slots[] = {
 };
 
 static PyType_Spec placeholder_type_spec = {
-    .name = "partial2.Placeholder",
+    .name = "partial.Placeholder",
     .basicsize = sizeof(placeholderobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
              Py_TPFLAGS_IMMUTABLETYPE |
@@ -73,7 +73,7 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
-    PyObject *placeholder;
+    PyObject *placeholder; /* Placeholder for positional arguments */
     Py_ssize_t np;         /* Number of placeholders */
     vectorcallfunc vectorcall;
 } partialobject;
@@ -155,6 +155,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
     if (nnargs > 0){
+        /* Trim placeholders from the end if needed */
         Py_ssize_t i;
         for (i=nnargs; i > 0;) {
             item = PyTuple_GET_ITEM(nargs, i-1);
@@ -162,9 +163,13 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 break;
             i--;
         }
-        if (i != nnargs)
+        if (i != nnargs){
             nnargs = i;
-
+            PyObject *tmp = PyTuple_GetSlice(nargs, 0, nnargs);
+            Py_DECREF(nargs);
+            nargs = tmp;
+        }
+        /* Count placeholders */
         if (nnargs > 0){
             for (Py_ssize_t i=0; i < nnargs; i++){
                 item = PyTuple_GET_ITEM(nargs, i);
