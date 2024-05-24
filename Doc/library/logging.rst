@@ -109,7 +109,7 @@ The ``name`` is potentially a period-separated hierarchical value, like
 Loggers that are further down in the hierarchical list are children of loggers
 higher up in the list.  For example, given a logger with a name of ``foo``,
 loggers with names of ``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all
-descendants of ``foo``.  In addition, all loggers are descendants of ``root``.
+descendants of ``foo``.  In addition, all loggers are descendants of the root logger.
 The logger name hierarchy is analogous to the Python
 package hierarchy, and identical to it if you organise your loggers on a
 per-module basis using the recommended construction
@@ -1159,7 +1159,7 @@ functions.
 .. function:: getLogger(name=None)
 
    Return a logger with the specified name or, if name is ``None``, return the
-   root logger of the hierarchy (equivalent to passing ``name='root'``). If specified, the name is
+   root logger of the hierarchy. If specified, the name is
    typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
    Choice of these names is entirely up to the developer who is using logging.
 
