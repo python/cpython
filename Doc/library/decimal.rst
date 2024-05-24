@@ -900,14 +900,14 @@ Decimal objects
    .. describe:: round(number, ndigits=None)
 
       If *ndigits* is ``None``, returns the nearest :class:`int` to *number*,
-      rounding ties to even, ignoring the rounding mode of the :class:`Decimal`
-      context.  Raises :exc:`OverflowError` if *number* is an infinity or
-      :exc:`ValueError` if *number* is a (quiet or signaling) NaN.
+      rounding ties to even, and ignoring the rounding mode of the
+      :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
+      infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
 
       If *ndigits* is an :class:`int`, the context's rounding mode is respected
       and a :class:`Decimal` representing *number* rounded to the nearest
-      multiple of ``Decimal('1E-ndigits')`` is returned;
-      ``round(number, ndigits)`` is exactly equivalent to
+      multiple of ``Decimal('1E-ndigits')`` is returned; in this case,
+      ``round(number, ndigits)`` is equivalent to
       ``self.quantize(Decimal('1E-ndigits'))``.  Returns ``Decimal('NaN')`` if
       *number* is a quiet NaN.  Raises :class:`InvalidOperation` if *number*
       is an infinity, a signaling NaN, or if the length of the coefficient after
