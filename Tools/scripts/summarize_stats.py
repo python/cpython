@@ -126,7 +126,7 @@ def save_raw_data(data: RawData, json_output: TextIO):
 @functools.cache
 def _get_uop_flags_from_file(
     flag_names: tuple[str] = None,
-    filepath: str | Path = "Include/internal/pycore_uop_metadata.h",
+    filepath: str | Path = Path("Include") / "internal" / "pycore_uop_metadata.h",
 ) -> dict[str, list[str]]:
     flags = {}
     with open(SOURCE_DIR / filepath) as spec_src:
