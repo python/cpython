@@ -1664,13 +1664,15 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
-    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
-
     if (s_fast == NULL)
         return -1;
+
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
+
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        return _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
+        int r = _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
+        Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(r);
     }
 
     if (s->markers != Py_None) {
@@ -1718,13 +1720,11 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
         if (encoder_listencode_obj(s, writer, obj, new_newline_indent))
             goto bail;
     }
-    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
             goto bail;
         Py_CLEAR(ident);
     }
-
     if (s->indent != Py_None) {
         Py_CLEAR(new_newline_indent);
         Py_CLEAR(separator_indent);
@@ -1736,14 +1736,16 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     if (_PyUnicodeWriter_WriteChar(writer, ']'))
         goto bail;
     Py_DECREF(s_fast);
-    return 0;
+    Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(0);
 
 bail:
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
     Py_XDECREF(ident);
     Py_DECREF(s_fast);
     Py_XDECREF(separator_indent);
     Py_XDECREF(new_newline_indent);
     return -1;
+
 }
 
 static void
