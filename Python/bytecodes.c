@@ -2136,8 +2136,7 @@ dummy_func(
             _STORE_ATTR_INSTANCE_VALUE;
 
         op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner --)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
