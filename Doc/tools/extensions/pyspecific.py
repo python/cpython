@@ -604,7 +604,7 @@ def parse_monitoring_event(env, sig, signode):
 
 
 def process_audit_events(app, doctree, fromdocname):
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         break
     else:
         return
@@ -663,7 +663,7 @@ def process_audit_events(app, doctree, fromdocname):
 
         body += row
 
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         node.replace_self(table)
 
 
