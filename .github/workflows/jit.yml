@@ -32,11 +32,11 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Build Tier Two Interpreter
+      - name: Build tier two interpreter
         run: |
           ./configure --enable-experimental-jit=interpreter --with-pydebug
           make all --jobs 4
-      - name: Test Tier Two Interpreter
+      - name: Test tier two interpreter
         run: |
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
   jit:
