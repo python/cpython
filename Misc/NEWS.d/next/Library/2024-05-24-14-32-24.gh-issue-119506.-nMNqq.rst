@@ -1,1 +1,1 @@
-Fix bug in :meth:`!io.TextIOWrapper.write` method of :class:`io.TextIOWrapper`, which causes its internal buffer to be rewritten during flushing of large data.
+Fix bug in :meth:`!io.TextIOWrapper.write` method, which causes wrapper's internal buffer to be rewritten during flushing of large data.
