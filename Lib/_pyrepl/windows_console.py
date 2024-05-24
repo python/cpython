@@ -66,21 +66,6 @@ GetConsoleScreenBufferInfo.use_last_error = True
 GetConsoleScreenBufferInfo.argtypes = [HANDLE, ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO)]
 GetConsoleScreenBufferInfo.restype = BOOL
 
-SetConsoleCursorInfo = windll.kernel32.SetConsoleCursorInfo
-SetConsoleCursorInfo.use_last_error = True
-SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-SetConsoleCursorInfo.restype = BOOL
-
-GetConsoleCursorInfo = windll.kernel32.GetConsoleCursorInfo
-GetConsoleCursorInfo.use_last_error = True
-GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-GetConsoleCursorInfo.restype = BOOL
-
-SetConsoleCursorPosition = windll.kernel32.SetConsoleCursorPosition
-SetConsoleCursorPosition.argtypes = [HANDLE, _COORD]
-SetConsoleCursorPosition.restype = BOOL
-SetConsoleCursorPosition.use_last_error = True
-
 FillConsoleOutputCharacter = windll.kernel32.FillConsoleOutputCharacterW
 FillConsoleOutputCharacter.use_last_error = True
 FillConsoleOutputCharacter.argtypes = [HANDLE, CHAR, DWORD, _COORD, POINTER(DWORD)]
@@ -263,7 +248,7 @@ class WindowsConsole(Console):
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
 
-            for i in range(scroll_lines):
+            for _ in range(scroll_lines):
                 self.screen.append("")
 
         elif offset > 0 and len(screen) < offset + height:
@@ -330,7 +315,7 @@ class WindowsConsole(Console):
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
 
     @property
-    def screen_xy(self):
+    def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise ctypes.WinError(ctypes.GetLastError())
@@ -438,16 +423,14 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def prepare(self) -> None:
+        """
+        Prepare the console for input/output operations.
+        """
         trace("prepare")
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
-
         self.__posxy = 0, 0
-        self.__gone_tall = 0
         self.__offset = 0
 
     def restore(self) -> None: ...
@@ -460,7 +443,7 @@ class WindowsConsole(Console):
         cur_y += dy
         return cur_x, cur_y
 
-    def __move_relative(self, x, y):
+    def __move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current __posxy"""
         trace('move relative {} {} {} {}', x, y, self.__posxy, self.screen_xy)
         cur_x, cur_y = self.get_abs_position(x, y)
@@ -471,7 +454,7 @@ class WindowsConsole(Console):
             cur_y = 0
         self.__move_absolute(cur_x, cur_y)
 
-    def __move_absolute(self, x, y):
+    def __move_absolute(self, x: int, y: int) -> None:
         """Moves to an absolute location in the screen buffer"""
         trace(f"move absolute {x} {y}")
         if y < 0:
@@ -481,6 +464,13 @@ class WindowsConsole(Console):
         self.__write("\x1b[{};{}H".format(y + 1, x + 1))
 
     def move_cursor(self, x: int, y: int) -> None:
+        """
+        Move the cursor to the specified position on the screen.
+
+        Parameters:
+        - x (int): X coordinate.
+        - y (int): Y coordinate.
+        """
         trace(f'move_cursor {x} {y}')
 
         if x < 0 or y < 0:
