@@ -1334,5 +1334,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(s, 1024.0)
 
 
+    def test_guard_type_version_removed(self):
+        def thing(f):
+            x = 0
+            for _ in range(100):
+                x += f() + f()
+            return x
+
+        # Specify an unused arg in the function so that
+        # CALL_PY_GENERAL is used over CALL_PY_EXACT_ARGS
+        res, ex = self._run_with_optimizer(thing, lambda _=1: 1)
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+
+        guard_type_version_count = opnames.count("_CHECK_FUNCTION_VERSION")
+        self.assertEqual(guard_type_version_count, 1)
+
 if __name__ == "__main__":
     unittest.main()
+

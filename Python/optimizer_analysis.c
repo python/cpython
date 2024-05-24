@@ -79,7 +79,17 @@ increment_mutations(PyObject* dict) {
  * so we don't need to check that they haven't been used */
 #define BUILTINS_WATCHER_ID 0
 #define GLOBALS_WATCHER_ID  1
+#define FUNCTION_WATCHER_ID 0
 
+static int
+function_watcher_callback(
+  PyFunction_WatchEvent event,
+  PyFunctionObject *func,
+  PyObject *new_value)
+{
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), func, 1);
+    return 0;
+}
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
@@ -166,6 +176,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
+    }
+    if (interp->func_watchers[GLOBALS_WATCHER_ID] == NULL) {
+        interp->active_func_watchers |= 0x1;
+        interp->func_watchers[FUNCTION_WATCHER_ID] = function_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
@@ -310,9 +324,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_matches_function_version _Py_uop_sym_matches_function_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_function_version(SYM, VERSION) _Py_uop_sym_set_function_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness

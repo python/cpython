@@ -52,7 +52,8 @@ static inline int get_lltrace(void) {
 static _Py_UopsSymbol NO_SPACE_SYMBOL = {
     .flags = IS_NULL | NOT_NULL | NO_SPACE,
     .typ = NULL,
-    .const_val = NULL
+    .const_val = NULL,
+    .function_version = 0,
 };
 
 _Py_UopsSymbol *
@@ -76,6 +77,7 @@ sym_new(_Py_UOpsContext *ctx)
     self->flags = 0;
     self->typ = NULL;
     self->const_val = NULL;
+    self->function_version = 0;
 
     return self;
 }
@@ -150,6 +152,24 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
         sym_set_flag(sym, NOT_NULL);
         sym->typ = typ;
     }
+}
+
+void
+_Py_uop_sym_set_function_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, uint32_t version)
+{
+    sym->function_version = version;
+}
+
+uint32_t
+_Py_uop_sym_get_function_version(_Py_UopsSymbol *sym)
+{
+    return sym->function_version;
+}
+
+bool
+_Py_uop_sym_matches_function_version(_Py_UopsSymbol *sym, uint32_t version)
+{
+    return _Py_uop_sym_get_function_version(sym) == version;
 }
 
 void
