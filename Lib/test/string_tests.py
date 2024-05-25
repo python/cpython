@@ -238,6 +238,7 @@ class BaseTest:
         self.checkequal(1, 'a' + 'b' * 10000, 'find', ('b' * 10000,))
         s = 'ab' + 'c' * 100000
         self.checkequal(1, s, 'find', ('c' * 100000, 'b' + 'c' * 100000))
+        self.checkequal(0, 'foobar', 'find', ('foo',))
 
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
@@ -312,6 +313,7 @@ class BaseTest:
         self.checkequal(0, 'b' * 10000 + 'a', 'rfind', ('b' * 10000,))
         s = 'ab' + 'c' * 100000
         self.checkequal(2, s, 'rfind', ('c' * 100000, 'b' + 'c' * 100000))
+        self.checkequal(3, 'foo', 'rfind', ('',))
 
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
