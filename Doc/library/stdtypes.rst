@@ -1768,7 +1768,7 @@ expression support in the :mod:`re` module).
       cases.
 
 
-.. method:: str.format_map(mapping)
+.. method:: str.format_map(mapping, /)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful

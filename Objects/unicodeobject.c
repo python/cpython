@@ -13490,7 +13490,7 @@ Return a formatted version of the string, using substitutions from args and kwar
 The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
-             "format_map($self, /, mapping)\n\
+             "format_map($self, mapping, /)\n\
 --\n\
 \n\
 Return a formatted version of the string, using substitutions from mapping.\n\
