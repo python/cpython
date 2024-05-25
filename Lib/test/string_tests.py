@@ -235,7 +235,7 @@ class BaseTest:
         self.checkequal(2, '__abcd__', 'find', ('cd', 'ab'))
         self.checkequal(2, '__abc__', 'find', ('bc', 'ab'))
         self.checkequal(1, 'a' + 'b' * 10000, 'find', ('b' * 10000,))
-
+self.checkequal(1, 'ab' + 'c' * 100000, 'find', ('c' * 100000, 'b' + 'c' * 100000))
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
         self.checkequal(12, 'abcdefghiabc', 'rfind', '')
