@@ -230,12 +230,17 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
+   The output is a subsequence of :func:`product` keeping only entries that
+   are subsequences of the *iterable*.  The length of the output is given
+   by :func:`math.comb` which computes ``n! / r! / (n - r)!`` when ``0 ≤ r
+   ≤ n`` or zero when ``r > n``.
+
    The combination tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*. If the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, there will be no repeated
+   value.  If the input elements are unique, there will be no repeated
    values within each combination.
 
    Roughly equivalent to::
@@ -260,19 +265,6 @@ loops that truncate the stream.
                     indices[j] = indices[j-1] + 1
                 yield tuple(pool[i] for i in indices)
 
-   The code for :func:`combinations` can be also expressed as a subsequence
-   of :func:`permutations` after filtering entries where the elements are not
-   in sorted order (according to their position in the input pool)::
-
-        def combinations(iterable, r):
-            pool = tuple(iterable)
-            n = len(pool)
-            for indices in permutations(range(n), r):
-                if sorted(indices) == list(indices):
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``n! / r! / (n-r)!`` when ``0 <= r <= n``
-   or zero when ``r > n``.
 
 .. function:: combinations_with_replacement(iterable, r)
 
@@ -543,8 +535,8 @@ loops that truncate the stream.
 
    The output is a subsequence of :func:`product` where entries with
    repeated elements have been filtered out.  The length of the output is
-   given by :func:`math.perm` which gives ``n! / (n-r)!`` when ``0 <= r <=
-   n`` or zero when ``r > n``.
+   given by :func:`math.perm` which computes ``n! / (n - r)!`` when
+   ``0 ≤ r ≤ n`` or zero when ``r > n``.
 
    The permutation tuples are emitted in lexicographic order according to
    the order of the input *iterable*.  If the input *iterable* is sorted,
