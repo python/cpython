@@ -11370,10 +11370,10 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         ADJUST_INDICES(start, end, len);
         // Work in batches of 10000
         for (; result == -1 && start <= end; start += 10000) {
+            Py_ssize_t cur_end = start + 10000;
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sublen = PyUnicode_GET_LENGTH(substr);
-                Py_ssize_t sub_end = start + 10000 + sublen;
+                Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
                 if (sub_end > end) {
                     sub_end = end;
                 }
@@ -11382,7 +11382,7 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                 if (new_result != -1 &&
                     (new_result < result || result == -1))
                 {
-                    result = new_result;
+                    result = cur_end = new_result;
                 }
             }
         }
@@ -12574,9 +12574,9 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         // Work in batches of 10000
         Py_ssize_t cur_end = end;
         for (; result == -1 && cur_end >= start; cur_end -= 10000) {
-            Py_ssize_t sub_start = end - 10000;
-            if (sub_start < start) {
-                sub_start = start;
+            Py_ssize_t cur_start = cur_end - 10000;
+            if (cur_start < start) {
+                cur_start = start;
             }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
@@ -12584,10 +12584,10 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                 if (sub_end > end) {
                     sub_end = end;
                 }
-                Py_ssize_t new_result = any_find_slice(str, substr, sub_start,
+                Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
                                                        sub_end, -1);
                 if (new_result > result) {
-                    result = new_result;
+                    result = cur_start = new_result;
                 }
             }
         }

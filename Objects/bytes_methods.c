@@ -566,12 +566,13 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
         ADJUST_INDICES(start, end, len);
         // Work in batches of 10000
         for (; result == -1 && start <= end; start += 10000) {
+            Py_ssize_t cur_end = start + 10000;
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sublen;
+                Py_ssize_t sub_len;
                 Py_buffer subbuf;
                 if (!PyObject_CheckBuffer(subseq)) {
-                    sublen = 1;
+                    sub_len = 1;
                 }
                 else if (PyObject_GetBuffer(subseq, &subbuf,
                                             PyBUF_SIMPLE) != 0)
@@ -579,9 +580,9 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
                     return NULL;
                 }
                 else {
-                    sublen = subbuf.len;
+                    sub_len = subbuf.len;
                 }
-                Py_ssize_t sub_end = start + 10000 + sublen;
+                Py_ssize_t sub_end = cur_end + sub_len;
                 if (sub_end > end) {
                     sub_end = end;
                 }
@@ -593,7 +594,7 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
                 if (new_result != -1 &&
                     (new_result < result || result == -1))
                 {
-                    result = new_result;
+                    result = cur_end = new_result;
                 }
             }
         }
@@ -631,16 +632,16 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
         // Work in batches of 10000
         Py_ssize_t cur_end = end;
         for (; result == -1 && cur_end >= start; cur_end -= 10000) {
-            Py_ssize_t sub_start = end - 10000;
-            if (sub_start < start) {
-                sub_start = start;
+            Py_ssize_t cur_start = cur_end - 10000;
+            if (cur_start < start) {
+                cur_start = start;
             }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sublen;
+                Py_ssize_t sub_len;
                 Py_buffer subbuf;
                 if (!PyObject_CheckBuffer(subseq)) {
-                    sublen = 1;
+                    sub_len = 1;
                 }
                 else if (PyObject_GetBuffer(subseq, &subbuf,
                                             PyBUF_SIMPLE) != 0)
@@ -648,20 +649,20 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                     return NULL;
                 }
                 else {
-                    sublen = subbuf.len;
+                    sub_len = subbuf.len;
                 }
-                Py_ssize_t sub_end = cur_end + sublen;
+                Py_ssize_t sub_end = cur_end + sub_len;
                 if (sub_end > end) {
                     sub_end = end;
                 }
                 Py_ssize_t new_result = find_internal(str, len, "rfind",
-                                                      subseq, sub_start,
+                                                      subseq, cur_start,
                                                       sub_end, -1);
                 if (new_result == -2) {
                     return NULL;
                 }
                 if (new_result > result) {
-                    result = new_result;
+                    result = cur_start = new_result;
                 }
             }
         }
