@@ -340,6 +340,11 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'index', 42)
 
+        # test tuple arguments (should be wrapper around find)
+        self.checkequal(2, '__aa__bb__', 'index', ('aa', 'bb'))
+        self.checkequal(2, '__aa__bb__', 'index', ('aa', 'bb'))
+        self.checkraises(ValueError, '__aa__bb__', 'index', ('cc', 'dd'))
+
     def test_rindex(self):
         self.checkequal(12, 'abcdefghiabc', 'rindex', '')
         self.checkequal(3,  'abcdefghiabc', 'rindex', 'def')
@@ -365,6 +370,11 @@ class BaseTest:
             self.checkraises(ValueError, 'hello', 'rindex', 42)
         else:
             self.checkraises(TypeError, 'hello', 'rindex', 42)
+
+        # test tuple arguments (should be wrapper around rfind)
+        self.checkequal(6, '__aa__bb__', 'rindex', ('aa', 'bb'))
+        self.checkequal(6, '__aa__bb__', 'rindex', ('bb', 'aa'))
+        self.checkraises(ValueError, '__aa__bb__', 'rindex', ('cc', 'dd'))
 
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""

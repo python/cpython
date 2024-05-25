@@ -409,7 +409,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_index__doc__,
-"index($self, sub[, start[, end]], /)\n"
+"index($self, sub, start=None, end=None, /)\n"
 "--\n"
 "\n"
 "Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -421,14 +421,14 @@ PyDoc_STRVAR(unicode_index__doc__,
     {"index", _PyCFunction_CAST(unicode_index), METH_FASTCALL, unicode_index__doc__},
 
 static Py_ssize_t
-unicode_index_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+unicode_index_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                    Py_ssize_t end);
 
 static PyObject *
 unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *substr;
+    PyObject *subobj;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -436,11 +436,7 @@ unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("index", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    substr = args[0];
+    subobj = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -454,7 +450,7 @@ unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_index_impl(str, substr, start, end);
+    _return_value = unicode_index_impl(str, subobj, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1108,7 +1104,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rindex__doc__,
-"rindex($self, sub[, start[, end]], /)\n"
+"rindex($self, sub, start=None, end=None, /)\n"
 "--\n"
 "\n"
 "Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1120,14 +1116,14 @@ PyDoc_STRVAR(unicode_rindex__doc__,
     {"rindex", _PyCFunction_CAST(unicode_rindex), METH_FASTCALL, unicode_rindex__doc__},
 
 static Py_ssize_t
-unicode_rindex_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+unicode_rindex_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                     Py_ssize_t end);
 
 static PyObject *
 unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *substr;
+    PyObject *subobj;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -1135,11 +1131,7 @@ unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("rindex", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    substr = args[0];
+    subobj = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1153,7 +1145,7 @@ unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_rindex_impl(str, substr, start, end);
+    _return_value = unicode_rindex_impl(str, subobj, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1880,4 +1872,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1db638aa49eefba8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fb071b9e4dc87fa input=a9049054013a1b77]*/
