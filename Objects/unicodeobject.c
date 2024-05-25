@@ -11334,6 +11334,7 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
 }
 
 #define FIND_CHUNK_SIZE 10000
+#define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
 
 /*[clinic input]
 str.find as unicode_find -> Py_ssize_t
@@ -12577,8 +12578,8 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         ADJUST_INDICES(start, end, len);
         // Work in chunks
         Py_ssize_t cur_end = end;
-        for (; result == -1 && cur_end >= start; cur_end -= FIND_CHUNK_SIZE) {
-            Py_ssize_t cur_start = cur_end - FIND_CHUNK_SIZE;
+        for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
+            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE;
             if (cur_start < start) {
                 cur_start = start;
             }

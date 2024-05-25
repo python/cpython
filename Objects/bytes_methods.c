@@ -557,6 +557,7 @@ find_internal(const char *str, Py_ssize_t len,
 }
 
 #define FIND_CHUNK_SIZE 10000
+#define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
 
 PyObject *
 _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
@@ -635,8 +636,8 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
         ADJUST_INDICES(start, end, len);
         // Work in chunks
         Py_ssize_t cur_end = end;
-        for (; result == -1 && cur_end >= start; cur_end -= FIND_CHUNK_SIZE) {
-            Py_ssize_t cur_start = cur_end - FIND_CHUNK_SIZE;
+        for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
+            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE;
             if (cur_start < start) {
                 cur_start = start;
             }
