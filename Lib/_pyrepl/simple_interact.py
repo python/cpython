@@ -35,7 +35,7 @@ from types import ModuleType
 
 from .readline import _get_reader, multiline_input
 
-error: tuple[type[Exception], ...] | type[Exception]
+_error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import _error
 except ModuleNotFoundError:

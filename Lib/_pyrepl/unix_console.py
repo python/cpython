@@ -143,19 +143,8 @@ class UnixConsole(Console):
         - term (str): Terminal name.
         - encoding (str): Encoding to use for I/O operations.
         """
-
-        self.encoding = encoding or sys.getdefaultencoding()
-
-        if isinstance(f_in, int):
-            self.input_fd = f_in
-        else:
-            self.input_fd = f_in.fileno()
-
-        if isinstance(f_out, int):
-            self.output_fd = f_out
-        else:
-            self.output_fd = f_out.fileno()
-
+        super().__init__(f_in, f_out, term, encoding)
+        
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
         curses.setupterm(term or None, self.output_fd)

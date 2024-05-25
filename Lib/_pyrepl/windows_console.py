@@ -45,7 +45,7 @@ from .utils import wlen
 
 try:
     # type: ignore
-    from ctypes import GetLastError, WinDLL, windll
+    from ctypes import GetLastError, WinDLL, windll, WinError
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
@@ -113,6 +113,7 @@ class WindowsConsole(Console):
         term: str = "",
         encoding: str = "",
     ):
+        super().__init__(f_in, f_out, term, encoding)
 
         SetConsoleMode(
             OutHandle,
@@ -120,18 +121,6 @@ class WindowsConsole(Console):
             | ENABLE_PROCESSED_OUTPUT
             | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
         )
-        self.encoding = encoding or sys.getdefaultencoding()
-
-        if isinstance(f_in, int):
-            self.input_fd = f_in
-        else:
-            self.input_fd = f_in.fileno()
-
-        if isinstance(f_out, int):
-            self.output_fd = f_out
-        else:
-            self.output_fd = f_out.fileno()
-
         self.screen: list[str] = []
         self.width = 80
         self.height = 25
@@ -293,7 +282,6 @@ class WindowsConsole(Console):
             raise WinError(GetLastError())
 
     def __write(self, text: str) -> None:
-        print(repr(text))
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
 
     @property
@@ -551,48 +539,47 @@ class INPUT_RECORD(Structure):
 STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
 
-if sys.platform == "win32":
-    _KERNEL32 = WinDLL("kernel32", use_last_error=True)
+_KERNEL32 = WinDLL("kernel32", use_last_error=True)
 
-    GetStdHandle = windll.kernel32.GetStdHandle
-    GetStdHandle.argtypes = [DWORD]
-    GetStdHandle.restype = HANDLE
+GetStdHandle = windll.kernel32.GetStdHandle
+GetStdHandle.argtypes = [DWORD]
+GetStdHandle.restype = HANDLE
 
-    GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
-    GetConsoleScreenBufferInfo.argtypes = [
-        HANDLE,
-        ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
-    ]
-    GetConsoleScreenBufferInfo.restype = BOOL
+GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
+GetConsoleScreenBufferInfo.argtypes = [
+    HANDLE,
+    ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
+]
+GetConsoleScreenBufferInfo.restype = BOOL
 
-    SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
-    SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-    SetConsoleCursorInfo.restype = BOOL
+SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
+SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
+SetConsoleCursorInfo.restype = BOOL
 
-    GetConsoleCursorInfo = _KERNEL32.GetConsoleCursorInfo
-    GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-    GetConsoleCursorInfo.restype = BOOL
+GetConsoleCursorInfo = _KERNEL32.GetConsoleCursorInfo
+GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
+GetConsoleCursorInfo.restype = BOOL
 
-    ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
-    ScrollConsoleScreenBuffer.argtypes = [
-        HANDLE,
-        POINTER(SMALL_RECT),
-        POINTER(SMALL_RECT),
-        _COORD,
-        POINTER(CHAR_INFO),
-    ]
-    ScrollConsoleScreenBuffer.restype = BOOL
+ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
+ScrollConsoleScreenBuffer.argtypes = [
+    HANDLE,
+    POINTER(SMALL_RECT),
+    POINTER(SMALL_RECT),
+    _COORD,
+    POINTER(CHAR_INFO),
+]
+ScrollConsoleScreenBuffer.restype = BOOL
 
-    SetConsoleMode = _KERNEL32.SetConsoleMode
-    SetConsoleMode.argtypes = [HANDLE, DWORD]
-    SetConsoleMode.restype = BOOL
+SetConsoleMode = _KERNEL32.SetConsoleMode
+SetConsoleMode.argtypes = [HANDLE, DWORD]
+SetConsoleMode.restype = BOOL
 
-    ReadConsoleInput = _KERNEL32.ReadConsoleInputW
-    ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
-    ReadConsoleInput.restype = BOOL
+ReadConsoleInput = _KERNEL32.ReadConsoleInputW
+ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
+ReadConsoleInput.restype = BOOL
 
-    OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
-    InHandle = GetStdHandle(STD_INPUT_HANDLE)
+OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
+InHandle = GetStdHandle(STD_INPUT_HANDLE)
 
 ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
