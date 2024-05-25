@@ -25,8 +25,6 @@ import sys
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
-from _pyrepl.console import Event, Console
-from .trace import trace
 import ctypes
 from ctypes.wintypes import (
     _COORD,
@@ -42,23 +40,25 @@ from ctypes.wintypes import (
 from ctypes import Structure, POINTER, Union
 from ctypes import windll
 from typing import TYPE_CHECKING
+from .console import Event, Console
+from .trace import trace
 from .utils import wlen
 
 try:
-    from ctypes import GetLastError, WinError, WinDLL, windll
+    from ctypes import GetLastError, WinDLL, windll
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
 
     def GetLastError() -> int:
         return 42
-    
+
     class WinError(OSError):
-        def __init__(self, err: int|None, descr: str|None = None) -> None:
+        def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
-    
-    
+
+
 if TYPE_CHECKING:
     from typing import IO
 
@@ -132,7 +132,7 @@ class WindowsConsole(Console):
         else:
             self.output_fd = f_out.fileno()
 
-        self.screen: List[str] = []
+        self.screen: list[str] = []
         self.width = 80
         self.height = 25
         self.__offset = 0
@@ -206,7 +206,9 @@ class WindowsConsole(Console):
         self.screen = screen
         self.move_cursor(cx, cy)
 
-    def __write_changed_line(self, y: int, oldline: str, newline: str, px_coord: int) -> None:
+    def __write_changed_line(
+        self, y: int, oldline: str, newline: str, px_coord: int
+    ) -> None:
         # this is frustrating; there's no reason to test (say)
         # self.dch1 inside the loop -- but alternative ways of
         # structuring this function are equally painful (I'm trying to
