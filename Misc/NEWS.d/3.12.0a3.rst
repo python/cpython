@@ -82,7 +82,7 @@ Victor Stinner.
 .. section: Core and Builtins
 
 Fixed a bug that was causing a buffer overflow if the tokenizer copies a
-line missing the newline caracter from a file that is as long as the
+line missing the newline character from a file that is as long as the
 available tokenizer buffer. Patch by Pablo galindo
 
 ..
@@ -496,7 +496,7 @@ Created packages from zipfile and test_zipfile modules, separating
 
 Fix :attr:`~ipaddress.IPv4Address.is_private` properties in the
 :mod:`ipaddress` module. Previously non-private networks (0.0.0.0/0) would
-return True from this method; now they correctly return False.
+return ``True`` from this method; now they correctly return ``False``.
 
 ..
 

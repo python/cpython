@@ -22,7 +22,6 @@ import logging
 import subprocess
 import struct
 import operator
-import pathlib
 import pickle
 import weakref
 import warnings
@@ -324,8 +323,9 @@ class _TestProcess(BaseTestCase):
             self.skipTest(f'test not appropriate for {self.TYPE}')
         paths = [
             sys.executable,               # str
-            sys.executable.encode(),      # bytes
-            pathlib.Path(sys.executable)  # os.PathLike
+            os.fsencode(sys.executable),  # bytes
+            os_helper.FakePath(sys.executable),  # os.PathLike
+            os_helper.FakePath(os.fsencode(sys.executable)),  # os.PathLike bytes
         ]
         for path in paths:
             self.set_executable(path)
@@ -2693,13 +2693,19 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
-        if self.TYPE == 'threads':
-            self.skipTest("Threads cannot be terminated")
-
         # Simulate slow tasks which take "forever" to complete
+        sleep_time = support.LONG_TIMEOUT
+
+        if self.TYPE == 'threads':
+            # Thread pool workers can't be forced to quit, so if the first
+            # task starts early enough, we will end up waiting for it.
+            # Sleep for a shorter time, so the test doesn't block.
+            sleep_time = 1
+
         p = self.Pool(3)
-        args = [support.LONG_TIMEOUT for i in range(10_000)]
+        args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
@@ -2806,8 +2812,8 @@ class _TestPool(BaseTestCase):
         self.pool.map(identity, objs)
 
         del objs
-        gc.collect()  # For PyPy or other GCs.
         time.sleep(DELTA)  # let threaded cleanup code run
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(set(wr() for wr in refs), {None})
         # With a process pool, copies of the objects are returned, check
         # they were released too.
@@ -3498,6 +3504,30 @@ class _TestListener(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
+    def test_empty_authkey(self):
+        # bpo-43952: allow empty bytes as authkey
+        def handler(*args):
+            raise RuntimeError('Connection took too long...')
+
+        def run(addr, authkey):
+            client = self.connection.Client(addr, authkey=authkey)
+            client.send(1729)
+
+        key = b''
+
+        with self.connection.Listener(authkey=key) as listener:
+            thread = threading.Thread(target=run, args=(listener.address, key))
+            thread.start()
+            try:
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
+            finally:
+                thread.join()
+
+        if self.TYPE == 'processes':
+            with self.assertRaises(OSError):
+                listener.accept()
+
     @unittest.skipUnless(util.abstract_sockets_supported,
                          "test needs abstract socket support")
     def test_abstract_socket(self):
@@ -3965,6 +3995,21 @@ class _TestSharedMemory(BaseTestCase):
         # test_multiprocessing_spawn, etc) in parallel.
         return prefix + str(os.getpid())
 
+    def test_shared_memory_name_with_embedded_null(self):
+        name_tsmb = self._new_shm_name('test01_null')
+        sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
+        self.addCleanup(sms.unlink)
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(name_tsmb + '\0a', create=False, size=512)
+        if shared_memory._USE_POSIX:
+            orig_name = sms._name
+            try:
+                sms._name = orig_name + '\0a'
+                with self.assertRaises(ValueError):
+                    sms.unlink()
+            finally:
+                sms._name = orig_name
+
     def test_shared_memory_basics(self):
         name_tsmb = self._new_shm_name('test01_tsmb')
         sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
@@ -4099,7 +4144,7 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
-    def test_invalid_shared_memory_cration(self):
+    def test_invalid_shared_memory_creation(self):
         # Test creating a shared memory segment with negative size
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
@@ -4617,7 +4662,7 @@ class _TestFinalize(BaseTestCase):
         old_interval = sys.getswitchinterval()
         old_threshold = gc.get_threshold()
         try:
-            sys.setswitchinterval(1e-6)
+            support.setswitchinterval(1e-6)
             gc.set_threshold(5, 5, 5)
             threads = [threading.Thread(target=run_finalizers),
                        threading.Thread(target=make_finalizers)]
@@ -5603,8 +5648,9 @@ class TestResourceTracker(unittest.TestCase):
         '''
         for rtype in resource_tracker._CLEANUP_FUNCS:
             with self.subTest(rtype=rtype):
-                if rtype == "noop":
+                if rtype in ("noop", "dummy"):
                     # Artefact resource type used by the resource_tracker
+                    # or tests
                     continue
                 r, w = os.pipe()
                 p = subprocess.Popen([sys.executable,
@@ -5724,6 +5770,38 @@ class TestResourceTracker(unittest.TestCase):
         with self.assertRaises(ValueError):
             resource_tracker.register(too_long_name_resource, rtype)
 
+    def _test_resource_tracker_leak_resources(self, cleanup):
+        # We use a separate instance for testing, since the main global
+        # _resource_tracker may be used to watch test infrastructure.
+        from multiprocessing.resource_tracker import ResourceTracker
+        tracker = ResourceTracker()
+        tracker.ensure_running()
+        self.assertTrue(tracker._check_alive())
+
+        self.assertIsNone(tracker._exitcode)
+        tracker.register('somename', 'dummy')
+        if cleanup:
+            tracker.unregister('somename', 'dummy')
+            expected_exit_code = 0
+        else:
+            expected_exit_code = 1
+
+        self.assertTrue(tracker._check_alive())
+        self.assertIsNone(tracker._exitcode)
+        tracker._stop()
+        self.assertEqual(tracker._exitcode, expected_exit_code)
+
+    def test_resource_tracker_exit_code(self):
+        """
+        Test the exit code of the resource tracker.
+
+        If no leaked resources were found, exit code should be 0, otherwise 1
+        """
+        for cleanup in [True, False]:
+            with self.subTest(cleanup=cleanup):
+                self._test_resource_tracker_leak_resources(
+                    cleanup=cleanup,
+                )
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -5986,12 +6064,30 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(obj[0], 5)
         case.assertEqual(obj.count(5), 1)
         case.assertEqual(obj.index(5), 0)
+        obj += [7]
+        case.assertIsInstance(obj, multiprocessing.managers.ListProxy)
+        case.assertListEqual(list(obj), [5, 7])
+        obj *= 2
+        case.assertIsInstance(obj, multiprocessing.managers.ListProxy)
+        case.assertListEqual(list(obj), [5, 7, 5, 7])
+        double_obj = obj * 2
+        case.assertIsInstance(double_obj, list)
+        case.assertListEqual(list(double_obj), [5, 7, 5, 7, 5, 7, 5, 7])
+        double_obj = 2 * obj
+        case.assertIsInstance(double_obj, list)
+        case.assertListEqual(list(double_obj), [5, 7, 5, 7, 5, 7, 5, 7])
+        copied_obj = obj.copy()
+        case.assertIsInstance(copied_obj, list)
+        case.assertListEqual(list(copied_obj), [5, 7, 5, 7])
+        obj.extend(double_obj + copied_obj)
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        case.assertEqual(len(obj), 1)
-        case.assertEqual(obj.pop(0), 5)
+        case.assertEqual(len(obj), 16)
+        case.assertEqual(obj.pop(0), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_list(self):
         o = self.manager.list()
@@ -6010,7 +6106,29 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertListEqual(list(obj.keys()), ['foo'])
         case.assertListEqual(list(obj.values()), [5])
         case.assertDictEqual(obj.copy(), {'foo': 5})
-        case.assertTupleEqual(obj.popitem(), ('foo', 5))
+        obj |= {'bar': 6}
+        case.assertIsInstance(obj, multiprocessing.managers.DictProxy)
+        case.assertDictEqual(dict(obj), {'foo': 5, 'bar': 6})
+        x = reversed(obj)
+        case.assertIsInstance(x, type(iter([])))
+        case.assertListEqual(list(x), ['bar', 'foo'])
+        x = {'bar': 7, 'baz': 7} | obj
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(dict(x), {'foo': 5, 'bar': 6, 'baz': 7})
+        x = obj | {'bar': 7, 'baz': 7}
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(dict(x), {'foo': 5, 'bar': 7, 'baz': 7})
+        x = obj.fromkeys(['bar'], 6)
+        case.assertIsInstance(x, dict)
+        case.assertDictEqual(x, {'bar': 6})
+        x = obj.popitem()
+        case.assertIsInstance(x, tuple)
+        case.assertTupleEqual(x, ('bar', 6))
+        obj.setdefault('bar', 0)
+        obj.update({'bar': 7})
+        case.assertEqual(obj.pop('bar'), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_dict(self):
         o = self.manager.dict()
@@ -6083,6 +6201,29 @@ class TestNamedResource(unittest.TestCase):
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 
+class _TestAtExit(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    @classmethod
+    def _write_file_at_exit(self, output_path):
+        import atexit
+        def exit_handler():
+            with open(output_path, 'w') as f:
+                f.write("deadbeef")
+        atexit.register(exit_handler)
+
+    def test_atexit(self):
+        # gh-83856
+        with os_helper.temp_dir() as temp_dir:
+            output_path = os.path.join(temp_dir, 'output.txt')
+            p = self.Process(target=self._write_file_at_exit, args=(output_path,))
+            p.start()
+            p.join()
+            with open(output_path) as f:
+                self.assertEqual(f.read(), 'deadbeef')
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         # Just make sure names in not_exported are excluded
@@ -6105,6 +6246,24 @@ class MiscTestCase(unittest.TestCase):
             import multiprocessing.spawn  # This should not fail\n""",
         )
         self.assertEqual(rc, 0)
+        self.assertFalse(err, msg=err.decode('utf-8'))
+
+    def test_large_pool(self):
+        #
+        # gh-89240: Check that large pools are always okay
+        #
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                import multiprocessing
+                def f(x): return x*x
+                if __name__ == '__main__':
+                    with multiprocessing.Pool(200) as p:
+                        print(sum(p.map(f, range(1000))))
+            '''))
+        rc, out, err = script_helper.assert_python_ok(testfn)
+        self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 

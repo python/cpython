@@ -1,3 +1,0 @@
-Document that the :mod:`asyncio` module contains code taken from `v0.16.0 of
-the uvloop project <https://github.com/MagicStack/uvloop/tree/v0.16.0>`_, as
-well as the required MIT licensing information.

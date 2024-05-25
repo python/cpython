@@ -1,1 +1,0 @@
-:func:`os.waitid` is now available on macOS

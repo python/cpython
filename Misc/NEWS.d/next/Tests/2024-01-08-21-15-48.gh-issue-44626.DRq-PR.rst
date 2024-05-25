@@ -1,5 +1,0 @@
-Fix :func:`os.path.isabs` incorrectly returning ``True`` when given a path
-that starts with exactly one (back)slash on Windows.
-
-Fix :meth:`pathlib.PureWindowsPath.is_absolute` incorrectly returning
-``False`` for some paths beginning with two (back)slashes.

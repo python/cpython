@@ -1,5 +1,5 @@
-:mod:`re` --- Regular expression operations
-===========================================
+:mod:`!re` --- Regular expression operations
+============================================
 
 .. module:: re
    :synopsis: Regular expression operations.
@@ -48,7 +48,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.org/project/regex/>`_ module,
+   The third-party :pypi:`regex` module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 
@@ -880,8 +880,8 @@ Functions
    below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the following variables, combined using bitwise OR (the
-   ``|`` operator).
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    The sequence ::
 
@@ -1344,7 +1344,8 @@ when there is no match, you can test whether there was a match with a simple
    Escapes such as ``\n`` are converted to the appropriate characters,
    and numeric backreferences (``\1``, ``\2``) and named backreferences
    (``\g<1>``, ``\g<name>``) are replaced by the contents of the
-   corresponding group.
+   corresponding group. The backreference ``\g<0>`` will be
+   replaced by the entire match.
 
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
@@ -1597,7 +1598,7 @@ To find out what card the pair consists of, one could use the
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
 
-.. index:: single: scanf()
+.. index:: single: scanf (C function)
 
 Python does not currently have an equivalent to :c:func:`!scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than

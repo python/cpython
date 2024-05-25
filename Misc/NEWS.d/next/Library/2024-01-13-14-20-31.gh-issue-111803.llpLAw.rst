@@ -1,2 +1,0 @@
-:mod:`plistlib` now supports loading more deeply nested lists in binary
-format.

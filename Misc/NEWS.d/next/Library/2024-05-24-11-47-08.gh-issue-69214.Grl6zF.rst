@@ -1,0 +1,3 @@
+Fix ``fcntl.ioctl()`` *request* parameter: use an ``unsigned long`` instead of
+an ``unsigned int`` for the *request* parameter of :func:`fcntl.ioctl` to
+support requests larger than ``UINT_MAX``. Patch by Victor Stinner.

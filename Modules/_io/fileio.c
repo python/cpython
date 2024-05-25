@@ -157,7 +157,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         return res;
     }
 
-    PyObject *exc;
+    PyObject *exc = NULL;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }
@@ -269,6 +269,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -1171,8 +1178,8 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL,           NULL}             /* sentinel */
 };
 

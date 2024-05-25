@@ -70,6 +70,7 @@ extern void _PyMem_ArenaFree(void *, void *, size_t);
         PYDBGMEM_ALLOC(runtime), \
         PYDBGOBJ_ALLOC(runtime), \
     }
+# define _pymem_is_debug_enabled_INIT 1
 #else
 # define _pymem_allocators_standard_INIT(runtime) \
     { \
@@ -77,6 +78,7 @@ extern void _PyMem_ArenaFree(void *, void *, size_t);
         PYMEM_ALLOC, \
         PYOBJ_ALLOC, \
     }
+# define _pymem_is_debug_enabled_INIT 0
 #endif
 
 #define _pymem_allocators_debug_INIT \
@@ -89,6 +91,11 @@ extern void _PyMem_ArenaFree(void *, void *, size_t);
 #  define _pymem_allocators_obj_arena_INIT \
     { NULL, _PyMem_ArenaAlloc, _PyMem_ArenaFree }
 
+
+#define _Py_mem_free_queue_INIT(queue) \
+    { \
+        .head = LLIST_INIT(queue.head), \
+    }
 
 #ifdef __cplusplus
 }

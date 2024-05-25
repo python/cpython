@@ -74,6 +74,7 @@ import os
 import builtins
 import _sitebuiltins
 import io
+import stat
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -168,37 +169,56 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
-    _trace(f"Processing .pth file: {fullname!r}")
     try:
-        # locale encoding is not ideal especially on Windows. But we have used
-        # it for a long time. setuptools uses the locale encoding too.
-        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
+        st = os.lstat(fullname)
     except OSError:
         return
-    with f:
-        for n, line in enumerate(f):
-            if line.startswith("#"):
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden .pth file: {fullname!r}")
+        return
+    _trace(f"Processing .pth file: {fullname!r}")
+    try:
+        with io.open_code(fullname) as f:
+            pth_content = f.read()
+    except OSError:
+        return
+
+    try:
+        # Accept BOM markers in .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
+        pth_content = pth_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Fallback to locale encoding for backward compatibility.
+        # We will deprecate this fallback in the future.
+        import locale
+        pth_content = pth_content.decode(locale.getencoding())
+        _trace(f"Cannot read {fullname!r} as UTF-8. "
+               f"Using fallback encoding {locale.getencoding()!r}")
+
+    for n, line in enumerate(pth_content.splitlines(), 1):
+        if line.startswith("#"):
+            continue
+        if line.strip() == "":
+            continue
+        try:
+            if line.startswith(("import ", "import\t")):
+                exec(line)
                 continue
-            if line.strip() == "":
-                continue
-            try:
-                if line.startswith(("import ", "import\t")):
-                    exec(line)
-                    continue
-                line = line.rstrip()
-                dir, dircase = makepath(sitedir, line)
-                if not dircase in known_paths and os.path.exists(dir):
-                    sys.path.append(dir)
-                    known_paths.add(dircase)
-            except Exception as exc:
-                print("Error processing line {:d} of {}:\n".format(n+1, fullname),
-                      file=sys.stderr)
-                import traceback
-                for record in traceback.format_exception(exc):
-                    for line in record.splitlines():
-                        print('  '+line, file=sys.stderr)
-                print("\nRemainder of file ignored", file=sys.stderr)
-                break
+            line = line.rstrip()
+            dir, dircase = makepath(sitedir, line)
+            if dircase not in known_paths and os.path.exists(dir):
+                sys.path.append(dir)
+                known_paths.add(dircase)
+        except Exception as exc:
+            print(f"Error processing line {n:d} of {fullname}:\n",
+                  file=sys.stderr)
+            import traceback
+            for record in traceback.format_exception(exc):
+                for line in record.splitlines():
+                    print('  '+line, file=sys.stderr)
+            print("\nRemainder of file ignored", file=sys.stderr)
+            break
     if reset:
         known_paths = None
     return known_paths
@@ -221,7 +241,8 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except OSError:
         return
-    names = [name for name in names if name.endswith(".pth")]
+    names = [name for name in names
+             if name.endswith(".pth") and not name.startswith(".")]
     for name in sorted(names):
         addpackage(sitedir, name, known_paths)
     if reset:
@@ -270,8 +291,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
+    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -450,60 +471,78 @@ def gethistoryfile():
 def enablerlcompleter():
     """Enable default readline configuration on interactive prompts, by
     registering a sys.__interactivehook__.
+    """
+    sys.__interactivehook__ = register_readline
+
+
+def register_readline():
+    """Configure readline completion on interactive prompts.
 
     If the readline module can be imported, the hook will set the Tab key
     as completion key and register ~/.python_history as history file.
     This can be overridden in the sitecustomize or usercustomize module,
     or in a PYTHONSTARTUP file.
     """
-    def register_readline():
-        import atexit
-        try:
-            import readline
-            import rlcompleter
-        except ImportError:
-            return
+    import atexit
+    try:
+        import readline
+        import rlcompleter
+        import _pyrepl.readline
+        import _pyrepl.unix_console
+    except ImportError:
+        return
 
-        # Reading the initialization (config) file may not be enough to set a
-        # completion key, so we set one first and then read the file.
-        if readline.backend == 'editline':
-            readline.parse_and_bind('bind ^I rl_complete')
-        else:
-            readline.parse_and_bind('tab: complete')
+    # Reading the initialization (config) file may not be enough to set a
+    # completion key, so we set one first and then read the file.
+    if readline.backend == 'editline':
+        readline.parse_and_bind('bind ^I rl_complete')
+    else:
+        readline.parse_and_bind('tab: complete')
 
+    try:
+        readline.read_init_file()
+    except OSError:
+        # An OSError here could have many causes, but the most likely one
+        # is that there's no .inputrc file (or .editrc file in the case of
+        # Mac OS X + libedit) in the expected location.  In that case, we
+        # want to ignore the exception.
+        pass
+
+    if readline.get_current_history_length() == 0:
+        # If no history was loaded, default to .python_history,
+        # or PYTHON_HISTORY.
+        # The guard is necessary to avoid doubling history size at
+        # each interpreter exit when readline was already configured
+        # through a PYTHONSTARTUP hook, see:
+        # http://bugs.python.org/issue5845#msg198636
+        history = gethistoryfile()
         try:
-            readline.read_init_file()
-        except OSError:
-            # An OSError here could have many causes, but the most likely one
-            # is that there's no .inputrc file (or .editrc file in the case of
-            # Mac OS X + libedit) in the expected location.  In that case, we
-            # want to ignore the exception.
+            if os.getenv("PYTHON_BASIC_REPL"):
+                readline.read_history_file(history)
+            else:
+                _pyrepl.readline.read_history_file(history)
+        except (OSError,* _pyrepl.unix_console._error):
             pass
 
-        if readline.get_current_history_length() == 0:
-            # If no history was loaded, default to .python_history,
-            # or PYTHON_HISTORY.
-            # The guard is necessary to avoid doubling history size at
-            # each interpreter exit when readline was already configured
-            # through a PYTHONSTARTUP hook, see:
-            # http://bugs.python.org/issue5845#msg198636
-            history = gethistoryfile()
+        def write_history():
             try:
-                readline.read_history_file(history)
-            except OSError:
+                # _pyrepl.__main__ is executed as the __main__ module
+                from __main__ import CAN_USE_PYREPL
+            except ImportError:
+                CAN_USE_PYREPL = False
+
+            try:
+                if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
+                    readline.write_history_file(history)
+                else:
+                    _pyrepl.readline.write_history_file(history)
+            except (FileNotFoundError, PermissionError):
+                # home directory does not exist or is not writable
+                # https://bugs.python.org/issue19891
                 pass
 
-            def write_history():
-                try:
-                    readline.write_history_file(history)
-                except OSError:
-                    # bpo-19891, bpo-41193: Home directory does not exist
-                    # or is not writable, or the filesystem is read-only.
-                    pass
+        atexit.register(write_history)
 
-            atexit.register(write_history)
-
-    sys.__interactivehook__ = register_readline
 
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE

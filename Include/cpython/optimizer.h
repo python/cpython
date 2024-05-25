@@ -14,10 +14,10 @@ typedef struct _PyExecutorLinkListNode {
 
 /* Bloom filter with m = 256
  * https://en.wikipedia.org/wiki/Bloom_filter */
-#define BLOOM_FILTER_WORDS 8
+#define _Py_BLOOM_FILTER_WORDS 8
 
-typedef struct _bloom_filter {
-    uint32_t bits[BLOOM_FILTER_WORDS];
+typedef struct {
+    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
 } _PyBloomFilter;
 
 typedef struct {
@@ -25,37 +25,71 @@ typedef struct {
     uint8_t oparg;
     uint8_t valid;
     uint8_t linked;
+    int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
+    PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
+/* Depending on the format,
+ * the 32 bits between the oparg and operand are:
+ * UOP_FORMAT_TARGET:
+ *    uint32_t target;
+ * UOP_FORMAT_EXIT
+ *    uint16_t exit_index;
+ *    uint16_t error_target;
+ * UOP_FORMAT_JUMP
+ *    uint16_t jump_target;
+ *    uint16_t error_target;
+ */
 typedef struct {
-    uint16_t opcode;
+    uint16_t opcode:14;
+    uint16_t format:2;
     uint16_t oparg;
-    uint32_t target;
+    union {
+        uint32_t target;
+        struct {
+            union {
+                uint16_t exit_index;
+                uint16_t jump_target;
+            };
+            uint16_t error_target;
+        };
+    };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
+typedef struct {
+    uint32_t target;
+    _Py_BackoffCounter temperature;
+    const struct _PyExecutorObject *executor;
+} _PyExitData;
+
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
+    const _PyUOpInstruction *trace;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
-    _PyUOpInstruction trace[1];
+    uint32_t exit_count;
+    uint32_t code_size;
+    size_t jit_size;
+    void *jit_code;
+    void *jit_side_entry;
+    _PyExitData exits[1];
 } _PyExecutorObject;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
 /* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
-typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject **, int curr_stackentries);
+typedef int (*_Py_optimize_func)(
+    _PyOptimizerObject* self, struct _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
+    int curr_stackentries);
 
-typedef struct _PyOptimizerObject {
+struct _PyOptimizerObject {
     PyObject_HEAD
-    optimize_func optimize;
-    /* These thresholds are treated as signed so do not exceed INT16_MAX
-     * Use INT16_MAX to indicate that the optimizer should never be called */
-    uint16_t resume_threshold;
-    uint16_t backedge_threshold;
+    _Py_optimize_func optimize;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
-} _PyOptimizerObject;
+};
 
 /** Test support **/
 typedef struct {
@@ -65,32 +99,34 @@ typedef struct {
 
 PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *executor);
 
-PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
+_PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
+
+PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
-int
-_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer);
-
-extern _PyOptimizerObject _PyOptimizer_Default;
-
-void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
-void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
+void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
-PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
-extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
-
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
-#define OPTIMIZER_BITS_IN_COUNTER 4
-/* Minimum of 16 additional executions before retry */
-#define MINIMUM_TIER2_BACKOFF 4
+#define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
+#define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
+
+#ifdef _Py_TIER2
+PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+#else
+#  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
+#  define _Py_Executors_InvalidateAll(A, B) ((void)0)
+#endif
+
 
 #ifdef __cplusplus
 }

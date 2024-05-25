@@ -204,6 +204,67 @@ PyDoc_STRVAR(math_log10__doc__,
 #define MATH_LOG10_METHODDEF    \
     {"log10", (PyCFunction)math_log10, METH_O, math_log10__doc__},
 
+PyDoc_STRVAR(math_fma__doc__,
+"fma($module, x, y, z, /)\n"
+"--\n"
+"\n"
+"Fused multiply-add operation.\n"
+"\n"
+"Compute (x * y) + z with a single round.");
+
+#define MATH_FMA_METHODDEF    \
+    {"fma", _PyCFunction_CAST(math_fma), METH_FASTCALL, math_fma__doc__},
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z);
+
+static PyObject *
+math_fma(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double z;
+
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[2])) {
+        z = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        z = PyFloat_AsDouble(args[2]);
+        if (z == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_fma_impl(module, x, y, z);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fmod__doc__,
 "fmod($module, x, y, /)\n"
 "--\n"
@@ -950,4 +1011,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b2eeaed8d8a76d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fe3f007f474e015 input=a9049054013a1b77]*/
