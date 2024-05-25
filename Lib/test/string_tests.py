@@ -307,7 +307,7 @@ class BaseTest:
         self.checkequal(4, '__abcd__', 'rfind', ('ab', 'cd'))
         self.checkequal(3, '__abc__', 'rfind', ('ab', 'bc'))
         self.checkequal(0, 'b' * 10000 + 'a', 'rfind', ('b' * 10000,))
-
+        self.checkequal(2, 'ab' + 'c' * 100000, 'rfind', ('c' * 100000, 'b' + 'c' * 100000))
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
         self.checkequal(3, 'abcdefghiabc', 'index', 'def')
