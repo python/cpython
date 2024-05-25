@@ -39,11 +39,26 @@ from ctypes.wintypes import (
     WCHAR,
     SHORT,
 )
-from ctypes import Structure, POINTER, Union, WinDLL
+from ctypes import Structure, POINTER, Union
 from ctypes import windll
 from typing import TYPE_CHECKING
 from .utils import wlen
 
+try:
+    from ctypes import GetLastError, WinError, WinDLL, windll
+except:
+    # Keep MyPy happy off Windows
+    from ctypes import CDLL as WinDLL, cdll as windll
+
+    def GetLastError() -> int:
+        return 42
+    
+    class WinError(OSError):
+        def __init__(self, err: int|None, descr: str|None = None) -> None:
+            self.err = err
+            self.descr = descr
+    
+    
 if TYPE_CHECKING:
     from typing import IO
 
@@ -117,6 +132,10 @@ class WindowsConsole(Console):
         else:
             self.output_fd = f_out.fileno()
 
+        self.screen: List[str] = []
+        self.width = 80
+        self.height = 25
+        self.__offset = 0
         self.event_queue: deque[Event] = deque()
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
@@ -251,25 +270,25 @@ class WindowsConsole(Console):
         if not ScrollConsoleScreenBuffer(
             OutHandle, scroll_rect, None, destination_origin, fill_info
         ):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
     def __hide_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
         info.bVisible = False
         if not SetConsoleCursorInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
     def __show_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
         info.bVisible = True
         if not SetConsoleCursorInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
     def __write(self, text: str) -> None:
         print(repr(text))
@@ -279,7 +298,7 @@ class WindowsConsole(Console):
     def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
     def erase_to_end(self) -> None:
@@ -340,7 +359,7 @@ class WindowsConsole(Console):
         and width of the terminal window in characters."""
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
         return (
             info.srWindow.Bottom - info.srWindow.Top + 1,
             info.srWindow.Right - info.srWindow.Left + 1,
@@ -349,7 +368,7 @@ class WindowsConsole(Console):
     def getscrollbacksize(self) -> int:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
         return info.srWindow.Bottom
 
@@ -357,7 +376,7 @@ class WindowsConsole(Console):
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
-            raise ctypes.WinError(ctypes.GetLastError())
+            raise WinError(GetLastError())
 
         if read.value == 0:
             return None

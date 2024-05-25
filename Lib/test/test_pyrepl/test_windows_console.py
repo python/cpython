@@ -1,15 +1,8 @@
 import itertools
 import sys
 import unittest
-from Lib._pyrepl.windows_console import ERASE_IN_LINE
 from _pyrepl.console import Event, Console
-from _pyrepl.windows_console import (
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    MOVE_UP,
-    MOVE_DOWN,
-    ERASE_IN_LINE,
-)
+from _pyrepl.windows_console import MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN, ERASE_IN_LINE
 from functools import partial
 from typing import Iterable
 from unittest import TestCase, main
@@ -22,7 +15,6 @@ try:
     from _pyrepl.windows_console import WindowsConsole
 except ImportError:
     pass
-
 
 @patch("os.write")
 @unittest.skipIf(sys.platform != "win32", "No Unix event queue on Windows")
@@ -46,16 +38,16 @@ class WindowsConsoleTests(TestCase):
 
     def handle_events(self, events: Iterable[Event], **kwargs):
         return handle_all_events(events, partial(self.console, **kwargs))
-
+    
     def handle_events_narrow(self, events):
         return self.handle_events(events, width=5)
-
+    
     def handle_events_short(self, events):
         return self.handle_events(events, height=1)
-
+    
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
-
+    
     def test_simple_addition(self, _os_write):
         code = "12+34"
         events = code_to_events(code)
@@ -130,8 +122,8 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        _os_write.assert_any_call(ANY, b"456\\")
-        _os_write.assert_any_call(ANY, b"789\\")
+        _os_write.assert_any_call(ANY, b'456\\')
+        _os_write.assert_any_call(ANY, b'789\\')
 
         con.restore()
 
@@ -323,10 +315,9 @@ class WindowsConsoleTests(TestCase):
 
     def move_right(self, cols=1):
         return MOVE_RIGHT.format(cols).encode("utf8")
-
+    
     def erase_in_line(self):
         return ERASE_IN_LINE.encode("utf8")
-
 
 if __name__ == "__main__":
     unittest.main()

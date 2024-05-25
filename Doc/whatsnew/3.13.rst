@@ -154,9 +154,9 @@ New Features
 A Better Interactive Interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS as well as Windows, Python now 
-uses a new :term:`interactive` shell. When the user starts the 
-:term:`REPL` from an interactive terminal the interactive shell now 
+On Unix-like systems like Linux or macOS as well as Windows, Python now
+uses a new :term:`interactive` shell. When the user starts the
+:term:`REPL` from an interactive terminal the interactive shell now
 supports the following new features:
 
 * Colorized prompts.
