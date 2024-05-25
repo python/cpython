@@ -238,6 +238,7 @@ class Reader:
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
     calc_screen: CalcScreen = field(init=False)
+    scheduled_commands: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -556,6 +557,10 @@ class Reader:
         except BaseException:
             self.restore()
             raise
+
+        while self.scheduled_commands:
+            cmd = self.scheduled_commands.pop()
+            self.do_cmd((cmd, []))
 
     def last_command_is(self, cls: type) -> bool:
         if not self.last_command:
