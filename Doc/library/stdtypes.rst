@@ -1794,6 +1794,9 @@ expression support in the :mod:`re` module).
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
    not found.
 
+   .. versionchanged:: 3.14
+      *sub* can now be a tuple of substrings.
+
 
 .. method:: str.isalnum()
 
@@ -2048,6 +2051,9 @@ expression support in the :mod:`re` module).
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
+
+   .. versionchanged:: 3.14
+      *sub* can now be a tuple of substrings.
 
 
 .. method:: str.rjust(width[, fillchar])
@@ -2906,6 +2912,9 @@ arbitrary binary data.
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
 
+   .. versionchanged:: 3.14
+       *sub* can now be a tuple of subsequences.
+
 
 .. method:: bytes.join(iterable)
             bytearray.join(iterable)
@@ -2989,6 +2998,9 @@ arbitrary binary data.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
+
+   .. versionchanged:: 3.14
+       *sub* can now be a tuple of subsequences.
 
 
 .. method:: bytes.rpartition(sep)
