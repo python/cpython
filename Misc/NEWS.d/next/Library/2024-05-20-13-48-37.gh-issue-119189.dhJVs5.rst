@@ -1,3 +1,1 @@
-This fixes a situation where raising a class with rpow in the class calling
-the exponent operator to raise it to the power of that class to not cast it
-as a float.
+When using the ** operator with a Fraction as a base and an object that implements __rpow__ as an exponent the fraction it is now not cast to a float.
