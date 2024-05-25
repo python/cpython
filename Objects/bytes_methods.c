@@ -569,7 +569,7 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
         ADJUST_INDICES(start, end, len);
         // Work in chunks
         for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
-            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE;
+            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_len;
@@ -637,7 +637,7 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
         // Work in chunks
         Py_ssize_t cur_end = end;
         for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
-            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE;
+            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE + 1;
             if (cur_start < start) {
                 cur_start = start;
             }
