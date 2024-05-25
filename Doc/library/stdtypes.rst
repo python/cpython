@@ -1725,8 +1725,9 @@ expression support in the :mod:`re` module).
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  *sub* can also be a tuple of substrings to look
-   for.  Optional arguments *start* and *end* are interpreted as in slice
-   notation.  Return ``-1`` if *sub* is not found.
+   for.  In this case the returned index, if found, will be the index of the
+   first match.  Optional arguments *start* and *end* are interpreted as in
+   slice notation.  Return ``-1`` if *sub* is not found.
 
    .. note::
 
@@ -2035,7 +2036,8 @@ expression support in the :mod:`re` module).
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  *sub* can also be a tuple
-   of substrings to look for.  Optional arguments *start* and *end* are
+   of substrings to look for.  In this case the returned index, if found, will
+   be the index of the last match.  Optional arguments *start* and *end* are
    interpreted as in slice notation.  Return ``-1`` on failure.
 
    .. versionchanged:: 3.14
@@ -2868,9 +2870,10 @@ arbitrary binary data.
 
    Return the lowest index in the data where the subsequence *sub* is found,
    such that *sub* is contained in the slice ``s[start:end]``.  *sub* can
-   also be a tuple of subsequences to look for.  Optional arguments *start*
-   and *end* are interpreted as in slice notation.  Return ``-1`` if *sub*
-   is not found.
+   also be a tuple of subsequences to look for.  In this case the returned
+   index, if found, will be the index of the first match.  Optional arguments
+   *start* and *end* are interpreted as in slice notation.  Return ``-1`` if
+   *sub* is not found.
 
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
@@ -2960,8 +2963,10 @@ arbitrary binary data.
 
    Return the highest index in the sequence where the subsequence *sub* is
    found, such that *sub* is contained within ``s[start:end]``.  *sub* can
-   also be a tuple of subsequences to look for.  Optional arguments *start*
-   and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
+   also be a tuple of subsequences to look for.  In this case the returned
+   index, if found, will be the index of the last match.  Optional arguments
+   *start* and *end* are interpreted as in slice notation.  Return ``-1`` on
+   failure.
 
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
