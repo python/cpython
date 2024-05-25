@@ -534,18 +534,24 @@ loops that truncate the stream.
 
 .. function:: permutations(iterable, r=None)
 
-   Return successive *r* length permutations of elements in the *iterable*.
+   Return successive *r* length `permutations of elements
+   <https://www.britannica.com/science/permutation>`_ from the *iterable*.
 
    If *r* is not specified or is ``None``, then *r* defaults to the length
    of the *iterable* and all possible full-length permutations
    are generated.
 
+   The output is a subsequence of :func:`product` where entries with
+   repeated elements have been filtered out.  The length of the output is
+   given by :func:`math.perm` which gives ``n! / (n-r)!`` when ``0 <= r <=
+   n`` or zero when ``r > n``.
+
    The permutation tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*.  If the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, there will be no repeated
+   value.  If the input elements are unique, there will be no repeated
    values within a permutation.
 
    Roughly equivalent to::
@@ -578,20 +584,6 @@ loops that truncate the stream.
                 else:
                     return
 
-   The code for :func:`permutations` can be also expressed as a subsequence of
-   :func:`product` filtered to exclude entries with repeated elements (those
-   from the same position in the input pool)::
-
-        def permutations(iterable, r=None):
-            pool = tuple(iterable)
-            n = len(pool)
-            r = n if r is None else r
-            for indices in product(range(n), repeat=r):
-                if len(set(indices)) == r:
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``n! / (n-r)!`` when ``0 <= r <= n``
-   or zero when ``r > n``.
 
 .. function:: product(*iterables, repeat=1)
 
