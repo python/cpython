@@ -683,7 +683,6 @@ bytes_rfind_internal(const char *str, Py_ssize_t len,
     return find_internal(str, len, function_name, subobj, start, end, -1);
 }
 
-
 PyObject *
 _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 Py_ssize_t start, Py_ssize_t end)
