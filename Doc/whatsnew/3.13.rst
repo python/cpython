@@ -2304,10 +2304,14 @@ Changes in the C API
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
-* :c:func:`!PyFrame_FastToLocals`, :c:func:`!PyFrame_FastToLocalsWithError`, and
-  :c:func:`!PyFrame_LocalsToFast` no longer have any effect. Note that calling
-  them has been redundant since Python 3.11, when :c:func:`PyFrame_GetLocals`
-  was first introduced. (Changed as part of :pep:`667`.)
+* :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
+  no longer have any effect. Calling these functions has been redundant since
+  Python 3.11, when  :c:func:`PyFrame_GetLocals`  was first introduced.
+  (Changed as part of :pep:`667`.)
+
+* :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
+  is redundant now that  :c:func:`PyFrame_GetLocals` returns a write-through proxy
+  on :term:`optimized frames <optimized frame>`. (Changed as part of :pep:`667`.)
 
 Removed C APIs
 --------------
