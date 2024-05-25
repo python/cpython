@@ -38,6 +38,10 @@ from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
+from .console import Console as ConsoleType
+
+Console: type[ConsoleType]
+error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import UnixConsole as Console, _error
 except:

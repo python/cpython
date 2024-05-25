@@ -35,10 +35,11 @@ from types import ModuleType
 
 from .readline import _get_reader, multiline_input
 
+error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import _error
 except ModuleNotFoundError:
-    _error = OSError
+    from .windows_console import _error
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
