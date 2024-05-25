@@ -581,12 +581,12 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
                 else {
                     sublen = subbuf.len;
                 }
-                Py_ssize_t cur_end = start + 10000 + sublen;
-                if (cur_end > end) {
-                    cur_end = end;
+                Py_ssize_t sub_end = start + 10000 + sublen;
+                if (sub_end > end) {
+                    sub_end = end;
                 }
                 Py_ssize_t new_result = find_internal(str, len, "find", subseq,
-                                                      start, cur_end, +1);
+                                                      start, sub_end, +1);
                 if (new_result == -2) {
                     return NULL;
                 }
@@ -629,10 +629,11 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
         result = -1;
         ADJUST_INDICES(start, end, len);
         // Work in batches of 10000
-        for (; result == -1 && end >= start; end -= 10000) {
-            Py_ssize_t cur_start = end - 10000;
-            if (cur_start < start) {
-                cur_start = start;
+        Py_ssize_t cur_end = end;
+        for (; result == -1 && cur_end >= start; cur_end -= 10000) {
+            Py_ssize_t sub_start = end - 10000;
+            if (sub_start < start) {
+                sub_start = start;
             }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
@@ -649,13 +650,13 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 else {
                     sublen = subbuf.len;
                 }
-                Py_ssize_t cur_end = end + sublen;
-                if (cur_end > end) {
-                    cur_end = end;
+                Py_ssize_t sub_end = cur_end + sublen;
+                if (sub_end > end) {
+                    sub_end = end;
                 }
                 Py_ssize_t new_result = find_internal(str, len, "rfind",
-                                                      subseq, cur_start,
-                                                      cur_end, -1);
+                                                      subseq, sub_start,
+                                                      sub_end, -1);
                 if (new_result == -2) {
                     return NULL;
                 }
