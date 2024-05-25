@@ -457,20 +457,19 @@ loops that truncate the stream.
 .. function:: islice(iterable, stop)
               islice(iterable, start, stop[, step])
 
-   Make an iterator that returns selected elements from the iterable. If *start* is
-   non-zero, then elements from the iterable are skipped until start is reached.
-   Afterward, elements are returned consecutively unless *step* is set higher than
-   one which results in items being skipped.  If *stop* is ``None``, then iteration
-   continues until the iterator is exhausted, if at all; otherwise, it stops at the
-   specified position.
+   Make an iterator that returns selected elements from the iterable.
+   Works like sequence slicing but does not support negative values for
+   *start*, *stop*, or *step*.
 
-   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
-   then the step defaults to one.
+   If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
+   elements from the iterable are skipped until *start* is reached.
 
-   Unlike regular slicing, :func:`islice` does not support negative values for
-   *start*, *stop*, or *step*.  Can be used to extract related fields from
-   data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).
+   If *stop* is ``None``, iteration continues until the iterator is
+   exhausted, if at all.  Otherwise, it stops at the specified position.
+
+   Elements are returned consecutively unless *step* is set higher than one
+   which results in items being skipped.  If *step* is ``None``, the step
+   defaults to one.
 
    Roughly equivalent to::
 
