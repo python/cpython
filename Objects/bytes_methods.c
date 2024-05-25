@@ -663,7 +663,7 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 if (new_result == -2) {
                     return NULL;
                 }
-                if (new_result != 1) {
+                if (new_result != -1) {
                     if (new_result == cur_end) {
                         return PyLong_FromSsize_t(cur_end);
                     }

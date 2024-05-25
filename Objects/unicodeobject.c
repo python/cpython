@@ -12588,7 +12588,7 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
                                                        sub_end, -1);
-                if (new_result != 1) {
+                if (new_result != -1) {
                     if (new_result == cur_end) {
                         return cur_end;
                     }
