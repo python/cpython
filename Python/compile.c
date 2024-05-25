@@ -2173,7 +2173,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     assert(ste != NULL);
     bool annotations_used = ste->ste_annotations_used;
 
-    if (!future_annotations && annotations_used) {
+    if (annotations_used && !future_annotations) {
         if (compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
                                              ste->ste_name) < 0) {
             Py_DECREF(ste);
@@ -2183,7 +2183,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_DECREF(ste);
 
     if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (!future_annotations && annotations_used) {
+        if (annotations_used && !future_annotations) {
             compiler_exit_scope(c);
         }
         return ERROR;
