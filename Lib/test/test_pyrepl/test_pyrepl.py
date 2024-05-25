@@ -791,7 +791,7 @@ class TestMain(TestCase):
         os.write(master_fd, repl_input.encode("utf-8"))
 
         output = []
-        while select.select([master_fd], [], [], 0.05)[0]:
+        while select.select([master_fd], [], [], 0.5)[0]:
             data = os.read(master_fd, 1024).decode("utf-8")
             if not data:
                 break
