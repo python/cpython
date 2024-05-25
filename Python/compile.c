@@ -1643,6 +1643,8 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
         return ERROR;
     }
     c->u->u_metadata.u_posonlyargcount = 1;
+    // if .format != 1: raise NotImplementedError
+    // The raise is at the end of the function so there are no jumps in the happy path.
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
     ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
@@ -1681,7 +1683,7 @@ compiler_collect_annotations(struct compiler *c, asdl_stmt_seq *stmts,
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, i);
         switch (st->kind) {
         case AnnAssign_kind:
-            // Only "simple" names (i.e., unparenthesized names) are stored.
+            // Only "simple" (i.e., unparenthesized) names are stored.
             if (st->v.AnnAssign.simple) {
                 PyObject *mangled = _Py_Mangle(c->u->u_private, st->v.AnnAssign.target->v.Name.id);
                 ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
@@ -1761,7 +1763,9 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
         loc = LOC(st);
     }
-    /* Every annotated class and module should have __annotations__. */
+    /* If from __future__ import annotations is active,
+     * every annotated class and module should have __annotations__.
+     * Else __annotate__ is created when necessary. */
     if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && find_ann(stmts)) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
@@ -1789,6 +1793,9 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     }
+    // If there are annotations and the future import is not on, we
+    // collect the annotations in a separate pass and generate an
+    // __annotate__ function. See PEP 649.
     if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
          c->u->u_ste->ste_annotation_block != NULL) {
         NEW_JUMP_TARGET_LABEL(c, raise_notimp);
@@ -2156,7 +2163,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
                            arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
-       The expressions are evaluated out-of-order wrt the source code.
+       The expressions are evaluated separately from the rest of the source code.
 
        Return -1 on error, or a combination of flags to add to the function.
        */

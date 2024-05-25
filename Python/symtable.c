@@ -2508,7 +2508,8 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
             }
 
             _Py_DECLARE_STR(format, ".format");
-            // We need to insert code that reads this "parameter" to the function.
+            // The generated __annotate__ function takes a single parameter with the
+            // internal name ".format".
             if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM,
                                   LOCATION(annotation))) {
                 return 0;

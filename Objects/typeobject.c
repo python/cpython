@@ -1829,7 +1829,6 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
             return -1;
         }
     }
-    PyType_Modified(type);
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
