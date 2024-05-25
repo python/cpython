@@ -11333,6 +11333,8 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
     return NULL;
 }
 
+#define FIND_CHUNK_SIZE 10000
+
 /*[clinic input]
 str.find as unicode_find -> Py_ssize_t
 
@@ -11368,9 +11370,9 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         result = -1;
         Py_ssize_t len = PyUnicode_GET_LENGTH(str);
         ADJUST_INDICES(start, end, len);
-        // Work in batches of 10000
-        for (; result == -1 && start <= end; start += 10000) {
-            Py_ssize_t cur_end = start + 10000;
+        // Work in chunks
+        for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
+            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE;
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
@@ -12573,10 +12575,10 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         result = -1;
         Py_ssize_t len = PyUnicode_GET_LENGTH(str);
         ADJUST_INDICES(start, end, len);
-        // Work in batches of 10000
+        // Work in chunks
         Py_ssize_t cur_end = end;
-        for (; result == -1 && cur_end >= start; cur_end -= 10000) {
-            Py_ssize_t cur_start = cur_end - 10000;
+        for (; result == -1 && cur_end >= start; cur_end -= FIND_CHUNK_SIZE) {
+            Py_ssize_t cur_start = cur_end - FIND_CHUNK_SIZE;
             if (cur_start < start) {
                 cur_start = start;
             }
