@@ -108,7 +108,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None= None, future_flags: int = 0
+    mainmodule: ModuleType | None = None, future_flags: int = 0
 ) -> None:
     import __main__
     from .readline import _setup

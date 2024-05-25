@@ -1,7 +1,13 @@
-import itertools
+import importlib
 import io
+import itertools
 import os
+import pty
 import rlcompleter
+import select
+import subprocess
+import sys
+import termios
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -748,3 +754,50 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
+
+
+class TestMain(TestCase):
+    def test_exposed_globals_in_repl(self):
+        expected_output = (
+            "['__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', "
+            "'__loader__', '__name__', '__package__', '__spec__', 'interactive_console']"
+        )
+        output, exit_code = self.run_repl(["dir()", "exit"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn(expected_output, output)
+
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> str:
+        master_fd, slave_fd = pty.openpty()
+        process = subprocess.Popen(
+            [sys.executable, "-i", "-u"],
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+        )
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], 0.05)[0]:
+            data = os.read(master_fd, 1024).decode("utf-8")
+            if not data:
+                break
+            output.append(data)
+
+        os.close(master_fd)
+        os.close(slave_fd)
+        exit_code = process.wait()
+        return "\n".join(output), exit_code

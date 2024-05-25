@@ -1,9 +1,9 @@
 """Test the interactive interpreter."""
 
-import sys
 import os
-import unittest
 import subprocess
+import sys
+import unittest
 from textwrap import dedent
 from test import support
 from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
@@ -197,7 +197,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
     def test_asyncio_repl_is_ok(self):
         assert_python_ok("-m", "asyncio")
-
 
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
