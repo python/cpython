@@ -271,12 +271,17 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
+   The output is a subsequence of :func:`product` that keeps only entries
+   that are subsequences (with possible repeated elements) of the
+   *iterable*.  The number of subsequence returned is ``(n + r - 1)! / r! /
+   (n - 1)!`` when ``n > 0``.
+
    The combination tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*. if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, the generated combinations
+   value.  If the input elements are unique, the generated combinations
    will also be unique.
 
    Roughly equivalent to::
@@ -297,19 +302,6 @@ loops that truncate the stream.
                     return
                 indices[i:] = [indices[i] + 1] * (r - i)
                 yield tuple(pool[i] for i in indices)
-
-   The code for :func:`combinations_with_replacement` can be also expressed as
-   a subsequence of :func:`product` after filtering entries where the elements
-   are not in sorted order (according to their position in the input pool)::
-
-        def combinations_with_replacement(iterable, r):
-            pool = tuple(iterable)
-            n = len(pool)
-            for indices in product(range(n), repeat=r):
-                if sorted(indices) == list(indices):
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``(n+r-1)! / r! / (n-1)!`` when ``n > 0``.
 
    .. versionadded:: 3.1
 
