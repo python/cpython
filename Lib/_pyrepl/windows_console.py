@@ -221,13 +221,18 @@ class WindowsConsole(Console):
             self.erase_to_end()
 
         self.__write(newline[x_pos:])
-        self.__posxy = wlen(newline), y
+        if wlen(newline) == self.width:
+            # If we wrapped we want to start at the next line
+            self.__move_relative(0, y + 1)
+            self.__posxy = 0, y + 1
+        else:
+            self.__posxy = wlen(newline), y
 
-        if "\x1b" in newline or y != self.__posxy[1]:
-            # ANSI escape characters are present, so we can't assume
-            # anything about the position of the cursor.  Moving the cursor
-            # to the left margin should work to get to a known position.
-            self.move_cursor(0, y)
+            if "\x1b" in newline or y != self.__posxy[1]:
+                # ANSI escape characters are present, so we can't assume
+                # anything about the position of the cursor.  Moving the cursor
+                # to the left margin should work to get to a known position.
+                self.move_cursor(0, y)
 
     def scroll(
         self, top: int, bottom: int, left: int | None = None, right: int | None = None
@@ -267,6 +272,7 @@ class WindowsConsole(Console):
             raise ctypes.WinError(ctypes.GetLastError())
 
     def __write(self, text: str) -> None:
+        print(repr(text))
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
 
     @property
@@ -283,10 +289,6 @@ class WindowsConsole(Console):
         trace("prepare")
         self.screen = []
         self.height, self.width = self.getheightwidth()
-
-        info = CONSOLE_SCREEN_BUFFER_INFO()
-        if not GetConsoleScreenBufferInfo(OutHandle, info):
-            raise ctypes.WinError(ctypes.GetLastError())
 
         self.__posxy = 0, 0
         self.__gone_tall = 0
