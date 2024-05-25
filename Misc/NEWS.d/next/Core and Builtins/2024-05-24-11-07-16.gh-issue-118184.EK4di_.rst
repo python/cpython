@@ -1,1 +1,4 @@
-Support tuples for :meth:`str.find`, :meth:`bytearray.find`, :meth:`bytes.find`, :meth:`str.rfind`, :meth:`bytearray.rfind` and :meth:`bytes.rfind`.
+Support tuples for :meth:`str.find`,   :meth:`bytearray.find`,      :meth:`bytes.find`,
+                   :meth:`str.index`,  :meth:`bytearray.index`,     :meth:`bytes.index`,
+                   :meth:`str.rfind`,  :meth:`bytearray.rfind`,     :meth:`bytes.rfind`,
+                   :meth:`str.rindex`, :meth:`bytearray.rindex` and :meth:`bytes.rindex`.
