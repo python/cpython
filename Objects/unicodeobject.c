@@ -44,6 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
@@ -201,6 +202,11 @@ static PyObject *
 unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed);
+static int
+unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
+                           const char *s, Py_ssize_t size,
+                           _Py_error_handler error_handler, const char *errors,
+                           Py_ssize_t *consumed);
 #ifdef Py_DEBUG
 static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
@@ -2376,14 +2382,11 @@ unicode_fromformat_write_str(_PyUnicodeWriter *writer, PyObject *str,
 }
 
 static int
-unicode_fromformat_write_cstr(_PyUnicodeWriter *writer, const char *str,
+unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
                               Py_ssize_t width, Py_ssize_t precision, int flags)
 {
     /* UTF-8 */
     Py_ssize_t length;
-    PyObject *unicode;
-    int res;
-
     if (precision == -1) {
         length = strlen(str);
     }
@@ -2393,11 +2396,19 @@ unicode_fromformat_write_cstr(_PyUnicodeWriter *writer, const char *str,
             length++;
         }
     }
-    unicode = PyUnicode_DecodeUTF8Stateful(str, length, "replace", NULL);
+
+    if (width < 0) {
+        return unicode_decode_utf8_writer(writer, str, length,
+                                          _Py_ERROR_REPLACE, "replace", NULL);
+    }
+
+    PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
+                                                     "replace", NULL);
     if (unicode == NULL)
         return -1;
 
-    res = unicode_fromformat_write_str(writer, unicode, width, -1, flags);
+    int res = unicode_fromformat_write_str(writer, unicode,
+                                           width, -1, flags);
     Py_DECREF(unicode);
     return res;
 }
@@ -2699,7 +2710,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         else {
             /* UTF-8 */
             const char *s = va_arg(*vargs, const char*);
-            if (unicode_fromformat_write_cstr(writer, s, width, precision, flags) < 0)
+            if (unicode_fromformat_write_utf8(writer, s, width, precision, flags) < 0)
                 return NULL;
         }
         break;
@@ -2738,7 +2749,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         }
         else {
             assert(str != NULL);
-            if (unicode_fromformat_write_cstr(writer, str, width, precision, flags) < 0)
+            if (unicode_fromformat_write_utf8(writer, str, width, precision, flags) < 0)
                 return NULL;
         }
         break;
@@ -4736,46 +4747,14 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     return p - start;
 }
 
-static PyObject *
-unicode_decode_utf8(const char *s, Py_ssize_t size,
-                    _Py_error_handler error_handler, const char *errors,
-                    Py_ssize_t *consumed)
+
+static int
+unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
+                         const char *starts, const char *s, const char *end,
+                         _Py_error_handler error_handler,
+                         const char *errors,
+                         Py_ssize_t *consumed)
 {
-    if (size == 0) {
-        if (consumed)
-            *consumed = 0;
-        _Py_RETURN_UNICODE_EMPTY();
-    }
-
-    /* ASCII is equivalent to the first 128 ordinals in Unicode. */
-    if (size == 1 && (unsigned char)s[0] < 128) {
-        if (consumed) {
-            *consumed = 1;
-        }
-        return get_latin1_char((unsigned char)s[0]);
-    }
-
-    const char *starts = s;
-    const char *end = s + size;
-
-    // fast path: try ASCII string.
-    PyObject *u = PyUnicode_New(size, 127);
-    if (u == NULL) {
-        return NULL;
-    }
-    s += ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
-    if (s == end) {
-        if (consumed) {
-            *consumed = size;
-        }
-        return u;
-    }
-
-    // Use _PyUnicodeWriter after fast path is failed.
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_InitWithBuffer(&writer, u);
-    writer.pos = s - starts;
-
     Py_ssize_t startinpos, endinpos;
     const char *errmsg = "";
     PyObject *error_handler_obj = NULL;
@@ -4783,18 +4762,18 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 
     while (s < end) {
         Py_UCS4 ch;
-        int kind = writer.kind;
+        int kind = writer->kind;
 
         if (kind == PyUnicode_1BYTE_KIND) {
-            if (PyUnicode_IS_ASCII(writer.buffer))
-                ch = asciilib_utf8_decode(&s, end, writer.data, &writer.pos);
+            if (PyUnicode_IS_ASCII(writer->buffer))
+                ch = asciilib_utf8_decode(&s, end, writer->data, &writer->pos);
             else
-                ch = ucs1lib_utf8_decode(&s, end, writer.data, &writer.pos);
+                ch = ucs1lib_utf8_decode(&s, end, writer->data, &writer->pos);
         } else if (kind == PyUnicode_2BYTE_KIND) {
-            ch = ucs2lib_utf8_decode(&s, end, writer.data, &writer.pos);
+            ch = ucs2lib_utf8_decode(&s, end, writer->data, &writer->pos);
         } else {
             assert(kind == PyUnicode_4BYTE_KIND);
-            ch = ucs4lib_utf8_decode(&s, end, writer.data, &writer.pos);
+            ch = ucs4lib_utf8_decode(&s, end, writer->data, &writer->pos);
         }
 
         switch (ch) {
@@ -4825,7 +4804,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             endinpos = startinpos + ch - 1;
             break;
         default:
-            if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
+            // ch doesn't fit into kind, so change the buffer kind to write
+            // the character
+            if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0)
                 goto onError;
             continue;
         }
@@ -4839,7 +4820,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
             break;
 
         case _Py_ERROR_REPLACE:
-            if (_PyUnicodeWriter_WriteCharInline(&writer, 0xfffd) < 0)
+            if (_PyUnicodeWriter_WriteCharInline(writer, 0xfffd) < 0)
                 goto onError;
             s += (endinpos - startinpos);
             break;
@@ -4848,13 +4829,13 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         {
             Py_ssize_t i;
 
-            if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
+            if (_PyUnicodeWriter_PrepareKind(writer, PyUnicode_2BYTE_KIND) < 0)
                 goto onError;
             for (i=startinpos; i<endinpos; i++) {
                 ch = (Py_UCS4)(unsigned char)(starts[i]);
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos,
+                PyUnicode_WRITE(writer->kind, writer->data, writer->pos,
                                 ch + 0xdc00);
-                writer.pos++;
+                writer->pos++;
             }
             s += (endinpos - startinpos);
             break;
@@ -4865,8 +4846,13 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     errors, &error_handler_obj,
                     "utf-8", errmsg,
                     &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &writer))
+                    writer)) {
                 goto onError;
+            }
+
+            if (_PyUnicodeWriter_Prepare(writer, end - s, 127) < 0) {
+                return -1;
+            }
         }
     }
 
@@ -4876,13 +4862,107 @@ End:
 
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    return _PyUnicodeWriter_Finish(&writer);
+    return 0;
 
 onError:
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    _PyUnicodeWriter_Dealloc(&writer);
-    return NULL;
+    return -1;
+}
+
+
+static PyObject *
+unicode_decode_utf8(const char *s, Py_ssize_t size,
+                    _Py_error_handler error_handler, const char *errors,
+                    Py_ssize_t *consumed)
+{
+    if (size == 0) {
+        if (consumed) {
+            *consumed = 0;
+        }
+        _Py_RETURN_UNICODE_EMPTY();
+    }
+
+    /* ASCII is equivalent to the first 128 ordinals in Unicode. */
+    if (size == 1 && (unsigned char)s[0] < 128) {
+        if (consumed) {
+            *consumed = 1;
+        }
+        return get_latin1_char((unsigned char)s[0]);
+    }
+
+    // fast path: try ASCII string.
+    const char *starts = s;
+    const char *end = s + size;
+    PyObject *u = PyUnicode_New(size, 127);
+    if (u == NULL) {
+        return NULL;
+    }
+    Py_ssize_t decoded = ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
+    if (decoded == size) {
+        if (consumed) {
+            *consumed = size;
+        }
+        return u;
+    }
+    s += decoded;
+    size -= decoded;
+
+    // Use _PyUnicodeWriter after fast path is failed.
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_InitWithBuffer(&writer, u);
+    writer.pos = decoded;
+
+    if (unicode_decode_utf8_impl(&writer, starts, s, end,
+                                 error_handler, errors,
+                                 consumed) < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
+}
+
+
+static int
+unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
+                           const char *s, Py_ssize_t size,
+                           _Py_error_handler error_handler, const char *errors,
+                           Py_ssize_t *consumed)
+{
+    if (size == 0) {
+        if (consumed) {
+            *consumed = 0;
+        }
+        return 0;
+    }
+
+    // fast path: try ASCII string.
+    if (_PyUnicodeWriter_Prepare(writer, size, 127) < 0) {
+        return -1;
+    }
+
+    const char *starts = s;
+    const char *end = s + size;
+    Py_ssize_t decoded = 0;
+    Py_UCS1 *dest = (Py_UCS1*)writer->data + writer->pos * writer->kind;
+    if (writer->kind == PyUnicode_1BYTE_KIND
+        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
+    {
+        decoded = ascii_decode(s, end, dest);
+        writer->pos += decoded;
+
+        if (decoded == size) {
+            if (consumed) {
+                *consumed = size;
+            }
+            return 0;
+        }
+        s += decoded;
+        size -= decoded;
+    }
+
+    return unicode_decode_utf8_impl(writer, starts, s, end,
+                                    error_handler, errors, consumed);
 }
 
 
@@ -9559,13 +9639,14 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         return NULL;
     }
 
-    /* NOTE: the following code can't call back into Python code,
-     * so we are sure that fseq won't be mutated.
-     */
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
 
     items = PySequence_Fast_ITEMS(fseq);
     seqlen = PySequence_Fast_GET_SIZE(fseq);
     res = _PyUnicode_JoinArray(separator, items, seqlen);
+
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+
     Py_DECREF(fseq);
     return res;
 }
@@ -13409,7 +13490,7 @@ Return a formatted version of the string, using substitutions from args and kwar
 The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
-             "format_map($self, /, mapping)\n\
+             "format_map($self, mapping, /)\n\
 --\n\
 \n\
 Return a formatted version of the string, using substitutions from mapping.\n\
