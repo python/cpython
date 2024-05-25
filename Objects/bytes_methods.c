@@ -630,6 +630,10 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
         ADJUST_INDICES(start, end, len);
         // Work in batches of 10000
         for (; result == -1 && end >= start; end -= 10000) {
+            Py_ssize_t cur_start = end - 10000;
+            if (cur_start < start) {
+                cur_start = start;
+            }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sublen;
@@ -645,13 +649,13 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 else {
                     sublen = subbuf.len;
                 }
-                Py_ssize_t cur_start = end - 10000 - sublen;
-                if (cur_start < start) {
-                    cur_start = start;
+                Py_ssize_t cur_end = end + sublen;
+                if (cur_end > end) {
+                    cur_end = end;
                 }
                 Py_ssize_t new_result = find_internal(str, len, "rfind",
-                                                      subseq, cur_start, end,
-                                                      -1);
+                                                      subseq, cur_start,
+                                                      cur_end, -1);
                 if (new_result == -2) {
                     return NULL;
                 }

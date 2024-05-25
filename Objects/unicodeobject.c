@@ -12560,6 +12560,10 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         ADJUST_INDICES(start, end, len);
         // Work in batches of 10000
         for (; result == -1 && end >= start; end -= 10000) {
+            Py_ssize_t cur_start = end - 10000;
+            if (cur_start < start) {
+                cur_start = start;
+            }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
                 if (!PyUnicode_Check(substr)) {
@@ -12569,13 +12573,12 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                                 Py_TYPE(substr)->tp_name);
                     return -1;
                 }
-                Py_ssize_t sublen = PyUnicode_GET_LENGTH(substr);
-                Py_ssize_t cur_start = end - 10000 - sublen;
-                if (cur_start < start) {
-                    cur_start = start;
+                Py_ssize_t cur_end = end + PyUnicode_GET_LENGTH(substr);
+                if (cur_end > end) {
+                    cur_end = end;
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
-                                                       end, -1);
+                                                       cur_end, -1);
                 if (new_result > result) {
                     result = new_result;
                 }
