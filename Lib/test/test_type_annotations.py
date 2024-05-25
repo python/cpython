@@ -355,3 +355,8 @@ class DeferredEvaluationTests(unittest.TestCase):
                 with self.assertRaises(NotImplementedError):
                     annotate(None)
                 self.assertEqual(annotate(inspect.VALUE), {"x": int})
+
+    def test_comprehension_in_annotation(self):
+        # This crashed in an earlier version of the code
+        ns = run_code("x: [y for y in range(10)]")
+        self.assertEqual(ns["__annotate__"](1), {"x": list(range(10))})

@@ -1635,8 +1635,7 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
 
 static int
 compiler_setup_annotations_scope(struct compiler *c, location loc,
-                                 void *key, jump_target_label label,
-                                 PyObject *name)
+                                 void *key, PyObject *name)
 {
     if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
                              key, loc.lineno) == -1) {
@@ -1644,24 +1643,24 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
     }
     c->u->u_metadata.u_posonlyargcount = 1;
     // if .format != 1: raise NotImplementedError
-    // The raise is at the end of the function so there are no jumps in the happy path.
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
     ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
-    ADDOP_I(c, loc, COMPARE_OP, (Py_EQ << 5) | compare_masks[Py_EQ]);
-    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, label);
+    ADDOP_I(c, loc, COMPARE_OP, (Py_NE << 5) | compare_masks[Py_NE]);
+    NEW_JUMP_TARGET_LABEL(c, body);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
+    ADDOP_I(c, loc, RAISE_VARARGS, 1);
+    USE_LABEL(c, body);
     return 0;
 }
 
 static int
 compiler_leave_annotations_scope(struct compiler *c, location loc,
-                                 Py_ssize_t annotations_len, jump_target_label label)
+                                 Py_ssize_t annotations_len)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-    USE_LABEL(c, label);
-    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
-    ADDOP_I(c, loc, RAISE_VARARGS, 1);
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (co == NULL) {
@@ -1798,16 +1797,15 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // __annotate__ function. See PEP 649.
     if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
          c->u->u_ste->ste_annotation_block != NULL) {
-        NEW_JUMP_TARGET_LABEL(c, raise_notimp);
         void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
-        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key, raise_notimp,
+        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key,
                                                          c->u->u_ste->ste_annotation_block->ste_name));
         int annotations_len = 0;
         RETURN_IF_ERROR(
             compiler_collect_annotations(c, stmts, &annotations_len)
         );
         RETURN_IF_ERROR(
-            compiler_leave_annotations_scope(c, loc, annotations_len, raise_notimp)
+            compiler_leave_annotations_scope(c, loc, annotations_len)
         );
         RETURN_IF_ERROR(
             compiler_nameop(c, loc, &_Py_ID(__annotate__), Store)
@@ -2170,8 +2168,6 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
     int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
-    NEW_JUMP_TARGET_LABEL(c, raise_notimp);
-
     PySTEntryObject *ste;
     int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
     if (result == -1) {
@@ -2181,7 +2177,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     bool annotations_used = ste->ste_annotations_used;
 
     if (annotations_used && !future_annotations) {
-        if (compiler_setup_annotations_scope(c, loc, (void *)args, raise_notimp,
+        if (compiler_setup_annotations_scope(c, loc, (void *)args,
                                              ste->ste_name) < 0) {
             Py_DECREF(ste);
             return ERROR;
@@ -2205,7 +2201,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     else {
         if (annotations_used) {
             RETURN_IF_ERROR(
-                compiler_leave_annotations_scope(c, loc, annotations_len, raise_notimp)
+                compiler_leave_annotations_scope(c, loc, annotations_len)
             );
             return MAKE_FUNCTION_ANNOTATE;
         }
