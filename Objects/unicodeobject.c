@@ -11379,10 +11379,12 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, start,
                                                        sub_end, 1);
-                if (new_result != -1 &&
-                    (new_result < result || result == -1))
-                {
-                    result = cur_end = new_result;
+                if (new_result != -1) {
+                    if (new_result == start) {
+                        return start;
+                    }
+                    cur_end = new_result - 1;
+                    result = new_result;
                 }
             }
         }
@@ -12586,8 +12588,12 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
                                                        sub_end, -1);
-                if (new_result > result) {
-                    result = cur_start = new_result;
+                if (new_result != 1) {
+                    if (new_result == cur_end) {
+                        return cur_end;
+                    }
+                    cur_start = new_result + 1;
+                    result = new_result;
                 }
             }
         }

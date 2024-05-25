@@ -591,10 +591,12 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
                 if (new_result == -2) {
                     return NULL;
                 }
-                if (new_result != -1 &&
-                    (new_result < result || result == -1))
-                {
-                    result = cur_end = new_result;
+                if (new_result != -1) {
+                    if (new_result == start) {
+                        return start;
+                    }
+                    cur_end = new_result - 1;
+                    result = new_result;
                 }
             }
         }
@@ -661,8 +663,12 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
                 if (new_result == -2) {
                     return NULL;
                 }
-                if (new_result > result) {
-                    result = cur_start = new_result;
+                if (new_result != 1) {
+                    if (new_result == cur_end) {
+                        return cur_end;
+                    }
+                    cur_start = new_result + 1;
+                    result = new_result;
                 }
             }
         }
