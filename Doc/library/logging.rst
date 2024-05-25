@@ -1161,7 +1161,7 @@ functions.
    Return a logger with the specified name or, if name is ``None``, return the
    root logger of the hierarchy. If specified, the name is
    typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
-   Choice of these names is entirely up to the developer who is using logging.
+   Choice of these names is entirely up to the developer who is using logging, though it is recommended that ``__name__`` be used unless you have a specific reason for not doing that, as mentioned in :ref:`logger-objects`.
 
    All calls to this function with a given name return the same logger instance.
    This means that logger instances never need to be passed between different parts
