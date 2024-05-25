@@ -775,7 +775,7 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> str:
+    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(
             [sys.executable, "-i", "-u"],
