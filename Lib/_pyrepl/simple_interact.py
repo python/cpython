@@ -96,7 +96,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = compile(item, filename, the_symbol)
-            except (OverflowError, ValueError):
+            except (OverflowError, ValueError, SyntaxError):
                     self.showsyntaxerror(filename)
                     return False
 
