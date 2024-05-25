@@ -227,6 +227,7 @@ class BaseTest:
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'find', ('aa', 'bb'), 0, 3)
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 4)
+        self.checkraises(TypeError, 'hello', 'find', (None,))
         s = '_' * 9998 + 'aaaa' + '_' * 9998
         self.checkequal(9998, s, 'find', ('aaaa', 'bb'))
         self.checkequal(2, 'foobar', 'find', ('ob', 'oba'))
@@ -235,7 +236,8 @@ class BaseTest:
         self.checkequal(2, '__abcd__', 'find', ('cd', 'ab'))
         self.checkequal(2, '__abc__', 'find', ('bc', 'ab'))
         self.checkequal(1, 'a' + 'b' * 10000, 'find', ('b' * 10000,))
-        self.checkequal(1, 'ab' + 'c' * 100000, 'find', ('c' * 100000, 'b' + 'c' * 100000))
+        s = 'ab' + 'c' * 100000
+        self.checkequal(1, s, 'find', ('c' * 100000, 'b' + 'c' * 100000))
 
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
@@ -299,6 +301,7 @@ class BaseTest:
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'rfind', ('aa', 'bb'), 7, 10)
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 6, 10)
+        self.checkraises(TypeError, 'hello', 'rfind', (None,))
         s = '_' * 9998 + 'aaaa' + '_' * 9998
         self.checkequal(9998, s, 'rfind', ('aaaa', 'bb'))
         self.checkequal(2, 'foobar', 'rfind', ('oba', 'ob'))
@@ -307,7 +310,8 @@ class BaseTest:
         self.checkequal(4, '__abcd__', 'rfind', ('ab', 'cd'))
         self.checkequal(3, '__abc__', 'rfind', ('ab', 'bc'))
         self.checkequal(0, 'b' * 10000 + 'a', 'rfind', ('b' * 10000,))
-        self.checkequal(2, 'ab' + 'c' * 100000, 'rfind', ('c' * 100000, 'b' + 'c' * 100000))
+        s = 'ab' + 'c' * 100000
+        self.checkequal(2, s, 'rfind', ('c' * 100000, 'b' + 'c' * 100000))
 
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
