@@ -11355,6 +11355,16 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
 {
     Py_ssize_t result;
     if (PyTuple_Check(subobj)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+            if (!PyUnicode_Check(substr)) {
+                PyErr_Format(PyExc_TypeError,
+                            "tuple for find must only contain str, "
+                            "not %.100s",
+                            Py_TYPE(substr)->tp_name);
+                return -1;
+            }
+        }
         result = -1;
         Py_ssize_t len = PyUnicode_GET_LENGTH(str);
         ADJUST_INDICES(start, end, len);
@@ -11362,13 +11372,6 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
         for (; result == -1 && start <= end; start += 10000) {
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                if (!PyUnicode_Check(substr)) {
-                    PyErr_Format(PyExc_TypeError,
-                                "tuple for find must only contain str, "
-                                "not %.100s",
-                                Py_TYPE(substr)->tp_name);
-                    return -1;
-                }
                 Py_ssize_t sublen = PyUnicode_GET_LENGTH(substr);
                 Py_ssize_t cur_end = start + 10000 + sublen;
                 if (cur_end > end) {
@@ -12555,6 +12558,16 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
 {
     Py_ssize_t result;
     if (PyTuple_Check(subobj)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+            if (!PyUnicode_Check(substr)) {
+                PyErr_Format(PyExc_TypeError,
+                            "tuple for rfind must only contain str, "
+                            "not %.100s",
+                            Py_TYPE(substr)->tp_name);
+                return -1;
+            }
+        }
         result = -1;
         Py_ssize_t len = PyUnicode_GET_LENGTH(str);
         ADJUST_INDICES(start, end, len);
@@ -12566,13 +12579,6 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
             }
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                if (!PyUnicode_Check(substr)) {
-                    PyErr_Format(PyExc_TypeError,
-                                "tuple for rfind must only contain str, "
-                                "not %.100s",
-                                Py_TYPE(substr)->tp_name);
-                    return -1;
-                }
                 Py_ssize_t cur_end = end + PyUnicode_GET_LENGTH(substr);
                 if (cur_end > end) {
                     cur_end = end;
