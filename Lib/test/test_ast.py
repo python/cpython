@@ -8,9 +8,7 @@ import sys
 import textwrap
 import types
 import unittest
-import warnings
 import weakref
-from functools import partial
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -18,7 +16,6 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support.import_helper import import_fresh_module
 from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
