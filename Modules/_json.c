@@ -1725,6 +1725,7 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
             goto bail;
         Py_CLEAR(ident);
     }
+
     if (s->indent != Py_None) {
         Py_CLEAR(new_newline_indent);
         Py_CLEAR(separator_indent);
@@ -1745,7 +1746,6 @@ bail:
     Py_XDECREF(separator_indent);
     Py_XDECREF(new_newline_indent);
     return -1;
-
 }
 
 static void
