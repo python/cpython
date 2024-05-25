@@ -647,6 +647,8 @@ class BaseBytesTest:
         # test tuple arguments
         self.assertEqual(b.find((i,)), 1)
         self.assertEqual(b.find((w,)), -1)
+        self.assertEqual(b.find((i, w)), 1)
+        self.assertEqual(b.find((w, i)), 1)
 
     def test_rfind(self):
         b = self.type2test(b'mississippi')
@@ -670,6 +672,8 @@ class BaseBytesTest:
         # test tuple arguments
         self.assertEqual(b.rfind((i,)), 10)
         self.assertEqual(b.rfind((w,)), -1)
+        self.assertEqual(b.rfind((i, w)), 10)
+        self.assertEqual(b.rfind((w, i)), 10)
 
     def test_index(self):
         b = self.type2test(b'mississippi')
