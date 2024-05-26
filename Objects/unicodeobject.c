@@ -9148,7 +9148,7 @@ any_find_first_slice(PyObject *str, const char *function_name,
     if (!PyTuple_Check(subobj)) {
         if (!PyUnicode_Check(subobj)) {
             PyErr_Format(PyExc_TypeError,
-                        "find %.200s arg must be str or "
+                        "%.200s first arg must be str or "
                         "a tuple of str, not %.100s", function_name,
                         Py_TYPE(subobj)->tp_name);
             return -2;
