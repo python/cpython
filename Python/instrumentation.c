@@ -2622,7 +2622,7 @@ exception_event_teardown(int err, PyObject *exc) {
     }
     else {
         assert(PyErr_Occurred());
-        Py_DECREF(exc);
+        Py_XDECREF(exc);
     }
     return err;
 }
@@ -2712,15 +2712,18 @@ _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, in
 }
 
 int
-_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *value)
 {
     int event = PY_MONITORING_EVENT_STOP_ITERATION;
     assert(state->active);
+    assert(!PyErr_Occurred());
+    PyErr_SetObject(PyExc_StopIteration, value);
     PyObject *exc;
     if (exception_event_setup(&exc, event) < 0) {
         return -1;
     }
     PyObject *args[4] = { NULL, NULL, NULL, exc };
     int err = capi_call_instrumentation(state, codelike, offset, args, 3, event);
-    return exception_event_teardown(err, exc);
+    Py_DECREF(exc);
+    return exception_event_teardown(err, NULL);
 }
