@@ -891,7 +891,7 @@ Deprecated
 
 * Deprecated the ``split()`` method of :class:`!_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
-  predicable behavior.
+  predictable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
 * The explicit passing of coroutine objects to :func:`asyncio.wait` has been

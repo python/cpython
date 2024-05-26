@@ -2336,10 +2336,10 @@ Changes in the Python API
 * With the introduction of :exc:`ModuleNotFoundError`, import system consumers
   may start expecting import system replacements to raise that more specific
   exception when appropriate, rather than the less-specific :exc:`ImportError`.
-  To provide future compatibility with such consumers, implementors of
+  To provide future compatibility with such consumers, implementers of
   alternative import systems that completely replace :func:`__import__` will
   need to update their implementations to raise the new subclass when a module
-  can't be found at all. Implementors of compliant plugins to the default
+  can't be found at all. Implementers of compliant plugins to the default
   import system shouldn't need to make any changes, as the default import
   system will raise the new subclass when appropriate.
 
