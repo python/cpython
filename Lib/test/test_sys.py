@@ -1564,7 +1564,7 @@ class SizeofTest(unittest.TestCase):
         check(x, size('3Pi2cP7P2ic??2P'))
         # function
         def func(): pass
-        check(func, size('15Pi'))
+        check(func, size('16Pi'))
         class c():
             @staticmethod
             def foo():

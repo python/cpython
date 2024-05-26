@@ -212,13 +212,18 @@ class _Target(typing.Generic[_S, _R]):
         ):
             return
         stencil_groups = asyncio.run(self._build_stencils())
-        with jit_stencils.open("w") as file:
-            file.write(digest)
-            if comment:
-                file.write(f"// {comment}\n\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
-                file.write(f"{line}\n")
+        jit_stencils_new = out / "jit_stencils.h.new"
+        try:
+            with jit_stencils_new.open("w") as file:
+                file.write(digest)
+                if comment:
+                    file.write(f"// {comment}\n")
+                file.write("\n")
+                for line in _writer.dump(stencil_groups):
+                    file.write(f"{line}\n")
+            jit_stencils_new.replace(jit_stencils)
+        finally:
+            jit_stencils_new.unlink(missing_ok=True)
 
 
 class _COFF(
