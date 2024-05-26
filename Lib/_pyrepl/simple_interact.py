@@ -115,11 +115,8 @@ def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
     import __main__
-    try:
-        from .readline import _setup
-        _setup()
-    except ImportError:
-        pass
+    from .readline import _setup
+    _setup()
 
     mainmodule = mainmodule or __main__
     console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
