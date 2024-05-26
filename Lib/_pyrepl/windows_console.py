@@ -44,7 +44,7 @@ from .trace import trace
 from .utils import wlen
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError # type: ignore
+    from ctypes import GetLastError, WinDLL, windll, WinError # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
@@ -52,7 +52,7 @@ except:
     def GetLastError() -> int:
         return 42
 
-    class WinError(OSError): # type: ignore
+    class WinError(OSError): # type: ignore[no-redef]
         def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
