@@ -1062,6 +1062,7 @@ Element Objects
    Use specific ``len(elem)`` or ``elem is None`` test instead.::
 
    .. versionchanged:: 3.14
+
       Testing the truth value of an Element raises :exc:`RuntimeError`
       after emitting :exc:`DeprecationWarning` since Python 3.12.
 
