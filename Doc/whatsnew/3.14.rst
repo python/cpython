@@ -121,9 +121,11 @@ ast
   * :class:`!ast.Ellipsis`
 
   Use :class:`ast.Constant` instead. As a consequence of these removals,
-  ``visit_Num``, ``visit_Str``, ``visit_Bytes``, ``visit_NameConstant`` and
-  ``visit_Ellipsis`` methods will no longer have any effect on
-  :class:`ast.NodeVisitor` subclasses; use ``visit_Constant`` instead.
+  user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
+  ``visit_NameConstant`` and ``visit_Ellipsis`` methods on custom
+  :class:`ast.NodeVisitor` subclasses will no longer be called when the
+  ``NodeVisitor`` subclass is visiting an AST. Define ``visit_Constant``
+  methods instead.
 
   Also, remove the following deprecated properties on :class:`ast.Constant`,
   which were present for compatibility with the now-removed AST classes:
