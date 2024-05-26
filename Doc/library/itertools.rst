@@ -467,9 +467,9 @@ loops that truncate the stream.
    If *stop* is ``None``, iteration continues until the iterator is
    exhausted, if at all.  Otherwise, it stops at the specified position.
 
-   Elements are returned consecutively unless *step* is set higher than one
-   which results in items being skipped.  If *step* is ``None``, the step
-   defaults to one.
+   If *step* is ``None``, the step defaults to one.  Elements are returned
+   consecutively unless *step* is set higher than one which results in
+   items being skipped.
 
    Roughly equivalent to::
 
