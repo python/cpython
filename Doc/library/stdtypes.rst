@@ -1627,8 +1627,8 @@ expression support in the :mod:`re` module).
 
       >>> 'PYTHON IS AMAZING'.capitalize()
       'Python is amazing'
-      >>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
-      'ǋemačka starts with a non-english digraph'
+      >>> 'ǋemačka Starts With a non-English Digraph'.capitalize()
+      'ǋemačka starts with a non-English digraph'
 
    See also :meth:`title`.
 
@@ -1745,7 +1745,7 @@ expression support in the :mod:`re` module).
       >>> 'a tuple of suffixes'.endswith(('at', 'es'))
       True
 
-   With optional *end*, stop comparin at that position::
+   With optional *end*, stop comparing at that position::
 
       >>> 'Python is amazing'.endswith('is', 0, 9)
       True
@@ -1898,7 +1898,7 @@ expression support in the :mod:`re` module).
    Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
    See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
@@ -1917,7 +1917,7 @@ expression support in the :mod:`re` module).
       >>> 'Ŧ'.isascii()
       False
 
-   ASCII characters have code points in the range U+0000-U+007F::
+   ASCII characters have code points in the range U+0000-U+007F.
 
    .. versionadded:: 3.7
 
@@ -1931,9 +1931,9 @@ expression support in the :mod:`re` module).
       >>> '0123456789'.isdecimal()
       True
 
-   Decimal characters are those that can be used to form numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT ZERO::
+   Decimal characters are those that can be used to form numbers in base 10, for example::
 
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
       >>> '²'.isdecimal(), '²'.isdigit()
       (False, True)
@@ -1949,7 +1949,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdigit()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
       >>> '²'.isdigit(), '²'.isdecimal()
       (True, False)
@@ -2010,7 +2010,7 @@ expression support in the :mod:`re` module).
    ::
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
       >>> '⅕'.isnumeric()  # VULGAR FRACTION ONE FIFTH
       True
@@ -2297,7 +2297,6 @@ If the separator is not found, return a 3-tuple containing
 
    See also :meth:`partition`.
 
-
 .. method:: str.rsplit(sep=None, maxsplit=-1)
 
    Return a list of the words in the string, using *sep* as the delimiter string.
@@ -2497,7 +2496,7 @@ If the separator is not found, return a 3-tuple containing
 
    See also :meth:`upper` and :meth:`lower`.
 
-   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``.
 
 .. method:: str.title()
 
