@@ -584,9 +584,10 @@ if sys.platform == "win32":
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
 else:
+
     def _win_only(*args, **kwargs):
         raise NotImplementedError("Windows only")
-    
+
     GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
     SetConsoleCursorInfo = _win_only
