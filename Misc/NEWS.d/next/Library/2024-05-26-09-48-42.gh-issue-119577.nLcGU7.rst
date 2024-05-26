@@ -1,0 +1,3 @@
+The :mod:`xml.etree.ElementTree` module now raises :exc:`RuntimeError` when
+testing the truth value of an :class:`xml.etree.ElementTree.Element`, after
+emitting :exc:`DeprecationWarning` since Python 3.12.

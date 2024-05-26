@@ -200,13 +200,10 @@ class Element:
         return len(self._children)
 
     def __bool__(self):
-        warnings.warn(
-            "Testing an element's truth value will raise an exception in "
-            "future versions.  "
-            "Use specific 'len(elem)' or 'elem is not None' test instead.",
-            DeprecationWarning, stacklevel=2
-            )
-        return len(self._children) != 0 # emulate old behaviour, for now
+        raise RuntimeError(
+            "Testing an element's truth value is not supported. "
+            "Use specific 'len(elem)' or 'elem is not None' test instead."
+        )
 
     def __getitem__(self, index):
         return self._children[index]

@@ -1500,18 +1500,10 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 static int
 element_bool(PyObject* self_)
 {
-    ElementObject* self = (ElementObject*) self_;
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Testing an element's truth value will raise an exception "
-                     "in future versions.  Use specific 'len(elem)' or "
-                     "'elem is not None' test instead.",
-                     1) < 0) {
-        return -1;
-    };
-    if (self->extra ? self->extra->length : 0) {
-        return 1;
-    }
-    return 0;
+    PyErr_SetString(PyExc_RuntimeError,
+                    "Testing an element's truth value is not supported. Use "
+                    "specific 'len(elem)' or 'elem is not None' test instead.");
+    return -1;
 }
 
 /*[clinic input]

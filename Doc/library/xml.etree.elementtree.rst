@@ -1058,20 +1058,12 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Testing the truth value of an Element raises :exc:`RuntimeError`.
+   Use specific ``len(elem)`` or ``elem is None`` test instead.::
 
-     element = root.find('foo')
-
-     if not element:  # careful!
-         print("element not found, or element has no subelements")
-
-     if element is None:
-         print("element not found")
-
-   .. versionchanged:: 3.12
-      Testing the truth value of an Element emits :exc:`DeprecationWarning`.
+   .. versionchanged:: 3.14
+      Testing the truth value of an Element raises :exc:`RuntimeError`
+      after emitting :exc:`DeprecationWarning` since Python 3.12.
 
    Prior to Python 3.8, the serialisation order of the XML attributes of
    elements was artificially made predictable by sorting the attributes by
