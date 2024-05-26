@@ -9189,6 +9189,9 @@ any_find_first_slice(PyObject *str, const char *function_name,
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, start,
                                                        sub_end, +1);
+                if (new_result == -2) {
+                    return -2;
+                }
                 if (new_result != -1) {
                     if (new_result == start) {
                         return start;
@@ -9215,6 +9218,9 @@ any_find_first_slice(PyObject *str, const char *function_name,
                 }
                 Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
                                                        sub_end, -1);
+                if (new_result == -2) {
+                    return -2;
+                }
                 if (new_result != -1) {
                     if (new_result == cur_end) {
                         return cur_end;
