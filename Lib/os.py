@@ -281,6 +281,11 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
+# Private sentinel that can be passed to os.walk() to classify all symlinks as
+# files, and walk into every path classified as a directory (potentially after
+# user modification in topdown mode). Used by pathlib.Path.walk().
+_walk_symlinks_as_files = object()
+
 def walk(top, topdown=True, onerror=None, followlinks=False):
     """Directory tree generator.
 
@@ -382,7 +387,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     break
 
                 try:
-                    is_dir = entry.is_dir()
+                    is_dir = entry.is_dir(follow_symlinks=followlinks is not _walk_symlinks_as_files)
                 except OSError:
                     # If is_dir() raises an OSError, consider the entry not to
                     # be a directory, same behaviour as os.path.isdir().
