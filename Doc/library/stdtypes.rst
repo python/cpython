@@ -2913,7 +2913,7 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
    .. versionchanged:: 3.14
-       *sub* can now be a tuple of subsequences.
+      *sub* can now be a tuple of subsequences.
 
 
 .. method:: bytes.join(iterable)
@@ -3000,7 +3000,7 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
    .. versionchanged:: 3.14
-       *sub* can now be a tuple of subsequences.
+      *sub* can now be a tuple of subsequences.
 
 
 .. method:: bytes.rpartition(sep)
