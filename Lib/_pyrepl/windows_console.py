@@ -44,7 +44,7 @@ from .trace import trace
 from .utils import wlen
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError # type: ignore[attr-defined]
+    from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
@@ -52,7 +52,7 @@ except:
     def GetLastError() -> int:
         return 42
 
-    class WinError(OSError): # type: ignore[no-redef]
+    class WinError(OSError):  # type: ignore[no-redef]
         def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
@@ -524,62 +524,75 @@ class ConsoleEvent(ctypes.Union):
     ]
 
 
+class INPUT_RECORD(Structure):
+    _fields_ = [("EventType", WORD), ("Event", ConsoleEvent)]
+
+
 KEY_EVENT = 0x01
 FOCUS_EVENT = 0x10
 MENU_EVENT = 0x08
 MOUSE_EVENT = 0x02
 WINDOW_BUFFER_SIZE_EVENT = 0x04
 
-
-class INPUT_RECORD(Structure):
-    _fields_ = [("EventType", WORD), ("Event", ConsoleEvent)]
-
+ENABLE_PROCESSED_OUTPUT = 0x01
+ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
+ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
 STD_INPUT_HANDLE = -10
 STD_OUTPUT_HANDLE = -11
 
-_KERNEL32 = WinDLL("kernel32", use_last_error=True)
+if sys.platform == "win32":
+    _KERNEL32 = WinDLL("kernel32", use_last_error=True)
 
-GetStdHandle = windll.kernel32.GetStdHandle
-GetStdHandle.argtypes = [DWORD]
-GetStdHandle.restype = HANDLE
+    GetStdHandle = windll.kernel32.GetStdHandle
+    GetStdHandle.argtypes = [DWORD]
+    GetStdHandle.restype = HANDLE
 
-GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
-GetConsoleScreenBufferInfo.argtypes = [
-    HANDLE,
-    ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
-]
-GetConsoleScreenBufferInfo.restype = BOOL
+    GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
+    GetConsoleScreenBufferInfo.argtypes = [
+        HANDLE,
+        ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
+    ]
+    GetConsoleScreenBufferInfo.restype = BOOL
 
-SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
-SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-SetConsoleCursorInfo.restype = BOOL
+    SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
+    SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
+    SetConsoleCursorInfo.restype = BOOL
 
-GetConsoleCursorInfo = _KERNEL32.GetConsoleCursorInfo
-GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-GetConsoleCursorInfo.restype = BOOL
+    GetConsoleCursorInfo = _KERNEL32.GetConsoleCursorInfo
+    GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
+    GetConsoleCursorInfo.restype = BOOL
 
-ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
-ScrollConsoleScreenBuffer.argtypes = [
-    HANDLE,
-    POINTER(SMALL_RECT),
-    POINTER(SMALL_RECT),
-    _COORD,
-    POINTER(CHAR_INFO),
-]
-ScrollConsoleScreenBuffer.restype = BOOL
+    ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
+    ScrollConsoleScreenBuffer.argtypes = [
+        HANDLE,
+        POINTER(SMALL_RECT),
+        POINTER(SMALL_RECT),
+        _COORD,
+        POINTER(CHAR_INFO),
+    ]
+    ScrollConsoleScreenBuffer.restype = BOOL
 
-SetConsoleMode = _KERNEL32.SetConsoleMode
-SetConsoleMode.argtypes = [HANDLE, DWORD]
-SetConsoleMode.restype = BOOL
+    SetConsoleMode = _KERNEL32.SetConsoleMode
+    SetConsoleMode.argtypes = [HANDLE, DWORD]
+    SetConsoleMode.restype = BOOL
 
-ReadConsoleInput = _KERNEL32.ReadConsoleInputW
-ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
-ReadConsoleInput.restype = BOOL
+    ReadConsoleInput = _KERNEL32.ReadConsoleInputW
+    ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
+    ReadConsoleInput.restype = BOOL
 
-OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
-InHandle = GetStdHandle(STD_INPUT_HANDLE)
-
-ENABLE_PROCESSED_OUTPUT = 0x01
-ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
-ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
+    OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
+    InHandle = GetStdHandle(STD_INPUT_HANDLE)
+else:
+    def _win_only(*args, **kwargs):
+        raise NotImplementedError("Windows only")
+    
+    GetStdHandle = _win_only
+    GetConsoleScreenBufferInfo = _win_only
+    SetConsoleCursorInfo = _win_only
+    GetConsoleCursorInfo = _win_only
+    ScrollConsoleScreenBuffer = _win_only
+    SetConsoleMode = _win_only
+    ReadConsoleInput = _win_only
+    OutHandle = 0
+    InHandle = 0
