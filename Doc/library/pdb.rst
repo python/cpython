@@ -288,7 +288,8 @@ There are three preset *convenience variables*:
 * ``$_retval``: the return value if the frame is returning
 * ``$_exception``: the exception if the frame is raising an exception
 
-.. versionadded:: 3.12  *convenience variable*
+.. versionadded:: 3.12
+   *convenience variable*
 
 .. index::
    pair: .pdbrc; file
