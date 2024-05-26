@@ -1738,7 +1738,7 @@ seen, but blow up if it comes after ``-b`` in the command-line.  ::
 Callback example 3: check option order (generalized)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to re-use this callback for several similar options (set a flag, but
+If you want to reuse this callback for several similar options (set a flag, but
 blow up if ``-b`` has already been seen), it needs a bit of work: the error
 message and the flag that it sets must be generalized.  ::
 

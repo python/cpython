@@ -759,7 +759,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -767,7 +767,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
