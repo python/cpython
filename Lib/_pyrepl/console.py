@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import IO
 
+
 @dataclass
 class Event:
     evt: str
@@ -49,7 +50,7 @@ class Console(ABC):
         encoding: str = "",
     ):
         self.encoding = encoding or sys.getdefaultencoding()
-        
+
         if isinstance(f_in, int):
             self.input_fd = f_in
         else:
@@ -59,7 +60,6 @@ class Console(ABC):
             self.output_fd = f_out
         else:
             self.output_fd = f_out.fileno()
-
 
     @abstractmethod
     def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
@@ -133,5 +133,4 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def repaint(self) -> None:
-        ...
+    def repaint(self) -> None: ...

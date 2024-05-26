@@ -44,8 +44,7 @@ from .trace import trace
 from .utils import wlen
 
 try:
-    # type: ignore
-    from ctypes import GetLastError, WinDLL, windll, WinError
+    from ctypes import GetLastError, WinDLL, windll, WinError # type: ignore
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
@@ -53,7 +52,7 @@ except:
     def GetLastError() -> int:
         return 42
 
-    class WinError(OSError):
+    class WinError(OSError): # type: ignore
         def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
@@ -138,8 +137,8 @@ class WindowsConsole(Console):
         cx, cy = c_xy
 
         while len(self.screen) < min(len(screen), self.height):
-            self.__hide_cursor()
-            self.__move_relative(0, len(self.screen) - 1)
+            self._hide_cursor()
+            self._move_relative(0, len(self.screen) - 1)
             self.__write("\n")
             self.__posxy = 0, len(self.screen)
             self.screen.append("")
@@ -159,7 +158,7 @@ class WindowsConsole(Console):
             # Scrolling the buffer as the current input is greater than the visible
             # portion of the window.  We need to scroll the visible portion and the
             # entire history
-            self.scroll(scroll_lines, self.getscrollbacksize())
+            self._scroll(scroll_lines, self._getscrollbacksize())
             self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
             self.__offset += scroll_lines
 
@@ -174,7 +173,7 @@ class WindowsConsole(Console):
 
         self.__offset = offset
 
-        self.__hide_cursor()
+        self._hide_cursor()
         for (
             y,
             oldline,
@@ -185,12 +184,12 @@ class WindowsConsole(Console):
 
         y = len(newscr)
         while y < len(oldscr):
-            self.__move_relative(0, y)
+            self._move_relative(0, y)
             self.__posxy = 0, y
-            self.erase_to_end()
+            self._erase_to_end()
             y += 1
 
-        self.__show_cursor()
+        self._show_cursor()
 
         self.screen = screen
         self.move_cursor(cx, cy)
@@ -225,15 +224,15 @@ class WindowsConsole(Console):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
-        self.__hide_cursor()
-        self.__move_relative(x_coord, y)
+        self._hide_cursor()
+        self._move_relative(x_coord, y)
         if wlen(oldline) > wlen(newline):
-            self.erase_to_end()
+            self._erase_to_end()
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
             # If we wrapped we want to start at the next line
-            self.__move_relative(0, y + 1)
+            self._move_relative(0, y + 1)
             self.__posxy = 0, y + 1
         else:
             self.__posxy = wlen(newline), y
@@ -244,7 +243,7 @@ class WindowsConsole(Console):
                 # to the left margin should work to get to a known position.
                 self.move_cursor(0, y)
 
-    def scroll(
+    def _scroll(
         self, top: int, bottom: int, left: int | None = None, right: int | None = None
     ) -> None:
         scroll_rect = SMALL_RECT()
@@ -263,7 +262,7 @@ class WindowsConsole(Console):
         ):
             raise WinError(GetLastError())
 
-    def __hide_cursor(self) -> None:
+    def _hide_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
             raise WinError(GetLastError())
@@ -272,7 +271,7 @@ class WindowsConsole(Console):
         if not SetConsoleCursorInfo(OutHandle, info):
             raise WinError(GetLastError())
 
-    def __show_cursor(self) -> None:
+    def _show_cursor(self) -> None:
         info = CONSOLE_CURSOR_INFO()
         if not GetConsoleCursorInfo(OutHandle, info):
             raise WinError(GetLastError())
@@ -291,7 +290,7 @@ class WindowsConsole(Console):
             raise WinError(GetLastError())
         return info.dwCursorPosition.X, info.dwCursorPosition.Y
 
-    def erase_to_end(self) -> None:
+    def _erase_to_end(self) -> None:
         self.__write(ERASE_IN_LINE)
 
     def prepare(self) -> None:
@@ -314,7 +313,7 @@ class WindowsConsole(Console):
         cur_y += dy
         return cur_x, cur_y
 
-    def __move_relative(self, x: int, y: int) -> None:
+    def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current __posxy"""
         dx = x - self.__posxy[0]
         dy = y - self.__posxy[1]
@@ -335,14 +334,14 @@ class WindowsConsole(Console):
         if y < self.__offset or y >= self.__offset + self.height:
             self.event_queue.insert(0, Event("scroll", ""))
         else:
-            self.__move_relative(x, y)
+            self._move_relative(x, y)
             self.__posxy = x, y
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:
-            self.__show_cursor()
+            self._show_cursor()
         else:
-            self.__hide_cursor()
+            self._hide_cursor()
 
     def getheightwidth(self) -> tuple[int, int]:
         """Return (height, width) where height and width are the height
@@ -355,14 +354,14 @@ class WindowsConsole(Console):
             info.srWindow.Right - info.srWindow.Left + 1,
         )
 
-    def getscrollbacksize(self) -> int:
+    def _getscrollbacksize(self) -> int:
         info = CONSOLE_SCREEN_BUFFER_INFO()
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise WinError(GetLastError())
 
         return cast(int, info.srWindow.Bottom)
 
-    def __read_input(self) -> INPUT_RECORD | None:
+    def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
@@ -381,7 +380,7 @@ class WindowsConsole(Console):
             return self.event_queue.pop()
 
         while True:
-            rec = self.__read_input()
+            rec = self._read_input()
             if rec is None:
                 if block:
                     continue
@@ -443,7 +442,7 @@ class WindowsConsole(Console):
         y = len(self.screen) - 1
         while y >= 0 and not self.screen[y]:
             y -= 1
-        self.__move_relative(0, min(y, self.height + self.__offset - 1))
+        self._move_relative(0, min(y, self.height + self.__offset - 1))
         self.__write("\r\n")
 
     def flushoutput(self) -> None:
@@ -455,7 +454,7 @@ class WindowsConsole(Console):
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        while self.__read_input() is not None:
+        while self._read_input() is not None:
             pass
 
     def getpending(self) -> Event:
