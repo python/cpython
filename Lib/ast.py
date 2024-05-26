@@ -567,15 +567,6 @@ class NodeTransformer(NodeVisitor):
                     setattr(node, field, new_node)
         return node
 
-
-_DEPRECATED_VALUE_ALIAS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; use value instead"
-)
-_DEPRECATED_CLASS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; "
-    "use ast.Constant instead"
-)
-
 class slice(AST):
     """Deprecated AST node class."""
 
