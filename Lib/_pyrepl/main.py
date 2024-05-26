@@ -1,12 +1,13 @@
 import os
 import sys
 
-CAN_USE_PYREPL = sys.platform != "win32"
+IS_SUPPORTED_PYREPL_PLATFORM = sys.platform != "win32"
+IS_USING_PYREPL = False
 
 
 def interactive_console():
-    global CAN_USE_PYREPL
-    if not CAN_USE_PYREPL:
+    global IS_USING_PYREPL
+    if not IS_SUPPORTED_PYREPL_PLATFORM:
         return sys._baserepl()
 
     startup_path = os.getenv("PYTHONSTARTUP")
@@ -38,7 +39,7 @@ def interactive_console():
         msg = f"warning: can't use pyrepl: {e}"
         trace(msg)
         print(msg, file=sys.stderr)
-        CAN_USE_PYREPL = False
     if run_interactive is None:
         return sys._baserepl()
+    IS_USING_PYREPL = True
     return run_interactive()
