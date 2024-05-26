@@ -9137,6 +9137,87 @@ any_find_slice(PyObject* s1, PyObject* s2,
     return result;
 }
 
+#define FIND_CHUNK_SIZE 10000
+#define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
+
+static Py_ssize_t
+any_find_first_slice(PyObject *str, const char *function_name,
+                     PyObject *subobj, Py_ssize_t start, Py_ssize_t end,
+                     int direction)
+{
+    if (!PyTuple_Check(subobj)) {
+        if (!PyUnicode_Check(subobj)) {
+            PyErr_Format(PyExc_TypeError,
+                        "find %.200s arg must be str or "
+                        "a tuple of str, not %.100s", function_name,
+                        Py_TYPE(subobj)->tp_name);
+            return -2;
+        }
+        return any_find_slice(str, subobj, start, end, direction);
+    }
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+        PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+        if (!PyUnicode_Check(substr)) {
+            PyErr_Format(PyExc_TypeError,
+                        "tuple for %.200s must only contain str, "
+                        "not %.100s", function_name,
+                        Py_TYPE(substr)->tp_name);
+            return -2;
+        }
+    }
+    Py_ssize_t result = -1;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+    ADJUST_INDICES(start, end, len);
+    // Work in chunks
+    if (direction > 0) {
+        for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
+            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+                Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
+                if (sub_end > end) {
+                    sub_end = end;
+                }
+                Py_ssize_t new_result = any_find_slice(str, substr, start,
+                                                       sub_end, +1);
+                if (new_result != -1) {
+                    if (new_result == start) {
+                        return start;
+                    }
+                    cur_end = new_result - 1;
+                    result = new_result;
+                }
+            }
+        }
+    }
+    else {
+        Py_ssize_t cur_end = end;
+        for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
+            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE + 1;
+            if (cur_start < start) {
+                cur_start = start;
+            }
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
+                Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
+                if (sub_end > end) {
+                    sub_end = end;
+                }
+                Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
+                                                       sub_end, -1);
+                if (new_result != -1) {
+                    if (new_result == cur_end) {
+                        return cur_end;
+                    }
+                    cur_start = new_result + 1;
+                    result = new_result;
+                }
+            }
+        }
+    }
+    return result;
+}
+
 /* _PyUnicode_InsertThousandsGrouping() helper functions */
 #include "stringlib/localeutil.h"
 
@@ -11333,59 +11414,6 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
     return NULL;
 }
 
-#define FIND_CHUNK_SIZE 10000
-#define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
-
-static Py_ssize_t
-unicode_find_internal(PyObject *str, const char *function_name,
-                      PyObject *subobj, Py_ssize_t start, Py_ssize_t end)
-{
-    if (PyTuple_Check(subobj)) {
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-            if (!PyUnicode_Check(substr)) {
-                PyErr_Format(PyExc_TypeError,
-                            "tuple for %.200s must only contain str, "
-                            "not %.100s", function_name,
-                            Py_TYPE(substr)->tp_name);
-                return -2;
-            }
-        }
-        Py_ssize_t result = -1;
-        Py_ssize_t len = PyUnicode_GET_LENGTH(str);
-        ADJUST_INDICES(start, end, len);
-        // Work in chunks
-        for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
-            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
-                if (sub_end > end) {
-                    sub_end = end;
-                }
-                Py_ssize_t new_result = any_find_slice(str, substr, start,
-                                                       sub_end, 1);
-                if (new_result != -1) {
-                    if (new_result == start) {
-                        return start;
-                    }
-                    cur_end = new_result - 1;
-                    result = new_result;
-                }
-            }
-        }
-        return result;
-    }
-    if (!PyUnicode_Check(subobj)) {
-        PyErr_Format(PyExc_TypeError,
-                     "find %.200s arg must be str or "
-                     "a tuple of str, not %.100s", function_name,
-                     Py_TYPE(subobj)->tp_name);
-        return -2;
-    }
-    return any_find_slice(str, subobj, start, end, 1);
-}
-
 /*[clinic input]
 str.find as unicode_find -> Py_ssize_t
 
@@ -11406,7 +11434,8 @@ unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                   Py_ssize_t end)
 /*[clinic end generated code: output=80175735a6d549d0 input=51e7b530950ab304]*/
 {
-    Py_ssize_t result = unicode_find_internal(str, "find", subobj, start, end);
+    Py_ssize_t result = any_find_first_slice(str, "find", subobj, start, end,
+                                             +1);
     return result < 0 ? -1 : result;
 }
 
@@ -11464,8 +11493,8 @@ unicode_index_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                    Py_ssize_t end)
 /*[clinic end generated code: output=c9af24adf2f1f99e input=f0033cf1698b6108]*/
 {
-    Py_ssize_t result = unicode_find_internal(str, "index", subobj, start,
-                                              end);
+    Py_ssize_t result = any_find_first_slice(str, "index", subobj, start, end,
+                                             +1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
     }
@@ -12549,60 +12578,6 @@ unicode_repr(PyObject *unicode)
     return repr;
 }
 
-static Py_ssize_t
-unicode_rfind_internal(PyObject *str, const char *function_name,
-                       PyObject *subobj, Py_ssize_t start, Py_ssize_t end)
-{
-    if (PyTuple_Check(subobj)) {
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-            if (!PyUnicode_Check(substr)) {
-                PyErr_Format(PyExc_TypeError,
-                            "tuple for %.200s must only contain str, "
-                            "not %.100s", function_name,
-                            Py_TYPE(substr)->tp_name);
-                return -2;
-            }
-        }
-        Py_ssize_t result = -1;
-        Py_ssize_t len = PyUnicode_GET_LENGTH(str);
-        ADJUST_INDICES(start, end, len);
-        // Work in chunks
-        Py_ssize_t cur_end = end;
-        for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
-            Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE + 1;
-            if (cur_start < start) {
-                cur_start = start;
-            }
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
-                if (sub_end > end) {
-                    sub_end = end;
-                }
-                Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
-                                                       sub_end, -1);
-                if (new_result != -1) {
-                    if (new_result == cur_end) {
-                        return cur_end;
-                    }
-                    cur_start = new_result + 1;
-                    result = new_result;
-                }
-            }
-        }
-        return result;
-    }
-    if (!PyUnicode_Check(subobj)) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s first arg must be str or "
-                     "a tuple of str, not %.100s", function_name,
-                     Py_TYPE(subobj)->tp_name);
-        return -2;
-    }
-    return any_find_slice(str, subobj, start, end, -1);
-}
-
 /*[clinic input]
 str.rfind as unicode_rfind = str.find
 
@@ -12617,8 +12592,8 @@ unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                    Py_ssize_t end)
 /*[clinic end generated code: output=9d316eee7b9f9bf0 input=23ae7964e8f70b35]*/
 {
-    Py_ssize_t result = unicode_rfind_internal(str, "rfind", subobj, start,
-                                               end);
+    Py_ssize_t result = any_find_first_slice(str, "rfind", subobj, start, end,
+                                             -1);
     return result < 0 ? -1 : result;
 }
 
@@ -12636,8 +12611,8 @@ unicode_rindex_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
                     Py_ssize_t end)
 /*[clinic end generated code: output=847d553d0dc10a86 input=990f3925b149c1bc]*/
 {
-    Py_ssize_t result = unicode_rfind_internal(str, "rindex", subobj, start,
-                                               end);
+    Py_ssize_t result = any_find_first_slice(str, "rindex", subobj, start, end,
+                                             -1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
     }
