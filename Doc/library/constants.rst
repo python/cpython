@@ -100,8 +100,8 @@ should not be used in programs.
    :noindex:
 
    Object that when printed, prints the message "Type help() for interactive
-   help, or help(object) for help about object.", and when called, invokes the
-   built-in :func:`help` function.
+   help, or help(object) for help about object.", and when called,
+   acts as described :func:`elsewhere <help>`.
 
 .. data:: copyright
           credits
