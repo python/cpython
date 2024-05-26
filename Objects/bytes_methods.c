@@ -591,9 +591,6 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                     sub_len = subbuf.len;
                 }
                 Py_ssize_t sub_end = cur_end + sub_len;
-                if (sub_end > end) {
-                    sub_end = end;
-                }
                 Py_ssize_t new_result = find_internal(str, len, function_name,
                                                       subseq, start, sub_end,
                                                       +1);
@@ -634,9 +631,6 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                     sub_len = subbuf.len;
                 }
                 Py_ssize_t sub_end = cur_end + sub_len;
-                if (sub_end > end) {
-                    sub_end = end;
-                }
                 Py_ssize_t new_result = find_internal(str, len, function_name,
                                                       subseq, cur_start,
                                                       sub_end, -1);

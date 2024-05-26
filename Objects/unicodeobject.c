@@ -9176,9 +9176,6 @@ any_find_first_slice(PyObject *str, const char *function_name,
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
-                if (sub_end > end) {
-                    sub_end = end;
-                }
                 Py_ssize_t new_result = any_find_slice(str, substr, start,
                                                        sub_end, +1);
                 if (new_result != -1) {
@@ -9202,9 +9199,6 @@ any_find_first_slice(PyObject *str, const char *function_name,
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_end = cur_end + PyUnicode_GET_LENGTH(substr);
-                if (sub_end > end) {
-                    sub_end = end;
-                }
                 Py_ssize_t new_result = any_find_slice(str, substr, cur_start,
                                                        sub_end, -1);
                 if (new_result != -1) {
