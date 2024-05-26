@@ -208,7 +208,7 @@ and ``make altinstall`` in the others.
 Release Schedule
 ----------------
 
-See `PEP 745 <https://peps.python.org/pep-0745/>`__ for the Python 3.14 release details.
+See `PEP 745 <https://peps.python.org/pep-0745/>`__ for Python 3.14 release details.
 
 
 Copyright and License Information
