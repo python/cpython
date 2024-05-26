@@ -86,6 +86,13 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+Added :func:`ast.compare` for comparing two ASTs.
+(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`)
+
+
 
 Optimizations
 =============
@@ -100,6 +107,36 @@ Deprecated
 
 Removed
 =======
+
+ast
+---
+
+* Remove the following classes. They were all deprecated since Python 3.8,
+  and have emitted deprecation warnings since Python 3.12:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead. As a consequence of these removals,
+  user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
+  ``visit_NameConstant`` and ``visit_Ellipsis`` methods on custom
+  :class:`ast.NodeVisitor` subclasses will no longer be called when the
+  ``NodeVisitor`` subclass is visiting an AST. Define a ``visit_Constant``
+  method instead.
+
+  Also, remove the following deprecated properties on :class:`ast.Constant`,
+  which were present for compatibility with the now-removed AST classes:
+
+  * :attr:`!ast.Constant.n`
+  * :attr:`!ast.Constant.s`
+
+  Use :attr:`!ast.Constant.value` instead.
+
+  (Contributed by Alex Waygood in :gh:`119562`.)
+
 
 argparse
 --------

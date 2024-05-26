@@ -39,9 +39,11 @@ Python/bytecodes.c            @markshannon @gvanrossum
 Python/optimizer*.c           @markshannon @gvanrossum
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
+Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Lib/test/test_pyrepl/*        @pablogsal @lysnikolaou @ambv
 Tools/c-analyzer/             @ericsnowcurrently
 
 # dbm

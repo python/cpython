@@ -472,8 +472,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3568 (Change semantics of END_FOR)
 #     Python 3.13a5 3569 (Specialize CONTAINS_OP)
 #     Python 3.13a6 3570 (Add __firstlineno__ class attribute)
+#     Python 3.14a1 3600 (Add LOAD_COMMON_CONSTANT)
 
-#     Python 3.14 will start with 3600
+#     Python 3.15 will start with 3700
 
 #     Please don't copy-paste the same pre-release tag for new entries above!!!
 #     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -488,7 +489,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3570).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3600).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
