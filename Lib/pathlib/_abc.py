@@ -13,31 +13,11 @@ resemble pathlib's PurePath and Path respectively.
 
 import functools
 from glob import _Globber, _no_recurse_symlinks
-from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
+from errno import ENOTDIR, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
 __all__ = ["UnsupportedOperation"]
-
-#
-# Internals
-#
-
-_WINERROR_NOT_READY = 21  # drive exists but is not accessible
-_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
-_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
-
-# EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERRNOS = (ENOENT, ENOTDIR, EBADF, ELOOP)
-
-_IGNORED_WINERRORS = (
-    _WINERROR_NOT_READY,
-    _WINERROR_INVALID_NAME,
-    _WINERROR_CANT_RESOLVE_FILENAME)
-
-def _ignore_error(exception):
-    return (getattr(exception, 'errno', None) in _IGNORED_ERRNOS or
-            getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
 @functools.cache
@@ -87,6 +67,12 @@ class ParserBase:
         a device name or mount point, and *tail* is everything after the
         drive. Either part may be empty."""
         raise UnsupportedOperation(self._unsupported_msg('splitdrive()'))
+
+    def splitext(self, path):
+        """Split the path into a pair (root, ext), where *ext* is empty or
+        begins with a begins with a period and contains at most one period,
+        and *root* is everything before the extension."""
+        raise UnsupportedOperation(self._unsupported_msg('splitext()'))
 
     def normcase(self, path):
         """Normalize the case of the path."""
@@ -171,12 +157,7 @@ class PurePathBase:
 
         This includes the leading period. For example: '.txt'
         """
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[i:]
-        else:
-            return ''
+        return self.parser.splitext(self.name)[1]
 
     @property
     def suffixes(self):
@@ -185,21 +166,18 @@ class PurePathBase:
 
         These include the leading periods. For example: ['.tar', '.gz']
         """
-        name = self.name
-        if name.endswith('.'):
-            return []
-        name = name.lstrip('.')
-        return ['.' + suffix for suffix in name.split('.')[1:]]
+        split = self.parser.splitext
+        stem, suffix = split(self.name)
+        suffixes = []
+        while suffix:
+            suffixes.append(suffix)
+            stem, suffix = split(stem)
+        return suffixes[::-1]
 
     @property
     def stem(self):
         """The final path component, minus its last suffix."""
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[:i]
-        else:
-            return name
+        return self.parser.splitext(self.name)[0]
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
@@ -225,15 +203,13 @@ class PurePathBase:
         string, remove the suffix from the path.
         """
         stem = self.stem
-        if not suffix:
-            return self.with_name(stem)
-        elif not stem:
+        if not stem:
             # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
-        elif suffix.startswith('.') and len(suffix) > 1:
-            return self.with_name(stem + suffix)
-        else:
+        elif suffix and not suffix.startswith('.'):
             raise ValueError(f"Invalid suffix {suffix!r}")
+        else:
+            return self.with_name(stem + suffix)
 
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -450,12 +426,7 @@ class PathBase(PurePathBase):
         """
         try:
             self.stat(follow_symlinks=follow_symlinks)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
         return True
 
@@ -465,14 +436,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_file(self, *, follow_symlinks=True):
@@ -482,14 +446,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_mount(self):
@@ -518,13 +475,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISLNK(self.lstat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_junction(self):
@@ -542,14 +493,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISBLK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_char_device(self):
@@ -558,14 +502,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISCHR(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_fifo(self):
@@ -574,14 +511,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISFIFO(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_socket(self):
@@ -590,14 +520,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISSOCK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def samefile(self, other_path):
