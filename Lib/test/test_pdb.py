@@ -2566,6 +2566,7 @@ def test_pdb_issue_gh_101673():
     ...     'll',
     ...     'p a',
     ...     'u',
+    ...     'p a',
     ...     'd',
     ...     'p a',
     ...     'continue'
@@ -2581,8 +2582,10 @@ def test_pdb_issue_gh_101673():
     (Pdb) p a
     2
     (Pdb) u
-    > <doctest test.test_pdb.test_pdb_issue_gh_101673[1]>(10)<module>()
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[1]>(11)<module>()
     -> test_function()
+    (Pdb) p a
+    *** NameError: name 'a' is not defined
     (Pdb) d
     > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
