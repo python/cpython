@@ -572,6 +572,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
     ADJUST_INDICES(start, end, len);
     // Work in chunks
     if (direction > 0) {
+        assert(FIND_CHUNK_SIZE > 0);
         for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
             Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
@@ -611,6 +612,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
     }
     else {
         Py_ssize_t cur_end = end;
+        assert(RFIND_CHUNK_SIZE > 0);
         for (; result == -1 && cur_end >= start; cur_end -= RFIND_CHUNK_SIZE) {
             Py_ssize_t cur_start = cur_end - RFIND_CHUNK_SIZE + 1;
             if (cur_start < start) {
