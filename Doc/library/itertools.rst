@@ -341,6 +341,7 @@ loops that truncate the stream.
    .. versionchanged:: 3.1
       Added *step* argument and allowed non-integer arguments.
 
+
 .. function:: cycle(iterable)
 
    Make an iterator returning elements from the iterable and saving a copy of each.
@@ -377,6 +378,7 @@ loops that truncate the stream.
                   break
           for x in iterable:
               yield x
+
 
 .. function:: filterfalse(predicate, iterable)
 
@@ -601,6 +603,7 @@ loops that truncate the stream.
    keeping pools of values in memory to generate the products.  Accordingly,
    it is only useful with finite inputs.
 
+
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
@@ -624,6 +627,7 @@ loops that truncate the stream.
 
       >>> list(map(pow, range(10), repeat(2)))
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
 
 .. function:: starmap(function, iterable)
 
