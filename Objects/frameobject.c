@@ -638,6 +638,23 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 }
 
 static PyObject*
+framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* result = PyDict_New();
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(result, self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject*
 framelocalsproxy_reversed(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
@@ -676,6 +693,8 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"update",        framelocalsproxy_update,            METH_O,
      NULL},
     {"__reversed__", _PyCFunction_CAST(framelocalsproxy_reversed),       METH_NOARGS,
+     NULL},
+    {"copy",         _PyCFunction_CAST(framelocalsproxy_copy),           METH_NOARGS,
      NULL},
     {"keys",         _PyCFunction_CAST(framelocalsproxy_keys),           METH_NOARGS,
      NULL},
@@ -1809,32 +1828,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-static int
-_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
-{
-    // This only works when opcode is a non-quickened form:
-    assert(_PyOpcode_Deopt[opcode] == opcode);
-    int check_oparg = 0;
-    for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
-         instruction < frame->instr_ptr; instruction++)
-    {
-        int check_opcode = _PyOpcode_Deopt[instruction->op.code];
-        check_oparg |= instruction->op.arg;
-        if (check_opcode == opcode && check_oparg == oparg) {
-            return 1;
-        }
-        if (check_opcode == EXTENDED_ARG) {
-            check_oparg <<= 8;
-        }
-        else {
-            check_oparg = 0;
-        }
-        instruction += _PyOpcode_Caches[check_opcode];
-    }
-    return 0;
-}
-
-
 // Initialize frame free variables if needed
 static void
 frame_init_get_vars(_PyInterpreterFrame *frame)
@@ -1888,14 +1881,9 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
             value = PyCell_GET(value);
         }
         else if (kind & CO_FAST_CELL) {
-            // Note that no *_DEREF ops can happen before MAKE_CELL
-            // executes.  So there's no need to duplicate the work
-            // that MAKE_CELL would otherwise do later, if it hasn't
-            // run yet.
             if (value != NULL) {
-                if (PyCell_Check(value) &&
-                        _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                    // (likely) MAKE_CELL must have executed already.
+                if (PyCell_Check(value)) {
+                    assert(!_PyFrame_IsIncomplete(frame));
                     value = PyCell_GET(value);
                 }
                 // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
