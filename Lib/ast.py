@@ -332,6 +332,7 @@ def _splitlines_no_ff(source, maxlines=None):
     """
     global _line_pattern
     if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
         import re
         _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
 
