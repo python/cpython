@@ -568,6 +568,15 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         return find_internal(str, len, function_name, subobj, start, end,
                              direction);
     }
+    Py_ssize_t tuple_len = PyTuple_GET_SIZE(subobj);
+    if (tuple_len == 0) {
+        return -1;
+    }
+    if (tuple_len == 1) {
+        PyObject *subseq = PyTuple_GET_ITEM(subobj, 0);
+        return find_internal(str, len, function_name, subseq, start, end,
+                             direction);
+    }
     Py_ssize_t result = -1;
     ADJUST_INDICES(start, end, len);
     // Work in chunks
@@ -575,7 +584,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         assert(FIND_CHUNK_SIZE > 0);
         for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
             Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            for (Py_ssize_t i = 0; i < tuple_len; i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_len;
                 Py_buffer subbuf;
@@ -618,7 +627,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
             if (cur_start < start) {
                 cur_start = start;
             }
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            for (Py_ssize_t i = 0; i < tuple_len; i++) {
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 Py_ssize_t sub_len;
                 Py_buffer subbuf;
