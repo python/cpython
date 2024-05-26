@@ -124,8 +124,8 @@ ast
   user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
   ``visit_NameConstant`` and ``visit_Ellipsis`` methods on custom
   :class:`ast.NodeVisitor` subclasses will no longer be called when the
-  ``NodeVisitor`` subclass is visiting an AST. Define ``visit_Constant``
-  methods instead.
+  ``NodeVisitor`` subclass is visiting an AST. Define a ``visit_Constant``
+  method instead.
 
   Also, remove the following deprecated properties on :class:`ast.Constant`,
   which were present for compatibility with the now-removed AST classes:
