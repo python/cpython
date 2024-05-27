@@ -347,9 +347,9 @@ loops that truncate the stream.
 
 .. function:: cycle(iterable)
 
-   Make an iterator returning elements from the iterable and saving a copy of each.
-   When the iterable is exhausted, return elements from the saved copy.  Repeats
-   indefinitely.  Roughly equivalent to::
+   Make an iterator returning elements from the *iterable* and saving a
+   copy of each.  When the iterable is exhausted, return elements from
+   the saved copy.  Repeats indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
           # cycle('ABCD') → A B C D A B C D A B C D ...
@@ -361,8 +361,8 @@ loops that truncate the stream.
               for element in saved:
                   yield element
 
-   Note, this member of the toolkit may require significant auxiliary storage
-   (depending on the length of the iterable).
+   This itertool may require significant auxiliary storage (depending on
+   the length of the iterable).
 
 
 .. function:: dropwhile(predicate, iterable)
