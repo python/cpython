@@ -110,6 +110,7 @@ symtable_init_constants(PyObject *m)
 static PyModuleDef_Slot symtable_slots[] = {
     {Py_mod_exec, symtable_init_constants},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

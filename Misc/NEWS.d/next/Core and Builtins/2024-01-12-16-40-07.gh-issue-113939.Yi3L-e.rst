@@ -1,4 +1,0 @@
-frame.clear():
-Clear frame.f_locals as well, and not only the fast locals.
-This is relevant once frame.f_locals was accessed,
-which would contain also references to all the locals.

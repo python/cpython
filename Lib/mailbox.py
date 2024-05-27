@@ -750,9 +750,13 @@ class _singlefileMailbox(Mailbox):
         _sync_close(new_file)
         # self._file is about to get replaced, so no need to sync.
         self._file.close()
-        # Make sure the new file's mode is the same as the old file's
-        mode = os.stat(self._path).st_mode
-        os.chmod(new_file.name, mode)
+        # Make sure the new file's mode and owner are the same as the old file's
+        info = os.stat(self._path)
+        os.chmod(new_file.name, info.st_mode)
+        try:
+            os.chown(new_file.name, info.st_uid, info.st_gid)
+        except (AttributeError, OSError):
+            pass
         try:
             os.rename(new_file.name, self._path)
         except FileExistsError:
@@ -830,10 +834,11 @@ class _mboxMMDF(_singlefileMailbox):
         """Return a Message representation or raise a KeyError."""
         start, stop = self._lookup(key)
         self._file.seek(start)
-        from_line = self._file.readline().replace(linesep, b'')
+        from_line = self._file.readline().replace(linesep, b'').decode('ascii')
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(linesep, b'\n'))
-        msg.set_from(from_line[5:].decode('ascii'))
+        msg.set_unixfrom(from_line)
+        msg.set_from(from_line[5:])
         return msg
 
     def get_string(self, key, from_=False):
