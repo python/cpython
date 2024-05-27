@@ -454,20 +454,17 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            Py_VISIT(info->proto);
-            Py_VISIT(info->argtypes);
-            Py_VISIT(info->converters);
-            Py_VISIT(info->restype);
-            Py_VISIT(info->checker);
-            Py_VISIT(info->module);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        Py_VISIT(info->proto);
+        Py_VISIT(info->argtypes);
+        Py_VISIT(info->converters);
+        Py_VISIT(info->restype);
+        Py_VISIT(info->checker);
+        Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
@@ -488,15 +485,12 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
+    }
+    if (info) {
+        ctype_clear_stginfo(info);
     }
     return PyType_Type.tp_clear(self);
 }
@@ -504,22 +498,20 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-    if (st && st->PyCType_Type) {
-        StgInfo *info;
-        if (PyStgInfo_FromType(st, self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
-        }
-        if (info) {
-            PyMem_Free(info->ffi_type_pointer.elements);
-            info->ffi_type_pointer.elements = NULL;
-            PyMem_Free(info->format);
-            info->format = NULL;
-            PyMem_Free(info->shape);
-            info->shape = NULL;
-            ctype_clear_stginfo(info);
-        }
+    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    if (!info) {
+        PyErr_WriteUnraisable(self);
     }
+    if (info) {
+        PyMem_Free(info->ffi_type_pointer.elements);
+        info->ffi_type_pointer.elements = NULL;
+        PyMem_Free(info->format);
+        info->format = NULL;
+        PyMem_Free(info->shape);
+        info->shape = NULL;
+        ctype_clear_stginfo(info);
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
@@ -5947,7 +5939,7 @@ module_free(void *module)
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _ctypes_mod_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
