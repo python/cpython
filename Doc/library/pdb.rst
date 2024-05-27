@@ -278,6 +278,8 @@ There are three preset *convenience variables*:
 
 .. versionadded:: 3.12
 
+   Added the *convenience variable* feature.
+
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
