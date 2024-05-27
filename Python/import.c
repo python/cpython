@@ -2183,7 +2183,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
     /* Clear data set when the module was initially loaded. */
     def->m_base.m_init = NULL;
     Py_CLEAR(def->m_base.m_copy);
-    // We leave m_index alone since there's no reason to reset it.
+    def->m_base.m_index = 0;
 
     /* Clear the PyState_*Module() cache entry. */
     Py_ssize_t index = _get_cached_module_index(cached);
@@ -2192,7 +2192,6 @@ clear_singlephase_extension(PyInterpreterState *interp,
             return -1;
         }
     }
-    def->m_base.m_index = 0;
 
     /* Clear the cached module def. */
     _extensions_cache_delete(path, name);
