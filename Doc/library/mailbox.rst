@@ -1,5 +1,5 @@
-:mod:`mailbox` --- Manipulate mailboxes in various formats
-==========================================================
+:mod:`!mailbox` --- Manipulate mailboxes in various formats
+===========================================================
 
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats

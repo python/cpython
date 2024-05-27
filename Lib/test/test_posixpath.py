@@ -1,3 +1,4 @@
+import inspect
 import os
 import posixpath
 import sys
@@ -5,7 +6,7 @@ import unittest
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
 from test.support import import_helper
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support.os_helper import FakePath
 from unittest import mock
 
@@ -282,6 +283,16 @@ class PosixPathTest(unittest.TestCase):
 
     def test_isjunction(self):
         self.assertFalse(posixpath.isjunction(ABSTFN))
+
+    @unittest.skipIf(sys.platform == 'win32', "Fast paths are not for win32")
+    @cpython_only
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks
+        self.assertTrue(os.path.splitroot is posix._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is posix._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
@@ -659,6 +670,24 @@ class PosixPathTest(unittest.TestCase):
             os_helper.unlink(ABSTFN + "link")
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @skip_if_ABSTFN_contains_backslash
+    @unittest.skipIf(os.chmod not in os.supports_follow_symlinks, "Can't set symlink permissions")
+    @unittest.skipIf(sys.platform != "darwin", "only macOS requires read permission to readlink()")
+    def test_realpath_unreadable_symlink(self):
+        try:
+            os.symlink(ABSTFN+"1", ABSTFN)
+            os.chmod(ABSTFN, 0o000, follow_symlinks=False)
+            self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/foo'), ABSTFN + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/../foo'), dirname(ABSTFN) + '/foo')
+            self.assertEqual(realpath(ABSTFN + '/foo/..'), ABSTFN)
+            with self.assertRaises(PermissionError):
+                realpath(ABSTFN, strict=True)
+        finally:
+            os.chmod(ABSTFN, 0o755, follow_symlinks=False)
+            os.unlink(ABSTFN)
 
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")

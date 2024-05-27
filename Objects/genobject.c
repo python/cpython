@@ -799,6 +799,7 @@ static PyMethodDef gen_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1151,6 +1152,7 @@ static PyMethodDef coro_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1774,6 +1776,7 @@ async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
 
     if (o->ags_state == AWAITABLE_STATE_INIT) {
         if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "anext(): asynchronous generator is already running");
@@ -1817,10 +1820,24 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
         return NULL;
     }
 
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return NULL;
+        }
+
+        o->ags_state = AWAITABLE_STATE_ITER;
+        o->ags_gen->ag_running_async = 1;
+    }
+
     result = gen_throw((PyGenObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
+        o->ags_gen->ag_running_async = 0;
         o->ags_state = AWAITABLE_STATE_CLOSED;
     }
 
@@ -1831,8 +1848,25 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
 static PyObject *
 async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 {
-    o->ags_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->ags_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_asend_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 static void
@@ -2209,10 +2243,31 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         return NULL;
     }
 
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        if (o->agt_gen->ag_running_async) {
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+            if (o->agt_args == NULL) {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "aclose(): asynchronous generator is already running");
+            }
+            else {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "athrow(): asynchronous generator is already running");
+            }
+            return NULL;
+        }
+
+        o->agt_state = AWAITABLE_STATE_ITER;
+        o->agt_gen->ag_running_async = 1;
+    }
+
     retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
     if (o->agt_args) {
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
             o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         return retval;
@@ -2226,6 +2281,7 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
             return NULL;
         }
         if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
             o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
@@ -2254,8 +2310,25 @@ async_gen_athrow_iternext(PyAsyncGenAThrow *o)
 static PyObject *
 async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 {
-    o->agt_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->agt_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_athrow_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 
