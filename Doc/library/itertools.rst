@@ -389,9 +389,10 @@ loops that truncate the stream.
 
 .. function:: filterfalse(predicate, iterable)
 
-   Make an iterator that filters elements from iterable returning only those for
-   which the predicate is false. If *predicate* is ``None``, return the items
-   that are false. Roughly equivalent to::
+   Make an iterator that filters elements from iterable returning only
+   those for which the *predicate* returns a false value.  If
+   *predicate* is ``None``, return the items that are false.  Roughly
+   equivalent to::
 
       def filterfalse(predicate, iterable):
           # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
@@ -599,10 +600,13 @@ loops that truncate the stream.
        def product(*iterables, repeat=1):
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
+
            pools = [tuple(pool) for pool in iterables] * repeat
+
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
+
            for prod in result:
                yield tuple(prod)
 
@@ -638,10 +642,10 @@ loops that truncate the stream.
 
 .. function:: starmap(function, iterable)
 
-   Make an iterator that computes the function using arguments obtained from
-   the iterable.  Used instead of :func:`map` when argument parameters are already
-   grouped in tuples from a single iterable (when the data has been
-   "pre-zipped").
+   Make an iterator that computes the function using arguments obtained
+   from the *iterable*.  Used instead of :func:`map` when argument
+   parameters are already grouped in tuples from a single iterable (when
+   the data has been "pre-zipped").
 
    The difference between :func:`map` and :func:`starmap` parallels the
    distinction between ``function(a,b)`` and ``function(*c)``. Roughly
@@ -655,8 +659,8 @@ loops that truncate the stream.
 
 .. function:: takewhile(predicate, iterable)
 
-   Make an iterator that returns elements from the iterable as long as the
-   predicate is true.  Roughly equivalent to::
+   Make an iterator that returns elements from the *iterable* as long as
+   the *predicate* is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
           # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
@@ -712,9 +716,15 @@ loops that truncate the stream.
 
 .. function:: zip_longest(*iterables, fillvalue=None)
 
-   Make an iterator that aggregates elements from each of the iterables. If the
-   iterables are of uneven length, missing values are filled-in with *fillvalue*.
-   Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
+   Make an iterator that aggregates elements from each of the
+   *iterables*.
+
+   If the iterables are of uneven length, missing values are filled-in
+   with *fillvalue*.  If not specified, *fillvalue* defaults to ``None``.
+
+   Iteration continues until the longest iterable is exhausted.
+
+   Roughly equivalent to::
 
       def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
@@ -740,8 +750,7 @@ loops that truncate the stream.
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls
-   (for example :func:`islice` or :func:`takewhile`).  If not specified,
-   *fillvalue* defaults to ``None``.
+   (for example :func:`islice` or :func:`takewhile`).
 
 
 .. _itertools-recipes:
