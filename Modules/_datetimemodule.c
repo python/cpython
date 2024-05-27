@@ -969,6 +969,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
  */
 
 /* Create a date instance with no range checking. */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_date_ex(int year, int month, int day, PyTypeObject *type)
 {
@@ -1013,6 +1014,7 @@ new_date_subclass_ex(int year, int month, int day, PyObject *cls)
 }
 
 /* Create a datetime instance with no range checking. */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_datetime_ex2(int year, int month, int day, int hour, int minute,
                  int second, int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
@@ -1046,6 +1048,7 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
     return (PyObject *)self;
 }
 
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_datetime_ex(int year, int month, int day, int hour, int minute,
                 int second, int usecond, PyObject *tzinfo, PyTypeObject *type)
@@ -1123,6 +1126,7 @@ new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
 }
 
 /* Create a time instance with no range checking. */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_time_ex2(int hour, int minute, int second, int usecond,
              PyObject *tzinfo, int fold, PyTypeObject *type)
@@ -1153,6 +1157,7 @@ new_time_ex2(int hour, int minute, int second, int usecond,
     return (PyObject *)self;
 }
 
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_time_ex(int hour, int minute, int second, int usecond,
             PyObject *tzinfo, PyTypeObject *type)
@@ -1190,6 +1195,7 @@ static PyDateTime_Delta * look_up_delta(int, int, int, PyTypeObject *);
  * case, raises OverflowError and returns NULL if the normalized days is out
  * of range.
  */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_delta_ex(int days, int seconds, int microseconds, int normalize,
              PyTypeObject *type)
@@ -1265,6 +1271,7 @@ create_timezone(PyObject *offset, PyObject *name)
 
 static int delta_bool(PyDateTime_Delta *self);
 
+/* This is exposed by the datetime C-API. */
 static PyObject *
 new_timezone(PyObject *offset, PyObject *name)
 {
@@ -3094,6 +3101,7 @@ datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
  * which expects a function that takes an *args tuple, whereas the argument
  * clinic generates code that takes METH_O.
  */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
 {
@@ -5296,6 +5304,7 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
 }
 
 /* Return new local datetime from timestamp (Python timestamp -- a double). */
+/* This is exposed by the datetime C-API. */
 static PyObject *
 datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 {
