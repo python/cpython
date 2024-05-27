@@ -894,8 +894,8 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "complex() argument must be a string or a number, not '%.200s'",
-            Py_TYPE(v)->tp_name);
+            "complex() argument must be a string or a number, not %T",
+            v);
         return NULL;
     }
 
@@ -903,6 +903,74 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
                                                    complex_from_string_inner);
     Py_DECREF(s_buffer);
     return result;
+}
+
+static PyObject *
+actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *tmp;
+    PyObject *res = NULL;
+    PyNumberMethods *nbr;
+    int own_arg = 0;
+
+    if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
+        return complex_new(type, args, kwargs);
+    }
+    if (!PyTuple_GET_SIZE(args)) {
+        return complex_subtype_from_doubles(type, 0, 0);
+    }
+
+    PyObject *arg = PyTuple_GET_ITEM(args, 0);
+    /* Special-case for a single argument when type(arg) is complex. */
+    if (PyComplex_CheckExact(arg) && type == &PyComplex_Type) {
+        /* Note that we can't know whether it's safe to return
+           a complex *subclass* instance as-is, hence the restriction
+           to exact complexes here.  If either the input or the
+           output is a complex subclass, it will be handled below
+           as a non-orthogonal vector.  */
+        return Py_NewRef(arg);
+    }
+    if (PyUnicode_Check(arg)) {
+        return complex_subtype_from_string(type, arg);
+    }
+    tmp = try_complex_special_method(arg);
+    if (tmp) {
+        arg = tmp;
+        own_arg = 1;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    if (PyComplex_Check(arg)) {
+        /* Note that if arg is of a complex subtype, we're only
+           retaining its real & imag parts here, and the return
+           value is (properly) of the builtin complex type. */
+        Py_complex c = ((PyComplexObject*)arg)->cval;
+        res = complex_subtype_from_doubles(type, c.real, c.imag);
+    }
+    else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
+             (nbr->nb_float != NULL || nbr->nb_index != NULL))
+    {
+        /* The argument really is entirely real, and contributes
+           nothing in the imaginary direction.
+           Just treat it as a double. */
+        double r = PyFloat_AsDouble(arg);
+        if (r != -1.0 || !PyErr_Occurred()) {
+            res = complex_subtype_from_doubles(type, r, 0);
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "complex() argument must be a string or a number, not %T",
+                     arg);
+    }
+    if (own_arg) {
+        /* arg was a newly created complex number, rather
+           than the original "real" argument. */
+        Py_DECREF(arg);
+    }
+    return res;
 }
 
 /*[clinic input]
@@ -930,30 +998,22 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     if (r == NULL) {
         r = _PyLong_GetZero();
     }
+    PyObject *orig_r = r;
 
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(r) && i == NULL &&
         type == &PyComplex_Type) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "complex() argument 'real' must be a real number, not %T",
+                r)) {
+            return NULL;
+        }
         /* Note that we can't know whether it's safe to return
            a complex *subclass* instance as-is, hence the restriction
            to exact complexes here.  If either the input or the
            output is a complex subclass, it will be handled below
            as a non-orthogonal vector.  */
         return Py_NewRef(r);
-    }
-    if (PyUnicode_Check(r)) {
-        if (i != NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "complex() can't take second arg"
-                            " if first is a string");
-            return NULL;
-        }
-        return complex_subtype_from_string(type, r);
-    }
-    if (i != NULL && PyUnicode_Check(i)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "complex() second arg can't be a string");
-        return NULL;
     }
 
     tmp = try_complex_special_method(r);
@@ -970,9 +1030,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         (nbr->nb_float == NULL && nbr->nb_index == NULL && !PyComplex_Check(r)))
     {
         PyErr_Format(PyExc_TypeError,
-                     "complex() first argument must be a string or a number, "
-                     "not '%.200s'",
-                     Py_TYPE(r)->tp_name);
+                     "complex() argument 'real' must be a real number, not %T",
+                     r);
         if (own_r) {
             Py_DECREF(r);
         }
@@ -984,9 +1043,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
             (nbi->nb_float == NULL && nbi->nb_index == NULL && !PyComplex_Check(i)))
         {
             PyErr_Format(PyExc_TypeError,
-                         "complex() second argument must be a number, "
-                         "not '%.200s'",
-                         Py_TYPE(i)->tp_name);
+                         "complex() argument 'imag' must be a real number, not %T",
+                         i);
             if (own_r) {
                 Py_DECREF(r);
             }
@@ -1010,6 +1068,16 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         if (own_r) {
             Py_DECREF(r);
         }
+        nbr = Py_TYPE(orig_r)->tp_as_number;
+        if (nbr == NULL ||
+            (nbr->nb_float == NULL && nbr->nb_index == NULL))
+        {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                    "complex() argument 'real' must be a real number, not %T",
+                    orig_r)) {
+                return NULL;
+            }
+        }
     }
     else {
         /* The "real" part really is entirely real, and contributes
@@ -1032,6 +1100,11 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         ci.real = cr.imag;
     }
     else if (PyComplex_Check(i)) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "complex() argument 'imag' must be a real number, not %T",
+                i)) {
+            return NULL;
+        }
         ci = ((PyComplexObject*)i)->cval;
         ci_is_complex = 1;
     } else {
@@ -1131,6 +1204,6 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    complex_new,                                /* tp_new */
+    actual_complex_new,                         /* tp_new */
     PyObject_Del,                               /* tp_free */
 };

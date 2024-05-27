@@ -21,6 +21,15 @@ ZERO_DIVISION = (
     (1, 0+0j),
 )
 
+class ComplexSubclass(complex):
+    pass
+
+class MockComplex:
+    def __init__(self, value):
+        self.value = value
+    def __complex__(self):
+        return self.value
+
 class ComplexTest(unittest.TestCase):
 
     def assertAlmostEqual(self, a, b):
@@ -340,16 +349,13 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        class NS:
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        self.assertEqual(complex(NS(1+10j)), 1+10j)
-        self.assertRaises(TypeError, complex, NS(None))
+        self.assertEqual(complex(MockComplex(1+10j)), 1+10j)
+        self.assertRaises(TypeError, complex, MockComplex(None))
         self.assertRaises(TypeError, complex, {})
-        self.assertRaises(TypeError, complex, NS(1.5))
-        self.assertRaises(TypeError, complex, NS(1))
+        self.assertRaises(TypeError, complex, MockComplex(1.5))
+        self.assertRaises(TypeError, complex, MockComplex(1))
         self.assertRaises(TypeError, complex, object())
-        self.assertRaises(TypeError, complex, NS(4.25+0.5j), object())
+        self.assertRaises(TypeError, complex, MockComplex(4.25+0.5j), object())
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
@@ -369,13 +375,33 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(3.14), 3.14+0j)
         self.assertAlmostEqual(complex(314), 314.0+0j)
         self.assertAlmostEqual(complex(314), 314.0+0j)
-        self.assertAlmostEqual(complex(3.14+0j, 0j), 3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(3.14+0j, 0j), 3.14+0j)
         self.assertAlmostEqual(complex(3.14, 0.0), 3.14+0j)
         self.assertAlmostEqual(complex(314, 0), 314.0+0j)
         self.assertAlmostEqual(complex(314, 0), 314.0+0j)
-        self.assertAlmostEqual(complex(0j, 3.14j), -3.14+0j)
-        self.assertAlmostEqual(complex(0.0, 3.14j), -3.14+0j)
-        self.assertAlmostEqual(complex(0j, 3.14), 3.14j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(0j, 3.14j), -3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(0.0, 3.14j), -3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(0j, 3.14), 3.14j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(3.14+0j, 0), 3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not .*MockComplex"):
+            self.assertAlmostEqual(complex(MockComplex(3.14+0j), 0), 3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not .*complex"):
+            self.assertAlmostEqual(complex(0, 3.14+0j), 3.14j)
+        with self.assertRaisesRegex(TypeError,
+                "argument 'imag' must be a real number, not .*MockComplex"):
+            complex(0, MockComplex(3.14+0j))
         self.assertAlmostEqual(complex(0.0, 3.14), 3.14j)
         self.assertAlmostEqual(complex("1"), 1+0j)
         self.assertAlmostEqual(complex("1j"), 1j)
@@ -398,12 +424,32 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(complex('1-1j'), 1.0 - 1j)
         self.assertEqual(complex('1J'), 1j)
 
-        class complex2(complex): pass
-        self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
+        self.assertAlmostEqual(complex(ComplexSubclass(1+1j)), 1+1j)
         self.assertAlmostEqual(complex(real=17, imag=23), 17+23j)
-        self.assertAlmostEqual(complex(real=17+23j), 17+23j)
-        self.assertAlmostEqual(complex(real=17+23j, imag=23), 17+46j)
-        self.assertAlmostEqual(complex(real=1+2j, imag=3+4j), -3+5j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(real=17+23j), 17+23j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(real=17+23j, imag=23), 17+46j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(real=1+2j, imag=3+4j), -3+5j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertAlmostEqual(complex(real=3.14+0j), 3.14+0j)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not .*MockComplex"):
+            self.assertAlmostEqual(complex(real=MockComplex(3.14+0j)), 3.14+0j)
+        with self.assertRaisesRegex(TypeError,
+                "argument 'real' must be a real number, not str"):
+            complex(real='1')
+        with self.assertRaisesRegex(TypeError,
+                "argument 'real' must be a real number, not str"):
+            complex('1', 0)
+        with self.assertRaisesRegex(TypeError,
+                "argument 'imag' must be a real number, not str"):
+            complex(0, '1')
 
         # check that the sign of a zero in the real or imaginary part
         # is preserved when constructing from two floats.  (These checks
@@ -432,8 +478,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, int, 5+3j)
         self.assertRaises(TypeError, float, 5+3j)
         self.assertRaises(ValueError, complex, "")
-        self.assertRaises(TypeError, complex, None)
-        self.assertRaisesRegex(TypeError, "not 'NoneType'", complex, None)
+        self.assertRaisesRegex(TypeError,
+            "argument must be a string or a number, not NoneType",
+            complex, None)
         self.assertRaises(ValueError, complex, "\0")
         self.assertRaises(ValueError, complex, "3\09")
         self.assertRaises(TypeError, complex, "1", "2")
@@ -453,11 +500,11 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, ")1+2j(")
         self.assertRaisesRegex(
             TypeError,
-            "first argument must be a string or a number, not 'dict'",
+            "argument 'real' must be a real number, not dict",
             complex, {1:2}, 1)
         self.assertRaisesRegex(
             TypeError,
-            "second argument must be a number, not 'dict'",
+            "argument 'imag' must be a real number, not dict",
             complex, 1, {1:2})
         # the following three are accepted by Python 2.6
         self.assertRaises(ValueError, complex, "1..1j")
@@ -537,33 +584,28 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(z.__complex__(), z)
         self.assertEqual(type(z.__complex__()), complex)
 
-        class complex_subclass(complex):
-            pass
-
-        z = complex_subclass(3 + 4j)
+        z = ComplexSubclass(3 + 4j)
         self.assertEqual(z.__complex__(), 3 + 4j)
         self.assertEqual(type(z.__complex__()), complex)
 
     @support.requires_IEEE_754
     def test_constructor_special_numbers(self):
-        class complex2(complex):
-            pass
         for x in 0.0, -0.0, INF, -INF, NAN:
             for y in 0.0, -0.0, INF, -INF, NAN:
                 with self.subTest(x=x, y=y):
                     z = complex(x, y)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex2(x, y)
-                    self.assertIs(type(z), complex2)
+                    z = ComplexSubclass(x, y)
+                    self.assertIs(type(z), ComplexSubclass)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex(complex2(x, y))
+                    z = complex(ComplexSubclass(x, y))
                     self.assertIs(type(z), complex)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex2(complex(x, y))
-                    self.assertIs(type(z), complex2)
+                    z = ComplexSubclass(complex(x, y))
+                    self.assertIs(type(z), ComplexSubclass)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
 
@@ -645,9 +687,6 @@ class ComplexTest(unittest.TestCase):
         test(complex(-0., -0.), "(-0-0j)")
 
     def test_pos(self):
-        class ComplexSubclass(complex):
-            pass
-
         self.assertEqual(+(1+6j), 1+6j)
         self.assertEqual(+ComplexSubclass(1, 6), 1+6j)
         self.assertIs(type(+ComplexSubclass(1, 6)), complex)
