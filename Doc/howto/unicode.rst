@@ -351,6 +351,7 @@ they have no significance to Python but are a convention.  Python looks for
 If you don't include such a comment, the default encoding used will be UTF-8 as
 already mentioned.  See also :pep:`263` for more information.
 
+.. _unicode-howto-properties:
 
 Unicode Properties
 ------------------
