@@ -3089,3 +3089,72 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
     }
 #endif
 }
+
+
+// --- Frame Stack API ------------------------------------------------------
+
+struct PyFrameStack {
+    _PyInterpreterFrame *current_frame;
+    _PyStackChunk *datastack_chunk;
+    PyObject **datastack_top;
+    PyObject **datastack_limit;
+    int py_recursion_depth;
+    int c_recursion_depth;
+    PyFrameObject *top_frame;  // strong reference
+    PyObject *delete_later;  // strong reference
+    PyObject *context;  // strong reference
+} PythonState;
+
+PyFrameStack *PyFrameStack_Init(void)
+{
+    PyFrameStack *fs = PyMem_Malloc(sizeof(PyFrameStack));
+    if (fs == NULL) {
+        return NULL;
+    }
+
+    PyThreadState* tstate = _PyThreadState_GET();
+    //fs->cframe = tstate->cframe;
+    //fs->current_frame = tstate->cframe->current_frame;
+    fs->datastack_chunk = tstate->datastack_chunk;
+    fs->datastack_top = tstate->datastack_top;
+    fs->datastack_limit = tstate->datastack_limit;
+    tstate->datastack_chunk = NULL;
+    tstate->datastack_top = NULL;
+    tstate->datastack_limit = NULL;
+
+    fs->py_recursion_depth = (tstate->py_recursion_limit - tstate->py_recursion_remaining);
+    fs->c_recursion_depth = (Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining);
+    fs->top_frame = PyThreadState_GetFrame((PyThreadState*)tstate);
+
+    fs->delete_later = Py_XNewRef(tstate->delete_later);
+
+    fs->context = Py_XNewRef(tstate->context);
+    return fs;
+}
+
+
+void PyFrameStack_Swap(PyFrameStack *fs)
+{
+    PyThreadState* tstate = _PyThreadState_GET();
+    //tstate->cframe = fs->cframe;
+    //tstate->cframe->current_frame = fs->current_frame;
+    tstate->datastack_chunk = fs->datastack_chunk;
+    tstate->datastack_top = fs->datastack_top;
+    tstate->datastack_limit = fs->datastack_limit;
+
+    tstate->py_recursion_remaining = tstate->py_recursion_limit - fs->py_recursion_depth;
+    tstate->c_recursion_remaining = Py_C_RECURSION_LIMIT - fs->c_recursion_depth;
+
+    tstate->delete_later = fs->delete_later;
+
+    tstate->context = fs->context;
+}
+
+
+void PyFrameStack_Free(PyFrameStack *fs)
+{
+    Py_XDECREF(fs->top_frame);
+    Py_XDECREF(fs->delete_later);
+    Py_XDECREF(fs->context);
+    PyMem_Free(fs);
+}

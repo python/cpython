@@ -63,6 +63,7 @@ _get_current_module(void)
 
 typedef struct {
     PyObject *record_list;
+    PyTypeObject *pyframestack_type;
 } module_state;
 
 static inline module_state *
@@ -78,6 +79,7 @@ static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
     Py_VISIT(state->record_list);
+    Py_VISIT(state->pyframestack_type);
     return 0;
 }
 
@@ -85,6 +87,7 @@ static int
 clear_module_state(module_state *state)
 {
     Py_CLEAR(state->record_list);
+    Py_CLEAR(state->pyframestack_type);
     return 0;
 }
 
@@ -2024,6 +2027,61 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+typedef struct {
+    PyObject_HEAD
+    PyFrameStack *fs;
+} PyFrameStackObject;
+
+static void
+pyframestack_dealloc(PyObject *ob)
+{
+    PyFrameStackObject *self = (PyFrameStackObject *)ob;
+    PyTypeObject *tp = Py_TYPE(self);
+    PyFrameStack_Free(self->fs);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyObject*
+pyframestack_swap(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef PyFrameStack_methods[] = {
+    {"swap", pyframestack_swap, METH_NOARGS},
+    {NULL, NULL}
+};
+static PyType_Slot PyFrameStack_slots[] = {
+    {Py_tp_dealloc, pyframestack_dealloc},
+    {Py_tp_methods, PyFrameStack_methods},
+    {0, NULL},
+};
+
+static PyType_Spec PyFrameStackType_Spec = {
+    .name = "_testinternalcapi.FrameStack",
+    .basicsize = sizeof(PyFrameStackObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = PyFrameStack_slots,
+};
+
+static PyObject*
+pyframestack(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    module_state *state = get_module_state(module);
+    PyTypeObject *type = state->pyframestack_type;
+    PyFrameStackObject *self = (PyFrameStackObject *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->fs = PyFrameStack_Init();
+    if (self->fs == NULL) {
+        Py_DECREF(self);
+    }
+    return (PyObject *) self;
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2116,6 +2174,7 @@ static PyMethodDef module_functions[] = {
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
     GH_119213_GETARGS_METHODDEF
+    {"pyframestack", pyframestack, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2126,16 +2185,16 @@ static int
 module_exec(PyObject *module)
 {
     if (_PyTestInternalCapi_Init_Lock(module) < 0) {
-        return 1;
+        return -1;
     }
     if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
-        return 1;
+        return -1;
     }
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
-        return 1;
+        return -1;
     }
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
-        return 1;
+        return -1;
     }
 
     Py_ssize_t sizeof_gc_head = 0;
@@ -2145,27 +2204,33 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
                         PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
-        return 1;
+        return -1;
     }
 
     if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
                         PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
-        return 1;
+        return -1;
     }
 
     if (PyModule_Add(module, "SIZEOF_PYOBJECT",
                         PyLong_FromSsize_t(sizeof(PyObject))) < 0) {
-        return 1;
+        return -1;
     }
 
     if (PyModule_Add(module, "SIZEOF_TIME_T",
                         PyLong_FromSsize_t(sizeof(time_t))) < 0) {
-        return 1;
+        return -1;
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
                         PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
-        return 1;
+        return -1;
+    }
+
+    module_state *state = get_module_state(module);
+    state->pyframestack_type = (PyTypeObject*)PyType_FromSpec(&PyFrameStackType_Spec);
+    if (state->pyframestack_type == NULL) {
+        return -1;
     }
 
     return 0;

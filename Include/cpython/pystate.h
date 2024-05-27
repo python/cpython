@@ -266,3 +266,10 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+// --- Frame Stack API ------------------------------------------------------
+
+typedef struct PyFrameStack PyFrameStack;
+PyAPI_FUNC(PyFrameStack*) PyFrameStack_Init(void);
+PyAPI_FUNC(void) PyFrameStack_Swap(PyFrameStack *fs);
+PyAPI_FUNC(void) PyFrameStack_Free(PyFrameStack *fs);
