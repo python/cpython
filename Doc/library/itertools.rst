@@ -245,11 +245,13 @@ loops that truncate the stream.
         def combinations(iterable, r):
             # combinations('ABCD', 2) → AB AC AD BC BD CD
             # combinations(range(4), 3) → 012 013 023 123
+
             pool = tuple(iterable)
             n = len(pool)
             if r > n:
                 return
             indices = list(range(r))
+
             yield tuple(pool[i] for i in indices)
             while True:
                 for i in reversed(range(r)):
@@ -285,11 +287,13 @@ loops that truncate the stream.
 
         def combinations_with_replacement(iterable, r):
             # combinations_with_replacement('ABC', 2) → AA AB AC BB BC CC
+
             pool = tuple(iterable)
             n = len(pool)
             if not n and r:
                 return
             indices = [0] * r
+
             yield tuple(pool[i] for i in indices)
             while True:
                 for i in reversed(range(r)):
