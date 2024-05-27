@@ -231,7 +231,8 @@ static void monitor_reraise(PyThreadState *tstate,
                  _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr);
+                 _Py_CODEUNIT *instr,
+                 PyObject *value);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -247,10 +248,6 @@ static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-static _PyInterpreterFrame *
-_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
-                        size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
@@ -1716,7 +1713,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 }
 
 /* Consumes references to func, locals and all the args */
-static _PyInterpreterFrame *
+_PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
@@ -1736,6 +1733,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     return frame;
 fail:
     /* Consume the references */
+    Py_DECREF(func);
+    Py_XDECREF(locals);
     for (size_t i = 0; i < argcount; i++) {
         Py_DECREF(args[i]);
     }
@@ -2217,12 +2216,19 @@ monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
 static int
 monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
-                       _Py_CODEUNIT *instr)
+                       _Py_CODEUNIT *instr, PyObject *value)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
         return 0;
     }
-    return do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
+    assert(!PyErr_Occurred());
+    PyErr_SetObject(PyExc_StopIteration, value);
+    int res = do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
+    if (res < 0) {
+        return res;
+    }
+    PyErr_SetRaisedException(NULL);
+    return 0;
 }
 
 static void
@@ -2477,12 +2483,7 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    if (_PyFrame_FastToLocalsWithError(current_frame) < 0) {
-        return NULL;
-    }
-
-    PyObject *locals = current_frame->f_locals;
-    assert(locals != NULL);
+    PyObject *locals = _PyEval_GetFrameLocals();
     return locals;
 }
 
@@ -2496,7 +2497,28 @@ _PyEval_GetFrameLocals(void)
         return NULL;
     }
 
-    return _PyFrame_GetLocals(current_frame, 1);
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyObject* ret = PyDict_New();
+        if (ret == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            Py_DECREF(ret);
+            Py_DECREF(locals);
+            return NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    return locals;
 }
 
 PyObject *
@@ -2508,6 +2530,28 @@ PyEval_GetGlobals(void)
         return NULL;
     }
     return current_frame->f_globals;
+}
+
+PyObject*
+PyEval_GetFrameLocals(void)
+{
+    return _PyEval_GetFrameLocals();
+}
+
+PyObject* PyEval_GetFrameGlobals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        return NULL;
+    }
+    return Py_XNewRef(current_frame->f_globals);
+}
+
+PyObject* PyEval_GetFrameBuiltins(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return Py_XNewRef(_PyEval_GetBuiltins(tstate));
 }
 
 int

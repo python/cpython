@@ -42,6 +42,7 @@ additional methods of invocation:
 * When called with standard input connected to a tty device, it prompts for
   commands and executes them until an EOF (an end-of-file character, you can
   produce that with :kbd:`Ctrl-D` on UNIX or :kbd:`Ctrl-Z, Enter` on Windows) is read.
+  For more on interactive mode, see :ref:`tut-interac`.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
 * When called with a directory name argument, it reads and executes an
@@ -289,9 +290,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
@@ -586,6 +593,15 @@ Miscellaneous options
 
      .. versionadded:: 3.12
 
+   * ``-X perf_jit`` enables support for the Linux ``perf`` profiler with DWARF
+     support. When this option is provided, the ``perf`` profiler will be able
+     to report Python calls using DWARF information. This option is only available on
+     some platforms and will do nothing if is not supported on the current
+     system. The default value is "off". See also :envvar:`PYTHON_PERF_JIT_SUPPORT`
+     and :ref:`perf_profiling`.
+
+     .. versionadded:: 3.13
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -606,7 +622,8 @@ Miscellaneous options
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
      respectively. Only available in builds configured with
-     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
+     :ref:`free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -1127,6 +1144,21 @@ conflict.
 
    .. versionadded:: 3.12
 
+.. envvar:: PYTHON_PERF_JIT_SUPPORT
+
+   If this variable is set to a nonzero value, it enables support for
+   the Linux ``perf`` profiler so Python calls can be detected by it
+   using DWARF information.
+
+   If set to ``0``, disable Linux ``perf`` profiler support.
+
+   See also the :option:`-X perf_jit <-X>` command-line option
+   and :ref:`perf_profiling`.
+
+   .. versionadded:: 3.13
+
+
+
 .. envvar:: PYTHON_CPU_COUNT
 
    If this variable is set to a positive integer, it overrides the return
@@ -1158,6 +1190,15 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_REPL
+
+   If this variable is set to ``1``, the interpreter will not attempt to
+   load the Python-based :term:`REPL` that requires :mod:`curses` and
+   :mod:`readline`, and will instead use the traditional parser-based
+   :term:`REPL`.
+
+   .. versionadded:: 3.13
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
@@ -1172,7 +1213,7 @@ conflict.
    forced on. Setting it to ``0`` forces the GIL off.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable.
+   precedence over this variable, and :ref:`free-threaded-cpython`.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 

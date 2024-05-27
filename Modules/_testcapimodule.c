@@ -3303,6 +3303,15 @@ failed:
     return NULL;
 }
 
+static PyObject *
+function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    if (PyErr_WarnEx(PyExc_RuntimeWarning, "Testing PyErr_WarnEx", 2)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3444,6 +3453,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
+    {"function_set_warning", function_set_warning, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3936,7 +3946,7 @@ PyInit__testcapi(void)
     if (m == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(m, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
@@ -4133,6 +4143,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Monitoring(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {

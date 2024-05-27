@@ -2502,6 +2502,11 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
+    ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(c->u->u_metadata.u_firstlineno));
+    if (compiler_nameop(c, loc, &_Py_ID(__firstlineno__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     if (asdl_seq_LEN(type_params) > 0) {
         if (!compiler_set_type_params_in_class(c, loc)) {
@@ -3969,7 +3974,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     }
     NEW_JUMP_TARGET_LABEL(c, end);
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
-    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);

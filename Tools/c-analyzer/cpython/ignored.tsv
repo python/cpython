@@ -365,6 +365,8 @@ Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
 Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
+Python/perf_jit_trampoline.c	-	_Py_perfmap_jit_callbacks	-
+Python/perf_jit_trampoline.c	-	perf_jit_map_state	-
 Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
@@ -393,8 +395,6 @@ Python/optimizer.c	-	cold_exits_initialized	-
 ##-----------------------
 ## test code
 
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
 Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
 Modules/_ctypes/_ctypes_test.c	-	an_integer	-
 Modules/_ctypes/_ctypes_test.c	-	bottom	-
@@ -402,7 +402,6 @@ Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
 Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
 Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
 Modules/_ctypes/_ctypes_test.c	-	left	-
-Modules/_ctypes/_ctypes_test.c	-	module_methods	-
 Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
 Modules/_ctypes/_ctypes_test.c	-	my_spams	-
 Modules/_ctypes/_ctypes_test.c	-	right	-
