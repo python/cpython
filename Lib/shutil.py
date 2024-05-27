@@ -611,23 +611,24 @@ def _rmtree_unsafe(path, onexc):
             onexc(os.scandir, err.filename, err)
     results = os.walk(path, False, onerror, os._walk_symlinks_as_files)
     for dirpath, dirnames, filenames in results:
-        prefix = os.path.join(dirpath, dirpath[:0])
-        for name in filenames:
-            fullname = prefix + name
-            try:
-                os.unlink(fullname)
-            except FileNotFoundError:
-                continue
-            except OSError as err:
-                onexc(os.unlink, fullname, err)
+        # Add trailing slash to dirpath.
+        dirpath = os.path.join(dirpath, dirpath[:0])
         for name in dirnames:
-            fullname = prefix + name
+            fullname = dirpath + name
             try:
                 os.rmdir(fullname)
             except FileNotFoundError:
                 continue
             except OSError as err:
                 onexc(os.rmdir, fullname, err)
+        for name in filenames:
+            fullname = dirpath + name
+            try:
+                os.unlink(fullname)
+            except FileNotFoundError:
+                continue
+            except OSError as err:
+                onexc(os.unlink, fullname, err)
     try:
         os.rmdir(path)
     except FileNotFoundError:
