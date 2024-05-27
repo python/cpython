@@ -97,7 +97,7 @@ Interpreter improvements:
 * :pep:`667`: The :func:`locals` builtin now has
   :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
   returned mapping. Python debuggers and similar tools may now more reliably
-  update local variables in optimized frames even during concurrent code
+  update local variables in optimized scopes even during concurrent code
   execution.
 
 New typing features:
@@ -2310,8 +2310,8 @@ Changes in the C API
   (Changed as part of :pep:`667`.)
 
 * :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
-  is redundant now that  :c:func:`PyFrame_GetLocals` returns a write-through proxy
-  on :term:`optimized frames <optimized frame>`. (Changed as part of :pep:`667`.)
+  is redundant now that :c:func:`PyFrame_GetLocals` returns a write-through proxy
+  for :term:`optimized scopes <optimized scope>`. (Changed as part of :pep:`667`.)
 
 Removed C APIs
 --------------
