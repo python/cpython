@@ -579,15 +579,20 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
     }
     Py_ssize_t result = -1;
     ADJUST_INDICES(start, end, len);
-    // Work in chunks
     if (direction > 0) {
         assert(FIND_CHUNK_SIZE > 0);
-        for (; result == -1 && start <= end; start += FIND_CHUNK_SIZE) {
-            Py_ssize_t cur_end = start + FIND_CHUNK_SIZE - 1;
+        for (; result == -1; start += FIND_CHUNK_SIZE) {
+            Py_ssize_t cur_end;
+            if (start > end - FIND_CHUNK_SIZE + 1) { // Guard overflow
+                cur_end = end;
+            }
+            else {
+                cur_end = start - 1 + FIND_CHUNK_SIZE;
+            }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_len;
                 Py_buffer subbuf;
+                Py_ssize_t new_result, sub_len;
+                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 if (!PyObject_CheckBuffer(subseq)) {
                     sub_len = 1;
                 }
@@ -599,13 +604,14 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 else {
                     sub_len = subbuf.len;
                 }
-                Py_ssize_t sub_end = cur_end + sub_len;
-                if (sub_end > end) {
-                    sub_end = end;
+                if (cur_end >= end - sub_len) { // Guard overflow
+                    new_result = find_internal(str, len, function_name, subseq,
+                                               start, end, +1);
                 }
-                Py_ssize_t new_result = find_internal(str, len, function_name,
-                                                      subseq, start, sub_end,
-                                                      +1);
+                else {
+                    new_result = find_internal(str, len, function_name, subseq,
+                                               start, cur_end + sub_len, +1);
+                }
                 if (new_result == -2) {
                     return -2;
                 }
@@ -616,6 +622,9 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                     cur_end = new_result - 1;
                     result = new_result;
                 }
+            }
+            if (start > end - FIND_CHUNK_SIZE) {
+                break; // Guard overflow
             }
         }
     }
@@ -628,9 +637,9 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 cur_start = start;
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_len;
                 Py_buffer subbuf;
+                Py_ssize_t new_result, sub_len;
+                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
                 if (!PyObject_CheckBuffer(subseq)) {
                     sub_len = 1;
                 }
@@ -642,13 +651,15 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 else {
                     sub_len = subbuf.len;
                 }
-                Py_ssize_t sub_end = cur_end + sub_len;
-                if (sub_end > end) {
-                    sub_end = end;
+                if (cur_end >= end - sub_len) { // Guard overflow
+                    new_result = find_internal(str, len, function_name, subseq,
+                                               cur_start, end, -1);
                 }
-                Py_ssize_t new_result = find_internal(str, len, function_name,
-                                                      subseq, cur_start,
-                                                      sub_end, -1);
+                else {
+                    new_result = find_internal(str, len, function_name, subseq,
+                                               cur_start, cur_end + sub_len,
+                                               -1);
+                }
                 if (new_result == -2) {
                     return -2;
                 }
