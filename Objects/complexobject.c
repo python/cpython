@@ -122,20 +122,20 @@ _Py_c_quot(Py_complex a, Py_complex b)
 
     /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
        the C11, Annex G.5.2, routine _Cdivd(). */
-    if (isnan(r.real) && isnan(r.imag)) {
-        if ((isinf(a.real) || isinf(a.imag))
-            && isfinite(b.real) && isfinite(b.imag))
+    if (Py_IS_NAN(r.real) && Py_IS_NAN(r.imag)) {
+        if ((Py_IS_INFINITY(a.real) || Py_IS_INFINITY(a.imag))
+            && Py_IS_FINITE(b.real) && Py_IS_FINITE(b.imag))
         {
-            const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
-            const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
+            const double x = copysign(Py_IS_INFINITY(a.real) ? 1.0 : 0.0, a.real);
+            const double y = copysign(Py_IS_INFINITY(a.imag) ? 1.0 : 0.0, a.imag);
             r.real = Py_INFINITY * (x*b.real + y*b.imag);
             r.imag = Py_INFINITY * (y*b.real - x*b.imag);
         }
-        else if ((fmax(abs_breal, abs_bimag) == Py_INFINITY)
-                 && isfinite(a.real) && isfinite(a.imag))
+        else if ((Py_IS_INFINITY(abs_breal) || Py_IS_INFINITY(abs_bimag))
+                 && Py_IS_FINITE(a.real) && Py_IS_FINITE(a.imag))
         {
-            const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
-            const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
+            const double x = copysign(Py_IS_INFINITY(b.real) ? 1.0 : 0.0, b.real);
+            const double y = copysign(Py_IS_INFINITY(b.imag) ? 1.0 : 0.0, b.imag);
             r.real = 0.0 * (a.real*x + a.imag*y);
             r.imag = 0.0 * (a.imag*x - a.real*y);
         }
