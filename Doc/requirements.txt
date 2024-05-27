@@ -10,7 +10,6 @@ sphinx~=7.3.0
 
 blurb
 
-sphinx-autobuild
 sphinxext-opengraph==0.7.5
 sphinx-notfound-page==1.0.0
 
