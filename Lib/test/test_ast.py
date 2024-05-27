@@ -8,9 +8,7 @@ import sys
 import textwrap
 import types
 import unittest
-import warnings
 import weakref
-from functools import partial
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -18,7 +16,6 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support.import_helper import import_fresh_module
 from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
@@ -38,6 +35,9 @@ def to_tuple(t):
         result.append(to_tuple(getattr(t, f)))
     return tuple(result)
 
+STDLIB = os.path.dirname(ast.__file__)
+STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
+STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
 
 # These tests are compiled through "exec"
 # There should be at least one test per statement
@@ -220,7 +220,7 @@ single_tests = [
 # These are compiled through "eval"
 # It should test all expressions
 eval_tests = [
-  # None
+  # Constant(value=None)
   "None",
   # BoolOp
   "a and b",
@@ -266,9 +266,9 @@ eval_tests = [
   "f(*[0, 1])",
   # Call with a generator argument
   "f(a for a in b)",
-  # Num
+  # Constant(value=int())
   "10",
-  # Str
+  # Constant(value=str())
   "'string'",
   # Attribute
   "a.b",
@@ -495,35 +495,8 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(issubclass(ast.comprehension, ast.AST))
         self.assertTrue(issubclass(ast.Gt, ast.AST))
 
-    def test_import_deprecated(self):
-        ast = import_fresh_module('ast')
-        depr_regex = (
-            r'ast\.{} is deprecated and will be removed in Python 3.14; '
-            r'use ast\.Constant instead'
-        )
-        for name in 'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis':
-            with self.assertWarnsRegex(DeprecationWarning, depr_regex.format(name)):
-                getattr(ast, name)
-
-    def test_field_attr_existence_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num, Str, Bytes, NameConstant, Ellipsis
-
-        for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis'):
-            item = getattr(ast, name)
-            if self._is_ast_node(name, item):
-                with self.subTest(item):
-                    with self.assertWarns(DeprecationWarning):
-                        x = item()
-                if isinstance(x, ast.AST):
-                    self.assertIs(type(x._fields), tuple)
-
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
-            # These emit DeprecationWarnings
-            if name in {'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis'}:
-                continue
             # constructor has a different signature
             if name == 'Index':
                 continue
@@ -566,105 +539,11 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.args, 2)
         self.assertEqual(x.vararg, 3)
 
-    def test_field_attr_writable_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            x = ast.Num()
-        # We can assign to _fields
-        x._fields = 666
-        self.assertEqual(x._fields, 666)
-
     def test_field_attr_writable(self):
         x = ast.Constant(1)
         # We can assign to _fields
         x._fields = 666
         self.assertEqual(x._fields, 666)
-
-    def test_classattrs_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num, Str, Bytes, NameConstant, Ellipsis
-
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            x = ast.Num()
-            self.assertEqual(x._fields, ('value', 'kind'))
-
-            with self.assertRaises(AttributeError):
-                x.value
-
-            with self.assertRaises(AttributeError):
-                x.n
-
-            x = ast.Num(42)
-            self.assertEqual(x.value, 42)
-            self.assertEqual(x.n, 42)
-
-            with self.assertRaises(AttributeError):
-                x.lineno
-
-            with self.assertRaises(AttributeError):
-                x.foobar
-
-            x = ast.Num(lineno=2)
-            self.assertEqual(x.lineno, 2)
-
-            x = ast.Num(42, lineno=0)
-            self.assertEqual(x.lineno, 0)
-            self.assertEqual(x._fields, ('value', 'kind'))
-            self.assertEqual(x.value, 42)
-            self.assertEqual(x.n, 42)
-
-            self.assertRaises(TypeError, ast.Num, 1, None, 2)
-            self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
-
-            # Arbitrary keyword arguments are supported
-            self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
-
-            with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
-                ast.Num(1, n=2)
-
-            self.assertEqual(ast.Num(42).n, 42)
-            self.assertEqual(ast.Num(4.25).n, 4.25)
-            self.assertEqual(ast.Num(4.25j).n, 4.25j)
-            self.assertEqual(ast.Str('42').s, '42')
-            self.assertEqual(ast.Bytes(b'42').s, b'42')
-            self.assertIs(ast.NameConstant(True).value, True)
-            self.assertIs(ast.NameConstant(False).value, False)
-            self.assertIs(ast.NameConstant(None).value, None)
-
-        self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
-            'an error in Python 3.15.',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
-            'an error in Python 3.15.',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            "Constant.__init__ got an unexpected keyword argument 'foo'. Support for "
-            'arbitrary keyword arguments is deprecated and will be removed in Python '
-            '3.15.',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Bytes is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-        ])
 
     def test_classattrs(self):
         with self.assertWarns(DeprecationWarning):
@@ -710,190 +589,6 @@ class AST_Tests(unittest.TestCase):
         self.assertIs(ast.Constant(False).value, False)
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
-
-    def test_realtype(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num, Str, Bytes, NameConstant, Ellipsis
-
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            self.assertIs(type(ast.Num(42)), ast.Constant)
-            self.assertIs(type(ast.Num(4.25)), ast.Constant)
-            self.assertIs(type(ast.Num(4.25j)), ast.Constant)
-            self.assertIs(type(ast.Str('42')), ast.Constant)
-            self.assertIs(type(ast.Bytes(b'42')), ast.Constant)
-            self.assertIs(type(ast.NameConstant(True)), ast.Constant)
-            self.assertIs(type(ast.NameConstant(False)), ast.Constant)
-            self.assertIs(type(ast.NameConstant(None)), ast.Constant)
-            self.assertIs(type(ast.Ellipsis()), ast.Constant)
-
-        self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Bytes is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Ellipsis is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-        ])
-
-    def test_isinstance(self):
-        from ast import Constant
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num, Str, Bytes, NameConstant, Ellipsis
-
-        cls_depr_msg = (
-            'ast.{} is deprecated and will be removed in Python 3.14; '
-            'use ast.Constant instead'
-        )
-
-        assertNumDeprecated = partial(
-            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Num")
-        )
-        assertStrDeprecated = partial(
-            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Str")
-        )
-        assertBytesDeprecated = partial(
-            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Bytes")
-        )
-        assertNameConstantDeprecated = partial(
-            self.assertWarnsRegex,
-            DeprecationWarning,
-            cls_depr_msg.format("NameConstant")
-        )
-        assertEllipsisDeprecated = partial(
-            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Ellipsis")
-        )
-
-        for arg in 42, 4.2, 4.2j:
-            with self.subTest(arg=arg):
-                with assertNumDeprecated():
-                    n = Num(arg)
-                with assertNumDeprecated():
-                    self.assertIsInstance(n, Num)
-
-        with assertStrDeprecated():
-            s = Str('42')
-        with assertStrDeprecated():
-            self.assertIsInstance(s, Str)
-
-        with assertBytesDeprecated():
-            b = Bytes(b'42')
-        with assertBytesDeprecated():
-            self.assertIsInstance(b, Bytes)
-
-        for arg in True, False, None:
-            with self.subTest(arg=arg):
-                with assertNameConstantDeprecated():
-                    n = NameConstant(arg)
-                with assertNameConstantDeprecated():
-                    self.assertIsInstance(n, NameConstant)
-
-        with assertEllipsisDeprecated():
-            e = Ellipsis()
-        with assertEllipsisDeprecated():
-            self.assertIsInstance(e, Ellipsis)
-
-        for arg in 42, 4.2, 4.2j:
-            with self.subTest(arg=arg):
-                with assertNumDeprecated():
-                    self.assertIsInstance(Constant(arg), Num)
-
-        with assertStrDeprecated():
-            self.assertIsInstance(Constant('42'), Str)
-
-        with assertBytesDeprecated():
-            self.assertIsInstance(Constant(b'42'), Bytes)
-
-        for arg in True, False, None:
-            with self.subTest(arg=arg):
-                with assertNameConstantDeprecated():
-                    self.assertIsInstance(Constant(arg), NameConstant)
-
-        with assertEllipsisDeprecated():
-            self.assertIsInstance(Constant(...), Ellipsis)
-
-        with assertStrDeprecated():
-            s = Str('42')
-        assertNumDeprecated(self.assertNotIsInstance, s, Num)
-        assertBytesDeprecated(self.assertNotIsInstance, s, Bytes)
-
-        with assertNumDeprecated():
-            n = Num(42)
-        assertStrDeprecated(self.assertNotIsInstance, n, Str)
-        assertNameConstantDeprecated(self.assertNotIsInstance, n, NameConstant)
-        assertEllipsisDeprecated(self.assertNotIsInstance, n, Ellipsis)
-
-        with assertNameConstantDeprecated():
-            n = NameConstant(True)
-        with assertNumDeprecated():
-            self.assertNotIsInstance(n, Num)
-
-        with assertNameConstantDeprecated():
-            n = NameConstant(False)
-        with assertNumDeprecated():
-            self.assertNotIsInstance(n, Num)
-
-        for arg in '42', True, False:
-            with self.subTest(arg=arg):
-                with assertNumDeprecated():
-                    self.assertNotIsInstance(Constant(arg), Num)
-
-        assertStrDeprecated(self.assertNotIsInstance, Constant(42), Str)
-        assertBytesDeprecated(self.assertNotIsInstance, Constant('42'), Bytes)
-        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(42), NameConstant)
-        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(42), Ellipsis)
-        assertNumDeprecated(self.assertNotIsInstance, Constant(None), Num)
-        assertStrDeprecated(self.assertNotIsInstance, Constant(None), Str)
-        assertBytesDeprecated(self.assertNotIsInstance, Constant(None), Bytes)
-        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(1), NameConstant)
-        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(None), Ellipsis)
-
-        class S(str): pass
-        with assertStrDeprecated():
-            self.assertIsInstance(Constant(S('42')), Str)
-        with assertNumDeprecated():
-            self.assertNotIsInstance(Constant(S('42')), Num)
-
-    def test_constant_subclasses_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num
-
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            class N(ast.Num):
-                def __init__(self, *args, **kwargs):
-                    super().__init__(*args, **kwargs)
-                    self.z = 'spam'
-            class N2(ast.Num):
-                pass
-
-            n = N(42)
-            self.assertEqual(n.n, 42)
-            self.assertEqual(n.z, 'spam')
-            self.assertIs(type(n), N)
-            self.assertIsInstance(n, N)
-            self.assertIsInstance(n, ast.Num)
-            self.assertNotIsInstance(n, N2)
-            self.assertNotIsInstance(ast.Num(42), N)
-            n = N(n=42)
-            self.assertEqual(n.n, 42)
-            self.assertIs(type(n), N)
-
-        self.assertEqual([str(w.message) for w in wlog], [
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-        ])
 
     def test_constant_subclasses(self):
         class N(ast.Constant):
@@ -1066,6 +761,114 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_compare_basics(self):
+        self.assertTrue(ast.compare(ast.parse("x = 10"), ast.parse("x = 10")))
+        self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("")))
+        self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("x")))
+        self.assertFalse(
+            ast.compare(ast.parse("x = 10;y = 20"), ast.parse("class C:pass"))
+        )
+
+    def test_compare_modified_ast(self):
+        # The ast API is a bit underspecified. The objects are mutable,
+        # and even _fields and _attributes are mutable. The compare() does
+        # some simple things to accommodate mutability.
+        a = ast.parse("m * x + b", mode="eval")
+        b = ast.parse("m * x + b", mode="eval")
+        self.assertTrue(ast.compare(a, b))
+
+        a._fields = a._fields + ("spam",)
+        a.spam = "Spam"
+        self.assertNotEqual(a._fields, b._fields)
+        self.assertFalse(ast.compare(a, b))
+        self.assertFalse(ast.compare(b, a))
+
+        b._fields = a._fields
+        b.spam = a.spam
+        self.assertTrue(ast.compare(a, b))
+        self.assertTrue(ast.compare(b, a))
+
+        b._attributes = b._attributes + ("eggs",)
+        b.eggs = "eggs"
+        self.assertNotEqual(a._attributes, b._attributes)
+        self.assertFalse(ast.compare(a, b, compare_attributes=True))
+        self.assertFalse(ast.compare(b, a, compare_attributes=True))
+
+        a._attributes = b._attributes
+        a.eggs = b.eggs
+        self.assertTrue(ast.compare(a, b, compare_attributes=True))
+        self.assertTrue(ast.compare(b, a, compare_attributes=True))
+
+    def test_compare_literals(self):
+        constants = (
+            -20,
+            20,
+            20.0,
+            1,
+            1.0,
+            True,
+            0,
+            False,
+            frozenset(),
+            tuple(),
+            "ABCD",
+            "abcd",
+            "中文字",
+            1e1000,
+            -1e1000,
+        )
+        for next_index, constant in enumerate(constants[:-1], 1):
+            next_constant = constants[next_index]
+            with self.subTest(literal=constant, next_literal=next_constant):
+                self.assertTrue(
+                    ast.compare(ast.Constant(constant), ast.Constant(constant))
+                )
+                self.assertFalse(
+                    ast.compare(
+                        ast.Constant(constant), ast.Constant(next_constant)
+                    )
+                )
+
+        same_looking_literal_cases = [
+            {1, 1.0, True, 1 + 0j},
+            {0, 0.0, False, 0 + 0j},
+        ]
+        for same_looking_literals in same_looking_literal_cases:
+            for literal in same_looking_literals:
+                for same_looking_literal in same_looking_literals - {literal}:
+                    self.assertFalse(
+                        ast.compare(
+                            ast.Constant(literal),
+                            ast.Constant(same_looking_literal),
+                        )
+                    )
+
+    def test_compare_fieldless(self):
+        self.assertTrue(ast.compare(ast.Add(), ast.Add()))
+        self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
+
+    def test_compare_modes(self):
+        for mode, sources in (
+            ("exec", exec_tests),
+            ("eval", eval_tests),
+            ("single", single_tests),
+        ):
+            for source in sources:
+                a = ast.parse(source, mode=mode)
+                b = ast.parse(source, mode=mode)
+                self.assertTrue(
+                    ast.compare(a, b), f"{ast.dump(a)} != {ast.dump(b)}"
+                )
+
+    def test_compare_attributes_option(self):
+        def parse(a, b):
+            return ast.parse(a), ast.parse(b)
+
+        a, b = parse("2 + 2", "2+2")
+        self.assertTrue(ast.compare(a, b))
+        self.assertTrue(ast.compare(a, b, compare_attributes=False))
+        self.assertFalse(ast.compare(a, b, compare_attributes=True))
+
     def test_positional_only_feature_version(self):
         ast.parse('def foo(x, /): ...', feature_version=(3, 8))
         ast.parse('def bar(x=1, /): ...', feature_version=(3, 8))
@@ -1221,6 +1024,7 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -2111,32 +1915,6 @@ class ASTValidatorTests(unittest.TestCase):
         call = ast.Call(func, args, bad_keywords)
         self.expr(call, "must have Load context")
 
-    def test_num(self):
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import Num
-
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            class subint(int):
-                pass
-            class subfloat(float):
-                pass
-            class subcomplex(complex):
-                pass
-            for obj in "0", "hello":
-                self.expr(ast.Num(obj))
-            for obj in subint(), subfloat(), subcomplex():
-                self.expr(ast.Num(obj), "invalid type", exc=TypeError)
-
-        self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-        ])
-
     def test_attribute(self):
         attr = ast.Attribute(ast.Name("x", ast.Store()), "y", ast.Load())
         self.expr(attr, "must have Load context")
@@ -2176,31 +1954,17 @@ class ASTValidatorTests(unittest.TestCase):
     def test_tuple(self):
         self._sequence(ast.Tuple)
 
-    def test_nameconstant(self):
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('ignore', '', DeprecationWarning)
-            from ast import NameConstant
-
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            self.expr(ast.NameConstant(4))
-
-        self.assertEqual([str(w.message) for w in wlog], [
-            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
-        ])
-
     @support.requires_resource('cpu')
     def test_stdlib_validates(self):
-        stdlib = os.path.dirname(ast.__file__)
-        tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
-        tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
-        for module in tests:
+        for module in STDLIB_FILES:
             with self.subTest(module):
-                fn = os.path.join(stdlib, module)
+                fn = os.path.join(STDLIB, module)
                 with open(fn, "r", encoding="utf-8") as fp:
                     source = fp.read()
                 mod = ast.parse(source, fn)
                 compile(mod, fn, "exec")
+                mod2 = ast.parse(source, fn)
+                self.assertTrue(ast.compare(mod, mod2))
 
     constant_1 = ast.Constant(1)
     pattern_1 = ast.MatchValue(constant_1)
@@ -2842,69 +2606,8 @@ class EndPositionTests(unittest.TestCase):
         self.assertIsNone(ast.get_source_segment(s, x))
         self.assertIsNone(ast.get_source_segment(s, y))
 
-class BaseNodeVisitorCases:
-    # Both `NodeVisitor` and `NodeTranformer` must raise these warnings:
-    def test_old_constant_nodes(self):
-        class Visitor(self.visitor_class):
-            def visit_Num(self, node):
-                log.append((node.lineno, 'Num', node.n))
-            def visit_Str(self, node):
-                log.append((node.lineno, 'Str', node.s))
-            def visit_Bytes(self, node):
-                log.append((node.lineno, 'Bytes', node.s))
-            def visit_NameConstant(self, node):
-                log.append((node.lineno, 'NameConstant', node.value))
-            def visit_Ellipsis(self, node):
-                log.append((node.lineno, 'Ellipsis', ...))
-        mod = ast.parse(dedent('''\
-            i = 42
-            f = 4.25
-            c = 4.25j
-            s = 'string'
-            b = b'bytes'
-            t = True
-            n = None
-            e = ...
-            '''))
-        visitor = Visitor()
-        log = []
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            visitor.visit(mod)
-        self.assertEqual(log, [
-            (1, 'Num', 42),
-            (2, 'Num', 4.25),
-            (3, 'Num', 4.25j),
-            (4, 'Str', 'string'),
-            (5, 'Bytes', b'bytes'),
-            (6, 'NameConstant', True),
-            (7, 'NameConstant', None),
-            (8, 'Ellipsis', ...),
-        ])
-        self.assertEqual([str(w.message) for w in wlog], [
-            'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
-            'visit_Str is deprecated; add visit_Constant',
-            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
-            'visit_Bytes is deprecated; add visit_Constant',
-            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
-            'visit_NameConstant is deprecated; add visit_Constant',
-            'visit_NameConstant is deprecated; add visit_Constant',
-            'visit_Ellipsis is deprecated; add visit_Constant',
-        ])
 
-
-class NodeVisitorTests(BaseNodeVisitorCases, unittest.TestCase):
-    visitor_class = ast.NodeVisitor
-
-
-class NodeTransformerTests(ASTTestMixin, BaseNodeVisitorCases, unittest.TestCase):
-    visitor_class = ast.NodeTransformer
-
+class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
     def assertASTTransformation(self, tranformer_class,
                                 initial_code, expected_code):
         initial_ast = ast.parse(dedent(initial_code))
