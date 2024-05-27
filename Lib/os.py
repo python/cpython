@@ -547,7 +547,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     yield from _fwalk(dirfd, dirpath, isbytes,
                                       topdown, onerror, follow_symlinks)
             finally:
-                close(dirfd)
+                try:
+                    close(dirfd)
+                except OSError as err:
+                    err.filename = path.join(toppath, name)
+                    if onerror is not None:
+                        onerror(err)
+                    continue
 
         if not topdown:
             yield toppath, dirs, nondirs, topfd

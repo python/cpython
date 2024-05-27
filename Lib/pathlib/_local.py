@@ -853,6 +853,7 @@ class Path(PathBase, PurePath):
                             on_error(error)
                 os.rmdir(path)
             except OSError as error:
+                error.filename = path
                 on_error(error)
         rmtree.avoids_symlink_attacks = True
 
