@@ -1837,6 +1837,74 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef CHECK_FORMAT_0
 }
 
+
+// Test PyUnicode_Export()
+static PyObject*
+unicode_export(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    unsigned int requested_formats;
+    if (!PyArg_ParseTuple(args, "OI", &obj, &requested_formats)) {
+        return NULL;
+    }
+
+    Py_buffer view;
+    if (PyUnicode_Export(obj, requested_formats, &view) < 0) {
+        return NULL;
+    }
+    uint32_t format;
+    if (PyUnicode_GetBufferFormat(&view, &format) < 0) {
+        return NULL;
+    }
+
+    // Make sure that the exported string ends with a NUL character
+    char *data = view.buf;
+    Py_ssize_t nbytes = view.len * view.itemsize;
+    switch (format)
+    {
+    case PyUnicode_FORMAT_ASCII:
+    case PyUnicode_FORMAT_UCS1:
+        assert(data[nbytes] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS2:
+        assert(data[nbytes] == 0);
+        assert(data[nbytes + 1] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS4:
+        assert(data[nbytes] == 0);
+        assert(data[nbytes + 1] == 0);
+        assert(data[nbytes + 2] == 0);
+        assert(data[nbytes + 3] == 0);
+        break;
+    case PyUnicode_FORMAT_UTF8:
+        assert(data[nbytes] == 0);
+        break;
+    }
+
+    assert(view.format != NULL);
+    PyObject *res = Py_BuildValue("y#Iis",
+                                  view.buf, view.len * view.itemsize,
+                                  (unsigned int)format,
+                                  (int)view.itemsize, view.format);
+    PyBuffer_Release(&view);
+    return res;
+}
+
+
+// Test PyUnicode_Import()
+static PyObject*
+unicode_import(PyObject *self, PyObject *args)
+{
+    const void *data;
+    Py_ssize_t nbytes;
+    unsigned int format;
+    if (!PyArg_ParseTuple(args, "y#I", &data, &nbytes, &format)) {
+        return NULL;
+    }
+    return PyUnicode_Import(data, nbytes, format);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
     {"codec_incrementaldecoder", codec_incrementaldecoder,       METH_VARARGS},
@@ -1924,6 +1992,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_format",           unicode_format,                 METH_VARARGS},
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
+    {"unicode_export",           unicode_export,                 METH_VARARGS},
+    {"unicode_import",           unicode_import,                 METH_VARARGS},
     {NULL},
 };
 

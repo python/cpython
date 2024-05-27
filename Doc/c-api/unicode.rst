@@ -341,6 +341,71 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
+
+   Export the contents of the *unicode* string in one of the requested format
+   *requested_formats*.
+
+   * On success, fill *view*, and return ``0``.
+   * On error, set an exception and return ``-1``.
+
+   The export must be released by :c:func:`PyBuffer_Release`.
+   The contents of the buffer are valid until they are released.
+
+   The buffer is read-only and must not be modified.
+
+   *unicode* and *view* must not be NULL.
+
+   Available formats:
+
+   .. c:namespace:: NULL
+
+   ===================================  ========  ===========================
+   Constant Identifier                  Value     Description
+   ===================================  ========  ===========================
+   .. c:macro:: PyUnicode_FORMAT_ASCII  ``0x01``  ASCII string (``Py_UCS1*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS1   ``0x02``  UCS-1 string (``Py_UCS1*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS2   ``0x04``  UCS-2 string (``Py_UCS2*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x08``  UCS-4 string (``Py_UCS4*``)
+   .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
+   ===================================  ========  ===========================
+
+   *requested_formats* can be a single format or a bitwise combination of the
+   formats in the table above.
+   On success, *\*format* will be set to a single one of the requested flags.
+
+   Note that future versions of Python may introduce additional formats.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyUnicode_GetBufferFormat(const Py_buffer *view, uint32_t *format)
+
+   Get the format of the buffer *view*.
+
+   * On success, set *\*result* to the corresponding `PyUnicode_FORMAT_*` value
+     and return ``0``.
+   * On error, set an exception and return ``-1``.
+
+   *view* must be a buffer filled by :c:func:`PyUnicode_Export`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, uint32_t format)
+
+   Create a string object from a buffer in an “export format”.
+
+   * Return a reference to a new string object on success.
+   * Set an exception and return ``NULL`` on error.
+
+   *data* must not be NULL. *nbytes* must be positive or zero.
+
+   See :c:func:`PyUnicode_Export` for the available formats.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
 
