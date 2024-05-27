@@ -188,8 +188,8 @@ loops that truncate the stream.
           # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
-          iterable = iter(iterable)
-          while batch := tuple(islice(iterable, n)):
+          iterator = iter(iterable)
+          while batch := tuple(islice(iterator, n)):
               if strict and len(batch) != n:
                   raise ValueError('batched(): incomplete batch')
               yield batch
@@ -367,20 +367,24 @@ loops that truncate the stream.
 
 .. function:: dropwhile(predicate, iterable)
 
-   Make an iterator that drops elements from the iterable as long as the predicate
-   is true; afterwards, returns every element.  Note, the iterator does not produce
-   *any* output until the predicate first becomes false, so it may have a lengthy
-   start-up time.  Roughly equivalent to::
+   Make an iterator that drops elements from the *iterable* while the
+   *predicate* is true and afterwards returns every element.  Roughly
+   equivalent to::
 
       def dropwhile(predicate, iterable):
           # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
-          iterable = iter(iterable)
-          for x in iterable:
+
+          iterator = iter(iterable)
+          for x in iterator:
               if not predicate(x):
                   yield x
                   break
-          for x in iterable:
+
+          for x in iterator:
               yield x
+
+   Note this does not produce *any* output until the predicate first
+   becomes false, so this itertool may have a lengthy start-up time.
 
 
 .. function:: filterfalse(predicate, iterable)
