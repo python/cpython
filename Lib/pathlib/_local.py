@@ -793,19 +793,14 @@ class Path(PathBase, PurePath):
                 def on_error(error):
                     raise
             try:
-                orig_st = os.lstat(path)
-                walker = os.fwalk(
+                if os.path.islink(path):
+                    raise OSError("Cannot call rmtree on a symbolic link")
+                results = os.fwalk(
                     path,
                     topdown=False,
                     onerror=on_error,
                     follow_symlinks=os._walk_symlinks_as_files)
-                for dirpath, dirnames, filenames, fd in walker:
-                    if dirpath == path and not os.path.samestat(orig_st, os.fstat(fd)):
-                        try:
-                            raise OSError("Cannot call rmtree on a symbolic link")
-                        except OSError as error:
-                            on_error(error)
-                            return
+                for dirpath, dirnames, filenames, fd in results:
                     for filename in filenames:
                         try:
                             os.unlink(filename, dir_fd=fd)
