@@ -97,31 +97,26 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
-.. function:: accumulate(iterable[, func, *, initial=None])
+.. function:: accumulate(iterable[, function, *, initial=None])
 
-    Make an iterator that returns accumulated sums, or accumulated
-    results of other binary functions (specified via the optional
-    *func* argument).
+    Make an iterator that returns accumulated sums or accumulated
+    results from other binary functions.
 
-    If *func* is supplied, it should be a function
-    of two arguments. Elements of the input *iterable* may be any type
-    that can be accepted as arguments to *func*. (For example, with
-    the default operation of addition, elements may be any addable
-    type including :class:`~decimal.Decimal` or
-    :class:`~fractions.Fraction`.)
+    The *function* defaults to addition.  The *function* should accept
+    two arguments, an accumulated total and a value from the *iterable*.
 
-    Usually, the number of elements output matches the input iterable.
-    However, if the keyword argument *initial* is provided, the
-    accumulation leads off with the *initial* value so that the output
-    has one more element than the input iterable.
+    If an *initial* value is provided, the accumulation will start with
+    that value and the output will have one more element than the input
+    iterable.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, func=operator.add, *, initial=None):
+        def accumulate(iterable, function=operator.add, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
+
             iterator = iter(iterable)
             total = initial
             if initial is None:
@@ -129,23 +124,25 @@ loops that truncate the stream.
                     total = next(iterator)
                 except StopIteration:
                     return
+
             yield total
             for element in iterator:
-                total = func(total, element)
+                total = function(total, element)
                 yield total
 
-    The *func* argument can be set to
-    :func:`min` for a running minimum, :func:`max` for a running maximum, or
-    :func:`operator.mul` for a running product.  Amortization tables can be
-    built by accumulating interest and applying payments:
+    The *function* argument can be set to :func:`min` for a running
+    minimum, :func:`max` for a running maximum, or :func:`operator.mul`
+    for a running product.  `Amortization tables
+    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_
+    can be built by accumulating interest and applying payments:
 
     .. doctest::
 
       >>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
-      >>> list(accumulate(data, operator.mul))     # running product
-      [3, 12, 72, 144, 144, 1296, 0, 0, 0, 0]
       >>> list(accumulate(data, max))              # running maximum
       [3, 4, 6, 6, 6, 9, 9, 9, 9, 9]
+      >>> list(accumulate(data, operator.mul))     # running product
+      [3, 12, 72, 144, 144, 1296, 0, 0, 0, 0]
 
       # Amortize a 5% loan of 1000 with 10 annual payments of 90
       >>> update = lambda balance, payment: round(balance * 1.05) - payment
@@ -158,7 +155,7 @@ loops that truncate the stream.
     .. versionadded:: 3.2
 
     .. versionchanged:: 3.3
-       Added the optional *func* parameter.
+       Added the optional *function* parameter.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
