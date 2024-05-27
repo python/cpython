@@ -977,6 +977,13 @@ static PyObject *
 datetime_capi_pydate_check(PyObject *self, PyObject *op)
 {
     PyDateTime_IMPORT;
+#ifdef Py_GIL_DISABLED
+    if (!PyDateTimeAPI && PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        // Subinterpreter cannot import lagacy _datetime module and capsule.
+        PyErr_WriteUnraisable(NULL);
+        Py_RETURN_NONE;
+    }
+#endif
     if (PyDate_Check(op)) {
         Py_RETURN_NONE;
     }
