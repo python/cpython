@@ -556,7 +556,7 @@ find_internal(const char *str, Py_ssize_t len,
     return res;
 }
 
-#define FIND_CHUNK_SIZE 10000
+#define FIND_CHUNK_SIZE 1000
 #define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
 
 static Py_ssize_t

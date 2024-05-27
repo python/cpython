@@ -9137,7 +9137,7 @@ any_find_slice(PyObject* s1, PyObject* s2,
     return result;
 }
 
-#define FIND_CHUNK_SIZE 10000
+#define FIND_CHUNK_SIZE 1000
 #define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
 
 static Py_ssize_t
