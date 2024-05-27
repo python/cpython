@@ -405,12 +405,21 @@ class TestPyReplOutput(TestCase):
             [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
                 Event(evt="key", data="g", raw=bytearray(b"g")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
+                Event(evt="key", data="delete", raw=bytearray(b"\x7F")),
+                Event(evt="key", data="right", raw=bytearray(b"g")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
+                Event(evt="key", data="p", raw=bytearray(b"p")),
+                Event(evt="key", data="a", raw=bytearray(b"a")),
+                Event(evt="key", data="s", raw=bytearray(b"s")),
+                Event(evt="key", data="s", raw=bytearray(b"s")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
@@ -419,7 +428,7 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "def f():\n    ...\n    ")
         output = multiline_input(reader)
-        self.assertEqual(output, "def g():\n    ...\n    ")
+        self.assertEqual(output, "def g():\n    pass\n    ")
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -578,7 +587,7 @@ class TestPyReplCompleter(TestCase):
         reader = self.prepare_reader(events, namespace)
         mock_get_reader.return_value = reader
         output = readline_multiline_input(more_lines, ">>>", "...")
-        self.assertEqual(output[0], "dummy.test_func.__")
+        self.assertEqual(output, "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
 
 
