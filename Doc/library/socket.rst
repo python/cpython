@@ -105,7 +105,7 @@ created.  Socket addresses are represented as follows:
   - *scope* is one of :const:`TIPC_ZONE_SCOPE`, :const:`TIPC_CLUSTER_SCOPE`, and
     :const:`TIPC_NODE_SCOPE`.
   - If *addr_type* is :const:`TIPC_ADDR_NAME`, then *v1* is the server type, *v2* is
-    the port identifier, and *v3* should be 0.
+    the port number, and *v3* should be 0.
 
     If *addr_type* is :const:`TIPC_ADDR_NAMESEQ`, then *v1* is the server type, *v2*
     is the lower port number, and *v3* is the upper port number.
