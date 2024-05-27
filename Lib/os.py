@@ -479,16 +479,25 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, isinstance(top, bytes),
-                                  topdown, onerror, follow_symlinks)
+                stack = [(top, topfd)]
+                isbytes = isinstance(top, bytes)
+                while stack:
+                    yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
         finally:
             close(topfd)
 
-    def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
+    def _fwalk(stack, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
 
+        toppath, topfd = stack.pop()
+        if toppath is None:
+            if isinstance(topfd, int):
+                close(topfd)
+            else:
+                yield topfd
+            return
         scandir_it = scandir(topfd)
         dirs = []
         nondirs = []
@@ -514,8 +523,10 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
+        else:
+            stack.append((None, (toppath, dirs, nondirs, topfd)))
 
-        for name in dirs if entries is None else zip(dirs, entries):
+        for name in reversed(dirs) if entries is None else zip(dirs, entries):
             try:
                 if not follow_symlinks:
                     if topdown:
@@ -528,17 +539,11 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             except OSError as err:
                 if onerror is not None:
                     onerror(err)
-                continue
-            try:
+            else:
+                stack.append((None, dirfd))
                 if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                     dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, isbytes,
-                                      topdown, onerror, follow_symlinks)
-            finally:
-                close(dirfd)
-
-        if not topdown:
-            yield toppath, dirs, nondirs, topfd
+                    stack.append((dirpath, dirfd))
 
     __all__.append("fwalk")
 
