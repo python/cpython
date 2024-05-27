@@ -7,7 +7,7 @@
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_lock.h"          // _PySeqLock_*
-#include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -1675,6 +1675,76 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
+type_get_annotate(PyTypeObject *type, void *Py_UNUSED(ignored))
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotate__'", type->tp_name);
+        return NULL;
+    }
+
+    PyObject *annotate;
+    PyObject *dict = PyType_GetDict(type);
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    if (annotate) {
+        descrgetfunc get = Py_TYPE(annotate)->tp_descr_get;
+        if (get) {
+            Py_SETREF(annotate, get(annotate, NULL, (PyObject *)type));
+        }
+    }
+    else {
+        annotate = Py_None;
+        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
+        if (result < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    Py_DECREF(dict);
+    return annotate;
+}
+
+static int
+type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot delete __annotate__ attribute");
+        return -1;
+    }
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot set '__annotate__' attribute of immutable type '%s'",
+                     type->tp_name);
+        return -1;
+    }
+
+    if (!Py_IsNone(value) && !PyCallable_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "__annotate__ must be callable or None");
+        return -1;
+    }
+
+    PyObject *dict = PyType_GetDict(type);
+    assert(PyDict_Check(dict));
+    int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), value);
+    if (result < 0) {
+        Py_DECREF(dict);
+        return -1;
+    }
+    if (!Py_IsNone(value)) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
+            Py_DECREF(dict);
+            PyType_Modified(type);
+            return -1;
+        }
+    }
+    Py_DECREF(dict);
+    PyType_Modified(type);
+    return 0;
+}
+
+static PyObject *
 type_get_annotations(PyTypeObject *type, void *context)
 {
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -1683,8 +1753,9 @@ type_get_annotations(PyTypeObject *type, void *context)
     }
 
     PyObject *annotations;
-    PyObject *dict = lookup_tp_dict(type);
+    PyObject *dict = PyType_GetDict(type);
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
+        Py_DECREF(dict);
         return NULL;
     }
     if (annotations) {
@@ -1694,7 +1765,32 @@ type_get_annotations(PyTypeObject *type, void *context)
         }
     }
     else {
-        annotations = PyDict_New();
+        PyObject *annotate = type_get_annotate(type, NULL);
+        if (annotate == NULL) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (PyCallable_Check(annotate)) {
+            PyObject *one = _PyLong_GetOne();
+            annotations = _PyObject_CallOneArg(annotate, one);
+            if (annotations == NULL) {
+                Py_DECREF(dict);
+                Py_DECREF(annotate);
+                return NULL;
+            }
+            if (!PyDict_Check(annotations)) {
+                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                             Py_TYPE(annotations)->tp_name);
+                Py_DECREF(annotations);
+                Py_DECREF(annotate);
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+        else {
+            annotations = PyDict_New();
+        }
+        Py_DECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);
@@ -1705,6 +1801,7 @@ type_get_annotations(PyTypeObject *type, void *context)
             }
         }
     }
+    Py_DECREF(dict);
     return annotations;
 }
 
@@ -1719,7 +1816,7 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     }
 
     int result;
-    PyObject *dict = lookup_tp_dict(type);
+    PyObject *dict = PyType_GetDict(type);
     if (value != NULL) {
         /* set */
         result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
@@ -1728,14 +1825,23 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
         result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
         if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
+            Py_DECREF(dict);
             return -1;
         }
     }
     if (result < 0) {
+        Py_DECREF(dict);
         return -1;
     }
-
+    else if (result == 0) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
+            PyType_Modified(type);
+            Py_DECREF(dict);
+            return -1;
+        }
+    }
     PyType_Modified(type);
+    Py_DECREF(dict);
     return 0;
 }
 
@@ -1811,6 +1917,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
+    {"__annotate__", (getter)type_get_annotate, (setter)type_set_annotate, NULL},
     {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
     {0}
 };
@@ -7037,8 +7144,11 @@ object___sizeof___impl(PyObject *self)
 
     res = 0;
     isize = Py_TYPE(self)->tp_itemsize;
-    if (isize > 0)
-        res = Py_SIZE(self) * isize;
+    if (isize > 0) {
+        /* This assumes that ob_size is valid if tp_itemsize is not 0,
+         which isn't true for PyLongObject. */
+        res = _PyVarObject_CAST(self)->ob_size * isize;
+    }
     res += Py_TYPE(self)->tp_basicsize;
 
     return PyLong_FromSsize_t(res);

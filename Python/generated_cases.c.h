@@ -3644,11 +3644,9 @@
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(PyStackRef_To_PyObject_Borrow(receiver))) {
-                PyErr_SetObject(PyExc_StopIteration, PyStackRef_To_PyObject_Borrow(value));
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_To_PyObject_Borrow(value))) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             PyStackRef_DECREF(value);
             stack_pointer += -1;
@@ -3668,11 +3666,9 @@
 
             PyObject *receiver_o = PyStackRef_To_PyObject_Borrow(receiver);
             if (PyGen_Check(receiver_o) || PyCoro_CheckExact(receiver_o)) {
-                PyErr_SetObject(PyExc_StopIteration, PyStackRef_To_PyObject_Borrow(value));
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_To_PyObject_Borrow(value))) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             PyStackRef_DECREF(receiver);
             stack_pointer[-2] = value;
@@ -4100,17 +4096,6 @@
             assert(Py_IsNone(none_val));
             PyStackRef_DECREF(iterable_st);
             stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(LOAD_ASSERTION_ERROR) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(LOAD_ASSERTION_ERROR);
-            _PyStackRef value;
-            value = PyObject_To_StackRef_New(PyExc_AssertionError);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -4686,6 +4671,27 @@
                 if (true) goto error;
             }
             stack_pointer[0] = PyObject_To_StackRef_Steal((PyObject *)bc);
+            stack_pointer += 1;
+            DISPATCH();
+        }
+
+        TARGET(LOAD_COMMON_CONSTANT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
+            _PyStackRef value;
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+                case CONSTANT_ASSERTIONERROR:
+                value = PyObject_To_StackRef_New(PyExc_AssertionError);
+                break;
+                case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyObject_To_StackRef_New(PyExc_NotImplementedError);
+                break;
+                default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
+            stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
         }

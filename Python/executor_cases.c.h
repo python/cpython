@@ -1324,9 +1324,20 @@
             break;
         }
 
-        case _LOAD_ASSERTION_ERROR: {
+        case _LOAD_COMMON_CONSTANT: {
             _PyStackRef value;
-            value = PyObject_To_StackRef_New(PyExc_AssertionError);
+            oparg = CURRENT_OPARG();
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+                case CONSTANT_ASSERTIONERROR:
+                value = PyObject_To_StackRef_New(PyExc_AssertionError);
+                break;
+                case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyObject_To_StackRef_New(PyExc_NotImplementedError);
+                break;
+                default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
