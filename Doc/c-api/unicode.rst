@@ -341,6 +341,61 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: const void* PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_ssize_t *size, uint32_t *format)
+
+   Export the contents of the *unicode* string in one of the requested format
+   *requested_formats*.
+
+   * On success, set *\*size* and *\*format*, and return the contents.
+   * On error, set an exception and return ``NULL``.
+
+   The contents is valid as long as *unicode* is valid.
+
+   The export must be released by :c:func:`PyUnicode_ReleaseExport`.
+
+   *unicode*, *size* and *format* must not be NULL.
+
+   Available formats:
+
+   .. c:namespace:: NULL
+
+   ===================================  ========  ===========================
+   Constant Identifier                  Value  Description
+   ===================================  ========  ===========================
+   .. c:macro:: PyUnicode_FORMAT_ASCII  ``0x01``  ASCII string (``Py_UCS1*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS1   ``0x02``  UCS-1 string (``Py_UCS1*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS2   ``0x04``  UCS-2 string (``Py_UCS2*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x08``  UCS-4 string (``Py_UCS4*``)
+   .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
+   ===================================  ========  ===========================
+
+   *requested_formats* can be a single format or a combination of the formats
+   in the table above.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: void PyUnicode_ReleaseExport(PyObject *unicode, const void* data, uint32_t format)
+
+   Release an export created by :c:func:`PyUnicode_Export`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t size, uint32_t format)
+
+   Import a string from the *format* format.
+
+   * Return a reference to a new string object on success.
+   * Set an exception and return ``NULL`` on error.
+
+   *data* must not be NULL. *size* must be positive or zero.
+
+   See :c:func:`PyUnicode_Export` for the available formats.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
 

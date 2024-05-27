@@ -298,6 +298,11 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
+* Add :c:func:`PyUnicode_Export` and :c:func:`PyUnicode_Import` functions to
+  export and import strings.
+  (Contributed by Victor Stinner in :gh:`119609`.)
+
+
 Porting to Python 3.14
 ----------------------
 

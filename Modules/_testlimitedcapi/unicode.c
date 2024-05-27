@@ -1837,6 +1837,44 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef CHECK_FORMAT_0
 }
 
+
+// Test PyUnicode_Export()
+static PyObject*
+unicode_export(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    unsigned int supported_formats;
+    if (!PyArg_ParseTuple(args, "OI", &obj, &supported_formats)) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    uint32_t format;
+    const void *data = PyUnicode_Export(obj, supported_formats, &size, &format);
+    if (data == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = Py_BuildValue("y#I", data, size, (unsigned int)format);
+    PyUnicode_ReleaseExport(obj, data, format);
+    return res;
+}
+
+
+// Test PyUnicode_Import()
+static PyObject*
+unicode_import(PyObject *self, PyObject *args)
+{
+    const void *data;
+    Py_ssize_t size;
+    unsigned int format;
+    if (!PyArg_ParseTuple(args, "y#I", &data, &size, &format)) {
+        return NULL;
+    }
+    return PyUnicode_Import(data, size, format);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
     {"codec_incrementaldecoder", codec_incrementaldecoder,       METH_VARARGS},
@@ -1924,6 +1962,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_format",           unicode_format,                 METH_VARARGS},
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
+    {"unicode_export",           unicode_export,                 METH_VARARGS},
+    {"unicode_import",           unicode_import,                 METH_VARARGS},
     {NULL},
 };
 

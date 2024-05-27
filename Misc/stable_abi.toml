@@ -2510,3 +2510,9 @@
 
 [function.Py_TYPE]
     added = '3.14'
+[function.PyUnicode_Export]
+    added = '3.14'
+[function.PyUnicode_ReleaseExport]
+    added = '3.14'
+[function.PyUnicode_Import]
+    added = '3.14'

@@ -24,6 +24,14 @@ class Str(str):
     pass
 
 
+PyUnicode_FORMAT_ASCII = 0x01
+PyUnicode_FORMAT_UCS1 = 0x02
+PyUnicode_FORMAT_UCS2 = 0x04
+PyUnicode_FORMAT_UCS4 = 0x08
+PyUnicode_FORMAT_UTF8 = 0x10
+# Invalid native format
+PyUnicode_FORMAT_INVALID = 0x20
+
 class CAPITest(unittest.TestCase):
 
     @support.cpython_only
@@ -1675,6 +1683,124 @@ class CAPITest(unittest.TestCase):
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
 
+    def test_unicode_export(self):
+        # Test PyUnicode_Export() and PyUnicode_FreeExport()
+        unicode_export = _testlimitedcapi.unicode_export
+        if sys.byteorder == 'little':
+            ucs2_enc = 'utf-16le'
+            ucs4_enc = 'utf-32le'
+        else:
+            ucs2_enc = 'utf-16be'
+            ucs4_enc = 'utf-32be'
 
-if __name__ == "__main__":
+        # export to the native format
+        formats = (PyUnicode_FORMAT_ASCII
+                   | PyUnicode_FORMAT_UCS1
+                   | PyUnicode_FORMAT_UCS2
+                   | PyUnicode_FORMAT_UCS4)
+        self.assertEqual(unicode_export("abc", formats),
+                         (b'abc', PyUnicode_FORMAT_ASCII))
+        self.assertEqual(unicode_export("latin1:\xe9", formats),
+                         (b'latin1:\xe9', PyUnicode_FORMAT_UCS1))
+        self.assertEqual(unicode_export('ucs2:\u20ac', formats),
+                         ('ucs2:\u20ac'.encode(ucs2_enc),
+                          PyUnicode_FORMAT_UCS2))
+        self.assertEqual(unicode_export('ucs4:\U0010ffff', formats),
+                         ('ucs4:\U0010ffff'.encode(ucs4_enc),
+                          PyUnicode_FORMAT_UCS4))
+
+        # export ASCII as UCS1
+        self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UCS1),
+                         (b'abc', PyUnicode_FORMAT_UCS1))
+
+        # always export to UCS4
+        self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UCS4),
+                         ('abc'.encode(ucs4_enc), PyUnicode_FORMAT_UCS4))
+        self.assertEqual(unicode_export("latin1:\xe9", PyUnicode_FORMAT_UCS4),
+                         ('latin1:\xe9'.encode(ucs4_enc), PyUnicode_FORMAT_UCS4))
+        self.assertEqual(unicode_export('ucs2:\u20ac', PyUnicode_FORMAT_UCS4),
+                         ('ucs2:\u20ac'.encode(ucs4_enc),
+                          PyUnicode_FORMAT_UCS4))
+        self.assertEqual(unicode_export('ucs4:\U0010ffff', PyUnicode_FORMAT_UCS4),
+                         ('ucs4:\U0010ffff'.encode(ucs4_enc),
+                          PyUnicode_FORMAT_UCS4))
+
+        # always export to UTF8
+        self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UTF8),
+                         ('abc'.encode('utf8'), PyUnicode_FORMAT_UTF8))
+        self.assertEqual(unicode_export("latin1:\xe9", PyUnicode_FORMAT_UTF8),
+                         ('latin1:\xe9'.encode('utf8'), PyUnicode_FORMAT_UTF8))
+        self.assertEqual(unicode_export('ucs2:\u20ac', PyUnicode_FORMAT_UTF8),
+                         ('ucs2:\u20ac'.encode('utf8'),
+                          PyUnicode_FORMAT_UTF8))
+        self.assertEqual(unicode_export('ucs4:\U0010ffff', PyUnicode_FORMAT_UTF8),
+                         ('ucs4:\U0010ffff'.encode('utf8'),
+                          PyUnicode_FORMAT_UTF8))
+
+        # No supported format or invalid format
+        with self.assertRaisesRegex(ValueError,
+                                    "unable to find a matching export format"):
+            unicode_export('abc', 0)
+        with self.assertRaisesRegex(ValueError,
+                                    "unable to find a matching export format"):
+            unicode_export('abc', PyUnicode_FORMAT_INVALID)
+
+    def test_unicode_import(self):
+        # Test PyUnicode_Import()
+        unicode_import = _testlimitedcapi.unicode_import
+        if sys.byteorder == 'little':
+            ucs2_enc = 'utf-16le'
+            ucs4_enc = 'utf-32le'
+        else:
+            ucs2_enc = 'utf-16be'
+            ucs4_enc = 'utf-32be'
+
+        self.assertEqual(unicode_import(b'abc', PyUnicode_FORMAT_ASCII),
+                         "abc")
+        self.assertEqual(unicode_import(b'latin1:\xe9', PyUnicode_FORMAT_UCS1),
+                         "latin1:\xe9")
+
+        self.assertEqual(unicode_import('ucs2:\u20ac'.encode(ucs2_enc),
+                                          PyUnicode_FORMAT_UCS2),
+                         'ucs2:\u20ac')
+
+        self.assertEqual(unicode_import('ucs4:\U0010ffff'.encode(ucs4_enc),
+                                          PyUnicode_FORMAT_UCS4),
+                         'ucs4:\U0010ffff')
+
+        text = "abc\xe9\U0010ffff"
+        self.assertEqual(unicode_import(text.encode('utf8'),
+                                          PyUnicode_FORMAT_UTF8),
+                         text)
+
+        # Empty string
+        for native_format in (
+            PyUnicode_FORMAT_ASCII,
+            PyUnicode_FORMAT_UCS1,
+            PyUnicode_FORMAT_UCS2,
+            PyUnicode_FORMAT_UCS4,
+            PyUnicode_FORMAT_UTF8,
+        ):
+            with self.subTest(native_format=native_format):
+                self.assertEqual(unicode_import(b'', native_format),
+                                 '')
+
+        # Invalid format
+        with self.assertRaises(ValueError):
+            unicode_import(b'', PyUnicode_FORMAT_INVALID)
+
+        # Invalid size
+        ucs2 = 'ucs2:\u20ac'.encode(ucs2_enc)
+        with self.assertRaises(ValueError):
+            unicode_import(ucs2[:-1], PyUnicode_FORMAT_UCS2)
+        ucs4 = 'ucs4:\U0010ffff'.encode(ucs4_enc)
+        with self.assertRaises(ValueError):
+            unicode_import(ucs4[:-1], PyUnicode_FORMAT_UCS4)
+        with self.assertRaises(ValueError):
+            unicode_import(ucs4[:-2], PyUnicode_FORMAT_UCS4)
+        with self.assertRaises(ValueError):
+            unicode_import(ucs4[:-3], PyUnicode_FORMAT_UCS4)
+
+
+if __name__ == '__main__':
     unittest.main()
