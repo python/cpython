@@ -389,9 +389,9 @@ loops that truncate the stream.
 
 .. function:: filterfalse(predicate, iterable)
 
-   Make an iterator that filters elements from iterable returning only
-   those for which the *predicate* returns a false value.  If
-   *predicate* is ``None``, return the items that are false.  Roughly
+   Make an iterator that filters elements from the *iterable* returning
+   only those for which the *predicate* returns a false value.  If
+   *predicate* is ``None``, returns the items that are false.  Roughly
    equivalent to::
 
       def filterfalse(predicate, iterable):
@@ -642,10 +642,9 @@ loops that truncate the stream.
 
 .. function:: starmap(function, iterable)
 
-   Make an iterator that computes the function using arguments obtained
+   Make an iterator that computes the *function* using arguments obtained
    from the *iterable*.  Used instead of :func:`map` when argument
-   parameters are already grouped in tuples from a single iterable (when
-   the data has been "pre-zipped").
+   parameters have already been "pre-zipped" into tuples.
 
    The difference between :func:`map` and :func:`starmap` parallels the
    distinction between ``function(a,b)`` and ``function(*c)``. Roughly
