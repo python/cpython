@@ -1513,8 +1513,6 @@ call fails (for example because the path doesn't exist).
    it to stop. Note that the filename is available as the ``filename``
    attribute of the exception object.
 
-   This method calls :func:`shutil.rmtree` internally.
-
    .. attribute:: Path.rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
