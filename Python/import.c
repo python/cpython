@@ -2192,6 +2192,7 @@ clear_singlephase_extension(PyInterpreterState *interp,
             return -1;
         }
     }
+    def->m_base.m_index = 0;
 
     /* Clear the cached module def. */
     _extensions_cache_delete(path, name);
