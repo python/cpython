@@ -151,7 +151,7 @@ htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 .PHONY: ensure-sphinx-autobuild
-ensure-sphinx-autobuild:
+ensure-sphinx-autobuild: venv
 	$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild
 
 .PHONY: htmllive
