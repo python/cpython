@@ -70,7 +70,7 @@ These :class:`tzinfo` objects capture information about the offset from UTC
 time, the time zone name, and whether daylight saving time is in effect.
 
 Only one concrete :class:`tzinfo` class, the :class:`timezone` class, is
-supplied by the :mod:`!datetime` module. The :class:`timezone` class can
+supplied by the :mod:`!datetime` module. The :class:`!timezone` class can
 represent simple time zones with fixed offsets from UTC, such as UTC itself or
 North American EST and EDT time zones. Supporting time zones at deeper levels of
 detail is up to the application. The rules for time adjustment across the
@@ -1326,7 +1326,7 @@ Instance methods:
 
    If you merely want to attach a :class:`timezone` object *tz* to a datetime *dt* without
    adjustment of date and time data, use ``dt.replace(tzinfo=tz)``. If you
-   merely want to remove the :class:`timezone` object from an aware datetime *dt* without
+   merely want to remove the :class:`!timezone` object from an aware datetime *dt* without
    conversion of date and time data, use ``dt.replace(tzinfo=None)``.
 
    Note that the default :meth:`tzinfo.fromutc` method can be overridden in a
@@ -2263,7 +2263,7 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
     :mod:`zoneinfo`
       The :mod:`!datetime` module has a basic :class:`timezone` class (for
       handling arbitrary fixed offsets from UTC) and its :attr:`timezone.utc`
-      attribute (a UTC :class:`timezone` instance).
+      attribute (a UTC :class:`!timezone` instance).
 
       ``zoneinfo`` brings the *IANA time zone database* (also known as the Olson
       database) to Python, and its usage is recommended.
