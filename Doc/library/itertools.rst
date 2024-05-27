@@ -56,13 +56,13 @@ Iterator                        Arguments                       Results         
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') → A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) → A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
-:func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,4,1]) → 6 4 1``
-:func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x%2, range(10)) → 0 2 4 6 8``
+:func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8``
+:func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
-:func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,4,1]) → 1 4``
+:func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
@@ -97,31 +97,27 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
-.. function:: accumulate(iterable[, func, *, initial=None])
 
-    Make an iterator that returns accumulated sums, or accumulated
-    results of other binary functions (specified via the optional
-    *func* argument).
+.. function:: accumulate(iterable[, function, *, initial=None])
 
-    If *func* is supplied, it should be a function
-    of two arguments. Elements of the input *iterable* may be any type
-    that can be accepted as arguments to *func*. (For example, with
-    the default operation of addition, elements may be any addable
-    type including :class:`~decimal.Decimal` or
-    :class:`~fractions.Fraction`.)
+    Make an iterator that returns accumulated sums or accumulated
+    results from other binary functions.
 
-    Usually, the number of elements output matches the input iterable.
-    However, if the keyword argument *initial* is provided, the
-    accumulation leads off with the *initial* value so that the output
-    has one more element than the input iterable.
+    The *function* defaults to addition.  The *function* should accept
+    two arguments, an accumulated total and a value from the *iterable*.
+
+    If an *initial* value is provided, the accumulation will start with
+    that value and the output will have one more element than the input
+    iterable.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, func=operator.add, *, initial=None):
+        def accumulate(iterable, function=operator.add, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
+
             iterator = iter(iterable)
             total = initial
             if initial is None:
@@ -129,27 +125,29 @@ loops that truncate the stream.
                     total = next(iterator)
                 except StopIteration:
                     return
+
             yield total
             for element in iterator:
-                total = func(total, element)
+                total = function(total, element)
                 yield total
 
-    The *func* argument can be set to
-    :func:`min` for a running minimum, :func:`max` for a running maximum, or
-    :func:`operator.mul` for a running product.  Amortization tables can be
-    built by accumulating interest and applying payments:
+    The *function* argument can be set to :func:`min` for a running
+    minimum, :func:`max` for a running maximum, or :func:`operator.mul`
+    for a running product.  `Amortization tables
+    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_
+    can be built by accumulating interest and applying payments:
 
     .. doctest::
 
       >>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
-      >>> list(accumulate(data, operator.mul))     # running product
-      [3, 12, 72, 144, 144, 1296, 0, 0, 0, 0]
       >>> list(accumulate(data, max))              # running maximum
       [3, 4, 6, 6, 6, 9, 9, 9, 9, 9]
+      >>> list(accumulate(data, operator.mul))     # running product
+      [3, 12, 72, 144, 144, 1296, 0, 0, 0, 0]
 
       # Amortize a 5% loan of 1000 with 10 annual payments of 90
-      >>> account_update = lambda bal, pmt: round(bal * 1.05) + pmt
-      >>> list(accumulate(repeat(-90, 10), account_update, initial=1_000))
+      >>> update = lambda balance, payment: round(balance * 1.05) - payment
+      >>> list(accumulate(repeat(90, 10), update, initial=1_000))
       [1000, 960, 918, 874, 828, 779, 728, 674, 618, 559, 497]
 
     See :func:`functools.reduce` for a similar function that returns only the
@@ -158,7 +156,7 @@ loops that truncate the stream.
     .. versionadded:: 3.2
 
     .. versionchanged:: 3.3
-       Added the optional *func* parameter.
+       Added the optional *function* parameter.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
@@ -187,8 +185,8 @@ loops that truncate the stream.
           # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
-          iterable = iter(iterable)
-          while batch := tuple(islice(iterable, n)):
+          iterator = iter(iterable)
+          while batch := tuple(islice(iterator, n)):
               yield batch
 
    .. versionadded:: 3.12
@@ -222,12 +220,17 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
+   The output is a subsequence of :func:`product` keeping only entries that
+   are subsequences of the *iterable*.  The length of the output is given
+   by :func:`math.comb` which computes ``n! / r! / (n - r)!`` when ``0 ≤ r
+   ≤ n`` or zero when ``r > n``.
+
    The combination tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*. If the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, there will be no repeated
+   value.  If the input elements are unique, there will be no repeated
    values within each combination.
 
    Roughly equivalent to::
@@ -235,11 +238,13 @@ loops that truncate the stream.
         def combinations(iterable, r):
             # combinations('ABCD', 2) → AB AC AD BC BD CD
             # combinations(range(4), 3) → 012 013 023 123
+
             pool = tuple(iterable)
             n = len(pool)
             if r > n:
                 return
             indices = list(range(r))
+
             yield tuple(pool[i] for i in indices)
             while True:
                 for i in reversed(range(r)):
@@ -252,42 +257,36 @@ loops that truncate the stream.
                     indices[j] = indices[j-1] + 1
                 yield tuple(pool[i] for i in indices)
 
-   The code for :func:`combinations` can be also expressed as a subsequence
-   of :func:`permutations` after filtering entries where the elements are not
-   in sorted order (according to their position in the input pool)::
-
-        def combinations(iterable, r):
-            pool = tuple(iterable)
-            n = len(pool)
-            for indices in permutations(range(n), r):
-                if sorted(indices) == list(indices):
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``n! / r! / (n-r)!`` when ``0 <= r <= n``
-   or zero when ``r > n``.
 
 .. function:: combinations_with_replacement(iterable, r)
 
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
+   The output is a subsequence of :func:`product` that keeps only entries
+   that are subsequences (with possible repeated elements) of the
+   *iterable*.  The number of subsequence returned is ``(n + r - 1)! / r! /
+   (n - 1)!`` when ``n > 0``.
+
    The combination tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*. if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, the generated combinations
+   value.  If the input elements are unique, the generated combinations
    will also be unique.
 
    Roughly equivalent to::
 
         def combinations_with_replacement(iterable, r):
             # combinations_with_replacement('ABC', 2) → AA AB AC BB BC CC
+
             pool = tuple(iterable)
             n = len(pool)
             if not n and r:
                 return
             indices = [0] * r
+
             yield tuple(pool[i] for i in indices)
             while True:
                 for i in reversed(range(r)):
@@ -298,28 +297,15 @@ loops that truncate the stream.
                 indices[i:] = [indices[i] + 1] * (r - i)
                 yield tuple(pool[i] for i in indices)
 
-   The code for :func:`combinations_with_replacement` can be also expressed as
-   a subsequence of :func:`product` after filtering entries where the elements
-   are not in sorted order (according to their position in the input pool)::
-
-        def combinations_with_replacement(iterable, r):
-            pool = tuple(iterable)
-            n = len(pool)
-            for indices in product(range(n), repeat=r):
-                if sorted(indices) == list(indices):
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``(n+r-1)! / r! / (n-1)!`` when ``n > 0``.
-
    .. versionadded:: 3.1
 
 
 .. function:: compress(data, selectors)
 
-   Make an iterator that filters elements from *data* returning only those that
-   have a corresponding element in *selectors* is true.
-   Stops when either the *data* or *selectors* iterables have been exhausted.
-   Roughly equivalent to::
+   Make an iterator that returns elements from *data* where the
+   corresponding element in *selectors* is true.  Stops when either the
+   *data* or *selectors* iterables have been exhausted.  Roughly
+   equivalent to::
 
        def compress(data, selectors):
            # compress('ABCDEF', [1,0,1,0,1,1]) → A C E F
@@ -330,9 +316,10 @@ loops that truncate the stream.
 
 .. function:: count(start=0, step=1)
 
-   Make an iterator that returns evenly spaced values starting with number *start*. Often
-   used as an argument to :func:`map` to generate consecutive data points.
-   Also, used with :func:`zip` to add sequence numbers.  Roughly equivalent to::
+   Make an iterator that returns evenly spaced values beginning with
+   *start*. Can be used with :func:`map` to generate consecutive data
+   points or with :func:`zip` to add sequence numbers.  Roughly
+   equivalent to::
 
       def count(start=0, step=1):
           # count(10) → 10 11 12 13 14 ...
@@ -349,11 +336,12 @@ loops that truncate the stream.
    .. versionchanged:: 3.1
       Added *step* argument and allowed non-integer arguments.
 
+
 .. function:: cycle(iterable)
 
-   Make an iterator returning elements from the iterable and saving a copy of each.
-   When the iterable is exhausted, return elements from the saved copy.  Repeats
-   indefinitely.  Roughly equivalent to::
+   Make an iterator returning elements from the *iterable* and saving a
+   copy of each.  When the iterable is exhausted, return elements from
+   the saved copy.  Repeats indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
           # cycle('ABCD') → A B C D A B C D A B C D ...
@@ -365,32 +353,38 @@ loops that truncate the stream.
               for element in saved:
                   yield element
 
-   Note, this member of the toolkit may require significant auxiliary storage
-   (depending on the length of the iterable).
+   This itertool may require significant auxiliary storage (depending on
+   the length of the iterable).
 
 
 .. function:: dropwhile(predicate, iterable)
 
-   Make an iterator that drops elements from the iterable as long as the predicate
-   is true; afterwards, returns every element.  Note, the iterator does not produce
-   *any* output until the predicate first becomes false, so it may have a lengthy
-   start-up time.  Roughly equivalent to::
+   Make an iterator that drops elements from the *iterable* while the
+   *predicate* is true and afterwards returns every element.  Roughly
+   equivalent to::
 
       def dropwhile(predicate, iterable):
           # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
-          iterable = iter(iterable)
-          for x in iterable:
+
+          iterator = iter(iterable)
+          for x in iterator:
               if not predicate(x):
                   yield x
                   break
-          for x in iterable:
+
+          for x in iterator:
               yield x
+
+   Note this does not produce *any* output until the predicate first
+   becomes false, so this itertool may have a lengthy start-up time.
+
 
 .. function:: filterfalse(predicate, iterable)
 
-   Make an iterator that filters elements from iterable returning only those for
-   which the predicate is false. If *predicate* is ``None``, return the items
-   that are false. Roughly equivalent to::
+   Make an iterator that filters elements from the *iterable* returning
+   only those for which the *predicate* returns a false value.  If
+   *predicate* is ``None``, returns the items that are false.  Roughly
+   equivalent to::
 
       def filterfalse(predicate, iterable):
           # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
@@ -465,20 +459,19 @@ loops that truncate the stream.
 .. function:: islice(iterable, stop)
               islice(iterable, start, stop[, step])
 
-   Make an iterator that returns selected elements from the iterable. If *start* is
-   non-zero, then elements from the iterable are skipped until start is reached.
-   Afterward, elements are returned consecutively unless *step* is set higher than
-   one which results in items being skipped.  If *stop* is ``None``, then iteration
-   continues until the iterator is exhausted, if at all; otherwise, it stops at the
-   specified position.
+   Make an iterator that returns selected elements from the iterable.
+   Works like sequence slicing but does not support negative values for
+   *start*, *stop*, or *step*.
 
-   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
-   then the step defaults to one.
+   If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
+   elements from the iterable are skipped until *start* is reached.
 
-   Unlike regular slicing, :func:`islice` does not support negative values for
-   *start*, *stop*, or *step*.  Can be used to extract related fields from
-   data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).
+   If *stop* is ``None``, iteration continues until the iterator is
+   exhausted, if at all.  Otherwise, it stops at the specified position.
+
+   If *step* is ``None``, the step defaults to one.  Elements are returned
+   consecutively unless *step* is set higher than one which results in
+   items being skipped.
 
    Roughly equivalent to::
 
@@ -526,18 +519,24 @@ loops that truncate the stream.
 
 .. function:: permutations(iterable, r=None)
 
-   Return successive *r* length permutations of elements in the *iterable*.
+   Return successive *r* length `permutations of elements
+   <https://www.britannica.com/science/permutation>`_ from the *iterable*.
 
    If *r* is not specified or is ``None``, then *r* defaults to the length
    of the *iterable* and all possible full-length permutations
    are generated.
 
+   The output is a subsequence of :func:`product` where entries with
+   repeated elements have been filtered out.  The length of the output is
+   given by :func:`math.perm` which computes ``n! / (n - r)!`` when
+   ``0 ≤ r ≤ n`` or zero when ``r > n``.
+
    The permutation tuples are emitted in lexicographic order according to
-   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the order of the input *iterable*.  If the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So, if the input elements are unique, there will be no repeated
+   value.  If the input elements are unique, there will be no repeated
    values within a permutation.
 
    Roughly equivalent to::
@@ -570,20 +569,6 @@ loops that truncate the stream.
                 else:
                     return
 
-   The code for :func:`permutations` can be also expressed as a subsequence of
-   :func:`product` filtered to exclude entries with repeated elements (those
-   from the same position in the input pool)::
-
-        def permutations(iterable, r=None):
-            pool = tuple(iterable)
-            n = len(pool)
-            r = n if r is None else r
-            for indices in product(range(n), repeat=r):
-                if len(set(indices)) == r:
-                    yield tuple(pool[i] for i in indices)
-
-   The number of items returned is ``n! / (n-r)!`` when ``0 <= r <= n``
-   or zero when ``r > n``.
 
 .. function:: product(*iterables, repeat=1)
 
@@ -607,16 +592,20 @@ loops that truncate the stream.
        def product(*iterables, repeat=1):
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
+
            pools = [tuple(pool) for pool in iterables] * repeat
+
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
+
            for prod in result:
                yield tuple(prod)
 
    Before :func:`product` runs, it completely consumes the input iterables,
    keeping pools of values in memory to generate the products.  Accordingly,
    it is only useful with finite inputs.
+
 
 .. function:: repeat(object[, times])
 
@@ -642,12 +631,12 @@ loops that truncate the stream.
       >>> list(map(pow, range(10), repeat(2)))
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
+
 .. function:: starmap(function, iterable)
 
-   Make an iterator that computes the function using arguments obtained from
-   the iterable.  Used instead of :func:`map` when argument parameters are already
-   grouped in tuples from a single iterable (when the data has been
-   "pre-zipped").
+   Make an iterator that computes the *function* using arguments obtained
+   from the *iterable*.  Used instead of :func:`map` when argument
+   parameters have already been "pre-zipped" into tuples.
 
    The difference between :func:`map` and :func:`starmap` parallels the
    distinction between ``function(a,b)`` and ``function(*c)``. Roughly
@@ -661,8 +650,8 @@ loops that truncate the stream.
 
 .. function:: takewhile(predicate, iterable)
 
-   Make an iterator that returns elements from the iterable as long as the
-   predicate is true.  Roughly equivalent to::
+   Make an iterator that returns elements from the *iterable* as long as
+   the *predicate* is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
           # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
@@ -718,9 +707,15 @@ loops that truncate the stream.
 
 .. function:: zip_longest(*iterables, fillvalue=None)
 
-   Make an iterator that aggregates elements from each of the iterables. If the
-   iterables are of uneven length, missing values are filled-in with *fillvalue*.
-   Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
+   Make an iterator that aggregates elements from each of the
+   *iterables*.
+
+   If the iterables are of uneven length, missing values are filled-in
+   with *fillvalue*.  If not specified, *fillvalue* defaults to ``None``.
+
+   Iteration continues until the longest iterable is exhausted.
+
+   Roughly equivalent to::
 
       def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
@@ -746,8 +741,7 @@ loops that truncate the stream.
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls
-   (for example :func:`islice` or :func:`takewhile`).  If not specified,
-   *fillvalue* defaults to ``None``.
+   (for example :func:`islice` or :func:`takewhile`).
 
 
 .. _itertools-recipes:
