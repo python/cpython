@@ -1,5 +1,5 @@
-:mod:`itertools` --- Functions creating iterators for efficient looping
-=======================================================================
+:mod:`!itertools` --- Functions creating iterators for efficient looping
+========================================================================
 
 .. module:: itertools
    :synopsis: Functions creating iterators for efficient looping.
@@ -122,19 +122,19 @@ loops that truncate the stream.
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
-            it = iter(iterable)
+            iterator = iter(iterable)
             total = initial
             if initial is None:
                 try:
-                    total = next(it)
+                    total = next(iterator)
                 except StopIteration:
                     return
             yield total
-            for element in it:
+            for element in iterator:
                 total = func(total, element)
                 yield total
 
-    There are a number of uses for the *func* argument.  It can be set to
+    The *func* argument can be set to
     :func:`min` for a running minimum, :func:`max` for a running maximum, or
     :func:`operator.mul` for a running product.  Amortization tables can be
     built by accumulating interest and applying payments:
@@ -184,21 +184,14 @@ loops that truncate the stream.
       >>> unflattened
       [('roses', 'red'), ('violets', 'blue'), ('sugar', 'sweet')]
 
-      >>> for batch in batched('ABCDEFG', 3):
-      ...     print(batch)
-      ...
-      ('A', 'B', 'C')
-      ('D', 'E', 'F')
-      ('G',)
-
    Roughly equivalent to::
 
       def batched(iterable, n, *, strict=False):
           # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
-          it = iter(iterable)
-          while batch := tuple(islice(it, n)):
+          iterable = iter(iterable)
+          while batch := tuple(islice(iterable, n)):
               if strict and len(batch) != n:
                   raise ValueError('batched(): incomplete batch')
               yield batch
@@ -218,9 +211,8 @@ loops that truncate the stream.
 
       def chain(*iterables):
           # chain('ABC', 'DEF') → A B C D E F
-          for it in iterables:
-              for element in it:
-                  yield element
+          for iterable in iterables:
+              yield from iterable
 
 
 .. classmethod:: chain.from_iterable(iterable)
@@ -230,22 +222,21 @@ loops that truncate the stream.
 
       def from_iterable(iterables):
           # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
-          for it in iterables:
-              for element in it:
-                  yield element
+          for iterable in iterables:
+              yield from iterable
 
 
 .. function:: combinations(iterable, r)
 
    Return *r* length subsequences of elements from the input *iterable*.
 
-   The combination tuples are emitted in lexicographic ordering according to
+   The combination tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeated
-   values in each combination.
+   value.  So, if the input elements are unique, there will be no repeated
+   values within each combination.
 
    Roughly equivalent to::
 
@@ -288,12 +279,12 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   The combination tuples are emitted in lexicographic ordering according to
+   The combination tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, the generated combinations
+   value.  So, if the input elements are unique, the generated combinations
    will also be unique.
 
    Roughly equivalent to::
@@ -334,13 +325,13 @@ loops that truncate the stream.
 .. function:: compress(data, selectors)
 
    Make an iterator that filters elements from *data* returning only those that
-   have a corresponding element in *selectors* that evaluates to ``True``.
-   Stops when either the *data* or *selectors* iterables has been exhausted.
+   have a corresponding element in *selectors* is true.
+   Stops when either the *data* or *selectors* iterables have been exhausted.
    Roughly equivalent to::
 
        def compress(data, selectors):
            # compress('ABCDEF', [1,0,1,0,1,1]) → A C E F
-           return (d for d, s in zip(data, selectors) if s)
+           return (datum for datum, selector in zip(data, selectors) if selector)
 
    .. versionadded:: 3.1
 
@@ -380,7 +371,7 @@ loops that truncate the stream.
               saved.append(element)
           while saved:
               for element in saved:
-                    yield element
+                  yield element
 
    Note, this member of the toolkit may require significant auxiliary storage
    (depending on the length of the iterable).
@@ -394,7 +385,7 @@ loops that truncate the stream.
    start-up time.  Roughly equivalent to::
 
       def dropwhile(predicate, iterable):
-          # dropwhile(lambda x: x<5, [1,4,6,4,1]) → 6 4 1
+          # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
           iterable = iter(iterable)
           for x in iterable:
               if not predicate(x):
@@ -410,7 +401,7 @@ loops that truncate the stream.
    that are false. Roughly equivalent to::
 
       def filterfalse(predicate, iterable):
-          # filterfalse(lambda x: x%2, range(10)) → 0 2 4 6 8
+          # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
           if predicate is None:
               predicate = bool
           for x in iterable:
@@ -446,36 +437,37 @@ loops that truncate the stream.
 
    :func:`groupby` is roughly equivalent to::
 
-      class groupby:
+      def groupby(iterable, key=None):
           # [k for k, g in groupby('AAAABBBCCDAABBB')] → A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] → AAAA BBB CC D
 
-          def __init__(self, iterable, key=None):
-              if key is None:
-                  key = lambda x: x
-              self.keyfunc = key
-              self.it = iter(iterable)
-              self.tgtkey = self.currkey = self.currvalue = object()
+          keyfunc = (lambda x: x) if key is None else key
+          iterator = iter(iterable)
+          exhausted = False
 
-          def __iter__(self):
-              return self
-
-          def __next__(self):
-              self.id = object()
-              while self.currkey == self.tgtkey:
-                  self.currvalue = next(self.it)    # Exit on StopIteration
-                  self.currkey = self.keyfunc(self.currvalue)
-              self.tgtkey = self.currkey
-              return (self.currkey, self._grouper(self.tgtkey, self.id))
-
-          def _grouper(self, tgtkey, id):
-              while self.id is id and self.currkey == tgtkey:
-                  yield self.currvalue
-                  try:
-                      self.currvalue = next(self.it)
-                  except StopIteration:
+          def _grouper(target_key):
+              nonlocal curr_value, curr_key, exhausted
+              yield curr_value
+              for curr_value in iterator:
+                  curr_key = keyfunc(curr_value)
+                  if curr_key != target_key:
                       return
-                  self.currkey = self.keyfunc(self.currvalue)
+                  yield curr_value
+              exhausted = True
+
+          try:
+              curr_value = next(iterator)
+          except StopIteration:
+              return
+          curr_key = keyfunc(curr_value)
+
+          while not exhausted:
+              target_key = curr_key
+              curr_group = _grouper(target_key)
+              yield curr_key, curr_group
+              if curr_key == target_key:
+                  for _ in curr_group:
+                      pass
 
 
 .. function:: islice(iterable, stop)
@@ -503,25 +495,20 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, 4) → C D
           # islice('ABCDEFG', 2, None) → C D E F G
           # islice('ABCDEFG', 0, None, 2) → A C E G
+
           s = slice(*args)
-          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
-          it = iter(range(start, stop, step))
-          try:
-              nexti = next(it)
-          except StopIteration:
-              # Consume *iterable* up to the *start* position.
-              for i, element in zip(range(start), iterable):
-                  pass
-              return
-          try:
-              for i, element in enumerate(iterable):
-                  if i == nexti:
-                      yield element
-                      nexti = next(it)
-          except StopIteration:
-              # Consume to *stop*.
-              for i, element in zip(range(i + 1, stop), iterable):
-                  pass
+          start = 0 if s.start is None else s.start
+          stop = s.stop
+          step = 1 if s.step is None else s.step
+          if start < 0 or (stop is not None and stop < 0) or step <= 0:
+              raise ValueError
+
+          indices = count() if stop is None else range(max(start, stop))
+          next_i = start
+          for i, element in zip(indices, iterable):
+              if i == next_i:
+                  yield element
+                  next_i += step
 
 
 .. function:: pairwise(iterable)
@@ -558,7 +545,7 @@ loops that truncate the stream.
    the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeated
+   value.  So, if the input elements are unique, there will be no repeated
    values within a permutation.
 
    Roughly equivalent to::
@@ -566,14 +553,17 @@ loops that truncate the stream.
         def permutations(iterable, r=None):
             # permutations('ABCD', 2) → AB AC AD BA BC BD CA CB CD DA DB DC
             # permutations(range(3)) → 012 021 102 120 201 210
+
             pool = tuple(iterable)
             n = len(pool)
             r = n if r is None else r
             if r > n:
                 return
+
             indices = list(range(n))
             cycles = list(range(n, n-r, -1))
             yield tuple(pool[i] for i in indices[:r])
+
             while n:
                 for i in reversed(range(r)):
                     cycles[i] -= 1
@@ -589,7 +579,7 @@ loops that truncate the stream.
                     return
 
    The code for :func:`permutations` can be also expressed as a subsequence of
-   :func:`product`, filtered to exclude entries with repeated elements (those
+   :func:`product` filtered to exclude entries with repeated elements (those
    from the same position in the input pool)::
 
         def permutations(iterable, r=None):
@@ -622,10 +612,10 @@ loops that truncate the stream.
    This function is roughly equivalent to the following code, except that the
    actual implementation does not build up intermediate results in memory::
 
-       def product(*args, repeat=1):
+       def product(*iterables, repeat=1):
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
-           pools = [tuple(pool) for pool in args] * repeat
+           pools = [tuple(pool) for pool in iterables] * repeat
            result = [[]]
            for pool in pools:
                result = [x+[y] for x in result for y in pool]
@@ -683,17 +673,16 @@ loops that truncate the stream.
    predicate is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
-          # takewhile(lambda x: x<5, [1,4,6,4,1]) → 1 4
+          # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
           for x in iterable:
-              if predicate(x):
-                  yield x
-              else:
+              if not predicate(x):
                   break
+              yield x
 
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
-   input iterator after takewhile has been run to exhaustion.  To work
+   input iterator after *takewhile* has been run to exhaustion.  To work
    around this problem, consider using `more-iterools before_and_after()
    <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
    instead.
@@ -703,24 +692,23 @@ loops that truncate the stream.
 
    Return *n* independent iterators from a single iterable.
 
-   The following Python code helps explain what *tee* does (although the actual
-   implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue)::
+   Roughly equivalent to::
 
         def tee(iterable, n=2):
-            it = iter(iterable)
-            deques = [collections.deque() for i in range(n)]
-            def gen(mydeque):
+            iterator = iter(iterable)
+            shared_link = [None, None]
+            return tuple(_tee(iterator, shared_link) for _ in range(n))
+
+        def _tee(iterator, link):
+            try:
                 while True:
-                    if not mydeque:             # when the local deque is empty
-                        try:
-                            newval = next(it)   # fetch a new value and
-                        except StopIteration:
-                            return
-                        for d in deques:        # load it to all the deques
-                            d.append(newval)
-                    yield mydeque.popleft()
-            return tuple(gen(d) for d in deques)
+                    if link[1] is None:
+                        link[0] = next(iterator)
+                        link[1] = [None, None]
+                    value, link = link
+                    yield value
+            except StopIteration:
+                return
 
    Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
@@ -742,17 +730,19 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-      def zip_longest(*args, fillvalue=None):
+      def zip_longest(*iterables, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
-          iterators = [iter(it) for it in args]
+
+          iterators = list(map(iter, iterables))
           num_active = len(iterators)
           if not num_active:
               return
+
           while True:
               values = []
-              for i, it in enumerate(iterators):
+              for i, iterator in enumerate(iterators):
                   try:
-                      value = next(it)
+                      value = next(iterator)
                   except StopIteration:
                       num_active -= 1
                       if not num_active:
@@ -791,7 +781,7 @@ recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
 recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
-the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+the :pypi:`more-itertools` project found
 on the Python Package Index::
 
     python -m pip install more-itertools
@@ -807,6 +797,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 .. testcode::
 
    import collections
+   import contextlib
    import functools
    import math
    import operator
@@ -826,10 +817,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return map(function, count(start))
 
    def repeatfunc(func, times=None, *args):
-       """Repeat calls to func with specified arguments.
-
-       Example:  repeatfunc(random.random)
-       """
+       "Repeat calls to func with specified arguments."
        if times is None:
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
@@ -851,10 +839,8 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
-           # feed the entire iterator into a zero-length deque
            collections.deque(iterator, maxlen=0)
        else:
-           # advance to the empty slice starting at position n
            next(islice(iterator, n, n), None)
 
    def nth(iterable, n, default=None):
@@ -873,7 +859,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
-       # all_equal('4٤໔４৪', key=int) → True
+       # all_equal('4٤௪౪໔', key=int) → True
        return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_justseen(iterable, key=None):
@@ -903,9 +889,9 @@ and :term:`generators <generator>` which incur interpreter overhead.
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n-1), maxlen=n)
-       for x in it:
+       iterator = iter(iterable)
+       window = collections.deque(islice(iterator, n - 1), maxlen=n)
+       for x in iterator:
            window.append(x)
            yield tuple(window)
 
@@ -954,35 +940,26 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # iter_index('AABCADEAF', 'A') → 0 1 4 7
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
-           # Path for general iterables
-           it = islice(iterable, start, stop)
-           for i, element in enumerate(it, start):
+           iterator = islice(iterable, start, stop)
+           for i, element in enumerate(iterator, start):
                if element is value or element == value:
                    yield i
        else:
-           # Path for sequences with an index() method
            stop = len(iterable) if stop is None else stop
            i = start
-           try:
+           with contextlib.suppress(ValueError):
                while True:
                    yield (i := seq_index(value, i, stop))
                    i += 1
-           except ValueError:
-               pass
 
    def iter_except(func, exception, first=None):
-       """ Call a function repeatedly until an exception is raised.
-
-       Converts a call-until-exception interface to an iterator interface.
-       """
+       "Convert a call-until-exception interface to an iterator interface."
        # iter_except(d.popitem, KeyError) → non-blocking dictionary iterator
-       try:
+       with contextlib.suppress(exception):
            if first is not None:
                yield first()
            while True:
                yield func()
-       except exception:
-           pass
 
 
 The following recipes have a more mathematical flavor:
@@ -1074,14 +1051,10 @@ The following recipes have a more mathematical flavor:
        # sieve(30) → 2 3 5 7 11 13 17 19 23 29
        if n > 2:
            yield 2
-       start = 3
        data = bytearray((0, 1)) * (n // 2)
-       limit = math.isqrt(n) + 1
-       for p in iter_index(data, 1, start, limit):
-           yield from iter_index(data, 1, start, p*p)
+       for p in iter_index(data, 1, start=3, stop=math.isqrt(n) + 1):
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-           start = p*p
-       yield from iter_index(data, 1, start)
+       yield from iter_index(data, 1, start=3)
 
    def factor(n):
        "Prime factors of n."
@@ -1101,8 +1074,8 @@ The following recipes have a more mathematical flavor:
        "Count of natural numbers up to n that are coprime to n."
        # https://mathworld.wolfram.com/TotientFunction.html
        # totient(12) → 4 because len([1, 5, 7, 11]) == 4
-       for p in unique_justseen(factor(n)):
-           n -= n // p
+       for prime in set(factor(n)):
+           n -= n // prime
        return n
 
 

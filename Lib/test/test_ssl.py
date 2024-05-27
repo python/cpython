@@ -2429,16 +2429,18 @@ class ThreadedEchoServer(threading.Thread):
                         self.write(msg.lower())
                 except OSError as e:
                     # handles SSLError and socket errors
+                    if isinstance(e, ConnectionError):
+                        # OpenSSL 1.1.1 sometimes raises
+                        # ConnectionResetError when connection is not
+                        # shut down gracefully.
+                        if self.server.chatty and support.verbose:
+                            print(f" Connection reset by peer: {self.addr}")
+
+                        self.close()
+                        self.running = False
+                        return
                     if self.server.chatty and support.verbose:
-                        if isinstance(e, ConnectionError):
-                            # OpenSSL 1.1.1 sometimes raises
-                            # ConnectionResetError when connection is not
-                            # shut down gracefully.
-                            print(
-                                f" Connection reset by peer: {self.addr}"
-                            )
-                        else:
-                            handle_error("Test server failure:\n")
+                        handle_error("Test server failure:\n")
                     try:
                         self.write(b"ERROR\n")
                     except OSError:
@@ -3166,8 +3168,10 @@ class ThreadedTests(unittest.TestCase):
                                         suppress_ragged_eofs=False) as s:
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
-                ssl.SSLError,
-                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA'
+                OSError,
+                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|'
+                'closed by the remote host|Connection reset by peer|'
+                'Broken pipe'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -3865,7 +3869,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(ssl.SSLError) as e:
                     s.connect((HOST, server.port))
-                self.assertRegex("(alert|ALERT)", str(e.exception))
+                self.assertRegex(str(e.exception), "(alert|ALERT)")
 
     @requires_tls_version('SSLv3')
     def test_min_max_version_sslv3(self):
@@ -4180,7 +4184,7 @@ class ThreadedTests(unittest.TestCase):
 
             # Allow for flexible libssl error messages.
             regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
-            self.assertRegex(regex, cm.exception.reason)
+            self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     def test_sni_callback_wrong_return_type(self):
@@ -4532,8 +4536,12 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 # test sometimes fails with EOF error. Test passes as long as
                 # server aborts connection with an error.
                 with self.assertRaisesRegex(
-                    ssl.SSLError,
-                    '(certificate required|EOF occurred)'
+                    OSError,
+                    ('certificate required'
+                     '|EOF occurred'
+                     '|closed by the remote host'
+                     '|Connection reset by peer'
+                     '|Broken pipe')
                 ):
                     # receive CertificateRequest
                     data = s.recv(1024)
