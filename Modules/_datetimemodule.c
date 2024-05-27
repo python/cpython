@@ -62,6 +62,14 @@ static inline datetime_state* get_datetime_state(void)
     return &_datetime_global_state;
 }
 
+static datetime_state *
+get_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (datetime_state *)state;
+}
+
 #define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
 #define PyDate_CheckExact(op) Py_IS_TYPE(op, &PyDateTime_DateType)
 
@@ -6864,7 +6872,8 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
     }
 
     /* Per-module heap types. */
-    st->isocalendar_date_type = PyDateTime_IsoCalendarDateType;
+    st->isocalendar_date_type =
+            (PyTypeObject *)Py_NewRef(PyDateTime_IsoCalendarDateType);
 
     st->us_per_ms = PyLong_FromLong(1000);
     if (st->us_per_ms == NULL) {
@@ -6914,6 +6923,9 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
 static int
 _datetime_exec(PyObject *module)
 {
+    int rc = -1;
+    PyTypeObject *PyDateTime_IsoCalendarDateType = NULL;
+
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6944,14 +6956,15 @@ _datetime_exec(PyObject *module)
         }                                               \
     } while (0)
 
-    PyTypeObject *PyDateTime_IsoCalendarDateType = NULL;
-    datetime_state *st = get_datetime_state();
-
-    if (!st->initialized) {
-        CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
-    }
+    CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
 #undef CREATE_TYPE
 
+    datetime_state *st_global = get_datetime_state();
+    if (init_state(st_global, PyDateTime_IsoCalendarDateType) < 0) {
+        goto error;
+    }
+
+    datetime_state *st = get_module_state(module);
     if (init_state(st, PyDateTime_IsoCalendarDateType) < 0) {
         goto error;
     }
@@ -7054,11 +7067,15 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    return 0;
+    rc = 0;
+    goto finally;
 
 error:
     datetime_clear(module);
-    return -1;
+
+finally:
+    Py_XDECREF(PyDateTime_IsoCalendarDateType);
+    return rc;
 }
 #undef DATETIME_ADD_MACRO
 
@@ -7073,7 +7090,7 @@ static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
-    .m_size = 0,
+    .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,
 };
