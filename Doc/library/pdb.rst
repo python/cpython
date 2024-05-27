@@ -289,7 +289,8 @@ There are three preset *convenience variables*:
 * ``$_exception``: the exception if the frame is raising an exception
 
 .. versionadded:: 3.12
-   *convenience variable*
+
+   Added the *convenience variable* feature.
 
 .. index::
    pair: .pdbrc; file
