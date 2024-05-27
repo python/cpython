@@ -19,7 +19,7 @@
                documentation: "https://docs.python.org/3.14/",
            }
        },
-     {
+       {
            slug: "dev (3.13)",
            urls: {
                documentation: "https://docs.python.org/3.13/",
