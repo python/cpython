@@ -1899,7 +1899,7 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
-   See Unicode Properties section in :ref:`unicode-howto`.
+   See Unicode Properties section in :ref:`unicode-howto-properties`.
 
 .. method:: str.isascii()
 
@@ -2449,15 +2449,18 @@ If the separator is not found, return a 3-tuple containing
       True
       >>> 'a tuple of prefixes'.startswith(('at', 'in'))
       False
+      >>> 'a tuple of suffixes'.startswith(('at', 'a'))
+      True
+   
 
    With optional *start*, test string beginning at that position::
 
-      >>> 'a tuple of suffixes'.startswith(('at', 'a'))
+      >>> 'Python is amazing'.startswith('is', 7)
       True
 
    With optional *end*, stop comparing string at that position::
 
-      >>> 'Python is amazing'.startswith('is', 7)
+      >>> 'Python is amazing, yet not mysterious'.startswith('ama', 10, 15)
       True
 
    See also :meth:`endswith` and :meth:`removeprefix`.
