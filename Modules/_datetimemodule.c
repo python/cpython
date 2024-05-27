@@ -61,6 +61,14 @@ static inline datetime_state* get_datetime_state(void)
     return &_datetime_global_state;
 }
 
+static datetime_state *
+get_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (datetime_state *)state;
+}
+
 #define PyDate_Check(st, op) PyObject_TypeCheck(op, st->date_type)
 #define PyDate_CheckExact(st, op) Py_IS_TYPE(op, st->date_type)
 
@@ -7070,6 +7078,11 @@ _datetime_exec(PyObject *module)
         goto error;
     }
 
+    st = get_module_state(module);
+    if (init_state(st, PyDateTime_IsoCalendarDateType) < 0) {
+        goto error;
+    }
+
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
         PyObject *value = (value_expr);                 \
@@ -7191,7 +7204,7 @@ static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
-    .m_size = 0,
+    .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,
 };
