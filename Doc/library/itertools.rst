@@ -97,6 +97,7 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
+
 .. function:: accumulate(iterable[, function, *, initial=None])
 
     Make an iterator that returns accumulated sums or accumulated
@@ -309,10 +310,10 @@ loops that truncate the stream.
 
 .. function:: compress(data, selectors)
 
-   Make an iterator that filters elements from *data* returning only those that
-   have a corresponding element in *selectors* is true.
-   Stops when either the *data* or *selectors* iterables have been exhausted.
-   Roughly equivalent to::
+   Make an iterator that returns elements from *data* where the
+   corresponding element in *selectors* is true.  Stops when either the
+   *data* or *selectors* iterables have been exhausted.  Roughly
+   equivalent to::
 
        def compress(data, selectors):
            # compress('ABCDEF', [1,0,1,0,1,1]) → A C E F
