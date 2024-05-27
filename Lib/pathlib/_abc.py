@@ -825,7 +825,7 @@ class PathBase(PurePathBase):
                 raise
 
         try:
-            if self.is_symlink():
+            if self.is_symlink() or self.is_junction():
                 raise OSError("Cannot call rmtree on a symbolic link")
         except OSError as error:
             on_error(error)
@@ -837,10 +837,14 @@ class PathBase(PurePathBase):
                 filepath = dirpath / filename
                 try:
                     filepath.unlink()
+                except FileNotFoundError:
+                    pass
                 except OSError as error:
                     on_error(error)
             try:
                 dirpath.rmdir()
+            except FileNotFoundError:
+                pass
             except OSError as error:
                 on_error(error)
     rmtree.avoids_symlink_attacks = False

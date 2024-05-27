@@ -3,7 +3,6 @@ import ntpath
 import operator
 import os
 import posixpath
-import shutil
 import sys
 import warnings
 from glob import _StringGlobber
@@ -639,7 +638,9 @@ class Path(PathBase, PurePath):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         root_dir = str(self)
-        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        if not follow_symlinks:
+            follow_symlinks = os._walk_symlinks_as_files
+        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
         for path_str, dirnames, filenames in results:
             if root_dir == '.':
                 path_str = path_str[2:]
@@ -768,23 +769,63 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def rmtree(self, ignore_errors=False, on_error=None):
-        """
-        Recursively delete this directory tree.
+    _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
+                         os.supports_dir_fd and
+                         os.scandir in os.supports_fd and
+                         os.stat in os.supports_follow_symlinks)
 
-        If *ignore_errors* is true, exceptions raised from scanning the tree
-        and removing files and directories are ignored. Otherwise, if
-        *on_error* is set, it will be called to handle the error. If neither
-        *ignore_errors* nor *on_error* are set, exceptions are propagated to
-        the caller.
-        """
-        if on_error is None:
-            onexc = None
-        else:
-            def onexc(function, path, excinfo):
-                on_error(excinfo)
-        shutil.rmtree(self, ignore_errors=ignore_errors, onexc=onexc)
-    rmtree.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
+    if _use_fd_functions:
+        def rmtree(self, ignore_errors=False, on_error=None):
+            """
+            Recursively delete this directory tree.
+
+            If *ignore_errors* is true, exceptions raised from scanning the tree
+            and removing files and directories are ignored. Otherwise, if
+            *on_error* is set, it will be called to handle the error. If neither
+            *ignore_errors* nor *on_error* are set, exceptions are propagated to
+            the caller.
+            """
+            path = os.fspath(self)
+            if ignore_errors:
+                def on_error(error):
+                    pass
+            elif on_error is None:
+                def on_error(error):
+                    raise
+            try:
+                orig_st = os.lstat(path)
+                walker = os.fwalk(
+                    path,
+                    topdown=False,
+                    onerror=on_error,
+                    follow_symlinks=os._walk_symlinks_as_files)
+                for dirpath, dirnames, filenames, fd in walker:
+                    if dirpath == path and not os.path.samestat(orig_st, os.fstat(fd)):
+                        try:
+                            raise OSError("Cannot call rmtree on a symbolic link")
+                        except OSError as error:
+                            on_error(error)
+                            return
+                    for filename in filenames:
+                        try:
+                            os.unlink(filename, dir_fd=fd)
+                        except FileNotFoundError:
+                            pass
+                        except OSError as error:
+                            error.filename = os.path.join(dirpath, filename)
+                            on_error(error)
+                    for dirname in dirnames:
+                        try:
+                            os.rmdir(dirname, dir_fd=fd)
+                        except FileNotFoundError:
+                            pass
+                        except OSError as error:
+                            error.filename = os.path.join(dirpath, dirname)
+                            on_error(error)
+                os.rmdir(path)
+            except OSError as error:
+                on_error(error)
+        rmtree.avoids_symlink_attacks = True
 
     def rename(self, target):
         """

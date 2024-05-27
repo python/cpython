@@ -281,6 +281,11 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
+# Private sentinel that can be passed to os.walk() to classify all symlinks as
+# files, and walk into every path classified as a directory (potentially after
+# user modification in topdown mode). Used by pathlib.Path.walk().
+_walk_symlinks_as_files = object()
+
 def walk(top, topdown=True, onerror=None, followlinks=False):
     """Directory tree generator.
 
@@ -382,7 +387,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     break
 
                 try:
-                    is_dir = entry.is_dir()
+                    if followlinks is _walk_symlinks_as_files:
+                        is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
+                    else:
+                        is_dir = entry.is_dir()
                 except OSError:
                     # If is_dir() raises an OSError, consider the entry not to
                     # be a directory, same behaviour as os.path.isdir().
@@ -489,7 +497,11 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
 
-        scandir_it = scandir(topfd)
+        try:
+            scandir_it = scandir(topfd)
+        except OSError as error:
+            error.filename = toppath
+            raise
         dirs = []
         nondirs = []
         entries = None if topdown or follow_symlinks else []
@@ -498,7 +510,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if isbytes:
                 name = fsencode(name)
             try:
-                if entry.is_dir():
+                if entry.is_dir(follow_symlinks=follow_symlinks is not _walk_symlinks_as_files):
                     dirs.append(name)
                     if entries is not None:
                         entries.append(entry)
