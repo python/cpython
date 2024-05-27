@@ -4,7 +4,6 @@ import operator
 import os
 import posixpath
 import sys
-import warnings
 from glob import _StringGlobber
 from itertools import chain
 from _collections_abc import Sequence
@@ -362,6 +361,40 @@ class PurePath(PurePathBase):
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
+    @property
+    def stem(self):
+        """The final path component, minus its last suffix."""
+        name = self.name
+        i = name.rfind('.')
+        if i != -1:
+            stem = name[:i]
+            # Stem must contain at least one non-dot character.
+            if stem.lstrip('.'):
+                return stem
+        return name
+
+    @property
+    def suffix(self):
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
+        name = self.name.lstrip('.')
+        i = name.rfind('.')
+        if i != -1:
+            return name[i:]
+        return ''
+
+    @property
+    def suffixes(self):
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
+        return ['.' + ext for ext in self.name.lstrip('.').split('.')[1:]]
+
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
@@ -405,6 +438,7 @@ class PurePath(PurePathBase):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
+        import warnings
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
