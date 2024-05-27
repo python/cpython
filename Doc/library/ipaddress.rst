@@ -504,7 +504,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is either
+      integer, or an existing :class:`IPv4Address` object; and the netmask is either
       an integer representing the prefix length (e.g. ``24``) or a string
       representing the prefix mask (e.g. ``255.255.255.0``).
 
@@ -725,7 +725,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv6Address object; and the netmask is an
+      integer, or an existing :class:`IPv6Address` object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
@@ -781,7 +781,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
 
