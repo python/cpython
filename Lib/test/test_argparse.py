@@ -2447,9 +2447,9 @@ class TestAddSubparsers(TestCase):
             positional arguments:
               bar         bar help
               {1,2,3}     command help
-                1         1 help
-                2         2 help
-                3         3 help
+              1           1 help
+              2           2 help
+              3           3 help
 
             options:
               -h, --help  show this help message and exit
@@ -2552,10 +2552,9 @@ class TestAddSubparsers(TestCase):
 
             commands:
               COMMAND
-                1 (1alias1, 1alias2)
-                                    1 help
-                2                   2 help
-                3                   3 help
+              1 (1alias1, 1alias2)  1 help
+              2                     2 help
+              3                     3 help
             """))
 
 # ============
@@ -4872,11 +4871,11 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
 
         positional arguments:
           {a,b,c,d,e}
-            a            a subcommand help
-            b            b subcommand help
-            c            c subcommand help
-            d            d subcommand help
-            e            e subcommand help
+          a              a subcommand help
+          b              b subcommand help
+          c              c subcommand help
+          d              d subcommand help
+          e              e subcommand help
 
         options:
           -h, --help     show this help message and exit
