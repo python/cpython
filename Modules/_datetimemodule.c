@@ -26,13 +26,17 @@
 #endif
 
 typedef struct {
+    /* Static types exposed by the datetime C-API. */
     PyTypeObject *date_type;
     PyTypeObject *datetime_type;
     PyTypeObject *delta_type;
-    PyTypeObject *isocalendar_date_type;
     PyTypeObject *time_type;
     PyTypeObject *tzinfo_type;
+    /* Exposed indirectly via TimeZone_UTC. */
     PyTypeObject *timezone_type;
+
+    /* Other module classes. */
+    PyTypeObject *isocalendar_date_type;
 
     /* Conversion factors. */
     PyObject *us_per_ms;       // 1_000
@@ -6844,10 +6848,11 @@ init_state(datetime_state *st)
     st->date_type = &PyDateTime_DateType;
     st->datetime_type = &PyDateTime_DateTimeType;
     st->delta_type = &PyDateTime_DeltaType;
-    st->isocalendar_date_type = &PyDateTime_IsoCalendarDateType;
     st->time_type = &PyDateTime_TimeType;
     st->tzinfo_type = &PyDateTime_TZInfoType;
     st->timezone_type = &PyDateTime_TimeZoneType;
+
+    st->isocalendar_date_type = &PyDateTime_IsoCalendarDateType;
 
     st->us_per_ms = PyLong_FromLong(1000);
     if (st->us_per_ms == NULL) {
@@ -6906,7 +6911,7 @@ _datetime_exec(PyObject *module)
     PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
     PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
-    PyTypeObject *types[] = {
+    PyTypeObject *capi_types[] = {
         &PyDateTime_DateType,
         &PyDateTime_DateTimeType,
         &PyDateTime_TimeType,
@@ -6915,8 +6920,8 @@ _datetime_exec(PyObject *module)
         &PyDateTime_TimeZoneType,
     };
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
-        if (PyModule_AddType(module, types[i]) < 0) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
+        if (PyModule_AddType(module, capi_types[i]) < 0) {
             goto error;
         }
     }
