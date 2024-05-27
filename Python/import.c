@@ -457,7 +457,6 @@ static Py_ssize_t
 _get_module_index_from_def(PyModuleDef *def)
 {
     Py_ssize_t index = def->m_base.m_index;
-    assert(index > 0);
 #ifndef NDEBUG
     struct extensions_cache_value *cached = _find_cached_def(def);
     assert(cached == NULL || index == _get_cached_module_index(cached));
@@ -489,7 +488,7 @@ _set_module_index(PyModuleDef *def, Py_ssize_t index)
 static const char *
 _modules_by_index_check(PyInterpreterState *interp, Py_ssize_t index)
 {
-    if (index == 0) {
+    if (index <= 0) {
         return "invalid module index";
     }
     if (MODULES_BY_INDEX(interp) == NULL) {

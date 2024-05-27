@@ -14,6 +14,12 @@
    // since all the "active, built and not hidden" versions will be shown automatically.
    let versions = config.versions.active.concat([
        {
+           slug: "dev (3.14)",
+           urls: {
+               documentation: "https://docs.python.org/3.14/",
+           }
+       },
+     {
            slug: "dev (3.13)",
            urls: {
                documentation: "https://docs.python.org/3.13/",
