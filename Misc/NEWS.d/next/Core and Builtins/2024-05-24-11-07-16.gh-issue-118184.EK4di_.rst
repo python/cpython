@@ -1,1 +1,1 @@
-Support tuples for for :class:`str`, :class:`bytes` and :class:`bytearray` methods ``find()``, ``index()``, ``rfind()`` and ``rindex()``.
+Support tuples for :class:`str`, :class:`bytes` and :class:`bytearray` methods ``find()``, ``index()``, ``rfind()`` and ``rindex()``.
