@@ -494,7 +494,7 @@ _modules_by_index_check(PyInterpreterState *interp, Py_ssize_t index)
     if (MODULES_BY_INDEX(interp) == NULL) {
         return "Interpreters module-list not accessible.";
     }
-    if (index > PyList_GET_SIZE(MODULES_BY_INDEX(interp))) {
+    if (index >= PyList_GET_SIZE(MODULES_BY_INDEX(interp))) {
         return "Module index out of bounds.";
     }
     return NULL;
