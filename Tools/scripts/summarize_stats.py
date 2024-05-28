@@ -62,6 +62,9 @@ def _load_metadata_from_source():
                     continue
                 line = line[len(start) :]
                 name, val = line.split()
+                # For flag defines, the data looks like
+                # #define HAS_PASSTHROUGH_FLAG (4096)
+                # The following line grabs the integer without the surrounding parentheses:
                 defines[int(val.strip().strip("()"))].append(name.strip())
         return defines
 
