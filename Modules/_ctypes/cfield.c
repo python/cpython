@@ -1100,25 +1100,45 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
+    if (PyBytes_Check(value)) {
+        if (PyBytes_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytes of length %zd",
+                        PyBytes_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyBytes_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyByteArray_Check(value) && PyByteArray_GET_SIZE(value) == 1) {
+    if (PyByteArray_Check(value)) {
+        if (PyByteArray_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytearray of length %zd",
+                        PyByteArray_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyByteArray_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyLong_Check(value))
-    {
-        long longval = PyLong_AsLong(value);
-        if (longval < 0 || longval >= 256)
-            goto error;
+    if (PyLong_Check(value)) {
+        int overflow;
+        long longval = PyLong_AsLongAndOverflow(value, &overflow);
+        if (longval == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (overflow || longval < 0 || longval >= 256) {
+            PyErr_SetString(PyExc_TypeError, "integer not in range(256)");
+            return NULL;
+        }
         *(char *)ptr = (char)longval;
         _RET(value);
     }
-  error:
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or integer expected");
+                 "one character bytes, bytearray, or an integer "
+                 "in range(256) expected, not %T",
+                 value);
     return NULL;
 }
 
@@ -1137,22 +1157,27 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                        "unicode string expected instead of %s instance",
-                        Py_TYPE(value)->tp_name);
+                     "a unicode character expected, not instance of %T",
+                     value);
         return NULL;
-    } else
-        Py_INCREF(value);
+    }
 
     len = PyUnicode_AsWideChar(value, chars, 2);
     if (len != 1) {
-        Py_DECREF(value);
-        PyErr_SetString(PyExc_TypeError,
-                        "one character unicode string expected");
+        if (PyUnicode_GET_LENGTH(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "a unicode character expected, not a string of length %zd",
+                         PyUnicode_GET_LENGTH(value));
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "the string %A cannot be converted to a single wchar_t character",
+                         value);
+        }
         return NULL;
     }
 
     *(wchar_t *)ptr = chars[0];
-    Py_DECREF(value);
 
     _RET(value);
 }

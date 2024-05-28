@@ -260,20 +260,32 @@ u_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PyObject *u;
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, not %T",
+                     v);
         return -1;
     }
 
-    Py_ssize_t len = PyUnicode_AsWideChar(u, NULL, 0);
+    Py_ssize_t len = PyUnicode_AsWideChar(v, NULL, 0);
     if (len != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be unicode character");
+        if (PyUnicode_GET_LENGTH(v) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "array item must be a unicode character, "
+                         "not a string of length %zd",
+                         PyUnicode_GET_LENGTH(v));
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "string %A cannot be converted to "
+                         "a single wchar_t character",
+                         v);
+        }
         return -1;
     }
 
     wchar_t w;
-    len = PyUnicode_AsWideChar(u, &w, 1);
+    len = PyUnicode_AsWideChar(v, &w, 1);
     assert(len == 1);
 
     if (i >= 0) {
@@ -291,19 +303,23 @@ w_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 w_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    PyObject *u;
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
+    if (!PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, not %T",
+                     v);
         return -1;
     }
 
-    if (PyUnicode_GetLength(u) != 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be unicode character");
+    if (PyUnicode_GET_LENGTH(v) != 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "array item must be a unicode character, "
+                     "not a string of length %zd",
+                     PyUnicode_GET_LENGTH(v));
         return -1;
     }
 
     if (i >= 0) {
-        ((Py_UCS4 *)ap->ob_item)[i] = PyUnicode_READ_CHAR(u, 0);
+        ((Py_UCS4 *)ap->ob_item)[i] = PyUnicode_READ_CHAR(v, 0);
     }
     return 0;
 }
