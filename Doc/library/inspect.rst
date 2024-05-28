@@ -1,5 +1,5 @@
-:mod:`inspect` --- Inspect live objects
-=======================================
+:mod:`!inspect` --- Inspect live objects
+========================================
 
 .. testsetup:: *
 
@@ -55,6 +55,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           | __module__        | name of module in which   |
 |           |                   | this class was defined    |
 +-----------+-------------------+---------------------------+
+|           | __type_params__   | A tuple containing the    |
+|           |                   | :ref:`type parameters     |
+|           |                   | <type-params>` of         |
+|           |                   | a generic class           |
++-----------+-------------------+---------------------------+
 | method    | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -102,6 +107,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __type_params__   | A tuple containing the    |
+|           |                   | :ref:`type parameters     |
+|           |                   | <type-params>` of         |
+|           |                   | a generic function        |
 +-----------+-------------------+---------------------------+
 |           | __module__        | name of module in which   |
 |           |                   | this function was defined |
@@ -340,6 +350,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a Python generator function.
 
 .. function:: isgenerator(object)
 
@@ -362,6 +375,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
       ``True``.
+
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 
 .. function:: markcoroutinefunction(func)
@@ -429,6 +446,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 .. function:: isasyncgen(object)
 
@@ -655,9 +675,6 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
-   If the passed object has a ``__signature__`` attribute, this function
-   returns it without further computations.
-
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -691,6 +708,13 @@ function.
       Some callables may not be introspectable in certain implementations of
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
+
+   .. impl-detail::
+
+      If the passed object has a :attr:`!__signature__` attribute,
+      we may use it to create the signature.
+      The exact semantics are an implementation detail and are subject to
+      unannounced changes. Consult the source code for current semantics.
 
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)

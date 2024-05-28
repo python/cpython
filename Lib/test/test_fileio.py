@@ -17,6 +17,7 @@ from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
     )
 from test.support.warnings_helper import check_warnings
+from test.support.import_helper import import_module
 from collections import UserList
 
 import _io  # C implementation of io
@@ -484,6 +485,14 @@ class OtherFileTests:
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
 
+    def testBooleanFd(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor') as cm:
+                f = self.FileIO(fd, closefd=False)
+            f.close()
+            self.assertEqual(cm.filename, __file__)
+
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
@@ -589,7 +598,7 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
     @cpython_only
     def testInvalidFd_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MIN - 1)
 
