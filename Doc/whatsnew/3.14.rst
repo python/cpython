@@ -175,6 +175,14 @@ pathlib
   :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
   arguments are joined onto *other*.
 
+pty
+___
+
+* Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
+  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  Use :func:`pty.openpty` instead.
+  (Contributed by Nikita Sobolev in :gh:`118824`.)
+
 sqlite3
 -------
 
