@@ -27,6 +27,7 @@ from typing import Any, Callable, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
+JitStencilData: TypeAlias = dict[str, int]
 Rows: TypeAlias = list[tuple]
 Columns: TypeAlias = tuple[str, ...]
 RowCalculator: TypeAlias = Callable[["Stats"], Rows]
@@ -119,6 +120,24 @@ def load_raw_data(input: Path) -> RawData:
 
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
+
+
+def load_jit_data(jit_path: Path | str) -> JitStencilData:
+    with open(jit_path, "r") as f:
+        lines = f.readlines()
+        r = re.compile(r"static const StencilGroup stencil_groups.*")
+        start_line = list(filter(r.search, lines))
+        static_group_start = lines.index(start_line[0])
+        static_group_end = lines.index("};\n", static_group_start)
+        lines = (l.strip() for l in lines[static_group_start + 1 : static_group_end])
+
+    code_lengths = {}
+    for l in lines:
+        name = l[l.index("[") + 1 : l.index("]")]
+        code_size = int(l[l.index("{") + 1 : l.index("}")].split(",")[1].strip())
+        code_lengths[name] = code_size
+
+    return code_lengths
 
 
 @dataclass(frozen=True)
@@ -356,8 +375,9 @@ class OpcodeStats:
 
 
 class Stats:
-    def __init__(self, data: RawData):
+    def __init__(self, data: RawData, jit_stencils_data=None):
         self._data = data
+        self._jit_stencils_data = jit_stencils_data
 
     def get(self, key: str) -> int:
         return self._data.get(key, 0)
@@ -734,6 +754,40 @@ def execution_count_section() -> Section:
         instruction is not counted.
         """,
     )
+
+
+def calc_execution_cost_table(prefix: str, jit_data: JitStencilData) -> RowCalculator:
+    """Calculate the product of the number of times each uop is executed and the
+    number of machine instructions for that uop, as a rough measure of the time
+    spent in each uop
+    """
+
+    def calc(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats(prefix)
+        counts = opcode_stats.get_execution_counts()
+        uop_costs = {
+            opcode: jit_data[opcode] * counts[opcode][0] for opcode in counts.keys()
+        }
+        total = sum(cost for cost in uop_costs.values())
+        cumulative = 0
+        rows: Rows = []
+        for opcode, cost in sorted(uop_costs.items(), key=itemgetter(1), reverse=True):
+            count = counts[opcode][0]
+            cumulative += cost
+            rows.append(
+                (
+                    opcode,
+                    Count(cost),
+                    Ratio(cost, total),
+                    Ratio(cumulative, total),
+                    Count(count),
+                    Count(jit_data[opcode]),
+                )
+            )
+        rows.sort(key=lambda row: int(row[1]), reverse=True)  # Sort by cost
+        return rows
+
+    return calc
 
 
 def pair_count_section(prefix: str, title=None) -> Section:
@@ -1232,6 +1286,33 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        if base_stats._jit_stencils_data:
+            yield Section(
+                "Total Machine Instruction Counts per UOp",
+                "",
+                [
+                    Table(
+                        (
+                            "Name",
+                            "Product",
+                            "Self",
+                            "Cumulative",
+                            "Count",
+                            "Length (Machine Instructions)",
+                        ),
+                        calc_execution_cost_table(
+                            "uops", jit_data=base_stats._jit_stencils_data
+                        ),
+                        JoinMode.CHANGE_ONE_COLUMN,
+                    ),
+                ],
+            )
+        else:
+            yield Section(
+                title="Total Machine Instruction Counts per UOp",
+                summary="",
+                doc="No data found for jit stencils, skipping information on machine instruction counts",
+            )
         yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
@@ -1389,14 +1470,24 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=str | None):
+def output_stats(
+    inputs: list[Path],
+    json_output=str | None,
+    jit_stencils_path=SOURCE_DIR / "jit_stencils.h",
+):
+    if not jit_stencils_path.exists():
+        jit_stencils_path = None
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
+            if jit_stencils_path:
+                jit_data = load_jit_data(jit_stencils_path)
+            else:
+                jit_data = None
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
-            stats = Stats(data)
+            stats = Stats(data, jit_stencils_data=jit_data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
