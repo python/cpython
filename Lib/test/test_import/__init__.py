@@ -31,7 +31,7 @@ from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
-    requires_gil_enabled, Py_GIL_DISABLED)
+    requires_gil_enabled, Py_GIL_DISABLED, no_rerun)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
@@ -118,25 +118,6 @@ def remove_files(name):
               name + "$py.class"):
         unlink(f)
     rmtree('__pycache__')
-
-
-def no_rerun(reason):
-    """Skip rerunning for a particular test.
-
-    WARNING: Use this decorator with care; skipping rerunning makes it
-    impossible to find reference leaks. Provide a clear reason for skipping the
-    test using the 'reason' parameter.
-    """
-    def deco(func):
-        _has_run = False
-        def wrapper(self):
-            nonlocal _has_run
-            if _has_run:
-                self.skipTest(reason)
-            func(self)
-            _has_run = True
-        return wrapper
-    return deco
 
 
 if _testsinglephase is not None:
