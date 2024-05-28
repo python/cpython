@@ -1,0 +1,2 @@
+:func:`shlex.quote` now has an *always* keyword argument for forcing
+the escaping of the string passed to it
