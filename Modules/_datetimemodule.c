@@ -7017,7 +7017,7 @@ _datetime_exec(PyObject *module)
         goto error;
     }
     PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, NULL);
-    // (capsule == NULL) {is handled by PyModule_Add
+    // (capsule == NULL) is handled by PyModule_Add
     if (PyModule_Add(module, "datetime_CAPI", capsule) < 0) {
         goto error;
     }
