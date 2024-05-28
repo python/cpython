@@ -20,7 +20,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(PyStackRef_To_PyObject_Borrow(locals[i]));
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
     }
     return 0;
 }
@@ -101,7 +101,7 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame)
     int stacktop = frame->stacktop;
     frame->stacktop = 0;
     for (int i = 0; i < stacktop; i++) {
-        PyStackRef_DECREF(frame->localsplus[i]);
+        PyStackRef_CLOSE(frame->localsplus[i]);
     }
     Py_CLEAR(frame->f_locals);
 }

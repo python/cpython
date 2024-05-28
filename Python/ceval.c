@@ -114,7 +114,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
-        PyObject *obj = PyStackRef_To_PyObject_Borrow(*ptr);
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(*ptr);
         if (obj == NULL) {
             printf("<nil>");
             continue;
@@ -897,7 +897,7 @@ exception_unwind:
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyStackRef_DECREF(POP());
+                    PyStackRef_CLOSE(POP());
                 }
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -908,7 +908,7 @@ exception_unwind:
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyStackRef_DECREF(POP());
+                PyStackRef_CLOSE(POP());
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
@@ -916,7 +916,7 @@ exception_unwind:
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(PyObject_To_StackRef_Steal(lasti));
+                PUSH(PyStackRef_FromPyObjectSteal(lasti));
             }
 
             /* Make the raw exception data
@@ -924,7 +924,7 @@ exception_unwind:
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyObject_To_StackRef_Steal(exc));
+            PUSH(PyStackRef_FromPyObjectSteal(exc));
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
@@ -1244,7 +1244,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (PyStackRef_To_PyObject_Borrow(localsplus[i]) != NULL) {
+        if (PyStackRef_AsPyObjectBorrow(localsplus[i]) != NULL) {
             kwonly_given++;
         }
     }
@@ -1441,7 +1441,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             i++;
         }
         assert(PyStackRef_IsNull(localsplus[i]));
-        localsplus[i] = PyObject_To_StackRef_Steal(kwdict);
+        localsplus[i] = PyStackRef_FromPyObjectSteal(kwdict);
     }
     else {
         kwdict = NULL;
@@ -1473,13 +1473,13 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (u == NULL) {
             goto fail_post_positional;
         }
-        assert(PyStackRef_To_PyObject_Borrow(localsplus[total_args]) == NULL);
-        localsplus[total_args] = PyObject_To_StackRef_Steal(u);
+        assert(PyStackRef_AsPyObjectBorrow(localsplus[total_args]) == NULL);
+        localsplus[total_args] = PyStackRef_FromPyObjectSteal(u);
     }
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
         for (j = n; j < argcount; j++) {
-            PyStackRef_DECREF(args[j]);
+            PyStackRef_CLOSE(args[j]);
         }
     }
 
@@ -1562,20 +1562,20 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
 
-            if (PyDict_SetItem(kwdict, keyword, PyStackRef_To_PyObject_New(value_stackref)) == -1) {
+            if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectNew(value_stackref)) == -1) {
                 goto kw_fail;
             }
-            PyStackRef_DECREF(value_stackref);
+            PyStackRef_CLOSE(value_stackref);
             continue;
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyStackRef_DECREF(args[i+argcount]);
+                PyStackRef_CLOSE(args[i+argcount]);
             }
             goto fail_post_args;
 
         kw_found:
-            if (PyStackRef_To_PyObject_Borrow(localsplus[j]) != NULL) {
+            if (PyStackRef_AsPyObjectBorrow(localsplus[j]) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           func->func_qualname, keyword);
@@ -1614,9 +1614,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(func->func_defaults, 0);
             for (; i < defcount; i++) {
-                if (PyStackRef_To_PyObject_Borrow(localsplus[m+i]) == NULL) {
+                if (PyStackRef_AsPyObjectBorrow(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = PyObject_To_StackRef_New(def);
+                    localsplus[m+i] = PyStackRef_FromPyObjectNew(def);
                 }
             }
         }
@@ -1626,7 +1626,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (PyStackRef_To_PyObject_Borrow(localsplus[i]) != NULL)
+            if (PyStackRef_AsPyObjectBorrow(localsplus[i]) != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (func->func_kwdefaults != NULL) {
@@ -1635,7 +1635,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     goto fail_post_args;
                 }
                 if (def) {
-                    localsplus[i] = PyObject_To_StackRef_Steal(def);
+                    localsplus[i] = PyStackRef_FromPyObjectSteal(def);
                     continue;
                 }
             }
@@ -1651,14 +1651,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
 fail_pre_positional:
     for (j = 0; j < argcount; j++) {
-        PyStackRef_DECREF(args[j]);
+        PyStackRef_CLOSE(args[j]);
     }
     /* fall through */
 fail_post_positional:
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
-            PyStackRef_DECREF(args[j]);
+            PyStackRef_CLOSE(args[j]);
         }
     }
     /* fall through */
@@ -1734,12 +1734,12 @@ fail:
     Py_DECREF(func);
     Py_XDECREF(locals);
     for (size_t i = 0; i < argcount; i++) {
-        PyStackRef_DECREF(args[i]);
+        PyStackRef_CLOSE(args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            PyStackRef_DECREF(args[i+argcount]);
+            PyStackRef_CLOSE(args[i+argcount]);
         }
     }
     PyErr_NoMemory();
@@ -1760,10 +1760,10 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     for (size_t i = 0; i < argcount; i++) {
-        tagged_args_buffer[i] = PyObject_To_StackRef_Steal(args[i]);
+        tagged_args_buffer[i] = PyStackRef_FromPyObjectSteal(args[i]);
     }
     for (size_t i = 0; i < kw_count; i++) {
-        tagged_args_buffer[argcount + i] = PyObject_To_StackRef_Steal(args[argcount + i]);
+        tagged_args_buffer[argcount + i] = PyStackRef_FromPyObjectSteal(args[argcount + i]);
     }
     _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
     PyMem_Free(tagged_args_buffer);
@@ -2096,7 +2096,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
     PyObject *w;
     PyObject *l = NULL; /* variable list */
 
-    PyObject *v = PyStackRef_To_PyObject_Borrow(v_stackref);
+    PyObject *v = PyStackRef_AsPyObjectBorrow(v_stackref);
     assert(v != NULL);
 
     it = PyObject_GetIter(v);
@@ -2131,7 +2131,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
             }
             goto Error;
         }
-        *--sp = PyObject_To_StackRef_Steal(w);
+        *--sp = PyStackRef_FromPyObjectSteal(w);
     }
 
     if (argcntafter == -1) {
@@ -2153,7 +2153,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
     l = PySequence_List(it);
     if (l == NULL)
         goto Error;
-    *--sp = PyObject_To_StackRef_Steal(l);
+    *--sp = PyStackRef_FromPyObjectSteal(l);
     i++;
 
     ll = PyList_GET_SIZE(l);
@@ -2166,7 +2166,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
 
     /* Pop the "after-variable" args off the list. */
     for (j = argcntafter; j > 0; j--, i++) {
-        *--sp = PyObject_To_StackRef_Steal(PyList_GET_ITEM(l, ll - j));
+        *--sp = PyStackRef_FromPyObjectSteal(PyList_GET_ITEM(l, ll - j));
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);
@@ -2175,7 +2175,7 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
 
 Error:
     for (; i > 0; i--, sp++) {
-        PyStackRef_DECREF(*sp);
+        PyStackRef_CLOSE(*sp);
     }
     Py_XDECREF(it);
     return 0;

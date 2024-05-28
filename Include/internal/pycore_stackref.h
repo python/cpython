@@ -40,7 +40,7 @@ PyStackRef_IsDeferred(_PyStackRef ref)
 
 // Gets a PyObject * from a _PyStackRef
 static inline PyObject *
-PyStackRef_To_PyObject_Borrow(_PyStackRef tagged)
+PyStackRef_AsPyObjectBorrow(_PyStackRef tagged)
 {
     PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
     return cleared;
@@ -48,18 +48,18 @@ PyStackRef_To_PyObject_Borrow(_PyStackRef tagged)
 
 // Converts a PyObject * to a PyStackRef, stealing the reference
 static inline _PyStackRef
-_PyObject_To_StackRef_Steal(PyObject *obj)
+_PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG) == 0);
     int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
-#define PyObject_To_StackRef_Steal(obj) _PyObject_To_StackRef_Steal(_PyObject_CAST(obj))
+#define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
 // Converts a PyObject * to a PyStackRef, with a new reference
 static inline _PyStackRef
-PyObject_To_StackRef_New(PyObject *obj)
+PyStackRef_FromPyObjectNew(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG) == 0);
@@ -72,27 +72,27 @@ PyObject_To_StackRef_New(PyObject *obj)
         return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
     }
 }
-#define PyObject_To_StackRef_New(obj) PyObject_To_StackRef_New(_PyObject_CAST(obj))
+#define PyStackRef_FromPyObjectNew(obj) PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
 
 
 // Converts a PyStackRef back to a PyObject *, converting deferred references
 // to new references.
 static inline PyObject *
-PyStackRef_To_PyObject_New(_PyStackRef tagged)
+PyStackRef_AsPyObjectNew(_PyStackRef tagged)
 {
     if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
         assert(PyStackRef_IsNull(tagged) ||
-            _Py_IsImmortal(PyStackRef_To_PyObject_Borrow(tagged)));
-        return Py_NewRef(PyStackRef_To_PyObject_Borrow(tagged));
+            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
+        return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
     }
-    return PyStackRef_To_PyObject_Borrow(tagged);
+    return PyStackRef_AsPyObjectBorrow(tagged);
 }
 
 static inline void
 _Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length)
 {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_To_PyObject_Borrow(src[i]);
+        dst[i] = PyStackRef_AsPyObjectBorrow(src[i]);
     }
 }
 
@@ -100,25 +100,16 @@ static inline void
 _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
 {
     for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_To_PyObject_New(src[i]);
+        dst[i] = PyStackRef_AsPyObjectNew(src[i]);
     }
 }
 
-
-#define PyStackRef_XSETREF(dst, src) \
+#define PyStackRef_SET(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = &(dst); \
         _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        PyStackRef_DECREF(_tmp_old_dst); \
-    } while (0)
-
-#define PyStackRef_SETREF(dst, src) \
-    do { \
-        _PyStackRef *_tmp_dst_ptr = &(dst); \
-        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
-        *_tmp_dst_ptr = (src); \
-        PyStackRef_DECREF(_tmp_old_dst); \
+        PyStackRef_CLOSE(_tmp_old_dst); \
     } while (0)
 
 #define PyStackRef_CLEAR(op) \
@@ -127,48 +118,40 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
         if (!PyStackRef_IsNull(_tmp_old_op)) { \
             *_tmp_op_ptr = Py_STACKREF_NULL; \
-            PyStackRef_DECREF(_tmp_old_op); \
+            PyStackRef_CLOSE(_tmp_old_op); \
         } \
     } while (0)
 
 static inline void
-PyStackRef_DECREF(_PyStackRef tagged)
+PyStackRef_CLOSE(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
         // No assert for being immortal or deferred here.
         // The GC unsets deferred objects right before clearing.
         return;
     }
-    Py_DECREF(PyStackRef_To_PyObject_Borrow(tagged));
+    Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged));
 }
 
 static inline void
-PyStackRef_INCREF(_PyStackRef tagged)
+PyStackRef_DUP(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
         assert(PyStackRef_IsNull(tagged) ||
-            _Py_IsImmortal(PyStackRef_To_PyObject_Borrow(tagged)));
+            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
         return;
     }
-    Py_INCREF(PyStackRef_To_PyObject_Borrow(tagged));
+    Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
 }
 
 
 static inline _PyStackRef
-PyStackRef_NewRef(_PyStackRef obj)
+PyStackRef_DUPNEW(_PyStackRef obj)
 {
-    PyStackRef_INCREF(obj);
+    PyStackRef_DUP(obj);
     return obj;
 }
 
-static inline _PyStackRef
-PyStackRef_XNewRef(_PyStackRef obj)
-{
-    if (PyStackRef_IsNull(obj)) {
-        return obj;
-    }
-    return PyStackRef_NewRef(obj);
-}
 
 #ifdef __cplusplus
 }

@@ -421,13 +421,13 @@ _PyTuple_FromStackSteal(_PyStackRef const *src, Py_ssize_t n)
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_DECREF(src[i]);
+            PyStackRef_CLOSE(src[i]);
         }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = PyStackRef_To_PyObject_New(src[i]);
+        PyObject *item = PyStackRef_AsPyObjectNew(src[i]);
         dst[i] = item;
     }
     _PyObject_GC_TRACK(tuple);

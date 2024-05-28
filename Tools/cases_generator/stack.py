@@ -200,7 +200,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    tag = "PyObject_To_StackRef_Steal" if should_tag and type.strip() else ""
+                    tag = "PyStackRef_FromPyObjectSteal" if should_tag and type.strip() else ""
                     if tag:
                         out.emit(
                             f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
