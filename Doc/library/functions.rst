@@ -141,10 +141,11 @@ are always available.  They are listed here in alphabetical order.
    See also :func:`format` for more information.
 
 
-.. class:: bool(x=False)
+.. class:: bool(object=False, /)
 
-   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
-   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  The argument
+   is converted using the standard :ref:`truth testing procedure <truth>`.
+   If the argument is false
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
@@ -153,7 +154,7 @@ are always available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -371,29 +372,64 @@ are always available.  They are listed here in alphabetical order.
       support for top-level ``await``, ``async for``, and ``async with``.
 
 
-.. class:: complex(real=0, imag=0)
-           complex(string)
+.. class:: complex(number=0, /)
+           complex(string, /)
+           complex(real=0, imag=0)
 
-   Return a complex number with the value *real* + *imag*\*1j or convert a string
-   or number to a complex number.  If the first parameter is a string, it will
-   be interpreted as a complex number and the function must be called without a
-   second parameter.  The second parameter can never be a string. Each argument
-   may be any numeric type (including complex).  If *imag* is omitted, it
-   defaults to zero and the constructor serves as a numeric conversion like
-   :class:`int` and :class:`float`.  If both arguments are omitted, returns
-   ``0j``.
+   Convert a string or a number to a complex number or create a complex number
+   from the real and imaginary parts.
 
+   If the argument is a string, it should contain a decimal number, optionally
+   preceded by a sign, and optionally followed by the ``j`` or ``J`` suffix,
+   or a pair of decimal numbers, optionally preceded by a sign, separated by
+   the ``+`` or ``-`` operator, and followed by the ``j`` or ``J`` suffix.
+   A string representing a NaN (not-a-number), or infinity is acceptable
+   in place of a decimal number, like in :func:`float`.
+   The string can optionally be surrounded by whitespaces and the round
+   parenthesis ``(`` and ``)``, which are ignored.
+   The string must not contain whitespace between ``+``, ``-``, the ``j`` or
+   ``J`` suffix, and the decimal number.  For example, ``complex('1+2j')`` is fine, but
+   ``complex('1 + 2j')`` raises :exc:`ValueError`.
+
+   If the argument is a number, the constructor serves as a numeric
+   conversion like :class:`int` and :class:`float`.
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
-   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   ``x.__complex__()``.
+   If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.
+   If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   .. note::
+   If two arguments are provided or keyword arguments are used, each argument
+   may be any numeric type (including complex).
+   If both arguments are real numbers, return a complex number with the real
+   component *real* and the imaginary component *imag*.
+   If both arguments are complex numbers, return a complex number with the real
+   component ``real.real-imag.imag`` and the imaginary component
+   ``real.imag+imag.real``.
+   If one of arguments is a real number, only its real component is used in
+   the above expressions.
 
-      When converting from a string, the string must not contain whitespace
-      around the central ``+`` or ``-`` operator.  For example,
-      ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-      :exc:`ValueError`.
+   If all arguments are omitted, returns ``0j``.
+
+   Examples::
+
+      >>> complex('+1.23')
+      (1.23+0j)
+      >>> complex('-4.5j')
+      -4.5j
+      >>> complex('-1.23+4.5j')
+      (-1.23+4.5j)
+      >>> complex('\t( -1.23+4.5J )\n')
+      (-1.23+4.5j)
+      >>> complex('-Infinity+NaNj')
+      (-inf+nanj)
+      >>> complex(1.23)
+      (1.23+0j)
+      >>> complex(imag=-4.5)
+      -4.5j
+      >>> complex(-1.23, 4.5)
+      (-1.23+4.5j)
 
    The complex type is described in :ref:`typesnumeric`.
 
@@ -682,13 +718,14 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* is false.
 
 
-.. class:: float(x=0.0)
+.. class:: float(number=0.0, /)
+           float(string, /)
 
    .. index::
       single: NaN
       single: Infinity
 
-   Return a floating point number constructed from a number or string *x*.
+   Return a floating point number constructed from a number or a string.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
@@ -742,7 +779,7 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
@@ -926,17 +963,19 @@ are always available.  They are listed here in alphabetical order.
       with the result after successfully reading input.
 
 
-.. class:: int(x=0)
-           int(x, base=10)
+.. class:: int(number=0, /)
+           int(string, /, base=10)
 
-   Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
+   Return an integer object constructed from a number or a string, or return
+   ``0`` if no arguments are given.
+
+   If the argument defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If the argument defines :meth:`~object.__index__`,
+   it returns ``x.__index__()``.  If the argument defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
-   If *x* is not a number or if *base* is given, then *x* must be a string,
+   If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
    (with no space in between), have leading zeros, be surrounded by whitespace,
@@ -966,7 +1005,7 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The first parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
@@ -977,7 +1016,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
-      the limit is exceeded while converting a string *x* to an :class:`int` or
+      the limit is exceeded while converting a string to an :class:`int` or
       when converting an :class:`int` into a string would exceed the limit.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
