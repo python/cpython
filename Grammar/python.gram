@@ -78,6 +78,9 @@ _PyPegen_parse(Parser *p)
 #   Fail if e can be parsed, without consuming any input.
 # ~
 #   Commit to the current alternative, even if it fails to parse.
+# &&e
+#   Eager parse e. The parser will not backtrack and will immediately 
+#   fail with SyntaxError if e cannot be parsed.
 #
 
 # STARTING RULES
@@ -266,11 +269,11 @@ function_def[stmt_ty]:
 
 function_def_raw[stmt_ty]:
     | invalid_def_raw
-    | 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+    | 'def' n=NAME t=[type_params] '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
         _PyAST_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                         b, NULL, a, NEW_TYPE_COMMENT(p, tc), t, EXTRA) }
-    | 'async' 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+    | 'async' 'def' n=NAME t=[type_params] '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
         CHECK_VERSION(
             stmt_ty,
             5,
@@ -638,27 +641,33 @@ type_alias[stmt_ty]:
 # Type parameter declaration
 # --------------------------
 
-type_params[asdl_type_param_seq*]: '[' t=type_param_seq  ']' {
+type_params[asdl_type_param_seq*]: 
+    | invalid_type_params
+    | '[' t=type_param_seq ']' {
         CHECK_VERSION(asdl_type_param_seq *, 12, "Type parameter lists are", t) }
 
 type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ [','] { a }
 
 type_param[type_param_ty] (memo):
-    | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
+    | a=NAME b=[type_param_bound] c=[type_param_default] { _PyAST_TypeVar(a->v.Name.id, b, c, EXTRA) }
     | '*' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with TypeVarTuple"
                 : "cannot use bound with TypeVarTuple")
         }
-    | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
+    | '*' a=NAME b=[type_param_starred_default] { _PyAST_TypeVarTuple(a->v.Name.id, b, EXTRA) }
     | '**' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with ParamSpec"
                 : "cannot use bound with ParamSpec")
         }
-    | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
+    | '**' a=NAME b=[type_param_default] { _PyAST_ParamSpec(a->v.Name.id, b, EXTRA) }
 
 type_param_bound[expr_ty]: ':' e=expression { e }
+type_param_default[expr_ty]: '=' e=expression {
+    CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
+type_param_starred_default[expr_ty]: '=' e=star_expression {
+    CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
 
 # EXPRESSIONS
 # -----------
@@ -915,7 +924,7 @@ fstring_middle[expr_ty]:
     | fstring_replacement_field
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 fstring_replacement_field[expr_ty]:
-    | '{' a=(yield_expr | star_expressions) debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
+    | '{' a=annotated_rhs debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
         _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
     | invalid_replacement_field
 fstring_conversion[ResultTokenWithMetadata*]:
@@ -1201,7 +1210,7 @@ invalid_assignment:
     | (star_targets '=')* a=star_expressions '=' {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
-    | a=star_expressions augassign (yield_expr | star_expressions) {
+    | a=star_expressions augassign annotated_rhs {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a,
             "'%s' is an illegal expression for augmented assignment",
@@ -1299,10 +1308,14 @@ invalid_group:
 invalid_import:
     | a='import' ','.dotted_name+ 'from' dotted_name {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
+    | 'import' token=NEWLINE { 
+        RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+    | token=NEWLINE { 
+        RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_compound_stmt:
     | a='elif' named_expression ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' must match an if-statement here") }
@@ -1381,6 +1394,7 @@ invalid_for_stmt:
 invalid_def_raw:
     | ['async'] a='def' NAME [type_params] '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
+    | ['async'] 'def' NAME [type_params] &&'(' [params] ')' ['->' expression] &&':' [func_type_comment] block
 invalid_class_def_raw:
     | 'class' NAME [type_params] ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='class' NAME [type_params] ['(' [arguments] ')'] ':' NEWLINE !INDENT {
@@ -1403,17 +1417,17 @@ invalid_replacement_field:
     | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
     | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before ':'") }
     | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '}'") }
-    | '{' !(yield_expr | star_expressions) { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
-    | '{' (yield_expr | star_expressions) !('=' | '!' | ':' | '}') {
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
+    | '{' annotated_rhs !('=' | '!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '=', or '!', or ':', or '}'") }
-    | '{' (yield_expr | star_expressions) '=' !('!' | ':' | '}') {
+    | '{' annotated_rhs '=' !('!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '!', or ':', or '}'") }
-    | '{' (yield_expr | star_expressions) '='? invalid_conversion_character
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !(':' | '}') {
+    | '{' annotated_rhs '='? invalid_conversion_character
+    | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting ':' or '}'") }
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+    | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}', or format specs") }
-    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !'}' {
+    | '{' annotated_rhs '='? ['!' NAME] !'}' {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}'") }
 
 invalid_conversion_character:
@@ -1424,3 +1438,9 @@ invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
 invalid_factor:
     | ('+' | '-' | '~') a='not' b=factor { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
+
+invalid_type_params:
+    | '[' token=']' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(
+            token, 
+            "Type parameter list cannot be empty")}

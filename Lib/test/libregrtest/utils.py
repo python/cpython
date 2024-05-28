@@ -275,7 +275,7 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._shadowed_dict_from_weakref_mro_tuple.cache_clear()
         inspect._filesbymodname.clear()
         inspect.modulesbyfile.clear()
 
@@ -693,6 +693,14 @@ WINDOWS_STATUS = {
 def get_signal_name(exitcode):
     if exitcode < 0:
         signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
         try:
             return signal.Signals(signum).name
         except ValueError:
