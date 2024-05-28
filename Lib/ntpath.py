@@ -574,8 +574,6 @@ else:  # use native Windows method on Windows
         """Return the absolute version of a path."""
         path = os.fspath(path)
         try:
-            if isinstance(path, bytes):
-                return os.fsencode(_path_abspath(os.fsdecode(path)))
             return _path_abspath(path)
         except (OSError, ValueError):
             # See gh-75230, handle outside for cleaner traceback
@@ -590,10 +588,7 @@ else:  # use native Windows method on Windows
             drive, _, path = splitroot(path)
             if drive and drive != splitroot(cwd)[0]:
                 try:
-                    if isinstance(drive, bytes):
-                        cwd = os.fsencode(_path_abspath(os.fsdecode(drive)))
-                    else:
-                        cwd = _path_abspath(drive)
+                    cwd = _path_abspath(drive)
                 except (OSError, ValueError):
                     # Invalid drive
                     cwd = join(drive, sep)

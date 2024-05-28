@@ -293,6 +293,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertFalse(inspect.isfunction(os.path.splitroot))
         self.assertTrue(os.path.normpath is posix._path_normpath)
         self.assertFalse(inspect.isfunction(os.path.normpath))
+        self.assertTrue(os.path.abspath is posix._path_abspath)
+        self.assertFalse(inspect.isfunction(os.path.abspath))
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")

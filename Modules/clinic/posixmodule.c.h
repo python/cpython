@@ -2459,28 +2459,29 @@ PyDoc_STRVAR(os__path_abspath__doc__,
 "_path_abspath($module, path, /)\n"
 "--\n"
 "\n"
-"Make path absolute.");
+"Return an absolute path.");
 
 #define OS__PATH_ABSPATH_METHODDEF    \
     {"_path_abspath", (PyCFunction)os__path_abspath, METH_O, os__path_abspath__doc__},
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path);
+os__path_abspath_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__path_abspath(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_path_abspath", "path", 0, !IS_MS_WINDOWS, 1, 0, 0);
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_path_abspath", "argument", "str", arg);
+    if (!path_converter(arg, &path)) {
         goto exit;
     }
-    path = arg;
-    return_value = os__path_abspath_impl(module, path);
+    return_value = os__path_abspath_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -12787,4 +12788,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=47e788c9e8faa707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c39b00895e92770 input=a9049054013a1b77]*/

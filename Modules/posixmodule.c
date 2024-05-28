@@ -5520,49 +5520,48 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     return result;
 }
 
+#ifdef MS_WINDOWS
+#define IS_MS_WINDOWS 1
+#else
+#define IS_MS_WINDOWS 0
+#endif
+
 /*[clinic input]
 os._path_abspath
 
-    path: unicode
+    path: path_t(make_wide=True, nonstrict="!IS_MS_WINDOWS")
     /
 
-Make path absolute.
+Return an absolute path.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_abspath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b58956d662b60be0 input=577ecb3473d22113]*/
+os__path_abspath_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=bb40fbf3be7251a4 input=6e209cdad4aa4d4d]*/
 {
-    Py_ssize_t path_len, abs_len;
+    Py_ssize_t abs_len;
     wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
     PyObject *result = NULL;
 
-    wchar_t *path_buf = PyUnicode_AsWideCharString(path, &path_len);
-    if (!path_buf) {
-        goto exit;
-    }
-
+    wchar_t *path_buf = (wchar_t *)path->wide;
+    Py_ssize_t path_len = path->length;
+    int use_bytes = PyBytes_Check(path->object);
 #ifdef MS_WINDOWS
-    if (wcslen(path_buf) != path_len) {
-        PyErr_Format(PyExc_ValueError,
-                     "_path_abspath: embedded null character in path");
-        goto exit;
-    }
     // Preserve `.\` for qualified referencing
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
     if (abs_len == 0 || (abs_len == 1 && abs[0] == L'.')) {
-        result = posix_getcwd(0);
+        result = posix_getcwd(use_bytes);
         goto exit;
     }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
-        result = win32_error_object("GetFullPathNameW", path);
+        result = win32_error_object("GetFullPathNameW", path->object);
         goto exit;
     }
     abs = abs_buf;
     abs_len = wcslen(abs_buf);
 #else
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
-        result = posix_getcwd(0);
+        result = posix_getcwd(use_bytes);
         goto exit;
     }
 
@@ -5609,9 +5608,11 @@ os__path_abspath_impl(PyObject *module, PyObject *path)
 #endif
 
     result = PyUnicode_FromWideChar(abs, abs_len);
+    if (use_bytes) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 exit:
-    PyMem_Free(path_buf);
     PyMem_Free(cwd_buf);
     PyMem_RawFree(abs_buf);
     return result;
