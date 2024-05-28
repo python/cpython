@@ -150,10 +150,14 @@ gettext: build
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
+.PHONY: ensure-sphinx-autobuild
+ensure-sphinx-autobuild: venv
+	$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild
+
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
 htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
-htmllive: html
+htmllive: ensure-sphinx-autobuild html
 
 .PHONY: clean
 clean: clean-venv
