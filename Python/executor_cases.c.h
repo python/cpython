@@ -2074,7 +2074,7 @@
             _PyStackRef self_st;
             _PyStackRef class_st;
             _PyStackRef global_super_st;
-            PyObject *attr;
+            _PyStackRef attr_st;
             oparg = CURRENT_OPARG();
             self_st = stack_pointer[-1];
 
@@ -2096,12 +2096,13 @@
             }
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            PyObject *attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
             PyStackRef_CLOSE(global_super_st);
             PyStackRef_CLOSE(class_st);
             PyStackRef_CLOSE(self_st);
             if (attr == NULL) JUMP_TO_ERROR();
-            stack_pointer[-3] = PyStackRef_FromPyObjectSteal((PyObject *)attr);
+            attr_st = PyStackRef_FromPyObjectSteal(attr);
+            stack_pointer[-3] = attr_st;
             stack_pointer += -2;
             break;
         }

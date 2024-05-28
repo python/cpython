@@ -930,9 +930,9 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            _Py_UopsSymbol *attr;
-            attr = sym_new_not_null(ctx);
-            stack_pointer[-3] = (_Py_UopsSymbol *)attr;
+            _Py_UopsSymbol *attr_st;
+            attr_st = sym_new_not_null(ctx);
+            stack_pointer[-3] = attr_st;
             stack_pointer += -2;
             break;
         }

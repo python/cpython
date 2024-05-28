@@ -5139,7 +5139,7 @@
             _PyStackRef self_st;
             _PyStackRef class_st;
             _PyStackRef global_super_st;
-            PyObject *attr;
+            _PyStackRef attr_st;
             /* Skip 1 cache entry */
             self_st = stack_pointer[-1];
 
@@ -5155,12 +5155,13 @@
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            PyObject *attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
             PyStackRef_CLOSE(global_super_st);
             PyStackRef_CLOSE(class_st);
             PyStackRef_CLOSE(self_st);
             if (attr == NULL) goto pop_3_error;
-            stack_pointer[-3] = PyStackRef_FromPyObjectSteal((PyObject *)attr);
+            attr_st = PyStackRef_FromPyObjectSteal(attr);
+            stack_pointer[-3] = attr_st;
             stack_pointer += -2;
             DISPATCH();
         }
