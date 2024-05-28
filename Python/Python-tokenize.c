@@ -223,7 +223,7 @@ tokenizeriter_next(tokenizeriterobject *it)
             size -= 1;
         }
 
-        if (line_start != it->last_line_start || size != it->last_line_size) {
+        if (size != it->last_line_size || strcmp(line_start, it->last_line_start) != 0) {
             // Line has changed since last token, so we fetch the new line and cache it
             // in the iter object.
             Py_XDECREF(it->last_line);
@@ -246,8 +246,9 @@ tokenizeriter_next(tokenizeriterobject *it)
     Py_ssize_t end_lineno = it->tok->lineno;
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
+    Py_ssize_t byte_offset = -1;
     if (token.start != NULL && token.start >= line_start) {
-        Py_ssize_t byte_offset = token.start - line_start;
+        byte_offset = token.start - line_start;
         col_offset = byte_offset - it->byte_col_offset_diff;
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
@@ -256,12 +257,9 @@ tokenizeriter_next(tokenizeriterobject *it)
             // If the whole token is at the same line, we can just use the token.start
             // buffer for figuring out the new column offset, since using line is not
             // performant for very long lines.
-            Py_ssize_t token_byte_offset = token.end - token.start;
-            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_raw(
-                token.start, token_byte_offset
-            );
+            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
             end_col_offset = col_offset + token_col_offset;
-            it->byte_col_offset_diff += token_byte_offset - token_col_offset;
+            it->byte_col_offset_diff += token.end - token.start - token_col_offset;
         } else {
             end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, end_byte_offset);
             it->byte_col_offset_diff += end_byte_offset - end_col_offset;
