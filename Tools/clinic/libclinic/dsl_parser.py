@@ -119,7 +119,7 @@ class ParamState(enum.IntEnum):
     # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
     START = 0
 
-    # Left square backets before required params.
+    # Left square brackets before required params.
     LEFT_SQUARE_BEFORE = 1
 
     # In a group, before required params.
