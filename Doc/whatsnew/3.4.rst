@@ -2413,7 +2413,7 @@ Changes in the Python API
   formal public interface the naming has been made consistent (:issue:`18532`).
 
 * Because :mod:`unittest.TestSuite` now drops references to tests after they
-  are run, test harnesses that re-use a :class:`~unittest.TestSuite` to re-run
+  are run, test harnesses that reuse a :class:`~unittest.TestSuite` to re-run
   a set of tests may fail.   Test suites should not be re-used in this fashion
   since it means state is retained between test runs, breaking the test
   isolation that :mod:`unittest` is designed to provide.  However, if the lack

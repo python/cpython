@@ -1,4 +1,5 @@
 import textwrap
+import types
 import unittest
 from test.support import run_code
 
@@ -212,3 +213,46 @@ class TestSetupAnnotations(unittest.TestCase):
                 case 0:
                     x: int = 1
         """)
+
+
+class AnnotateTests(unittest.TestCase):
+    """See PEP 649."""
+    def test_manual_annotate(self):
+        def f():
+            pass
+        mod = types.ModuleType("mod")
+        class X:
+            pass
+
+        for obj in (f, mod, X):
+            with self.subTest(obj=obj):
+                self.check_annotations(obj)
+
+    def check_annotations(self, f):
+        self.assertEqual(f.__annotations__, {})
+        self.assertIs(f.__annotate__, None)
+
+        with self.assertRaisesRegex(TypeError, "__annotate__ must be callable or None"):
+            f.__annotate__ = 42
+        f.__annotate__ = lambda: 42
+        with self.assertRaisesRegex(TypeError, r"takes 0 positional arguments but 1 was given"):
+            print(f.__annotations__)
+
+        f.__annotate__ = lambda x: 42
+        with self.assertRaisesRegex(TypeError, r"__annotate__ returned non-dict of type 'int'"):
+            print(f.__annotations__)
+
+        f.__annotate__ = lambda x: {"x": x}
+        self.assertEqual(f.__annotations__, {"x": 1})
+
+        # Setting annotate to None does not invalidate the cached __annotations__
+        f.__annotate__ = None
+        self.assertEqual(f.__annotations__, {"x": 1})
+
+        # But setting it to a new callable does
+        f.__annotate__ = lambda x: {"y": x}
+        self.assertEqual(f.__annotations__, {"y": 1})
+
+        # Setting f.__annotations__ also clears __annotate__
+        f.__annotations__ = {"z": 43}
+        self.assertIs(f.__annotate__, None)

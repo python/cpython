@@ -131,11 +131,10 @@ extern int _PyEval_ThreadsInitialized(void);
 extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-// Acquire the GIL and return 1. In free-threaded builds, this function may
-// return 0 to indicate that the GIL was disabled and therefore not acquired.
-extern int _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
 
-extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
+                                int final_release);
 
 #ifdef Py_GIL_DISABLED
 // Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or

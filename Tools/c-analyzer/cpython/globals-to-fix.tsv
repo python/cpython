@@ -304,6 +304,9 @@ Python/crossinterp_exceptions.h	-	PyExc_InterpreterNotFoundError	-
 ##-----------------------
 ## singletons
 
+Modules/_datetimemodule.c	-	zero_delta	-
+Modules/_datetimemodule.c	-	utc_timezone	-
+Modules/_datetimemodule.c	-	capi	-
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
 Objects/dictobject.c	-	empty_keys_struct	-
@@ -354,37 +357,6 @@ Modules/_testclinic.c	-	TestClass	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCFuncPtr_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCPointerType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
-Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	Struct_Type	-
-Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
-Modules/_ctypes/_ctypes.c	-	Union_Type	-
-Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
-Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
-Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
-Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
-Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
-Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
-Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
-Modules/_ctypes/ctypes.h	-	basespec_string	-
-Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_DateType	-
@@ -410,32 +382,19 @@ Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 
 ## exception types
-Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
 ##-----------------------
-## cached - initialized once
-
-## manually cached PyUnicodeOjbect
-Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
-Modules/_ctypes/_ctypes.c	CreateSwappedType	swapped_suffix	-
-
-##-----------------------
 ## other
 
 ## initialized once
-Modules/_ctypes/_ctypes.c	-	_unpickle	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	array_cache	-
 Modules/_cursesmodule.c	-	ModDict	-
 Modules/_datetimemodule.c	datetime_strptime	module	-
 
 ## state
-Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
-Modules/_ctypes/_ctypes.c	-	global_state	-
-Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-

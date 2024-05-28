@@ -8,12 +8,12 @@ import unittest
 import zipfile
 import zipfile._path
 
+from test.support.os_helper import temp_dir, FakePath
+
 from ._functools import compose
 from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
-
-from test.support.os_helper import temp_dir, FakePath
 
 
 class jaraco:

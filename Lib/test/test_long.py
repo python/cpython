@@ -1639,6 +1639,8 @@ class LongTest(unittest.TestCase):
                     MyInt.__basicsize__ + MyInt.__itemsize__ * ndigits
                 )
 
+        # GH-117195 -- This shouldn't crash
+        object.__sizeof__(1)
 
 if __name__ == "__main__":
     unittest.main()

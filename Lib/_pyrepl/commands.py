@@ -358,7 +358,10 @@ class backward_word(MotionCommand):
 class self_insert(EditCommand):
     def do(self) -> None:
         r = self.reader
-        r.insert(self.event * r.get_arg())
+        text = self.event * r.get_arg()
+        r.insert(text)
+        if len(text) == 1 and r.pos == len(r.buffer):
+            r.calc_screen = r.append_to_screen
 
 
 class insert_nl(EditCommand):
@@ -458,8 +461,6 @@ class show_history(Command):
 class paste_mode(Command):
 
     def do(self) -> None:
-        if not self.reader.paste_mode:
-            self.reader.was_paste_mode_activated = True
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
@@ -467,9 +468,11 @@ class paste_mode(Command):
 class enable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = True
-        self.reader.was_paste_mode_activated = True
+        self.reader.in_bracketed_paste = True
 
 class disable_bracketed_paste(Command):
     def do(self) -> None:
         self.reader.paste_mode = False
+        self.reader.in_bracketed_paste = False
         self.reader.dirty = True
+        self.reader.calc_screen = self.reader.calc_complete_screen

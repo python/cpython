@@ -1481,7 +1481,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
                 # wait again only for rewait tasks
                 await barrier.wait()
             else:
-                # wait for end of draining state`
+                # wait for end of draining state
                 await barrier_nowaiting.wait()
                 # wait for other waiting tasks
                 await barrier.wait()
@@ -1780,7 +1780,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(barrier.n_waiting, 0)
 
     async def test_abort_barrier_when_exception_then_resetting(self):
-        # test from threading.Barrier: see `lock_tests.test_abort_and_reset``
+        # test from threading.Barrier: see `lock_tests.test_abort_and_reset`
         barrier1 = asyncio.Barrier(self.N)
         barrier2 = asyncio.Barrier(self.N)
         results1 = []

@@ -1,0 +1,1 @@
+Avoid creating unnecessary :exc:`StopIteration` instances for monitoring.

@@ -29,6 +29,12 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: PyHASH_MULTIPLIER
+
+   Prime multiplier used in string and various other hashes.
+
+   .. versionadded:: 3.13
+
 .. c:macro:: PyHASH_INF
 
    The hash value returned for a positive infinity.

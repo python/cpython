@@ -628,7 +628,7 @@
             break;
         }
 
-        case _LOAD_ASSERTION_ERROR: {
+        case _LOAD_COMMON_CONSTANT: {
             _Py_UopsSymbol *value;
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;

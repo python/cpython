@@ -1,0 +1,3 @@
+Objects in the datetime C-API are now all statically allocated, which means
+better memory safety, especially when the module is reloaded. This should be
+transparent to users.

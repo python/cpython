@@ -957,7 +957,7 @@ class RawConfigParser(MutableMapping):
                                 self._sections[section].items(), d)
 
     def _write_section(self, fp, section_name, section_items, delimiter, unnamed=False):
-        """Write a single section to the specified `fp'."""
+        """Write a single section to the specified 'fp'."""
         if not unnamed:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:

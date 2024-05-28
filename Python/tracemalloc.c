@@ -312,7 +312,7 @@ traceback_hash(traceback_t *traceback)
     /* code based on tuplehash() of Objects/tupleobject.c */
     Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
     int len = traceback->nframe;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
+    Py_uhash_t mult = PyHASH_MULTIPLIER;
     frame_t *frame;
 
     x = 0x345678UL;

@@ -234,7 +234,7 @@ functions:
 .. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
-   globals and locals dictionaries for the *command* string. This routine
+   globals and locals mappings for the *command* string. This routine
    executes::
 
       exec(command, globals, locals)

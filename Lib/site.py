@@ -185,7 +185,9 @@ def addpackage(sitedir, name, known_paths):
         return
 
     try:
-        pth_content = pth_content.decode()
+        # Accept BOM markers in .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
+        pth_content = pth_content.decode("utf-8-sig")
     except UnicodeDecodeError:
         # Fallback to locale encoding for backward compatibility.
         # We will deprecate this fallback in the future.
@@ -524,7 +526,13 @@ def register_readline():
 
         def write_history():
             try:
-                if os.getenv("PYTHON_BASIC_REPL"):
+                # _pyrepl.__main__ is executed as the __main__ module
+                from __main__ import CAN_USE_PYREPL
+            except ImportError:
+                CAN_USE_PYREPL = False
+
+            try:
+                if os.getenv("PYTHON_BASIC_REPL") or not CAN_USE_PYREPL:
                     readline.write_history_file(history)
                 else:
                     _pyrepl.readline.write_history_file(history)

@@ -609,7 +609,7 @@ with the documentation)
 
 :func:`asyncio.Condition.wait()` now re-raises the same
 :exc:`CancelledError` instance that may have caused it to be interrupted.
-Fixed race condition in :func:`asyncio.Semaphore.aquire` when interrupted
+Fixed race condition in :func:`asyncio.Semaphore.acquire` when interrupted
 with a :exc:`CancelledError`.
 
 ..
@@ -928,7 +928,7 @@ on Windows.
 .. section: Library
 
 Fix :func:`shutil.copymode` and :func:`shutil.copystat` on Windows.
-Previously they worked differenly if *dst* is a symbolic link: they modified
+Previously they worked differently if *dst* is a symbolic link: they modified
 the permission bits of *dst* itself rather than the file it points to if
 *follow_symlinks* is true or *src* is not a symbolic link, and did not
 modify the permission bits if *follow_symlinks* is false and *src* is a
@@ -1550,7 +1550,7 @@ addresses are encountered instead of potentially inaccurate values. Add
 optional *strict* parameter to these two functions: use ``strict=False`` to
 get the old behavior, accept malformed inputs. ``getattr(email.utils,
 'supports_strict_parsing', False)`` can be use to check if the *strict*
-paramater is available. Patch by Thomas Dwyer and Victor Stinner to improve
+parameter is available. Patch by Thomas Dwyer and Victor Stinner to improve
 the :cve:`2023-27043` fix.
 
 ..
@@ -1615,7 +1615,7 @@ method of :class:`itertools.pairwise`.
 .. section: Library
 
 Small (10 - 20%) and trivial performance improvement of
-:func:`urrlib.request.getproxies_environment`, typically useful when there
+:func:`urllib.request.getproxies_environment`, typically useful when there
 are many environment variables to go over.
 
 ..

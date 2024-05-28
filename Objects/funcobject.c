@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -124,6 +125,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_weakreflist = NULL;
     op->func_module = module;
     op->func_annotations = NULL;
+    op->func_annotate = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
@@ -202,6 +204,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_weakreflist = NULL;
     op->func_module = module;
     op->func_annotations = NULL;
+    op->func_annotate = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
@@ -512,7 +515,22 @@ static PyObject *
 func_get_annotation_dict(PyFunctionObject *op)
 {
     if (op->func_annotations == NULL) {
-        return NULL;
+        if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
+            Py_RETURN_NONE;
+        }
+        PyObject *one = _PyLong_GetOne();
+        PyObject *ann_dict = _PyObject_CallOneArg(op->func_annotate, one);
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+        if (!PyDict_Check(ann_dict)) {
+            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                         Py_TYPE(ann_dict)->tp_name);
+            Py_DECREF(ann_dict);
+            return NULL;
+        }
+        Py_XSETREF(op->func_annotations, ann_dict);
+        return ann_dict;
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
         PyObject *ann_tuple = op->func_annotations;
@@ -565,7 +583,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
+    PyFunctionObject *func = (PyFunctionObject *)op;
+    Py_XSETREF(func->func_annotations, annotations);
+    Py_CLEAR(func->func_annotate);
     return 0;
 }
 
@@ -764,9 +784,43 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
 }
 
 static PyObject *
+func_get_annotate(PyFunctionObject *op, void *Py_UNUSED(ignored))
+{
+    if (op->func_annotate == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(op->func_annotate);
+}
+
+static int
+func_set_annotate(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+            "__annotate__ cannot be deleted");
+        return -1;
+    }
+    if (Py_IsNone(value)) {
+        Py_XSETREF(op->func_annotate, value);
+        return 0;
+    }
+    else if (PyCallable_Check(value)) {
+        Py_XSETREF(op->func_annotate, Py_XNewRef(value));
+        Py_CLEAR(op->func_annotations);
+        return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+            "__annotate__ must be callable or None");
+        return -1;
+    }
+}
+
+static PyObject *
 func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    if (op->func_annotations == NULL) {
+    if (op->func_annotations == NULL &&
+        (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
@@ -789,6 +843,7 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
         return -1;
     }
     Py_XSETREF(op->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(op->func_annotate);
     return 0;
 }
 
@@ -836,6 +891,7 @@ static PyGetSetDef func_getsetlist[] = {
      (setter)func_set_kwdefaults},
     {"__annotations__", (getter)func_get_annotations,
      (setter)func_set_annotations},
+    {"__annotate__", (getter)func_get_annotate, (setter)func_set_annotate},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
@@ -972,6 +1028,7 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    Py_CLEAR(op->func_annotate);
     Py_CLEAR(op->func_typeparams);
     // Don't Py_CLEAR(op->func_code), since code is always required
     // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
@@ -1028,6 +1085,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_dict);
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
+    Py_VISIT(f->func_annotate);
     Py_VISIT(f->func_typeparams);
     Py_VISIT(f->func_qualname);
     return 0;

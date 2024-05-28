@@ -563,7 +563,7 @@ on deallocation.
 
 Fix :meth:`multiprocessing.synchronize.SemLock.__setstate__` to properly
 initialize :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx`. This
-fixes a regression when passing a SemLock accross nested processes.
+fixes a regression when passing a SemLock across nested processes.
 
 Rename :attr:`multiprocessing.synchronize.SemLock.is_fork_ctx` to
 :attr:`multiprocessing.synchronize.SemLock._is_fork_ctx` to avoid exposing
@@ -708,7 +708,7 @@ Fixes crash when tracing in recursive calls to Python classes.
 .. section: Core and Builtins
 
 Remove the ``_PyCFrame`` struct, moving the pointer to the current
-intepreter frame back to the threadstate, as it was for 3.10 and earlier.
+interpreter frame back to the threadstate, as it was for 3.10 and earlier.
 The ``_PyCFrame`` existed as a performance optimization for tracing. Since
 PEP 669 has been implemented, this optimization no longer applies.
 
@@ -926,7 +926,7 @@ Isolate :mod:`!_decimal` (apply :pep:`687`). Patch by Charlie Zhao.
 
 Add the exception as the third argument to ``PY_UNIND`` callbacks in
 ``sys.monitoring``. This makes the ``PY_UNWIND`` callback consistent with
-the other exception hanlding callbacks.
+the other exception handling callbacks.
 
 ..
 
@@ -935,7 +935,7 @@ the other exception hanlding callbacks.
 .. nonce: DdEwV8
 .. section: Core and Builtins
 
-Raise a ``ValueError`` when a monitoring callback funtion returns
+Raise a ``ValueError`` when a monitoring callback function returns
 ``DISABLE`` for events that cannot be disabled locally.
 
 ..
@@ -1006,7 +1006,7 @@ Add :meth:`dbm.gnu.gdbm.clear` to :mod:`dbm.gnu`. Patch By Donghee Na.
 .. section: Core and Builtins
 
 The ASYNC and AWAIT tokens are removed from the Grammar, which removes the
-posibility of making ``async`` and ``await`` soft keywords when using
+possibility of making ``async`` and ``await`` soft keywords when using
 ``feature_version<7`` in :func:`ast.parse`.
 
 ..
@@ -1028,7 +1028,7 @@ the call is not a classmethod.
 .. nonce: DdqHFg
 .. section: Core and Builtins
 
-Python no longer crashes due an infrequent race when initialzing
+Python no longer crashes due an infrequent race when initializing
 per-interpreter interned strings.  The crash would manifest when the
 interpreter was finalized.
 
@@ -1922,7 +1922,7 @@ objects
 .. nonce: RDGe8-
 .. section: Library
 
-Deprecation warning about non-integer number in :mod:`gettext` now alwais
+Deprecation warning about non-integer number in :mod:`gettext` now always
 refers to the line in the user code where gettext function or method is
 used. Previously it could refer to a line in ``gettext`` code.
 
@@ -1964,7 +1964,7 @@ debugging.
 .. nonce: LCxiau
 .. section: Library
 
-Fix :func:`termios.tcsetattr` bug that was overwritting existing errors
+Fix :func:`termios.tcsetattr` bug that was overwriting existing errors
 during parsing integers from ``term`` list.
 
 ..
@@ -2047,7 +2047,7 @@ point.
 .. nonce: fECxTj
 .. section: Library
 
-On Windows, multiprocessing ``Popen.terminate()`` now catchs
+On Windows, multiprocessing ``Popen.terminate()`` now catches
 :exc:`PermissionError` and get the process exit code. If the process is
 still running, raise again the :exc:`PermissionError`. Otherwise, the
 process terminated as expected: store its exit code. Patch by Victor
@@ -2857,7 +2857,7 @@ Seems that in some conditions, OpenSSL will return ``SSL_ERROR_SYSCALL``
 instead of ``SSL_ERROR_SSL`` when a certification verification has failed,
 but the error parameters will still contain ``ERR_LIB_SSL`` and
 ``SSL_R_CERTIFICATE_VERIFY_FAILED``. We are now detecting this situation and
-raising the appropiate ``ssl.SSLCertVerificationError``. Patch by Pablo
+raising the appropriate ``ssl.SSLCertVerificationError``. Patch by Pablo
 Galindo
 
 ..
@@ -2979,7 +2979,7 @@ method. Patch by James Cave.
 .. section: Library
 
 Fix overflow on 32-bit systems with :mod:`asyncio` :func:`os.sendfile`
-implemention.
+implementation.
 
 ..
 
@@ -3251,7 +3251,7 @@ Eliseev.
 .. nonce: NN35-U
 .. section: Library
 
-Optimize ``(?!)`` (pattern which alwais fails) in regular expressions.
+Optimize ``(?!)`` (pattern which always fails) in regular expressions.
 
 ..
 
@@ -3495,7 +3495,7 @@ star imports.
 .. nonce: TJEUkd
 .. section: Library
 
-Zipapp will now skip over apending an archive to itself.
+Zipapp will now skip over appending an archive to itself.
 
 ..
 
@@ -4564,7 +4564,7 @@ Deprecate passing any arguments to :func:`threading.RLock`.
 .. nonce: o5Zb0t
 .. section: Library
 
-Refactored ``zipfile._strip_extra`` to use higher level abstactions for
+Refactored ``zipfile._strip_extra`` to use higher level abstractions for
 extras instead of a heavy-state loop.
 
 ..
@@ -5014,7 +5014,7 @@ by Victor Stinner.
 
 Fix test_timeout() of test_concurrent_futures.test_wait. Remove the future
 which may or may not complete depending if it takes longer than the timeout
-ot not. Keep the second future which does not complete before wait()
+or not. Keep the second future which does not complete before wait()
 timeout. Patch by Victor Stinner.
 
 ..
@@ -5104,7 +5104,7 @@ Victor Stinner.
 
 regrtest: Add ``--fast-ci`` and ``--slow-ci`` options. ``--fast-ci`` uses a
 default timeout of 10 minutes and ``-u all,-cpu`` (skip slowest tests).
-``--slow-ci`` uses a default timeout of 20 minues and ``-u all`` (run all
+``--slow-ci`` uses a default timeout of 20 minutes and ``-u all`` (run all
 tests). Patch by Victor Stinner.
 
 ..
@@ -5232,7 +5232,7 @@ and ``sysctl net.inet.udp.blackhole=1``).  Patch by Victor Stinner.
 
 Skip ``test_gdb`` if gdb is unable to retrieve Python frame objects: if a
 frame is ``<optimized out>``. When Python is built with "clang -Og", gdb can
-fail to retrive the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
+fail to retrieve the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
 this case, tests like ``py_bt()`` are likely to fail. Without getting access
 to Python frames, ``python-gdb.py`` is mostly clueless on retrieving the
 Python traceback. Moreover, ``test_gdb`` is no longer skipped on macOS if

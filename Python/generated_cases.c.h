@@ -3260,11 +3260,9 @@
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(value);
             stack_pointer += -1;
@@ -3281,11 +3279,9 @@
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     goto error;
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
             stack_pointer[-2] = value;
@@ -3696,17 +3692,6 @@
             assert(Py_IsNone(none_val));
             Py_DECREF(iterable);
             stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(LOAD_ASSERTION_ERROR) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(LOAD_ASSERTION_ERROR);
-            PyObject *value;
-            value = Py_NewRef(PyExc_AssertionError);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -4251,6 +4236,27 @@
                 if (true) goto error;
             }
             stack_pointer[0] = bc;
+            stack_pointer += 1;
+            DISPATCH();
+        }
+
+        TARGET(LOAD_COMMON_CONSTANT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
+            PyObject *value;
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+                case CONSTANT_ASSERTIONERROR:
+                value = PyExc_AssertionError;
+                break;
+                case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyExc_NotImplementedError;
+                break;
+                default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
+            stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
         }

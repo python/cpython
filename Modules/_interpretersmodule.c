@@ -656,7 +656,7 @@ Create a new interpreter and return a unique generated ID.\n\
 The caller is responsible for destroying the interpreter before exiting,\n\
 typically by using _interpreters.destroy().  This can be managed \n\
 automatically by passing \"reqrefs=True\" and then using _incref() and\n\
-_decref()` appropriately.\n\
+_decref() appropriately.\n\
 \n\
 \"config\" must be a valid interpreter config or the name of a\n\
 predefined config (\"isolated\" or \"legacy\").  The default\n\

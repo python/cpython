@@ -260,7 +260,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         }
         else {
             PyErr_SetString(PyExc_TypeError,
-     "tcsetattr: elements of attributes must be characters or integers");
+     "tcsetattr: elements of attributes must be bytes objects of length 1 or integers");
                         return NULL;
                 }
     }

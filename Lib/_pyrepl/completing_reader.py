@@ -30,7 +30,7 @@ from .reader import Reader
 # types
 Command = commands.Command
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    from .types import KeySpec, CommandName
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -187,8 +187,8 @@ class complete(commands.Command):
             if p:
                 r.insert(p)
             if last_is_completer:
-                if not r.cmpltn_menu_vis:
-                    r.cmpltn_menu_vis = 1
+                if not r.cmpltn_menu_visible:
+                    r.cmpltn_menu_visible = True
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
@@ -208,7 +208,7 @@ class self_insert(commands.self_insert):
 
         commands.self_insert.do(self)
 
-        if r.cmpltn_menu_vis:
+        if r.cmpltn_menu_visible:
             stem = r.get_stem()
             if len(stem) < 1:
                 r.cmpltn_reset()
@@ -235,7 +235,7 @@ class CompletingReader(Reader):
 
     ### Instance variables
     cmpltn_menu: list[str] = field(init=False)
-    cmpltn_menu_vis: int = field(init=False)
+    cmpltn_menu_visible: bool = field(init=False)
     cmpltn_menu_end: int = field(init=False)
     cmpltn_menu_choices: list[str] = field(init=False)
 
@@ -255,9 +255,9 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_screen(self) -> list[str]:
-        screen = super().calc_screen()
-        if self.cmpltn_menu_vis:
+    def calc_complete_screen(self) -> list[str]:
+        screen = super().calc_complete_screen()
+        if self.cmpltn_menu_visible:
             ly = self.lxy[1]
             screen[ly:ly] = self.cmpltn_menu
             self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
@@ -270,7 +270,7 @@ class CompletingReader(Reader):
 
     def cmpltn_reset(self) -> None:
         self.cmpltn_menu = []
-        self.cmpltn_menu_vis = 0
+        self.cmpltn_menu_visible = False
         self.cmpltn_menu_end = 0
         self.cmpltn_menu_choices = []
 

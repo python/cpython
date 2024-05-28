@@ -192,7 +192,7 @@ class Header:
 
         The maximum line length can be specified explicitly via maxlinelen. For
         splitting the first line to a shorter value (to account for the field
-        header which isn't included in s, e.g. `Subject') pass in the name of
+        header which isn't included in s, e.g. 'Subject') pass in the name of
         the field in header_name.  The default maxlinelen is 78 as recommended
         by RFC 2822.
 
@@ -276,7 +276,7 @@ class Header:
         output codec of the charset.  If the string cannot be encoded to the
         output codec, a UnicodeError will be raised.
 
-        Optional `errors' is passed as the errors argument to the decode
+        Optional 'errors' is passed as the errors argument to the decode
         call if s is a byte string.
         """
         if charset is None:
@@ -326,7 +326,7 @@ class Header:
 
         Optional splitchars is a string containing characters which should be
         given extra weight by the splitting algorithm during normal header
-        wrapping.  This is in very rough support of RFC 2822's `higher level
+        wrapping.  This is in very rough support of RFC 2822's 'higher level
         syntactic breaks':  split points preceded by a splitchar are preferred
         during line splitting, with the characters preferred in the order in
         which they appear in the string.  Space and tab may be included in the

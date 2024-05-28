@@ -416,16 +416,17 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
-    PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
+    PyObject *value;
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &value)) {
         return NULL;
     }
-    NULLABLE(exception);
+    NULLABLE(value);
+    PyObject *exception = NULL;
     PyMonitoringState *state = setup_fire(codelike, offset, exception);
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset);
+    int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset, value);
     RETURN_INT(teardown_fire(res, state, exception));
 }
 
