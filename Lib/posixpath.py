@@ -371,7 +371,7 @@ def expandvars(path):
 # if it contains symbolic links!
 
 try:
-    from posix import _path_normpath
+    from posix import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -403,14 +403,6 @@ except ImportError:
         comps = new_comps
         path = initial_slashes + sep.join(comps)
         return path or dot
-
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 
 
 def abspath(path):

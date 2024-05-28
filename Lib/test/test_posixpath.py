@@ -1,3 +1,4 @@
+import inspect
 import os
 import posixpath
 import sys
@@ -5,7 +6,7 @@ import unittest
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
 from test.support import import_helper
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support.os_helper import FakePath
 from unittest import mock
 
@@ -272,6 +273,14 @@ class PosixPathTest(unittest.TestCase):
 
     def test_isjunction(self):
         self.assertFalse(posixpath.isjunction(ABSTFN))
+
+    @unittest.skipIf(sys.platform == 'win32', "Fast paths are not for win32")
+    @cpython_only
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks
+        self.assertTrue(os.path.normpath is posix._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
 
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
