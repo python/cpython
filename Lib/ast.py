@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -325,12 +324,18 @@ def get_docstring(node, clean=True):
     return text
 
 
-_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+_line_pattern = None
 def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
+    global _line_pattern
+    if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
+        import re
+        _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+
     lines = []
     for lineno, match in enumerate(_line_pattern.finditer(source), 1):
         if maxlines is not None and lineno > maxlines:
