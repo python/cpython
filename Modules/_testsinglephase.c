@@ -682,6 +682,9 @@ finally:
 /* the _testsinglephase_*_check_cache_first modules */
 /****************************************************/
 
+/* Each of these modules should only be freshly loaded.  That means
+   clearing the caches and each module def's m_base after each load. */
+
 static struct PyModuleDef _testsinglephase_check_cache_first = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testsinglephase_check_cache_first",
