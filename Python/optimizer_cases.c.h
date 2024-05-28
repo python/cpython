@@ -1079,7 +1079,10 @@
             break;
         }
 
-        /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 */
+        case _STORE_ATTR_WITH_HINT: {
+            stack_pointer += -2;
+            break;
+        }
 
         case _STORE_ATTR_SLOT: {
             stack_pointer += -2;
