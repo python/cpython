@@ -905,6 +905,16 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     return result;
 }
 
+/* The constructor should only accept a string as a positional argument,
+ * not as by the 'real' keyword.  But Argument Clinic does not allow
+ * to distinguish between argument passed positionally and by keyword.
+ * So the constructor must be split into two parts: actual_complex_new()
+ * handles the case of no arguments and one positional argument, and calls
+ * complex_new(), implemented with Argument Clinic, to handle the remaining
+ * cases: 'real' and 'imag' arguments.  This separation is well suited
+ * for different constructor roles: convering a string or number to a complex
+ * number and constructing a complex number from real and imaginary parts.
+ */
 static PyObject *
 actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -993,6 +1003,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     PyObject *orig_r = r;
 
+    /* DEPRECATED: The call of try_complex_special_method() for the "real"
+     * part will be dropped after the end of the deprecation period. */
     tmp = try_complex_special_method(r);
     if (tmp) {
         r = tmp;
@@ -1033,6 +1045,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
        both be treated as numbers, and the constructor should return a
        complex number equal to (real + imag*1j).
 
+       The following is DEPRECATED:
        Note that we do NOT assume the input to already be in canonical
        form; the "real" and "imag" parts might themselves be complex
        numbers, which slightly complicates the code below. */
