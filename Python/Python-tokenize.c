@@ -76,7 +76,7 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
     self->done = 0;
 
     self->last_line_start = NULL;
-    self->last_line_size = -2;
+    self->last_line_size = 0;
     self->last_line = NULL;
     self->byte_col_offset_diff = 0;
 
