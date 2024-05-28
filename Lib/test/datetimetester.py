@@ -48,7 +48,6 @@ except ImportError:
 #
 
 # This is copied from test_import/__init__.py.
-# XXX Move it to support/__init__.py.
 def no_rerun(reason):
     """Skip rerunning for a particular test.
 
