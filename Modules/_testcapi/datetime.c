@@ -43,33 +43,41 @@ do {                                                            \
     Py_RETURN_FALSE;                                            \
 } while (0)                                                     \
 
+// The following C API types need to outlive interpreters, since the borrowed
+// references to them can be held by users without being updated.
+
 static PyObject *
 datetime_check_date(PyObject *self, PyObject *args)
 {
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
     MAKE_DATETIME_CHECK_FUNC(PyDate_Check, PyDate_CheckExact);
 }
 
 static PyObject *
 datetime_check_time(PyObject *self, PyObject *args)
 {
+    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
     MAKE_DATETIME_CHECK_FUNC(PyTime_Check, PyTime_CheckExact);
 }
 
 static PyObject *
 datetime_check_datetime(PyObject *self, PyObject *args)
 {
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
     MAKE_DATETIME_CHECK_FUNC(PyDateTime_Check, PyDateTime_CheckExact);
 }
 
 static PyObject *
 datetime_check_delta(PyObject *self, PyObject *args)
 {
+    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
     MAKE_DATETIME_CHECK_FUNC(PyDelta_Check, PyDelta_CheckExact);
 }
 
 static PyObject *
 datetime_check_tzinfo(PyObject *self, PyObject *args)
 {
+    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
     MAKE_DATETIME_CHECK_FUNC(PyTZInfo_Check, PyTZInfo_CheckExact);
 }
 #undef MAKE_DATETIME_CHECK_FUNC
