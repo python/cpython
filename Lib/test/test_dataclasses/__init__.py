@@ -1317,6 +1317,29 @@ class TestCase(unittest.TestCase):
         c = C(10, 11, 50, 51)
         self.assertEqual(vars(c), {'x': 21, 'y': 101})
 
+    def test_init_var_name_shadowing(self):
+        # Because dataclasses rely exclusively on `__annotations__` for
+        # handling InitVar and `__annotations__` preserves shadowed definitions,
+        # you can actually shadow an InitVar with a method or property.
+        #
+        # This only works when there is no default value; `dataclasses` uses the
+        # actual name (which will be bound to the shadowing method) for default
+        # values.
+        @dataclass
+        class C:
+            shadowed: InitVar[int]
+            _shadowed: int = field(init=False)
+
+            def __post_init__(self, shadowed):
+                self._shadowed = shadowed * 2
+
+            @property
+            def shadowed(self):
+                return self._shadowed * 3
+
+        c = C(5)
+        self.assertEqual(c.shadowed, 30)
+
     def test_default_factory(self):
         # Test a factory that returns a new list.
         @dataclass
