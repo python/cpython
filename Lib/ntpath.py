@@ -572,12 +572,12 @@ except ImportError: # not running on Windows - mock up something sensible
 else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
-        path = os.fspath(path)
         try:
             return _path_abspath(path)
         except (OSError, ValueError):
             # See gh-75230, handle outside for cleaner traceback
             pass
+        path = os.fspath(path)
         if not isabs(path):
             if isinstance(path, bytes):
                 sep = b'/'
