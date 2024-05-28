@@ -58,7 +58,6 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
-    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
     _Py_block_ty ste_type;
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
@@ -88,6 +87,7 @@ typedef struct _symtable_entry {
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
     struct symtable *ste_table;
+    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
 } PySTEntryObject;
 
 extern PyTypeObject PySTEntry_Type;
