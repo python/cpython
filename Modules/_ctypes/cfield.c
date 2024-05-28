@@ -44,7 +44,7 @@ static void pymem_destructor(PyObject *ptr)
  * prev_desc points to the type of the previous bitfield, if any.
  */
 PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
@@ -54,33 +54,37 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     Py_ssize_t size, align;
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
-    StgDictObject *dict;
     int fieldtype;
 #define NO_BITFIELD 0
 #define NEW_BITFIELD 1
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    ctypes_state *st = GLOBAL_STATE();
     PyTypeObject *tp = st->PyCField_Type;
     self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
-    dict = PyType_stgdict(desc);
-    if (!dict) {
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
         Py_DECREF(self);
         return NULL;
     }
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
         /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
+        && info->size * 8 == *pfield_size
 #else
         /* GCC */
-        && dict->size * 8 <= *pfield_size
+        && info->size * 8 <= *pfield_size
 #endif
         && (*pbitofs + bitsize) <= *pfield_size) {
         /* continue bit field */
@@ -88,8 +92,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #ifndef MS_WIN32
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        && info->size * 8 >= *pfield_size
+        && (*pbitofs + bitsize) <= info->size * 8) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -97,7 +101,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
@@ -105,29 +109,37 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         *pfield_size = 0;
     }
 
-    size = dict->size;
+    size = info->size;
     proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
     */
     if (PyCArrayTypeObject_Check(st, proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
                 Py_DECREF(self);
                 return NULL;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
@@ -151,9 +163,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* fall through */
     case NO_BITFIELD:
         if (pack)
-            align = min(pack, dict->align);
+            align = min(pack, info->align);
         else
-            align = dict->align;
+            align = info->align;
         if (align && *poffset % align) {
             Py_ssize_t delta = align - (*poffset % align);
             *psize += delta;
@@ -171,10 +183,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        *poffset += info->size - *pfield_size/8;
+        *psize += info->size - *pfield_size/8;
 
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
@@ -204,7 +216,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
     if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
@@ -217,7 +229,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
                         "can't delete attribute");
         return -1;
     }
-    return PyCData_set(inst, self->proto, self->setfunc, value,
+    return PyCData_set(st, inst, self->proto, self->setfunc, value,
                      self->index, self->size, ptr);
 }
 
@@ -228,14 +240,14 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
     if (inst == NULL) {
         return Py_NewRef(self);
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
     if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return NULL;
     }
     src = (CDataObject *)inst;
-    return PyCData_get(self->proto, self->getfunc, inst,
+    return PyCData_get(st, self->proto, self->getfunc, inst,
                      self->index, self->size, src->b_ptr + self->offset);
 }
 
@@ -1088,25 +1100,45 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
+    if (PyBytes_Check(value)) {
+        if (PyBytes_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytes of length %zd",
+                        PyBytes_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyBytes_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyByteArray_Check(value) && PyByteArray_GET_SIZE(value) == 1) {
+    if (PyByteArray_Check(value)) {
+        if (PyByteArray_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytearray of length %zd",
+                        PyByteArray_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyByteArray_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyLong_Check(value))
-    {
-        long longval = PyLong_AsLong(value);
-        if (longval < 0 || longval >= 256)
-            goto error;
+    if (PyLong_Check(value)) {
+        int overflow;
+        long longval = PyLong_AsLongAndOverflow(value, &overflow);
+        if (longval == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (overflow || longval < 0 || longval >= 256) {
+            PyErr_SetString(PyExc_TypeError, "integer not in range(256)");
+            return NULL;
+        }
         *(char *)ptr = (char)longval;
         _RET(value);
     }
-  error:
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or integer expected");
+                 "one character bytes, bytearray, or an integer "
+                 "in range(256) expected, not %T",
+                 value);
     return NULL;
 }
 
@@ -1125,22 +1157,27 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                        "unicode string expected instead of %s instance",
-                        Py_TYPE(value)->tp_name);
+                     "a unicode character expected, not instance of %T",
+                     value);
         return NULL;
-    } else
-        Py_INCREF(value);
+    }
 
     len = PyUnicode_AsWideChar(value, chars, 2);
     if (len != 1) {
-        Py_DECREF(value);
-        PyErr_SetString(PyExc_TypeError,
-                        "one character unicode string expected");
+        if (PyUnicode_GET_LENGTH(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "a unicode character expected, not a string of length %zd",
+                         PyUnicode_GET_LENGTH(value));
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "the string %A cannot be converted to a single wchar_t character",
+                         value);
+        }
         return NULL;
     }
 
     *(wchar_t *)ptr = chars[0];
-    Py_DECREF(value);
 
     _RET(value);
 }

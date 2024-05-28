@@ -10,6 +10,7 @@ import operator
 
 INF = float("inf")
 NAN = float("nan")
+DBL_MAX = sys.float_info.max
 # These tests ensure that complex math does the right thing
 
 ZERO_DIVISION = (
@@ -596,6 +597,8 @@ class ComplexTest(unittest.TestCase):
         nums = [complex(x/3., y/7.) for x in range(-9,9) for y in range(-9,9)]
         for num in nums:
             self.assertAlmostEqual((num.real**2 + num.imag**2)  ** 0.5, abs(num))
+
+        self.assertRaises(OverflowError, abs, complex(DBL_MAX, DBL_MAX))
 
     def test_repr_str(self):
         def test(v, expected, test_fn=self.assertEqual):

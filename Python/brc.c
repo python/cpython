@@ -119,6 +119,8 @@ _Py_brc_merge_refcounts(PyThreadState *tstate)
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
     struct _brc_bucket *bucket = get_bucket(tstate->interp, brc->tid);
 
+    assert(brc->tid == _Py_ThreadId());
+
     // Append all objects into a local stack. We don't want to hold the lock
     // while calling destructors.
     PyMutex_Lock(&bucket->mutex);
@@ -142,11 +144,12 @@ void
 _Py_brc_init_thread(PyThreadState *tstate)
 {
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
-    brc->tid = _Py_ThreadId();
+    uintptr_t tid = _Py_ThreadId();
 
     // Add ourself to the hashtable
-    struct _brc_bucket *bucket = get_bucket(tstate->interp, brc->tid);
+    struct _brc_bucket *bucket = get_bucket(tstate->interp, tid);
     PyMutex_Lock(&bucket->mutex);
+    brc->tid = tid;
     llist_insert_tail(&bucket->root, &brc->bucket_node);
     PyMutex_Unlock(&bucket->mutex);
 }
@@ -155,6 +158,13 @@ void
 _Py_brc_remove_thread(PyThreadState *tstate)
 {
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
+    if (brc->tid == 0) {
+        // The thread state may have been created, but never bound to a native
+        // thread and therefore never added to the hashtable.
+        assert(tstate->_status.bound == 0);
+        return;
+    }
+
     struct _brc_bucket *bucket = get_bucket(tstate->interp, brc->tid);
 
     // We need to fully process any objects to merge before removing ourself
