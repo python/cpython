@@ -7048,30 +7048,26 @@ error:
 }
 #undef DATETIME_ADD_MACRO
 
-static struct PyModuleDef datetimemodule = {
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, _datetime_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
-    .m_size = -1,
+    .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__datetime(void)
 {
-    PyObject *mod = PyModule_Create(&datetimemodule);
-    if (mod == NULL)
-        return NULL;
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
-#endif
-
-    if (_datetime_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-
-    return mod;
+    return PyModuleDef_Init(&datetimemodule);
 }
 
 /* ---------------------------------------------------------------------------
