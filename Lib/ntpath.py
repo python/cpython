@@ -564,9 +564,15 @@ except ImportError: # not running on Windows - mock up something sensible
         path = os.fspath(path)
         if not isabs(path):
             if isinstance(path, bytes):
-                path = join(os.getcwdb(), path)
+                sep = b'/'
+                cwd = os.getcwdb()
             else:
-                path = join(os.getcwd(), path)
+                sep = '/'
+                cwd = os.getcwd()
+            drive, _, path = splitroot(path)
+            if drive and drive != splitroot(cwd)[0]:
+                cwd = join(drive, sep)
+            path = join(cwd, path)
         return normpath(path)
 
 else:  # use native Windows method on Windows
