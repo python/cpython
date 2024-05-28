@@ -2001,18 +2001,25 @@ expression support in the :mod:`re` module).
 
    Return ``True`` if all characters in the string are numeric
    characters, and there is at least one character, ``False``
-   otherwise. Numeric characters include digit characters, and all characters
-   that have the Unicode numeric value property, e.g. U+2155,
-   VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
-   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   otherwise::
 
-   ::
       >>> '0123456789'.isnumeric()
       True
+
+
+   Numeric characters include digit characters, and all characters
+   that have the Unicode numeric value property, e.g. U+2155,
+   VULGAR FRACTION ONE FIFTH::
+
       >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
       >>> '⅕'.isnumeric()  # VULGAR FRACTION ONE FIFTH
       True
+
+
+   Formally, numeric characters are those with the property
+   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric::
+
       >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
       (True, False, True)
 
@@ -2023,15 +2030,18 @@ expression support in the :mod:`re` module).
 .. method:: str.isprintable()
 
    Return ``True`` if all characters in the string are printable or the string is
-   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
-   in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.
+   empty, ``False`` otherwise::
 
-   ::
       >>> ''.isprintable()
       True
       >>> ' '.isprintable()
       True
+
+   Nonprintable characters are those characters defined
+   in the Unicode character database as "Other" or "Separator", excepting the
+   ASCII space (0x20) which is considered printable::
+
+
       >>> '\t\n'.isprintable()  # TAB and BREAK LINE
       False
       >>> '\u3000'.isprintable()  # IDEOGRAPHIC SPACE
@@ -2338,31 +2348,30 @@ If the separator is not found, return a 3-tuple containing
    string.  If *maxsplit* is given, at most *maxsplit* splits are done (thus,
    the list will have at most ``maxsplit+1`` elements).  If *maxsplit* is not
    specified or ``-1``, then there is no limit on the number of splits
-   (all possible splits are made).
-
-   If *sep* is given, consecutive delimiters are not grouped together and are
-   deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
-   ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
-   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
-   Splitting an empty string with a specified separator returns ``['']``.
-
-   For example::
+   (all possible splits are made)::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
       >>> '1,2,3'.split(',', maxsplit=1)
       ['1', '2,3']
+
+
+   If *sep* is given, consecutive delimiters are not grouped together and are
+   deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
+   ``['1', '', '2']``)::
+
       >>> '1,2,,3,'.split(',')
       ['1', '2', '', '3', '']
+
+
+   The *sep* argument may consist of multiple characters
+   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
+   Splitting an empty string with a specified separator returns ``['']``.
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied: runs of consecutive whitespace are regarded as a single separator,
    and the result will contain no empty strings at the start or end if the
-   string has leading or trailing whitespace.  Consequently, splitting an empty
-   string or a string consisting of just whitespace with a ``None`` separator
-   returns ``[]``.
-
-   For example::
+   string has leading or trailing whitespace::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2370,6 +2379,9 @@ If the separator is not found, return a 3-tuple containing
       ['1', '2 3']
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
+
+   Consequently, splitting an empty string or a string consisting of just whitespace with a ``None`` separator
+   returns ``[]``.
 
    See also :meth:`rsplit`.
 
@@ -2589,8 +2601,6 @@ If the separator is not found, return a 3-tuple containing
       '00042'
       >>> "-42".zfill(5)
       '-0042'
-
-
 
 .. _old-string-formatting:
 
