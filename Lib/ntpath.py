@@ -571,7 +571,7 @@ def _abspath_fallback(path):
             cwd = os.getcwd()
         drive, root, path = splitroot(path)
         if drive and drive != splitroot(cwd)[0]:
-            cwd = join(drive, sep)
+            cwd, root = drive, sep
         path = join(cwd, root + path)
     return normpath(path)
 
