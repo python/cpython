@@ -27,9 +27,11 @@ class TestSimpleInteract(unittest.TestCase):
         a
         """)
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        f = io.StringIO()
         with (
             patch.object(InteractiveColoredConsole, "showsyntaxerror") as showsyntaxerror,
             patch.object(InteractiveColoredConsole, "runsource", wraps=console.runsource) as runsource,
+            contextlib.redirect_stdout(f),
         ):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
@@ -71,7 +73,9 @@ class TestSimpleInteract(unittest.TestCase):
     def test_runsource_returns_false_for_successful_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!')"
-        result = console.runsource(source)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
         self.assertFalse(result)
 
     @force_not_colorized
