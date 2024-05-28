@@ -55,7 +55,7 @@ typedef struct {
     int initialized;
 } datetime_state;
 
-static datetime_state _datetime_global_state;
+static datetime_state _datetime_global_state = {0};
 
 static inline datetime_state* get_datetime_state(void)
 {
@@ -6834,22 +6834,6 @@ get_datetime_capi(void)
     return &capi;
 }
 
-static int
-datetime_clear(PyObject *module)
-{
-    datetime_state *st = get_datetime_state();
-
-    Py_CLEAR(st->us_per_ms);
-    Py_CLEAR(st->us_per_second);
-    Py_CLEAR(st->us_per_minute);
-    Py_CLEAR(st->us_per_hour);
-    Py_CLEAR(st->us_per_day);
-    Py_CLEAR(st->us_per_week);
-    Py_CLEAR(st->seconds_per_day);
-    Py_CLEAR(st->epoch);
-    return 0;
-}
-
 static PyObject *
 create_timezone_from_delta(int days, int sec, int ms, int normalize)
 {
@@ -6868,6 +6852,7 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
     // While datetime uses global module "state", we unly initialize it once.
     // The PyLong objects created here (once per process) are not decref'd.
     if (st->initialized) {
+        st->initialized += 1;
         return 0;
     }
 
@@ -6921,10 +6906,51 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
 }
 
 static int
+traverse_state(datetime_state *st, visitproc visit, void *arg)
+{
+    if (!st->initialized) {
+        return 0;
+    }
+    if (st->initialized > 1) {
+        return 0;
+    }
+    /* heap types */
+    Py_VISIT(st->isocalendar_date_type);
+
+    return 0;
+}
+
+static int
+clear_state(datetime_state *st)
+{
+    assert(st->initialized >= 0);
+    if (!st->initialized) {
+        return 0;
+    }
+    st->initialized -= 1;
+    if (st->initialized) {
+        return 0;
+    }
+
+    Py_CLEAR(st->isocalendar_date_type);
+    Py_CLEAR(st->us_per_ms);
+    Py_CLEAR(st->us_per_second);
+    Py_CLEAR(st->us_per_minute);
+    Py_CLEAR(st->us_per_hour);
+    Py_CLEAR(st->us_per_day);
+    Py_CLEAR(st->us_per_week);
+    Py_CLEAR(st->seconds_per_day);
+    Py_CLEAR(st->epoch);
+    return 0;
+}
+
+static int
 _datetime_exec(PyObject *module)
 {
     int rc = -1;
     PyTypeObject *PyDateTime_IsoCalendarDateType = NULL;
+    datetime_state *st = get_module_state(module);
+    datetime_state *st_global = get_datetime_state();
 
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
@@ -6959,12 +6985,10 @@ _datetime_exec(PyObject *module)
     CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
 #undef CREATE_TYPE
 
-    datetime_state *st_global = get_datetime_state();
     if (init_state(st_global, PyDateTime_IsoCalendarDateType) < 0) {
         goto error;
     }
 
-    datetime_state *st = get_module_state(module);
     if (init_state(st, PyDateTime_IsoCalendarDateType) < 0) {
         goto error;
     }
@@ -7071,7 +7095,8 @@ _datetime_exec(PyObject *module)
     goto finally;
 
 error:
-    datetime_clear(module);
+    clear_state(st);
+    clear_state(st_global);
 
 finally:
     Py_XDECREF(PyDateTime_IsoCalendarDateType);
@@ -7086,6 +7111,32 @@ static PyModuleDef_Slot module_slots[] = {
     {0, NULL},
 };
 
+static int
+module_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    datetime_state *st = get_module_state(mod);
+    traverse_state(st, visit, arg);
+    traverse_state(get_datetime_state(), visit, arg);
+    return 0;
+}
+
+static int
+module_clear(PyObject *mod)
+{
+    datetime_state *st = get_module_state(mod);
+    clear_state(st);
+    clear_state(get_datetime_state());
+    return 0;
+}
+
+static void
+module_free(void *mod)
+{
+    datetime_state *st = get_module_state(mod);
+    clear_state(st);
+    clear_state(get_datetime_state());
+}
+
 static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
@@ -7093,6 +7144,9 @@ static PyModuleDef datetimemodule = {
     .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
