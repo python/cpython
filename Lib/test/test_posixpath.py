@@ -279,6 +279,8 @@ class PosixPathTest(unittest.TestCase):
     def test_fast_paths_in_use(self):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks
+        self.assertTrue(os.path.splitroot is posix._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
         self.assertTrue(os.path.normpath is posix._path_normpath)
         self.assertFalse(inspect.isfunction(os.path.normpath))
 

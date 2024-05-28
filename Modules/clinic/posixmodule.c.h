@@ -2221,13 +2221,16 @@ exit:
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
 "_path_splitroot_ex($module, /, path)\n"
 "--\n"
-"\n");
+"\n"
+"Split a pathname into drive, root and tail.\n"
+"\n"
+"The tail contains anything after the root.");
 
 #define OS__PATH_SPLITROOT_EX_METHODDEF    \
     {"_path_splitroot_ex", _PyCFunction_CAST(os__path_splitroot_ex), METH_FASTCALL|METH_KEYWORDS, os__path_splitroot_ex__doc__},
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *path);
+os__path_splitroot_ex_impl(PyObject *module, path_t *path);
 
 static PyObject *
 os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2259,23 +2262,21 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    path_t path = PATH_T_INITIALIZE("_path_splitroot_ex", "path", 0, 1, 1, 0, 0);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("_path_splitroot_ex", "argument 'path'", "str", args[0]);
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
-    path = args[0];
-    return_value = os__path_splitroot_ex_impl(module, path);
+    return_value = os__path_splitroot_ex_impl(module, &path);
 
 exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -12075,4 +12076,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=66b9ec0427c8ff23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96bef929fd0eccb4 input=a9049054013a1b77]*/

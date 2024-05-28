@@ -177,19 +177,12 @@ def splitdrive(p):
 
 
 try:
-    from nt import _path_splitroot_ex
+    from nt import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'\\'
@@ -229,23 +222,6 @@ except ImportError:
         else:
             # Relative path, e.g. Windows
             return empty, empty, p
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
-
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the

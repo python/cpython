@@ -5255,23 +5255,22 @@ os__path_islink_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: unicode
+    path: path_t(make_wide=True, nonstrict=True)
 
+Split a pathname into drive, root and tail.
+
+The tail contains anything after the root.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=de97403d3dfebc40 input=f1470e12d899f9ac]*/
+os__path_splitroot_ex_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=6eb76e9173412c92]*/
 {
-    Py_ssize_t len, drvsize, rootsize;
+    Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
 
-    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
-    if (!buffer) {
-        goto exit;
-    }
-
-    _Py_skiproot(buffer, len, &drvsize, &rootsize);
+    const wchar_t *buffer = path->wide;
+    _Py_skiproot(buffer, path->length, &drvsize, &rootsize);
     drv = PyUnicode_FromWideChar(buffer, drvsize);
     if (drv == NULL) {
         goto exit;
@@ -5281,13 +5280,26 @@ os__path_splitroot_ex_impl(PyObject *module, PyObject *path)
         goto exit;
     }
     tail = PyUnicode_FromWideChar(&buffer[drvsize + rootsize],
-                                  len - drvsize - rootsize);
+                                  path->length - drvsize - rootsize);
     if (tail == NULL) {
         goto exit;
     }
-    result = Py_BuildValue("(OOO)", drv, root, tail);
+    if (PyBytes_Check(path->object)) {
+        Py_SETREF(drv, PyUnicode_EncodeFSDefault(drv));
+        if (drv == NULL) {
+            goto exit;
+        }
+        Py_SETREF(root, PyUnicode_EncodeFSDefault(root));
+        if (root == NULL) {
+            goto exit;
+        }
+        Py_SETREF(tail, PyUnicode_EncodeFSDefault(tail));
+        if (tail == NULL) {
+            goto exit;
+        }
+    }
+    result = PyTuple_Pack(3, drv, root, tail);
 exit:
-    PyMem_Free(buffer);
     Py_XDECREF(drv);
     Py_XDECREF(root);
     Py_XDECREF(tail);
