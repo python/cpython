@@ -108,7 +108,9 @@ PyAPI_DATA(PyObject *) PyExc_NotImplementedError;
 PyAPI_DATA(PyObject *) PyExc_SyntaxError;
 PyAPI_DATA(PyObject *) PyExc_IndentationError;
 PyAPI_DATA(PyObject *) PyExc_TabError;
+#if !defined(Py_LIMITED_API)
 PyAPI_DATA(PyObject *) PyExc_IncompleteInputError;
+#endif
 PyAPI_DATA(PyObject *) PyExc_ReferenceError;
 PyAPI_DATA(PyObject *) PyExc_SystemError;
 PyAPI_DATA(PyObject *) PyExc_SystemExit;
