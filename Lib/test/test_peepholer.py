@@ -56,7 +56,7 @@ class TestTranforms(BytecodeTestCase):
                           f'jumps to {tgt.opname} at {tgt.offset}')
 
     def check_lnotab(self, code):
-        "Check that the lnotab byte offsets are sensible."
+        "Check that the linetable byte offsets are sensible."
         code = dis._get_code_object(code)
         lnotab = list(dis.findlinestarts(code))
         # Don't bother checking if the line info is sensible, because
@@ -66,7 +66,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertGreaterEqual(min_bytecode, 0)
         self.assertLess(max_bytecode, len(code.co_code))
         # This could conceivably test more (and probably should, as there
-        # aren't very many tests of lnotab), if peepholer wasn't scheduled
+        # aren't very many tests of linetable), if peepholer wasn't scheduled
         # to be replaced anyway.
 
     def test_unot(self):

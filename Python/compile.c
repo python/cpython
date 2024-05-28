@@ -7979,7 +7979,7 @@ error:
 }
 
 
-/* Retained for API compatibility.
+/* Retained for API compatibility (co_lnotab is removed since 3.14).
  * Optimization is now done in _PyCfg_OptimizeCodeUnit */
 
 PyObject *

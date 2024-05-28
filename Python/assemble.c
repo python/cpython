@@ -397,7 +397,7 @@ write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 
 /* assemble_emit_instr()
    Extend the bytecode with a new instruction.
-   Update lnotab if necessary.
+   Update linetable if necessary.
 */
 
 static int
