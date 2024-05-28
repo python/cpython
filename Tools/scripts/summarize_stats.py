@@ -27,7 +27,7 @@ from typing import Any, Callable, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
-JitStencilData: TypeAlias = dict[str, int]
+JitStencilLengthData: TypeAlias = dict[str, int]
 Rows: TypeAlias = list[tuple]
 Columns: TypeAlias = tuple[str, ...]
 RowCalculator: TypeAlias = Callable[["Stats"], Rows]
@@ -122,7 +122,7 @@ def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
 
-def load_jit_stencils_lengths(jit_path: Path | str) -> JitStencilData:
+def load_jit_stencils_lengths(jit_path: Path | str) -> JitStencilLengthData:
     """From jit_stencils.h, extract the code size of each UOp's template
     from lines like:
         [_BINARY_OP_ADD_INT] = {emit__BINARY_OP_ADD_INT, 333, 224}
@@ -380,9 +380,9 @@ class OpcodeStats:
 
 
 class Stats:
-    def __init__(self, data: RawData, jit_stencils_data=None):
+    def __init__(self, data: RawData, jit_stencil_lengths=None):
         self._data = data
-        self._jit_stencils_data = jit_stencils_data
+        self._jit_stencil_lengths = jit_stencil_lengths
 
     def get(self, key: str) -> int:
         return self._data.get(key, 0)
@@ -762,7 +762,7 @@ def execution_count_section() -> Section:
 
 
 def calc_execution_cost_table(
-    prefix: str, jit_stencils_data: JitStencilData
+    prefix: str, jit_stencil_lengths: JitStencilLengthData
 ) -> RowCalculator:
     """Calculate the product of the number of times each uop is executed and the
     number of machine instructions for that uop, as a rough measure of the time
@@ -773,7 +773,7 @@ def calc_execution_cost_table(
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
         uop_costs = {
-            opcode: jit_stencils_data[opcode] * counts[opcode][0]
+            opcode: jit_stencil_lengths[opcode] * counts[opcode][0]
             for opcode in counts.keys()
         }
         total = sum(cost for cost in uop_costs.values())
@@ -789,7 +789,7 @@ def calc_execution_cost_table(
                     Ratio(cost, total),
                     Ratio(cumulative, total),
                     Count(count),
-                    Count(jit_stencils_data[opcode]),
+                    Count(jit_stencil_lengths[opcode]),
                 )
             )
         rows.sort(key=lambda row: int(row[1]), reverse=True)  # Sort by cost
@@ -1294,7 +1294,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        if base_stats._jit_stencils_data:
+        if base_stats._jit_stencil_lengths:
             yield Section(
                 "Total Machine Instruction Counts per UOp",
                 "",
@@ -1309,7 +1309,7 @@ def optimization_section() -> Section:
                             "Length (Machine Instructions)",
                         ),
                         calc_execution_cost_table(
-                            "uops", jit_stencils_data=base_stats._jit_stencils_data
+                            "uops", jit_stencil_lengths=base_stats._jit_stencil_lengths
                         ),
                         JoinMode.CHANGE_ONE_COLUMN,
                     ),
@@ -1489,13 +1489,13 @@ def output_stats(
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if jit_stencils_path:
-                jit_data = load_jit_stencils_lengths(jit_stencils_path)
+                jit_stencil_lengths = load_jit_stencils_lengths(jit_stencils_path)
             else:
-                jit_data = None
+                jit_stencil_lengths = None
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
-            stats = Stats(data, jit_stencils_data=jit_data)
+            stats = Stats(data, jit_stencil_lengths=jit_stencil_lengths)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
