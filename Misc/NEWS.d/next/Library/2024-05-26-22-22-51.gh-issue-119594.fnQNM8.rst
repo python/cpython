@@ -1,0 +1,1 @@
+Fraction.__pow__ accepts (but does not implement) optional modulo argument.
