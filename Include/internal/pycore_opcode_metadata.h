@@ -20,10 +20,6 @@ extern "C" {
 #define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
-    ((OP) == LOAD_SUPER_METHOD) || \
-    ((OP) == LOAD_ZERO_SUPER_METHOD) || \
-    ((OP) == LOAD_ZERO_SUPER_ATTR) || \
-    ((OP) == LOAD_METHOD) || \
     ((OP) == JUMP) || \
     ((OP) == JUMP_NO_INTERRUPT) || \
     ((OP) == SETUP_FINALLY) || \
@@ -912,7 +908,7 @@ enum InstructionFormat {
 };
 
 #define IS_VALID_OPCODE(OP) \
-    (((OP) >= 0) && ((OP) < 268) && \
+    (((OP) >= 0) && ((OP) < 264) && \
      (_PyOpcode_opcode_metadata[(OP)].valid_entry))
 
 #define HAS_ARG_FLAG (1)
@@ -961,9 +957,9 @@ struct opcode_metadata {
     int16_t flags;
 };
 
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[268];
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[264];
 #ifdef NEED_OPCODE_METADATA
-const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1178,10 +1174,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [JUMP] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_NO_INTERRUPT] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [LOAD_CLOSURE] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG },
-    [LOAD_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [LOAD_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [LOAD_ZERO_SUPER_ATTR] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [LOAD_ZERO_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
     [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
@@ -1364,9 +1356,9 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-extern const char *_PyOpcode_OpName[268];
+extern const char *_PyOpcode_OpName[264];
 #ifdef NEED_OPCODE_METADATA
-const char *_PyOpcode_OpName[268] = {
+const char *_PyOpcode_OpName[264] = {
     [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
     [BEFORE_WITH] = "BEFORE_WITH",
     [BINARY_OP] = "BINARY_OP",
@@ -1516,14 +1508,10 @@ const char *_PyOpcode_OpName[268] = {
     [LOAD_GLOBAL_BUILTIN] = "LOAD_GLOBAL_BUILTIN",
     [LOAD_GLOBAL_MODULE] = "LOAD_GLOBAL_MODULE",
     [LOAD_LOCALS] = "LOAD_LOCALS",
-    [LOAD_METHOD] = "LOAD_METHOD",
     [LOAD_NAME] = "LOAD_NAME",
     [LOAD_SUPER_ATTR] = "LOAD_SUPER_ATTR",
     [LOAD_SUPER_ATTR_ATTR] = "LOAD_SUPER_ATTR_ATTR",
     [LOAD_SUPER_ATTR_METHOD] = "LOAD_SUPER_ATTR_METHOD",
-    [LOAD_SUPER_METHOD] = "LOAD_SUPER_METHOD",
-    [LOAD_ZERO_SUPER_ATTR] = "LOAD_ZERO_SUPER_ATTR",
-    [LOAD_ZERO_SUPER_METHOD] = "LOAD_ZERO_SUPER_METHOD",
     [MAKE_CELL] = "MAKE_CELL",
     [MAKE_FUNCTION] = "MAKE_FUNCTION",
     [MAP_ADD] = "MAP_ADD",
@@ -1887,15 +1875,11 @@ const uint8_t _PyOpcode_Deopt[256] = {
 struct pseudo_targets {
     uint8_t targets[3];
 };
-extern const struct pseudo_targets _PyOpcode_PseudoTargets[12];
+extern const struct pseudo_targets _PyOpcode_PseudoTargets[8];
 #ifdef NEED_OPCODE_METADATA
-const struct pseudo_targets _PyOpcode_PseudoTargets[12] = {
+const struct pseudo_targets _PyOpcode_PseudoTargets[8] = {
     [LOAD_CLOSURE-256] = { { LOAD_FAST, 0, 0 } },
     [STORE_FAST_MAYBE_NULL-256] = { { STORE_FAST, 0, 0 } },
-    [LOAD_SUPER_METHOD-256] = { { LOAD_SUPER_ATTR, 0, 0 } },
-    [LOAD_ZERO_SUPER_METHOD-256] = { { LOAD_SUPER_ATTR, 0, 0 } },
-    [LOAD_ZERO_SUPER_ATTR-256] = { { LOAD_SUPER_ATTR, 0, 0 } },
-    [LOAD_METHOD-256] = { { LOAD_ATTR, 0, 0 } },
     [JUMP-256] = { { JUMP_FORWARD, JUMP_BACKWARD, 0 } },
     [JUMP_NO_INTERRUPT-256] = { { JUMP_FORWARD, JUMP_BACKWARD_NO_INTERRUPT, 0 } },
     [SETUP_FINALLY-256] = { { NOP, 0, 0 } },
@@ -1907,7 +1891,7 @@ const struct pseudo_targets _PyOpcode_PseudoTargets[12] = {
 #endif // NEED_OPCODE_METADATA
 static inline bool
 is_pseudo_target(int pseudo, int target) {
-    if (pseudo < 256 || pseudo >= 268) {
+    if (pseudo < 256 || pseudo >= 264) {
         return false;
     }
     for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {
