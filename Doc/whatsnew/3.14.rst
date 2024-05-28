@@ -182,6 +182,14 @@ pkgutil
   These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
   (Contributed by Bénédikt Tran in :gh:`97850`.)
 
+pty
+___
+
+* Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
+  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
+  Use :func:`pty.openpty` instead.
+  (Contributed by Nikita Sobolev in :gh:`118824`.)
+
 sqlite3
 -------
 
