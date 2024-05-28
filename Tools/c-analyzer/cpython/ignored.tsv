@@ -453,6 +453,9 @@ Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
 Modules/_testcapi/watchers.c	-	func_watcher_ids	-
 Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapi/watchers.c	-	context_watcher_ids	-
+Modules/_testcapi/watchers.c	-	num_context_object_enter_events	-
+Modules/_testcapi/watchers.c	-	num_context_object_exit_events	-
 Modules/_testcapimodule.c	-	BasicStaticTypes	-
 Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
