@@ -499,6 +499,11 @@ class TypeParamsAccessTest(unittest.TestCase):
                                             r"Cannot use [a-z]+ in annotation scope within class scope"):
                     run_code(code.format(case))
 
+    def test_type_special_case(self):
+        # https://github.com/python/cpython/issues/119011
+        self.assertEqual(type.__type_params__, ())
+        self.assertEqual(object.__type_params__, ())
+
 
 def make_base(arg):
     class Base:
