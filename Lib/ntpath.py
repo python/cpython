@@ -569,10 +569,10 @@ except ImportError: # not running on Windows - mock up something sensible
             else:
                 sep = '/'
                 cwd = os.getcwd()
-            drive, _, path = splitroot(path)
+            drive, root, path = splitroot(path)
             if drive and drive != splitroot(cwd)[0]:
                 cwd = join(drive, sep)
-            path = join(cwd, path)
+            path = join(cwd, root + path)
         return normpath(path)
 
 else:  # use native Windows method on Windows
@@ -591,14 +591,14 @@ else:  # use native Windows method on Windows
             else:
                 sep = '/'
                 cwd = os.getcwd()
-            drive, _, path = splitroot(path)
+            drive, root, path = splitroot(path)
             if drive and drive != splitroot(cwd)[0]:
                 try:
                     cwd = _path_abspath(drive)
                 except (OSError, ValueError):
                     # Invalid drive
                     cwd = join(drive, sep)
-            path = join(cwd, path)
+            path = join(cwd, root + path)
         return normpath(path)
 
 try:
