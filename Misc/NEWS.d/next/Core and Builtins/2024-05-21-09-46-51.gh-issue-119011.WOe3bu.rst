@@ -1,0 +1,2 @@
+Fixes ``type.__type_params__`` to return an empty tuple instead of a
+descriptor.
