@@ -259,11 +259,15 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case IS_OP:
             return 2;
+        case JUMP:
+            return 0;
         case JUMP_BACKWARD:
             return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case JUMP_FORWARD:
+            return 0;
+        case JUMP_NO_INTERRUPT:
             return 0;
         case LIST_APPEND:
             return 2 + (oparg-1);
@@ -296,6 +300,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case LOAD_ATTR_WITH_HINT:
             return 1;
         case LOAD_BUILD_CLASS:
+            return 0;
+        case LOAD_CLOSURE:
             return 0;
         case LOAD_COMMON_CONSTANT:
             return 0;
@@ -347,6 +353,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case NOP:
             return 0;
+        case POP_BLOCK:
+            return 0;
         case POP_EXCEPT:
             return 1;
         case POP_JUMP_IF_FALSE:
@@ -385,6 +393,12 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case SETUP_ANNOTATIONS:
             return 0;
+        case SETUP_CLEANUP:
+            return 0;
+        case SETUP_FINALLY:
+            return 0;
+        case SETUP_WITH:
+            return 0;
         case SET_ADD:
             return 2 + (oparg-1);
         case SET_FUNCTION_ATTRIBUTE:
@@ -404,6 +418,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case STORE_FAST:
             return 1;
         case STORE_FAST_LOAD_FAST:
+            return 1;
+        case STORE_FAST_MAYBE_NULL:
             return 1;
         case STORE_FAST_STORE_FAST:
             return 2;
@@ -692,11 +708,15 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case IS_OP:
             return 1;
+        case JUMP:
+            return 0;
         case JUMP_BACKWARD:
             return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case JUMP_FORWARD:
+            return 0;
+        case JUMP_NO_INTERRUPT:
             return 0;
         case LIST_APPEND:
             return 1 + (oparg-1);
@@ -729,6 +749,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LOAD_ATTR_WITH_HINT:
             return 1 + (oparg & 1);
         case LOAD_BUILD_CLASS:
+            return 1;
+        case LOAD_CLOSURE:
             return 1;
         case LOAD_COMMON_CONSTANT:
             return 1;
@@ -780,6 +802,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case NOP:
             return 0;
+        case POP_BLOCK:
+            return 0;
         case POP_EXCEPT:
             return 0;
         case POP_JUMP_IF_FALSE:
@@ -818,6 +842,12 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 2;
         case SETUP_ANNOTATIONS:
             return 0;
+        case SETUP_CLEANUP:
+            return 2;
+        case SETUP_FINALLY:
+            return 1;
+        case SETUP_WITH:
+            return 1;
         case SET_ADD:
             return 1 + (oparg-1);
         case SET_FUNCTION_ATTRIBUTE:
@@ -838,6 +868,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case STORE_FAST_LOAD_FAST:
             return 1;
+        case STORE_FAST_MAYBE_NULL:
+            return 0;
         case STORE_FAST_STORE_FAST:
             return 0;
         case STORE_GLOBAL:

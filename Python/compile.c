@@ -703,51 +703,22 @@ compiler_set_qualname(struct compiler *c)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
-    if (0 <= opcode && opcode <= MAX_REAL_OPCODE) {
-        if (_PyOpcode_Deopt[opcode] != opcode) {
-            // Specialized instructions are not supported.
-            return PY_INVALID_STACK_EFFECT;
-        }
-        int popped = _PyOpcode_num_popped(opcode, oparg);
-        int pushed = _PyOpcode_num_pushed(opcode, oparg);
-        if (popped < 0 || pushed < 0) {
-            return PY_INVALID_STACK_EFFECT;
-        }
-        return pushed - popped;
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    // Pseudo ops
-    switch (opcode) {
-        case POP_BLOCK:
-        case JUMP:
-        case JUMP_NO_INTERRUPT:
-            return 0;
-
-        /* Exception handling pseudo-instructions */
-        case SETUP_FINALLY:
-            /* 0 in the normal flow.
-             * Restore the stack position and push 1 value before jumping to
-             * the handler if an exception be raised. */
-            return jump ? 1 : 0;
-        case SETUP_CLEANUP:
-            /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 2 : 0;
-        case SETUP_WITH:
-            /* 0 in the normal flow.
-             * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 2 values before jumping to the handler
-             * if an exception be raised. */
-            return jump ? 1 : 0;
-
-        case STORE_FAST_MAYBE_NULL:
-            return -1;
-        case LOAD_CLOSURE:
-            return 1;
-        default:
-            return PY_INVALID_STACK_EFFECT;
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    return PY_INVALID_STACK_EFFECT; /* not reachable */
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
 }
 
 int
