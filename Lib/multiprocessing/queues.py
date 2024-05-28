@@ -40,7 +40,7 @@ class Queue(object):
             from .synchronize import SEM_VALUE_MAX as maxsize
         elif maxsize > SEM_VALUE_MAX:
             maxsize = SEM_VALUE_MAX
-        warnings.warn(f"maxsize exceeds SEM_VALUE_MAX; setting maxsize to {SEM_VALUE_MAX}", UserWarning)
+            warnings.warn(f"maxsize exceeds SEM_VALUE_MAX; setting maxsize to {SEM_VALUE_MAX}", UserWarning)
         self._maxsize = maxsize
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
