@@ -2407,10 +2407,12 @@ def test_DocFileSuite():
        Support for using a package's __loader__.get_data() is also
        provided.
 
-         >>> import unittest, pkgutil, test
+         >>> import importlib.util, unittest
+         >>> import test  # the module to test
          >>> added_loader = False
          >>> if not hasattr(test, '__loader__'):
-         ...     test.__loader__ = pkgutil.get_loader(test)
+         ...     spec = importlib.util.find_spec(test.__name__)
+         ...     test.__loader__ = spec.loader
          ...     added_loader = True
          >>> try:
          ...     suite = doctest.DocFileSuite('test_doctest.txt',
