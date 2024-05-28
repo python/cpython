@@ -122,7 +122,12 @@ def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
 
-def load_jit_data(jit_path: Path | str) -> JitStencilData:
+def load_jit_stencils_lengths(jit_path: Path | str) -> JitStencilData:
+    """From jit_stencils.h, extract the code size of each UOp's template
+    from lines like:
+        [_BINARY_OP_ADD_INT] = {emit__BINARY_OP_ADD_INT, 333, 224}
+    where the code size in this case is 333
+    """
     with open(jit_path, "r") as f:
         lines = f.readlines()
         r = re.compile(r"static const StencilGroup stencil_groups.*")
@@ -1484,7 +1489,7 @@ def output_stats(
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if jit_stencils_path:
-                jit_data = load_jit_data(jit_stencils_path)
+                jit_data = load_jit_stencils_lengths(jit_stencils_path)
             else:
                 jit_data = None
             if json_output is not None:
