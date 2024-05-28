@@ -5520,16 +5520,10 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     return result;
 }
 
-#ifdef MS_WINDOWS
-#define IS_MS_WINDOWS 1
-#else
-#define IS_MS_WINDOWS 0
-#endif
-
 /*[clinic input]
 os._path_abspath
 
-    path: path_t(make_wide=True, nonstrict="!IS_MS_WINDOWS")
+    path: path_t(make_wide=True, nonstrict=True)
     /
 
 Return an absolute path.
@@ -5537,7 +5531,7 @@ Return an absolute path.
 
 static PyObject *
 os__path_abspath_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=bb40fbf3be7251a4 input=6e209cdad4aa4d4d]*/
+/*[clinic end generated code: output=bb40fbf3be7251a4 input=8870bbcaa7c920a1]*/
 {
     Py_ssize_t abs_len;
     wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
@@ -5547,6 +5541,11 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     Py_ssize_t path_len = path->length;
     int use_bytes = PyBytes_Check(path->object);
 #ifdef MS_WINDOWS
+    if (wcslen(path_buf) != path_len) {
+        PyErr_Format(PyExc_ValueError,
+                     "_path_abspath: embedded null character in path");
+        goto exit;
+    }
     // Preserve `.\` for qualified referencing
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
     if (abs_len == 0 || (abs_len == 1 && abs[0] == L'.')) {

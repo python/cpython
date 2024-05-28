@@ -2471,7 +2471,7 @@ static PyObject *
 os__path_abspath(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    path_t path = PATH_T_INITIALIZE("_path_abspath", "path", 0, !IS_MS_WINDOWS, 1, 0, 0);
+    path_t path = PATH_T_INITIALIZE("_path_abspath", "path", 0, 1, 1, 0, 0);
 
     if (!path_converter(arg, &path)) {
         goto exit;
@@ -12788,4 +12788,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=5c39b00895e92770 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a851e6712142787 input=a9049054013a1b77]*/
