@@ -46,7 +46,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                         out.emit(f"_PyStackRef {var.name} = Py_STACKREF_NULL;\n")
                     else:
                         if var.is_array():
-                            out.emit(f"{var.type} {var.name};\n")
+                            out.emit(f"{var.type}{var.name};\n")
                         else:
                             out.emit(f"_PyStackRef {var.name};\n")
             for var in uop.stack.outputs:

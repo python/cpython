@@ -710,7 +710,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_CONST_KEY_MAP);
             _PyStackRef keys;
-            _PyStackRef * values;
+            _PyStackRef *values;
             _PyStackRef map;
             keys = stack_pointer[-1];
 
@@ -736,7 +736,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_LIST);
-            _PyStackRef * values;
+            _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
             PyObject *list_o = _PyList_FromStackSteal(values, oparg);
@@ -751,7 +751,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_MAP);
-            _PyStackRef * values;
+            _PyStackRef *values;
             _PyStackRef map;
             values = &stack_pointer[-oparg*2];
             PyObject *map_o = _PyDict_FromStackRefItems(
@@ -772,7 +772,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SET);
-            _PyStackRef * values;
+            _PyStackRef *values;
             _PyStackRef set;
             values = &stack_pointer[-oparg];
             PyObject *set_o = PySet_New(NULL);
@@ -830,7 +830,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_STRING);
-            _PyStackRef * pieces;
+            _PyStackRef *pieces;
             _PyStackRef str;
             pieces = &stack_pointer[-oparg];
             PyObject *str_o = _PyUnicode_JoinStackRef(&_Py_STR(empty), pieces, oparg);
@@ -848,7 +848,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TUPLE);
-            _PyStackRef * values;
+            _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
             PyObject *tup_o = _PyTuple_FromStackSteal(values, oparg);
@@ -875,7 +875,7 @@
             PREDICTED(CALL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
             (void)this_instr;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -985,7 +985,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef null;
             _PyStackRef callable;
             /* Skip 1 cache entry */
@@ -1056,7 +1056,7 @@
             _PyStackRef func;
             _PyStackRef self;
             _PyStackRef self_or_null;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -1155,7 +1155,7 @@
             _PyStackRef callable;
             _PyStackRef method;
             _PyStackRef self;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
@@ -1249,7 +1249,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1295,7 +1295,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1348,7 +1348,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1401,7 +1401,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1587,7 +1587,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1637,7 +1637,7 @@
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
             _PyStackRef kwnames;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1733,7 +1733,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1815,7 +1815,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1871,7 +1871,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1927,7 +1927,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -1982,7 +1982,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
@@ -2040,7 +2040,7 @@
             INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef res;
             /* Skip 1 cache entry */
@@ -2096,7 +2096,7 @@
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -2175,7 +2175,7 @@
             INSTRUCTION_STATS(CALL_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
-            _PyStackRef * args;
+            _PyStackRef *args;
             _PyStackRef self_or_null;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
@@ -5542,7 +5542,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RAISE_VARARGS);
-            _PyStackRef * args;
+            _PyStackRef *args;
             args = &stack_pointer[-oparg];
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
@@ -5573,7 +5573,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
             _PyStackRef exc_st;
-            _PyStackRef * values;
+            _PyStackRef *values;
             exc_st = stack_pointer[-1];
 
             values = &stack_pointer[-1 - oparg];
