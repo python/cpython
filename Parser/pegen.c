@@ -18,6 +18,31 @@ _PyPegen_interactive_exit(Parser *p)
 }
 
 Py_ssize_t
+_PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset)
+{
+    const char *data = PyUnicode_AsUTF8(line);
+
+    Py_ssize_t len = 0;
+    while (col_offset < end_col_offset) {
+        Py_UCS4 ch = data[col_offset];
+        if (ch < 0x80) {
+            col_offset += 1;
+        } else if ((ch & 0xe0) == 0xc0) {
+            col_offset += 2;
+        } else if ((ch & 0xf0) == 0xe0) {
+            col_offset += 3;
+        } else if ((ch & 0xf8) == 0xf0) {
+            col_offset += 4;
+        } else {
+            PyErr_SetString(PyExc_ValueError, "Invalid UTF-8 sequence");
+            return -1;
+        }
+        len++;
+    }
+    return len;
+}
+
+Py_ssize_t
 _PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
 {
     Py_ssize_t len = strlen(str);
