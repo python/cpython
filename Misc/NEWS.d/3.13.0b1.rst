@@ -1346,13 +1346,13 @@ urllib.
 .. nonce: du4UKW
 .. section: Library
 
-Callbacks registered in the :mod:`tkinter` module now take arguments as
-various Python objects (``int``, ``float``, ``bytes``, ``tuple``), not just
-``str``. To restore the previous behavior set :mod:`!tkinter` module global
-:data:`~tkinter.wantobject` to ``1`` before creating the
-:class:`~tkinter.Tk` object or call the :meth:`~tkinter.Tk.wantobject`
-method of the :class:`!Tk` object with argument ``1``. Calling it with
-argument ``2`` restores the current default behavior.
+Setting the :mod:`!tkinter` module global :data:`~tkinter.wantobject` to ``2``
+before creating the :class:`~tkinter.Tk` object or call the
+:meth:`~tkinter.Tk.wantobject` method of the :class:`!Tk` object with argument
+``2`` makes now arguments to callbacks registered in the :mod:`tkinter` module
+to be passed as various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
+depending on their internal representation in Tcl, instead of always ``str``.
+:data:`!tkinter.wantobject` is now set to ``2`` by default.
 
 ..
 

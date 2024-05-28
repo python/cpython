@@ -167,6 +167,7 @@ Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/repr.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 
 # @end=tsv@
