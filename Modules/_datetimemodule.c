@@ -48,6 +48,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    /* While we use a global state, we ensure it's only initialized once */
+    int initialized;
 } datetime_state;
 
 static datetime_state _datetime_global_state;
@@ -6841,6 +6844,12 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st)
 {
+    // While datetime uses global module "state", we unly initialize it once.
+    // The PyLong objects created here (once per process) are not decref'd.
+    if (st->initialized) {
+        return 0;
+    }
+
     st->date_type = &PyDateTime_DateType;
     st->datetime_type = &PyDateTime_DateTimeType;
     st->delta_type = &PyDateTime_DeltaType;
@@ -6893,6 +6902,9 @@ init_state(datetime_state *st)
     if (st->epoch == NULL) {
         return -1;
     }
+
+    st->initialized = 1;
+
     return 0;
 }
 
@@ -7005,12 +7017,8 @@ _datetime_exec(PyObject *module)
         goto error;
     }
     PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, NULL);
-    if (capsule == NULL) {
-        PyMem_Free(capi);
-        goto error;
-    }
+    // (capsule == NULL) is handled by PyModule_Add
     if (PyModule_Add(module, "datetime_CAPI", capsule) < 0) {
-        PyMem_Free(capi);
         goto error;
     }
 
