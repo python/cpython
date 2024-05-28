@@ -48,9 +48,6 @@ typedef struct {
     PyObject *us_per_week;     // 1e6 * 3600 * 24 * 7 as Python int
     PyObject *seconds_per_day; // 3600 * 24 as Python int
 
-    /* The interned UTC timezone instance */
-    PyObject *utc;
-
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
 
@@ -1264,6 +1261,7 @@ create_timezone(PyObject *offset, PyObject *name)
 }
 
 static int delta_bool(PyDateTime_Delta *self);
+static PyDateTime_TimeZone utc_timezone;
 
 static PyObject *
 new_timezone(PyObject *offset, PyObject *name)
@@ -1273,8 +1271,7 @@ new_timezone(PyObject *offset, PyObject *name)
     assert(name == NULL || PyUnicode_Check(name));
 
     if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
-        datetime_state *st = get_datetime_state();
-        return Py_NewRef(st->utc);
+        return Py_NewRef(&utc_timezone);
     }
     if ((GET_TD_DAYS(offset) == -1 &&
             GET_TD_SECONDS(offset) == 0 &&
@@ -1487,8 +1484,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
     if (rv == 1) {
         // Create a timezone from offset in seconds (0 returns UTC)
         if (tzoffset == 0) {
-            datetime_state *st = get_datetime_state();
-            return Py_NewRef(st->utc);
+            return Py_NewRef(&utc_timezone);
         }
 
         PyObject *delta = new_delta(0, tzoffset, tz_useconds, 1);
@@ -4069,8 +4065,7 @@ timezone_repr(PyDateTime_TimeZone *self)
        to use Py_TYPE(self)->tp_name here. */
     const char *type_name = Py_TYPE(self)->tp_name;
 
-    datetime_state *st = get_datetime_state();
-    if (((PyObject *)self) == st->utc) {
+    if (self == &utc_timezone) {
         return PyUnicode_FromFormat("%s.utc", type_name);
     }
 
@@ -4092,8 +4087,7 @@ timezone_str(PyDateTime_TimeZone *self)
     if (self->name != NULL) {
         return Py_NewRef(self->name);
     }
-    datetime_state *st = get_datetime_state();
-    if ((PyObject *)self == st->utc ||
+    if (self == &utc_timezone ||
            (GET_TD_DAYS(self->offset) == 0 &&
             GET_TD_SECONDS(self->offset) == 0 &&
             GET_TD_MICROSECONDS(self->offset) == 0))
@@ -6372,7 +6366,6 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     if (result == NULL)
         return NULL;
 
-    datetime_state *st = get_datetime_state();
     /* Make sure result is aware and UTC. */
     if (!HASTZINFO(result)) {
         temp = (PyObject *)result;
@@ -6384,7 +6377,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
                                     DATE_GET_MINUTE(result),
                                     DATE_GET_SECOND(result),
                                     DATE_GET_MICROSECOND(result),
-                                    st->utc,
+                                    (PyObject *)&utc_timezone,
                                     DATE_GET_FOLD(result),
                                     Py_TYPE(result));
         Py_DECREF(temp);
@@ -6393,7 +6386,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else {
         /* Result is already aware - just replace tzinfo. */
-        Py_SETREF(result->tzinfo, Py_NewRef(st->utc));
+        Py_SETREF(result->tzinfo, Py_NewRef(&utc_timezone));
     }
 
     /* Attach new tzinfo and let fromutc() do the rest. */
@@ -6845,7 +6838,6 @@ datetime_clear(PyObject *module)
     Py_CLEAR(st->us_per_day);
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
-    Py_CLEAR(st->utc);
     Py_CLEAR(st->epoch);
     return 0;
 }
@@ -6907,14 +6899,9 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
         return -1;
     }
 
-    /* Init UTC timezone */
-    st->utc = create_timezone_from_delta(0, 0, 0, 0);
-    if (st->utc == NULL) {
-        return -1;
-    }
-
     /* Init Unix epoch */
-    st->epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0, st->utc, 0);
+    st->epoch = new_datetime(
+            1970, 1, 1, 0, 0, 0, 0, (PyObject *)&utc_timezone, 0);
     if (st->epoch == NULL) {
         return -1;
     }
@@ -7011,7 +6998,7 @@ _datetime_exec(PyObject *module)
 
     /* timezone values */
     d = PyDateTime_TimeZoneType.tp_dict;
-    if (PyDict_SetItemString(d, "utc", st->utc) < 0) {
+    if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
         goto error;
     }
 
@@ -7034,7 +7021,7 @@ _datetime_exec(PyObject *module)
     if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
         goto error;
     }
-    if (PyModule_AddObjectRef(module, "UTC", st->utc) < 0) {
+    if (PyModule_AddObjectRef(module, "UTC", (PyObject *)&utc_timezone) < 0) {
         goto error;
     }
 
