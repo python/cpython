@@ -578,7 +578,9 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
-		Modules/expat/xmltok_impl.h
+		Modules/expat/xmltok_impl.h \
+		Modules/expat/xmltok_impl.c \
+		Modules/expat/xmltok_ns.c
 
 ##########################################################################
 # hashlib's HACL* library
