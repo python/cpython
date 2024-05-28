@@ -2442,15 +2442,18 @@ If the separator is not found, return a 3-tuple containing
 .. method:: str.startswith(prefix[, start[, end]])
 
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
-   *prefix* can also be a tuple of prefixes to look for::
 
       >>> 'Python'.startswith('Py')
       True
+
+
+   *prefix* can also be a tuple of prefixes to look for::
+
       >>> 'a tuple of prefixes'.startswith(('at', 'in'))
       False
       >>> 'a tuple of suffixes'.startswith(('at', 'a'))
       True
-   
+
 
    With optional *start*, test string beginning at that position::
 
@@ -3198,9 +3201,8 @@ arbitrary binary data.
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself or its
    bytearray copy, and the part after the separator.
-   If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   If the separator is not found, return a 3-tuple containing a copy of the original sequence,
+   followed by two empty bytes or bytearray objects.
 
    The separator to search for may be any :term:`bytes-like object`.
 
