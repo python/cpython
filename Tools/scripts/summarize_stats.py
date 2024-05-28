@@ -756,7 +756,9 @@ def execution_count_section() -> Section:
     )
 
 
-def calc_execution_cost_table(prefix: str, jit_data: JitStencilData) -> RowCalculator:
+def calc_execution_cost_table(
+    prefix: str, jit_stencils_data: JitStencilData
+) -> RowCalculator:
     """Calculate the product of the number of times each uop is executed and the
     number of machine instructions for that uop, as a rough measure of the time
     spent in each uop
@@ -766,7 +768,8 @@ def calc_execution_cost_table(prefix: str, jit_data: JitStencilData) -> RowCalcu
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
         uop_costs = {
-            opcode: jit_data[opcode] * counts[opcode][0] for opcode in counts.keys()
+            opcode: jit_stencils_data[opcode] * counts[opcode][0]
+            for opcode in counts.keys()
         }
         total = sum(cost for cost in uop_costs.values())
         cumulative = 0
@@ -781,7 +784,7 @@ def calc_execution_cost_table(prefix: str, jit_data: JitStencilData) -> RowCalcu
                     Ratio(cost, total),
                     Ratio(cumulative, total),
                     Count(count),
-                    Count(jit_data[opcode]),
+                    Count(jit_stencils_data[opcode]),
                 )
             )
         rows.sort(key=lambda row: int(row[1]), reverse=True)  # Sort by cost
@@ -1301,7 +1304,7 @@ def optimization_section() -> Section:
                             "Length (Machine Instructions)",
                         ),
                         calc_execution_cost_table(
-                            "uops", jit_data=base_stats._jit_stencils_data
+                            "uops", jit_stencils_data=base_stats._jit_stencils_data
                         ),
                         JoinMode.CHANGE_ONE_COLUMN,
                     ),
