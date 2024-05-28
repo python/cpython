@@ -48,6 +48,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    /* While we use a global state, we ensure it's only initialized once */
+    int initialized;
 } datetime_state;
 
 static datetime_state _datetime_global_state;
@@ -6841,6 +6844,12 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st)
 {
+    // While datetime uses global module "state", we unly initialize it once.
+    // The PyLong objects created here (once per process) are not decref'd.
+    if (st->initialized) {
+        return 0;
+    }
+
     st->date_type = &PyDateTime_DateType;
     st->datetime_type = &PyDateTime_DateTimeType;
     st->delta_type = &PyDateTime_DeltaType;
@@ -6893,6 +6902,9 @@ init_state(datetime_state *st)
     if (st->epoch == NULL) {
         return -1;
     }
+
+    st->initialized = 1;
+
     return 0;
 }
 
@@ -7005,12 +7017,8 @@ _datetime_exec(PyObject *module)
         goto error;
     }
     PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, NULL);
-    if (capsule == NULL) {
-        PyMem_Free(capi);
-        goto error;
-    }
+    // (capsule == NULL) is handled by PyModule_Add
     if (PyModule_Add(module, "datetime_CAPI", capsule) < 0) {
-        PyMem_Free(capi);
         goto error;
     }
 
@@ -7040,30 +7048,26 @@ error:
 }
 #undef DATETIME_ADD_MACRO
 
-static struct PyModuleDef datetimemodule = {
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, _datetime_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
     .m_doc = "Fast implementation of the datetime type.",
-    .m_size = -1,
+    .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__datetime(void)
 {
-    PyObject *mod = PyModule_Create(&datetimemodule);
-    if (mod == NULL)
-        return NULL;
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
-#endif
-
-    if (_datetime_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-
-    return mod;
+    return PyModuleDef_Init(&datetimemodule);
 }
 
 /* ---------------------------------------------------------------------------

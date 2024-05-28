@@ -477,21 +477,32 @@ formatlong(PyObject *v, int flags, int prec, int type)
 static int
 byte_converter(PyObject *arg, char *p)
 {
-    if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
+    if (PyBytes_Check(arg)) {
+        if (PyBytes_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "%%c requires an integer in range(256) or "
+                         "a single byte, not a bytes object of length %zd",
+                         PyBytes_GET_SIZE(arg));
+            return 0;
+        }
         *p = PyBytes_AS_STRING(arg)[0];
         return 1;
     }
-    else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
+    else if (PyByteArray_Check(arg)) {
+        if (PyByteArray_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "%%c requires an integer in range(256) or "
+                         "a single byte, not a bytearray object of length %zd",
+                         PyByteArray_GET_SIZE(arg));
+            return 0;
+        }
         *p = PyByteArray_AS_STRING(arg)[0];
         return 1;
     }
-    else {
+    else if (PyIndex_Check(arg)) {
         int overflow;
         long ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                goto onError;
-            }
             return 0;
         }
         if (!(0 <= ival && ival <= 255)) {
@@ -503,9 +514,9 @@ byte_converter(PyObject *arg, char *p)
         *p = (char)ival;
         return 1;
     }
-  onError:
-    PyErr_SetString(PyExc_TypeError,
-        "%c requires an integer in range(256) or a single byte");
+    PyErr_Format(PyExc_TypeError,
+        "%%c requires an integer in range(256) or a single byte, not %T",
+        arg);
     return 0;
 }
 
