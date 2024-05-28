@@ -173,6 +173,8 @@ def runtest_refleak(test_name, test_func,
         interned_before = interned_after
 
         restore_support_xml(xml_filename)
+        refleak_helper._refleak_iteration += 1
+    refleak_helper._refleak_iteration = 0
 
     if not quiet:
         print(file=sys.stderr)

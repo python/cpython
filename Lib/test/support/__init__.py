@@ -1196,16 +1196,28 @@ def no_rerun(reason):
     impossible to find reference leaks. Provide a clear reason for skipping the
     test using the 'reason' parameter.
     """
-    def deco(func):
-        _has_run = False
-        def wrapper(self):
-            nonlocal _has_run
-            if _has_run:
-                self.skipTest(reason)
-            func(self)
-            _has_run = True
+    def decorator(func_or_class):
+        if isinstance(func_or_class, type):
+            setUpClass = func_or_class.__dict__.get('setUpClass')
+            if setUpClass is None:
+                def setUpClass(cls):
+                    super(func_or_class, cls).setUpClass()
+                setUpClass.__qualname__ = func_or_class.__qualname__ + '.setUpClass'
+                setUpClass.__module__ = func_or_class.__module__
+            else:
+                setUpClass = setUpClass.__func__
+            setUpClass = classmethod(decorator(setUpClass))
+            func_or_class.setUpClass = setUpClass
+            return func_or_class
+
+        @functools.wraps(func_or_class)
+        def wrapper(*args, **kwargs):
+            from test.support import refleak_helper
+            if refleak_helper._refleak_iteration > 0:
+                raise unittest.SkipTest(reason)
+            return func_or_class(*args, **kwargs)
         return wrapper
-    return deco
+    return decorator
 
 
 def refcount_test(test):
