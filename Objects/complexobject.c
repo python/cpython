@@ -908,10 +908,8 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 static PyObject *
 actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyObject *tmp;
     PyObject *res = NULL;
     PyNumberMethods *nbr;
-    int own_arg = 0;
 
     if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
         return complex_new(type, args, kwargs);
@@ -933,16 +931,16 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (PyUnicode_Check(arg)) {
         return complex_subtype_from_string(type, arg);
     }
-    tmp = try_complex_special_method(arg);
+    PyObject *tmp = try_complex_special_method(arg);
     if (tmp) {
-        arg = tmp;
-        own_arg = 1;
+        Py_complex c = ((PyComplexObject*)tmp)->cval;
+        res = complex_subtype_from_doubles(type, c.real, c.imag);
+        Py_DECREF(tmp);
     }
     else if (PyErr_Occurred()) {
         return NULL;
     }
-
-    if (PyComplex_Check(arg)) {
+    else if (PyComplex_Check(arg)) {
         /* Note that if arg is of a complex subtype, we're only
            retaining its real & imag parts here, and the return
            value is (properly) of the builtin complex type. */
@@ -964,11 +962,6 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_Format(PyExc_TypeError,
                      "complex() argument must be a string or a number, not %T",
                      arg);
-    }
-    if (own_arg) {
-        /* arg was a newly created complex number, rather
-           than the original "real" argument. */
-        Py_DECREF(arg);
     }
     return res;
 }
@@ -999,22 +992,6 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         r = _PyLong_GetZero();
     }
     PyObject *orig_r = r;
-
-    /* Special-case for a single argument when type(arg) is complex. */
-    if (PyComplex_CheckExact(r) && i == NULL &&
-        type == &PyComplex_Type) {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "complex() argument 'real' must be a real number, not %T",
-                r)) {
-            return NULL;
-        }
-        /* Note that we can't know whether it's safe to return
-           a complex *subclass* instance as-is, hence the restriction
-           to exact complexes here.  If either the input or the
-           output is a complex subclass, it will be handled below
-           as a non-orthogonal vector.  */
-        return Py_NewRef(r);
-    }
 
     tmp = try_complex_special_method(r);
     if (tmp) {
