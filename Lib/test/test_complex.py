@@ -399,6 +399,8 @@ class ComplexTest(unittest.TestCase):
         check(complex(0j, 4.25j), -4.25, 0.0)
 
         check(complex(real=4.25), 4.25, 0.0)
+        check(complex(real=4.25+0j), 4.25, 0.0)
+        check(complex(real=4.25+1.5j), 4.25, 1.5)
         check(complex(imag=1.5), 0.0, 1.5)
         check(complex(real=4.25, imag=1.5), 4.25, 1.5)
         check(complex(4.25, imag=1.5), 4.25, 1.5)
@@ -413,8 +415,13 @@ class ComplexTest(unittest.TestCase):
 
         c = complex(4.25, 1.5)
         self.assertIs(complex(c), c)
-        self.assertIsNot(ComplexSubclass(c), c)
-        del c
+        c2 = ComplexSubclass(c)
+        self.assertEqual(c2, c)
+        self.assertIs(type(c2), ComplexSubclass)
+        c2 = ComplexSubclass(real=c)
+        self.assertEqual(c2, c)
+        self.assertIs(type(c2), ComplexSubclass)
+        del c, c2
 
         self.assertRaisesRegex(TypeError,
             "first argument must be a string or a number, not 'dict'",
@@ -439,6 +446,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, MockComplex(1))
         self.assertRaises(TypeError, complex, MockComplex(None))
         self.assertRaises(TypeError, complex, MockComplex(4.25+0j), object())
+        self.assertRaises(TypeError, complex, MockComplex(1.5), object())
+        self.assertRaises(TypeError, complex, MockComplex(1), object())
+        self.assertRaises(TypeError, complex, MockComplex(None), object())
 
         class EvilExc(Exception):
             pass
