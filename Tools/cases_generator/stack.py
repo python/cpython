@@ -1,7 +1,8 @@
 import re
-from analyzer import StackItem, Instruction, Uop, PseudoInstruction
+from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
 from dataclasses import dataclass
 from cwriter import CWriter
+from typing import Iterator
 
 UNUSED = {"unused"}
 
@@ -210,7 +211,7 @@ class Stack:
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
-    def stacks(inst):
+    def stacks(inst : Instruction | PseudoInstruction) -> Iterator[StackEffect]:
         if isinstance(inst, Instruction):
             for uop in inst.parts:
                 if isinstance(uop, Uop):
