@@ -1729,6 +1729,9 @@ expression support in the :mod:`re` module).
    first match.  Optional arguments *start* and *end* are interpreted as in
    slice notation.  Return ``-1`` if *sub* is not found.
 
+   .. seealso::
+      The :mod:`re` module, which provides advanced pattern matching.
+
    .. note::
 
       The :meth:`~str.find` method should be used only if you need to know the
@@ -2042,6 +2045,9 @@ expression support in the :mod:`re` module).
    of substrings to look for.  In this case the returned index, if found, will
    be the index of the last match.  Optional arguments *start* and *end* are
    interpreted as in slice notation.  Return ``-1`` on failure.
+
+   .. seealso::
+      The third-party :pypi:`regex` module, which provides advanced pattern matching.
 
    .. versionchanged:: 3.14
       *sub* can now be a tuple of substrings.
@@ -2884,6 +2890,9 @@ arbitrary binary data.
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
 
+   .. seealso::
+      The :mod:`re` module, which provides advanced pattern matching.
+
    .. note::
 
       The :meth:`~bytes.find` method should be used only if you need to know the
@@ -2979,6 +2988,9 @@ arbitrary binary data.
 
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
+
+   .. seealso::
+      The third-party :pypi:`regex` module, which provides advanced pattern matching.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
