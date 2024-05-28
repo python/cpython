@@ -746,12 +746,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case LOAD_CLOSURE:
             return 1;
-        case LOAD_METHOD:
-            return 1;
-        case LOAD_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_ATTR:
-            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -997,6 +991,11 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
+#define LOAD_METHOD -1
+#define LOAD_SUPER_METHOD -2
+#define LOAD_ZERO_SUPER_ATTR -3
+#define LOAD_ZERO_SUPER_METHOD -4
+
 static int
 compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
@@ -1014,7 +1013,6 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1024,18 +1022,15 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
