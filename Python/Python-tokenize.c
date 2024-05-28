@@ -34,9 +34,8 @@ typedef struct
     int done;
 
     /* Needed to cache line for performance */
-    const char *last_line_start;
-    Py_ssize_t last_line_size;
     PyObject *last_line;
+    Py_ssize_t last_lineno;
     Py_ssize_t byte_col_offset_diff;
 } tokenizeriterobject;
 
@@ -75,10 +74,9 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
     }
     self->done = 0;
 
-    self->last_line_start = NULL;
-    self->last_line_size = 0;
     self->last_line = NULL;
     self->byte_col_offset_diff = 0;
+    self->last_lineno = 0;
 
     return (PyObject *)self;
 }
@@ -223,14 +221,12 @@ tokenizeriter_next(tokenizeriterobject *it)
             size -= 1;
         }
 
-        if (size != it->last_line_size || strcmp(line_start, it->last_line_start) != 0) {
+        if (it->tok->lineno != it->last_lineno) {
             // Line has changed since last token, so we fetch the new line and cache it
             // in the iter object.
             Py_XDECREF(it->last_line);
             line = PyUnicode_DecodeUTF8(line_start, size, "replace");
             it->last_line = line;
-            it->last_line_start = line_start;
-            it->last_line_size = size;
             it->byte_col_offset_diff = 0;
         } else {
             // Line hasn't changed so we reuse the cached one.
@@ -244,6 +240,8 @@ tokenizeriter_next(tokenizeriterobject *it)
 
     Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     Py_ssize_t end_lineno = it->tok->lineno;
+    it->last_lineno = lineno;
+
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
     Py_ssize_t byte_offset = -1;
