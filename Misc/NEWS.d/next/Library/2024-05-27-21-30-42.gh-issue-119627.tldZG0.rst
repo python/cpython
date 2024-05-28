@@ -1,0 +1,12 @@
+Remove classes :class:`!asyncio.MultiLoopChildWatcher`,
+:class:`!asyncio.FastChildWatcher`,
+:class:`!asyncio.AbstractChildWatcher`,
+:class:`!asyncio.ThreadedChildWatcher`,
+:class:`!asyncio.BaseChildWatcher`,
+:class:`!asyncio.PidfdChildWatcher`,
+:class:`!asyncio.SafeChildWatcher` and
+methods :class:`!asyncio.set_child_watcher()`,
+:class:`!asyncio.get_child_watcher()`,
+:class:`!asyncio.AbstractEventLoopPolicy.set_child_watcher()`,
+:class:`!asyncio.AbstractEventLoopPolicy.get_child_watcher()`.
+They had all emitted deprecation warnings since Python 3.12. Patch by Albert Gorokhovskiy.
