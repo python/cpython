@@ -524,11 +524,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(source, /, globals=None, locals=None)
 
-   :param expression:
+   :param source:
       A Python expression.
-   :type expression: :class:`str` | :ref:`code object <code-objects>`
+   :type source: :class:`str` | :ref:`code object <code-objects>`
 
    :param globals:
       The global namespace (default: ``None``).
@@ -543,18 +543,19 @@ are always available.  They are listed here in alphabetical order.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
-   dictionaries as global and local namespace.  If the *globals* dictionary is
+   mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *expression* is parsed.  That way you can
    control what builtins are available to the executed code by inserting your
    own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
-   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   *globals* dictionary.  If both mappings are omitted, the expression is
    executed with the *globals* and *locals* in the environment where
-   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
-   environment.
+   environment if they are already referenced in the scope that is calling
+   :func:`eval` (e.g. via a :keyword:`nonlocal` statement).
 
    Example:
 
@@ -583,11 +584,20 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
+
 .. index:: pair: built-in function; exec
 
-.. function:: exec(object, globals=None, locals=None, /, *, closure=None)
+.. function:: exec(source, /, globals=None, locals=None, *, closure=None)
 
-   This function supports dynamic execution of Python code. *object* must be
+   This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
@@ -604,9 +614,15 @@ are always available.  They are listed here in alphabetical order.
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary. If exec
-   gets two separate objects as *globals* and *locals*, the code will be
-   executed as if it were embedded in a class definition.
+   that at the module level, globals and locals are the same dictionary.
+
+   .. note::
+
+      When ``exec`` gets two separate objects as *globals* and *locals*, the
+      code will be executed as if it were embedded in a class definition. This
+      means functions and classes defined in the executed code will not be able
+      to access variables assigned at the top level (as the "top level"
+      variables are treated as class variables in a class definition).
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
@@ -627,18 +643,26 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       The built-in functions :func:`globals` and :func:`locals` return the current
-      global and local dictionary, respectively, which may be useful to pass around
+      global and local namespace, respectively, which may be useful to pass around
       for use as the second and third argument to :func:`exec`.
 
    .. note::
 
-      The default *locals* act as described for function :func:`locals` below:
-      modifications to the default *locals* dictionary should not be attempted.
+      The default *locals* act as described for function :func:`locals` below.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
 
    .. versionchanged:: 3.11
       Added the *closure* parameter.
+
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
 
 
 .. function:: filter(function, iterable)
@@ -1041,14 +1065,56 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-   Update and return a dictionary representing the current local symbol table.
-   Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks. Note that at the module level, :func:`locals`
-   and :func:`globals` are the same dictionary.
+    Return a mapping object representing the current local symbol table, with
+    variable names as the keys, and their currently bound references as the
+    values.
 
-   .. note::
-      The contents of this dictionary should not be modified; changes may not
-      affect the values of local and free variables used by the interpreter.
+    At module scope, as well as when using :func:`exec` or :func:`eval` with
+    a single namespace, this function returns the same namespace as
+    :func:`globals`.
+
+    At class scope, it returns the namespace that will be passed to the
+    metaclass constructor.
+
+    When using ``exec()`` or ``eval()`` with separate local and global
+    arguments, it returns the local namespace passed in to the function call.
+
+    In all of the above cases, each call to ``locals()`` in a given frame of
+    execution will return the *same* mapping object. Changes made through
+    the mapping object returned from ``locals()`` will be visible as assigned,
+    reassigned, or deleted local variables, and assigning, reassigning, or
+    deleting local variables will immediately affect the contents of the
+    returned mapping object.
+
+    In an :term:`optimized scope` (including functions, generators, and
+    coroutines), each call to ``locals()`` instead returns a fresh dictionary
+    containing the current bindings of the function's local variables and any
+    nonlocal cell references. In this case, name binding changes made via the
+    returned dict are *not* written back to the corresponding local variables
+    or nonlocal cell references, and assigning, reassigning, or deleting local
+    variables and nonlocal cell references does *not* affect the contents
+    of previously returned dictionaries.
+
+    Calling ``locals()`` as part of a comprehension in a function, generator, or
+    coroutine is equivalent to calling it in the containing scope, except that
+    the comprehension's initialised iteration variables will be included. In
+    other scopes, it behaves as if the comprehension were running as a nested
+    function.
+
+    Calling ``locals()`` as part of a generator expression is equivalent to
+    calling it in a nested generator function.
+
+   .. versionchanged:: 3.12
+      The behaviour of ``locals()`` in a comprehension has been updated as
+      described in :pep:`709`.
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, the semantics of mutating the mapping objects
+      returned from this function are now defined. The behavior in
+      :term:`optimized scopes <optimized scope>` is now as described above.
+      Aside from being defined, the behaviour in other scopes remains
+      unchanged from previous versions.
+
 
 .. function:: map(function, iterable, *iterables)
 
@@ -1733,8 +1799,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`function` for details.
 
    A static method can be called either on the class (such as ``C.f()``) or on
-   an instance (such as ``C().f()``). Moreover, they can be called as regular
-   functions (such as ``f()``).
+   an instance (such as ``C().f()``).
+   Moreover, the static method :term:`descriptor` is also callable, so it can
+   be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1933,13 +2000,17 @@ are always available.  They are listed here in alphabetical order.
    :attr:`~object.__dict__` attributes (for example, classes use a
    :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
-   Without an argument, :func:`vars` acts like :func:`locals`.  Note, the
-   locals dictionary is only useful for reads since updates to the locals
-   dictionary are ignored.
+   Without an argument, :func:`vars` acts like :func:`locals`.
 
    A :exc:`TypeError` exception is raised if an object is specified but
    it doesn't have a :attr:`~object.__dict__` attribute (for example, if
    its class defines the :attr:`~object.__slots__` attribute).
+
+   .. versionchanged:: 3.13
+
+      The result of calling this function without an argument has been
+      updated as described for the :func:`locals` builtin.
+
 
 .. function:: zip(*iterables, strict=False)
 

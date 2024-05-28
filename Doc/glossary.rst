@@ -9,13 +9,14 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The default Python prompt of the interactive shell.  Often seen for code
-      examples which can be executed interactively in the interpreter.
+      The default Python prompt of the :term:`interactive` shell.  Often
+      seen for code examples which can be executed interactively in the
+      interpreter.
 
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering the
+      * The default Python prompt of the :term:`interactive` shell when entering the
         code for an indented code block, when within a pair of matching left and
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
@@ -547,12 +548,12 @@ Glossary
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
-      Past efforts to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity) have not been successful
-      because performance suffered in the common single-processor case. It
-      is believed that overcoming this performance issue would make the
-      implementation much more complicated and therefore costlier to maintain.
-
+      As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
+      build configuration. After building Python with this option, code must be
+      run with :option:`-X gil 0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
+      environment variable. This feature enables improved performance for
+      multi-threaded applications and makes it easier to use multi-core CPUs
+      efficiently. For more details, see :pep:`703`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -620,7 +621,8 @@ Glossary
       execute them and see their results.  Just launch ``python`` with no
       arguments (possibly by selecting it from your computer's main
       menu). It is a very powerful way to test out new ideas or inspect
-      modules and packages (remember ``help(x)``).
+      modules and packages (remember ``help(x)``). For more on interactive
+      mode, see :ref:`tut-interac`.
 
    interpreted
       Python is an interpreted language, as opposed to a compiled one,
@@ -727,18 +729,6 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
-   locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
-
-      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
-
-      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
-
-      ``locale.getencoding()`` can be used to get the locale encoding.
-
-      See also the :term:`filesystem encoding and error handler`.
-
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -757,6 +747,18 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      :func:`locale.getencoding` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    magic method
       .. index:: pair: magic; method
@@ -800,8 +802,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module
@@ -887,6 +888,15 @@ Glossary
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
+
+   optimized scope
+      A scope where target local variable names are reliably known to the
+      compiler when the code is compiled, allowing optimization of read and
+      write access to these names. The local namespaces for functions,
+      generators, coroutines, comprehensions, and generator expressions are
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
@@ -1084,6 +1094,10 @@ Glossary
       ``__init__.py`` file.
 
       See also :term:`namespace package`.
+
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
 
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for

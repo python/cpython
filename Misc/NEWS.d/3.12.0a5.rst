@@ -506,7 +506,7 @@ inheritance.
 .. nonce: 7sQz5l
 .. section: Build
 
-Update BOLT configration not to use depreacted usage of ``--split
+Update BOLT configuration not to use deprecated usage of ``--split
 functions``. Patch by Donghee Na.
 
 ..

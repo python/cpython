@@ -69,7 +69,7 @@ Lib/test/data/*
 /_bootstrap_python
 /Makefile
 /Makefile.pre
-iOSTestbed.*
+/iOSTestbed.*
 iOS/Frameworks/
 iOS/Resources/Info.plist
 iOS/testbed/build
@@ -142,7 +142,6 @@ Tools/unicode/data/
 /profile-clean-stamp
 /profile-run-stamp
 /profile-bolt-stamp
-/Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h
 /python-config

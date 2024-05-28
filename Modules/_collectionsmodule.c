@@ -2511,9 +2511,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    mapping_get = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(get));
+    mapping_get = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(get));
     dict_get = _PyType_Lookup(&PyDict_Type, &_Py_ID(get));
-    mapping_setitem = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(__setitem__));
+    mapping_setitem = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(__setitem__));
     dict_setitem = _PyType_Lookup(&PyDict_Type, &_Py_ID(__setitem__));
 
     if (mapping_get != NULL && mapping_get == dict_get &&
@@ -2587,6 +2587,8 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     }
 
 done:
+    Py_XDECREF(mapping_get);
+    Py_XDECREF(mapping_setitem);
     Py_DECREF(it);
     Py_XDECREF(key);
     Py_XDECREF(newval);
@@ -2817,6 +2819,7 @@ collections_exec(PyObject *module) {
 static struct PyModuleDef_Slot collections_slots[] = {
     {Py_mod_exec, collections_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

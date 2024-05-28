@@ -525,7 +525,7 @@ def urlunsplit(components):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
+    if netloc or (scheme and scheme in uses_netloc) or url[:2] == '//':
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
@@ -773,7 +773,11 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         def _unquote(s):
             return unquote_plus(s, encoding=encoding, errors=errors)
     else:
-        qs = bytes(qs)
+        if not qs:
+            return []
+        # Use memoryview() to reject integers and iterables,
+        # acceptable by the bytes constructor.
+        qs = bytes(memoryview(qs))
         if isinstance(separator, str):
             separator = bytes(separator, 'ascii')
         eq = b'='
