@@ -320,9 +320,9 @@ def join(split_command):
 
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
-def quote(s):
+def quote(s, always=False):
     """Return a shell-escaped version of the string *s*."""
-    if not s or _find_unsafe(s) is not None:
+    if always or not s or _find_unsafe(s) is not None:
         # use single quotes, and put single quotes into double quotes
         # the string $'b is then quoted as '$'"'"'b'
         return "'" + s.replace("'", "'\"'\"'") + "'"
