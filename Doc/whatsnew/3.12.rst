@@ -1262,7 +1262,7 @@ Deprecated
     :exc:`DeprecationWarning` when it can detect being called from a
     multithreaded process. There has always been a fundamental incompatibility
     with the POSIX platform when doing so. Even if such code *appeared* to work.
-    We added the warning to to raise awareness as issues encounted by code doing
+    We added the warning to raise awareness as issues encountered by code doing
     this are becoming more frequent. See the :func:`os.fork` documentation for
     more details along with `this discussion on fork being incompatible with threads
     <https://discuss.python.org/t/33555>`_ for *why* we're now surfacing this

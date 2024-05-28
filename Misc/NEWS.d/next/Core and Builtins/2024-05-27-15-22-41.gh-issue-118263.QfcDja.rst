@@ -1,0 +1,1 @@
+Speed up :func:`os.path.normpath` with a direct C call.
