@@ -151,8 +151,9 @@ typing
 urllib
 ------
 
-* Remove deprecated ``Quoter`` class from :mod:`urllib.parse`.
+* Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
+  (Contributed by Nikita Sobolev in :gh:`118827`.)
 
 Others
 ------
