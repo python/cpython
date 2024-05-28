@@ -1962,19 +1962,7 @@ dummy_func(
 
         macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
 
-        pseudo(LOAD_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr: PyObject *, unused if (0))) {
+        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr_st, unused if (0))) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
             PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
@@ -1984,9 +1972,10 @@ dummy_func(
             DEOPT_IF(!PyType_Check(class));
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            PyObject *attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
             DECREF_INPUTS();
             ERROR_IF(attr == NULL, error);
+            attr_st = PyStackRef_FromPyObjectSteal(attr);
         }
 
         inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super_st, class_st, self_st -- attr: PyObject *, self_or_null)) {
@@ -2082,10 +2071,6 @@ dummy_func(
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +
             _LOAD_ATTR;
-
-        pseudo(LOAD_METHOD) = {
-            LOAD_ATTR,
-        };
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
