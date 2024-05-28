@@ -1899,7 +1899,7 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
-   See Unicode Properties section in :ref:`unicode-howto-properties`.
+   See :ref:`unicode-howto-properties`.
 
 .. method:: str.isascii()
 
