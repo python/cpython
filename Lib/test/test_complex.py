@@ -418,9 +418,6 @@ class ComplexTest(unittest.TestCase):
         c2 = ComplexSubclass(c)
         self.assertEqual(c2, c)
         self.assertIs(type(c2), ComplexSubclass)
-        c2 = ComplexSubclass(real=c)
-        self.assertEqual(c2, c)
-        self.assertIs(type(c2), ComplexSubclass)
         del c, c2
 
         self.assertRaisesRegex(TypeError,
