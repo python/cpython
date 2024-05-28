@@ -101,6 +101,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_children = NULL;
 
     ste->ste_directives = NULL;
+    ste->ste_mangled_names = NULL;
 
     ste->ste_type = block;
     ste->ste_nested = 0;
@@ -164,6 +165,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
+    Py_XDECREF(ste->ste_mangled_names);
     PyObject_Free(ste);
 }
 
@@ -1231,6 +1233,11 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     if (prev) {
         ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
     }
+    /* No need to inherit ste_mangled_names in classes, where all names
+     * are mangled. */
+    if (prev && prev->ste_mangled_names != NULL && block != ClassBlock) {
+        ste->ste_mangled_names = Py_NewRef(prev->ste_mangled_names);
+    }
     /* The entry is owned by the stack. Borrow it for st_cur. */
     Py_DECREF(ste);
     st->st_cur = ste;
@@ -1256,7 +1263,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 static long
 symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *mangled = _Py_Mangle(st->st_private, name);
+    PyObject *mangled = _Py_MaybeMangle(st->st_private, ste, name);
     if (!mangled)
         return 0;
     long ret = _PyST_GetSymbol(ste, mangled);
@@ -1277,8 +1284,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
     PyObject *o;
     PyObject *dict;
     long val;
-    PyObject *mangled = _Py_Mangle(st->st_private, name);
-
+    PyObject *mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
 
     if (!mangled)
         return 0;
@@ -1367,6 +1373,11 @@ static int
 symtable_add_def(struct symtable *st, PyObject *name, int flag,
                  int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
+    if ((flag & DEF_TYPE_PARAM) && st->st_cur->ste_mangled_names != NULL) {
+        if(PySet_Add(st->st_cur->ste_mangled_names, name) < 0) {
+            return 0;
+        }
+    }
     return symtable_add_def_helper(st, name, flag, st->st_cur,
                         lineno, col_offset, end_lineno, end_col_offset);
 }
@@ -1401,7 +1412,6 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
-        st->st_private = name;
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
@@ -1490,7 +1500,7 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
         if (!st->st_cur->ste_directives)
             return 0;
     }
-    mangled = _Py_Mangle(st->st_private, name);
+    mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
     if (!mangled)
         return 0;
     data = Py_BuildValue("(Niiii)", mangled, lineno, col_offset, end_lineno, end_col_offset);
@@ -1566,11 +1576,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
+        tmp = st->st_private;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.type_params,
                                                 false, false, s->kind,
                                                 LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            st->st_private = s->v.ClassDef.name;
+            st->st_cur->ste_mangled_names = PySet_New(NULL);
+            if (!st->st_cur->ste_mangled_names) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
@@ -1581,7 +1597,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
             VISIT_QUIT(st, 0);
-        tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_add_def(st, &_Py_ID(__type_params__),
@@ -1595,13 +1610,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
-        st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
+        st->st_private = tmp;
         break;
     }
     case TypeAlias_kind: {
@@ -2661,6 +2676,26 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
+}
+
+PyObject *
+_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name)
+{
+    /* Special case for type parameter blocks around generic classes:
+     * we want to mangle type parameter names (so a type param with a private
+     * name can be used inside the class body), but we don't want to mangle
+     * any other names that appear within the type parameter scope.
+     */
+    if (ste->ste_mangled_names != NULL) {
+        int result = PySet_Contains(ste->ste_mangled_names, name);
+        if (result < 0) {
+            return NULL;
+        }
+        if (result == 0) {
+            return Py_NewRef(name);
+        }
+    }
+    return _Py_Mangle(privateobj, name);
 }
 
 PyObject *
