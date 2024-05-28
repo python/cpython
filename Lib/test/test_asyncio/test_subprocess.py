@@ -865,7 +865,7 @@ class SubprocessMixin:
 if sys.platform != 'win32':
     # Unix
     pass
-    
+
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):

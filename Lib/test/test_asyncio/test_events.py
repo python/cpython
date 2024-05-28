@@ -2232,7 +2232,7 @@ if sys.platform == 'win32':
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
 else:
     import selectors
-    
+
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
             super().setUp()
