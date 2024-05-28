@@ -943,14 +943,19 @@
                 stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
                 Py_DECREF(callable);
             }
-            // _CHECK_FUNCTION_EXACT_ARGS
-            self_or_null = self;
+            // _CHECK_FUNCTION_VERSION
             callable = func;
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 DEOPT_IF(func->func_version != func_version, CALL);
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
+            {
+                assert(PyFunction_Check(callable));
+                PyFunctionObject *func = (PyFunctionObject *)callable;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
             }
@@ -1859,8 +1864,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject *self_or_null;
             PyObject *callable;
+            PyObject *self_or_null;
             PyObject **args;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
@@ -1868,14 +1873,19 @@
             {
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
             }
-            // _CHECK_FUNCTION_EXACT_ARGS
-            self_or_null = stack_pointer[-1 - oparg];
+            // _CHECK_FUNCTION_VERSION
             callable = stack_pointer[-2 - oparg];
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 DEOPT_IF(func->func_version != func_version, CALL);
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
+            {
+                assert(PyFunction_Check(callable));
+                PyFunctionObject *func = (PyFunctionObject *)callable;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
             }
