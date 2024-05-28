@@ -1748,7 +1748,7 @@ def patch(
     the patch is undone.
 
     If `new` is omitted, then the target is replaced with an
-    `AsyncMock if the patched object is an async function or a
+    `AsyncMock` if the patched object is an async function or a
     `MagicMock` otherwise. If `patch` is used as a decorator and `new` is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If `patch` is used as a context manager the created

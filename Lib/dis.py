@@ -11,6 +11,7 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _common_constants,
     _intrinsic_1_descs,
     _intrinsic_2_descs,
     _specializations,
@@ -44,6 +45,7 @@ LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
+LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
@@ -601,6 +603,12 @@ class ArgResolver:
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:
                 argrepr = _intrinsic_2_descs[arg]
+            elif deop == LOAD_COMMON_CONSTANT:
+                obj = _common_constants[arg]
+                if isinstance(obj, type):
+                    argrepr = obj.__name__
+                else:
+                    argrepr = repr(obj)
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):

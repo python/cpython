@@ -2887,6 +2887,16 @@ class SinglephaseInitTests(unittest.TestCase):
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_check_state_first(self):
+        for variant in ['', '_with_reinit', '_with_state']:
+            name = f'{self.NAME}{variant}_check_cache_first'
+            with self.subTest(name):
+                mod = self._load_dynamic(name, self.ORIGIN)
+                self.assertEqual(mod.__name__, name)
+                sys.modules.pop(name, None)
+                _testinternalcapi.clear_extension(name, self.ORIGIN)
+
     # Currently, for every single-phrase init module loaded
     # in multiple interpreters, those interpreters share a
     # PyModuleDef for that object, which can be a problem.
