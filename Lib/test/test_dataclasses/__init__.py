@@ -1331,14 +1331,14 @@ class TestCase(unittest.TestCase):
             _shadowed: int = field(init=False)
 
             def __post_init__(self, shadowed):
-                self._shadowed = shadowed
+                self._shadowed = shadowed * 2
 
             @property
             def shadowed(self):
-                return self._shadowed
+                return self._shadowed * 3
 
         c = C(5)
-        self.assertEqual(c.shadowed, 5)
+        self.assertEqual(c.shadowed, 30)
 
     def test_default_factory(self):
         # Test a factory that returns a new list.
