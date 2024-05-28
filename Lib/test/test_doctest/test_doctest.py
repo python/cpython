@@ -2407,8 +2407,7 @@ def test_DocFileSuite():
        Support for using a package's __loader__.get_data() is also
        provided.
 
-         >>> import importlib.util, unittest
-         >>> import test  # the module to test
+         >>> import importlib.util, unittest, test
          >>> added_loader = False
          >>> if not hasattr(test, '__loader__'):
          ...     spec = importlib.util.find_spec(test.__name__)
