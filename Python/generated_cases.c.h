@@ -2791,8 +2791,7 @@
                         _PyErr_Clear(tstate);
                     }
                     /* iterator ended normally */
-                    assert(next_instr[oparg].op.code == END_FOR ||
-                       next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+                    assert(base_opcode(_PyFrame_GetCode(frame), INSTR_OFFSET() + oparg) == END_FOR);
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */

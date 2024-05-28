@@ -564,7 +564,9 @@
             retval = stack_pointer[-1];
             stack_pointer += -1;
             ctx->frame->stack_pointer = stack_pointer;
-            frame_pop(ctx);
+            if (frame_pop(ctx)) {
+                goto done;
+            }
             stack_pointer = ctx->frame->stack_pointer;
             res = retval;
             /* Stack space handling */
@@ -1774,7 +1776,9 @@
         case _RETURN_GENERATOR: {
             _Py_UopsSymbol *res;
             ctx->frame->stack_pointer = stack_pointer;
-            frame_pop(ctx);
+            if (frame_pop(ctx)) {
+                goto done;
+            }
             stack_pointer = ctx->frame->stack_pointer;
             res = sym_new_unknown(ctx);
             /* Stack space handling */
@@ -2061,6 +2065,14 @@
         }
 
         case _TIER2_RESUME_CHECK: {
+            break;
+        }
+
+        case _RETURN_OFFSET: {
+            break;
+        }
+
+        case _YIELD_OFFSET: {
             break;
         }
 

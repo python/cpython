@@ -386,9 +386,11 @@ _Py_uop_frame_pop(_Py_UOpsContext *ctx)
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
     ctx->curr_frame_depth--;
-    assert(ctx->curr_frame_depth >= 1);
+    if (ctx->curr_frame_depth == 0) {
+        ctx->frame = NULL;
+        return -1;
+    }
     ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
-
     return 0;
 }
 
