@@ -174,6 +174,7 @@ class Namespace(argparse.Namespace):
         self.tempdir = None
         self._add_python_opts = True
         self.xmlpath = None
+        self.sequentially = False
 
         super().__init__(**kwargs)
 
@@ -307,6 +308,10 @@ def _create_parser():
     group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
                        dest='use_mp', type=int,
                        help='run PROCESSES processes at once')
+    group.add_argument('--sequentially', action='store_true',
+                       help='always run all tests sequentially, '
+                            'ignore -jN option, '
+                            'and failed tests are also rerun sequentially')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '

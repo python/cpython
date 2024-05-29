@@ -473,6 +473,13 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.hunt_refleak.runs, 10)
         self.assertFalse(regrtest.output_on_failure)
 
+    def test_sequentially(self):
+        args = ['-j2', '--sequentially']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.sequentially)
+
 
 @dataclasses.dataclass(slots=True)
 class Rerun:
