@@ -29,7 +29,7 @@
 
 // Py_IS_NAN(X)
 // Return 1 if float or double arg is a NaN, else 0.
-// Soft deprecated since Python 3.14.
+// Soft deprecated since Python 3.14, use isnan() instead.
 #define Py_IS_NAN(X) isnan(X)
 
 // Py_IS_INFINITY(X)
