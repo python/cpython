@@ -609,7 +609,7 @@ Additionally, for :class:`float` available following representation types:
    |         | prefix and ``'P'`` as the exponent separator.            |
    +---------+----------------------------------------------------------+
 
-.. versionchanged:: 3.13
+.. versionchanged:: 3.14
    Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 

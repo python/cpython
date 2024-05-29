@@ -151,7 +151,7 @@ The following functions provide locale-independent string to number conversions.
 
    .. versionadded:: 3.1
 
-.. versionchanged:: 3.13
+.. versionchanged:: 3.14
    Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 

@@ -2513,7 +2513,7 @@ that ``'\0'`` is the end of the string.
    ``%f`` conversions for numbers whose absolute value is over 1e50 are no
    longer replaced by ``%g`` conversions.
 
-.. versionchanged:: 3.13
+.. versionchanged:: 3.14
    Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 
