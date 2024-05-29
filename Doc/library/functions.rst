@@ -977,6 +977,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. doctest::
 
+      >>> int(123.45)
+      123
       >>> int('123')
       123
       >>> int('   -12_345\n')
