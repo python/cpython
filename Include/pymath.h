@@ -27,20 +27,19 @@
 #define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
 #endif
 
-/* Py_IS_NAN, Py_IS_INFINITY and Py_IS_FINITE are soft deprecated
- * since CPython 3.14.
- */
-
 // Py_IS_NAN(X)
 // Return 1 if float or double arg is a NaN, else 0.
+// Soft deprecated since Python 3.14.
 #define Py_IS_NAN(X) isnan(X)
 
 // Py_IS_INFINITY(X)
 // Return 1 if float or double arg is an infinity, else 0.
+// Soft deprecated since Python 3.14.
 #define Py_IS_INFINITY(X) isinf(X)
 
 // Py_IS_FINITE(X)
 // Return 1 if float or double arg is neither infinite nor NAN, else 0.
+// Soft deprecated since Python 3.14.
 #define Py_IS_FINITE(X) isfinite(X)
 
 // Py_INFINITY: Value that evaluates to a positive double infinity.
