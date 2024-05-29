@@ -281,6 +281,10 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
+# Private sentinel that makes walk() classify all symlinks and junctions as
+# regular files.
+_walk_symlinks_as_files = object()
+
 def walk(top, topdown=True, onerror=None, followlinks=False):
     """Directory tree generator.
 
@@ -382,7 +386,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     break
 
                 try:
-                    is_dir = entry.is_dir()
+                    if followlinks is _walk_symlinks_as_files:
+                        is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
+                    else:
+                        is_dir = entry.is_dir()
                 except OSError:
                     # If is_dir() raises an OSError, consider the entry not to
                     # be a directory, same behaviour as os.path.isdir().
