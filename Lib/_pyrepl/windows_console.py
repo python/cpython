@@ -38,7 +38,6 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
-from typing import TYPE_CHECKING
 from .console import Event, Console
 from .trace import trace
 from .utils import wlen
