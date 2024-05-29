@@ -590,7 +590,7 @@ else:  # use native Windows method on Windows
                 try:
                     path = join(_path_abspath(drive), path)
                 except (OSError, ValueError):
-                    # Invalid drive \x00:Windows, assume root directory
+                    # Invalid drive \x00: on Windows; assume root directory
                     path = drive + sep + path
             else:
                 path = join(cwd, root + path)
