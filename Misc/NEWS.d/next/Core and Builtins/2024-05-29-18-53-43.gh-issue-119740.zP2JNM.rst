@@ -1,2 +1,2 @@
-Remove the previously-deprecated delegation of :class:`int` to
+Remove the previously-deprecated delegation of :func:`int` to
 :meth:`~object.__trunc__`.
