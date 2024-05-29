@@ -262,23 +262,17 @@ class WindowsConsole(Console):
         ):
             raise WinError(GetLastError())
 
-    def _hide_cursor(self) -> None:
-        info = CONSOLE_CURSOR_INFO()
-        if not GetConsoleCursorInfo(OutHandle, info):
-            raise WinError(GetLastError())
+    def _hide_cursor(self):
+        self.__write("\x1b[?25l")
 
-        info.bVisible = False
-        if not SetConsoleCursorInfo(OutHandle, info):
-            raise WinError(GetLastError())
+    def _show_cursor(self):
+        self.__write("\x1b[?25h")
 
-    def _show_cursor(self) -> None:
-        info = CONSOLE_CURSOR_INFO()
-        if not GetConsoleCursorInfo(OutHandle, info):
-            raise WinError(GetLastError())
+    def _enable_blinking(self):
+        self.__write("\x1b[?12h")
 
-        info.bVisible = True
-        if not SetConsoleCursorInfo(OutHandle, info):
-            raise WinError(GetLastError())
+    def _disable_blinking(self):
+        self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
         os.write(self.output_fd, text.encode(self.encoding, "replace"))
@@ -555,14 +549,6 @@ if sys.platform == "win32":
     ]
     GetConsoleScreenBufferInfo.restype = BOOL
 
-    SetConsoleCursorInfo = _KERNEL32.SetConsoleCursorInfo
-    SetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-    SetConsoleCursorInfo.restype = BOOL
-
-    GetConsoleCursorInfo = _KERNEL32.GetConsoleCursorInfo
-    GetConsoleCursorInfo.argtypes = [HANDLE, POINTER(CONSOLE_CURSOR_INFO)]
-    GetConsoleCursorInfo.restype = BOOL
-
     ScrollConsoleScreenBuffer = _KERNEL32.ScrollConsoleScreenBufferW
     ScrollConsoleScreenBuffer.argtypes = [
         HANDLE,
@@ -590,8 +576,6 @@ else:
 
     GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
-    SetConsoleCursorInfo = _win_only
-    GetConsoleCursorInfo = _win_only
     ScrollConsoleScreenBuffer = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
