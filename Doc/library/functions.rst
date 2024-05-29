@@ -978,7 +978,7 @@ are always available.  They are listed here in alphabetical order.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
 
-   .. deprecated-removed:: 3.11 3.14
+   .. versionchanged:: 3.14
       :class:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
 

@@ -3127,7 +3127,7 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   .. deprecated-removed:: 3.11 3.14
+   .. versionchanged:: 3.14
       :class:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
 
