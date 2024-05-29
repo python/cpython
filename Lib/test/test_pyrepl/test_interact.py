@@ -94,3 +94,12 @@ class TestSimpleInteract(unittest.TestCase):
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+
+    def test_no_active_future(self):
+        console = InteractiveColoredConsole()
+        source = "x: int = 1; print(__annotations__)"
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
