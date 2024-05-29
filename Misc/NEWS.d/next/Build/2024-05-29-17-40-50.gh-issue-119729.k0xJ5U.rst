@@ -1,0 +1,3 @@
+On POSIX systems, the pkg-config (``.pc``) files now include the ABI flags.
+For example, the free-threaded build generates ``python-3.14t.pc`` and the
+default build generates ``python-3.14.pc``.
