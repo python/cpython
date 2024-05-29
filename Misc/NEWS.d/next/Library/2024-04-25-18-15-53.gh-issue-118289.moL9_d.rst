@@ -1,2 +1,7 @@
-:func:`os.path.realpath` now raises :exc:`NotADirectoryError` when *strict*
-mode is enabled and a non-directory path with a trailing slash is supplied.
+Fix issue where :func:`os.path.realpath` didn't raise :exc:`OSError` when
+given a non-directory path with a trailing slash in *strict* mode on POSIX.
+:func:`~os.path.realpath` now raises :exc:`NotADirectoryError` in this case,
+and whenever a non-directory path in a non-final position is resolved; for
+example, ``realpath("photo.jpg/spam", strict=True)`` now raises
+:exc:`NotADirectoryError` for ``"photo.jpg"`` rather than
+:exc:`FileNotFoundError` for ``"photo.jpg/spam"``.
