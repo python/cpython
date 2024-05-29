@@ -39,7 +39,7 @@
 
 // Py_IS_FINITE(X)
 // Return 1 if float or double arg is neither infinite nor NAN, else 0.
-// Soft deprecated since Python 3.14.
+// Soft deprecated since Python 3.14, use isfinite() instead.
 #define Py_IS_FINITE(X) isfinite(X)
 
 // Py_INFINITY: Value that evaluates to a positive double infinity.
