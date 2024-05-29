@@ -621,7 +621,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     if (impl == NULL) {
         return NULL;
     }
-    PyObject *dict = _PyType_GetDict(self);
+    PyObject *dict = _PyType_GetDict((PyTypeObject *)self);
     if (!PyDict_Contains(dict, &_Py_ID(_abc_impl))) {
         _abc__abc_init(module, self);
         impl = _get_impl(module, self);
@@ -720,7 +720,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (impl == NULL) {
         return NULL;
     }
-    PyObject *dict = _PyType_GetDict(self);
+    PyObject *dict = _PyType_GetDict((PyTypeObject *)self);
     if (!PyDict_Contains(dict, &_Py_ID(_abc_impl))) {
         _abc__abc_init(module, self);
         impl = _get_impl(module, self);
