@@ -152,7 +152,11 @@ htmlview: html
 
 .PHONY: ensure-sphinx-autobuild
 ensure-sphinx-autobuild: venv
-	$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild
+	if uv --version > /dev/null; then \
+		$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install sphinx-autobuild; \
+	else \
+		$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild; \
+	fi
 
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
@@ -174,10 +178,15 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
-		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
-		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
-		echo "The venv has been created in the $(VENVDIR) directory"; \
+		if uv --version > /dev/null; then \
+			uv venv $(VENVDIR); \
+			VIRTUAL_ENV=$(VENVDIR) uv pip install -r $(REQUIREMENTS); \
+		else \
+			$(PYTHON) -m venv $(VENVDIR); \
+			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+			echo "The venv has been created in the $(VENVDIR) directory"; \
+		fi; \
 	fi
 
 .PHONY: dist
@@ -237,7 +246,11 @@ dist:
 
 .PHONY: check
 check: venv
-	$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit
+	if uv --version > /dev/null; then \
+		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install pre-commit; \
+	else \
+		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit; \
+	fi;
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
