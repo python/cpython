@@ -1586,21 +1586,23 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    PyObject *docstring = _PyAST_GetDocString(stmts);
-    if (docstring) {
-        first_instr = 1;
-        /* if not -OO mode, set docstring */
-        if (c->c_optimize < 2) {
-            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-            if (cleandoc == NULL) {
-                return ERROR;
+    if (!c->c_interactive) {
+        PyObject *docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            first_instr = 1;
+            /* if not -OO mode, set docstring */
+            if (c->c_optimize < 2) {
+                PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+                if (cleandoc == NULL) {
+                    return ERROR;
+                }
+                stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+                assert(st->kind == Expr_kind);
+                location loc = LOC(st->v.Expr.value);
+                ADDOP_LOAD_CONST(c, loc, cleandoc);
+                Py_DECREF(cleandoc);
+                RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
             }
-            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-            assert(st->kind == Expr_kind);
-            location loc = LOC(st->v.Expr.value);
-            ADDOP_LOAD_CONST(c, loc, cleandoc);
-            Py_DECREF(cleandoc);
-            RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
