@@ -27,7 +27,7 @@
 #define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
 #endif
 
-/* Py_IS_NAN, Py_IS_INFINITY and Py_IS_FINITE are deprecated
+/* Py_IS_NAN, Py_IS_INFINITY and Py_IS_FINITE are soft deprecated
  * since CPython 3.14.
  */
 
