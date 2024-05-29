@@ -244,13 +244,16 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
-.PHONY: check
-check: venv
+.PHONY: ensure-pre-commit
+ensure-pre-commit: venv
 	if uv --version > /dev/null; then \
 		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install pre-commit; \
 	else \
 		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit; \
-	fi;
+	fi
+
+.PHONY: check
+check: ensure-pre-commit
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
