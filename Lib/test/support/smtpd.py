@@ -7,7 +7,7 @@ Options:
 
     --nosetuid
     -n
-        This program generally tries to setuid `nobody', unless this flag is
+        This program generally tries to setuid 'nobody', unless this flag is
         set.  The setuid call will fail if this program is not run as root (in
         which case, use this flag).
 
@@ -17,7 +17,7 @@ Options:
 
     --class classname
     -c classname
-        Use `classname' as the concrete SMTP proxy class.  Uses `PureProxy' by
+        Use 'classname' as the concrete SMTP proxy class.  Uses 'PureProxy' by
         default.
 
     --size limit
@@ -39,8 +39,8 @@ Options:
 
 Version: %(__version__)s
 
-If localhost is not given then `localhost' is used, and if localport is not
-given then 8025 is used.  If remotehost is not given then `localhost' is used,
+If localhost is not given then 'localhost' is used, and if localport is not
+given then 8025 is used.  If remotehost is not given then 'localhost' is used,
 and if remoteport is not given, then 25 is used.
 """
 
@@ -672,9 +672,9 @@ class SMTPServer(asyncore.dispatcher):
         message to.
 
         data is a string containing the entire full text of the message,
-        headers (if supplied) and all.  It has been `de-transparencied'
+        headers (if supplied) and all.  It has been 'de-transparencied'
         according to RFC 821, Section 4.5.2.  In other words, a line
-        containing a `.' followed by other text has had the leading dot
+        containing a '.' followed by other text has had the leading dot
         removed.
 
         kwargs is a dictionary containing additional information.  It is
@@ -685,7 +685,7 @@ class SMTPServer(asyncore.dispatcher):
                             ['BODY=8BITMIME', 'SMTPUTF8'].
             'rcpt_options': same, for the rcpt command.
 
-        This function should return None for a normal `250 Ok' response;
+        This function should return None for a normal '250 Ok' response;
         otherwise, it should return the desired response string in RFC 821
         format.
 
