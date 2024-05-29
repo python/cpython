@@ -231,6 +231,12 @@ Porting to Python 3.14
 Deprecated
 ----------
 
+* Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
+  and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
+  use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
+  :c:macro:`!isfinite` available from :file:`math.h`
+  since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
 Removed
 -------
 

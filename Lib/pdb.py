@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """
 The Python Debugger Pdb
 =======================
