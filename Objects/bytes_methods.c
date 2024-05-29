@@ -577,8 +577,12 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         return find_internal(str, len, function_name, subseq, start, end,
                              direction);
     }
-    Py_ssize_t* sub_lengths = PyMem_RawMalloc(((size_t)tuple_len + 1) *
-                                              sizeof(wchar_t));
+    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) {
+        PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+        return -2;
+    }
+    Py_ssize_t *sub_lengths = PyMem_RawMalloc(((size_t)tuple_len) *
+                                              sizeof(Py_ssize_t));
     if (!sub_lengths) {
         PyErr_NoMemory();
         return -2;
