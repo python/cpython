@@ -52,7 +52,7 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
    The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
    If you wish to capture and combine both streams into one,
    set *stdout* to :data:`~subprocess.PIPE`
