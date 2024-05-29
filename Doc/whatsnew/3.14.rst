@@ -207,6 +207,11 @@ Others
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
 
+* The :class:`int` built-in will no longer delegate to
+  :meth:`~object.__trunc__`. Classes that want to support conversion to `int`
+  must implement either :meth:`~object.__int__` or :meth:`~object.__index__`.
+  (Contributed by Mark Dickinson in :gh:`119742`).
+
 
 Porting to Python 3.14
 ======================
