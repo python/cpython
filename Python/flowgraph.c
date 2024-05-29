@@ -2813,6 +2813,9 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
             }
         }
     }
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -2892,18 +2895,14 @@ static PyObject *
 cfg_to_instruction_sequence(cfg_builder *g)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)_PyInstructionSequence_New();
-    if (seq != NULL) {
-        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
-            goto error;
-        }
-        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
-            goto error;
-        }
+    if (seq == NULL) {
+        return NULL;
+    }
+    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
+        PyInstructionSequence_Fini(seq);
+        return NULL;
     }
     return (PyObject*)seq;
-error:
-    PyInstructionSequence_Fini(seq);
-    return NULL;
 }
 
 PyObject *
