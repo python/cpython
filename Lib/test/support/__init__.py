@@ -1189,6 +1189,25 @@ def no_tracing(func):
     return coverage_wrapper
 
 
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
+
 def refcount_test(test):
     """Decorator for tests which involve reference counting.
 
