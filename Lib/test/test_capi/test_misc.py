@@ -2285,6 +2285,7 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_datetime_capi_type_check(self):
         script = textwrap.dedent("""
             try:
