@@ -651,6 +651,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 }
                 else {
                     sub_len = subbuf.len;
+                    PyBuffer_Release(&subbuf);
                 }
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = find_internal(str, len, function_name, subseq,
