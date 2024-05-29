@@ -14,6 +14,9 @@ from .utils import (
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+NEED_TTY = set('''
+    test_ioctl
+'''.split())
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
@@ -47,7 +50,10 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
         close_fds=True,
         cwd=work_dir,
     )
-    if USE_PROCESS_GROUP:
+
+    # Don't use setsid() in tests using TTY
+    test_name = runtests.tests[0]
+    if USE_PROCESS_GROUP and test_name not in NEED_TTY:
         kwargs['start_new_session'] = True
 
     # Pass json_file to the worker process
