@@ -1356,7 +1356,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
     }
     /* No need to inherit ste_mangled_names in classes, where all names
      * are mangled. */
-    if (prev && prev->ste_mangled_names != NULL && block != ClassBlock) {
+    if (prev && prev->ste_mangled_names != NULL && ste->ste_type != ClassBlock) {
         ste->ste_mangled_names = Py_NewRef(prev->ste_mangled_names);
     }
     /* The entry is owned by the stack. Borrow it for st_cur. */
