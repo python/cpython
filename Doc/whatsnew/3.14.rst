@@ -193,8 +193,8 @@ Porting to Python 3.14
 Deprecated
 ----------
 
-* Deprecate ``Py_IS_NAN``, ``Py_IS_INFINITY`` and ``Py_IS_FINITE`` macros,
-  use instead ``isnan``, ``isinf`` and ``isfinite`` available from ``<math.h>``
+* Deprecate :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY` and :c:macro:`!Py_IS_FINITE` macros,
+  use instead :c:macro:`!isnan`, :c:macro:`!isinf` and :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
 Removed
