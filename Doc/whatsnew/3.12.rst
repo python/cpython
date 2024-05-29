@@ -1229,7 +1229,7 @@ Deprecated
   your code *requires* ``'fork'``.  See :ref:`contexts and start methods
   <multiprocessing-start-methods>`.
 
-* :mod:`pkgutil`: :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader`
   are deprecated and will be removed in Python 3.14;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
