@@ -493,12 +493,15 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             yield value
             return
         assert action == _fwalk_walk
-        isroot, toppath, dirfd, topname, orig_st = value
+        isroot, toppath, dirfd, topname, entry = value
         try:
-            if orig_st is None and not follow_symlinks:
+            if not follow_symlinks:
                 # Note: To guard against symlink races, we use the standard
                 # lstat()/open()/fstat() trick.
-                orig_st = stat(topname, follow_symlinks=False, dir_fd=dirfd)
+                if entry is None:
+                    orig_st = stat(topname, follow_symlinks=False, dir_fd=dirfd)
+                else:
+                    orig_st = entry.stat(follow_symlinks=False)
             topfd = open(topname, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
         except OSError as err:
             if isroot:
@@ -544,19 +547,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
         if entries is None:
-            for name in reversed(dirs):
-                args = (False, path.join(toppath, name), topfd, name, None)
-                stack.append((_fwalk_walk, args))
+            stack.extend(
+                (_fwalk_walk, (False, path.join(toppath, name), topfd, name, None))
+                for name in reversed(dirs))
         else:
-            for name, entry in zip(dirs, entries):
-                try:
-                    orig_st = entry.stat(follow_symlinks=False)
-                except OSError as err:
-                    if onerror is not None:
-                        onerror(err)
-                    continue
-                args = (False, path.join(toppath, name), topfd, name, orig_st)
-                stack.append((_fwalk_walk, args))
+            stack.extend(
+                (_fwalk_walk, (False, path.join(toppath, name), topfd, name, entry))
+                for name, entry in zip(dirs, entries))
 
     __all__.append("fwalk")
 
