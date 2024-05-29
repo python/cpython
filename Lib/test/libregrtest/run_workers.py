@@ -142,14 +142,20 @@ class WorkerThread(threading.Thread):
             return
         self._killed = True
 
-        if USE_PROCESS_GROUP:
+        use_killpg = USE_PROCESS_GROUP
+        if use_killpg:
+            parent_sid = os.getsid(0)
+            sid = os.getsid(popen.pid)
+            use_killpg = (sid != parent_sid)
+
+        if use_killpg:
             what = f"{self} process group"
         else:
             what = f"{self} process"
 
         print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
-            if USE_PROCESS_GROUP:
+            if use_killpg:
                 os.killpg(popen.pid, signal.SIGKILL)
             else:
                 popen.kill()

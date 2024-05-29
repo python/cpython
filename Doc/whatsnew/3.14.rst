@@ -90,7 +90,7 @@ ast
 ---
 
 Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`)
+(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
 
 
@@ -107,6 +107,13 @@ Deprecated
 
 Removed
 =======
+
+argparse
+--------
+
+* Remove the *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction`.
+  They were deprecated since 3.12.
 
 ast
 ---
@@ -137,26 +144,33 @@ ast
 
   (Contributed by Alex Waygood in :gh:`119562`.)
 
-
-argparse
---------
-
-* Remove the *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction`.
-  They were deprecated since 3.12.
-
 collections.abc
 ---------------
 
 * Remove :class:`!collections.abc.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
 
-
 email
 -----
 
 * Remove the *isdst* parameter from :func:`email.utils.localtime`.
   (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+importlib
+---------
+
+* Remove deprecated :mod:`importlib.abc` classes:
+
+  * :class:`!importlib.abc.ResourceReader`
+  * :class:`!importlib.abc.Traversable`
+  * :class:`!importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
 itertools
 ---------
@@ -230,6 +244,12 @@ Porting to Python 3.14
 
 Deprecated
 ----------
+
+* Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
+  and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
+  use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
+  :c:macro:`!isfinite` available from :file:`math.h`
+  since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
 Removed
 -------
