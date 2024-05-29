@@ -546,13 +546,17 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         else:
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
+        dirs = dirs[::-1]
         if entries is None:
             stack.extend(
-                (_fwalk_walk, (False, path.join(toppath, name), topfd, name, None))
-                for name in reversed(dirs))
+                (_fwalk_walk,
+                 (False, path.join(toppath, name), topfd, name, None))
+                for name in dirs)
         else:
+            entries = entries[::-1]
             stack.extend(
-                (_fwalk_walk, (False, path.join(toppath, name), topfd, name, entry))
+                (_fwalk_walk,
+                 (False, path.join(toppath, name), topfd, name, entry))
                 for name, entry in zip(dirs, entries))
 
     __all__.append("fwalk")
