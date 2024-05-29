@@ -5534,7 +5534,7 @@ os__path_abspath_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=bb40fbf3be7251a4 input=8870bbcaa7c920a1]*/
 {
     Py_ssize_t abs_len;
-    wchar_t *abs, *abs_buf = NULL, *cwd_buf = NULL;
+    wchar_t *abs, *abs_buf = NULL;
     PyObject *result = NULL;
 
     wchar_t *path_buf = (wchar_t *)path->wide;
@@ -5559,6 +5559,7 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     abs = abs_buf;
     abs_len = wcslen(abs_buf);
 #else
+    wchar_t *cwd_buf = NULL;
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
         result = posix_getcwd(use_bytes);
         goto exit;
@@ -5612,7 +5613,9 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     }
 
 exit:
+#ifndef MS_WINDOWS
     PyMem_Free(cwd_buf);
+#endif
     PyMem_RawFree(abs_buf);
     return result;
 }
