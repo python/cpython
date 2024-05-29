@@ -475,13 +475,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
-        # Note: To guard against symlink races, we use the standard
-        # lstat()/open()/fstat() trick.
-        if follow_symlinks:
-            orig_st = None
-        else:
-            orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
-        stack = [(_fwalk_walk, (top, dir_fd, None, orig_st))]
+        stack = [(_fwalk_walk, (True, top, dir_fd, top, None))]
         isbytes = isinstance(top, bytes)
         while stack:
             yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
@@ -499,21 +493,22 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             yield value
             return
         assert action == _fwalk_walk
-        toppath, dirfd, topname, orig_st = value
-        if topname is None:
-            # Root directory of the walk: propagate any error from open().
-            topfd = open(toppath, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
-        else:
-            # Inner directory: call onerror() to handle error from open().
-            try:
-                topfd = open(topname, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
-            except OSError as err:
-                if onerror is not None:
-                    onerror(err)
-                return
+        isroot, toppath, dirfd, topname, orig_st = value
+        try:
+            if orig_st is None and not follow_symlinks:
+                # Note: To guard against symlink races, we use the standard
+                # lstat()/open()/fstat() trick.
+                orig_st = stat(topname, follow_symlinks=False, dir_fd=dirfd)
+            topfd = open(topname, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
+        except OSError as err:
+            if isroot:
+                raise
+            if onerror is not None:
+                onerror(err)
+            return
         stack.append((_fwalk_close, topfd))
         if not follow_symlinks:
-            if topname is None and not st.S_ISDIR(orig_st.st_mode):
+            if isroot and not st.S_ISDIR(orig_st.st_mode):
                 # Root of walk: ignore non-directory.
                 return
             if not path.samestat(orig_st, stat(topfd)):
@@ -548,23 +543,20 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         else:
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
-        for name in reversed(dirs) if entries is None else zip(dirs, entries):
-            try:
-                if follow_symlinks:
-                    orig_st = None
-                else:
-                    if topdown:
-                        orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
-                    else:
-                        assert entries is not None
-                        name, entry = name
-                        orig_st = entry.stat(follow_symlinks=False)
-            except OSError as err:
-                if onerror is not None:
-                    onerror(err)
-                continue
-            stack.append((_fwalk_walk,
-                          (path.join(toppath, name), topfd, name, orig_st)))
+        if entries is None:
+            for name in reversed(dirs):
+                args = (False, path.join(toppath, name), topfd, name, None)
+                stack.append((_fwalk_walk, args))
+        else:
+            for name, entry in zip(dirs, entries):
+                try:
+                    orig_st = entry.stat(follow_symlinks=False)
+                except OSError as err:
+                    if onerror is not None:
+                        onerror(err)
+                    continue
+                args = (False, path.join(toppath, name), topfd, name, orig_st)
+                stack.append((_fwalk_walk, args))
 
     __all__.append("fwalk")
 
