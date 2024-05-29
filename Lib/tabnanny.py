@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """The Tab Nanny despises ambiguous indentation.  She knows no mercy.
 
 tabnanny -- Detection of ambiguous indentation

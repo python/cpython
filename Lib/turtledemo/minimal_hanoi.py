@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """       turtle-example-suite:
 
          tdemo_minimal_hanoi.py
