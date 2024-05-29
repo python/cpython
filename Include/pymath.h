@@ -34,7 +34,7 @@
 
 // Py_IS_INFINITY(X)
 // Return 1 if float or double arg is an infinity, else 0.
-// Soft deprecated since Python 3.14.
+// Soft deprecated since Python 3.14, use isinf() instead.
 #define Py_IS_INFINITY(X) isinf(X)
 
 // Py_IS_FINITE(X)
