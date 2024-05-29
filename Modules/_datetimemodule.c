@@ -70,6 +70,32 @@ get_module_state(PyObject *module)
     return (datetime_state *)state;
 }
 
+#define INTERP_KEY "cached-datetime-module"
+
+static PyObject *
+get_current_module(PyInterpreterState *interp)
+{
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        return NULL;
+    }
+    PyObject *mod = NULL;
+    if (PyDict_GetItemStringRef(dict, INTERP_KEY, &mod) < 0) {
+        return NULL;
+    }
+    return mod;
+}
+
+static int
+set_current_module(PyInterpreterState *interp, PyObject *mod)
+{
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        return -1;
+    }
+    return PyDict_SetItemString(dict, INTERP_KEY, mod);
+}
+
 #define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
 #define PyDate_CheckExact(op) Py_IS_TYPE(op, &PyDateTime_DateType)
 
@@ -86,6 +112,7 @@ get_module_state(PyObject *module)
 #define PyTZInfo_CheckExact(op) Py_IS_TYPE(op, &PyDateTime_TZInfoType)
 
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
+
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -6961,6 +6988,14 @@ _datetime_exec(PyObject *module)
     datetime_state *st = get_module_state(module);
     datetime_state *st_global = get_datetime_state();
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *old_module = get_current_module(interp);
+    if (PyErr_Occurred()) {
+        assert(old_module == NULL);
+        goto error;
+    }
+    /* We actually set the "current" module right before a successful return. */
+
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -7088,6 +7123,10 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
+    if (set_current_module(interp, module) < 0) {
+        goto error;
+    }
+
     rc = 0;
     goto finally;
 
@@ -7096,6 +7135,7 @@ error:
     clear_state(st_global);
 
 finally:
+    Py_XDECREF(old_module);
     return rc;
 }
 #undef DATETIME_ADD_MACRO
