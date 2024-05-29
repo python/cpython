@@ -138,6 +138,8 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
     flags: list[str]  # instr flags to set on the pseudo instruction
     targets: list[str]  # opcodes this can be replaced by
 
@@ -409,16 +411,18 @@ class Parser(PLexer):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.COMMA):
-                        flags = self.flags()
-                    else:
-                        flags = []
-                    if self.expect(lx.RPAREN):
-                        if self.expect(lx.EQUALS):
-                            if not self.expect(lx.LBRACE):
-                                raise self.make_syntax_error("Expected {")
-                            if members := self.members():
-                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(tkn.text, flags, members)
+                        inp, outp = self.io_effect()
+                        if self.expect(lx.COMMA):
+                            flags = self.flags()
+                        else:
+                            flags = []
+                        if self.expect(lx.RPAREN):
+                            if self.expect(lx.EQUALS):
+                                if not self.expect(lx.LBRACE):
+                                    raise self.make_syntax_error("Expected {")
+                                if members := self.members():
+                                    if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                        return Pseudo(tkn.text, inp, outp, flags, members)
         return None
 
     def members(self) -> list[str] | None:

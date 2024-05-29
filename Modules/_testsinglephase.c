@@ -1,7 +1,7 @@
 
 /* Testing module for single-phase initialization of extension modules
 
-This file contains 5 distinct modules, meaning each as its own name
+This file contains 8 distinct modules, meaning each as its own name
 and its own init function (PyInit_...).  The default import system will
 only find the one matching the filename: _testsinglephase.  To load the
 others you must do so manually.  For example:
@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
 mod = importlib._bootstrap._load(spec)
 ```
 
-Here are the 5 modules:
+Here are the 8 modules:
 
 * _testsinglephase
    * def: _testsinglephase_basic,
@@ -136,6 +136,32 @@ Here are the 5 modules:
       5. increment <global>.initialized_count
    * functions: see common functions below
    * import system: same as _testsinglephase_basic_copy
+* _testsinglephase_check_cache_first
+   * def: _testsinglepahse_check_cache_first
+      * m_name: "_testsinglephase_check_cache_first"
+      * m_size: -1
+   * state: none
+   * init function:
+      * tries PyState_FindModule() first
+      * otherwise creates empty module
+   * functions: none
+   * import system: same as _testsinglephase
+* _testsinglephase_with_reinit_check_cache_first
+   * def: _testsinglepahse_with_reinit_check_cache_first
+      * m_name: "_testsinglephase_with_reinit_check_cache_first"
+      * m_size: 0
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_reinit
+* _testsinglephase_with_state_check_cache_first
+   * def: _testsinglepahse_with_state_check_cache_first
+      * m_name: "_testsinglephase_with_state_check_cache_first"
+      * m_size: 42
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_state
 
 Module state:
 
@@ -649,4 +675,68 @@ PyInit__testsinglephase_with_state(void)
 
 finally:
     return module;
+}
+
+
+/****************************************************/
+/* the _testsinglephase_*_check_cache_first modules */
+/****************************************************/
+
+/* Each of these modules should only be freshly loaded.  That means
+   clearing the caches and each module def's m_base after each load. */
+
+static struct PyModuleDef _testsinglephase_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_check_cache_first"),
+    .m_size = -1,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_check_cache_first(void)
+{
+    assert(_testsinglephase_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_reinit_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_reinit_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_reinit_check_cache_first"),
+    .m_size = 0,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_reinit_check_cache_first(void)
+{
+    assert(_testsinglephase_with_reinit_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_reinit_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_reinit_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_state_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_state_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_state_check_cache_first"),
+    .m_size = 42,  // not used
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_state_check_cache_first(void)
+{
+    assert(_testsinglephase_with_state_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_state_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_state_check_cache_first);
 }
