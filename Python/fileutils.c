@@ -2494,8 +2494,8 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
         *normsize = 0;
         return path;
     }
-    // Start beyond end of path
     if (size >= 0 && start >= size) {
+        // Don't normalize path
         *normsize = size;
         return path;
     }
@@ -2611,7 +2611,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
     if (explicit_curdir && !rootsize && explicit) {
         // Add explicit curdir
         if (p2 == minP2 - 1) {
-            // '.'
+            // Set to '.'
             p2++;
             assert(p2 < p1);
             *p2 = L'.';
@@ -2619,7 +2619,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
         else if (minP2[0] != L'.' || minP2[1] != L'.' ||
                  !SEP_OR_END(&minP2[2]))
         {
-            // Not '..\'
+            // Add leading '.\'
             wchar_t *p3 = p2;
             p2 += 2;
             assert(p2 < p1);
