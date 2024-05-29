@@ -152,11 +152,7 @@ htmlview: html
 
 .PHONY: ensure-sphinx-autobuild
 ensure-sphinx-autobuild: venv
-	if uv --version > /dev/null; then \
-		$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install sphinx-autobuild; \
-	else \
-		$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild; \
-	fi
+	$(call ensure_package,sphinx-autobuild)
 
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
@@ -244,16 +240,17 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
-.PHONY: ensure-pre-commit
-ensure-pre-commit: venv
+define ensure_package
 	if uv --version > /dev/null; then \
-		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install pre-commit; \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || VIRTUAL_ENV=$(VENVDIR) uv pip install $(1); \
 	else \
-		$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit; \
+		$(VENVDIR)/bin/python3 -m $(1) --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install $(1); \
 	fi
+endef
 
 .PHONY: check
-check: ensure-pre-commit
+check: venv
+	$(call ensure_package,pre-commit)
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
