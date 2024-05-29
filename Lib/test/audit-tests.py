@@ -556,6 +556,29 @@ def test_sys_monitoring_register_callback():
     sys.monitoring.register_callback(1, 1, None)
 
 
+def test_import():
+    with TestHook() as hook:
+        import array  # Native module
+        import hashlib  # Python module
+        try:
+            import does_not_exist
+        except ImportError:
+            pass
+
+    for modname, module in [
+        ('array', array),
+        ('hashlib', hashlib),
+        ('does_not_exist', None),
+    ]:
+        events = [
+            ev for ev in hook.seen
+            if ev[0].startswith('import') and ev[1][0] == modname
+        ]
+        assertEqual(events[0][0], 'import')
+        assertEqual(events[-1][0], 'import/module')
+        assert events[-1][1][1] is module
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

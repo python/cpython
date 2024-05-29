@@ -3720,6 +3720,11 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
         accumulated = accumulated_copy + cum;
     }
+    if (_PySys_Audit(tstate, "import/module", "OO", abs_name,
+                     mod ? mod : Py_None) < 0) {
+        Py_XDECREF(mod);
+        return NULL;
+    }
 
     return mod;
 #undef import_level

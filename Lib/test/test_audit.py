@@ -279,6 +279,9 @@ class AuditTest(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
         self.assertIn('hook failed', stderr.splitlines()[-1])
 
+    def test_import(self):
+        self.do_test("test_import")
+
     def test_sys_monitoring_register_callback(self):
         returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
         if returncode:
