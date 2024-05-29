@@ -703,60 +703,22 @@ compiler_set_qualname(struct compiler *c)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
-    if (0 <= opcode && opcode <= MAX_REAL_OPCODE) {
-        if (_PyOpcode_Deopt[opcode] != opcode) {
-            // Specialized instructions are not supported.
-            return PY_INVALID_STACK_EFFECT;
-        }
-        int popped = _PyOpcode_num_popped(opcode, oparg);
-        int pushed = _PyOpcode_num_pushed(opcode, oparg);
-        if (popped < 0 || pushed < 0) {
-            return PY_INVALID_STACK_EFFECT;
-        }
-        return pushed - popped;
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    // Pseudo ops
-    switch (opcode) {
-        case POP_BLOCK:
-        case JUMP:
-        case JUMP_NO_INTERRUPT:
-            return 0;
-
-        case EXIT_INIT_CHECK:
-            return -1;
-
-        /* Exception handling pseudo-instructions */
-        case SETUP_FINALLY:
-            /* 0 in the normal flow.
-             * Restore the stack position and push 1 value before jumping to
-             * the handler if an exception be raised. */
-            return jump ? 1 : 0;
-        case SETUP_CLEANUP:
-            /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 2 : 0;
-        case SETUP_WITH:
-            /* 0 in the normal flow.
-             * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 2 values before jumping to the handler
-             * if an exception be raised. */
-            return jump ? 1 : 0;
-
-        case STORE_FAST_MAYBE_NULL:
-            return -1;
-        case LOAD_CLOSURE:
-            return 1;
-        case LOAD_METHOD:
-            return 1;
-        case LOAD_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_ATTR:
-            return -1;
-        default:
-            return PY_INVALID_STACK_EFFECT;
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    return PY_INVALID_STACK_EFFECT; /* not reachable */
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
 }
 
 int
@@ -997,11 +959,16 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
+#define LOAD_METHOD -1
+#define LOAD_SUPER_METHOD -2
+#define LOAD_ZERO_SUPER_ATTR -3
+#define LOAD_ZERO_SUPER_METHOD -4
+
 static int
 compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    PyObject *mangled = _Py_Mangle(u->u_private, o);
+    PyObject *mangled = _Py_MaybeMangle(u->u_private, u->u_ste, o);
     if (!mangled) {
         return ERROR;
     }
@@ -1014,7 +981,6 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1024,18 +990,15 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1873,7 +1836,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
+            PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, arg->arg);
             if (!mangled) {
                 goto error;
             }
@@ -1930,7 +1893,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     if (!annotation) {
         return SUCCESS;
     }
-    PyObject *mangled = _Py_Mangle(c->u->u_private, id);
+    PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, id);
     if (!mangled) {
         return ERROR;
     }
@@ -2117,12 +2080,43 @@ wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
+compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
+                                     identifier name, void *key,
+                                     bool allow_starred)
+{
+    if (compiler_enter_scope(c, name, COMPILER_SCOPE_TYPEPARAMS,
+                             key, e->lineno) == -1) {
+        return ERROR;
+    }
+    if (allow_starred && e->kind == Starred_kind) {
+        VISIT(c, expr, e->v.Starred.value);
+        ADDOP_I(c, LOC(e), UNPACK_SEQUENCE, (Py_ssize_t)1);
+    }
+    else {
+        VISIT(c, expr, e);
+    }
+    ADDOP_IN_SCOPE(c, LOC(e), RETURN_VALUE);
+    PyCodeObject *co = optimize_and_assemble(c, 1);
+    compiler_exit_scope(c);
+    if (co == NULL) {
+        return ERROR;
+    }
+    if (compiler_make_closure(c, LOC(e), co, 0) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
+    Py_DECREF(co);
+    return SUCCESS;
+}
+
+static int
 compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
 {
     if (!type_params) {
         return SUCCESS;
     }
     Py_ssize_t n = asdl_seq_LEN(type_params);
+    bool seen_default = false;
 
     for (Py_ssize_t i = 0; i < n; i++) {
         type_param_ty typeparam = asdl_seq_GET(type_params, i);
@@ -2132,22 +2126,10 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
             if (typeparam->v.TypeVar.bound) {
                 expr_ty bound = typeparam->v.TypeVar.bound;
-                if (compiler_enter_scope(c, typeparam->v.TypeVar.name, COMPILER_SCOPE_TYPEPARAMS,
-                                        (void *)typeparam, bound->lineno) == -1) {
+                if (compiler_type_param_bound_or_default(c, bound, typeparam->v.TypeVar.name,
+                                                         (void *)typeparam, false) < 0) {
                     return ERROR;
                 }
-                VISIT_IN_SCOPE(c, expr, bound);
-                ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-                PyCodeObject *co = optimize_and_assemble(c, 1);
-                compiler_exit_scope(c);
-                if (co == NULL) {
-                    return ERROR;
-                }
-                if (compiler_make_closure(c, loc, co, 0) < 0) {
-                    Py_DECREF(co);
-                    return ERROR;
-                }
-                Py_DECREF(co);
 
                 int intrinsic = bound->kind == Tuple_kind
                     ? INTRINSIC_TYPEVAR_WITH_CONSTRAINTS
@@ -2157,18 +2139,60 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             else {
                 ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
             }
+            if (typeparam->v.TypeVar.default_value) {
+                seen_default = true;
+                expr_ty default_ = typeparam->v.TypeVar.default_value;
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
+                                                         (void *)((uintptr_t)typeparam + 1), false) < 0) {
+                    return ERROR;
+                }
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
+            }
+            else if (seen_default) {
+                return compiler_error(c, loc, "non-default type parameter '%U' "
+                                      "follows default type parameter",
+                                      typeparam->v.TypeVar.name);
+            }
             ADDOP_I(c, loc, COPY, 1);
             RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store));
             break;
         case TypeVarTuple_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
+            if (typeparam->v.TypeVarTuple.default_value) {
+                expr_ty default_ = typeparam->v.TypeVarTuple.default_value;
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
+                                                         (void *)typeparam, true) < 0) {
+                    return ERROR;
+                }
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
+                seen_default = true;
+            }
+            else if (seen_default) {
+                return compiler_error(c, loc, "non-default type parameter '%U' "
+                                      "follows default type parameter",
+                                      typeparam->v.TypeVarTuple.name);
+            }
             ADDOP_I(c, loc, COPY, 1);
             RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.TypeVarTuple.name, Store));
             break;
         case ParamSpec_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
+            if (typeparam->v.ParamSpec.default_value) {
+                expr_ty default_ = typeparam->v.ParamSpec.default_value;
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
+                                                         (void *)typeparam, false) < 0) {
+                    return ERROR;
+                }
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
+                seen_default = true;
+            }
+            else if (seen_default) {
+                return compiler_error(c, loc, "non-default type parameter '%U' "
+                                      "follows default type parameter",
+                                      typeparam->v.ParamSpec.name);
+            }
             ADDOP_I(c, loc, COPY, 1);
             RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.ParamSpec.name, Store));
             break;
@@ -2441,6 +2465,11 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
+    ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(c->u->u_metadata.u_firstlineno));
+    if (compiler_nameop(c, loc, &_Py_ID(__firstlineno__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     if (asdl_seq_LEN(type_params) > 0) {
         if (!compiler_set_type_params_in_class(c, loc)) {
@@ -2559,7 +2588,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
         if (!type_params_name) {
@@ -2571,6 +2599,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
@@ -3849,7 +3878,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     }
 
     if (location_is_after(LOC(s), c->c_future.ff_location) &&
-        s->v.ImportFrom.module &&
+        s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
         Py_DECREF(names);
@@ -3908,7 +3937,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
     }
     NEW_JUMP_TARGET_LABEL(c, end);
     RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
-    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
+    ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
@@ -4137,7 +4166,7 @@ compiler_nameop(struct compiler *c, location loc,
         return ERROR;
     }
 
-    mangled = _Py_Mangle(c->u->u_private, name);
+    mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
     if (!mangled) {
         return ERROR;
     }
@@ -5500,10 +5529,48 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
-        // only values bound in the comprehension (DEF_LOCAL) need to be handled
-        // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
-        // assignment expression to a nonlocal in the comprehension, these don't
-        // need handling here since they shouldn't be isolated
+        long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
+        if (outv == NULL) {
+            if (PyErr_Occurred()) {
+                return ERROR;
+            }
+            outv = _PyLong_GetZero();
+        }
+        assert(PyLong_CheckExact(outv));
+        long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
+        // If a name has different scope inside than outside the comprehension,
+        // we need to temporarily handle it with the right scope while
+        // compiling the comprehension. If it's free in the comprehension
+        // scope, no special handling; it should be handled the same as the
+        // enclosing scope. (If it's free in outer scope and cell in inner
+        // scope, we can't treat it as both cell and free in the same function,
+        // but treating it as free throughout is fine; it's *_DEREF
+        // either way.)
+        if ((scope != outsc && scope != FREE && !(scope == CELL && outsc == FREE))
+                || in_class_block) {
+            if (state->temp_symbols == NULL) {
+                state->temp_symbols = PyDict_New();
+                if (state->temp_symbols == NULL) {
+                    return ERROR;
+                }
+            }
+            // update the symbol to the in-comprehension version and save
+            // the outer version; we'll restore it after running the
+            // comprehension
+            Py_INCREF(outv);
+            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            Py_DECREF(outv);
+        }
+        // locals handling for names bound in comprehension (DEF_LOCAL |
+        // DEF_NONLOCAL occurs in assignment expression to nonlocal)
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
@@ -5527,41 +5594,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                         return ERROR;
                     }
                 }
-            }
-            long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
-            PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
-            if (outv == NULL) {
-                outv = _PyLong_GetZero();
-            }
-            assert(PyLong_Check(outv));
-            long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (scope != outsc && !(scope == CELL && outsc == FREE)) {
-                // If a name has different scope inside than outside the
-                // comprehension, we need to temporarily handle it with the
-                // right scope while compiling the comprehension. (If it's free
-                // in outer scope and cell in inner scope, we can't treat it as
-                // both cell and free in the same function, but treating it as
-                // free throughout is fine; it's *_DEREF either way.)
-
-                if (state->temp_symbols == NULL) {
-                    state->temp_symbols = PyDict_New();
-                    if (state->temp_symbols == NULL) {
-                        return ERROR;
-                    }
-                }
-                // update the symbol to the in-comprehension version and save
-                // the outer version; we'll restore it after running the
-                // comprehension
-                Py_INCREF(outv);
-                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                Py_DECREF(outv);
             }
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
@@ -6443,7 +6475,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
             ADDOP(c, loc, STORE_SUBSCR);
         }

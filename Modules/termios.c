@@ -260,7 +260,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         }
         else {
             PyErr_SetString(PyExc_TypeError,
-     "tcsetattr: elements of attributes must be characters or integers");
+     "tcsetattr: elements of attributes must be bytes objects of length 1 or integers");
                         return NULL;
                 }
     }
@@ -1364,6 +1364,7 @@ termios_exec(PyObject *mod)
 static PyModuleDef_Slot termios_slots[] = {
     {Py_mod_exec, termios_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

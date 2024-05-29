@@ -26,9 +26,9 @@ from test.support import force_not_colorized
 import json
 import textwrap
 import traceback
-import contextlib
 from functools import partial
 from pathlib import Path
+import _colorize
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
@@ -40,25 +40,18 @@ test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
-ORIGINAL_CAN_COLORIZE = traceback._can_colorize
-
-def setUpModule():
-    traceback._can_colorize = lambda: False
-
-def tearDownModule():
-    traceback._can_colorize = ORIGINAL_CAN_COLORIZE
 
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
     def setUp(self):
         super().setUp()
-        self.colorize = traceback._COLORIZE
-        traceback._COLORIZE = False
+        self.colorize = _colorize.COLORIZE
+        _colorize.COLORIZE = False
 
     def tearDown(self):
         super().tearDown()
-        traceback._COLORIZE = self.colorize
+        _colorize.COLORIZE = self.colorize
 
     def get_exception_format(self, func, exc):
         try:
@@ -507,7 +500,7 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception(e.__class__, e)
         with self.assertRaisesRegex(ValueError, 'Both or neither'):
             traceback.format_exception(e.__class__, tb=e.__traceback__)
-        with self.assertRaisesRegex(TypeError, 'positional-only'):
+        with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
     def test_format_exception_only_exc(self):
@@ -546,11 +539,11 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True)'))
+             'chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>, *, show_group=False)')
+            '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
 
 class PurePythonExceptionFormattingMixin:
@@ -3889,6 +3882,27 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
+    def test_getattr_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
@@ -4080,6 +4094,17 @@ class SuggestionFormattingTestBase:
         ]:
             actual = self.get_import_from_suggestion(code, 'bluch')
             self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_underscored(self):
+        code = "bluch = None"
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, 'blach'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_bluch'))
+
+        code = "_bluch = None"
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"
@@ -4478,9 +4503,9 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         lines = "".join(exc.format(colorize=True))
-        red = traceback._ANSIColors.RED
-        boldr = traceback._ANSIColors.BOLD_RED
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
         self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
         self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
@@ -4496,11 +4521,11 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        red = traceback._ANSIColors.RED
-        magenta = traceback._ANSIColors.MAGENTA
-        boldm = traceback._ANSIColors.BOLD_MAGENTA
-        boldr = traceback._ANSIColors.BOLD_RED
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         expected = "".join([
         f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
         f'    a {boldr}${reset} b\n',
@@ -4519,15 +4544,15 @@ class TestColorizedTraceback(unittest.TestCase):
             self.fail("No exception thrown.")
         except Exception as e:
             with captured_output("stderr") as tbstderr:
-                with unittest.mock.patch('traceback._can_colorize', return_value=True):
+                with unittest.mock.patch('_colorize.can_colorize', return_value=True):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()
 
-        red = traceback._ANSIColors.RED
-        boldr = traceback._ANSIColors.BOLD_RED
-        magenta = traceback._ANSIColors.MAGENTA
-        boldm = traceback._ANSIColors.BOLD_MAGENTA
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         expected = ['Traceback (most recent call last):',
             f'  File {magenta}"{__file__}"{reset}, '
@@ -4541,38 +4566,6 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
-    @force_not_colorized
-    def test_colorized_detection_checks_for_environment_variables(self):
-        if sys.platform == "win32":
-            virtual_patching = unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
-        else:
-            virtual_patching = contextlib.nullcontext()
-        with virtual_patching:
-
-            flags = unittest.mock.MagicMock(ignore_environment=False)
-            with (unittest.mock.patch("os.isatty") as isatty_mock,
-                  unittest.mock.patch("sys.flags", flags),
-                  unittest.mock.patch("traceback._can_colorize", ORIGINAL_CAN_COLORIZE)):
-                isatty_mock.return_value = True
-                with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '0'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                isatty_mock.return_value = False
-                with unittest.mock.patch("os.environ", {}):
-                    self.assertEqual(traceback._can_colorize(), False)
 
 if __name__ == "__main__":
     unittest.main()

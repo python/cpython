@@ -2425,12 +2425,12 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
     sign = (copysign(1.0, x) == 1.0) ? 0 : 1;
 
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x)) {
+    if (isnan(x) || isinf(x)) {
         dec = PyDecType_New(type);
         if (dec == NULL) {
             return NULL;
         }
-        if (Py_IS_NAN(x)) {
+        if (isnan(x)) {
             /* decimal.py calls repr(float(+-nan)),
              * which always gives a positive result. */
             mpd_setspecial(MPD(dec), MPD_POS, MPD_NAN);
@@ -6157,6 +6157,7 @@ decimal_free(void *module)
 static struct PyModuleDef_Slot _decimal_slots[] = {
     {Py_mod_exec, _decimal_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 
