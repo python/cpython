@@ -269,6 +269,20 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_winapi_createnamedpipe(self):
+        winapi = import_helper.import_module("_winapi")
+
+        pipe_name = r"\\.\pipe\LOCAL\test_winapi_createnamed_pipe"
+        returncode, events, stderr = self.run_python("test_winapi_createnamedpipe", pipe_name)
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_winapi.CreateNamedPipe", f"({pipe_name!r}, 3, 8)")]
+
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()
