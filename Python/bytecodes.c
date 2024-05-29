@@ -213,7 +213,7 @@ dummy_func(
             }
         }
 
-        pseudo(LOAD_CLOSURE) = {
+        pseudo(LOAD_CLOSURE, (-- unused)) = {
             LOAD_FAST,
         };
 
@@ -259,7 +259,7 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        pseudo(STORE_FAST_MAYBE_NULL) = {
+        pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
             STORE_FAST,
         };
 
@@ -2393,12 +2393,12 @@ dummy_func(
             #endif /* _Py_TIER2 */
         }
 
-        pseudo(JUMP) = {
+        pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD,
         };
 
-        pseudo(JUMP_NO_INTERRUPT) = {
+        pseudo(JUMP_NO_INTERRUPT, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD_NO_INTERRUPT,
         };
@@ -2895,19 +2895,27 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
+        pseudo(SETUP_FINALLY, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position
+             * and push one value before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
+        pseudo(SETUP_CLEANUP, (-- unused, unused), (HAS_ARG)) = {
+            /* As SETUP_FINALLY, but push lasti as well */
             NOP,
         };
 
-        pseudo(SETUP_WITH, (HAS_ARG)) = {
+        pseudo(SETUP_WITH, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position to the
+             * position before the result of __(a)enter__ and push 2 values
+             * before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(POP_BLOCK) = {
+        pseudo(POP_BLOCK, (--)) = {
             NOP,
         };
 
