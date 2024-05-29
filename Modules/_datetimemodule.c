@@ -6847,7 +6847,7 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 }
 
 static int
-init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
+init_state(datetime_state *st, PyObject *module)
 {
     // While datetime uses global module "state", we unly initialize it once.
     // The PyLong objects created here (once per process) are not decref'd.
@@ -6857,8 +6857,18 @@ init_state(datetime_state *st, PyTypeObject *PyDateTime_IsoCalendarDateType)
     }
 
     /* Per-module heap types. */
-    st->isocalendar_date_type =
-            (PyTypeObject *)Py_NewRef(PyDateTime_IsoCalendarDateType);
+#define ADD_TYPE(FIELD, SPEC, BASE)                 \
+    do {                                            \
+        PyObject *cls = PyType_FromModuleAndSpec(   \
+                module, SPEC, (PyObject *)BASE);    \
+        if (cls == NULL) {                          \
+            return -1;                              \
+        }                                           \
+        st->FIELD = (PyTypeObject *)cls;            \
+    } while (0)
+
+    ADD_TYPE(isocalendar_date_type, &isocal_spec, &PyTuple_Type);
+#undef ADD_TYPE
 
     st->us_per_ms = PyLong_FromLong(1000);
     if (st->us_per_ms == NULL) {
@@ -6948,7 +6958,6 @@ static int
 _datetime_exec(PyObject *module)
 {
     int rc = -1;
-    PyTypeObject *PyDateTime_IsoCalendarDateType = NULL;
     datetime_state *st = get_module_state(module);
     datetime_state *st_global = get_datetime_state();
 
@@ -6973,23 +6982,11 @@ _datetime_exec(PyObject *module)
         }
     }
 
-#define CREATE_TYPE(VAR, SPEC, BASE)                    \
-    do {                                                \
-        VAR = (PyTypeObject *)PyType_FromModuleAndSpec( \
-                module, SPEC, (PyObject *)BASE);        \
-        if (VAR == NULL) {                              \
-            goto error;                                 \
-        }                                               \
-    } while (0)
-
-    CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
-#undef CREATE_TYPE
-
-    if (init_state(st_global, PyDateTime_IsoCalendarDateType) < 0) {
+    if (init_state(st_global, module) < 0) {
         goto error;
     }
 
-    if (init_state(st, PyDateTime_IsoCalendarDateType) < 0) {
+    if (init_state(st, module) < 0) {
         goto error;
     }
 
@@ -7099,7 +7096,6 @@ error:
     clear_state(st_global);
 
 finally:
-    Py_XDECREF(PyDateTime_IsoCalendarDateType);
     return rc;
 }
 #undef DATETIME_ADD_MACRO
