@@ -354,7 +354,7 @@ class WindowsConsole(Console):
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise WinError(GetLastError())
 
-        return info.srWindow.Bottom
+        return info.srWindow.Bottom # type: ignore[no-any-return]
 
     def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
