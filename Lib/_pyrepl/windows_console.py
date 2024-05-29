@@ -38,7 +38,7 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from .console import Event, Console
 from .trace import trace
 from .utils import wlen
@@ -57,6 +57,7 @@ except:
             self.err = err
             self.descr = descr
 
+TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import IO
@@ -353,7 +354,7 @@ class WindowsConsole(Console):
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise WinError(GetLastError())
 
-        return cast(int, info.srWindow.Bottom)
+        return info.srWindow.Bottom
 
     def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()

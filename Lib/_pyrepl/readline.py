@@ -44,7 +44,7 @@ Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import UnixConsole as Console, _error
-except:
+except ImportError:
     from .windows_console import WindowsConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
