@@ -7,7 +7,7 @@ import re
 import threading
 import time
 import unittest
-from test.support import import_helper
+from test.support import import_helper, os_helper
 
 _winapi = import_helper.import_module('_winapi', required_on=['win'])
 
@@ -129,9 +129,7 @@ class WinAPITests(unittest.TestCase):
         self.assertIsNotNone(re.match(r".\:\\PROGRA~\d", actual.upper()), actual)
 
     def test_namedpipe(self):
-        # Deliberately complex name to flush out encoding errors
-        pipe_name = os.urandom(64).replace(b'\0', b'.').decode('latin-1')
-        pipe_name = rf"\\.\pipe\LOCAL\{pipe_name}"
+        pipe_name = rf"\\.\pipe\LOCAL\{os_helper.TESTFN}"
 
         # Pipe does not exist, so this raises
         with self.assertRaises(FileNotFoundError):
