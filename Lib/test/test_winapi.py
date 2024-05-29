@@ -127,3 +127,37 @@ class WinAPITests(unittest.TestCase):
 
         # Should contain "PROGRA~" but we can't predict the number
         self.assertIsNotNone(re.match(r".\:\\PROGRA~\d", actual.upper()), actual)
+
+    def test_namedpipe(self):
+        # Deliberately complex name to flush out encoding errors
+        pipe_name = os.urandom(64).replace(b'\0', b'.').decode('latin-1')
+        pipe_name = rf"\\.\pipe\LOCAL\{pipe_name}"
+
+        # Pipe does not exist, so this raises
+        with self.assertRaises(FileNotFoundError):
+            _winapi.WaitNamedPipe(pipe_name, 0)
+
+        pipe = _winapi.CreateNamedPipe(
+            pipe_name,
+            _winapi.PIPE_ACCESS_DUPLEX,
+            8, # 8=PIPE_REJECT_REMOTE_CLIENTS
+            2, # two instances available
+            32, 32, 0, 0)
+        self.addCleanup(_winapi.CloseHandle, pipe)
+
+        # Pipe instance is available, so this passes
+        _winapi.WaitNamedPipe(pipe_name, 0)
+
+        with open(pipe_name, 'w+b') as pipe2:
+            # No instances available, so this times out
+            # (WinError 121 does not get mapped to TimeoutError)
+            with self.assertRaises(OSError):
+                _winapi.WaitNamedPipe(pipe_name, 0)
+
+            _winapi.WriteFile(pipe, b'testdata')
+            self.assertEqual(b'testdata', pipe2.read(8))
+
+            self.assertEqual((b'', 0), _winapi.PeekNamedPipe(pipe, 8)[:2])
+            pipe2.write(b'testdata')
+            pipe2.flush()
+            self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
