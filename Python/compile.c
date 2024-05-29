@@ -1640,11 +1640,15 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // __annotate__ function. See PEP 649.
     if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
          c->u->u_ste->ste_annotation_block != NULL) {
-        void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
+
         assert(c->u->u_deferred_annotations != NULL);
         PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
-        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key,
-                                                         c->u->u_ste->ste_annotation_block->ste_name));
+        void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
+        if (compiler_setup_annotations_scope(c, loc, key,
+                                             c->u->u_ste->ste_annotation_block->ste_name) == -1) {
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
         Py_ssize_t annotations_len = PyList_Size(deferred_anno);
         for (Py_ssize_t i = 0; i < annotations_len; i++) {
             PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
@@ -6573,6 +6577,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                     Py_DECREF(ptr);
                     return ERROR;
                 }
+                Py_DECREF(ptr);
             }
         }
         break;
