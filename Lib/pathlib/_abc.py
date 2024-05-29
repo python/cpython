@@ -68,6 +68,12 @@ class ParserBase:
         drive. Either part may be empty."""
         raise UnsupportedOperation(self._unsupported_msg('splitdrive()'))
 
+    def splitext(self, path):
+        """Split the path into a pair (root, ext), where *ext* is empty or
+        begins with a begins with a period and contains at most one period,
+        and *root* is everything before the extension."""
+        raise UnsupportedOperation(self._unsupported_msg('splitext()'))
+
     def normcase(self, path):
         """Normalize the case of the path."""
         raise UnsupportedOperation(self._unsupported_msg('normcase()'))
@@ -151,12 +157,7 @@ class PurePathBase:
 
         This includes the leading period. For example: '.txt'
         """
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[i:]
-        else:
-            return ''
+        return self.parser.splitext(self.name)[1]
 
     @property
     def suffixes(self):
@@ -165,21 +166,18 @@ class PurePathBase:
 
         These include the leading periods. For example: ['.tar', '.gz']
         """
-        name = self.name
-        if name.endswith('.'):
-            return []
-        name = name.lstrip('.')
-        return ['.' + suffix for suffix in name.split('.')[1:]]
+        split = self.parser.splitext
+        stem, suffix = split(self.name)
+        suffixes = []
+        while suffix:
+            suffixes.append(suffix)
+            stem, suffix = split(stem)
+        return suffixes[::-1]
 
     @property
     def stem(self):
         """The final path component, minus its last suffix."""
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[:i]
-        else:
-            return name
+        return self.parser.splitext(self.name)[0]
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
@@ -208,7 +206,7 @@ class PurePathBase:
         if not stem:
             # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
-        elif suffix and not (suffix.startswith('.') and len(suffix) > 1):
+        elif suffix and not suffix.startswith('.'):
             raise ValueError(f"Invalid suffix {suffix!r}")
         else:
             return self.with_name(stem + suffix)
