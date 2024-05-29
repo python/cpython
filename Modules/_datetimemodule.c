@@ -6874,11 +6874,30 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 }
 
 static int
+copy_state(datetime_state *st, datetime_state *from)
+{
+    *st = (datetime_state){
+        .isocalendar_date_type
+                = (PyTypeObject *)Py_NewRef(from->isocalendar_date_type),
+        .us_per_ms = Py_NewRef(from->us_per_ms),
+        .us_per_second = Py_NewRef(from->us_per_second),
+        .us_per_minute = Py_NewRef(from->us_per_minute),
+        .us_per_hour = Py_NewRef(from->us_per_hour),
+        .us_per_day = Py_NewRef(from->us_per_day),
+        .us_per_week = Py_NewRef(from->us_per_week),
+        .seconds_per_day = Py_NewRef(from->seconds_per_day),
+        .epoch = Py_NewRef(from->epoch),
+    };
+    return 0;
+}
+
+static int
 init_state(datetime_state *st, PyObject *module)
 {
     // While datetime uses global module "state", we unly initialize it once.
     // The PyLong objects created here (once per process) are not decref'd.
     if (st->initialized) {
+        assert(st->initialized > 0);
         st->initialized += 1;
         return 0;
     }
@@ -7021,8 +7040,16 @@ _datetime_exec(PyObject *module)
         goto error;
     }
 
-    if (init_state(st, module) < 0) {
-        goto error;
+    if (old_module != NULL) {
+        datetime_state *st_old = get_module_state(old_module);
+        if (copy_state(st, st_old) < 0) {
+            goto error;
+        }
+    }
+    else {
+        if (init_state(st, module) < 0) {
+            goto error;
+        }
     }
 
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
