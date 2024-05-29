@@ -981,7 +981,6 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.14
       :func:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
-
 .. function:: isinstance(object, classinfo)
 
    Return ``True`` if the *object* argument is an instance of the *classinfo*

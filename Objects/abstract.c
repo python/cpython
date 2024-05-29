@@ -1559,7 +1559,6 @@ PyNumber_Long(PyObject *o)
         Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         return result;
     }
-
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
