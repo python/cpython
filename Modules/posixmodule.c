@@ -5590,7 +5590,7 @@ os__path_abspath_impl(PyObject *module, path_t *path)
 
         abs_buf = PyMem_RawMalloc(((size_t)abs_len + 1) * sizeof(wchar_t));
         if (!abs_buf) {
-            result = PyErr_NoMemory();
+            PyErr_NoMemory();
             goto exit;
         }
 
