@@ -577,16 +577,24 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         return find_internal(str, len, function_name, subseq, start, end,
                              direction);
     }
-    Py_ssize_t sub_lengths[tuple_len];
+    Py_ssize_t* sub_lengths = PyMem_RawMalloc(((size_t)tuple_len + 1) *
+                                              sizeof(wchar_t));
+    if (!sub_lengths) {
+        PyErr_NoMemory();
+        return -2;
+    }
+    Py_ssize_t result = -1;
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+        Py_buffer subbuf;
         Py_ssize_t sub_len;
         if (!PyObject_CheckBuffer(subseq)) {
             sub_len = 1;
         }
         else if (PyObject_GetBuffer(subseq, &subbuf, PyBUF_SIMPLE) != 0)
         {
-            return -2;
+            result = -2;
+            goto exit;
         }
         else {
             sub_len = subbuf.len;
@@ -594,7 +602,6 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         }
         sub_lengths[i] = sub_len;
     }
-    Py_ssize_t result = -1;
     ADJUST_INDICES(start, end, len);
     if (direction > 0) {
         assert(FIND_CHUNK_SIZE > 0);
@@ -619,11 +626,13 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                                                start, cur_end + sub_len, +1);
                 }
                 if (new_result == -2) {
-                    return -2;
+                    result = -2;
+                    goto exit;
                 }
                 if (new_result != -1) {
                     if (new_result == start) {
-                        return start;
+                        result = start;
+                        goto exit;
                     }
                     cur_end = new_result - 1;
                     result = new_result;
@@ -656,11 +665,13 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                                                -1);
                 }
                 if (new_result == -2) {
-                    return -2;
+                    result = -2;
+                    goto exit;
                 }
                 if (new_result != -1) {
                     if (new_result == cur_end) {
-                        return cur_end;
+                        result = cur_end;
+                        goto exit;
                     }
                     cur_start = new_result + 1;
                     result = new_result;
@@ -668,6 +679,8 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
             }
         }
     }
+exit:
+    PyMem_RawFree(sub_lengths);
     return result;
 }
 
