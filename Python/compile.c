@@ -1332,85 +1332,6 @@ compiler_exit_scope(struct compiler *c)
     PyErr_SetRaisedException(exc);
 }
 
-/* Search if variable annotations are present statically in a block. */
-
-static bool
-find_ann(asdl_stmt_seq *stmts)
-{
-    int i, j, res = 0;
-    stmt_ty st;
-
-    for (i = 0; i < asdl_seq_LEN(stmts); i++) {
-        st = (stmt_ty)asdl_seq_GET(stmts, i);
-        switch (st->kind) {
-        case AnnAssign_kind:
-            return true;
-        case For_kind:
-            res = find_ann(st->v.For.body) ||
-                  find_ann(st->v.For.orelse);
-            break;
-        case AsyncFor_kind:
-            res = find_ann(st->v.AsyncFor.body) ||
-                  find_ann(st->v.AsyncFor.orelse);
-            break;
-        case While_kind:
-            res = find_ann(st->v.While.body) ||
-                  find_ann(st->v.While.orelse);
-            break;
-        case If_kind:
-            res = find_ann(st->v.If.body) ||
-                  find_ann(st->v.If.orelse);
-            break;
-        case With_kind:
-            res = find_ann(st->v.With.body);
-            break;
-        case AsyncWith_kind:
-            res = find_ann(st->v.AsyncWith.body);
-            break;
-        case Try_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.Try.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.Try.handlers, j);
-                if (find_ann(handler->v.ExceptHandler.body)) {
-                    return true;
-                }
-            }
-            res = find_ann(st->v.Try.body) ||
-                  find_ann(st->v.Try.finalbody) ||
-                  find_ann(st->v.Try.orelse);
-            break;
-        case TryStar_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.TryStar.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.TryStar.handlers, j);
-                if (find_ann(handler->v.ExceptHandler.body)) {
-                    return true;
-                }
-            }
-            res = find_ann(st->v.TryStar.body) ||
-                  find_ann(st->v.TryStar.finalbody) ||
-                  find_ann(st->v.TryStar.orelse);
-            break;
-        case Match_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
-                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
-                    st->v.Match.cases, j);
-                if (find_ann(match_case->body)) {
-                    return true;
-                }
-            }
-            break;
-        default:
-            res = false;
-            break;
-        }
-        if (res) {
-            break;
-        }
-    }
-    return res;
-}
-
 /*
  * Frame block handling functions
  */
@@ -1757,7 +1678,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
-    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && find_ann(stmts)) {
+    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && c->u->u_ste->ste_annotations_used) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
@@ -1817,7 +1738,7 @@ compiler_codegen(struct compiler *c, mod_ty mod)
         }
         break;
     case Interactive_kind:
-        if (find_ann(mod->v.Interactive.body)) {
+        if (c->u->u_ste->ste_annotations_used) {
             ADDOP(c, loc, SETUP_ANNOTATIONS);
         }
         c->c_interactive = 1;

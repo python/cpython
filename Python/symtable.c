@@ -1809,6 +1809,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.Assign.value);
         break;
     case AnnAssign_kind:
+        st->st_cur->ste_annotations_used = 1;
         if (s->v.AnnAssign.target->kind == Name_kind) {
             expr_ty e_name = s->v.AnnAssign.target;
             long cur = symtable_lookup(st, e_name->v.Name.id);
