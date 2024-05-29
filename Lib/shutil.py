@@ -609,7 +609,7 @@ def _rmtree_unsafe(path, onexc):
     def onerror(err):
         if not isinstance(err, FileNotFoundError):
             onexc(os.scandir, err.filename, err)
-    results = os.walk(path, False, onerror, os._walk_symlinks_as_files)
+    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
     for dirpath, dirnames, filenames in results:
         # Add trailing slash to dirpath.
         dirpath = os.path.join(dirpath, dirpath[:0])
