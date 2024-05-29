@@ -94,6 +94,14 @@ class TestSimpleInteract(unittest.TestCase):
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+        source = dedent("""\
+        match 1:
+            case {0: _, 0j: _}:
+                pass
+        """)
+        with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
+            console.runsource(source)
+            mock_showsyntaxerror.assert_called_once()
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
