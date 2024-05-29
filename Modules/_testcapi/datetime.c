@@ -479,3 +479,54 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
     }
     return 0;
 }
+
+
+/* ---------------------------------------------------------------------------
+ * Test module for subinterpreters
+ */
+
+static int
+_testcapi_datetime_exec(PyObject *mod)
+{
+    PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        return -1;
+    }
+    // The following C API types need to outlive interpreters, since the
+    // borrowed references to them can be held by users without being updated.
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
+    return 0;
+}
+
+static PyMethodDef _testcapi_datetime_methods[] = {
+    {"check_date",     datetime_check_date,     METH_VARARGS},
+    {"check_datetime", datetime_check_datetime, METH_VARARGS},
+    {"check_delta",    datetime_check_delta,    METH_VARARGS},
+    {"check_time",     datetime_check_time,     METH_VARARGS},
+    {"check_tzinfo",   datetime_check_tzinfo,   METH_VARARGS},
+    {0},
+};
+
+static PyModuleDef_Slot _testcapi_datetime_slots[] = {
+    {Py_mod_exec, _testcapi_datetime_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
+
+static struct PyModuleDef _testcapi_datetime_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testcapi_datetime",
+    .m_size = 0,
+    .m_methods = _testcapi_datetime_methods,
+    .m_slots = _testcapi_datetime_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__testcapi_datetime(void)
+{
+    return PyModuleDef_Init(&_testcapi_datetime_module);
+}

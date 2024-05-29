@@ -2285,6 +2285,45 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
+    def test_datetime_capi_type_check(self):
+        script = textwrap.dedent("""
+            try:
+                import _datetime
+            except ImportError:
+                _datetime = None
+
+            def run(type_checker, obj):
+                if not type_checker(obj, True):  # exact check
+                    raise TypeError(f'{type(obj)} is not C API type')
+
+            if _datetime:
+                import importlib.machinery
+                import importlib.util
+                fullname = '_testcapi_datetime'
+                origin = importlib.util.find_spec('_testcapi').origin
+                loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+                spec = importlib.util.spec_from_loader(fullname, loader)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                run(module.check_date,     _datetime.date.today())
+                run(module.check_datetime, _datetime.datetime.now())
+                run(module.check_time,     _datetime.time(12, 30))
+                run(module.check_delta,    _datetime.timedelta(1))
+                run(module.check_tzinfo,   _datetime.tzinfo())
+        """)
+        with self.subTest("main interpreter"):
+            exec(script)
+        with self.subTest("non-isolated subinterpreter"):
+            ret = support.run_in_subinterp(script)
+            self.assertEqual(ret, 0)
+        if _interpreters:
+            with self.subTest("isolated subinterpreter"):
+                interpid = _interpreters.create()
+                ret = _interpreters.run_string(interpid, script)
+                _interpreters.destroy(interpid)
+                self.assertIsNone(ret)
+
 
 @requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):
