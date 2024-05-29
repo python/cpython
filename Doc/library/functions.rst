@@ -379,6 +379,27 @@ are always available.  They are listed here in alphabetical order.
    Convert a single string or number to a complex number, or create a
    complex number from real and imaginary parts.
 
+   Examples:
+
+   .. doctest::
+
+      >>> complex('+1.23')
+      (1.23+0j)
+      >>> complex('-4.5j')
+      -4.5j
+      >>> complex('-1.23+4.5j')
+      (-1.23+4.5j)
+      >>> complex('\t( -1.23+4.5J )\n')
+      (-1.23+4.5j)
+      >>> complex('-Infinity+NaNj')
+      (-inf+nanj)
+      >>> complex(1.23)
+      (1.23+0j)
+      >>> complex(imag=-4.5)
+      -4.5j
+      >>> complex(-1.23, 4.5)
+      (-1.23+4.5j)
+
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally followed by the ``j`` or ``J`` suffix,
    or a pair of decimal numbers, optionally preceded by a sign, separated by
@@ -411,27 +432,6 @@ are always available.  They are listed here in alphabetical order.
    the above expressions.
 
    If all arguments are omitted, returns ``0j``.
-
-   Examples:
-
-   .. doctest::
-
-      >>> complex('+1.23')
-      (1.23+0j)
-      >>> complex('-4.5j')
-      -4.5j
-      >>> complex('-1.23+4.5j')
-      (-1.23+4.5j)
-      >>> complex('\t( -1.23+4.5J )\n')
-      (-1.23+4.5j)
-      >>> complex('-Infinity+NaNj')
-      (-inf+nanj)
-      >>> complex(1.23)
-      (1.23+0j)
-      >>> complex(imag=-4.5)
-      -4.5j
-      >>> complex(-1.23, 4.5)
-      (-1.23+4.5j)
 
    The complex type is described in :ref:`typesnumeric`.
 
@@ -729,6 +729,21 @@ are always available.  They are listed here in alphabetical order.
 
    Return a floating point number constructed from a number or a string.
 
+   Examples:
+
+   .. doctest::
+
+      >>> float('+1.23')
+      1.23
+      >>> float('   -12345\n')
+      -12345.0
+      >>> float('1e-003')
+      0.001
+      >>> float('+1E6')
+      1000000.0
+      >>> float('-Infinity')
+      -inf
+
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
@@ -761,19 +776,6 @@ are always available.  They are listed here in alphabetical order.
    to :meth:`~object.__index__`.
 
    If no argument is given, ``0.0`` is returned.
-
-   Examples::
-
-      >>> float('+1.23')
-      1.23
-      >>> float('   -12345\n')
-      -12345.0
-      >>> float('1e-003')
-      0.001
-      >>> float('+1E6')
-      1000000.0
-      >>> float('-Infinity')
-      -inf
 
    The float type is described in :ref:`typesnumeric`.
 
@@ -970,6 +972,21 @@ are always available.  They are listed here in alphabetical order.
 
    Return an integer object constructed from a number or a string, or return
    ``0`` if no arguments are given.
+
+   Examples:
+
+   .. doctest::
+
+      >>> int('123')
+      123
+      >>> int('   -12_345\n')
+      -12345
+      >>> int('FACE', 16)
+      64206
+      >>> int('0xface', 0)
+      64206
+      >>> int('01110011', base=2)
+      115
 
    If the argument defines :meth:`~object.__int__`,
    ``int(x)`` returns ``x.__int__()``.  If the argument defines :meth:`~object.__index__`,
