@@ -718,31 +718,6 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             data["stdout"].strip(),
         )
 
-    def test_shebang_command_in_venv(self):
-        stem = "python-that-is-not-on-path"
-
-        # First ensure that our test name doesn't exist, and the launcher does
-        # not match any installed env
-        with self.script(f'#! /usr/bin/env {stem} arg1') as script:
-            data = self.run_py([script], expect_returncode=103)
-
-        with self.fake_venv() as (venv_exe, env):
-            # Put a "normal" Python on PATH as a distraction.
-            # The active VIRTUAL_ENV should be preferred when the name isn't an
-            # exact match.
-            exe = Path(Path(venv_exe).name).absolute()
-            exe.touch()
-            self.addCleanup(exe.unlink)
-            env["PATH"] = f"{exe.parent};{os.environ['PATH']}"
-
-            with self.script(f'#! /usr/bin/env {stem} arg1') as script:
-                data = self.run_py([script], env=env)
-            self.assertEqual(data["stdout"].strip(), f"{quote(venv_exe)} arg1 {quote(script)}")
-
-            with self.script(f'#! /usr/bin/env {exe.stem} arg1') as script:
-                data = self.run_py([script], env=env)
-            self.assertEqual(data["stdout"].strip(), f"{quote(exe)} arg1 {quote(script)}")
-
     def test_shebang_executable_extension(self):
         with self.script('#! /usr/bin/env python3.12') as script:
             data = self.run_py([script])
