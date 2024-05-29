@@ -36,7 +36,7 @@ class SubRuleValidator(GrammarValidator):
 
 class RaiseRuleValidator(GrammarValidator):
     def visit_Alt(self, node: Alt) -> None:
-        if self.rulename.startswith('invalid'):
+        if self.rulename and self.rulename.startswith('invalid'):
             # raising is allowed in invalid rules
             return
         if node.action and 'RAISE_SYNTAX_ERROR' in node.action:
