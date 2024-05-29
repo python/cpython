@@ -363,7 +363,7 @@ dis_annot_stmt_str = """\
               CALL                     1
               STORE_SUBSCR
 
-  2           LOAD_CONST               2 (<code object <annotations of top> at 0x..., file "<dis>", line 2>)
+  2           LOAD_CONST               2 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
               MAKE_FUNCTION
               STORE_NAME               3 (__annotate__)
               RETURN_CONST             3 (None)

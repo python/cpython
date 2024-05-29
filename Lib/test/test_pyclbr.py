@@ -109,6 +109,8 @@ class PyclbrTest(TestCase):
 
                 actualMethods = []
                 for m in py_item.__dict__.keys():
+                    if m == "__annotate__":
+                        continue
                     if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
                 foundMethods = []
