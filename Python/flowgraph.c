@@ -2881,3 +2881,56 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
 }
+
+/* Access to compiler optimizations for unit tests.
+
+ * _PyCompile_OptimizeCfg takes an instruction list, constructs
+ * a CFG, optimizes it and converts back to an instruction list.
+ */
+
+static PyObject *
+cfg_to_instruction_sequence(cfg_builder *g)
+{
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)_PyInstructionSequence_New();
+    if (seq != NULL) {
+        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
+            goto error;
+        }
+        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+            goto error;
+        }
+    }
+    return (PyObject*)seq;
+error:
+    PyInstructionSequence_Fini(seq);
+    return NULL;
+}
+
+PyObject *
+_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
+{
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    cfg_builder *g = _PyCfg_FromInstructionSequence((_PyInstructionSequence*)seq);
+    if (g == NULL) {
+        goto error;
+    }
+    int nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
+                                nparams, firstlineno) < 0) {
+        goto error;
+    }
+    res = cfg_to_instruction_sequence(g);
+error:
+    Py_DECREF(const_cache);
+    _PyCfgBuilder_Free(g);
+    return res;
+}

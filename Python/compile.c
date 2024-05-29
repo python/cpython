@@ -7565,39 +7565,6 @@ optimize_and_assemble(struct compiler *c, int addNone)
     return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
 
-/* Access to compiler optimizations for unit tests.
- *
- * _PyCompile_CodeGen takes and AST, applies code-gen and
- * returns the unoptimized CFG as an instruction list.
- *
- * _PyCompile_OptimizeCfg takes an instruction list, constructs
- * a CFG, optimizes it and converts back to an instruction list.
- *
- * An instruction list is a PyList where each item is either
- * a tuple describing a single instruction:
- * (opcode, oparg, lineno, end_lineno, col, end_col), or
- * a jump target label marking the beginning of a basic block.
- */
-
-
-static PyObject *
-cfg_to_instruction_sequence(cfg_builder *g)
-{
-    instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
-    if (seq != NULL) {
-        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
-            goto error;
-        }
-        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
-            goto error;
-        }
-    }
-    return (PyObject*)seq;
-error:
-    PyInstructionSequence_Fini(seq);
-    return NULL;
-}
-
 // C implementation of inspect.cleandoc()
 //
 // Difference from inspect.cleandoc():
@@ -7688,6 +7655,12 @@ _PyCompile_CleanDoc(PyObject *doc)
     return res;
 }
 
+/* Access to compiler optimizations for unit tests.
+ *
+ * _PyCompile_CodeGen takes an AST, applies code-gen and
+ * returns the unoptimized CFG as an instruction list.
+ *
+ */
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
@@ -7776,35 +7749,6 @@ finally:
     compiler_exit_scope(c);
     compiler_free(c);
     _PyArena_Free(arena);
-    return res;
-}
-
-PyObject *
-_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
-{
-    if (!_PyInstructionSequence_Check(seq)) {
-        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
-        return NULL;
-    }
-    PyObject *const_cache = PyDict_New();
-    if (const_cache == NULL) {
-        return NULL;
-    }
-
-    PyObject *res = NULL;
-    cfg_builder *g = _PyCfg_FromInstructionSequence((instr_sequence*)seq);
-    if (g == NULL) {
-        goto error;
-    }
-    int nparams = 0, firstlineno = 1;
-    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
-                                nparams, firstlineno) < 0) {
-        goto error;
-    }
-    res = cfg_to_instruction_sequence(g);
-error:
-    Py_DECREF(const_cache);
-    _PyCfgBuilder_Free(g);
     return res;
 }
 
