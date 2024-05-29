@@ -311,6 +311,7 @@ static void
 tokenizeriter_dealloc(tokenizeriterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
+    Py_XDECREF(it->last_line);
     _PyTokenizer_Free(it->tok);
     tp->tp_free(it);
     Py_DECREF(tp);
