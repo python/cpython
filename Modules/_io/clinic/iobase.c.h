@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -438,4 +441,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=e7326fbefc52bfba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dab5e9323d191e32 input=a9049054013a1b77]*/

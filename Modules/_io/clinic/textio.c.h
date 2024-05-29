@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
@@ -1292,4 +1292,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=93a5a91a22100a28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=04cb7c67791a9ec1 input=a9049054013a1b77]*/

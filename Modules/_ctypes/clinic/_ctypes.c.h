@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -607,4 +610,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=9c6539a3559e6088 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a90886be2a294ee6 input=a9049054013a1b77]*/
