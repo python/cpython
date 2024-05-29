@@ -1208,6 +1208,36 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
+    @requires_specialization
+    def test_loop_with_conditional_at_end_is_quickened(self):
+        def for_loop_true(x):
+            for i in range(10):
+                if x:
+                    pass
+
+        for_loop_true(True)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_true, adaptive=True))
+
+        def for_loop_false(x):
+            for i in range(10):
+                if x:
+                    pass
+
+        for_loop_false(False)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_false, adaptive=True))
+
+        def while_loop():
+            i = 0
+            while i < 10:
+                i += 1
+
+        while_loop()
+        self.assertIn('COMPARE_OP_INT',
+                      self.get_disassembly(while_loop, adaptive=True))
+
+    @cpython_only
     def test_extended_arg_quick(self):
         got = self.get_disassembly(extended_arg_quick)
         self.do_disassembly_compare(got, dis_extended_arg_quick_code)

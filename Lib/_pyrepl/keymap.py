@@ -30,20 +30,20 @@ sequence.
 pyrepl uses its own keyspec format that is meant to be a strict superset of
 readline's KEYSEQ format. This means that if a spec is found that readline
 accepts that this doesn't, it should be logged as a bug. Note that this means
-we're using the `\\C-o' style of readline's keyspec, not the `Control-o' sort.
+we're using the '\\C-o' style of readline's keyspec, not the 'Control-o' sort.
 
 The extension to readline is that the sequence \\<KEY> denotes the
 sequence of characters produced by hitting KEY.
 
 Examples:
-`a'      - what you get when you hit the `a' key
-`\\EOA'  - Escape - O - A (up, on my terminal)
-`\\<UP>' - the up arrow key
-`\\<up>' - ditto (keynames are case-insensitive)
-`\\C-o', `\\c-o'  - control-o
-`\\M-.'  - meta-period
-`\\E.'   - ditto (that's how meta works for pyrepl)
-`\\<tab>', `\\<TAB>', `\\t', `\\011', '\\x09', '\\X09', '\\C-i', '\\C-I'
+'a'      - what you get when you hit the 'a' key
+'\\EOA'  - Escape - O - A (up, on my terminal)
+'\\<UP>' - the up arrow key
+'\\<up>' - ditto (keynames are case-insensitive)
+'\\C-o', '\\c-o'  - control-o
+'\\M-.'  - meta-period
+'\\E.'   - ditto (that's how meta works for pyrepl)
+'\\<tab>', '\\<TAB>', '\\t', '\\011', '\\x09', '\\X09', '\\C-i', '\\C-I'
    - all of these are the tab character.
 """
 

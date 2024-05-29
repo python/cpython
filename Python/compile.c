@@ -703,60 +703,22 @@ compiler_set_qualname(struct compiler *c)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
-    if (0 <= opcode && opcode <= MAX_REAL_OPCODE) {
-        if (_PyOpcode_Deopt[opcode] != opcode) {
-            // Specialized instructions are not supported.
-            return PY_INVALID_STACK_EFFECT;
-        }
-        int popped = _PyOpcode_num_popped(opcode, oparg);
-        int pushed = _PyOpcode_num_pushed(opcode, oparg);
-        if (popped < 0 || pushed < 0) {
-            return PY_INVALID_STACK_EFFECT;
-        }
-        return pushed - popped;
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    // Pseudo ops
-    switch (opcode) {
-        case POP_BLOCK:
-        case JUMP:
-        case JUMP_NO_INTERRUPT:
-            return 0;
-
-        case EXIT_INIT_CHECK:
-            return -1;
-
-        /* Exception handling pseudo-instructions */
-        case SETUP_FINALLY:
-            /* 0 in the normal flow.
-             * Restore the stack position and push 1 value before jumping to
-             * the handler if an exception be raised. */
-            return jump ? 1 : 0;
-        case SETUP_CLEANUP:
-            /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 2 : 0;
-        case SETUP_WITH:
-            /* 0 in the normal flow.
-             * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 2 values before jumping to the handler
-             * if an exception be raised. */
-            return jump ? 1 : 0;
-
-        case STORE_FAST_MAYBE_NULL:
-            return -1;
-        case LOAD_CLOSURE:
-            return 1;
-        case LOAD_METHOD:
-            return 1;
-        case LOAD_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_ATTR:
-            return -1;
-        default:
-            return PY_INVALID_STACK_EFFECT;
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    return PY_INVALID_STACK_EFFECT; /* not reachable */
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
 }
 
 int
@@ -997,11 +959,16 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
+#define LOAD_METHOD -1
+#define LOAD_SUPER_METHOD -2
+#define LOAD_ZERO_SUPER_ATTR -3
+#define LOAD_ZERO_SUPER_METHOD -4
+
 static int
 compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    PyObject *mangled = _Py_Mangle(u->u_private, o);
+    PyObject *mangled = _Py_MaybeMangle(u->u_private, u->u_ste, o);
     if (!mangled) {
         return ERROR;
     }
@@ -1014,7 +981,6 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1024,18 +990,15 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1873,7 +1836,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
+            PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, arg->arg);
             if (!mangled) {
                 goto error;
             }
@@ -1930,7 +1893,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     if (!annotation) {
         return SUCCESS;
     }
-    PyObject *mangled = _Py_Mangle(c->u->u_private, id);
+    PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, id);
     if (!mangled) {
         return ERROR;
     }
@@ -2625,7 +2588,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
         if (!type_params_name) {
@@ -2637,6 +2599,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
@@ -4203,7 +4166,7 @@ compiler_nameop(struct compiler *c, location loc,
         return ERROR;
     }
 
-    mangled = _Py_Mangle(c->u->u_private, name);
+    mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
     if (!mangled) {
         return ERROR;
     }
@@ -6512,7 +6475,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
             ADDOP(c, loc, STORE_SUBSCR);
         }

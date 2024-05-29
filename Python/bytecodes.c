@@ -213,7 +213,7 @@ dummy_func(
             }
         }
 
-        pseudo(LOAD_CLOSURE) = {
+        pseudo(LOAD_CLOSURE, (-- unused)) = {
             LOAD_FAST,
         };
 
@@ -259,7 +259,7 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        pseudo(STORE_FAST_MAYBE_NULL) = {
+        pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
             STORE_FAST,
         };
 
@@ -1862,18 +1862,6 @@ dummy_func(
 
         macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
 
-        pseudo(LOAD_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
-        };
-
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (0))) {
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type);
@@ -1974,10 +1962,6 @@ dummy_func(
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +
             _LOAD_ATTR;
-
-        pseudo(LOAD_METHOD) = {
-            LOAD_ATTR,
-        };
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2185,11 +2169,8 @@ dummy_func(
             _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
-        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner --)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
@@ -2223,6 +2204,11 @@ dummy_func(
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
         }
+
+        macro(STORE_ATTR_WITH_HINT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _STORE_ATTR_WITH_HINT;
 
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
@@ -2457,12 +2443,12 @@ dummy_func(
             #endif /* _Py_TIER2 */
         }
 
-        pseudo(JUMP) = {
+        pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD,
         };
 
-        pseudo(JUMP_NO_INTERRUPT) = {
+        pseudo(JUMP_NO_INTERRUPT, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD_NO_INTERRUPT,
         };
@@ -2959,19 +2945,27 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
+        pseudo(SETUP_FINALLY, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position
+             * and push one value before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
+        pseudo(SETUP_CLEANUP, (-- unused, unused), (HAS_ARG)) = {
+            /* As SETUP_FINALLY, but push lasti as well */
             NOP,
         };
 
-        pseudo(SETUP_WITH, (HAS_ARG)) = {
+        pseudo(SETUP_WITH, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position to the
+             * position before the result of __(a)enter__ and push 2 values
+             * before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(POP_BLOCK) = {
+        pseudo(POP_BLOCK, (--)) = {
             NOP,
         };
 
@@ -3327,10 +3321,9 @@ dummy_func(
             DEOPT_IF(tstate->interp->eval_frame);
         }
 
-        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-            EXIT_IF(!PyFunction_Check(callable));
+        op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            assert(PyFunction_Check(callable));
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            EXIT_IF(func->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             EXIT_IF(code->co_argcount != oparg + (self_or_null != NULL));
         }
@@ -3374,6 +3367,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
@@ -3383,6 +3377,7 @@ dummy_func(
         macro(CALL_PY_EXACT_ARGS) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
