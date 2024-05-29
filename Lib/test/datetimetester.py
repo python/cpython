@@ -22,7 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
+from test.support import warnings_helper, no_rerun
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -46,26 +46,6 @@ try:
 except ImportError:
     pass
 #
-
-# This is copied from test_import/__init__.py.
-# XXX Move it to support/__init__.py.
-def no_rerun(reason):
-    """Skip rerunning for a particular test.
-
-    WARNING: Use this decorator with care; skipping rerunning makes it
-    impossible to find reference leaks. Provide a clear reason for skipping the
-    test using the 'reason' parameter.
-    """
-    def deco(func):
-        _has_run = False
-        def wrapper(self):
-            nonlocal _has_run
-            if _has_run:
-                self.skipTest(reason)
-            func(self)
-            _has_run = True
-        return wrapper
-    return deco
 
 pickle_loads = {pickle.loads, pickle._loads}
 
