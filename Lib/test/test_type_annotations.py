@@ -349,7 +349,7 @@ class DeferredEvaluationTests(unittest.TestCase):
             with self.subTest(obj=obj):
                 annotate = obj.__annotate__
                 self.assertIsInstance(annotate, types.FunctionType)
-                self.assertEqual(annotate.__name__, f"<annotations of {obj.__name__}>")
+                self.assertEqual(annotate.__name__, "__annotate__")
                 with self.assertRaises(NotImplementedError):
                     annotate(inspect.FORWARDREF)
                 with self.assertRaises(NotImplementedError):
