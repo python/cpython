@@ -406,8 +406,7 @@ class ComplexTest(unittest.TestCase):
         check(complex(4.25, imag=1.5), 4.25, 1.5)
 
         # check that the sign of a zero in the real or imaginary part
-        # is preserved when constructing from two floats.  (These checks
-        # are harmless on systems without support for signed zeros.)
+        # is preserved when constructing from two floats.
         for x in 1.0, -1.0:
             for y in 0.0, -0.0:
                 check(complex(x, y), x, y)
