@@ -3128,7 +3128,7 @@ left undefined.
    (typically an :class:`int`).
 
    .. versionchanged:: 3.14
-      :class:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
+      :func:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
 
 .. _context-managers:

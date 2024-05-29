@@ -979,7 +979,7 @@ are always available.  They are listed here in alphabetical order.
       <int_max_str_digits>` documentation.
 
    .. versionchanged:: 3.14
-      :class:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
+      :func:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
 
 .. function:: isinstance(object, classinfo)
