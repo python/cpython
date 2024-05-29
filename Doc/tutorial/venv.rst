@@ -38,7 +38,7 @@ Creating Virtual Environments
 The module used to create and manage virtual environments is called
 :mod:`venv`.  :mod:`venv` will install the Python version from which
 the command was run (as reported by the :option:`--version` option).
-For instance, excuting the command with ``python3.12`` will install
+For instance, executing the command with ``python3.12`` will install
 version 3.12.
 
 To create a virtual environment, decide upon a directory where you want to

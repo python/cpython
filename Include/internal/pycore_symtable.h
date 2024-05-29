@@ -83,6 +83,7 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
+    PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
     _Py_block_ty ste_type;
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
@@ -133,6 +134,7 @@ extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
