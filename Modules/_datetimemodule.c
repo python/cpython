@@ -6972,10 +6972,13 @@ _datetime_exec(PyObject *module)
     } while (0)
 
     PyTypeObject *PyDateTime_IsoCalendarDateType = NULL;
-    CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
+    datetime_state *st = get_datetime_state();
+
+    if (!st->initialized) {
+        CREATE_TYPE(PyDateTime_IsoCalendarDateType, &isocal_spec, &PyTuple_Type);
+    }
 #undef CREATE_TYPE
 
-    datetime_state *st = get_datetime_state();
     if (init_state(st, PyDateTime_IsoCalendarDateType) < 0) {
         goto error;
     }
