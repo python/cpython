@@ -488,7 +488,9 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    PyDateTime_IMPORT;
+    if (test_datetime_capi(NULL, NULL) == NULL)  {  // PyDateTime_IMPORT
+        return -1;
+    }
     if (PyDateTimeAPI == NULL) {
         return -1;
     }
