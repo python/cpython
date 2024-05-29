@@ -484,7 +484,7 @@ symbolic links encountered in the path."""
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
-                    raise OSError(errno.ELOOP, "Symlink loop", newpath)
+                    raise OSError(errno.ELOOP, "Too many levels of symbolic links", newpath)
                 path = newpath
                 continue
             target = os.readlink(newpath)
