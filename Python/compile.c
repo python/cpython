@@ -7496,9 +7496,6 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
-struct _PyCfgBuilder*
-_PyCfg_FromInstructionSequence(_PyInstructionSequence *seq);
-
 static PyCodeObject *
 optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
