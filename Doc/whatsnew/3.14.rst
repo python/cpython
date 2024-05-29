@@ -90,7 +90,7 @@ ast
 ---
 
 Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`)
+(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
 
 
@@ -107,6 +107,13 @@ Deprecated
 
 Removed
 =======
+
+argparse
+--------
+
+* Remove the *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction`.
+  They were deprecated since 3.12.
 
 ast
 ---
@@ -137,20 +144,11 @@ ast
 
   (Contributed by Alex Waygood in :gh:`119562`.)
 
-
-argparse
---------
-
-* Remove the *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction`.
-  They were deprecated since 3.12.
-
 collections.abc
 ---------------
 
 * Remove :class:`!collections.abc.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
-
 
 email
 -----
