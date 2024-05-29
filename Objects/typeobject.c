@@ -5062,7 +5062,7 @@ is_dunder_name(PyObject *name)
     return 0;
 }
 
-static void
+static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
     _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
@@ -5073,7 +5073,7 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     // exact unicode object or Py_None so it's safe to do so.
     PyObject *old_name = entry->name;
     _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
-    Py_DECREF(old_name);
+    return old_name;
 }
 
 #if Py_GIL_DISABLED
@@ -5093,10 +5093,12 @@ update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
         return;
     }
 
-    update_cache(entry, name, version_tag, value);
+    PyObject *old_value = update_cache(entry, name, version_tag, value);
 
     // Then update sequence to the next valid value
     _PySeqLock_UnlockWrite(&entry->sequence);
+
+    Py_DECREF(old_value);
 }
 
 #endif
@@ -5208,7 +5210,8 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
 #if Py_GIL_DISABLED
         update_cache_gil_disabled(entry, name, version, res);
 #else
-        update_cache(entry, name, version, res);
+        PyObject *old_value = update_cache(entry, name, version, res);
+        Py_DECREF(old_value);
 #endif
     }
     return res;
