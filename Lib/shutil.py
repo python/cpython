@@ -617,31 +617,18 @@ else:
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
-    try:
-        with os.scandir(path) as scandir_it:
-            entries = list(scandir_it)
-    except OSError as err:
-        onexc(os.scandir, path, err)
-        entries = []
-    for entry in entries:
-        fullname = entry.path
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-
-        if is_dir and not entry.is_junction():
+    def onerror(err):
+        onexc(os.scandir, err.filename, err)
+    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+    for dirpath, dirnames, filenames in results:
+        for name in dirnames:
+            fullname = os.path.join(dirpath, name)
             try:
-                if entry.is_symlink():
-                    # This can only happen if someone replaces
-                    # a directory with a symlink after the call to
-                    # os.scandir or entry.is_dir above.
-                    raise OSError("Cannot call rmtree on a symbolic link")
+                os.rmdir(fullname)
             except OSError as err:
-                onexc(os.path.islink, fullname, err)
-                continue
-            _rmtree_unsafe(fullname, onexc)
-        else:
+                onexc(os.rmdir, fullname, err)
+        for name in filenames:
+            fullname = os.path.join(dirpath, name)
             try:
                 os.unlink(fullname)
             except OSError as err:

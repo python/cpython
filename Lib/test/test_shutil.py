@@ -686,6 +686,17 @@ class TestRmTree(BaseTest, unittest.TestCase):
         shutil.rmtree(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
 
+    @unittest.skipIf(shutil._use_fd_functions, "fd-based functions remain unfixed (GH-89727)")
+    def test_rmtree_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = os.path.join(TESTFN, *(['d'] * directory_depth))
+        os.makedirs(base)
+
+        with support.infinite_recursion(recursion_limit):
+            shutil.rmtree(TESTFN)
+
 
 class TestCopyTree(BaseTest, unittest.TestCase):
 
