@@ -418,7 +418,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
     if (PyFloat_Check(w))
         j = PyFloat_AS_DOUBLE(w);
 
-    else if (!Py_IS_FINITE(i)) {
+    else if (!isfinite(i)) {
         if (PyLong_Check(w))
             /* If i is an infinity, its magnitude exceeds any
              * finite integer, so it doesn't matter which int we
@@ -749,13 +749,13 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
     if (iw == 0) {              /* v**0 is 1, even 0**0 */
         return PyFloat_FromDouble(1.0);
     }
-    if (Py_IS_NAN(iv)) {        /* nan**w = nan, unless w == 0 */
+    if (isnan(iv)) {        /* nan**w = nan, unless w == 0 */
         return PyFloat_FromDouble(iv);
     }
-    if (Py_IS_NAN(iw)) {        /* v**nan = nan, unless v == 1; 1**nan = 1 */
+    if (isnan(iw)) {        /* v**nan = nan, unless v == 1; 1**nan = 1 */
         return PyFloat_FromDouble(iv == 1.0 ? 1.0 : iw);
     }
-    if (Py_IS_INFINITY(iw)) {
+    if (isinf(iw)) {
         /* v**inf is: 0.0 if abs(v) < 1; 1.0 if abs(v) == 1; inf if
          *     abs(v) > 1 (including case where v infinite)
          *
@@ -770,7 +770,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
         else
             return PyFloat_FromDouble(0.0);
     }
-    if (Py_IS_INFINITY(iv)) {
+    if (isinf(iv)) {
         /* (+-inf)**w is: inf for w positive, 0 for w negative; in
          *     both cases, we need to add the appropriate sign if w is
          *     an odd integer.
@@ -885,7 +885,7 @@ float_is_integer_impl(PyObject *self)
 
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
-    if (!Py_IS_FINITE(x))
+    if (!isfinite(x))
         Py_RETURN_FALSE;
     errno = 0;
     o = (floor(x) == x) ? Py_True : Py_False;
@@ -1021,7 +1021,7 @@ double_round(double x, int ndigits) {
         }
         y = (x*pow1)*pow2;
         /* if y overflows, then rounded value is exactly x */
-        if (!Py_IS_FINITE(y))
+        if (!isfinite(y))
             return PyFloat_FromDouble(x);
     }
     else {
@@ -1041,7 +1041,7 @@ double_round(double x, int ndigits) {
         z *= pow1;
 
     /* if computation resulted in overflow, raise OverflowError */
-    if (!Py_IS_FINITE(z)) {
+    if (!isfinite(z)) {
         PyErr_SetString(PyExc_OverflowError,
                         "overflow occurred during round");
         return NULL;
@@ -1089,7 +1089,7 @@ float___round___impl(PyObject *self, PyObject *o_ndigits)
         return NULL;
 
     /* nans and infinities round to themselves */
-    if (!Py_IS_FINITE(x))
+    if (!isfinite(x))
         return PyFloat_FromDouble(x);
 
     /* Deal with extreme values for ndigits. For ndigits > NDIGITS_MAX, x
@@ -1237,7 +1237,7 @@ float_hex_impl(PyObject *self)
 
     CONVERT_TO_DOUBLE(self, x);
 
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x))
+    if (isnan(x) || isinf(x))
         return float_repr((PyFloatObject *)self);
 
     if (x == 0.0) {
@@ -1570,12 +1570,12 @@ float_as_integer_ratio_impl(PyObject *self)
 
     CONVERT_TO_DOUBLE(self, self_double);
 
-    if (Py_IS_INFINITY(self_double)) {
+    if (isinf(self_double)) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot convert Infinity to integer ratio");
         return NULL;
     }
-    if (Py_IS_NAN(self_double)) {
+    if (isnan(self_double)) {
         PyErr_SetString(PyExc_ValueError,
                         "cannot convert NaN to integer ratio");
         return NULL;
@@ -2060,12 +2060,12 @@ PyFloat_Pack2(double x, char *data, int le)
         e = 0;
         bits = 0;
     }
-    else if (Py_IS_INFINITY(x)) {
+    else if (isinf(x)) {
         sign = (x < 0.0);
         e = 0x1f;
         bits = 0;
     }
-    else if (Py_IS_NAN(x)) {
+    else if (isnan(x)) {
         /* There are 2046 distinct half-precision NaNs (1022 signaling and
            1024 quiet), but there are only two quiet NaNs that don't arise by
            quieting a signaling NaN; we get those by setting the topmost bit
@@ -2234,7 +2234,7 @@ PyFloat_Pack4(double x, char *data, int le)
         float y = (float)x;
         int i, incr = 1;
 
-        if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
+        if (isinf(y) && !isinf(x))
             goto Overflow;
 
         unsigned char s[sizeof(float)];

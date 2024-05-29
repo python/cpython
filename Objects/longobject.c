@@ -401,12 +401,12 @@ PyLong_FromDouble(double dval)
     double frac;
     int i, ndig, expo, neg;
     neg = 0;
-    if (Py_IS_INFINITY(dval)) {
+    if (isinf(dval)) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot convert float infinity to integer");
         return NULL;
     }
-    if (Py_IS_NAN(dval)) {
+    if (isnan(dval)) {
         PyErr_SetString(PyExc_ValueError,
                         "cannot convert float NaN to integer");
         return NULL;

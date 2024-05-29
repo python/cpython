@@ -2640,7 +2640,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 /* Avoid losing the sign on a negative result,
                    and don't let adding the compensation convert
                    an infinite or overflowed sum to a NaN. */
-                if (c && Py_IS_FINITE(c)) {
+                if (c && isfinite(c)) {
                     f_result += c;
                 }
                 return PyFloat_FromDouble(f_result);
@@ -2672,7 +2672,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
             }
-            if (c && Py_IS_FINITE(c)) {
+            if (c && isfinite(c)) {
                 f_result += c;
             }
             result = PyFloat_FromDouble(f_result);

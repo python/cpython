@@ -90,8 +90,8 @@ _Py_HashDouble(PyObject *inst, double v)
     double m;
     Py_uhash_t x, y;
 
-    if (!Py_IS_FINITE(v)) {
-        if (Py_IS_INFINITY(v))
+    if (!isfinite(v)) {
+        if (isinf(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
             return PyObject_GenericHash(inst);

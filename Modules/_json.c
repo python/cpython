@@ -1326,7 +1326,7 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
 {
     /* Return the JSON representation of a PyFloat. */
     double i = PyFloat_AS_DOUBLE(obj);
-    if (!Py_IS_FINITE(i)) {
+    if (!isfinite(i)) {
         if (!s->allow_nan) {
             PyErr_Format(
                     PyExc_ValueError,
