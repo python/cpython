@@ -858,6 +858,8 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         }
     }
 
+    debug(L"# Search PATH for %s\n", filename);
+
     wchar_t pathVariable[MAXLEN];
     int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);
     if (!n) {
