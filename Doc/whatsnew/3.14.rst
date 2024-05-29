@@ -145,6 +145,23 @@ argparse
   of :class:`!argparse.BooleanOptionalAction`.
   They were deprecated since 3.12.
 
+asyncio
+-------
+
+* Remove classes :class:`!asyncio.MultiLoopChildWatcher`,
+  :class:`!asyncio.FastChildWatcher`,
+  :class:`!asyncio.AbstractChildWatcher`,
+  :class:`!asyncio.ThreadedChildWatcher`,
+  :class:`!asyncio.BaseChildWatcher`,
+  :class:`!asyncio.PidfdChildWatcher`,
+  :class:`!asyncio.SafeChildWatcher` and
+  methods :class:`!asyncio.set_child_watcher()`,
+  :class:`!asyncio.get_child_watcher()`,
+  :class:`!asyncio.AbstractEventLoopPolicy.set_child_watcher()`,
+  :class:`!asyncio.AbstractEventLoopPolicy.get_child_watcher()`.
+  They were deprecated since Python 3.12.
+  (Contributed by Albert Gorokhovskiy in :gh:`119627`)
+
 collections.abc
 ---------------
 

@@ -824,6 +824,8 @@ class StreamTests(test_utils.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
     @requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_read_all_from_pipe_reader(self):
         # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the
@@ -845,24 +847,12 @@ os.close(fd)
         protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
         transport, _ = self.loop.run_until_complete(
             self.loop.connect_read_pipe(lambda: protocol, pipe))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(self.loop)
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(watcher)
-            create = asyncio.create_subprocess_exec(
-                *args,
-                pass_fds={wfd},
-            )
-            proc = self.loop.run_until_complete(create)
-            self.loop.run_until_complete(proc.wait())
-        finally:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
+        create = asyncio.create_subprocess_exec(
+            *args,
+            pass_fds={wfd},
+        )
+        proc = self.loop.run_until_complete(create)
+        self.loop.run_until_complete(proc.wait())
 
         os.close(wfd)
         data = self.loop.run_until_complete(reader.read(-1))

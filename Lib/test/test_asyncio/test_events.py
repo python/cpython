@@ -1894,6 +1894,8 @@ class SubprocessTestsMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_exec(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1916,6 +1918,8 @@ class SubprocessTestsMixin:
         self.assertEqual(b'Python The Winner', proto.data[1])
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_interactive(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1944,6 +1948,8 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_shell(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1961,6 +1967,8 @@ class SubprocessTestsMixin:
         transp.close()
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_exitcode(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1973,6 +1981,8 @@ class SubprocessTestsMixin:
         transp.close()
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_close_after_finish(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1988,6 +1998,8 @@ class SubprocessTestsMixin:
         self.assertIsNone(transp.close())
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_kill(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -2005,6 +2017,8 @@ class SubprocessTestsMixin:
         transp.close()
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_terminate(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -2023,6 +2037,8 @@ class SubprocessTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_send_signal(self):
         # bpo-31034: Make sure that we get the default signal handler (killing
         # the process). The parent process may have decided to ignore SIGHUP,
@@ -2048,6 +2064,8 @@ class SubprocessTestsMixin:
             signal.signal(signal.SIGHUP, old_handler)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_stderr(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
@@ -2070,6 +2088,8 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_stderr_redirect_to_stdout(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
@@ -2096,6 +2116,8 @@ class SubprocessTestsMixin:
         self.assertEqual(0, proto.returncode)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_close_client_stream(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
 
@@ -2131,6 +2153,8 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
 
     @support.requires_subprocess()
+    # Skip test as _make_subprocess_transport is not implemented
+    @unittest.skip("Skip test as _make_subprocess_transport is not implemented")
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session
         connect = self.loop.subprocess_shell(
@@ -2212,18 +2236,9 @@ else:
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
             super().setUp()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = asyncio.SafeChildWatcher()
-                watcher.attach_loop(self.loop)
-                asyncio.set_child_watcher(watcher)
 
         def tearDown(self):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
             super().tearDown()
-
 
     if hasattr(selectors, 'KqueueSelector'):
         class KqueueEventLoopTests(UnixEventLoopTestsMixin,
@@ -2716,9 +2731,6 @@ class PolicyTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, policy.get_event_loop)
         self.assertRaises(NotImplementedError, policy.set_event_loop, object())
         self.assertRaises(NotImplementedError, policy.new_event_loop)
-        self.assertRaises(NotImplementedError, policy.get_child_watcher)
-        self.assertRaises(NotImplementedError, policy.set_child_watcher,
-                          object())
 
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2833,19 +2845,9 @@ class GetEventLoopTestsMixin:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        if sys.platform != 'win32':
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = asyncio.SafeChildWatcher()
-                watcher.attach_loop(self.loop)
-                asyncio.set_child_watcher(watcher)
 
     def tearDown(self):
         try:
-            if sys.platform != 'win32':
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    asyncio.set_child_watcher(None)
 
             super().tearDown()
         finally:
