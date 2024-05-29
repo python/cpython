@@ -78,7 +78,7 @@ CLASSES
     class B(builtins.object)
      |  Methods defined here:
      |
-     |  __annotate__ = <annotations of B>(...)
+     |  __annotate__(...)
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -179,7 +179,7 @@ class A(builtins.object)
 
 class B(builtins.object)
     Methods defined here:
-        __annotate__ = (...)
+        __annotate__(...)
     ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__

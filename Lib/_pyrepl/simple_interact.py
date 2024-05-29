@@ -57,12 +57,17 @@ def _strip_final_indent(text: str) -> str:
     return text
 
 
+def _clear_screen():
+    reader = _get_reader()
+    reader.scheduled_commands.append("clear_screen")
+
+
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
-    "clear": "clear_screen",
+    "clear": _clear_screen,
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -96,7 +101,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = compile(item, filename, the_symbol, dont_inherit=True)
-            except (OverflowError, ValueError):
+            except (OverflowError, ValueError, SyntaxError):
                     self.showsyntaxerror(filename)
                     return False
 

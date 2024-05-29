@@ -339,6 +339,28 @@ class DeferredEvaluationTests(unittest.TestCase):
         check_syntax_error(self, "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
         check_syntax_error(self, "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
 
+    def test_no_exotic_expressions_in_unevaluated_annotations(self):
+        preludes = [
+            "",
+            "class X: ",
+            "def f(): ",
+            "async def f(): ",
+        ]
+        for prelude in preludes:
+            with self.subTest(prelude=prelude):
+                check_syntax_error(self, prelude + "(x): (yield)", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): (yield from x)", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): (y := 3)", "named expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): (await 42)", "await expression cannot be used within an annotation")
+
+    def test_ignore_non_simple_annotations(self):
+        ns = run_code("class X: (y): int")
+        self.assertEqual(ns["X"].__annotations__, {})
+        ns = run_code("class X: int.b: int")
+        self.assertEqual(ns["X"].__annotations__, {})
+        ns = run_code("class X: int[str]: int")
+        self.assertEqual(ns["X"].__annotations__, {})
+
     def test_generated_annotate(self):
         def func(x: int):
             pass
@@ -349,7 +371,7 @@ class DeferredEvaluationTests(unittest.TestCase):
             with self.subTest(obj=obj):
                 annotate = obj.__annotate__
                 self.assertIsInstance(annotate, types.FunctionType)
-                self.assertEqual(annotate.__name__, f"<annotations of {obj.__name__}>")
+                self.assertEqual(annotate.__name__, "__annotate__")
                 with self.assertRaises(NotImplementedError):
                     annotate(inspect.FORWARDREF)
                 with self.assertRaises(NotImplementedError):

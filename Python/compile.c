@@ -258,6 +258,7 @@ struct compiler_unit {
 
     PyObject *u_private;            /* for private name mangling */
     PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
+    PyObject *u_deferred_annotations; /* AnnAssign nodes deferred to the end of compilation */
 
     instr_sequence *u_instr_sequence; /* codegen output */
 
@@ -597,6 +598,7 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
     Py_CLEAR(u->u_static_attributes);
+    Py_CLEAR(u->u_deferred_annotations);
     PyMem_Free(u);
 }
 
@@ -714,60 +716,22 @@ compiler_set_qualname(struct compiler *c)
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
-    if (0 <= opcode && opcode <= MAX_REAL_OPCODE) {
-        if (_PyOpcode_Deopt[opcode] != opcode) {
-            // Specialized instructions are not supported.
-            return PY_INVALID_STACK_EFFECT;
-        }
-        int popped = _PyOpcode_num_popped(opcode, oparg);
-        int pushed = _PyOpcode_num_pushed(opcode, oparg);
-        if (popped < 0 || pushed < 0) {
-            return PY_INVALID_STACK_EFFECT;
-        }
-        return pushed - popped;
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    // Pseudo ops
-    switch (opcode) {
-        case POP_BLOCK:
-        case JUMP:
-        case JUMP_NO_INTERRUPT:
-            return 0;
-
-        case EXIT_INIT_CHECK:
-            return -1;
-
-        /* Exception handling pseudo-instructions */
-        case SETUP_FINALLY:
-            /* 0 in the normal flow.
-             * Restore the stack position and push 1 value before jumping to
-             * the handler if an exception be raised. */
-            return jump ? 1 : 0;
-        case SETUP_CLEANUP:
-            /* As SETUP_FINALLY, but pushes lasti as well */
-            return jump ? 2 : 0;
-        case SETUP_WITH:
-            /* 0 in the normal flow.
-             * Restore the stack position to the position before the result
-             * of __(a)enter__ and push 2 values before jumping to the handler
-             * if an exception be raised. */
-            return jump ? 1 : 0;
-
-        case STORE_FAST_MAYBE_NULL:
-            return -1;
-        case LOAD_CLOSURE:
-            return 1;
-        case LOAD_METHOD:
-            return 1;
-        case LOAD_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_METHOD:
-        case LOAD_ZERO_SUPER_ATTR:
-            return -1;
-        default:
-            return PY_INVALID_STACK_EFFECT;
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
     }
-
-    return PY_INVALID_STACK_EFFECT; /* not reachable */
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
 }
 
 int
@@ -1008,11 +972,16 @@ compiler_addop_o(struct compiler_unit *u, location loc,
     return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
 }
 
+#define LOAD_METHOD -1
+#define LOAD_SUPER_METHOD -2
+#define LOAD_ZERO_SUPER_ATTR -3
+#define LOAD_ZERO_SUPER_METHOD -4
+
 static int
 compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    PyObject *mangled = _Py_Mangle(u->u_private, o);
+    PyObject *mangled = _Py_MaybeMangle(u->u_private, u->u_ste, o);
     if (!mangled) {
         return ERROR;
     }
@@ -1025,7 +994,6 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1035,18 +1003,15 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1259,6 +1224,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_private = NULL;
+    u->u_deferred_annotations = NULL;
     if (scope_type == COMPILER_SCOPE_CLASS) {
         u->u_static_attributes = PySet_New(0);
         if (!u->u_static_attributes) {
@@ -1338,85 +1304,6 @@ compiler_exit_scope(struct compiler *c)
     Py_XDECREF(nested_seq);
 
     PyErr_SetRaisedException(exc);
-}
-
-/* Search if variable annotations are present statically in a block. */
-
-static bool
-find_ann(asdl_stmt_seq *stmts)
-{
-    int i, j, res = 0;
-    stmt_ty st;
-
-    for (i = 0; i < asdl_seq_LEN(stmts); i++) {
-        st = (stmt_ty)asdl_seq_GET(stmts, i);
-        switch (st->kind) {
-        case AnnAssign_kind:
-            return true;
-        case For_kind:
-            res = find_ann(st->v.For.body) ||
-                  find_ann(st->v.For.orelse);
-            break;
-        case AsyncFor_kind:
-            res = find_ann(st->v.AsyncFor.body) ||
-                  find_ann(st->v.AsyncFor.orelse);
-            break;
-        case While_kind:
-            res = find_ann(st->v.While.body) ||
-                  find_ann(st->v.While.orelse);
-            break;
-        case If_kind:
-            res = find_ann(st->v.If.body) ||
-                  find_ann(st->v.If.orelse);
-            break;
-        case With_kind:
-            res = find_ann(st->v.With.body);
-            break;
-        case AsyncWith_kind:
-            res = find_ann(st->v.AsyncWith.body);
-            break;
-        case Try_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.Try.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.Try.handlers, j);
-                if (find_ann(handler->v.ExceptHandler.body)) {
-                    return true;
-                }
-            }
-            res = find_ann(st->v.Try.body) ||
-                  find_ann(st->v.Try.finalbody) ||
-                  find_ann(st->v.Try.orelse);
-            break;
-        case TryStar_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.TryStar.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.TryStar.handlers, j);
-                if (find_ann(handler->v.ExceptHandler.body)) {
-                    return true;
-                }
-            }
-            res = find_ann(st->v.TryStar.body) ||
-                  find_ann(st->v.TryStar.finalbody) ||
-                  find_ann(st->v.TryStar.orelse);
-            break;
-        case Match_kind:
-            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
-                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
-                    st->v.Match.cases, j);
-                if (find_ann(match_case->body)) {
-                    return true;
-                }
-            }
-            break;
-        default:
-            res = false;
-            break;
-        }
-        if (res) {
-            break;
-        }
-    }
-    return res;
 }
 
 /*
@@ -1674,79 +1561,6 @@ compiler_leave_annotations_scope(struct compiler *c, location loc,
     return 0;
 }
 
-static int
-compiler_collect_annotations(struct compiler *c, asdl_stmt_seq *stmts,
-                             int *annotations_len)
-{
-    for (int i = 0; i < asdl_seq_LEN(stmts); i++) {
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, i);
-        switch (st->kind) {
-        case AnnAssign_kind:
-            // Only "simple" (i.e., unparenthesized) names are stored.
-            if (st->v.AnnAssign.simple) {
-                PyObject *mangled = _Py_Mangle(c->u->u_private, st->v.AnnAssign.target->v.Name.id);
-                ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
-                VISIT(c, expr, st->v.AnnAssign.annotation);
-                *annotations_len += 1;
-            }
-            break;
-        case For_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.For.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.For.orelse, annotations_len));
-            break;
-        case AsyncFor_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.AsyncFor.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.AsyncFor.orelse, annotations_len));
-            break;
-        case While_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.While.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.While.orelse, annotations_len));
-            break;
-        case If_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.If.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.If.orelse, annotations_len));
-            break;
-        case With_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.With.body, annotations_len));
-            break;
-        case AsyncWith_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.AsyncWith.body, annotations_len));
-            break;
-        case Match_kind:
-            for (int j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
-                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
-                    st->v.Match.cases, j);
-                RETURN_IF_ERROR(compiler_collect_annotations(c, match_case->body, annotations_len));
-            }
-            break;
-        case Try_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.Try.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.Try.orelse, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.Try.finalbody, annotations_len));
-            for (int j = 0; j < asdl_seq_LEN(st->v.Try.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.Try.handlers, j);
-                RETURN_IF_ERROR(compiler_collect_annotations(c, handler->v.ExceptHandler.body, annotations_len));
-            }
-            break;
-        case TryStar_kind:
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.TryStar.body, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.TryStar.orelse, annotations_len));
-            RETURN_IF_ERROR(compiler_collect_annotations(c, st->v.TryStar.finalbody, annotations_len));
-            for (int j = 0; j < asdl_seq_LEN(st->v.TryStar.handlers); j++) {
-                excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
-                    st->v.Try.handlers, j);
-                RETURN_IF_ERROR(compiler_collect_annotations(c, handler->v.ExceptHandler.body, annotations_len));
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    return SUCCESS;
-
-}
-
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
@@ -1765,28 +1579,30 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
-    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && find_ann(stmts)) {
+    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && c->u->u_ste->ste_annotations_used) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    PyObject *docstring = _PyAST_GetDocString(stmts);
-    if (docstring) {
-        first_instr = 1;
-        /* if not -OO mode, set docstring */
-        if (c->c_optimize < 2) {
-            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-            if (cleandoc == NULL) {
-                return ERROR;
+    if (!c->c_interactive) {
+        PyObject *docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            first_instr = 1;
+            /* if not -OO mode, set docstring */
+            if (c->c_optimize < 2) {
+                PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+                if (cleandoc == NULL) {
+                    return ERROR;
+                }
+                stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+                assert(st->kind == Expr_kind);
+                location loc = LOC(st->v.Expr.value);
+                ADDOP_LOAD_CONST(c, loc, cleandoc);
+                Py_DECREF(cleandoc);
+                RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
             }
-            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-            assert(st->kind == Expr_kind);
-            location loc = LOC(st->v.Expr.value);
-            ADDOP_LOAD_CONST(c, loc, cleandoc);
-            Py_DECREF(cleandoc);
-            RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
@@ -1796,14 +1612,35 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // collect the annotations in a separate pass and generate an
     // __annotate__ function. See PEP 649.
     if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
-         c->u->u_ste->ste_annotation_block != NULL) {
+         c->u->u_deferred_annotations != NULL) {
+
+        // It's possible that ste_annotations_block is set but
+        // u_deferred_annotations is not, because the former is still
+        // set if there are only non-simple annotations. However, the
+        // reverse should not be possible.
+        assert(c->u->u_ste->ste_annotation_block != NULL);
+        PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
         void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
-        RETURN_IF_ERROR(compiler_setup_annotations_scope(c, loc, key,
-                                                         c->u->u_ste->ste_annotation_block->ste_name));
-        int annotations_len = 0;
-        RETURN_IF_ERROR(
-            compiler_collect_annotations(c, stmts, &annotations_len)
-        );
+        if (compiler_setup_annotations_scope(c, loc, key,
+                                             c->u->u_ste->ste_annotation_block->ste_name) == -1) {
+            Py_DECREF(deferred_anno);
+            return ERROR;
+        }
+        Py_ssize_t annotations_len = PyList_Size(deferred_anno);
+        for (Py_ssize_t i = 0; i < annotations_len; i++) {
+            PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
+            stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
+            if (st == NULL) {
+                compiler_exit_scope(c);
+                Py_DECREF(deferred_anno);
+                return ERROR;
+            }
+            PyObject *mangled = _Py_Mangle(c->u->u_private, st->v.AnnAssign.target->v.Name.id);
+            ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
+            VISIT(c, expr, st->v.AnnAssign.annotation);
+        }
+        Py_DECREF(deferred_anno);
+
         RETURN_IF_ERROR(
             compiler_leave_annotations_scope(c, loc, annotations_len)
         );
@@ -1825,11 +1662,10 @@ compiler_codegen(struct compiler *c, mod_ty mod)
         }
         break;
     case Interactive_kind:
-        if (find_ann(mod->v.Interactive.body)) {
-            ADDOP(c, loc, SETUP_ANNOTATIONS);
-        }
         c->c_interactive = 1;
-        VISIT_SEQ(c, stmt, mod->v.Interactive.body);
+        if (compiler_body(c, loc, mod->v.Interactive.body) < 0) {
+            return ERROR;
+        }
         break;
     case Expression_kind:
         VISIT(c, expr, mod->v.Expression.body);
@@ -2022,7 +1858,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
+            PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, arg->arg);
             if (!mangled) {
                 goto error;
             }
@@ -2079,7 +1915,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     if (!annotation) {
         return SUCCESS;
     }
-    PyObject *mangled = _Py_Mangle(c->u->u_private, id);
+    PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, id);
     if (!mangled) {
         return ERROR;
     }
@@ -2815,7 +2651,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
         if (!type_params_name) {
@@ -2827,6 +2662,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
@@ -4384,7 +4220,7 @@ compiler_nameop(struct compiler *c, location loc,
         return ERROR;
     }
 
-    mangled = _Py_Mangle(c->u->u_private, name);
+    mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
     if (!mangled) {
         return ERROR;
     }
@@ -6668,9 +6504,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    bool is_interactive = (
-        c->c_st->st_kind == Interactive_kind && c->u->u_scope_type == COMPILER_SCOPE_MODULE
-    );
     bool future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
     PyObject *mangled;
 
@@ -6687,20 +6520,38 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
-        if ((future_annotations || is_interactive) &&
-            s->v.AnnAssign.simple &&
+        if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
             if (future_annotations) {
-                VISIT(c, annexpr, s->v.AnnAssign.annotation);
+                if (future_annotations) {
+                    VISIT(c, annexpr, s->v.AnnAssign.annotation);
+                }
+                else {
+                    VISIT(c, expr, s->v.AnnAssign.annotation);
+                }
+                ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
+                mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
+                ADDOP_LOAD_CONST_NEW(c, loc, mangled);
+                ADDOP(c, loc, STORE_SUBSCR);
             }
             else {
-                VISIT(c, expr, s->v.AnnAssign.annotation);
+                if (c->u->u_deferred_annotations == NULL) {
+                    c->u->u_deferred_annotations = PyList_New(0);
+                    if (c->u->u_deferred_annotations == NULL) {
+                        return ERROR;
+                    }
+                }
+                PyObject *ptr = PyLong_FromVoidPtr((void *)s);
+                if (ptr == NULL) {
+                    return ERROR;
+                }
+                if (PyList_Append(c->u->u_deferred_annotations, ptr) < 0) {
+                    Py_DECREF(ptr);
+                    return ERROR;
+                }
+                Py_DECREF(ptr);
             }
-            ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            ADDOP(c, loc, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
@@ -6726,7 +6577,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if ((future_annotations || is_interactive) && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+    if (future_annotations && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;

@@ -632,7 +632,7 @@ class TracebackErrorLocationCaretTestBase:
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_type\n'
             '    foo.__annotations__\n'
-            f'  File "{__file__}", line {lineno_f+1}, in <annotations of foo>\n'
+            f'  File "{__file__}", line {lineno_f+1}, in __annotate__\n'
             '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
             '               ^^^^^^^^^^^^^^^^^^^\n'
         )
