@@ -2500,6 +2500,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
             VISIT_QUIT(st, 0);
         }
     }
+    // At the top level, we evaluate annotations eagerly, as specified by PEP 649.
     else if (!is_top_level_interactive) {
         if (st->st_cur->ste_annotation_block == NULL) {
             _Py_block_ty current_type = st->st_cur->ste_type;

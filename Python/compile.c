@@ -1639,9 +1639,13 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // collect the annotations in a separate pass and generate an
     // __annotate__ function. See PEP 649.
     if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
-         c->u->u_ste->ste_annotation_block != NULL) {
+         c->u->u_deferred_annotations != NULL) {
 
-        assert(c->u->u_deferred_annotations != NULL);
+        // It's possible that ste_annotations_block is set but
+        // u_deferred_annotations is not, because the former is still
+        // set if there are only non-simple annotations. However, the
+        // reverse should not be possible.
+        assert(c->u->u_ste->ste_annotation_block != NULL);
         PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
         void *key = (void *)((uintptr_t)c->u->u_ste->ste_id + 1);
         if (compiler_setup_annotations_scope(c, loc, key,
