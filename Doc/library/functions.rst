@@ -728,7 +728,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Added support for hexadecimal floating-point numbers.
 
 

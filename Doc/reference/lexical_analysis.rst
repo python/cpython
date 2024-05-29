@@ -976,7 +976,7 @@ Some examples of floating point literals::
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
 
-.. versionchanged:: 3.13
+.. versionchanged:: 3.14
    Added support for hexadecimal floating-point literals.
 
 
