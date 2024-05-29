@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_curses_panel_panel_bottom__doc__,
@@ -418,4 +421,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=7bac14e9a1194c87 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18dc5571174c7189 input=a9049054013a1b77]*/
