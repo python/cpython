@@ -1660,11 +1660,10 @@ compiler_codegen(struct compiler *c, mod_ty mod)
         }
         break;
     case Interactive_kind:
-        if (c->u->u_ste->ste_annotations_used) {
-            ADDOP(c, loc, SETUP_ANNOTATIONS);
-        }
         c->c_interactive = 1;
-        VISIT_SEQ(c, stmt, mod->v.Interactive.body);
+        if (compiler_body(c, loc, mod->v.Interactive.body) < 0) {
+            return ERROR;
+        }
         break;
     case Expression_kind:
         VISIT(c, expr, mod->v.Expression.body);
@@ -6503,9 +6502,6 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    bool is_interactive = (
-        c->c_st->st_kind == Interactive_kind && c->u->u_scope_type == COMPILER_SCOPE_MODULE
-    );
     bool future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
     PyObject *mangled;
 
@@ -6525,7 +6521,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            if (future_annotations || is_interactive) {
+            if (future_annotations) {
                 if (future_annotations) {
                     VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 }
@@ -6579,7 +6575,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if ((future_annotations || is_interactive) && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
+    if (future_annotations && !s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;

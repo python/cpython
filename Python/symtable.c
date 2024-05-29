@@ -430,7 +430,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     }
 
     st->st_top = st->st_cur;
-    st->st_kind = mod->kind;
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
@@ -2491,17 +2490,13 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
                           struct _symtable_entry *parent_ste, void *key)
 {
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
-    int is_top_level_interactive = (
-        st->st_kind == Interactive_kind && st->st_cur->ste_type == ModuleBlock
-    );
     if (future_annotations) {
         if(!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
                                  key, LOCATION(annotation))) {
             VISIT_QUIT(st, 0);
         }
     }
-    // At the top level, we evaluate annotations eagerly, as specified by PEP 649.
-    else if (!is_top_level_interactive) {
+    else {
         if (st->st_cur->ste_annotation_block == NULL) {
             _Py_block_ty current_type = st->st_cur->ste_type;
             if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
@@ -2536,7 +2531,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
         }
     }
     VISIT(st, expr, annotation);
-    if ((future_annotations || !is_top_level_interactive) && !symtable_exit_block(st)) {
+    if (!symtable_exit_block(st)) {
         VISIT_QUIT(st, 0);
     }
     return 1;
