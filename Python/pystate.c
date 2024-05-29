@@ -2798,17 +2798,20 @@ PyGILState_Release(PyGILState_STATE oldstate)
                              tstate);
     }
     assert(holds_gil(tstate));
-    --tstate->gilstate_counter;
-    assert(tstate->gilstate_counter >= 0); /* illegal counter value */
+    assert(tstate->gilstate_counter >= 1); /* illegal counter value */
 
     /* If we're going to destroy this thread-state, we must
      * clear it while the GIL is held, as destructors may run.
      */
-    if (tstate->gilstate_counter == 0) {
+    if (tstate->gilstate_counter == 1) {
         /* can't have been locked when we created it */
         assert(oldstate == PyGILState_UNLOCKED);
         // XXX Unbind tstate here.
         PyThreadState_Clear(tstate);
+        // gh-119585: decrement gilstate_counter after `PyThreadState_Clear()`
+        // because it may call destructors that themselves use
+        // PyGILState_Ensure and PyGILState_Release.
+        --tstate->gilstate_counter;
         /* Delete the thread-state.  Note this releases the GIL too!
          * It's vital that the GIL be held here, to avoid shutdown
          * races; see bugs 225673 and 1061968 (that nasty bug has a
@@ -2818,8 +2821,11 @@ PyGILState_Release(PyGILState_STATE oldstate)
         _PyThreadState_DeleteCurrent(tstate);
     }
     /* Release the lock if necessary */
-    else if (oldstate == PyGILState_UNLOCKED) {
-        PyEval_SaveThread();
+    else {
+        --tstate->gilstate_counter;
+        if (oldstate == PyGILState_UNLOCKED) {
+            PyEval_SaveThread();
+        }
     }
 }
 
