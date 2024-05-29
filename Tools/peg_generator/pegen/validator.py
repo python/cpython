@@ -41,7 +41,7 @@ class RaiseRuleValidator(GrammarValidator):
             return
         if node.action and 'RAISE_SYNTAX_ERROR' in node.action:
             raise ValidationError(
-                f"In {self.rulename} there is an alternative that contains "
+                f"In {self.rulename!r} there is an alternative that contains "
                 f"RAISE_SYNTAX_ERROR; this is only allowed in invalid_ rules"
             )
 
