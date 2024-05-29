@@ -656,6 +656,18 @@ copy
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>` in
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` was improved to better
+  match platform defaults (GCC/Clang or MSC). In particular, fields no longer
+  overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+* A :attr:`ctypes.Structure._layout_` class attribute can be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
+
 dbm
 ---
 
