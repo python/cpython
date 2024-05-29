@@ -27,6 +27,10 @@
 #define Py_MATH_TAU 6.2831853071795864769252867665590057683943L
 #endif
 
+/* Py_IS_NAN, Py_IS_INFINITY and Py_IS_FINITE are deprecated
+ * since CPython 3.14.
+ */
+
 // Py_IS_NAN(X)
 // Return 1 if float or double arg is a NaN, else 0.
 #define Py_IS_NAN(X) isnan(X)

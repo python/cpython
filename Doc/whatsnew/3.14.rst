@@ -103,7 +103,9 @@ Optimizations
 Deprecated
 ==========
 
-
+* Deprecate ``Py_IS_NAN``, ``Py_IS_INFINITY`` and ``Py_IS_FINITE`` macroses,
+  use instead ``isnan``, ``isinf`` and ``isfinite`` available from ``<math.h>``
+  since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
 Removed
 =======
