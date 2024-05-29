@@ -376,8 +376,8 @@ are always available.  They are listed here in alphabetical order.
            complex(string, /)
            complex(real=0, imag=0)
 
-   Convert a string or a number to a complex number or create a complex number
-   from the real and imaginary parts.
+   Convert a single string or number to a complex number, or create a
+   complex number from real and imaginary parts.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally followed by the ``j`` or ``J`` suffix,
@@ -412,7 +412,9 @@ are always available.  They are listed here in alphabetical order.
 
    If all arguments are omitted, returns ``0j``.
 
-   Examples::
+   Examples:
+
+   .. doctest::
 
       >>> complex('+1.23')
       (1.23+0j)
