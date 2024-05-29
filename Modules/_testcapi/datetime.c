@@ -491,9 +491,6 @@ _testcapi_datetime_exec(PyObject *mod)
     if (test_datetime_capi(NULL, NULL) == NULL)  {  // PyDateTime_IMPORT
         return -1;
     }
-    if (PyDateTimeAPI == NULL) {
-        return -1;
-    }
     // The following C API types need to outlive interpreters, since the
     // borrowed references to them can be held by users without being updated.
     assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
