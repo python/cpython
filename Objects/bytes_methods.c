@@ -577,6 +577,23 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         return find_internal(str, len, function_name, subseq, start, end,
                              direction);
     }
+    Py_ssize_t sub_lengths[tuple_len];
+    for (Py_ssize_t i = 0; i < tuple_len; i++) {
+        PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+        Py_ssize_t sub_len;
+        if (!PyObject_CheckBuffer(subseq)) {
+            sub_len = 1;
+        }
+        else if (PyObject_GetBuffer(subseq, &subbuf, PyBUF_SIMPLE) != 0)
+        {
+            return -2;
+        }
+        else {
+            sub_len = subbuf.len;
+            PyBuffer_Release(&subbuf);
+        }
+        sub_lengths[i] = sub_len;
+    }
     Py_ssize_t result = -1;
     ADJUST_INDICES(start, end, len);
     if (direction > 0) {
@@ -590,21 +607,9 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 cur_end = start - 1 + FIND_CHUNK_SIZE;
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                Py_buffer subbuf;
-                Py_ssize_t new_result, sub_len;
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                if (!PyObject_CheckBuffer(subseq)) {
-                    sub_len = 1;
-                }
-                else if (PyObject_GetBuffer(subseq, &subbuf,
-                                            PyBUF_SIMPLE) != 0)
-                {
-                    return -2;
-                }
-                else {
-                    sub_len = subbuf.len;
-                    PyBuffer_Release(&subbuf);
-                }
+                Py_ssize_t sub_len = sub_lengths[i];
+                Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = find_internal(str, len, function_name, subseq,
                                                start, end, +1);
@@ -638,21 +643,9 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 cur_start = start;
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                Py_buffer subbuf;
-                Py_ssize_t new_result, sub_len;
                 PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
-                if (!PyObject_CheckBuffer(subseq)) {
-                    sub_len = 1;
-                }
-                else if (PyObject_GetBuffer(subseq, &subbuf,
-                                            PyBUF_SIMPLE) != 0)
-                {
-                    return -2;
-                }
-                else {
-                    sub_len = subbuf.len;
-                    PyBuffer_Release(&subbuf);
-                }
+                Py_ssize_t sub_len = sub_lengths[i];
+                Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = find_internal(str, len, function_name, subseq,
                                                cur_start, end, -1);

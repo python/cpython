@@ -9188,7 +9188,8 @@ any_find_first_slice(PyObject *str, const char *function_name,
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t new_result, sub_len = PyUnicode_GET_LENGTH(substr);
+                Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
+                Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = any_find_slice(str, substr, start, end, +1);
                 }
@@ -9222,7 +9223,8 @@ any_find_first_slice(PyObject *str, const char *function_name,
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
                 PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t new_result, sub_len = PyUnicode_GET_LENGTH(substr);
+                Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
+                Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = any_find_slice(str, substr, cur_start, end,
                                                 -1);
