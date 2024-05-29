@@ -3127,11 +3127,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
-   :meth:`__int__` nor :meth:`__index__` is defined.
-
-   .. versionchanged:: 3.11
-      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+   .. deprecated-removed:: 3.11 3.14
+      :class:`int` will no longer delegate to the :meth:`~object.__trunc__` method.
 
 
 .. _context-managers:
