@@ -737,6 +737,21 @@ class LongTests(unittest.TestCase):
 
         # CRASHES getsign(NULL)
 
+    def test_long_getnumbits(self):
+        numbits = _testcapi.pylong_getnumbits
+        self.assertEqual(numbits(0), 0)
+        self.assertEqual(numbits(7), 3)
+        self.assertEqual(numbits(-37), 6)
+        self.assertEqual(numbits(684_643_661_981), 40)
+        self.assertEqual(numbits(2**123-1), 123)
+
+        for invalid_type in (1.0, 1j, "abc"):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    numbits(invalid_type)
+
+        # CRASHES numbits(NULL)
+
 
 if __name__ == "__main__":
     unittest.main()

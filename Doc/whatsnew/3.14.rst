@@ -258,6 +258,9 @@ New Features
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
   (Contributed by Sergey B Kirpichev in :gh:`116560`.)
 
+* Add :c:func:`PyLong_GetNumBits` function to get the number of bits of an
+  integer. (Contributed by Victor Stinner in :gh:`119714`.)
+
 Porting to Python 3.14
 ----------------------
 

@@ -117,6 +117,18 @@ pylong_aspid(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+pylong_getnumbits(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    Py_ssize_t bits = PyLong_GetNumBits(arg);
+    if (bits < 0) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(bits);
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -124,6 +136,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_getnumbits",           pylong_getnumbits,          METH_O},
     {NULL},
 };
 

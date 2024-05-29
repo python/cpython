@@ -507,6 +507,18 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.14
 
 
+.. c:function:: Py_ssize_t PyLong_GetNumBits(PyObject *obj)
+
+   Get the number of bits of an integer.
+
+   * Return the number of bits on success: greater than or equal to zero.
+   * Set an exception and return ``-1`` on error.
+   * Set an :exc:`OverflowError` exception, and return ``-1`` if the number
+     of bits doesn't fit into ``Py_ssize_t``.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
 
    Return 1 if *op* is compact, 0 otherwise.

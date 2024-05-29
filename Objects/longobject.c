@@ -792,28 +792,32 @@ bit_length_digit(digit x)
     return _Py_bit_length((unsigned long)x);
 }
 
+
 size_t
 _PyLong_NumBits(PyObject *vv)
 {
     PyLongObject *v = (PyLongObject *)vv;
-    size_t result = 0;
-    Py_ssize_t ndigits;
-    int msd_bits;
-
     assert(v != NULL);
     assert(PyLong_Check(v));
-    ndigits = _PyLong_DigitCount(v);
+
+    Py_ssize_t ndigits = _PyLong_DigitCount(v);
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
-    if (ndigits > 0) {
-        digit msd = v->long_value.ob_digit[ndigits - 1];
-        if ((size_t)(ndigits - 1) > SIZE_MAX / (size_t)PyLong_SHIFT)
-            goto Overflow;
-        result = (size_t)(ndigits - 1) * (size_t)PyLong_SHIFT;
-        msd_bits = bit_length_digit(msd);
-        if (SIZE_MAX - msd_bits < result)
-            goto Overflow;
-        result += msd_bits;
+    if (ndigits == 0) {
+        return 0;
     }
+    assert(ndigits > 0);
+
+    digit msd = v->long_value.ob_digit[ndigits - 1];
+    if ((size_t)(ndigits - 1) > SIZE_MAX / (size_t)PyLong_SHIFT) {
+        goto Overflow;
+    }
+    size_t result = (size_t)(ndigits - 1) * (size_t)PyLong_SHIFT;
+
+    int msd_bits = bit_length_digit(msd);
+    if (SIZE_MAX - msd_bits < result) {
+        goto Overflow;
+    }
+    result += msd_bits;
     return result;
 
   Overflow:
@@ -821,6 +825,27 @@ _PyLong_NumBits(PyObject *vv)
                     "to express in a platform size_t");
     return (size_t)-1;
 }
+
+
+Py_ssize_t
+PyLong_GetNumBits(PyObject *obj)
+{
+    if (!PyLong_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
+        return -1;
+    }
+    size_t bits = _PyLong_NumBits(obj);
+    if (bits == (size_t)-1) {
+        return -1;
+    }
+    if (bits > (size_t)PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "int has too many bits to express in Py_ssize_t");
+        return -1;
+    }
+    return (Py_ssize_t)bits;
+}
+
 
 PyObject *
 _PyLong_FromByteArray(const unsigned char* bytes, size_t n,

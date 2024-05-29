@@ -1,0 +1,2 @@
+Add :c:func:`PyLong_GetNumBits` function to get the number of bits of an
+integer. Patch by Victor Stinner.
