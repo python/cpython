@@ -1521,7 +1521,6 @@ PyNumber_Long(PyObject *o)
 {
     PyObject *result;
     PyNumberMethods *m;
-    PyObject *trunc_func;
     Py_buffer view;
 
     if (o == NULL) {
