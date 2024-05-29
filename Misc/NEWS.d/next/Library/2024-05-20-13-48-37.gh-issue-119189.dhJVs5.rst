@@ -1,1 +1,3 @@
-When using the ** operator with a Fraction as a base and an object that implements __rpow__ as an exponent the fraction it is now not cast to a float.
+When using the ``**`` operator or :func:`pow` with :class:`~fractions.Fraction`
+as the base and an exponent that is not rational, a float, or a complex, the
+fraction is no longer converted to a float.
