@@ -1174,7 +1174,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [STORE_ATTR] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [STORE_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IXC000, HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000, HAS_EXIT_FLAG },
-    [STORE_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
+    [STORE_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [STORE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG },
     [STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
     [STORE_FAST_LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
@@ -1214,7 +1214,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
 };
 #endif
 
-#define MAX_UOP_PER_EXPANSION 8
+#define MAX_UOP_PER_EXPANSION 9
 struct opcode_macro_expansion {
     int nuops;
     struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];
@@ -1244,7 +1244,7 @@ _PyOpcode_macro_expansion[256] = {
     [BUILD_SLICE] = { .nuops = 1, .uops = { { _BUILD_SLICE, 0, 0 } } },
     [BUILD_STRING] = { .nuops = 1, .uops = { { _BUILD_STRING, 0, 0 } } },
     [BUILD_TUPLE] = { .nuops = 1, .uops = { { _BUILD_TUPLE, 0, 0 } } },
-    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 8, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_VERSION, 2, 1 }, { _CHECK_FUNCTION_EXACT_ARGS, 0, 0 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_BOUND_METHOD_GENERAL] = { .nuops = 6, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_METHOD_VERSION, 2, 1 }, { _EXPAND_METHOD, 0, 0 }, { _PY_FRAME_GENERAL, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_BUILTIN_CLASS] = { .nuops = 2, .uops = { { _CALL_BUILTIN_CLASS, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
     [CALL_BUILTIN_FAST] = { .nuops = 2, .uops = { { _CALL_BUILTIN_FAST, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
@@ -1259,7 +1259,7 @@ _PyOpcode_macro_expansion[256] = {
     [CALL_METHOD_DESCRIPTOR_NOARGS] = { .nuops = 2, .uops = { { _CALL_METHOD_DESCRIPTOR_NOARGS, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
     [CALL_METHOD_DESCRIPTOR_O] = { .nuops = 2, .uops = { { _CALL_METHOD_DESCRIPTOR_O, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
     [CALL_NON_PY_GENERAL] = { .nuops = 3, .uops = { { _CHECK_IS_NOT_PY_CALLABLE, 0, 0 }, { _CALL_NON_PY_GENERAL, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
-    [CALL_PY_EXACT_ARGS] = { .nuops = 6, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_VERSION, 2, 1 }, { _CHECK_FUNCTION_EXACT_ARGS, 0, 0 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_PY_GENERAL] = { .nuops = 5, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_VERSION, 2, 1 }, { _PY_FRAME_GENERAL, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_STR_1] = { .nuops = 2, .uops = { { _CALL_STR_1, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
     [CALL_TUPLE_1] = { .nuops = 2, .uops = { { _CALL_TUPLE_1, 0, 0 }, { _CHECK_PERIODIC, 0, 0 } } },
@@ -1357,6 +1357,7 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, 0, 0 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_NO_DICT, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
+    [STORE_ATTR_WITH_HINT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_WITH_HINT, 1, 3 } } },
     [STORE_DEREF] = { .nuops = 1, .uops = { { _STORE_DEREF, 0, 0 } } },
     [STORE_FAST] = { .nuops = 1, .uops = { { _STORE_FAST, 0, 0 } } },
     [STORE_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _STORE_FAST, 5, 0 }, { _LOAD_FAST, 6, 0 } } },

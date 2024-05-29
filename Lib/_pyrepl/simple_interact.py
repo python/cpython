@@ -100,8 +100,8 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = compile(item, filename, the_symbol)
-            except (OverflowError, ValueError):
+                code = compile(item, filename, the_symbol, dont_inherit=True)
+            except (OverflowError, ValueError, SyntaxError):
                     self.showsyntaxerror(filename)
                     return False
 
