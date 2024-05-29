@@ -50,9 +50,6 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
-
-    /* While we use a global state, we ensure it's only initialized once */
-    int initialized;
 } datetime_state;
 
 #define NO_STATE NULL
@@ -6933,14 +6930,6 @@ copy_state(datetime_state *st, datetime_state *from)
 static int
 init_state(datetime_state *st, PyObject *module)
 {
-    // While datetime uses global module "state", we unly initialize it once.
-    // The PyLong objects created here (once per process) are not decref'd.
-    if (st->initialized) {
-        assert(st->initialized > 0);
-        st->initialized += 1;
-        return 0;
-    }
-
     /* Per-module heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -6995,20 +6984,12 @@ init_state(datetime_state *st, PyObject *module)
         return -1;
     }
 
-    st->initialized = 1;
-
     return 0;
 }
 
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    if (!st->initialized) {
-        return 0;
-    }
-    if (st->initialized > 1) {
-        return 0;
-    }
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
 
@@ -7018,15 +6999,6 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 static int
 clear_state(datetime_state *st)
 {
-    assert(st->initialized >= 0);
-    if (!st->initialized) {
-        return 0;
-    }
-    st->initialized -= 1;
-    if (st->initialized) {
-        return 0;
-    }
-
     Py_CLEAR(st->isocalendar_date_type);
     Py_CLEAR(st->us_per_ms);
     Py_CLEAR(st->us_per_second);
