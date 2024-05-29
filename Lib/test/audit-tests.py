@@ -542,4 +542,4 @@ if __name__ == "__main__":
     suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])
