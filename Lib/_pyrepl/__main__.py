@@ -40,8 +40,6 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     except Exception as e:
         from .trace import trace
         msg = f"warning: can't use pyrepl: {e}"
-        import traceback
-        traceback.print_exc()
         trace(msg)
         print(msg, file=sys.stderr)
         CAN_USE_PYREPL = False
