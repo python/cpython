@@ -21,13 +21,13 @@ ZERO_DIVISION = (
     (1, 0+0j),
 )
 
-class MockIndex:
+class WithIndex:
     def __init__(self, value):
         self.value = value
     def __index__(self):
         return self.value
 
-class MockFloat:
+class WithFloat:
     def __init__(self, value):
         self.value = value
     def __float__(self):
@@ -36,7 +36,7 @@ class MockFloat:
 class ComplexSubclass(complex):
     pass
 
-class MockComplex:
+class WithComplex:
     def __init__(self, value):
         self.value = value
     def __complex__(self):
@@ -372,7 +372,7 @@ class ComplexTest(unittest.TestCase):
         check(complex(4.25+0j), 4.25, 0.0)
         check(complex(4.25+0.5j), 4.25, 0.5)
         check(complex(ComplexSubclass(4.25+0.5j)), 4.25, 0.5)
-        check(complex(MockComplex(4.25+0.5j)), 4.25, 0.5)
+        check(complex(WithComplex(4.25+0.5j)), 4.25, 0.5)
 
         check(complex(1, 10), 1.0, 10.0)
         check(complex(1, 10.0), 1.0, 10.0)
@@ -384,14 +384,14 @@ class ComplexTest(unittest.TestCase):
 
         check(complex(4.25+0j, 0), 4.25, 0.0)
         check(complex(ComplexSubclass(4.25+0j), 0), 4.25, 0.0)
-        check(complex(MockComplex(4.25+0j), 0), 4.25, 0.0)
+        check(complex(WithComplex(4.25+0j), 0), 4.25, 0.0)
         check(complex(4.25j, 0), 0.0, 4.25)
         check(complex(0j, 4.25), 0.0, 4.25)
         check(complex(0, 4.25+0j), 0.0, 4.25)
         check(complex(0, ComplexSubclass(4.25+0j)), 0.0, 4.25)
         with self.assertRaisesRegex(TypeError,
-                "second argument must be a number, not 'MockComplex'"):
-            complex(0, MockComplex(4.25+0j))
+                "second argument must be a number, not 'WithComplex'"):
+            complex(0, WithComplex(4.25+0j))
         check(complex(0.0, 4.25j), -4.25, 0.0)
         check(complex(4.25+0j, 0j), 4.25, 0.0)
         check(complex(4.25j, 0j), 0.0, 4.25)
@@ -439,13 +439,13 @@ class ComplexTest(unittest.TestCase):
                 "second arg can't be a string",
             complex, 0, '1')
 
-        self.assertRaises(TypeError, complex, MockComplex(1.5))
-        self.assertRaises(TypeError, complex, MockComplex(1))
-        self.assertRaises(TypeError, complex, MockComplex(None))
-        self.assertRaises(TypeError, complex, MockComplex(4.25+0j), object())
-        self.assertRaises(TypeError, complex, MockComplex(1.5), object())
-        self.assertRaises(TypeError, complex, MockComplex(1), object())
-        self.assertRaises(TypeError, complex, MockComplex(None), object())
+        self.assertRaises(TypeError, complex, WithComplex(1.5))
+        self.assertRaises(TypeError, complex, WithComplex(1))
+        self.assertRaises(TypeError, complex, WithComplex(None))
+        self.assertRaises(TypeError, complex, WithComplex(4.25+0j), object())
+        self.assertRaises(TypeError, complex, WithComplex(1.5), object())
+        self.assertRaises(TypeError, complex, WithComplex(1), object())
+        self.assertRaises(TypeError, complex, WithComplex(None), object())
 
         class EvilExc(Exception):
             pass
@@ -456,25 +456,25 @@ class ComplexTest(unittest.TestCase):
 
         self.assertRaises(EvilExc, complex, evilcomplex())
 
-        check(complex(MockFloat(4.25)), 4.25, 0.0)
-        check(complex(MockFloat(4.25), 1.5), 4.25, 1.5)
-        check(complex(1.5, MockFloat(4.25)), 1.5, 4.25)
-        self.assertRaises(TypeError, complex, MockFloat(42))
-        self.assertRaises(TypeError, complex, MockFloat(42), 1.5)
-        self.assertRaises(TypeError, complex, 1.5, MockFloat(42))
-        self.assertRaises(TypeError, complex, MockFloat(None))
-        self.assertRaises(TypeError, complex, MockFloat(None), 1.5)
-        self.assertRaises(TypeError, complex, 1.5, MockFloat(None))
+        check(complex(WithFloat(4.25)), 4.25, 0.0)
+        check(complex(WithFloat(4.25), 1.5), 4.25, 1.5)
+        check(complex(1.5, WithFloat(4.25)), 1.5, 4.25)
+        self.assertRaises(TypeError, complex, WithFloat(42))
+        self.assertRaises(TypeError, complex, WithFloat(42), 1.5)
+        self.assertRaises(TypeError, complex, 1.5, WithFloat(42))
+        self.assertRaises(TypeError, complex, WithFloat(None))
+        self.assertRaises(TypeError, complex, WithFloat(None), 1.5)
+        self.assertRaises(TypeError, complex, 1.5, WithFloat(None))
 
-        check(complex(MockIndex(42)), 42.0, 0.0)
-        check(complex(MockIndex(42), 1.5), 42.0, 1.5)
-        check(complex(1.5, MockIndex(42)), 1.5, 42.0)
-        self.assertRaises(OverflowError, complex, MockIndex(2**2000))
-        self.assertRaises(OverflowError, complex, MockIndex(2**2000), 1.5)
-        self.assertRaises(OverflowError, complex, 1.5, MockIndex(2**2000))
-        self.assertRaises(TypeError, complex, MockIndex(None))
-        self.assertRaises(TypeError, complex, MockIndex(None), 1.5)
-        self.assertRaises(TypeError, complex, 1.5, MockIndex(None))
+        check(complex(WithIndex(42)), 42.0, 0.0)
+        check(complex(WithIndex(42), 1.5), 42.0, 1.5)
+        check(complex(1.5, WithIndex(42)), 1.5, 42.0)
+        self.assertRaises(OverflowError, complex, WithIndex(2**2000))
+        self.assertRaises(OverflowError, complex, WithIndex(2**2000), 1.5)
+        self.assertRaises(OverflowError, complex, 1.5, WithIndex(2**2000))
+        self.assertRaises(TypeError, complex, WithIndex(None))
+        self.assertRaises(TypeError, complex, WithIndex(None), 1.5)
+        self.assertRaises(TypeError, complex, 1.5, WithIndex(None))
 
         class MyInt:
             def __int__(self):
