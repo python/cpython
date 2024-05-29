@@ -442,7 +442,8 @@ symbolic links encountered in the path."""
             st_mode = os.lstat(newpath).st_mode
             if not stat.S_ISLNK(st_mode):
                 if strict and part_count and not stat.S_ISDIR(st_mode):
-                    raise NotADirectoryError(errno.ENOTDIR, "Not a directory", newpath)
+                    raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
+                                  newpath)
                 path = newpath
                 continue
             if newpath in seen:
@@ -453,7 +454,8 @@ symbolic links encountered in the path."""
                     continue
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
-                    raise OSError(errno.ELOOP, "Too many levels of symbolic links", newpath)
+                    raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
+                                  newpath)
                 path = newpath
                 continue
             target = os.readlink(newpath)
