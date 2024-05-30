@@ -636,52 +636,52 @@ def _rmtree_unsafe(path, onexc):
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(stack, onexc):
-    func, dir_fd, path, orig_entry = stack.pop()
+    func, dirfd, path, orig_entry = stack.pop()
     name = path if orig_entry is None else orig_entry.name
     try:
         if func is os.close:
-            os.close(dir_fd)
-        elif func is os.rmdir:
-            os.rmdir(name, dir_fd=dir_fd)
+            os.close(dirfd)
+            return
+        if func is os.rmdir:
+            os.rmdir(name, dir_fd=dirfd)
+            return
+
+        assert func is os.lstat
+        if orig_entry is None:
+            orig_st = os.lstat(name, dir_fd=dirfd)
         else:
-            assert func is os.lstat
-            if orig_entry is None:
-                orig_st = os.lstat(name, dir_fd=dir_fd)
-            else:
-                orig_st = orig_entry.stat(follow_symlinks=False)
+            orig_st = orig_entry.stat(follow_symlinks=False)
 
-            func = os.open  # For error reporting.
-            fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+        func = os.open  # For error reporting.
+        topfd = os.open(name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dirfd)
 
-            func = os.path.islink  # For error reporting.
+        func = os.path.islink  # For error reporting.
+        try:
+            if not os.path.samestat(orig_st, os.fstat(topfd)):
+                # Symlinks to directories are forbidden, see GH-46010.
+                raise OSError("Cannot call rmtree on a symbolic link")
+            stack.append((os.rmdir, dirfd, path, orig_entry))
+        finally:
+            stack.append((os.close, topfd, path, None))
+
+        func = os.scandir  # For error reporting.
+        with os.scandir(topfd) as scandir_it:
+            entries = list(scandir_it)
+        for entry in entries:
+            fullname = os.path.join(path, entry.name)
             try:
-                if not os.path.samestat(orig_st, os.fstat(fd)):
-                    # Symlinks to directories are forbidden, see GH-46010.
-                    raise OSError("Cannot call rmtree on a symbolic link")
-                stack.append((os.rmdir, dir_fd, path, orig_entry))
-            finally:
-                stack.append((os.close, fd, path, None))
-
-            func = os.scandir  # For error reporting.
-            with os.scandir(fd) as scandir_it:
-                entries = list(scandir_it)
-            for entry in entries:
-                fullname = os.path.join(path, entry.name)
-                try:
-                    is_dir = entry.is_dir(follow_symlinks=False)
-                except OSError:
-                    is_dir = False
-                if is_dir:
+                if entry.is_dir(follow_symlinks=False):
                     # Traverse into sub-directory.
-                    stack.append((os.lstat, fd, fullname, entry))
-                else:
-                    try:
-                        os.unlink(entry.name, dir_fd=fd)
-                    except FileNotFoundError:
-                        continue
-                    except OSError as err:
-                        err.filename = fullname
-                        onexc(os.unlink, fullname, err)
+                    stack.append((os.lstat, topfd, fullname, entry))
+                    continue
+            except OSError:
+                pass
+            try:
+                os.unlink(entry.name, dir_fd=topfd)
+            except FileNotFoundError:
+                continue
+            except OSError as err:
+                onexc(os.unlink, fullname, err)
 
     except OSError as err:
         if orig_entry is None or not isinstance(err, FileNotFoundError):
