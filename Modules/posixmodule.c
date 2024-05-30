@@ -5584,15 +5584,15 @@ os__path_abspath_impl(PyObject *module, path_t *path)
         abs_len = prefix_len + path_len;
 
         if ((size_t)abs_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
-            PyErr_SetString(PyExc_OverflowError, "path is too long");
             PyMem_Free(cwd_buf);
+            PyErr_SetString(PyExc_OverflowError, "path is too long");
             goto exit;
         }
 
         abs_buf = PyMem_RawMalloc(((size_t)abs_len + 1) * sizeof(wchar_t));
         if (!abs_buf) {
-            PyErr_NoMemory();
             PyMem_Free(cwd_buf);
+            PyErr_NoMemory();
             goto exit;
         }
 
