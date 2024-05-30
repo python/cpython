@@ -1616,7 +1616,8 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 
         // It's possible that ste_annotations_block is set but
         // u_deferred_annotations is not, because the former is still
-        // set if there are only non-simple annotations. However, the
+        // set if there are only non-simple annotations (i.e., annotations
+        // for attributes, subscripts, or parenthesized names). However, the
         // reverse should not be possible.
         assert(c->u->u_ste->ste_annotation_block != NULL);
         PyObject *deferred_anno = Py_NewRef(c->u->u_deferred_annotations);
@@ -2368,7 +2369,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     asdl_expr_seq *decos;
     asdl_type_param_seq *type_params;
     Py_ssize_t funcflags;
-    int annotations;
     int firstlineno;
 
     if (is_async) {
@@ -2434,14 +2434,14 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
 
-    annotations = compiler_visit_annotations(c, loc, args, returns);
-    if (annotations < 0) {
+    int annotations_flag = compiler_visit_annotations(c, loc, args, returns);
+    if (annotations_flag < 0) {
         if (is_generic) {
             compiler_exit_scope(c);
         }
         return ERROR;
     }
-    funcflags |= annotations;
+    funcflags |= annotations_flag;
 
     if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
         if (is_generic) {
@@ -6524,12 +6524,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
             if (future_annotations) {
-                if (future_annotations) {
-                    VISIT(c, annexpr, s->v.AnnAssign.annotation);
-                }
-                else {
-                    VISIT(c, expr, s->v.AnnAssign.annotation);
-                }
+                VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
                 mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
                 ADDOP_LOAD_CONST_NEW(c, loc, mangled);

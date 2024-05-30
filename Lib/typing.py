@@ -3154,7 +3154,11 @@ class _TypedDictMeta(type):
         mutable_keys = set()
 
         for base in bases:
-            # TODO: preserve laziness
+            # TODO: Avoid eagerly evaluating annotations in VALUE format.
+            # Instead, evaluate in FORWARDREF format to figure out which
+            # keys have Required/NotRequired/ReadOnly qualifiers, and create
+            # a new __annotate__ function for the resulting TypedDict that
+            # combines the annotations from this class and its parents.
             annotations.update(base.__annotations__)
 
             base_required = base.__dict__.get('__required_keys__', set())
