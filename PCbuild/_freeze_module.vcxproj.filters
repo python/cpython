@@ -523,12 +523,6 @@
     <None Include="..\Lib\genericpath.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Lib\ntpath.py">
-      <Filter>Python Files</Filter>
-    </None>
-    <None Include="..\Lib\posixpath.py">
-      <Filter>Python Files</Filter>
-    </None>
     <None Include="..\Lib\os.py">
       <Filter>Python Files</Filter>
     </None>

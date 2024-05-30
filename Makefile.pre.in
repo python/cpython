@@ -1467,8 +1467,6 @@ FROZEN_FILES_IN = \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
 		Lib/genericpath.py \
-		Lib/ntpath.py \
-		Lib/posixpath.py \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
@@ -1492,8 +1490,6 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
 		Python/frozen_modules/genericpath.h \
-		Python/frozen_modules/ntpath.h \
-		Python/frozen_modules/posixpath.h \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
@@ -1547,12 +1543,6 @@ Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py $(FREEZE_MODULE_DEPS
 
 Python/frozen_modules/genericpath.h: Lib/genericpath.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) genericpath $(srcdir)/Lib/genericpath.py Python/frozen_modules/genericpath.h
-
-Python/frozen_modules/ntpath.h: Lib/ntpath.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) ntpath $(srcdir)/Lib/ntpath.py Python/frozen_modules/ntpath.h
-
-Python/frozen_modules/posixpath.h: Lib/posixpath.py $(FREEZE_MODULE_DEPS)
-	$(FREEZE_MODULE) posixpath $(srcdir)/Lib/posixpath.py Python/frozen_modules/posixpath.h
 
 Python/frozen_modules/os.h: Lib/os.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) os $(srcdir)/Lib/os.py Python/frozen_modules/os.h

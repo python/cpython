@@ -318,16 +318,6 @@
       <IntFile>$(IntDir)genericpath.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\genericpath.h</OutFile>
     </None>
-    <None Include="..\Lib\ntpath.py">
-      <ModName>ntpath</ModName>
-      <IntFile>$(IntDir)ntpath.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\ntpath.h</OutFile>
-    </None>
-    <None Include="..\Lib\posixpath.py">
-      <ModName>posixpath</ModName>
-      <IntFile>$(IntDir)posixpath.g.h</IntFile>
-      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\posixpath.h</OutFile>
-    </None>
     <None Include="..\Lib\os.py">
       <ModName>os</ModName>
       <IntFile>$(IntDir)os.g.h</IntFile>
@@ -409,8 +399,6 @@
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\_collections_abc.h" FrozenId="_collections_abc" />
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\_sitebuiltins.h" FrozenId="_sitebuiltins" />
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\genericpath.h" FrozenId="genericpath" />
-    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\ntpath.h" FrozenId="ntpath" />
-    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\posixpath.h" FrozenId="posixpath" />
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\os.h" FrozenId="os" />
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\site.h" FrozenId="site" />
     <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\stat.h" FrozenId="stat" />

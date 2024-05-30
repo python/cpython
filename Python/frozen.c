@@ -50,8 +50,6 @@
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
 #include "frozen_modules/genericpath.h"
-#include "frozen_modules/ntpath.h"
-#include "frozen_modules/posixpath.h"
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
@@ -82,9 +80,6 @@ static const struct _frozen stdlib_modules[] = {
     {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), false},
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), false},
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), false},
-    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), false},
-    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
