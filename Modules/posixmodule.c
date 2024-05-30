@@ -5559,7 +5559,6 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     abs = abs_buf;
     abs_len = wcslen(abs_buf);
 #else
-    wchar_t *cwd_buf = NULL;
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
         result = posix_getcwd(use_bytes);
         goto exit;
@@ -5574,7 +5573,7 @@ os__path_abspath_impl(PyObject *module, path_t *path)
             goto exit;
         }
         Py_ssize_t cwd_len;
-        cwd_buf = PyUnicode_AsWideCharString(cwd_obj, &cwd_len);
+        wchar_t *cwd_buf = PyUnicode_AsWideCharString(cwd_obj, &cwd_len);
         Py_DECREF(cwd_obj);
         if (!cwd_buf) {
             goto exit;
@@ -5586,17 +5585,20 @@ os__path_abspath_impl(PyObject *module, path_t *path)
 
         if ((size_t)abs_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             PyErr_SetString(PyExc_OverflowError, "path is too long");
+            PyMem_Free(cwd_buf);
             goto exit;
         }
 
         abs_buf = PyMem_RawMalloc(((size_t)abs_len + 1) * sizeof(wchar_t));
         if (!abs_buf) {
             PyErr_NoMemory();
+            PyMem_Free(cwd_buf);
             goto exit;
         }
 
         // Join cwd & path
         wchar_t *p = memcpy(abs_buf, cwd_buf, cwd_len * sizeof(wchar_t));
+        PyMem_Free(cwd_buf);
         p += cwd_len;
         if (add_sep) {
             *p++ = SEP;
@@ -5613,9 +5615,6 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     }
 
 exit:
-#ifndef MS_WINDOWS
-    PyMem_Free(cwd_buf);
-#endif
     PyMem_RawFree(abs_buf);
     return result;
 }
