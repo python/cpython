@@ -613,6 +613,13 @@ Added :func:`os.waitstatus_to_exitcode` function:
 convert a wait status to an exit code.
 (Contributed by Victor Stinner in :issue:`40094`.)
 
+As of 3.9.20, :func:`os.mkdir` and :func:`os.makedirs` on Windows now support
+passing a *mode* value of ``0o700`` to apply access control to the new
+directory. This implicitly affects :func:`tempfile.mkdtemp` and is a
+mitigation for CVE-2024-4030. Other values for *mode* continue to be
+ignored.
+(Contributed by Steve Dower in :gh:`118486`.)
+
 pathlib
 -------
 
@@ -703,6 +710,14 @@ platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
 Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
 ``stderr`` defaults to always being line-buffered.
 (Contributed by Jendrik Seipp in :issue:`13601`.)
+
+tempfile
+--------
+
+As of 3.9.20 on Windows, the default mode ``0o700`` used by
+:func:`tempfile.mkdtemp` now limits access to the new directory due to
+changes to :func:`os.mkdir`. This is a mitigation for CVE-2024-4030.
+(Contributed by Steve Dower in :gh:`118486`.)
 
 tracemalloc
 -----------
