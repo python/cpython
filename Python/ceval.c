@@ -2476,6 +2476,7 @@ _PyEval_GetBuiltinId(_Py_Identifier *name)
 PyObject *
 PyEval_GetLocals(void)
 {
+    // We need to return a borrowed reference here, so some tricks are needed
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
@@ -2483,8 +2484,43 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    PyObject *locals = _PyEval_GetFrameLocals();
+    // Be aware that this returns a new reference
+    PyObject *locals = _PyFrame_GetLocals(current_frame);
+
+    // There are three possibilities here:
+    //   1. locals is NULL - that's an error
+    //   2. locals is a PyFrameLocalsProxy - that means current_frame is
+    //      optimized and we need to return a borrowed reference of a dict.
+    //      In this case, put the reference in current_frame.f_locals which
+    //      will be released when the frame is released.
+    //   3. locals is other mappings - that means current_frame is not
+    //      optimized and we can just decref locals and return it because
+    //      it must have other references
+
+    if (locals == NULL) {
+        return NULL;
+    } else if (PyFrameLocalsProxy_Check(locals)) {
+        PyObject* ret = PyDict_New();
+        if (ret == NULL) {
+            Py_DECREF(locals);
+            return NULL;
+        }
+        if (PyDict_Update(ret, locals) < 0) {
+            Py_DECREF(ret);
+            Py_DECREF(locals);
+            return NULL;
+        }
+        Py_DECREF(locals);
+        Py_XSETREF(current_frame->f_locals, ret);
+        return ret;
+    }
+
+    assert(PyMapping_Check(locals));
+    assert(locals->ob_refcnt > 1);
+    Py_DECREF(locals);
+
     return locals;
+
 }
 
 PyObject *
