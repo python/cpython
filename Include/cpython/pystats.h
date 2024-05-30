@@ -87,8 +87,12 @@ typedef struct _object_stats {
     uint64_t type_cache_dunder_hits;
     uint64_t type_cache_dunder_misses;
     uint64_t type_cache_collisions;
+    uint64_t max_deferred_space;
+    uint64_t max_deferred_objects;
     /* Temporary value used during GC */
     uint64_t object_visits;
+    uint64_t deferred_space;
+    uint64_t deferred_objects;
 } ObjectStats;
 
 typedef struct _gc_stats {
@@ -167,3 +171,18 @@ PyAPI_DATA(PyStats*) _Py_stats;
 #  define _Py_INCREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.increfs++; } while (0)
 #  define _Py_DECREF_STAT_INC() do { if (_Py_stats) _Py_stats->object_stats.decrefs++; } while (0)
 #endif
+
+
+#define UPDATE_DEFERRED_STATS() \
+do { \
+   if (_Py_stats) { \
+       if (_Py_stats->object_stats.deferred_space > _Py_stats->object_stats.max_deferred_space) { \
+           _Py_stats->object_stats.max_deferred_space = _Py_stats->object_stats.deferred_space; \
+       } \
+       if (_Py_stats->object_stats.deferred_objects > _Py_stats->object_stats.max_deferred_objects) { \
+           _Py_stats->object_stats.max_deferred_objects = _Py_stats->object_stats.deferred_objects; \
+       } \
+       _Py_stats->object_stats.deferred_space = 0; \
+       _Py_stats->object_stats.deferred_objects = 0; \
+   } \
+} while (0)

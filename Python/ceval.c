@@ -765,6 +765,7 @@ start_frame:
 
     next_instr = frame->instr_ptr;
 resume_frame:
+    // assert(tstate->sp_cached == 0 || tstate->in_gc);
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE

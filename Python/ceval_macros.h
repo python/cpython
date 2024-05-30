@@ -137,10 +137,14 @@ do { \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     QSBR_QUIESCENT_STATE(tstate); \
     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
-        if (_Py_HandlePending(tstate) != 0) { \
+        SAVE_SP(); \
+        int err = _Py_HandlePending(tstate); \
+        LOAD_SP(); \
+        if (err != 0) { \
             GOTO_ERROR(error); \
         } \
-    }
+    } \
+    UPDATE_DEFERRED_STATS();
 
 
 /* Tuple access macros */
@@ -400,7 +404,10 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
+stack_pointer = _PyFrame_GetStackPointer(frame)
+
+#define SAVE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
@@ -447,3 +454,4 @@ do { \
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
+

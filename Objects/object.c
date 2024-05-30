@@ -2823,14 +2823,30 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
     Py_FatalError("_PyObject_AssertFailed");
 }
 
+size_t size_guess(PyObject *op)
+{
+    size_t res = Py_TYPE(op)->tp_basicsize;
+    size_t isize = Py_TYPE(op)->tp_itemsize;
+
+    if (isize > 0) {
+        size_t count = _PyVarObject_CAST(op)->ob_size;
+        if (Py_TYPE(op) == &PyLong_Type) {
+            count >>= 3;
+        }
+        if (count < 100000000) {
+            res += count * isize;
+        }
+    }
+    return res;
+}
 
 void
 _Py_Dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     destructor dealloc = type->tp_dealloc;
-#ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
     // on (tstate->curexc_type != old_exc_type) below
@@ -2848,7 +2864,14 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+
+    if (tstate->sp_cached && tstate->in_gc == 0) {
+        OBJECT_STAT_ADD(deferred_space, size_guess(op));
+        OBJECT_STAT_INC(deferred_objects);
+    }
+    tstate->in_gc++;
     (*dealloc)(op);
+    tstate->in_gc--;
 
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception

@@ -789,6 +789,8 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+PyAPI_FUNC(int) PyThreadState_GetSpCached(void);
+
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
@@ -923,6 +925,9 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
     if (op->ob_refcnt <= 0) {
         _Py_NegativeRefcount(filename, lineno, op);
     }
+    if (PyThreadState_GetSpCached() == 0) {
+        UPDATE_DEFERRED_STATS();
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }
@@ -939,6 +944,9 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
+    if (PyThreadState_GetSpCached() == 0) {
+        UPDATE_DEFERRED_STATS();
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }

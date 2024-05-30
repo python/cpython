@@ -23,6 +23,7 @@
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+            UPDATE_DEFERRED_STATS();
             if (eval_breaker != version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -297,7 +298,9 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
+            SAVE_SP();
             res = PyNumber_Negative(value);
+            LOAD_SP();
             Py_DECREF(value);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = res;
@@ -318,7 +321,9 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
+            SAVE_SP();
             int err = PyObject_IsTrue(value);
+            LOAD_SP();
             Py_DECREF(value);
             if (err < 0) JUMP_TO_ERROR();
             res = err ? Py_True : Py_False;
@@ -637,7 +642,9 @@
             PyObject *res;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
+            SAVE_SP();
             res = PyObject_GetItem(container, sub);
+            LOAD_SP();
             Py_DECREF(container);
             Py_DECREF(sub);
             if (res == NULL) JUMP_TO_ERROR();
@@ -654,7 +661,9 @@
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
+            SAVE_SP();
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            LOAD_SP();
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
@@ -686,7 +695,9 @@
                 err = 1;
             }
             else {
+                SAVE_SP();
                 err = PyObject_SetItem(container, slice, v);
+                LOAD_SP();
                 Py_DECREF(slice);
             }
             Py_DECREF(v);
@@ -862,7 +873,9 @@
             container = stack_pointer[-2];
             v = stack_pointer[-3];
             /* container[sub] = v */
+            SAVE_SP();
             int err = PyObject_SetItem(container, sub, v);
+            LOAD_SP();
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -933,7 +946,9 @@
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             /* del container[sub] */
+            SAVE_SP();
             int err = PyObject_DelItem(container, sub);
+            LOAD_SP();
             Py_DECREF(container);
             Py_DECREF(sub);
             if (err) JUMP_TO_ERROR();
@@ -947,7 +962,9 @@
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
             assert(oparg <= MAX_INTRINSIC_1);
+            SAVE_SP();
             res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
+            LOAD_SP();
             Py_DECREF(value);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = res;
@@ -962,7 +979,9 @@
             value1 = stack_pointer[-1];
             value2 = stack_pointer[-2];
             assert(oparg <= MAX_INTRINSIC_2);
+            SAVE_SP();
             res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
+            LOAD_SP();
             Py_DECREF(value2);
             Py_DECREF(value1);
             if (res == NULL) JUMP_TO_ERROR();
@@ -1207,10 +1226,12 @@
                 Py_DECREF(v);
                 if (true) JUMP_TO_ERROR();
             }
+            SAVE_SP();
             if (PyDict_CheckExact(ns))
             err = PyDict_SetItem(ns, name, v);
             else
             err = PyObject_SetItem(ns, name, v);
+            LOAD_SP();
             Py_DECREF(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1343,7 +1364,9 @@
             owner = stack_pointer[-1];
             v = stack_pointer[-2];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            SAVE_SP();
             int err = PyObject_SetAttr(owner, name, v);
+            LOAD_SP();
             Py_DECREF(v);
             Py_DECREF(owner);
             if (err) JUMP_TO_ERROR();
@@ -1806,7 +1829,10 @@
             oparg = CURRENT_OPARG();
             update = stack_pointer[-1];
             dict = stack_pointer[-2 - (oparg - 1)];
-            if (PyDict_Update(dict, update) < 0) {
+            SAVE_SP();
+            int err = PyDict_Update(dict, update);
+            LOAD_SP();
+            if (err < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   "'%.200s' object is not a mapping",
@@ -1828,7 +1854,10 @@
             update = stack_pointer[-1];
             dict = stack_pointer[-2 - (oparg - 1)];
             callable = stack_pointer[-5 - (oparg - 1)];
-            if (_PyDict_MergeEx(dict, update, 2) < 0) {
+            SAVE_SP();
+            int err = _PyDict_MergeEx(dict, update, 2);
+            LOAD_SP();
+            if (err < 0) {
                 _PyEval_FormatKwargsError(tstate, callable, update);
                 Py_DECREF(update);
                 if (true) JUMP_TO_ERROR();
@@ -1939,7 +1968,10 @@
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
                 attr = NULL;
-                if (_PyObject_GetMethod(owner, name, &attr)) {
+                SAVE_SP();
+                int err = _PyObject_GetMethod(owner, name, &attr);
+                LOAD_SP();
+                if (err) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
@@ -1961,7 +1993,9 @@
             }
             else {
                 /* Classic, pushes one value. */
+                SAVE_SP();
                 attr = PyObject_GetAttr(owner, name);
+                LOAD_SP();
                 Py_DECREF(owner);
                 if (attr == NULL) JUMP_TO_ERROR();
             }
@@ -2365,7 +2399,9 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             assert((oparg >> 5) <= Py_GE);
+            SAVE_SP();
             res = PyObject_RichCompare(left, right, oparg >> 5);
+            LOAD_SP();
             Py_DECREF(left);
             Py_DECREF(right);
             if (res == NULL) JUMP_TO_ERROR();
@@ -2477,7 +2513,9 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            SAVE_SP();
             int res = PySequence_Contains(right, left);
+            LOAD_SP();
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) JUMP_TO_ERROR();
@@ -2941,8 +2979,10 @@
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
+            SAVE_SP();
             res = PyObject_Vectorcall(exit_func, stack + 1,
                                       3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            LOAD_SP();
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3237,10 +3277,12 @@
                 total_args++;
             }
             /* Callable is not a normal Python function */
+            SAVE_SP();
             res = PyObject_Vectorcall(
                                       callable, args,
                                       total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                       NULL);
+            LOAD_SP();
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
@@ -3477,7 +3519,7 @@
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
             stack_pointer += -1;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            SAVE_SP();
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
@@ -3507,7 +3549,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            SAVE_SP();
             res = Py_NewRef(Py_TYPE(arg));
+            LOAD_SP();
             Py_DECREF(arg);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -3533,7 +3577,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            SAVE_SP();
             res = PyObject_Str(arg);
+            LOAD_SP();
             Py_DECREF(arg);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-3] = res;
@@ -3560,7 +3606,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            SAVE_SP();
             res = PySequence_Tuple(arg);
+            LOAD_SP();
             Py_DECREF(arg);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-3] = res;
@@ -3608,7 +3656,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            SAVE_SP();
             res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+            LOAD_SP();
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(args[i]);
@@ -3656,7 +3706,9 @@
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             PyObject *arg = args[0];
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            SAVE_SP();
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            LOAD_SP();
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(arg);
@@ -3693,10 +3745,12 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
+            SAVE_SP();
             res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
+            LOAD_SP();
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3737,7 +3791,9 @@
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
+            SAVE_SP();
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
+            LOAD_SP();
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3776,7 +3832,9 @@
             }
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
+            SAVE_SP();
             Py_ssize_t len_i = PyObject_Length(arg);
+            LOAD_SP();
             if (len_i < 0) {
                 JUMP_TO_ERROR();
             }
@@ -3819,7 +3877,9 @@
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
             PyObject *inst = args[0];
+            SAVE_SP();
             int retval = PyObject_IsInstance(inst, cls);
+            LOAD_SP();
             if (retval < 0) {
                 JUMP_TO_ERROR();
             }
@@ -3878,7 +3938,9 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            SAVE_SP();
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            LOAD_SP();
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3924,7 +3986,9 @@
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            SAVE_SP();
             res = cfunc(self, args + 1, nargs, NULL);
+            LOAD_SP();
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3979,7 +4043,9 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            SAVE_SP();
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
+            LOAD_SP();
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -4024,7 +4090,9 @@
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
+            SAVE_SP();
             res = cfunc(self, args + 1, nargs);
+            LOAD_SP();
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4153,7 +4221,9 @@
             conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
             conv_fn = _PyEval_ConversionFuncs[oparg];
+            SAVE_SP();
             result = conv_fn(value);
+            LOAD_SP();
             Py_DECREF(value);
             if (result == NULL) JUMP_TO_ERROR();
             stack_pointer[-1] = result;
@@ -4213,7 +4283,9 @@
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
             assert(_PyEval_BinaryOps[oparg]);
+            SAVE_SP();
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
+            LOAD_SP();
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             if (res == NULL) JUMP_TO_ERROR();
