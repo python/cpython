@@ -5535,33 +5535,28 @@ os__path_abspath_impl(PyObject *module, path_t *path)
 {
     Py_ssize_t abs_len;
     wchar_t *abs, *abs_buf = NULL;
-    PyObject *result = NULL;
 
     wchar_t *path_buf = (wchar_t *)path->wide;
     Py_ssize_t path_len = path->length;
     int use_bytes = PyBytes_Check(path->object);
 #ifdef MS_WINDOWS
     if (wcslen(path_buf) != path_len) {
-        PyErr_Format(PyExc_ValueError,
-                     "_path_abspath: embedded null character in path");
-        goto exit;
+        return PyErr_Format(PyExc_ValueError,
+                            "_path_abspath: embedded null character in path");
     }
     // Preserve `.\` for qualified referencing
     abs = _Py_normpath_and_size(path_buf, path_len, 0, &abs_len, 1);
     if (abs_len == 0 || (abs_len == 1 && abs[0] == L'.')) {
-        result = posix_getcwd(use_bytes);
-        goto exit;
+        return posix_getcwd(use_bytes);
     }
     if (_PyOS_getfullpathname(abs, &abs_buf) < 0) {
-        result = win32_error_object("GetFullPathNameW", path->object);
-        goto exit;
+        return win32_error_object("GetFullPathNameW", path->object);
     }
     abs = abs_buf;
     abs_len = wcslen(abs_buf);
 #else
     if (path_len == 0 || (path_len == 1 && path_buf[0] == L'.')) {
-        result = posix_getcwd(use_bytes);
-        goto exit;
+        return posix_getcwd(use_bytes);
     }
 
     if (_Py_isabs(path_buf)) {
@@ -5570,13 +5565,13 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     else {
         PyObject *cwd_obj = posix_getcwd(0);
         if (!cwd_obj) {
-            goto exit;
+            return NULL;
         }
         Py_ssize_t cwd_len;
         wchar_t *cwd_buf = PyUnicode_AsWideCharString(cwd_obj, &cwd_len);
         Py_DECREF(cwd_obj);
         if (!cwd_buf) {
-            goto exit;
+            return NULL;
         }
 
         int add_sep = cwd_buf[cwd_len - 1] != SEP;
@@ -5586,14 +5581,13 @@ os__path_abspath_impl(PyObject *module, path_t *path)
         if ((size_t)abs_len + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             PyMem_Free(cwd_buf);
             PyErr_SetString(PyExc_OverflowError, "path is too long");
-            goto exit;
+            return NULL;
         }
 
         abs_buf = PyMem_RawMalloc(((size_t)abs_len + 1) * sizeof(wchar_t));
         if (!abs_buf) {
             PyMem_Free(cwd_buf);
-            PyErr_NoMemory();
-            goto exit;
+            return PyErr_NoMemory();
         }
 
         // Join cwd & path
@@ -5609,13 +5603,12 @@ os__path_abspath_impl(PyObject *module, path_t *path)
     }
 #endif
 
-    result = PyUnicode_FromWideChar(abs, abs_len);
+    PyObject *result = PyUnicode_FromWideChar(abs, abs_len);
+    PyMem_RawFree(abs_buf);
     if (use_bytes) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
 
-exit:
-    PyMem_RawFree(abs_buf);
     return result;
 }
 
