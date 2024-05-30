@@ -553,13 +553,15 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
         toppath = path.join(toppath, toppath[:0])  # Add trailing slash.
         if entries is None:
+            if topdown:
+                dirs = dirs[::-1]
             stack.extend(
                 (_fwalk_walk, (False, topfd, toppath + name, name, None))
-                for name in dirs[::-1])
+                for name in dirs)
         else:
             stack.extend(
                 (_fwalk_walk, (False, topfd, toppath + name, name, entry))
-                for name, entry in zip(dirs[::-1], entries[::-1]))
+                for name, entry in zip(dirs, entries))
 
     __all__.append("fwalk")
 
