@@ -656,6 +656,7 @@ def _rmtree_safe_fd(stack, onexc):
             func = os.path.islink  # For error reporting.
             try:
                 if not os.path.samestat(orig_st, os.fstat(fd)):
+                    # Symlinks to directories are forbidden, see GH-46010.
                     raise OSError("Cannot call rmtree on a symbolic link")
                 stack.append((os.rmdir, dir_fd, path, orig_entry))
             finally:
