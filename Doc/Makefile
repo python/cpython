@@ -250,7 +250,7 @@ endef
 
 .PHONY: check
 check: venv
-	$(call ensure_package,pre-commit)
+	$(call ensure_package,pre_commit)
 	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
