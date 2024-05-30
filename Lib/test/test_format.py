@@ -82,6 +82,7 @@ def test_exc(formatstr, args, exception, excmsg):
         else:
             if verbose: print('no')
             print('Unexpected ', exception, ':', repr(str(exc)))
+            raise
     except:
         if verbose: print('no')
         print('Unexpected exception')
