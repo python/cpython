@@ -2516,7 +2516,7 @@ PyEval_GetLocals(void)
     }
 
     assert(PyMapping_Check(locals));
-    assert(locals->ob_refcnt > 1);
+    assert(Py_REFCNT(locals) > 1);
     Py_DECREF(locals);
 
     return locals;
