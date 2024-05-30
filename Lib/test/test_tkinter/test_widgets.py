@@ -659,9 +659,10 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_tabs(self):
         widget = self.create()
         self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
-        if get_tk_patchlevel(self.root) >= (8, 6, 14):
-            self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
-                        expected=(10.2, 20.7, '1i', '2i'))
+        self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
+                        expected=(10.2, 20.7, '1i', '2i')
+                                 if get_tk_patchlevel(self.root) >= (8, 6, 14)
+                                 else ('10.2', '20.7', '1i', '2i'))
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
@@ -1001,12 +1002,15 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaisesRegex(TclError, 'bad listbox index "red"'):
             widget.itemconfigure('red')
         if get_tk_patchlevel(self.root) >= (8, 6, 14):
-            self.assertEqual(widget.itemconfigure(0, 'background'),
-                             ('background', '', '', '', 'red'))
-            self.assertEqual(widget.itemconfigure('end', 'background'),
-                             ('background', '', '', '', 'violet'))
-            self.assertEqual(widget.itemconfigure('@0,0', 'background'),
-                             ('background', '', '', '', 'red'))
+            prefix = ('background', '', '', '')
+        else:
+            prefix = ('background', 'background', 'Background', '')
+        self.assertEqual(widget.itemconfigure(0, 'background'),
+                         (*prefix, 'red'))
+        self.assertEqual(widget.itemconfigure('end', 'background'),
+                         (*prefix, 'violet'))
+        self.assertEqual(widget.itemconfigure('@0,0', 'background'),
+                         (*prefix, 'red'))
 
         d = widget.itemconfigure(0)
         self.assertIsInstance(d, dict)
