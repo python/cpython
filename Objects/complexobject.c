@@ -885,14 +885,17 @@ complex.__new__ as complex_new
     real as r: object(c_default="NULL") = 0
     imag as i: object(c_default="NULL") = 0
 
-Create a complex number from a real part and an optional imaginary part.
+Create a complex number from a string or numbers.
 
-This is equivalent to (real + imag*1j) where imag defaults to 0.
+If a string is given, parse it as a complex number.
+If a single number is given, convert it to a complex number.
+If the 'real' or 'imag' arguments are given, create a complex number
+with the specified real and imaginary components.
 [clinic start generated code]*/
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=f4c667f2596d4fd1]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=ff4268dc540958a4]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
