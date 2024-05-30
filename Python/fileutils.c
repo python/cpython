@@ -2550,8 +2550,8 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
         explicit = 1;
     }
 
-    // Skip past cwd, not allowed if size is unknown or explicit_curdir is set
-    if (size >= 0 && path + start > p1 && !explicit_curdir) {
+    // Skip past cwd, not allowed if size is unknown
+    if (size >= 0 && path + start > p1) {
         p1 = p2 = path + start;
         lastC = *(p1-1);
     }
