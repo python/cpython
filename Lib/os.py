@@ -436,10 +436,10 @@ __all__.append("walk")
 
 if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
-    _fwalk_close = 0
-    _fwalk_yield = 1
-    _fwalk_walk = 2
-    _fwalk_walk_root = 3
+    _fwalk_root = 0
+    _fwalk_inner = 1
+    _fwalk_yield = 2
+    _fwalk_close = 3
 
     def fwalk(top=".", topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None):
         """Directory tree generator.
@@ -476,7 +476,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
-        stack = [(_fwalk_walk_root, top, dir_fd, top, None)]
+        stack = [(_fwalk_root, (top, dir_fd, top, None))]
         isbytes = isinstance(top, bytes)
         while stack:
             yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
@@ -486,9 +486,9 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
 
-        action, *value = stack.pop()
+        action, value = stack.pop()
         if action == _fwalk_close:
-            close(value[0])
+            close(value)
             return
         elif action == _fwalk_yield:
             yield value
@@ -504,7 +504,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     orig_st = entry.stat(follow_symlinks=False)
             topfd = open(topname, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
         except OSError as err:
-            if action == _fwalk_walk_root:
+            if action == _fwalk_root:
                 # Root of walk: propagate error from stat() or open().
                 raise
             if onerror is not None:
@@ -512,7 +512,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             return
         stack.append((_fwalk_close, topfd))
         if not follow_symlinks:
-            if action == _fwalk_walk_root and not st.S_ISDIR(orig_st.st_mode):
+            if action == _fwalk_root and not st.S_ISDIR(orig_st.st_mode):
                 # Root of walk: ignore non-directory.
                 return
             if not path.samestat(orig_st, stat(topfd)):
@@ -545,17 +545,17 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         if topdown:
             yield toppath, dirs, nondirs, topfd
         else:
-            stack.append((_fwalk_yield, toppath, dirs, nondirs, topfd))
+            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
         dirs = dirs[::-1]
         if entries is None:
             stack.extend(
-                (_fwalk_walk, path.join(toppath, name), topfd, name, None)
+                (_fwalk_inner, (path.join(toppath, name), topfd, name, None))
                 for name in dirs)
         else:
             entries = entries[::-1]
             stack.extend(
-                (_fwalk_walk, path.join(toppath, name), topfd, name, entry)
+                (_fwalk_inner, (path.join(toppath, name), topfd, name, entry))
                 for name, entry in zip(dirs, entries))
 
     __all__.append("fwalk")
