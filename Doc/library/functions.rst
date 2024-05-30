@@ -400,17 +400,24 @@ are always available.  They are listed here in alphabetical order.
       >>> complex(-1.23, 4.5)
       (-1.23+4.5j)
 
-   If the argument is a string, it should contain a decimal number, optionally
-   preceded by a sign, and optionally followed by the ``j`` or ``J`` suffix,
-   or a pair of decimal numbers, optionally preceded by a sign, separated by
-   the ``+`` or ``-`` operator, and followed by the ``j`` or ``J`` suffix.
-   A string representing a NaN (not-a-number), or infinity is acceptable
-   in place of a decimal number, like in :func:`float`.
+   If the argument is a string, it must contain either a real part (in the
+   same format as for :func:`float`) or an imaginary part (in the same
+   format but with a ``'j'`` or ``'J'`` suffix ), or both real and imaginary
+   parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
-   parenthesis ``(`` and ``)``, which are ignored.
-   The string must not contain whitespace between ``+``, ``-``, the ``j`` or
-   ``J`` suffix, and the decimal number.  For example, ``complex('1+2j')`` is fine, but
-   ``complex('1 + 2j')`` raises :exc:`ValueError`.
+   parenthesis ``'('`` and ``')'``, which are ignored.
+   The string must not contain whitespace between ``'+'``, ``'-'``, the
+   ``'j'`` or ``'J'`` suffix, and the decimal number.
+   For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
+   :exc:`ValueError`.
+   More precisely, the input must conform to the :token:`~float:complexvalue`
+   production rule in the following grammar, after parenthesis and leading and
+   trailing whitespace characters are removed:
+
+   .. productionlist:: float
+      complexvalue: `floatvalue` |
+                  : `floatvalue` ("j" | "J") |
+                  : `floatvalue` `sign` `absfloatvalue` ("j" | "J")
 
    If the argument is a number, the constructor serves as a numeric
    conversion like :class:`int` and :class:`float`.
@@ -748,9 +755,10 @@ are always available.  They are listed here in alphabetical order.
    preceded by a sign, and optionally embedded in whitespace.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
-   (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the ``floatvalue`` production rule in the following
-   grammar, after leading and trailing whitespace characters are removed:
+   (not-a-number), or positive or negative infinity.
+   More precisely, the input must conform to the :token:`~float:`floatvalue`
+   production rule in the following grammar, after leading and trailing
+   whitespace characters are removed:
 
    .. productionlist:: float
       sign: "+" | "-"
@@ -759,9 +767,10 @@ are always available.  They are listed here in alphabetical order.
       digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
       digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
-      exponent: ("e" | "E") ["+" | "-"] `digitpart`
-      floatnumber: number [`exponent`]
-      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
+      exponent: ("e" | "E") [`sign`] `digitpart`
+      floatnumber: `number` [`exponent`]
+      absfloatvalue: `floatnumber` | `infinity` | `nan`
+      floatvalue: [`sign`] `absfloatvalue`
 
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
    "iNfINity" are all acceptable spellings for positive infinity.
