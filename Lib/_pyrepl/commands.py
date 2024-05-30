@@ -216,6 +216,7 @@ class interrupt(FinishCommand):
         import signal
 
         self.reader.console.finish()
+        self.reader.finish()
         os.kill(os.getpid(), signal.SIGINT)
 
 

@@ -39,7 +39,7 @@ def code_to_events(code: str):
 
 
 def prepare_reader(console: Console, **kwargs):
-    config = ReadlineConfig(readline_completer=None)
+    config = ReadlineConfig(readline_completer=kwargs.pop("readline_completer", None))
     reader = ReadlineAlikeReader(console=console, config=config)
     reader.more_lines = partial(more_lines, namespace=None)
     reader.paste_mode = True  # Avoid extra indents
@@ -74,6 +74,8 @@ def handle_all_events(
         while True:
             reader.handle1()
     except StopIteration:
+        pass
+    except KeyboardInterrupt:
         pass
     return reader, console
 
