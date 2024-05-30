@@ -827,7 +827,7 @@ def opcode_input_overlap(
 
     results = {
         "Oparg": flag_compatible(
-            "HAS_OPARG_AND_1_FLAG",
+            "HAS_ARG_FLAG", "HAS_OPARG_AND_1_FLAG"
         ),
         "Operand": flag_compatible(
             "HAS_OPERAND_FLAG",
