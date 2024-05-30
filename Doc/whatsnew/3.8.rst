@@ -1046,6 +1046,13 @@ treat junctions as links.
 
 (Contributed by Steve Dower in :issue:`37834`.)
 
+As of 3.8.20, :func:`os.mkdir` and :func:`os.makedirs` on Windows now support
+passing a *mode* value of ``0o700`` to apply access control to the new
+directory. This implicitly affects :func:`tempfile.mkdtemp` and is a
+mitigation for CVE-2024-4030. Other values for *mode* continue to be
+ignored.
+(Contributed by Steve Dower in :gh:`118486`.)
+
 
 os.path
 -------
@@ -1250,6 +1257,15 @@ format for new archives, instead of the previous GNU-specific one.
 This improves cross-platform portability with a consistent encoding (UTF-8)
 in a standardized and extensible format, and offers several other benefits.
 (Contributed by C.A.M. Gerlach in :issue:`36268`.)
+
+
+tempfile
+--------
+
+As of 3.8.20 on Windows, the default mode ``0o700`` used by
+:func:`tempfile.mkdtemp` now limits access to the new directory due to
+changes to :func:`os.mkdir`. This is a mitigation for CVE-2024-4030.
+(Contributed by Steve Dower in :gh:`118486`.)
 
 
 threading
