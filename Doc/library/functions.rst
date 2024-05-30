@@ -449,6 +449,10 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
       :meth:`~object.__float__` are not defined.
 
+   .. deprecated:: 3.14
+      Passing a complex number as the *real* or *imag* argument is now
+      deprecated; it should only be passed as a single positional argument.
+
 
 .. function:: delattr(object, name)
 

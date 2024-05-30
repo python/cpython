@@ -382,25 +382,53 @@ class ComplexTest(unittest.TestCase):
         check(complex(1.0, 10.0), 1.0, 10.0)
         check(complex(4.25, 0.5), 4.25, 0.5)
 
-        check(complex(4.25+0j, 0), 4.25, 0.0)
-        check(complex(ComplexSubclass(4.25+0j), 0), 4.25, 0.0)
-        check(complex(WithComplex(4.25+0j), 0), 4.25, 0.0)
-        check(complex(4.25j, 0), 0.0, 4.25)
-        check(complex(0j, 4.25), 0.0, 4.25)
-        check(complex(0, 4.25+0j), 0.0, 4.25)
-        check(complex(0, ComplexSubclass(4.25+0j)), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(4.25+0j, 0), 4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not .*ComplexSubclass"):
+            check(complex(ComplexSubclass(4.25+0j), 0), 4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not .*WithComplex"):
+            check(complex(WithComplex(4.25+0j), 0), 4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(4.25j, 0), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(0j, 4.25), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex"):
+            check(complex(0, 4.25+0j), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not .*ComplexSubclass"):
+            check(complex(0, ComplexSubclass(4.25+0j)), 0.0, 4.25)
         with self.assertRaisesRegex(TypeError,
-                "second argument must be a number, not 'WithComplex'"):
+                "argument 'imag' must be a real number, not .*WithComplex"):
             complex(0, WithComplex(4.25+0j))
-        check(complex(0.0, 4.25j), -4.25, 0.0)
-        check(complex(4.25+0j, 0j), 4.25, 0.0)
-        check(complex(4.25j, 0j), 0.0, 4.25)
-        check(complex(0j, 4.25+0j), 0.0, 4.25)
-        check(complex(0j, 4.25j), -4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'imag' must be a real number, not complex"):
+            check(complex(0.0, 4.25j), -4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(4.25+0j, 0j), 4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(4.25j, 0j), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(0j, 4.25+0j), 0.0, 4.25)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(0j, 4.25j), -4.25, 0.0)
 
         check(complex(real=4.25), 4.25, 0.0)
-        check(complex(real=4.25+0j), 4.25, 0.0)
-        check(complex(real=4.25+1.5j), 4.25, 1.5)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(real=4.25+0j), 4.25, 0.0)
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            check(complex(real=4.25+1.5j), 4.25, 1.5)
         check(complex(imag=1.5), 0.0, 1.5)
         check(complex(real=4.25, imag=1.5), 4.25, 1.5)
         check(complex(4.25, imag=1.5), 4.25, 1.5)
@@ -420,22 +448,22 @@ class ComplexTest(unittest.TestCase):
         del c, c2
 
         self.assertRaisesRegex(TypeError,
-            "first argument must be a string or a number, not 'dict'",
+            "argument must be a string or a number, not dict",
             complex, {})
         self.assertRaisesRegex(TypeError,
-            "first argument must be a string or a number, not 'NoneType'",
+            "argument must be a string or a number, not NoneType",
             complex, None)
         self.assertRaisesRegex(TypeError,
-            "first argument must be a string or a number, not 'dict'",
+            "argument 'real' must be a real number, not dict",
             complex, {1:2}, 0)
         self.assertRaisesRegex(TypeError,
-            "can't take second arg if first is a string",
+            "argument 'real' must be a real number, not str",
             complex, '1', 0)
         self.assertRaisesRegex(TypeError,
-            "second argument must be a number, not 'dict'",
+            "argument 'imag' must be a real number, not dict",
             complex, 0, {1:2})
         self.assertRaisesRegex(TypeError,
-                "second arg can't be a string",
+            "argument 'imag' must be a real number, not str",
             complex, 0, '1')
 
         self.assertRaises(TypeError, complex, WithComplex(1.5))
