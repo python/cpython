@@ -178,7 +178,7 @@ pathlib
 pkgutil
 -------
 
-* Remove :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
+* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
   These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
   (Contributed by Bénédikt Tran in :gh:`97850`.)
 
