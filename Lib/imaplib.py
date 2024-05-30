@@ -325,7 +325,6 @@ class IMAP4:
             data += self.file.read(delta)
             cursize += delta
         return data
-        return self.file.read(size)
 
 
     def readline(self):
