@@ -299,7 +299,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+   See :ref:`free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 

@@ -368,7 +368,8 @@ CPython will run with the :term:`global interpreter lock` (GIL) disabled when
 configured using the ``--disable-gil`` option at build time. This is an
 experimental feature and therefore isn't used by default. Users need to
 either compile their own interpreter, or install one of the experimental
-builds that are marked as *free-threaded*.
+builds that are marked as *free-threaded*. See :pep:`703` "Making the Global
+Interpreter Lock Optional in CPython" for more detail.
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
@@ -654,6 +655,18 @@ copy
   :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>` in
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` was improved to better
+  match platform defaults (GCC/Clang or MSC). In particular, fields no longer
+  overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+* A :attr:`ctypes.Structure._layout_` class attribute can be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
 
 dbm
 ---
