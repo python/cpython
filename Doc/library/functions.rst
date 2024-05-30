@@ -405,13 +405,13 @@ are always available.  They are listed here in alphabetical order.
    format but with a ``'j'`` or ``'J'`` suffix ), or both real and imaginary
    parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
-   parenthesis ``'('`` and ``')'``, which are ignored.
+   parentheses ``'('`` and ``')'``, which are ignored.
    The string must not contain whitespace between ``'+'``, ``'-'``, the
    ``'j'`` or ``'J'`` suffix, and the decimal number.
    For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
    :exc:`ValueError`.
    More precisely, the input must conform to the :token:`~float:complexvalue`
-   production rule in the following grammar, after parenthesis and leading and
+   production rule in the following grammar, after parentheses and leading and
    trailing whitespace characters are removed:
 
    .. productionlist:: float
