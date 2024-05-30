@@ -54,7 +54,7 @@ Reflection
 
    Return a dictionary of the local variables in the current execution frame,
    or ``NULL`` if no frame is currently executing. Equivalent to calling
-   :func:`globals` in Python code.
+   :func:`locals` in Python code.
 
    .. versionadded:: 3.13
 
@@ -63,7 +63,7 @@ Reflection
 
    Return a dictionary of the global variables in the current execution frame,
    or ``NULL`` if no frame is currently executing. Equivalent to calling
-   :func:`locals` in Python code.
+   :func:`globals` in Python code.
 
    .. versionadded:: 3.13
 
