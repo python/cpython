@@ -2307,7 +2307,7 @@ class SubinterpreterTest(unittest.TestCase):
                 try:
                     module = importlib.util.module_from_spec(spec)
                 except ImportError:
-                    is_wasi = {support.is_wasi}  # no dlopen currently
+                    is_wasi = {support.is_wasi}  # current WASI has no dlopen
                     if not is_wasi:
                         raise
 
