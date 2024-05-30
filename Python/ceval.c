@@ -2520,7 +2520,6 @@ PyEval_GetLocals(void)
     Py_DECREF(locals);
 
     return locals;
-
 }
 
 PyObject *
