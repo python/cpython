@@ -433,11 +433,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
