@@ -2321,15 +2321,34 @@ class SubinterpreterTest(unittest.TestCase):
         """)
         with self.subTest("main interpreter"):
             exec(script)
-        with self.subTest("non-isolated subinterpreter"):
+        with self.subTest("legacy subinterpreter"):
             ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
         if _interpreters:
-            with self.subTest("isolated subinterpreter"):
-                interpid = _interpreters.create()
-                ret = _interpreters.run_string(interpid, script)
-                _interpreters.destroy(interpid)
-                self.assertIsNone(ret)
+            with self.subTest("legacy subinterpreter (config)"):
+                ret = support.run_in_subinterp_with_config(
+                    script,
+                    use_main_obmalloc=True,
+                    own_gil=False,
+                    allow_fork=True,
+                    allow_exec=True,
+                    allow_threads=True,
+                    allow_daemon_threads=True,
+                    check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+                )
+                self.assertEqual(ret, 0)
+            with self.subTest("isolated subinterpreter (config)"):
+                ret = support.run_in_subinterp_with_config(
+                    script,
+                    own_gil=True,
+                    use_main_obmalloc=False,
+                    allow_fork=False,
+                    allow_exec=False,
+                    allow_threads=True,
+                    allow_daemon_threads=False,
+                    check_multi_interp_extensions=True,
+                )
+                self.assertEqual(ret, 0)
 
 
 @requires_subinterpreters
