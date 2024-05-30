@@ -1,5 +1,5 @@
-:mod:`http.server` --- HTTP servers
-===================================
+:mod:`!http.server` --- HTTP servers
+====================================
 
 .. module:: http.server
    :synopsis: HTTP server and request handlers.
@@ -519,6 +519,12 @@ the ``--cgi`` option::
 
    :mod:`http.server` command line ``--cgi`` support is being removed
    because :class:`CGIHTTPRequestHandler` is being removed.
+
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
 
 .. _http.server-security:
 

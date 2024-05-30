@@ -83,9 +83,11 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
+Python/optimizer_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+Python/optimizer_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c
@@ -102,6 +104,7 @@ EXCLUDED += clean_lines('''
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
+Modules/expat/internal.h
 Modules/expat/xmlparse.c
 ''')
 
@@ -164,6 +167,7 @@ Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/repr.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 
 # @end=tsv@
@@ -318,6 +322,7 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (35_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),

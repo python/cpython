@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
@@ -16,11 +16,11 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionadded:: 3.2
+
    .. versionchanged:: 3.8
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
-
-   .. versionadded:: 3.2
 
    .. availability:: Unix.
 
@@ -194,6 +194,17 @@ always available.
    during reference leak debugging.
 
    This function should be used for internal and specialized purposes only.
+
+   .. deprecated:: 3.13
+      Use the more general :func:`_clear_internal_caches` function instead.
+
+
+.. function:: _clear_internal_caches()
+
+   Clear all internal performance-related caches. Use this function *only* to
+   release unnecessary references and memory blocks when hunting for leaks.
+
+   .. versionadded:: 3.13
 
 
 .. function:: _current_frames()
@@ -724,7 +735,7 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_type_cache()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches()` and :func:`gc.collect()` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
@@ -742,7 +753,9 @@ always available.
 
 .. function:: getandroidapilevel()
 
-   Return the build time API version of Android as an integer.
+   Return the build-time API level of Android as an integer. This represents the
+   minimum version of Android this build of Python can run on. For runtime
+   version information, see :func:`platform.android_ver`.
 
    .. availability:: Android.
 
@@ -864,7 +877,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1186,10 +1199,20 @@ always available.
    return value of :func:`intern` around to benefit from it.
 
 
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the main Python interpreter is
    :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
+
+   See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
 
@@ -1293,7 +1316,10 @@ always available.
    The list of the original command line arguments passed to the Python
    executable.
 
-   See also :data:`sys.argv`.
+   The elements of :data:`sys.orig_argv` are the arguments to the Python interpreter,
+   while the elements of :data:`sys.argv` are the arguments to the user's program.
+   Arguments consumed by the interpreter itself will be present in :data:`sys.orig_argv`
+   and missing from :data:`sys.argv`.
 
    .. versionadded:: 3.10
 
@@ -1351,47 +1377,42 @@ always available.
 
 .. data:: platform
 
-   This string contains a platform identifier that can be used to append
-   platform-specific components to :data:`sys.path`, for instance.
+   A string containing a platform identifier. Known values are:
 
-   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
-   returned by ``uname -s`` with the first part of the version as returned by
+   ================ ===========================
+   System           ``platform`` value
+   ================ ===========================
+   AIX              ``'aix'``
+   Android          ``'android'``
+   Emscripten       ``'emscripten'``
+   iOS              ``'ios'``
+   Linux            ``'linux'``
+   macOS            ``'darwin'``
+   Windows          ``'win32'``
+   Windows/Cygwin   ``'cygwin'``
+   WASI             ``'wasi'``
+   ================ ===========================
+
+   On Unix systems not listed in the table, the value is the lowercased OS name
+   as returned by ``uname -s``, with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
    version, it is therefore recommended to use the following idiom::
 
       if sys.platform.startswith('freebsd'):
           # FreeBSD-specific code here...
-      elif sys.platform.startswith('linux'):
-          # Linux-specific code here...
-      elif sys.platform.startswith('aix'):
-          # AIX-specific code here...
-
-   For other systems, the values are:
-
-   ================ ===========================
-   System           ``platform`` value
-   ================ ===========================
-   AIX              ``'aix'``
-   Emscripten       ``'emscripten'``
-   Linux            ``'linux'``
-   WASI             ``'wasi'``
-   Windows          ``'win32'``
-   Windows/Cygwin   ``'cygwin'``
-   macOS            ``'darwin'``
-   ================ ===========================
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.
 
    .. versionchanged:: 3.8
       On AIX, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.
+
+   .. versionchanged:: 3.13
+      On Android, :data:`sys.platform` now returns ``'android'`` rather than
+      ``'linux'``.
 
    .. seealso::
 
@@ -1687,7 +1708,7 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,

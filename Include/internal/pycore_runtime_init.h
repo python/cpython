@@ -16,6 +16,8 @@ extern "C" {
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
 #include "pycore_pyhash.h"        // pyhash_state_INIT
 #include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
+#include "pycore_pythread.h"      // _pythread_RUNTIME_INIT
+#include "pycore_qsbr.h"          // QSBR_INITIAL
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
@@ -81,6 +83,11 @@ extern PyTypeObject _PyExc_MemoryError;
             .tuple_object = { \
                 .ob_item = offsetof(PyTupleObject, ob_item), \
             }, \
+            .unicode_object = { \
+                .state = offsetof(PyUnicodeObject, _base._base.state), \
+                .length = offsetof(PyUnicodeObject, _base._base.length), \
+                .asciiobject_size = sizeof(PyASCIIObject), \
+            }, \
         }, \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \
@@ -90,6 +97,7 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
+        .threads = _pythread_RUNTIME_INIT(runtime.threads), \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
@@ -106,6 +114,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
+            .pending_mainthread = { \
+                .max = MAXPENDINGCALLS_MAIN, \
+                .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
+            }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
         .gilstate = { \
@@ -116,6 +128,10 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .ref_tracer = { \
+            .tracer_func = NULL, \
+            .tracer_data = NULL, \
+        }, \
         .stoptheworld = { \
             .is_global = 1, \
         }, \
@@ -154,22 +170,31 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
+        ._whence = _PyInterpreterState_WHENCE_NOTSET, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \
-            .generations = { \
-                /* .head is set in _PyGC_InitState(). */ \
-                { .threshold = 700, }, \
+            .young = { .threshold = 2000, }, \
+            .old = { \
                 { .threshold = 10, }, \
-                { .threshold = 10, }, \
+                { .threshold = 0, }, \
             }, \
+            .work_to_do = -5000, \
         }, \
-        .object_state = _py_object_state_INIT(INTERP), \
+        .qsbr = { \
+            .wr_seq = QSBR_INITIAL, \
+            .rd_seq = QSBR_INITIAL, \
+        }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
+        .mem_free_queue = _Py_mem_free_queue_INIT(INTERP.mem_free_queue), \
         .func_state = { \
             .next_version = 1, \
         }, \
@@ -203,16 +228,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
-
-#ifdef Py_TRACE_REFS
-# define _py_object_state_INIT(INTERP) \
-    { \
-        .refchain = NULL, \
-    }
-#else
-# define _py_object_state_INIT(INTERP) \
-    { 0 }
-#endif
 
 
 // global objects

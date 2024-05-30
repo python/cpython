@@ -5,9 +5,6 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
-import sys
-import os
-
 __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
 
@@ -67,6 +64,11 @@ def checkcache(filename=None):
         if mtime is None:
             continue   # no-op for files loaded via a __loader__
         try:
+            # This import can fail if the interpreter is shutting down
+            import os
+        except ImportError:
+            return
+        try:
             stat = os.stat(fullname)
         except OSError:
             cache.pop(filename, None)
@@ -80,6 +82,11 @@ def updatecache(filename, module_globals=None):
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
 
+    # These imports are not at top level because linecache is in the critical
+    # path of the interpreter startup and importing os and sys take a lot of time
+    # and slows down the startup sequence.
+    import os
+    import sys
     import tokenize
 
     if filename in cache:
@@ -137,7 +144,9 @@ def updatecache(filename, module_globals=None):
             lines = fp.readlines()
     except (OSError, UnicodeDecodeError, SyntaxError):
         return []
-    if lines and not lines[-1].endswith('\n'):
+    if not lines:
+        lines = ['\n']
+    elif not lines[-1].endswith('\n'):
         lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
@@ -166,13 +175,11 @@ def lazycache(filename, module_globals):
         return False
     # Try for a __loader__, if available
     if module_globals and '__name__' in module_globals:
-        name = module_globals['__name__']
-        if (loader := module_globals.get('__loader__')) is None:
-            if spec := module_globals.get('__spec__'):
-                try:
-                    loader = spec.loader
-                except AttributeError:
-                    pass
+        spec = module_globals.get('__spec__')
+        name = getattr(spec, 'name', None) or module_globals['__name__']
+        loader = getattr(spec, 'loader', None)
+        if loader is None:
+            loader = module_globals.get('__loader__')
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
