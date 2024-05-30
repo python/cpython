@@ -402,7 +402,7 @@ are always available.  They are listed here in alphabetical order.
 
    If the argument is a string, it must contain either a real part (in the
    same format as for :func:`float`) or an imaginary part (in the same
-   format but with a ``'j'`` or ``'J'`` suffix ), or both real and imaginary
+   format but with a ``'j'`` or ``'J'`` suffix), or both real and imaginary
    parts (the sign of the imaginary part is mandatory in this case).
    The string can optionally be surrounded by whitespaces and the round
    parentheses ``'('`` and ``')'``, which are ignored.
