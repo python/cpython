@@ -1,0 +1,3 @@
+Partially fix issue with :func:`shutil.rmtree` where a :exc:`RecursionError`
+is raised on deep directory trees. A recursion error is no longer raised
+when :data:`!rmtree.avoids_symlink_attacks` is false.
