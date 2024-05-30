@@ -791,7 +791,7 @@ def opcode_input_overlap(
     def target_compatible(*opcodes: str):
         targets = opcodes.count("_DEOPT")
         exit_indexes = opcodes.count("_EXIT_TRACE")
-        combined_flags = list(itertools.chain(*(uop_flags[op] for op in opcodes)))
+        combined_flags = list(itertools.chain.from_iterable(uop_flags[op] for op in opcodes))
         jump_targets = combined_flags.count("HAS_DEOPT_FLAG") + combined_flags.count(
             "HAS_EXIT_FLAG"
         )
