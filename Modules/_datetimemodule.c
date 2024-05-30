@@ -166,13 +166,15 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
         if (PyDict_GetItemStringRef(dict, INTERP_KEY, &ref) < 0) {
             goto error;
         }
-        int rc = PyWeakref_GetRef(ref, &current);
-        Py_DECREF(ref);
-        if (rc < 0) {
-            goto error;
-        }
-        if (current != expected) {
-            goto finally;
+        if (ref != NULL) {
+            int rc = PyWeakref_GetRef(ref, &current);
+            Py_DECREF(ref);
+            if (rc < 0) {
+                goto error;
+            }
+            if (current != expected) {
+                goto finally;
+            }
         }
     }
 
