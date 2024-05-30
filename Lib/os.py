@@ -510,21 +510,21 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 name = entry.name
                 if isbytes:
                     name = fsencode(name)
-                is_dir = False
+
                 try:
                     is_dir = entry.is_dir()
-                    if is_dir and not topdown:
+                except OSError:
+                    # If is_dir() raises an OSError, consider the entry not to
+                    # be a directory, same behaviour as os.path.isdir().
+                    is_dir = False
+
+                if is_dir:
+                    if not topdown:
                         # Bottom-up: traverse into sub-directory.
                         stack.append(
                             (_fwalk_walk, (
                                 False, topfd, topprefix + name, name,
                                 None if follow_symlinks else entry)))
-                except OSError:
-                    # If is_dir() raises an OSError, consider the entry not to
-                    # be a directory, same behaviour as os.path.isdir().
-                    pass
-
-                if is_dir:
                     dirs.append(name)
                 else:
                     nondirs.append(name)
