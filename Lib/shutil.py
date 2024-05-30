@@ -636,7 +636,8 @@ def _rmtree_unsafe(path, onexc):
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(stack, onexc):
-    func, dir_fd, name, path, entry = stack.pop()
+    func, dir_fd, path, orig_entry = stack.pop()
+    name = path if orig_entry is None else orig_entry.name
     try:
         if func is os.close:
             os.close(dir_fd)
@@ -644,20 +645,21 @@ def _rmtree_safe_fd(stack, onexc):
             os.rmdir(name, dir_fd=dir_fd)
         else:
             assert func is os.lstat
-            if entry is None:
+            if orig_entry is None:
                 orig_st = os.lstat(name, dir_fd=dir_fd)
             else:
-                orig_st = entry.stat(follow_symlinks=False)
+                orig_st = orig_entry.stat(follow_symlinks=False)
 
             func = os.open  # For error reporting.
             fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
+
+            func = os.path.islink  # For error reporting.
             try:
-                func = os.path.islink  # For error reporting.
                 if not os.path.samestat(orig_st, os.fstat(fd)):
                     raise OSError("Cannot call rmtree on a symbolic link")
-                stack.append((os.rmdir, dir_fd, name, path, None))
+                stack.append((os.rmdir, dir_fd, path, orig_entry))
             finally:
-                stack.append((os.close, fd, name, path, None))
+                stack.append((os.close, fd, path, None))
 
             func = os.scandir  # For error reporting.
             with os.scandir(fd) as scandir_it:
@@ -669,7 +671,8 @@ def _rmtree_safe_fd(stack, onexc):
                 except OSError:
                     is_dir = False
                 if is_dir:
-                    stack.append((os.lstat, fd, entry.name, fullname, entry))
+                    # Traverse into sub-directory.
+                    stack.append((os.lstat, fd, fullname, entry))
                 else:
                     try:
                         os.unlink(entry.name, dir_fd=fd)
@@ -680,7 +683,7 @@ def _rmtree_safe_fd(stack, onexc):
                         onexc(os.unlink, fullname, err)
 
     except OSError as err:
-        if func is os.close or name == path or not isinstance(err, FileNotFoundError):
+        if orig_entry is None or not isinstance(err, FileNotFoundError):
             err.filename = path
             onexc(func, path, err)
 
@@ -737,15 +740,16 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
             path = os.fsdecode(path)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
-        stack = [(os.lstat, dir_fd, path, path, None)]
+        stack = [(os.lstat, dir_fd, path, None)]
         try:
             while stack:
                 _rmtree_safe_fd(stack, onexc)
         finally:
+            # Close any file descriptors still on the stack.
             while stack:
-                func, dir_fd, name, path, entry = stack.pop()
+                func, fd, path, entry = stack.pop()
                 if func is os.close:
-                    os.close(dir_fd)
+                    os.close(fd)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
