@@ -849,7 +849,7 @@ def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
         cumulative = 0
         rows: Rows = []
         for (opcode_i, opcode_j), count in itertools.islice(
-            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 5000
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
         ):
             cumulative += count
             next_row = [
