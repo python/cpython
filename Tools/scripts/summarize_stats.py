@@ -771,7 +771,7 @@ def execution_count_section() -> Section:
                 join_mode=JoinMode.CHANGE_ONE_COLUMN,
             )
         ],
-        doc="""
+        doc="""[uop_flags[op] for op in opcodes]
         The "miss ratio" column shows the percentage of times the instruction
         executed that it deoptimized. When this happens, the base unspecialized
         instruction is not counted.
@@ -782,10 +782,47 @@ def execution_count_section() -> Section:
 def opcode_input_overlap(
     uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
 ) -> str:
+
     def flag_compatible(*flags: str):
-        return not (
-            any(f in uop_flags[opcode_i] for f in flags)
-            and any(f in uop_flags[opcode_j] for f in flags)
+        return not any(
+            f in uop_flags[opcode_i] and f in uop_flags[opcode_j] for f in flags
+        )
+
+    def target_compatible(*opcodes: str):
+        targets = opcodes.count("_DEOPT")
+        exit_indexes = opcodes.count("_EXIT_TRACE")
+        combined_flags = list(itertools.chain(uop_flags[op] for op in opcodes))
+        jump_targets = combined_flags.count("HAS_DEOPT_FLAG") + combined_flags.count(
+            "HAS_EXIT_FLAG"
+        )
+        error_targets = combined_flags.count("HAS_ERROR_FLAG") + combined_flags.count(
+            "HAS_ERROR_NO_POP_FLAG"
+        )
+
+        return (
+            # UOP_FORMAT_TARGET:
+            (
+                targets <= 1
+                and exit_indexes == 0
+                and jump_targets == 0
+                and error_targets == 0
+            )
+            or
+            # UOP_FORMAT_EXIT:
+            (
+                targets == 0
+                and exit_indexes <= 1
+                and jump_targets == 0
+                and error_targets <= 1
+            )
+            or
+            # UOP_FORMAT_JUMP:
+            (
+                targets == 0
+                and exit_indexes == 0
+                and jump_targets <= 1
+                and error_targets <= 1
+            )
         )
 
     results = {
@@ -795,7 +832,7 @@ def opcode_input_overlap(
         "Operand": flag_compatible(
             "HAS_OPERAND_FLAG",
         ),
-        "Target": flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
+        "Target": target_compatible(opcode_i, opcode_j),
     }
 
     if list(results.values()).count(False) == 0:
@@ -812,7 +849,7 @@ def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
         cumulative = 0
         rows: Rows = []
         for (opcode_i, opcode_j), count in itertools.islice(
-            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 5000
         ):
             cumulative += count
             next_row = [
