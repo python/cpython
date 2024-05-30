@@ -1291,7 +1291,7 @@ format_complex_internal(PyObject *value,
            format the result. We take care of that later. */
         type = 'g';
 
-    if (precision < 0 && type != 'x' && type != 'X')
+    if (precision < 0)
         precision = default_precision;
     else if (type == 'r')
         type = 'g';
@@ -1623,8 +1623,6 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'g':
     case 'G':
     case 'n':
-    case 'x':
-    case 'X':
         /* no conversion, already a complex.  do the formatting */
         return format_complex_internal(obj, &format, writer);
 

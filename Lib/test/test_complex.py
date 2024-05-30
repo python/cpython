@@ -817,7 +817,7 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, (1.5+3j).__format__, '=20')
 
         # integer presentation types are an error
-        for t in 'bcdo':
+        for t in 'bcdoxX':
             self.assertRaises(ValueError, (1.5+0.5j).__format__, t)
 
         # make sure everything works in ''.format()
