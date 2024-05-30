@@ -35,6 +35,9 @@ class TestCPPExt(unittest.TestCase):
     def test_build_cpp11(self):
         self.check_build('_testcpp11ext', std='c++11')
 
+    # Only test C++14 on MSVC.
+    # On s390x RHEL7, GCC 4.8.5 doesn't support C++14.
+    @unittest.skipIf(not support.MS_WINDOWS, "need Windows")
     def test_build_cpp14(self):
         self.check_build('_testcpp14ext', std='c++14')
 
