@@ -401,8 +401,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         if topdown:
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
+            # Traverse into sub-directories
             if dirs:
-                # Traverse into sub-directories
                 prefix = join(top, top[:0])
                 for dirname in reversed(dirs):
                     new_path = prefix + dirname
@@ -498,43 +498,50 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if not path.samestat(orig_st, stat(topfd)):
                 return
 
-        scandir_it = scandir(topfd)
         dirs = []
         nondirs = []
-        entries = None if topdown or follow_symlinks else []
-        for entry in scandir_it:
-            name = entry.name
-            if isbytes:
-                name = fsencode(name)
-            try:
-                if entry.is_dir():
-                    dirs.append(name)
-                    if entries is not None:
-                        entries.append(entry)
-                else:
-                    nondirs.append(name)
-            except OSError:
-                try:
-                    # Add dangling symlinks, ignore disappeared files
-                    if entry.is_symlink():
-                        nondirs.append(name)
-                except OSError:
-                    pass
-
-        if topdown:
-            yield toppath, dirs, nondirs, topfd
-        else:
+        if not topdown:
+            # Yield after sub-directory traversal if going bottom up.
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
-        toppath = path.join(toppath, toppath[:0])  # Add trailing slash.
-        if entries is None:
+        topprefix = path.join(toppath, toppath[:0])  # Add trailing slash.
+        try:
+            for entry in scandir(topfd):
+                name = entry.name
+                if isbytes:
+                    name = fsencode(name)
+                is_dir = False
+                try:
+                    is_dir = entry.is_dir()
+                    if is_dir and not topdown:
+                        # Bottom-up: traverse into sub-directory.
+                        stack.append(
+                            (_fwalk_walk, (
+                                False, topfd, topprefix + name, name,
+                                None if follow_symlinks else entry)))
+                except OSError:
+                    # If is_dir() raises an OSError, consider the entry not to
+                    # be a directory, same behaviour as os.path.isdir().
+                    pass
+
+                if is_dir:
+                    dirs.append(name)
+                else:
+                    nondirs.append(name)
+        except:
+            # Undo additions to stack in bottom-up mode.
+            if not topdown:
+                while stack.pop()[0] != _fwalk_yield:
+                    pass
+            raise
+
+        if topdown:
+            # Yield before sub-directory traversal if going top down
+            yield toppath, dirs, nondirs, topfd
+            # Traverse into sub-directories
             stack.extend(
-                (_fwalk_walk, (False, topfd, toppath + name, name, None))
+                (_fwalk_walk, (False, topfd, topprefix + name, name, None))
                 for name in dirs[::-1])
-        else:
-            stack.extend(
-                (_fwalk_walk, (False, topfd, toppath + name, name, entry))
-                for name, entry in zip(dirs[::-1], entries[::-1]))
 
     __all__.append("fwalk")
 
