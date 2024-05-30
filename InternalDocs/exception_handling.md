@@ -13,6 +13,7 @@ try:
     g(0)
 except:
     res = "fail"
+
 </code>
 
 compiles into pseudo-code like the following:
@@ -161,7 +162,6 @@ def parse_varint(iterator):
         val |= b&63
     return val
 ```
-
 ```
 def parse_exception_table(code):
     iterator = iter(code.co_exceptiontable)
