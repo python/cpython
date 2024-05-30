@@ -16,7 +16,6 @@ class PEGLexer(RegexLexer):
         - Rule types
         - Rule options
         - Rules named `invalid_*` or `incorrect_*`
-        - Rules with `RAISE_SYNTAX_ERROR`
     """
 
     name = "PEG"
@@ -60,7 +59,6 @@ class PEGLexer(RegexLexer):
             (r"^(\s+\|\s+.*invalid_\w+.*\n)", bygroups(None)),
             (r"^(\s+\|\s+.*incorrect_\w+.*\n)", bygroups(None)),
             (r"^(#.*invalid syntax.*(?:.|\n)*)", bygroups(None),),
-            (r"^(\s+\|\s+.*\{[^}]*RAISE_SYNTAX_ERROR[^}]*\})\n", bygroups(None)),
         ],
         "root": [
             include("invalids"),
