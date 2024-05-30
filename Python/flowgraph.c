@@ -751,6 +751,36 @@ make_cfg_traversal_stack(basicblock *entryblock) {
     return stack;
 }
 
+/* Return the stack effect of opcode with argument oparg.
+
+   Some opcodes have different stack effect when jump to the target and
+   when not jump. The 'jump' parameter specifies the case:
+
+   * 0 -- when not jump
+   * 1 -- when jump
+   * -1 -- maximal
+ */
+Py_LOCAL(int)
+stack_effect(int opcode, int oparg, int jump)
+{
+    if (opcode < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
+        // Specialized instructions are not supported.
+        return PY_INVALID_STACK_EFFECT;
+    }
+    int popped = _PyOpcode_num_popped(opcode, oparg);
+    int pushed = _PyOpcode_num_pushed(opcode, oparg);
+    if (popped < 0 || pushed < 0) {
+        return PY_INVALID_STACK_EFFECT;
+    }
+    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
+        return 0;
+    }
+    return pushed - popped;
+}
+
 Py_LOCAL_INLINE(int)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
@@ -795,8 +825,7 @@ calculate_stackdepth(cfg_builder *g)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int effect = PyCompile_OpcodeStackEffectWithJump(
-                             instr->i_opcode, instr->i_oparg, 0);
+            int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
                              "Invalid stack effect for opcode=%d, arg=%i",
@@ -813,8 +842,7 @@ calculate_stackdepth(cfg_builder *g)
                 maxdepth = new_depth;
             }
             if (HAS_TARGET(instr->i_opcode)) {
-                effect = PyCompile_OpcodeStackEffectWithJump(
-                             instr->i_opcode, instr->i_oparg, 1);
+                effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 if (effect == PY_INVALID_STACK_EFFECT) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
@@ -2711,6 +2739,49 @@ prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_fl
     return nlocalsplus;
 }
 
+cfg_builder *
+_PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
+{
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return NULL;
+    }
+    cfg_builder *g = _PyCfgBuilder_New();
+    if (g == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        seq->s_instrs[i].i_target = 0;
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        _PyInstruction *instr = &seq->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg >= 0 && instr->i_oparg < seq->s_used);
+            seq->s_instrs[instr->i_oparg].i_target = 1;
+        }
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_target) {
+            jump_target_label lbl_ = {i};
+            if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
+                goto error;
+            }
+        }
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+        if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
+            goto error;
+        }
+    }
+    if (_PyCfgBuilder_CheckSize(g) < 0) {
+        goto error;
+    }
+    return g;
+error:
+    _PyCfgBuilder_Free(g);
+    return NULL;
+}
+
 int
 _PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
 {
@@ -2741,6 +2812,9 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyInstructionSequence *seq)
                 hi->h_label = -1;
             }
         }
+    }
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return ERROR;
     }
     return SUCCESS;
 }
@@ -2795,4 +2869,67 @@ _PyCfg_JumpLabelsToTargets(cfg_builder *g)
     RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
     RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
     return SUCCESS;
+}
+
+/* Exported API functions */
+
+int
+PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+{
+    return stack_effect(opcode, oparg, jump);
+}
+
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
+{
+    return stack_effect(opcode, oparg, -1);
+}
+
+/* Access to compiler optimizations for unit tests.
+
+ * _PyCompile_OptimizeCfg takes an instruction list, constructs
+ * a CFG, optimizes it and converts back to an instruction list.
+ */
+
+static PyObject *
+cfg_to_instruction_sequence(cfg_builder *g)
+{
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)_PyInstructionSequence_New();
+    if (seq == NULL) {
+        return NULL;
+    }
+    if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
+        PyInstructionSequence_Fini(seq);
+        return NULL;
+    }
+    return (PyObject*)seq;
+}
+
+PyObject *
+_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
+{
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    cfg_builder *g = _PyCfg_FromInstructionSequence((_PyInstructionSequence*)seq);
+    if (g == NULL) {
+        goto error;
+    }
+    int nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
+                                nparams, firstlineno) < 0) {
+        goto error;
+    }
+    res = cfg_to_instruction_sequence(g);
+error:
+    Py_DECREF(const_cache);
+    _PyCfgBuilder_Free(g);
+    return res;
 }

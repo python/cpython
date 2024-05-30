@@ -197,47 +197,6 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
     return SUCCESS;
 }
 
-static cfg_builder*
-instr_sequence_to_cfg(instr_sequence *seq) {
-    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
-        return NULL;
-    }
-    cfg_builder *g = _PyCfgBuilder_New();
-    if (g == NULL) {
-        return NULL;
-    }
-    for (int i = 0; i < seq->s_used; i++) {
-        seq->s_instrs[i].i_target = 0;
-    }
-    for (int i = 0; i < seq->s_used; i++) {
-        instruction *instr = &seq->s_instrs[i];
-        if (HAS_TARGET(instr->i_opcode)) {
-            assert(instr->i_oparg >= 0 && instr->i_oparg < seq->s_used);
-            seq->s_instrs[instr->i_oparg].i_target = 1;
-        }
-    }
-    for (int i = 0; i < seq->s_used; i++) {
-        instruction *instr = &seq->s_instrs[i];
-        if (instr->i_target) {
-            jump_target_label lbl_ = {i};
-            if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
-                goto error;
-            }
-        }
-        int opcode = instr->i_opcode;
-        int oparg = instr->i_oparg;
-        if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
-            goto error;
-        }
-    }
-    if (_PyCfgBuilder_CheckSize(g) < 0) {
-        goto error;
-    }
-    return g;
-error:
-    _PyCfgBuilder_Free(g);
-    return NULL;
-}
 
 /* The following items change on entry and exit of code blocks.
    They must be saved and restored when returning to a block.
@@ -689,48 +648,6 @@ compiler_set_qualname(struct compiler *c)
     u->u_metadata.u_qualname = name;
 
     return SUCCESS;
-}
-
-/* Return the stack effect of opcode with argument oparg.
-
-   Some opcodes have different stack effect when jump to the target and
-   when not jump. The 'jump' parameter specifies the case:
-
-   * 0 -- when not jump
-   * 1 -- when jump
-   * -1 -- maximal
- */
-static int
-stack_effect(int opcode, int oparg, int jump)
-{
-    if (opcode < 0) {
-        return PY_INVALID_STACK_EFFECT;
-    }
-    if ((opcode <= MAX_REAL_OPCODE) && (_PyOpcode_Deopt[opcode] != opcode)) {
-        // Specialized instructions are not supported.
-        return PY_INVALID_STACK_EFFECT;
-    }
-    int popped = _PyOpcode_num_popped(opcode, oparg);
-    int pushed = _PyOpcode_num_pushed(opcode, oparg);
-    if (popped < 0 || pushed < 0) {
-        return PY_INVALID_STACK_EFFECT;
-    }
-    if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
-        return 0;
-    }
-    return pushed - popped;
-}
-
-int
-PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
-{
-    return stack_effect(opcode, oparg, jump);
-}
-
-int
-PyCompile_OpcodeStackEffect(int opcode, int oparg)
-{
-    return stack_effect(opcode, oparg, -1);
 }
 
 int
@@ -7592,7 +7509,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (consts == NULL) {
         goto error;
     }
-    g = instr_sequence_to_cfg(u->u_instr_sequence);
+    g = _PyCfg_FromInstructionSequence(u->u_instr_sequence);
     if (g == NULL) {
         goto error;
     }
@@ -7643,39 +7560,6 @@ optimize_and_assemble(struct compiler *c, int addNone)
     }
 
     return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
-}
-
-/* Access to compiler optimizations for unit tests.
- *
- * _PyCompile_CodeGen takes and AST, applies code-gen and
- * returns the unoptimized CFG as an instruction list.
- *
- * _PyCompile_OptimizeCfg takes an instruction list, constructs
- * a CFG, optimizes it and converts back to an instruction list.
- *
- * An instruction list is a PyList where each item is either
- * a tuple describing a single instruction:
- * (opcode, oparg, lineno, end_lineno, col, end_col), or
- * a jump target label marking the beginning of a basic block.
- */
-
-
-static PyObject *
-cfg_to_instruction_sequence(cfg_builder *g)
-{
-    instr_sequence *seq = (instr_sequence *)_PyInstructionSequence_New();
-    if (seq != NULL) {
-        if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
-            goto error;
-        }
-        if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
-            goto error;
-        }
-    }
-    return (PyObject*)seq;
-error:
-    PyInstructionSequence_Fini(seq);
-    return NULL;
 }
 
 // C implementation of inspect.cleandoc()
@@ -7768,6 +7652,12 @@ _PyCompile_CleanDoc(PyObject *doc)
     return res;
 }
 
+/* Access to compiler optimizations for unit tests.
+ *
+ * _PyCompile_CodeGen takes an AST, applies code-gen and
+ * returns the unoptimized CFG as an instruction list.
+ *
+ */
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
@@ -7859,35 +7749,6 @@ finally:
     return res;
 }
 
-PyObject *
-_PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
-{
-    if (!_PyInstructionSequence_Check(seq)) {
-        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
-        return NULL;
-    }
-    PyObject *const_cache = PyDict_New();
-    if (const_cache == NULL) {
-        return NULL;
-    }
-
-    PyObject *res = NULL;
-    cfg_builder *g = instr_sequence_to_cfg((instr_sequence*)seq);
-    if (g == NULL) {
-        goto error;
-    }
-    int nparams = 0, firstlineno = 1;
-    if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
-                                nparams, firstlineno) < 0) {
-        goto error;
-    }
-    res = cfg_to_instruction_sequence(g);
-error:
-    Py_DECREF(const_cache);
-    _PyCfgBuilder_Free(g);
-    return res;
-}
-
 int _PyCfg_JumpLabelsToTargets(cfg_builder *g);
 
 PyCodeObject *
@@ -7908,7 +7769,7 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         return NULL;
     }
 
-    g = instr_sequence_to_cfg((instr_sequence*)seq);
+    g = _PyCfg_FromInstructionSequence((instr_sequence*)seq);
     if (g == NULL) {
         goto error;
     }
