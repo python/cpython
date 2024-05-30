@@ -91,12 +91,14 @@ of the following steps:
 Format of the exception table
 -----------------------------
 
+```
 Conceptually, the exception table consists of a sequence of 5-tuples:
     1. `start-offset` (inclusive)
     2. `end-offset` (exclusive)
     3. `target`
     4. `stack-depth`
     5. `push-lasti` (boolean)
+```
 
 All offsets and lengths are in code units, not bytes.
 
