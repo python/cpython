@@ -7059,8 +7059,12 @@ _datetime_exec(PyObject *module)
         }
     }
 
+    /* For now we only set the objects on the static types once.
+     * We will relax that once each types __dict__ is per-interpreter. */
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
+      if (PyDict_GetItemString(dict, c) == NULL) {      \
+        assert(!PyErr_Occurred());                      \
         PyObject *value = (value_expr);                 \
         if (value == NULL) {                            \
             goto error;                                 \
@@ -7070,6 +7074,7 @@ _datetime_exec(PyObject *module)
             goto error;                                 \
         }                                               \
         Py_DECREF(value);                               \
+      }                                                 \
     } while(0)
 
     /* timedelta values */
@@ -7116,6 +7121,8 @@ _datetime_exec(PyObject *module)
     /* +23:59 */
     PyObject *max = create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0);
     DATETIME_ADD_MACRO(d, "max", max);
+
+#undef DATETIME_ADD_MACRO
 
     /* Add module level attributes */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
@@ -7171,7 +7178,6 @@ finally:
     Py_XDECREF(old_module);
     return rc;
 }
-#undef DATETIME_ADD_MACRO
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _datetime_exec},
