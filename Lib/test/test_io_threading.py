@@ -8,7 +8,7 @@ NUM_LOOPS = 10
 def looping_print_to_file(f, i):
     for j in range(NUM_LOOPS):
         # p = 'x' * 90 + '123456789'
-        p = f"{i:2}i,{j}j\n" + '0123456789' * 10
+        p = f"\n{i}i,{j}j\n" + '0123456789' * 10
         print(p, file=f)
 
 class IoThreadingTestCase(unittest.TestCase):
@@ -27,7 +27,7 @@ class IoThreadingTestCase(unittest.TestCase):
 
         for i in range(NUM_THREADS):
             for j in range(NUM_LOOPS):
-                p = f"{i:2}i,{j}j"
+                p = f"{i}i,{j}j"
 
                 assert p in lines, repr(p)
 
