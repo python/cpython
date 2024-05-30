@@ -800,7 +800,7 @@ def opcode_input_overlap(
 
     if list(results.values()).count(False) == 0:
         return "No Conflict"
-    return f"Conflict. Both Use: {','.join(k for k, v in results.items() if not v)}"
+    return f"Conflict: {','.join(k for k, v in results.items() if not v)}"
 
 
 def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
