@@ -2328,8 +2328,8 @@ class SubinterpreterTest(unittest.TestCase):
             with self.subTest("legacy subinterpreter (config)"):
                 ret = support.run_in_subinterp_with_config(
                     script,
-                    use_main_obmalloc=True,
                     own_gil=False,
+                    use_main_obmalloc=True,
                     allow_fork=True,
                     allow_exec=True,
                     allow_threads=True,
