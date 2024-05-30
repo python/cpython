@@ -107,10 +107,16 @@ get_current_module(PyInterpreterState *interp)
     if (dict == NULL) {
         return NULL;
     }
-    PyObject *mod = NULL;
-    if (PyDict_GetItemStringRef(dict, INTERP_KEY, &mod) < 0) {
+    PyObject *ref = NULL;
+    if (PyDict_GetItemStringRef(dict, INTERP_KEY, &ref) < 0) {
         return NULL;
     }
+    if (ref == NULL) {
+        return NULL;
+    }
+    PyObject *mod = NULL;
+    (void)PyWeakref_GetRef(ref, &mod);
+    Py_DECREF(ref);
     return mod;
 }
 
@@ -129,11 +135,18 @@ get_current_module(PyInterpreterState *interp)
 static int
 set_current_module(PyInterpreterState *interp, PyObject *mod)
 {
+    assert(mod != NULL);
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         return -1;
     }
-    return PyDict_SetItemString(dict, INTERP_KEY, mod);
+    PyObject *ref = PyWeakref_NewRef(mod, NULL);
+    if (ref == NULL) {
+        return -1;
+    }
+    int rc = PyDict_SetItemString(dict, INTERP_KEY, ref);
+    Py_DECREF(ref);
+    return rc;
 }
 
 static void
@@ -141,14 +154,21 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
     PyObject *exc = PyErr_GetRaisedException();
 
+    PyObject *current = NULL;
+
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         goto error;
     }
 
     if (expected != NULL) {
-        PyObject *current = NULL;
-        if (PyDict_GetItemStringRef(dict, INTERP_KEY, &current) < 0) {
+        PyObject *ref = NULL;
+        if (PyDict_GetItemStringRef(dict, INTERP_KEY, &ref) < 0) {
+            goto error;
+        }
+        int rc = PyWeakref_GetRef(ref, &current);
+        Py_DECREF(ref);
+        if (rc < 0) {
             goto error;
         }
         if (current != expected) {
@@ -168,6 +188,7 @@ error:
     PyErr_Print();
 
 finally:
+    Py_XDECREF(current);
     PyErr_SetRaisedException(exc);
 }
 
