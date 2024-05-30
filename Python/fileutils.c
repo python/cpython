@@ -2483,7 +2483,7 @@ _Py_find_basename(const wchar_t *filename)
    to be the end of the path. 'start' is the position where to start
    normalizing. 'normsize' will be set to contain the length of the
    resulting normalized path. If 'explicit_curdir' is set, an explicit
-   curdir will be used for qualified referencing in the cwd */
+   curdir will be used for qualified referencing in the cwd. */
 wchar_t *
 _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
                       Py_ssize_t *normsize, int explicit_curdir)
@@ -2553,7 +2553,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t start,
     // Skip past cwd, not allowed if size is unknown
     if (size >= 0 && path + start > p1) {
         p1 = p2 = path + start;
-        lastC = *(p1-1);
+        lastC = *(p1 - 1);
     }
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {
