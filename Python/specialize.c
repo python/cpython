@@ -315,7 +315,6 @@ print_stats(FILE *out, PyStats *stats)
     print_optimization_stats(out, &stats->optimization_stats);
 #endif
     print_rare_event_stats(out, &stats->rare_event_stats);
-    fprintf(out, "sp cached: %d", PyThreadState_GET()->sp_cached);
 }
 
 void

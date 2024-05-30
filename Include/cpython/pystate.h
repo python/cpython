@@ -192,8 +192,6 @@ struct _ts {
 
     uint64_t dict_global_version;
 
-    int sp_cached;
-    int in_gc;
 };
 
 #ifdef Py_DEBUG

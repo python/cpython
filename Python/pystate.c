@@ -1508,8 +1508,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
         tstate->state = _Py_THREAD_SUSPENDED;
     }
 
-    tstate->sp_cached = 0;
-    tstate->in_gc = 0;
     tstate->_status.initialized = 1;
 }
 
@@ -3090,8 +3088,4 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
         _mi_heap_collect_abandon(&tstate_impl->mimalloc.heaps[i]);
     }
 #endif
-}
-
-int PyThreadState_GetSpCached(void) {
-    return _PyThreadState_GET()->sp_cached;
 }

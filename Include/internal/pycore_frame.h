@@ -164,7 +164,6 @@ static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
     assert(frame->stacktop >= 0);
-    PyThreadState_GET()->sp_cached++;
     PyObject **sp = frame->localsplus + frame->stacktop;
     frame->stacktop = -1;
     return sp;
@@ -174,7 +173,6 @@ static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     assert(frame->stacktop == -1);
-    PyThreadState_GET()->sp_cached--;
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
 
