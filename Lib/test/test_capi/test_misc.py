@@ -2285,9 +2285,8 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
-    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_datetime_capi_type_check(self):
-        script = textwrap.dedent("""
+        script = textwrap.dedent(f"""
             try:
                 import _datetime
             except ImportError:
@@ -2295,8 +2294,9 @@ class SubinterpreterTest(unittest.TestCase):
 
             def run(type_checker, obj):
                 if not type_checker(obj, True):  # exact check
-                    raise TypeError(f'{type(obj)} is not C API type')
+                    raise TypeError(f'{{type(obj)}} is not C API type')
 
+            module = None
             if _datetime:
                 import importlib.machinery
                 import importlib.util
@@ -2304,9 +2304,15 @@ class SubinterpreterTest(unittest.TestCase):
                 origin = importlib.util.find_spec('_testcapi').origin
                 loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
                 spec = importlib.util.spec_from_loader(fullname, loader)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
+                try:
+                    module = importlib.util.module_from_spec(spec)
+                except ImportError:
+                    is_wasi = {support.is_wasi}  # no dlopen currently
+                    if not is_wasi:
+                        raise
 
+            if _datetime and module:
+                spec.loader.exec_module(module)
                 run(module.check_date,     _datetime.date.today())
                 run(module.check_datetime, _datetime.datetime.now())
                 run(module.check_time,     _datetime.time(12, 30))
