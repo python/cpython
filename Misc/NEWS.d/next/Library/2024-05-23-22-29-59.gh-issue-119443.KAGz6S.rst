@@ -1,0 +1,2 @@
+The interactive REPL no longer runs with ``from __future__ import
+annotations`` enabled. Patch by Jelle Zijlstra.

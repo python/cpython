@@ -1,5 +1,5 @@
-:mod:`subprocess` --- Subprocess management
-===========================================
+:mod:`!subprocess` --- Subprocess management
+============================================
 
 .. module:: subprocess
    :synopsis: Subprocess management.
@@ -52,7 +52,7 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
    The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
    If you wish to capture and combine both streams into one,
    set *stdout* to :data:`~subprocess.PIPE`
@@ -1065,6 +1065,22 @@ The :mod:`subprocess` module exposes the following constants.
 
    Specifies that the :attr:`STARTUPINFO.wShowWindow` attribute contains
    additional information.
+
+.. data:: STARTF_FORCEONFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the
+   *Working in Background* mouse cursor will be displayed while a
+   process is launching. This is the default behavior for GUI
+   processes.
+
+   .. versionadded:: 3.13
+
+.. data:: STARTF_FORCEOFFFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the mouse
+   cursor will not be changed when launching a process.
+
+   .. versionadded:: 3.13
 
 .. data:: CREATE_NEW_CONSOLE
 

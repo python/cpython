@@ -516,6 +516,34 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
+@contextlib.contextmanager
+def suppress_immortalization(suppress=True):
+    """Suppress immortalization of deferred objects."""
+    try:
+        import _testinternalcapi
+    except ImportError:
+        yield
+        return
+
+    if not suppress:
+        yield
+        return
+
+    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_immortalize_deferred(*old_values)
+
+def skip_if_suppress_immortalization():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
+                                "requires immortalization of deferred objects")
+
+
 MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
@@ -1161,6 +1189,25 @@ def no_tracing(func):
     return coverage_wrapper
 
 
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
+
 def refcount_test(test):
     """Decorator for tests which involve reference counting.
 
@@ -1181,8 +1228,9 @@ def requires_limited_api(test):
     return test
 
 
-TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
-
+# Windows build doesn't support --disable-test-modules feature, so there's no
+# 'TEST_MODULES' var in config
+TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'yes'
 
 def requires_specialization(test):
     return unittest.skipUnless(
@@ -2519,17 +2567,17 @@ Py_TRACE_REFS = hasattr(sys, 'getobjects')
 # Decorator to disable optimizer while a function run
 def without_optimizer(func):
     try:
-        import _testinternalcapi
+        from _testinternalcapi import get_optimizer, set_optimizer
     except ImportError:
         return func
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        save_opt = _testinternalcapi.get_optimizer()
+        save_opt = get_optimizer()
         try:
-            _testinternalcapi.set_optimizer(None)
+            set_optimizer(None)
             return func(*args, **kwargs)
         finally:
-            _testinternalcapi.set_optimizer(save_opt)
+            set_optimizer(save_opt)
     return wrapper
 
 
@@ -2559,20 +2607,21 @@ def copy_python_src_ignore(path, names):
         }
     return ignored
 
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import traceback
-        original_fn = traceback._can_colorize
+        import _colorize
+        original_fn = _colorize.can_colorize
         variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         try:
             for key in variables:
                 variables[key] = os.environ.pop(key, None)
-            traceback._can_colorize = lambda: False
+            _colorize.can_colorize = lambda: False
             return func(*args, **kwargs)
         finally:
-            traceback._can_colorize = original_fn
+            _colorize.can_colorize = original_fn
             for key, value in variables.items():
                 if value is not None:
                     os.environ[key] = value
