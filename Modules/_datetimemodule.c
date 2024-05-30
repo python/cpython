@@ -136,6 +136,41 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     return PyDict_SetItemString(dict, INTERP_KEY, mod);
 }
 
+static void
+clear_current_module(PyInterpreterState *interp, PyObject *expected)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        goto error;
+    }
+
+    if (expected != NULL) {
+        PyObject *current = NULL;
+        if (PyDict_GetItemStringRef(dict, INTERP_KEY, &current) < 0) {
+            goto error;
+        }
+        if (current != expected) {
+            goto finally;
+        }
+    }
+
+    if (PyDict_DelItemString(dict, INTERP_KEY) < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            goto error;
+        }
+    }
+
+    goto finally;
+
+error:
+    PyErr_Print();
+
+finally:
+    PyErr_SetRaisedException(exc);
+}
+
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -7199,14 +7234,21 @@ module_clear(PyObject *mod)
 {
     datetime_state *st = get_module_state(mod);
     clear_state(st);
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    clear_current_module(interp, mod);
+
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    datetime_state *st = get_module_state(mod);
+    datetime_state *st = get_module_state((PyObject *)mod);
     clear_state(st);
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    clear_current_module(interp, (PyObject *)mod);
 }
 
 static PyModuleDef datetimemodule = {
