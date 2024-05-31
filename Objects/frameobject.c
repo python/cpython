@@ -1619,8 +1619,10 @@ frame_dealloc(PyFrameObject *f)
         Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
-        for (int i = 0; i < frame->stacktop; i++) {
-            Py_CLEAR(locals[i]);
+        PyObject **sp = frame->stackpointer;
+        while (sp > locals) {
+            sp--;
+            Py_CLEAR(*sp);
         }
     }
     Py_CLEAR(f->f_back);
@@ -1652,11 +1654,13 @@ frame_tp_clear(PyFrameObject *f)
 
     /* locals and stack */
     PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
-    assert(f->f_frame->stacktop >= 0);
-    for (int i = 0; i < f->f_frame->stacktop; i++) {
-        Py_CLEAR(locals[i]);
+    PyObject **sp = f->f_frame->stackpointer;
+    assert(sp >= locals);
+    while (sp > locals) {
+            sp--;
+            Py_CLEAR(*sp);
     }
-    f->f_frame->stacktop = 0;
+    f->f_frame->stackpointer = locals;
     Py_CLEAR(f->f_frame->f_locals);
     return 0;
 }
@@ -1874,7 +1878,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
     }
 
     PyObject *value = frame->localsplus[i];
-    if (frame->stacktop) {
+    if (frame->stackpointer > frame->localsplus) {
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
             assert(value != NULL && PyCell_Check(value));

@@ -63,7 +63,7 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
-    int stacktop;  /* Offset of TOS from localsplus  */
+    PyObject **stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
     /* Locals and stack */
@@ -83,20 +83,20 @@ static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 }
 
 static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1] != NULL);
-    return f->localsplus[f->stacktop-1];
+    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer[-1] != NULL);
+    return f->stackpointer[-1];
 }
 
 static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    f->stacktop--;
-    return f->localsplus[f->stacktop];
+    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    f->stackpointer--;
+    return *f->stackpointer;
 }
 
 static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
-    f->localsplus[f->stacktop] = value;
-    f->stacktop++;
+    *f->stackpointer = value;
+    f->stackpointer++;
 }
 
 #define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
@@ -112,9 +112,12 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     *dest = *src;
-    for (int i = 1; i < src->stacktop; i++) {
+    assert(src->stackpointer != NULL);
+    int stacktop = (int)(src->stackpointer - src->localsplus);
+    assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
+    dest->stackpointer = dest->localsplus + stacktop;
+    for (int i = 1; i < stacktop; i++) {
         dest->localsplus[i] = src->localsplus[i];
     }
     // Don't leave a dangling pointer to the old frame when creating generators
@@ -136,7 +139,7 @@ _PyFrame_Initialize(
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
-    frame->stacktop = code->co_nlocalsplus;
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
@@ -156,24 +159,23 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
-/* Fetches the stack pointer, and sets stacktop to -1.
-   Having stacktop <= 0 ensures that invalid
-   values are not visible to the cycle GC.
-   We choose -1 rather than 0 to assist debugging. */
+/* Fetches the stack pointer, and sets stackpointer to NULL.
+   Having stackpointer == NULL ensures that invalid
+   values are not visible to the cycle GC. */
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    assert(frame->stacktop >= 0);
-    PyObject **sp = frame->localsplus + frame->stacktop;
-    frame->stacktop = -1;
+    assert(frame->stackpointer != NULL);
+    PyObject **sp = frame->stackpointer;
+    frame->stackpointer = NULL;
     return sp;
 }
 
 static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-    assert(frame->stacktop == -1);
-    frame->stacktop = (int)(stack_pointer - frame->localsplus);
+    assert(frame->stackpointer == NULL);
+    frame->stackpointer = stack_pointer;
 }
 
 /* Determine whether a frame is incomplete.
@@ -301,7 +303,8 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_globals = NULL;
 #endif
     frame->f_locals = NULL;
-    frame->stacktop = code->co_nlocalsplus + stackdepth;
+    assert(stackdepth <= code->co_stacksize);
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
