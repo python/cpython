@@ -6968,27 +6968,8 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 }
 
 static int
-copy_state(datetime_state *st, datetime_state *from)
+init_heap_types(datetime_state *st, PyObject *module)
 {
-    *st = (datetime_state){
-        .isocalendar_date_type
-                = (PyTypeObject *)Py_NewRef(from->isocalendar_date_type),
-        .us_per_ms = Py_NewRef(from->us_per_ms),
-        .us_per_second = Py_NewRef(from->us_per_second),
-        .us_per_minute = Py_NewRef(from->us_per_minute),
-        .us_per_hour = Py_NewRef(from->us_per_hour),
-        .us_per_day = Py_NewRef(from->us_per_day),
-        .us_per_week = Py_NewRef(from->us_per_week),
-        .seconds_per_day = Py_NewRef(from->seconds_per_day),
-        .epoch = Py_NewRef(from->epoch),
-    };
-    return 0;
-}
-
-static int
-init_state(datetime_state *st, PyObject *module)
-{
-    /* Per-module heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
         PyObject *cls = PyType_FromModuleAndSpec(   \
@@ -7001,6 +6982,15 @@ init_state(datetime_state *st, PyObject *module)
 
     ADD_TYPE(isocalendar_date_type, &isocal_spec, &PyTuple_Type);
 #undef ADD_TYPE
+
+    return 0;
+}
+
+static int
+init_state(datetime_state *st)
+{
+    /* st->isocalendar_date_type was set via init_heap_types(). */
+    assert(st->isocalendar_date_type != NULL);
 
     st->us_per_ms = PyLong_FromLong(1000);
     if (st->us_per_ms == NULL) {
@@ -7041,6 +7031,28 @@ init_state(datetime_state *st, PyObject *module)
     if (st->epoch == NULL) {
         return -1;
     }
+
+    return 0;
+}
+
+static int
+copy_state(datetime_state *st, datetime_state *from)
+{
+    /* isocalendar_date_type is set via init_heap_types(). */
+    assert(st->isocalendar_date_type != NULL);
+    assert(st->isocalendar_date_type != from->isocalendar_date_type);
+
+    *st = (datetime_state){
+        .isocalendar_date_type = st->isocalendar_date_type,
+        .us_per_ms = Py_NewRef(from->us_per_ms),
+        .us_per_second = Py_NewRef(from->us_per_second),
+        .us_per_minute = Py_NewRef(from->us_per_minute),
+        .us_per_hour = Py_NewRef(from->us_per_hour),
+        .us_per_day = Py_NewRef(from->us_per_day),
+        .us_per_week = Py_NewRef(from->us_per_week),
+        .seconds_per_day = Py_NewRef(from->seconds_per_day),
+        .epoch = Py_NewRef(from->epoch),
+    };
 
     return 0;
 }
@@ -7105,6 +7117,10 @@ _datetime_exec(PyObject *module)
         }
     }
 
+    if (init_heap_types(st, module) < 0) {
+        goto error;
+    }
+
     if (old_module != NULL) {
         datetime_state *st_old = get_module_state(old_module);
         if (copy_state(st, st_old) < 0) {
@@ -7112,7 +7128,7 @@ _datetime_exec(PyObject *module)
         }
     }
     else {
-        if (init_state(st, module) < 0) {
+        if (init_state(st) < 0) {
             goto error;
         }
     }
