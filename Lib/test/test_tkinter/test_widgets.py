@@ -1269,7 +1269,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     @requires_tk(8, 6, 5)
     def test_configure_proxyrelief(self):
         widget = self.create()
-        self.checkReliefParam(widget, 'proxyrelief')
+        self.checkReliefParam(widget, 'proxyrelief',
+                              allow_empty=(tk_version >= (8, 7)))
 
     def test_configure_sashcursor(self):
         widget = self.create()

@@ -150,9 +150,9 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg='bad screen distance "spam"')
 
-    def checkReliefParam(self, widget, name):
+    def checkReliefParam(self, widget, name, *, allow_empty=False):
         options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
-        if tk_version >= (8, 7) and name in ('overrelief', 'proxyrelief'):
+        if allow_empty:
             options.append('')
         self.checkParams(widget, name, *options)
         lastop = options.pop()
@@ -415,11 +415,11 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'troughcolor')
 
-    def test_configure_underline(self):
+    def test_configure_underline(self, *, empty_value=-1):
         widget = self.create()
         if tk_version >= (8, 7):
             self.checkParams(widget, 'underline', 0, 1, 10)
-            self.checkParam(widget, 'underline', '', expected=-1)
+            self.checkParam(widget, 'underline', '', expected=empty_value)
             errmsg = ('bad index "{}": must be integer?[+-]integer?, '
                       'end?[+-]integer?, or ""')
             self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
@@ -455,7 +455,8 @@ class StandardOptionsTests:
 
     def test_configure_overrelief(self):
         widget = self.create()
-        self.checkReliefParam(widget, 'overrelief')
+        self.checkReliefParam(widget, 'overrelief',
+                              allow_empty=(tk_version >= (8, 7)))
 
     def test_configure_selectcolor(self):
         widget = self.create()

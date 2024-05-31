@@ -57,6 +57,9 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
 
+    def test_configure_underline(self):
+        StandardOptionsTests.test_configure_underline(self, empty_value='')
+
 
 class WidgetTest(AbstractTkTest, unittest.TestCase):
     """Tests methods available in every ttk widget."""
@@ -129,6 +132,11 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Frame(self.root, **kwargs)
 
+    def test_configure_relief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'relief',
+                              allow_empty=(tk_version >= (8, 7)))
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
@@ -155,6 +163,11 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         self.checkParam(widget, 'labelwidget', label, expected='.foo')
         label.destroy()
 
+    def test_configure_relief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'relief',
+                              allow_empty=(tk_version >= (8, 7)))
+
 
 class AbstractLabelTest(AbstractWidgetTest):
 
@@ -173,9 +186,11 @@ class AbstractLabelTest(AbstractWidgetTest):
 
     def test_configure_compound(self):
         options = 'none text image center top bottom left right'.split()
+        if tk_version >= (8, 7):
+            options.append('')
         errmsg = (
             'bad compound "{}": must be'
-            f' {", ".join(options[:-1])}, or {options[-1]}'
+            f' {", ".join(options[:-1])}, or {options[-1] or '""'}'
             )
         widget = self.create()
         self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
@@ -208,6 +223,11 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
 
+    def test_configure_relief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'relief',
+                              allow_empty=(tk_version >= (8, 7)))
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
@@ -223,7 +243,11 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_default(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'default', 'normal', 'active', 'disabled')
+        if tk_version >= (8, 7):
+            values = ('active', 'disabled', 'normal')
+        else:
+            values = ('normal', 'active', 'disabled')
+        self.checkEnumParam(widget, 'default', *values)
 
     def test_invoke(self):
         success = []
@@ -616,18 +640,27 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         other_child = ttk.Label(self.paned)
         self.paned.add(other_child)
         self.assertEqual(self.paned.pane(0), self.paned.pane(1))
-        self.assertRaises(tkinter.TclError, self.paned.pane, 2)
+        if tk_version >= (8, 7):
+            self.assertEqual(self.paned.pane(2), self.paned.pane(1))
+        else:
+            self.assertRaises(tkinter.TclError, self.paned.pane, 2)
         good_child.destroy()
         other_child.destroy()
-        self.assertRaises(tkinter.TclError, self.paned.pane, 0)
+        if tk_version < (8, 7):
+            # BUG: Crash in Tk 8.7b1
+            self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
     def test_forget(self):
-        self.assertRaises(tkinter.TclError, self.paned.forget, None)
-        self.assertRaises(tkinter.TclError, self.paned.forget, 0)
+        if tk_version < (8, 7):
+            # BUG: Crash in Tk 8.7b1
+            self.assertRaises(tkinter.TclError, self.paned.forget, None)
+            self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
         self.paned.add(ttk.Label(self.root))
         self.paned.forget(0)
-        self.assertRaises(tkinter.TclError, self.paned.forget, 0)
+        if tk_version < (8, 7):
+            # BUG: Crash in Tk 8.7b1
+            self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
     def test_insert(self):
         self.assertRaises(tkinter.TclError, self.paned.insert, None, 0)
@@ -638,8 +671,14 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         child2 = ttk.Label(self.root)
         child3 = ttk.Label(self.root)
 
-        self.assertRaises(tkinter.TclError, self.paned.insert, 0, child)
+        if tk_version >= (8, 7):
+            self.paned.insert(0, child)
+            self.assertEqual(self.paned.panes(), (str(child),))
+            self.paned.forget(0)
+        else:
+            self.assertRaises(tkinter.TclError, self.paned.insert, 0, child)
 
+        self.assertEqual(self.paned.panes(), ())
         self.paned.insert('end', child2)
         self.paned.insert(0, child)
         self.assertEqual(self.paned.panes(), (str(child), str(child2)))
@@ -664,7 +703,9 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
             (str(child3), str(child2), str(child)))
 
     def test_pane(self):
-        self.assertRaises(tkinter.TclError, self.paned.pane, 0)
+        if tk_version < (8, 7):
+            # BUG: Crash in Tk 8.7b1
+            self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
         child = ttk.Label(self.root)
         self.paned.add(child)
@@ -742,7 +783,10 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
 
         cbtn2['command'] = ''
         res = cbtn2.invoke()
-        self.assertEqual(str(res), '')
+        if tk_version >= (8, 7):
+            self.assertEqual(res, ())
+        else:
+            self.assertEqual(str(res), '')
         self.assertLessEqual(len(success), 1)
         self.assertEqual(conv(cbtn2['value']), myvar.get())
         self.assertEqual(myvar.get(),
@@ -945,6 +989,22 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Notebook(self.root, **kwargs)
 
+    def test_configure_height(self):
+        widget = self.create()
+        if tk_version >= (8, 7):
+            self.checkPixelsParam(widget, 'height', 100, -100, 0, '3c', conv=False)
+            self.checkPixelsParam(widget, 'height', 101.2, 102.6, conv=False)
+        else:
+            self.checkIntegerParam(widget, 'height', 100, -100, 0)
+
+    def test_configure_width(self):
+        widget = self.create()
+        if tk_version >= (8, 7):
+            self.checkPixelsParam(widget, 'width', 402, -402, 0, '3c', conv=False)
+            self.checkPixelsParam(widget, 'height', 401.2, 402.6, conv=False)
+        else:
+            self.checkIntegerParam(widget, 'width', 402, -402, 0)
+
     def test_tab_identifiers(self):
         self.nb.forget(0)
         self.nb.hide(self.child2)
@@ -1039,7 +1099,13 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.insert('end', 0)
         self.assertEqual(self.nb.tabs(), tabs)
         # bad moves
-        self.assertRaises(tkinter.TclError, self.nb.insert, 2, tabs[0])
+        if tk_version >= (8, 7):
+            self.nb.insert(2, tabs[0])
+            self.assertEqual(self.nb.tabs(), (tabs[1], tabs[0]))
+            self.nb.insert(2, tabs[1])
+            self.assertEqual(self.nb.tabs(), tabs)
+        else:
+            self.assertRaises(tkinter.TclError, self.nb.insert, 2, tabs[0])
         self.assertRaises(tkinter.TclError, self.nb.insert, -1, tabs[0])
 
         # new tab
@@ -1051,7 +1117,11 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.insert(self.child1, child3)
         self.assertEqual(self.nb.tabs(), (str(child3), ) + tabs)
         self.nb.forget(child3)
-        self.assertRaises(tkinter.TclError, self.nb.insert, 2, child3)
+        if tk_version >= (8, 7):
+            self.nb.insert(2, child3)
+            self.assertEqual(self.nb.tabs(), (*tabs, str(child3)))
+        else:
+            self.assertRaises(tkinter.TclError, self.nb.insert, 2, child3)
         self.assertRaises(tkinter.TclError, self.nb.insert, -1, child3)
 
         # bad inserts
@@ -1333,7 +1403,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', '')
+        self.checkParam(widget, 'columns', '',
+                        expected=() if tk_version >= (8, 7) else '')
 
     def test_configure_displaycolumns(self):
         widget = self.create()
@@ -1346,10 +1417,13 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'displaycolumns', (2, 1, 0))
         self.checkInvalidParam(widget, 'displaycolumns', ('a', 'b', 'd'),
                                errmsg='Invalid column index d')
+        errmsg = ('Column index "{}" out of bounds'
+                  if tk_version >= (8, 7) else
+                  'Column index {} out of bounds')
         self.checkInvalidParam(widget, 'displaycolumns', (1, 2, 3),
-                               errmsg='Column index 3 out of bounds')
+                               errmsg=errmsg.format(3))
         self.checkInvalidParam(widget, 'displaycolumns', (1, -2),
-                               errmsg='Column index -2 out of bounds')
+                               errmsg=errmsg.format(-2))
 
     def test_configure_height(self):
         widget = self.create()
