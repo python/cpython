@@ -4,7 +4,7 @@ from tkinter import TclError
 import os
 from test.support import requires
 
-from test.test_tkinter.support import (requires_tk,
+from test.test_tkinter.support import (requires_tk, tk_version,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
@@ -868,24 +868,29 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_create_polygon(self):
         c = self.create()
+        tk87 = tk_version >= (8, 7)
         i1 = c.create_polygon(20, 30, 40, 50, 60, 10)
         self.assertEqual(c.coords(i1), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
-        self.assertEqual(c.bbox(i1), (19, 9, 61, 51))
+        self.assertEqual(c.bbox(i1),
+                         (18, 8, 62, 52) if tk87 else (19, 9, 61, 51))
         self.assertEqual(c.itemcget(i1, 'joinstyle'), 'round')
         self.assertEqual(c.itemcget(i1, 'smooth'), '0')
         self.assertEqual(c.itemcget(i1, 'splinestep'), '12')
 
         i2 = c.create_polygon([21, 31, 41, 51, 61, 11])
         self.assertEqual(c.coords(i2), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
-        self.assertEqual(c.bbox(i2), (20, 10, 62, 52))
+        self.assertEqual(c.bbox(i2),
+                         (19, 9, 63, 53) if tk87 else (20, 10, 62, 52))
 
         i3 = c.create_polygon((22, 32), (42, 52), (62, 12))
         self.assertEqual(c.coords(i3), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
-        self.assertEqual(c.bbox(i3), (21, 11, 63, 53))
+        self.assertEqual(c.bbox(i3),
+                         (20, 10, 64, 54) if tk87 else (21, 11, 63, 53))
 
         i4 = c.create_polygon([(23, 33), (43, 53), (63, 13)])
         self.assertEqual(c.coords(i4), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
-        self.assertEqual(c.bbox(i4), (22, 12, 64, 54))
+        self.assertEqual(c.bbox(i4),
+                         (21, 11, 65, 55) if tk87 else (22, 12, 64, 54))
 
         self.assertRaises(TclError, c.create_polygon, 20, 30, 60)
         self.assertRaises(TclError, c.create_polygon, [20, 30, 60])
