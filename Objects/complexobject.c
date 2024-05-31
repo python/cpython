@@ -946,13 +946,6 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     else if (PyErr_Occurred()) {
         return NULL;
     }
-    else if (PyComplex_Check(arg)) {
-        /* Note that if arg is of a complex subtype, we're only
-           retaining its real & imag parts here, and the return
-           value is (properly) of the builtin complex type. */
-        Py_complex c = ((PyComplexObject*)arg)->cval;
-        res = complex_subtype_from_doubles(type, c.real, c.imag);
-    }
     else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
              (nbr->nb_float != NULL || nbr->nb_index != NULL))
     {
