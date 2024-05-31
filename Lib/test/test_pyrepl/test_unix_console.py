@@ -1,12 +1,16 @@
 import itertools
+import sys
+import unittest
 from functools import partial
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
 from .support import handle_all_events, code_to_events
-from _pyrepl.console import Event
-from _pyrepl.unix_console import UnixConsole
-
+try:
+    from _pyrepl.console import Event
+    from _pyrepl.unix_console import UnixConsole
+except ImportError:
+    pass
 
 def unix_console(events, **kwargs):
     console = UnixConsole()
@@ -67,6 +71,7 @@ TERM_CAPABILITIES = {
 }
 
 
+@unittest.skipIf(sys.platform == "win32", "No Unix event queue on Windows")
 @patch("_pyrepl.curses.tigetstr", lambda s: TERM_CAPABILITIES.get(s))
 @patch(
     "_pyrepl.curses.tparm",
