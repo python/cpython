@@ -650,17 +650,8 @@ type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ ['
 
 type_param[type_param_ty] (memo):
     | a=NAME b=[type_param_bound] c=[type_param_default] { _PyAST_TypeVar(a->v.Name.id, b, c, EXTRA) }
-    | '*' a=NAME colon=':' e=expression {
-            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
-                ? "cannot use constraints with TypeVarTuple"
-                : "cannot use bound with TypeVarTuple")
-        }
+    | invalid_type_param
     | '*' a=NAME b=[type_param_starred_default] { _PyAST_TypeVarTuple(a->v.Name.id, b, EXTRA) }
-    | '**' a=NAME colon=':' e=expression {
-            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
-                ? "cannot use constraints with ParamSpec"
-                : "cannot use bound with ParamSpec")
-        }
     | '**' a=NAME b=[type_param_default] { _PyAST_ParamSpec(a->v.Name.id, b, EXTRA) }
 
 type_param_bound[expr_ty]: ':' e=expression { e }
@@ -979,8 +970,7 @@ for_if_clause[comprehension_ty]:
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
-    | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
-        RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
+    | invalid_for_if_clause
     | invalid_for_target
 
 listcomp[expr_ty]:
@@ -1020,9 +1010,9 @@ kwargs[asdl_seq*]:
     | ','.kwarg_or_double_starred+
 
 starred_expression[expr_ty]:
-    | invalid_starred_expression
+    | invalid_starred_expression_unpacking
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
-    | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
+    | invalid_starred_expression
 
 kwarg_or_starred[KeywordOrStarred*]:
     | invalid_kwarg
@@ -1176,6 +1166,18 @@ invalid_legacy_expression:
         _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
             "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
 
+invalid_type_param:
+    | '*' a=NAME colon=':' e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with TypeVarTuple"
+                : "cannot use bound with TypeVarTuple")
+        }
+    | '**' a=NAME colon=':' e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with ParamSpec"
+                : "cannot use bound with ParamSpec")
+        }
+
 invalid_expression:
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
@@ -1296,6 +1298,10 @@ invalid_with_item:
     | expression 'as' a=expression &(',' | ')' | ':') {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
 
+invalid_for_if_clause:
+    | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
+        RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
+
 invalid_for_target:
     | 'async'? 'for' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
@@ -1409,8 +1415,10 @@ invalid_kvpair:
         RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
-invalid_starred_expression:
+invalid_starred_expression_unpacking:
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
+invalid_starred_expression:
+    | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
 
 invalid_replacement_field:
     | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }

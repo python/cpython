@@ -112,42 +112,42 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "1d3f2015e49e269cf681373d433cd54d88d5ef7443fe87f5f50f5fcfe9003e73"
+          "checksumValue": "ad7623a44e1b6e42df47ba8f16b2b0435ac605650b5054077c4355a30473074c"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.14.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.14.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tcl-core",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.14.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tk",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6056203b8a6aaf6ea89d90a7b55dc7f407e55c093f731a98fd830a712a3c81d3"
+          "checksumValue": "e8d5cbe97952037962518b69aba85e324d80aa189054c163ab0ee764a448e802"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.14.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.14.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tk",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.14.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-xz",

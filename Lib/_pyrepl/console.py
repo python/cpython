@@ -20,10 +20,18 @@
 from __future__ import annotations
 
 import _colorize  # type: ignore[import-not-found]
+
 from abc import ABC, abstractmethod
 import ast
 import code
 from dataclasses import dataclass, field
+import sys
+
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import IO
 
 
 @dataclass
@@ -38,6 +46,25 @@ class Console(ABC):
     screen: list[str] = field(default_factory=list)
     height: int = 25
     width: int = 80
+
+    def __init__(
+        self,
+        f_in: IO[bytes] | int = 0,
+        f_out: IO[bytes] | int = 1,
+        term: str = "",
+        encoding: str = "",
+    ):
+        self.encoding = encoding or sys.getdefaultencoding()
+
+        if isinstance(f_in, int):
+            self.input_fd = f_in
+        else:
+            self.input_fd = f_in.fileno()
+
+        if isinstance(f_out, int):
+            self.output_fd = f_out
+        else:
+            self.output_fd = f_out.fileno()
 
     @abstractmethod
     def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
@@ -111,8 +138,7 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def repaint(self) -> None:
-        ...
+    def repaint(self) -> None: ...
 
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -145,8 +171,8 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = self.compile.compiler(item, filename, the_symbol)
-            except (OverflowError, ValueError):
+                code = self.compile.compiler(item, filename, the_symbol, dont_inherit=True)
+            except (OverflowError, ValueError, SyntaxError):
                     self.showsyntaxerror(filename)
                     return False
 
