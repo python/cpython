@@ -494,7 +494,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
                     widget, 'from', 200,
                     errmsg='-to value must be greater than -from value')
         else:
-            self.checkFloatParam(widget, 'from', 200)
+            self.checkFloatParam(widget, 'from', 100)
 
     def test_configure_increment(self):
         widget = self.create()
@@ -509,7 +509,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
                     widget, 'to', -200,
                     errmsg='-to value must be greater than -from value')
         else:
-            self.checkFloatParam(widget, 'to', -200)
+            self.checkFloatParam(widget, 'to', -100)
 
     def test_configure_values(self):
         # XXX

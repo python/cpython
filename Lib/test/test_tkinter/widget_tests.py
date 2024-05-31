@@ -74,15 +74,11 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkIntegerParam(self, widget, name, *values, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
-        if tk_version < (8, 7) or name == 'underline':
-            self.checkInvalidParam(widget, name, '',
-                    errmsg='expected integer but got ""')
-        else:
-            self.checkParams(widget, 'underline', '')
-        self.checkInvalidParam(widget, name, '10p',
-                errmsg='expected integer but got "10p"')
-        self.checkInvalidParam(widget, name, 3.2,
-                errmsg='expected integer but got "3.2"')
+        self.checkInvalidParam(widget, name, '',
+                errmsg='expected integer but got ""')
+        errmsg = 'expected integer but got "{}"'
+        self.checkInvalidParam(widget, name, '10p', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 3.2, errmsg=errmsg)
 
     def checkFloatParam(self, widget, name, *values, conv=float, **kwargs):
         for value in values:
@@ -421,7 +417,15 @@ class StandardOptionsTests:
 
     def test_configure_underline(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'underline', 0, 1, 10)
+        if tk_version >= (8, 7):
+            self.checkParams(widget, 'underline', 0, 1, 10)
+            self.checkParam(widget, 'underline', '', expected=-1)
+            errmsg = ('bad index "{}": must be integer?[+-]integer?, '
+                      'end?[+-]integer?, or ""')
+            self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
+            self.checkInvalidParam(widget, 'underline', 3.2, errmsg=errmsg)
+        else:
+            self.checkIntegerParam(widget, 'underline', 0, 1, 10)
 
     def test_configure_wraplength(self):
         widget = self.create()
