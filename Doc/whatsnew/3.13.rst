@@ -94,15 +94,19 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
-* :pep:`667`: :attr:`FrameType.f_locals <frame.f_locals>` when used in
-  a function now returns a write-through proxy to the frame's locals,
-  rather than a ``dict``. See the PEP for corresponding C API changes
-  and deprecations.
+* :pep:`667`: The :func:`locals` builtin now has
+  :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
+  returned mapping. Python debuggers and similar tools may now more reliably
+  update local variables in optimized frames even during concurrent code
+  execution.
 
 New typing features:
 
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
+
+* :pep:`702`: Support for marking deprecations in the type system using the
+  new :func:`warnings.deprecated` decorator.
 
 * :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
   type narrowing behavior.
@@ -150,10 +154,10 @@ New Features
 A Better Interactive Interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS, Python now uses a new
-:term:`interactive` shell. When the user starts the :term:`REPL` from an
-interactive terminal, and both :mod:`curses` and :mod:`readline` are
-available, the interactive shell now supports the following new features:
+On Unix-like systems like Linux or macOS as well as Windows, Python now
+uses a new :term:`interactive` shell. When the user starts the
+:term:`REPL` from an interactive terminal the interactive shell now
+supports the following new features:
 
 * Colorized prompts.
 * Multiline editing with history preservation.
@@ -170,10 +174,13 @@ available, the interactive shell now supports the following new features:
 If the new interactive shell is not desired, it can be disabled via
 the :envvar:`PYTHON_BASIC_REPL` environment variable.
 
+The new shell requires :mod:`curses` on Unix-like systems.
+
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
-Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
+Windows support contributed by Dino Viehland and Anthony Shaw.)
 
 .. _whatsnew313-improved-error-messages:
 
@@ -243,6 +250,34 @@ Improved Error Messages
   with a tuple of names of attributes of this class which are accessed
   through ``self.X`` from any function in its body. (Contributed by Irit Katriel
   in :gh:`115775`.)
+
+.. _whatsnew313-locals-semantics:
+
+Defined mutation semantics for ``locals()``
+-------------------------------------------
+
+Historically, the expected result of mutating the return value of :func:`locals`
+has been left to individual Python implementations to define.
+
+Through :pep:`667`, Python 3.13 standardises the historical behaviour of CPython
+for most code execution scopes, but changes
+:term:`optimized scopes <optimized scope>` (functions, generators, coroutines,
+comprehensions, and generator expressions) to explicitly return independent
+snapshots of the currently assigned local variables, including locally
+referenced nonlocal variables captured in closures.
+
+To ensure debuggers and similar tools can reliably update local variables in
+scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
+returns a write-through proxy to the frame's local and locally referenced
+nonlocal variables in these scopes, rather than returning an inconsistently
+updated shared  ``dict`` instance with undefined runtime semantics.
+
+See :pep:`667` for more details, including related C API changes and
+deprecations.
+
+(PEP and implementation contributed by Mark Shannon and Tian Gao in
+:gh:`74929`. Documentation updates provided by Guido van Rossum and
+Alyssa Coghlan.)
 
 Incremental Garbage Collection
 ------------------------------
@@ -336,7 +371,8 @@ CPython will run with the :term:`global interpreter lock` (GIL) disabled when
 configured using the ``--disable-gil`` option at build time. This is an
 experimental feature and therefore isn't used by default. Users need to
 either compile their own interpreter, or install one of the experimental
-builds that are marked as *free-threaded*.
+builds that are marked as *free-threaded*. See :pep:`703` "Making the Global
+Interpreter Lock Optional in CPython" for more detail.
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
@@ -622,6 +658,18 @@ copy
   :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>` in
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` was improved to better
+  match platform defaults (GCC/Clang or MSC). In particular, fields no longer
+  overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+* A :attr:`ctypes.Structure._layout_` class attribute can be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
 
 dbm
 ---
@@ -1631,9 +1679,6 @@ Pending Removal in Python 3.14
   * ``master_open()``: use :func:`pty.openpty`.
   * ``slave_open()``: use :func:`pty.openpty`.
 
-* :func:`shutil.rmtree` *onerror* parameter is deprecated in 3.12,
-  and will be removed in 3.14: use the *onexc* parameter instead.
-
 * :mod:`sqlite3`:
 
   * :data:`!version` and :data:`!version_info`.
@@ -1808,6 +1853,9 @@ although there is currently no date scheduled for their removal.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
+  Python 3.12; use the *onexc* parameter instead.
 
 * :mod:`ssl` options and protocols:
 
@@ -2136,6 +2184,10 @@ Build Changes
   The bundled mimalloc has custom changes, see :gh:`113141` for details.
   (Contributed by Dino Viehland in :gh:`109914`.)
 
+* On POSIX systems, the pkg-config (``.pc``) filenames now include the ABI
+  flags.  For example, the free-threaded build generates ``python-3.13t.pc``
+  and the debug build generates ``python-3.13d.pc``.
+
 
 Porting to Python 3.13
 ======================
@@ -2174,16 +2226,24 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
-* Callbacks registered in the :mod:`tkinter` module now take arguments as
-  various Python objects (``int``, ``float``, ``bytes``, ``tuple``),
-  not just ``str``.
-  To restore the previous behavior set :mod:`!tkinter` module global
-  :data:`!wantobject` to ``1`` before creating the
-  :class:`!Tk` object or call the :meth:`!wantobject`
-  method of the :class:`!Tk` object with argument ``1``.
-  Calling it with argument ``2`` restores the current default behavior.
-  (Contributed by Serhiy Storchaka in :gh:`66410`.)
+* Calling :func:`locals` in an :term:`optimized scope` now produces an
+  independent snapshot on each call, and hence no longer implicitly updates
+  previously returned references. Obtaining the legacy CPython behaviour now
+  requires explicit calls to update the initially returned dictionary with the
+  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
 
+* Calling :func:`locals` from a comprehension at module or class scope
+  (including via ``exec`` or ``eval``) once more behaves as if the comprehension
+  were running as an independent nested function (i.e. the local variables from
+  the containing scope are not included). In Python 3.12, this had changed
+  to include the local variables from the containing scope when implementing
+  :pep:`709`. (Changed as part of :pep:`667`.)
+
+* Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
+  :term:`optimized scope` now returns a write-through proxy rather than a
+  snapshot that gets updated at ill-specified times. If a snapshot is desired,
+  it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
+  (Changed as part of :pep:`667`.)
 
 Changes in the C API
 --------------------

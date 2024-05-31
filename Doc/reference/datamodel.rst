@@ -1243,7 +1243,7 @@ Methods on code objects
 
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
-   position of the source code that compiled to the *i-th* instruction.
+   position of the source code that compiled to the *i-th* code unit.
    Column information is 0-indexed utf-8 byte offsets on the given source
    line.
 
@@ -1349,7 +1349,7 @@ Special read-only attributes
    * - .. attribute:: frame.f_locals
      - The dictionary used by the frame to look up
        :ref:`local variables <naming>`.
-       If the frame refers to a function or comprehension,
+       If the frame refers to an :term:`optimized scope`,
        this may return a write-through proxy object.
 
        .. versionchanged:: 3.13
