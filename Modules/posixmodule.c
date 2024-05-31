@@ -4194,6 +4194,11 @@ os_getcwdb_impl(PyObject *module)
     return posix_getcwd(1);
 }
 
+#ifdef __wasi__
+# define LINK_DEFAULT_FOLLOW_SYMLINKS 0
+#else
+# define LINK_DEFAULT_FOLLOW_SYMLINKS 1
+#endif
 
 #if ((!defined(HAVE_LINK)) && defined(MS_WINDOWS))
 #define HAVE_LINK 1
@@ -4271,7 +4276,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #ifdef HAVE_LINKAT
     if ((src_dir_fd != DEFAULT_DIR_FD) ||
         (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (!follow_symlinks)) {
+        (follow_symlinks)) {
 
         if (HAVE_LINKAT_RUNTIME) {
 

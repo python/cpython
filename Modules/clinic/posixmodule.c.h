@@ -1480,7 +1480,7 @@ os_link(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     path_t dst = PATH_T_INITIALIZE_P("link", "dst", 0, 0, 0, 0);
     int src_dir_fd = DEFAULT_DIR_FD;
     int dst_dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
+    int follow_symlinks = LINK_DEFAULT_FOLLOW_SYMLINKS;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
