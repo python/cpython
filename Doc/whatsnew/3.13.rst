@@ -154,10 +154,10 @@ New Features
 A Better Interactive Interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS, Python now uses a new
-:term:`interactive` shell. When the user starts the :term:`REPL` from an
-interactive terminal, and both :mod:`curses` and :mod:`readline` are
-available, the interactive shell now supports the following new features:
+On Unix-like systems like Linux or macOS as well as Windows, Python now
+uses a new :term:`interactive` shell. When the user starts the
+:term:`REPL` from an interactive terminal the interactive shell now
+supports the following new features:
 
 * Colorized prompts.
 * Multiline editing with history preservation.
@@ -174,10 +174,13 @@ available, the interactive shell now supports the following new features:
 If the new interactive shell is not desired, it can be disabled via
 the :envvar:`PYTHON_BASIC_REPL` environment variable.
 
+The new shell requires :mod:`curses` on Unix-like systems.
+
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
-Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
+Windows support contributed by Dino Viehland and Anthony Shaw.)
 
 .. _whatsnew313-improved-error-messages:
 
@@ -1676,9 +1679,6 @@ Pending Removal in Python 3.14
   * ``master_open()``: use :func:`pty.openpty`.
   * ``slave_open()``: use :func:`pty.openpty`.
 
-* :func:`shutil.rmtree` *onerror* parameter is deprecated in 3.12,
-  and will be removed in 3.14: use the *onexc* parameter instead.
-
 * :mod:`sqlite3`:
 
   * :data:`!version` and :data:`!version_info`.
@@ -1853,6 +1853,9 @@ although there is currently no date scheduled for their removal.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
+  Python 3.12; use the *onexc* parameter instead.
 
 * :mod:`ssl` options and protocols:
 
@@ -2180,6 +2183,10 @@ Build Changes
   It is licensed under the MIT license; see :ref:`mimalloc license <mimalloc-license>`.
   The bundled mimalloc has custom changes, see :gh:`113141` for details.
   (Contributed by Dino Viehland in :gh:`109914`.)
+
+* On POSIX systems, the pkg-config (``.pc``) filenames now include the ABI
+  flags.  For example, the free-threaded build generates ``python-3.13t.pc``
+  and the debug build generates ``python-3.13d.pc``.
 
 
 Porting to Python 3.13
