@@ -508,14 +508,15 @@ class TestPyReplCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
+    @patch("rlcompleter._readline_available", False)
     def test_simple_completion(self):
-        events = code_to_events("os.geten\t\n")
+        events = code_to_events("os.getpid\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.getenv")
+        self.assertEqual(output, "os.getpid()")
 
     def test_completion_with_many_options(self):
         # Test with something that initially displays many options
