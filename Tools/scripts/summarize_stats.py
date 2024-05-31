@@ -753,7 +753,10 @@ def calc_execution_cost_table(prefix: str) -> RowCalculator:
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
         code_sizes = opcode_stats.get_code_sizes()
-        uop_costs = {name: counts[name][0] * code_sizes[name] for name in counts.keys()}
+
+        # Only include UOps for which we have both a count and a stencil size,
+        # to not error when running in Tier 2 without the JIT
+        uop_costs = {name: counts[name][0] * code_sizes[name] for name in counts.keys() if name in code_sizes}
 
         total = sum(uop_costs.values())
         cumulative = 0
@@ -1275,7 +1278,7 @@ def optimization_section() -> Section:
         )
 
         yield Section(
-            "Total Bytes Executed per UOp",
+            "Total Bytes Executed per JIT'ed UOp",
             "",
             [
                 Table(
