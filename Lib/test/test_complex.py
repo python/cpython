@@ -641,8 +641,8 @@ class ComplexTest(unittest.TestCase):
                      CustomBytes, CustomByteArray]
 
         for f in factories:
-            x = f(b"(1+1j)")
-            with self.subTest(type(x)):
+            with self.subTest(f=f):
+                x = f(b"(1+1j)")
                 self.assertEqual(complex(x), 1+1j)
                 with self.assertRaisesRegex(ValueError,
                                             "arg is a malformed string"):
