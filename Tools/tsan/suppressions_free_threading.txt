@@ -51,7 +51,6 @@ race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
 race_top:_PyImport_AcquireLock
 race_top:_Py_dict_lookup_threadsafe
-race_top:_imp_release_lock
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:builtin_compile_impl
 race_top:dictiter_new
