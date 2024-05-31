@@ -943,14 +943,17 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     else if (PyByteArray_Check(arg) || PyBytes_Check(arg)) {
         const char *string;
+        Py_ssize_t len;
 
         if (PyByteArray_Check(arg)) {
             string = PyByteArray_AS_STRING(arg);
+            len = PyByteArray_GET_SIZE(arg);
         }
         else {
             string = PyBytes_AS_STRING(arg);
+            len = PyBytes_GET_SIZE(arg);
         }
-        return _Py_string_to_number_with_underscores(string, Py_SIZE(arg),
+        return _Py_string_to_number_with_underscores(string, len,
                                                      "complex", arg, type,
                                                      complex_from_string_inner);
     }
