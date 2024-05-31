@@ -23,8 +23,7 @@ except ImportError:
     pass
 
 
-# @patch("os.write")
-@unittest.skipIf(sys.platform != "win32", "No Unix event queue on Windows")
+@unittest.skipIf(sys.platform != "win32", "Test class specifically for Windows")
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
