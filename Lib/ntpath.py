@@ -575,7 +575,7 @@ else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
         try:
-            return _getfullpathname(_normpath(path, explict_curdir=True))
+            return _getfullpathname(_normpath(path, explicit_curdir=True))
         except (OSError, ValueError):
             # See gh-75230, handle outside for cleaner traceback
             pass
