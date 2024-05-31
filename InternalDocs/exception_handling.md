@@ -8,34 +8,34 @@ The cost of raising an exception is increased, but not by much.
 
 The following code:
 
-<code>
+```
 try:
     g(0)
 except:
     res = "fail"
 
-</code>
+```
 
 compiles into pseudo-code like the following:
 
 ```
-                  `RESUME`                   0
+                  RESUME                   0
 
-     1            `SETUP_FINALLY`            8 (to L1)
+     1            SETUP_FINALLY            8 (to L1)
 
-     2            `LOAD_NAME`                0 (g)
-                  `PUSH_NULL`
-                  `LOAD_CONST`               0 (0)
-                  `CALL`                     1
-                  `POP_TOP`
-                  `POP_BLOCK`
+     2            LOAD_NAME                0 (g)
+                  PUSH_NULL
+                  LOAD_CONST               0 (0)
+                  CALL                     1
+                  POP_TOP
+                  POP_BLOCK
 
-    --   L1:      `PUSH_EXC_INFO`
+    --   L1:      PUSH_EXC_INFO
 
-     3            `POP_TOP`
+     3            POP_TOP
 
-     4            `LOAD_CONST`               1 ('fail')
-                  `STORE_NAME`               1 (res)
+     4            LOAD_CONST               1 ('fail')
+                  STORE_NAME               1 (res)
 ```
 
 The `SETUP_FINALLY` instruction specifies that henceforth, exceptions
@@ -91,8 +91,8 @@ of the following steps:
 Format of the exception table
 -----------------------------
 
-```
 Conceptually, the exception table consists of a sequence of 5-tuples:
+```
     1. `start-offset` (inclusive)
     2. `end-offset` (exclusive)
     3. `target`
@@ -108,7 +108,7 @@ For it to be searchable quickly, we need to support binary search giving us log(
 Binary search typically assumes fixed size entries, but that is not necessary, as long as we can identify the start of an entry.
 
 It is worth noting that the size (end-start) is always smaller than the end, so we encode the entries as:
-    `start, size, target, depth, push-lasti`
+    `start, size, target, depth, push-lasti`.
 
 Also, sizes are limited to 2**30 as the code length cannot exceed 2**31 and each code unit takes 2 bytes.
 It also happens that depth is generally quite small.
@@ -128,17 +128,21 @@ The 8 bits of a byte are (msb left) SXdddddd where S is the start bit. X is the 
 In addition, we combine `depth` and `lasti` into a single value, `((depth<<1)+lasti)`, before encoding.
 
 For example, the exception entry:
+```
     `start`:  20
     `end`:    28
     `target`: 100
     `depth`:  3
     `lasti`:  False
+```
 
 is encoded first by converting to the more compact four value form:
+```
     `start`:         20
     `size`:          8
     `target`:        100
   `depth<<1+lasti`:  6
+```
 
 which is then encoded as:
     148 (MSB + 20 for start)
