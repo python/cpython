@@ -120,6 +120,7 @@ def load_raw_data(input: Path) -> RawData:
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
+
 @dataclass(frozen=True)
 class Doc:
     text: str
@@ -214,14 +215,13 @@ class OpcodeStats:
                     miss = opcode_stat.get("specialization.miss", 0)
                 counts[name] = (count, miss)
         return counts
-    
+
     def get_code_sizes(self) -> dict[str, int]:
         sizes = {}
         for name, opcode_stat in self._data.items():
             if "code_size" in opcode_stat:
                 sizes[name] = opcode_stat["code_size"]
         return sizes
-
 
     @functools.cache
     def _get_pred_succ(
@@ -756,7 +756,11 @@ def calc_execution_cost_table(prefix: str) -> RowCalculator:
 
         # Only include UOps for which we have both a count and a stencil size,
         # to not error when running in Tier 2 without the JIT
-        uop_costs = {name: counts[name][0] * code_sizes[name] for name in counts.keys() if name in code_sizes}
+        uop_costs = {
+            name: counts[name][0] * code_sizes[name]
+            for name in counts.keys()
+            if name in code_sizes
+        }
 
         total = sum(uop_costs.values())
         cumulative = 0
