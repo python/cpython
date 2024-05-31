@@ -83,8 +83,6 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    */
 
-Py_hash_t _Py_HashPointer(const void *);
-
 Py_hash_t
 _Py_HashDouble(PyObject *inst, double v)
 {
@@ -92,11 +90,11 @@ _Py_HashDouble(PyObject *inst, double v)
     double m;
     Py_uhash_t x, y;
 
-    if (!Py_IS_FINITE(v)) {
-        if (Py_IS_INFINITY(v))
+    if (!isfinite(v)) {
+        if (isinf(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return _Py_HashPointer(inst);
+            return PyObject_GenericHash(inst);
     }
 
     m = frexp(v, &e);
@@ -132,23 +130,19 @@ _Py_HashDouble(PyObject *inst, double v)
 }
 
 Py_hash_t
-_Py_HashPointerRaw(const void *p)
+Py_HashPointer(const void *ptr)
 {
-    size_t y = (size_t)p;
-    /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
-       excessive hash collisions for dicts and sets */
-    y = (y >> 4) | (y << (8 * SIZEOF_VOID_P - 4));
-    return (Py_hash_t)y;
+    Py_hash_t hash = _Py_HashPointerRaw(ptr);
+    if (hash == -1) {
+        hash = -2;
+    }
+    return hash;
 }
 
 Py_hash_t
-_Py_HashPointer(const void *p)
+PyObject_GenericHash(PyObject *obj)
 {
-    Py_hash_t x = _Py_HashPointerRaw(p);
-    if (x == -1) {
-        x = -2;
-    }
-    return x;
+    return Py_HashPointer(obj);
 }
 
 Py_hash_t
@@ -269,12 +263,12 @@ fnv(const void *src, Py_ssize_t len)
     x ^= (Py_uhash_t) *p << 7;
     while (blocks--) {
         PY_UHASH_CPY(block.bytes, p);
-        x = (_PyHASH_MULTIPLIER * x) ^ block.value;
+        x = (PyHASH_MULTIPLIER * x) ^ block.value;
         p += SIZEOF_PY_UHASH_T;
     }
     /* add remainder */
     for (; remainder > 0; remainder--)
-        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
+        x = (PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
     x ^= (Py_uhash_t) _Py_HashSecret.fnv.suffix;
     if (x == (Py_uhash_t) -1) {

@@ -1,5 +1,5 @@
-:mod:`functools` --- Higher-order functions and operations on callable objects
-==============================================================================
+:mod:`!functools` --- Higher-order functions and operations on callable objects
+===============================================================================
 
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
@@ -194,7 +194,7 @@ The :mod:`functools` module defines the following functions:
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
-   The wrapped function is instrumented with a :func:`cache_parameters`
+   The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
@@ -275,8 +275,8 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
-   .. versionadded:: 3.9
-      Added the function :func:`cache_parameters`
+   .. versionchanged:: 3.9
+      Added the function :func:`!cache_parameters`
 
 .. decorator:: total_ordering
 
@@ -325,7 +325,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Returning NotImplemented from the underlying comparison function for
+      Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
 .. function:: partial(func, /, *args, **keywords)
@@ -646,8 +646,9 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``
-   and ``__doc__``, the documentation string) and ``WRAPPER_UPDATES`` (which
+   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
+   ``__type_params__``, and ``__doc__``, the documentation string)
+   and ``WRAPPER_UPDATES`` (which
    updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
@@ -667,19 +668,18 @@ The :mod:`functools` module defines the following functions:
    on the wrapper function). :exc:`AttributeError` is still raised if the
    wrapper function itself is missing any attributes named in *updated*.
 
-   .. versionadded:: 3.2
-      Automatic addition of the ``__wrapped__`` attribute.
-
-   .. versionadded:: 3.2
-      Copying of the ``__annotations__`` attribute by default.
-
    .. versionchanged:: 3.2
+      The ``__wrapped__`` attribute is now automatically added.
+      The ``__annotations__`` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
       The ``__wrapped__`` attribute now always refers to the wrapped
       function, even if that function defined a ``__wrapped__`` attribute.
       (see :issue:`17482`)
+
+   .. versionchanged:: 3.12
+      The ``__type_params__`` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -742,7 +742,7 @@ have three read-only attributes:
    called.
 
 :class:`partial` objects are like :class:`function` objects in that they are
-callable, weak referencable, and can have attributes.  There are some important
+callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods

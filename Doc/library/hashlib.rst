@@ -1,5 +1,5 @@
-:mod:`hashlib` --- Secure hashes and message digests
-====================================================
+:mod:`!hashlib` --- Secure hashes and message digests
+=====================================================
 
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
@@ -77,8 +77,6 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
    :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`
    were added.
-
-.. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
 .. _hashlib-usedforsecurity:
@@ -121,7 +119,7 @@ More condensed:
 Constructors
 ------------
 
-.. function:: new(name[, data], \*, usedforsecurity=True)
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -330,7 +328,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    your application, read *Appendix A.2.2* of NIST-SP-800-132_. The answers
    on the `stackexchange pbkdf2 iterations question`_ explain in detail.
 
-   *dklen* is the length of the derived key. If *dklen* is ``None`` then the
+   *dklen* is the length of the derived key in bytes. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
    >>> from hashlib import pbkdf2_hmac
@@ -359,7 +357,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
-   *dklen* is the length of the derived key.
+   *dklen* is the length of the derived key in bytes.
 
    .. versionadded:: 3.6
 

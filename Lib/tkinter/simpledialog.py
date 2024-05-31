@@ -262,7 +262,7 @@ def _setup_dialog(w):
         w.tk.call("::tk::unsupported::MacWindowStyle", "style",
                   w, "moveableModal", "")
     elif w._windowingsystem == "x11":
-        w.wm_attributes("-type", "dialog")
+        w.wm_attributes(type="dialog")
 
 # --------------------------------------------------------------------
 # convenience dialogues
