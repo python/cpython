@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 import sys
 
+from _io import _WindowsConsoleIO
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
@@ -125,6 +126,7 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
+        self.out = _WindowsConsoleIO(self.output_fd, 'w')
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
@@ -275,8 +277,9 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
-        os.write(self.output_fd, text.encode(self.encoding, "replace"))
-
+        self.out.write(text.encode(self.encoding, "replace"))
+        self.out.flush()
+        
     @property
     def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()

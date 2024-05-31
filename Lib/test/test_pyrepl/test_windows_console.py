@@ -23,7 +23,7 @@ except ImportError:
     pass
 
 
-@patch("os.write")
+# @patch("os.write")
 @unittest.skipIf(sys.platform != "win32", "No Unix event queue on Windows")
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
@@ -33,6 +33,7 @@ class WindowsConsoleTests(TestCase):
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
         console._getscrollbacksize = MagicMock(42)
+        console.out.write = MagicMock()
 
         height = kwargs.get("height", 25)
         width = kwargs.get("width", 80)
@@ -55,31 +56,31 @@ class WindowsConsoleTests(TestCase):
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
 
-    def test_simple_addition(self, _os_write):
+    def test_simple_addition(self):
         code = "12+34"
         events = code_to_events(code)
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, b"1")
-        _os_write.assert_any_call(ANY, b"2")
-        _os_write.assert_any_call(ANY, b"+")
-        _os_write.assert_any_call(ANY, b"3")
-        _os_write.assert_any_call(ANY, b"4")
+        con.out.write.assert_any_call(b"1")
+        con.out.write.assert_any_call(b"2")
+        con.out.write.assert_any_call(b"+")
+        con.out.write.assert_any_call(b"3")
+        con.out.write.assert_any_call(b"4")
         con.restore()
 
-    def test_wrap(self, _os_write):
+    def test_wrap(self):
         code = "12+34"
         events = code_to_events(code)
         _, con = self.handle_events_narrow(events)
-        _os_write.assert_any_call(ANY, b"1")
-        _os_write.assert_any_call(ANY, b"2")
-        _os_write.assert_any_call(ANY, b"+")
-        _os_write.assert_any_call(ANY, b"3")
-        _os_write.assert_any_call(ANY, b"\\")
-        _os_write.assert_any_call(ANY, b"\n")
-        _os_write.assert_any_call(ANY, b"4")
+        con.out.write.assert_any_call(b"1")
+        con.out.write.assert_any_call(b"2")
+        con.out.write.assert_any_call(b"+")
+        con.out.write.assert_any_call(b"3")
+        con.out.write.assert_any_call(b"\\")
+        con.out.write.assert_any_call(b"\n")
+        con.out.write.assert_any_call(b"4")
         con.restore()
 
-    def test_resize_wider(self, _os_write):
+    def test_resize_wider(self):
         code = "1234567890"
         events = code_to_events(code)
         reader, console = self.handle_events_narrow(events)
@@ -101,13 +102,13 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        _os_write.assert_any_call(ANY, self.move_right(2))
-        _os_write.assert_any_call(ANY, self.move_up(2))
-        _os_write.assert_any_call(ANY, b"567890")
+        con.out.write.assert_any_call(self.move_right(2))
+        con.out.write.assert_any_call(self.move_up(2))
+        con.out.write.assert_any_call(b"567890")
 
         con.restore()
 
-    def test_resize_narrower(self, _os_write):
+    def test_resize_narrower(self):
         code = "1234567890"
         events = code_to_events(code)
         reader, console = self.handle_events(events)
@@ -129,22 +130,22 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        _os_write.assert_any_call(ANY, b"456\\")
-        _os_write.assert_any_call(ANY, b"789\\")
+        con.out.write.assert_any_call(b"456\\")
+        con.out.write.assert_any_call(b"789\\")
 
         con.restore()
 
-    def test_cursor_left(self, _os_write):
+    def test_cursor_left(self):
         code = "1"
         events = itertools.chain(
             code_to_events(code),
             [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
         )
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, self.move_left())
+        con.out.write.assert_any_call(self.move_left())
         con.restore()
 
-    def test_cursor_left_right(self, _os_write):
+    def test_cursor_left_right(self):
         code = "1"
         events = itertools.chain(
             code_to_events(code),
@@ -154,21 +155,21 @@ class WindowsConsoleTests(TestCase):
             ],
         )
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, self.move_left())
-        _os_write.assert_any_call(ANY, self.move_right())
+        con.out.write.assert_any_call(self.move_left())
+        con.out.write.assert_any_call(self.move_right())
         con.restore()
 
-    def test_cursor_up(self, _os_write):
+    def test_cursor_up(self):
         code = "1\n2+3"
         events = itertools.chain(
             code_to_events(code),
             [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))],
         )
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, self.move_up())
+        con.out.write.assert_any_call(self.move_up())
         con.restore()
 
-    def test_cursor_up_down(self, _os_write):
+    def test_cursor_up_down(self):
         code = "1\n2+3"
         events = itertools.chain(
             code_to_events(code),
@@ -178,23 +179,23 @@ class WindowsConsoleTests(TestCase):
             ],
         )
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, self.move_up())
-        _os_write.assert_any_call(ANY, self.move_down())
+        con.out.write.assert_any_call(self.move_up())
+        con.out.write.assert_any_call(self.move_down())
         con.restore()
 
-    def test_cursor_back_write(self, _os_write):
+    def test_cursor_back_write(self):
         events = itertools.chain(
             code_to_events("1"),
             [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],
             code_to_events("2"),
         )
         _, con = self.handle_events(events)
-        _os_write.assert_any_call(ANY, b"1")
-        _os_write.assert_any_call(ANY, self.move_left())
-        _os_write.assert_any_call(ANY, b"21")
+        con.out.write.assert_any_call(b"1")
+        con.out.write.assert_any_call(self.move_left())
+        con.out.write.assert_any_call(b"21")
         con.restore()
 
-    def test_multiline_function_move_up_short_terminal(self, _os_write):
+    def test_multiline_function_move_up_short_terminal(self):
         # fmt: off
         code = (
             "def f():\n"
@@ -210,11 +211,11 @@ class WindowsConsoleTests(TestCase):
             ],
         )
         _, con = self.handle_events_short(events)
-        _os_write.assert_any_call(ANY, self.move_left(5))
-        _os_write.assert_any_call(ANY, self.move_up())
+        con.out.write.assert_any_call(self.move_left(5))
+        con.out.write.assert_any_call(self.move_up())
         con.restore()
 
-    def test_multiline_function_move_up_down_short_terminal(self, _os_write):
+    def test_multiline_function_move_up_down_short_terminal(self):
         # fmt: off
         code = (
             "def f():\n"
@@ -232,11 +233,11 @@ class WindowsConsoleTests(TestCase):
             ],
         )
         _, con = self.handle_events_short(events)
-        _os_write.assert_any_call(ANY, self.move_left(8))
-        _os_write.assert_any_call(ANY, self.erase_in_line())
+        con.out.write.assert_any_call(self.move_left(8))
+        con.out.write.assert_any_call(self.erase_in_line())
         con.restore()
 
-    def test_resize_bigger_on_multiline_function(self, _os_write):
+    def test_resize_bigger_on_multiline_function(self):
         # fmt: off
         code = (
             "def f():\n"
@@ -262,19 +263,19 @@ class WindowsConsoleTests(TestCase):
             prepare_reader=same_reader,
             prepare_console=same_console,
         )
-        _os_write.assert_has_calls(
+        con.out.write.assert_has_calls(
             [
-                call(ANY, self.move_left(5)),
-                call(ANY, self.move_up()),
-                call(ANY, b"def f():"),
-                call(ANY, self.move_left(3)),
-                call(ANY, self.move_down()),
+                call(self.move_left(5)),
+                call(self.move_up()),
+                call(b"def f():"),
+                call(self.move_left(3)),
+                call(self.move_down()),
             ]
         )
         console.restore()
         con.restore()
 
-    def test_resize_smaller_on_multiline_function(self, _os_write):
+    def test_resize_smaller_on_multiline_function(self):
         # fmt: off
         code = (
             "def f():\n"
@@ -300,12 +301,12 @@ class WindowsConsoleTests(TestCase):
             prepare_reader=same_reader,
             prepare_console=same_console,
         )
-        _os_write.assert_has_calls(
+        con.out.write.assert_has_calls(
             [
-                call(ANY, self.move_left(5)),
-                call(ANY, self.move_up()),
-                call(ANY, self.erase_in_line()),
-                call(ANY, b"  foo"),
+                call(self.move_left(5)),
+                call(self.move_up()),
+                call(self.erase_in_line()),
+                call(b"  foo"),
             ]
         )
         console.restore()
