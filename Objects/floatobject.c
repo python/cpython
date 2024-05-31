@@ -1205,6 +1205,10 @@ hex_from_char(char c) {
    where the fractional part either is exact (precision < 0) or the
    number of digits after the dot is equal to the precision.
 
+   The return value is a pointer to buffer with the converted string or NULL if
+   the conversion failed.  The caller is responsible for freeing the returned
+   string by calling PyMem_Free().
+
    The exponent d is written in decimal, it always contains at least one digit,
    and it gives the power of 2 by which to multiply the coefficient.
 
@@ -1270,6 +1274,9 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
         size += 2;
     }
     char *s = PyMem_Malloc(size);
+    if (!s) {
+        return NULL;
+    }
 
     /* sign and prefix */
     size_t si = 0;
