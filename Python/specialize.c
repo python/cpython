@@ -290,7 +290,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     }
 
 #ifdef _Py_JIT
-    _export_jit_data(_Py_stats);
+    _export_jit_data(stats);
 
     for (int i = 0; i < MAX_UOP_ID+1; i++){
         const char * possible_name = _PyUOpName(i);

@@ -15,7 +15,7 @@ typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_p
 
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
-void _export_jit_data(PyStats *stats);
+void _export_jit_data(OptimizationStats *stats);
 
 #endif  // _Py_JIT
 

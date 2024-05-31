@@ -397,13 +397,11 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 #ifdef Py_STATS
 void
-_export_jit_data(PyStats *stats){
-    if (_Py_stats){
-        for (int i = 0; i < MAX_UOP_ID + 1; i++){
-            if (stencil_groups[i].code_size){
-                stats->optimization_stats.opcode[i].code_size = stencil_groups[i].code_size;
-                stats->optimization_stats.opcode[i].data_size = stencil_groups[i].data_size;
-            }
+_export_jit_data(OptimizationStats *stats){
+    for (int i = 0; i < MAX_UOP_ID + 1; i++){
+        if (stencil_groups[i].code_size){
+            stats->opcode[i].code_size = stencil_groups[i].code_size;
+            stats->opcode[i].data_size = stencil_groups[i].data_size;
         }
     }
 }
