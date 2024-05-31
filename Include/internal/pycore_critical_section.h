@@ -128,7 +128,7 @@ extern "C" {
         }                                                               \
     }
 
-# define Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST                         \
+# define Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST()                       \
         if (_should_lock_cs) {                                          \
             _PyCriticalSection_End(&_cs);                               \
         }
