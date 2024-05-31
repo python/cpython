@@ -4030,7 +4030,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t.write("bcd")
         t.flush()
 
-        self.assertEqual([b"a" * (chunk_size - 1), b"bcdefg"], buf._write_stack)
+        self.assertEqual([b"a" * (chunk_size - 1), b"efgbcd"], buf._write_stack)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
