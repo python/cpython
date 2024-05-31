@@ -34,8 +34,12 @@ import ast
 from types import ModuleType
 
 from .readline import _get_reader, multiline_input
-from .unix_console import _error
 
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import _error
+except ModuleNotFoundError:
+    from .windows_console import _error
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
@@ -57,12 +61,17 @@ def _strip_final_indent(text: str) -> str:
     return text
 
 
+def _clear_screen():
+    reader = _get_reader()
+    reader.scheduled_commands.append("clear_screen")
+
+
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
-    "clear": "clear_screen",
+    "clear": _clear_screen,
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -95,8 +104,8 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = compile(item, filename, the_symbol)
-            except (OverflowError, ValueError):
+                code = compile(item, filename, the_symbol, dont_inherit=True)
+            except (OverflowError, ValueError, SyntaxError):
                     self.showsyntaxerror(filename)
                     return False
 

@@ -767,6 +767,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_initializing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_io));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_is_text_encoding));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_layout_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_length_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_limbo));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_lock_unlock_module));
@@ -1222,6 +1223,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sort));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source_traceback));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(spam));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src_dir_fd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stacklevel));
