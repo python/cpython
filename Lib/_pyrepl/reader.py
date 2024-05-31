@@ -131,6 +131,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         ("\\\\", "self-insert"),
         (r"\x1b[200~", "enable_bracketed_paste"),
         (r"\x1b[201~", "disable_bracketed_paste"),
+        (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
@@ -238,6 +239,7 @@ class Reader:
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
     calc_screen: CalcScreen = field(init=False)
+    scheduled_commands: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -307,7 +309,8 @@ class Reader:
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
             else:
-                for i in range(wrapcount + 1):
+                i = 0
+                while l:
                     prelen = lp if i == 0 else 0
                     index_to_wrap_before = 0
                     column = 0
@@ -317,12 +320,17 @@ class Reader:
                         index_to_wrap_before += 1
                         column += character_width
                     pre = prompt if i == 0 else ""
-                    post = "\\" if i != wrapcount else ""
-                    after = [1] if i != wrapcount else []
+                    if len(l) > index_to_wrap_before:
+                        post = "\\"
+                        after = [1]
+                    else:
+                        post = ""
+                        after = []
                     screen.append(pre + l[:index_to_wrap_before] + post)
                     screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
                     l = l[index_to_wrap_before:]
                     l2 = l2[index_to_wrap_before:]
+                    i += 1
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg and self.msg_at_bottom:
@@ -435,14 +443,13 @@ class Reader:
         """
         if self.arg is None:
             return default
-        else:
-            return self.arg
+        return self.arg
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
         'lineno'."""
         if self.arg is not None and cursor_on_line:
-            prompt = "(arg: %s) " % self.arg
+            prompt = f"(arg: {self.arg}) "
         elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
@@ -508,12 +515,12 @@ class Reader:
             offset = l - 1 if in_wrapped_line else l  # need to remove backslash
             if offset >= pos:
                 break
+
+            if p + sum(l2) >= self.console.width:
+                pos -= l - 1  # -1 cause backslash is not in buffer
             else:
-                if p + sum(l2) >= self.console.width:
-                    pos -= l - 1  # -1 cause backslash is not in buffer
-                else:
-                    pos -= l + 1  # +1 cause newline is in buffer
-                y += 1
+                pos -= l + 1  # +1 cause newline is in buffer
+            y += 1
         return p + sum(l2[:pos]), y
 
     def insert(self, text: str | list[str]) -> None:
@@ -551,6 +558,10 @@ class Reader:
             self.restore()
             raise
 
+        while self.scheduled_commands:
+            cmd = self.scheduled_commands.pop()
+            self.do_cmd((cmd, []))
+
     def last_command_is(self, cls: type) -> bool:
         if not self.last_command:
             return False
@@ -571,7 +582,6 @@ class Reader:
             for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode"):
                 setattr(self, arg, prev_state[arg])
             self.prepare()
-            pass
 
     def finish(self) -> None:
         """Called when a command signals that we're finished."""

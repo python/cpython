@@ -1172,10 +1172,55 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
     COPY_ATTR(__name__);
     COPY_ATTR(__qualname__);
     COPY_ATTR(__doc__);
-    COPY_ATTR(__annotations__);
     return 0;
 
 #undef COPY_ATTR
+}
+
+// Used for wrapping __annotations__ and __annotate__ on classmethod
+// and staticmethod objects.
+static PyObject *
+descriptor_get_wrapped_attribute(PyObject *wrapped, PyObject *dict, PyObject *name)
+{
+    PyObject *res;
+    if (PyDict_GetItemRef(dict, name, &res) < 0) {
+        return NULL;
+    }
+    if (res != NULL) {
+        return res;
+    }
+    res = PyObject_GetAttr(wrapped, name);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItem(dict, name, res) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
+}
+
+static int
+descriptor_set_wrapped_attribute(PyObject *dict, PyObject *name, PyObject *value,
+                                 char *type_name)
+{
+    if (value == NULL) {
+        if (PyDict_DelItem(dict, name) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                PyErr_Clear();
+                PyErr_Format(PyExc_AttributeError,
+                             "'%.200s' object has no attribute '%U'",
+                             type_name, name);
+            }
+            else {
+                return -1;
+            }
+        }
+        return 0;
+    }
+    else {
+        return PyDict_SetItem(dict, name, value);
+    }
 }
 
 
@@ -1283,10 +1328,37 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+cm_get___annotations__(classmethod *cm, void *closure)
+{
+    return descriptor_get_wrapped_attribute(cm->cm_callable, cm->cm_dict, &_Py_ID(__annotations__));
+}
+
+static int
+cm_set___annotations__(classmethod *cm, PyObject *value, void *closure)
+{
+    return descriptor_set_wrapped_attribute(cm->cm_dict, &_Py_ID(__annotations__), value, "classmethod");
+}
+
+static PyObject *
+cm_get___annotate__(classmethod *cm, void *closure)
+{
+    return descriptor_get_wrapped_attribute(cm->cm_callable, cm->cm_dict, &_Py_ID(__annotate__));
+}
+
+static int
+cm_set___annotate__(classmethod *cm, PyObject *value, void *closure)
+{
+    return descriptor_set_wrapped_attribute(cm->cm_dict, &_Py_ID(__annotate__), value, "classmethod");
+}
+
+
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)cm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {"__annotations__", (getter)cm_get___annotations__, (setter)cm_set___annotations__, NULL, NULL},
+    {"__annotate__", (getter)cm_get___annotate__, (setter)cm_set___annotate__, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1479,10 +1551,36 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+sm_get___annotations__(staticmethod *sm, void *closure)
+{
+    return descriptor_get_wrapped_attribute(sm->sm_callable, sm->sm_dict, &_Py_ID(__annotations__));
+}
+
+static int
+sm_set___annotations__(staticmethod *sm, PyObject *value, void *closure)
+{
+    return descriptor_set_wrapped_attribute(sm->sm_dict, &_Py_ID(__annotations__), value, "staticmethod");
+}
+
+static PyObject *
+sm_get___annotate__(staticmethod *sm, void *closure)
+{
+    return descriptor_get_wrapped_attribute(sm->sm_callable, sm->sm_dict, &_Py_ID(__annotate__));
+}
+
+static int
+sm_set___annotate__(staticmethod *sm, PyObject *value, void *closure)
+{
+    return descriptor_set_wrapped_attribute(sm->sm_dict, &_Py_ID(__annotate__), value, "staticmethod");
+}
+
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
      (getter)sm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {"__annotations__", (getter)sm_get___annotations__, (setter)sm_set___annotations__, NULL, NULL},
+    {"__annotate__", (getter)sm_get___annotate__, (setter)sm_set___annotate__, NULL, NULL},
     {NULL} /* Sentinel */
 };
 

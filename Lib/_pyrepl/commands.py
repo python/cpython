@@ -219,6 +219,11 @@ class interrupt(FinishCommand):
         os.kill(os.getpid(), signal.SIGINT)
 
 
+class ctrl_c(Command):
+    def do(self) -> None:
+        raise KeyboardInterrupt
+
+
 class suspend(Command):
     def do(self) -> None:
         import signal
@@ -475,3 +480,4 @@ class disable_bracketed_paste(Command):
         self.reader.paste_mode = False
         self.reader.in_bracketed_paste = False
         self.reader.dirty = True
+        self.reader.calc_screen = self.reader.calc_complete_screen

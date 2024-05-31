@@ -806,7 +806,10 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(F(3, 2) * Polar(4, 2), Polar(F(6, 1), 2))
         self.assertTypedEquals(F(3, 2) * Polar(4.0, 2), Polar(6.0, 2))
         self.assertTypedEquals(F(3, 2) * Rect(4, 3), Rect(F(6, 1), F(9, 2)))
-        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0+0j, 4.5+0j))
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertTypedEquals(F(3, 2) * RectComplex(4, 3),
+                                   RectComplex(6.0+0j, 4.5+0j))
         self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
         self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
         self.assertEqual(F(3, 2) * SymbolicComplex('X'), SymbolicComplex('3/2 * X'))
@@ -922,21 +925,21 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(Root(4) ** F(2, 1), Root(4, F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 1), Root(4, -F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 3), Root(4, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('3/2 ** X'))
         self.assertEqual(SymbolicReal('X') ** F(3, 2), SymbolicReal('X ** 1.5'))
 
-        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(2.25, 0.0))
-        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(1.0, 0.0))
+        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(F(9,4), 0.0))
+        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(F(1), 0.0))
         self.assertTypedEquals(F(3, 2) ** RectComplex(2, 0), Polar(2.25, 0.0))
         self.assertTypedEquals(F(1, 1) ** RectComplex(2, 3), Polar(1.0, 0.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 2), Polar(8.0, 3.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 1), Polar(64, 6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('3/2 ** X'))
         self.assertEqual(SymbolicComplex('X') ** F(3, 2), SymbolicComplex('X ** 1.5'))
 
-        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('3/2 ** X'))
         self.assertEqual(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):
@@ -1632,6 +1635,12 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(TypeError,
                                  message % ("divmod()", "complex", "Fraction"),
                                  divmod, b, a)
+
+    def test_three_argument_pow(self):
+        message = "unsupported operand type(s) for ** or pow(): '%s', '%s', '%s'"
+        self.assertRaisesMessage(TypeError,
+                                 message % ("Fraction", "int", "int"),
+                                 pow, F(3), 4, 5)
 
 
 if __name__ == '__main__':
