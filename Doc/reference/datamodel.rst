@@ -1244,7 +1244,8 @@ Methods on code objects
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
    position of the source code that compiled to the *i-th* code unit.
-   Column information is 0-indexed utf-8 byte offsets on the given source line.
+   Column information is 0-indexed utf-8 byte offsets on the given source
+   line.
 
    This positional information can be missing. A non-exhaustive lists of
    cases where this may happen:
