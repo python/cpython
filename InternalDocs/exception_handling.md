@@ -40,20 +40,20 @@ compiles into pseudo-code like the following:
 
 The `SETUP_FINALLY` instruction specifies that henceforth, exceptions
 are handled by the code at label L1. The `POP_BLOCK` instruction
-reverses the effect of the last `SETUP_FINALLY`, so the exception
-handler reverts to what it was before.
+reverses the effect of the last `SETUP` instruction, so that the
+active exception handler reverts to what it was before.
 
 Note that the `SETUP_FINALLY` and `POP_BLOCK` instructions have no effect
 when no exceptions are raised. The idea of zero-cost exception handling
 is to replace these instructions by metadata which is stored alongside
-the code, and which is inspected only when an exception occurs.
-This metadata is the exception table, which is stored in the code
+the bytecode, and which is inspected only when an exception occurs.
+This metadata is the exception table, and it is stored in the code
 object's `co_exceptiontable` field.
 
 When the pseudo-instructions are translated into bytecode, the
 `SETUP_FINALLY` and `POP_BLOCK` instructions are removed, and the
 exception table is constructed, mapping each instruction to the
-the exception handler that covers it, if any. Instructions which
+exception handler that covers it, if any. Instructions which
 are not covered by any exception handler within the same code
 object's bytecode, do not appear in the exception table at all.
 
@@ -62,17 +62,17 @@ entry specifying that all instructions between the `SETUP_FINALLY`
 and the `POP_BLOCK` are covered by the exception handler located
 at label `L1`.
 
-At runtime, when an exception occurs, the interpreted looks up
+Handling Exceptions
+-------------------
+
+At runtime, when an exception occurs, the interpreter looks up
 the offset of the current instruction in the exception table. If
 it finds a handler, control flow transfers to it. Otherwise, the
 exception bubbles up to the caller, and the caller's frame is
 checked for a handler covering the `CALL` instruction. This
-repeats until a handler is found or the topmost frame is reached,
-and the program terminates. During unwinding, the traceback
-is constructed.
-
-Unwinding
----------
+repeats until a handler is found or the topmost frame is reached.
+If no handler is found, the program terminates. During unwinding,
+the traceback is constructed as each frame is added to it.
 
 Along with the location of an exception handler, each entry of the
 exception table also contains the stack depth of the `try` instruction
@@ -87,6 +87,16 @@ of the following steps:
  3. push the exception to the stack.
  4. jump to the target offset and resume execution.
 
+
+Reraising Exceptions and `lasti`
+--------------------------------
+
+The purpose of pushing `lasti` to the stack is for cases where an exception
+needs to be re-raised, and be associated with the original instruction that
+raised it. This happens, for example, at the end of a `finally` block, when
+any in-flight exception needs to be propagated on. As the frame's instruction
+pointer now points into the finally block, a `RERAISE` instruction
+(with `oparg > 0`) sets it to the `lasti` value from the stack.
 
 Format of the exception table
 -----------------------------
@@ -136,7 +146,7 @@ For example, the exception entry:
     `lasti`:  False
 ```
 
-is encoded first by converting to the more compact four value form:
+is encoded by first converting to the more compact four value form:
 ```
     `start`:         20
     `size`:          8
