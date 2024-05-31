@@ -106,7 +106,12 @@ def load_raw_data(input: Path) -> RawData:
                     # are missing an underscore prefix in their name
                     if key.startswith("uops[") and key[5:6] != "_":
                         key = "uops[_" + key[5:]
-                    stats[key.strip()] += int(value)
+
+                    # Data about JIT stencils isn't cumulative
+                    if "code_size" in key or "data_size" in key:
+                        stats[key.strip()] = int(value)
+                    else:
+                        stats[key.strip()] += int(value)
             stats["__nfiles__"] += 1
 
         data = dict(stats)
@@ -758,13 +763,14 @@ def calc_execution_cost_table(prefix: str) -> RowCalculator:
         # to not error when running in Tier 2 without the JIT
         uop_costs = {
             name: counts[name][0] * code_sizes[name]
-            for name in counts.keys()
+            for name in counts
             if name in code_sizes
         }
 
-        total = sum(uop_costs.values())
+        total_cost = sum(uop_costs.values())
         cumulative = 0
         rows: Rows = []
+
         for opcode, cost in sorted(uop_costs.items(), key=itemgetter(1), reverse=True):
             count = counts[opcode][0]
             cumulative += cost
@@ -774,8 +780,8 @@ def calc_execution_cost_table(prefix: str) -> RowCalculator:
                     Count(count),
                     Count(code_sizes[opcode]),
                     Count(cost),
-                    Ratio(cost, total),
-                    Ratio(cumulative, total),
+                    Ratio(cost, total_cost),
+                    Ratio(cumulative, total_cost),
                 )
             )
         rows.sort(key=itemgetter(3), reverse=True)
