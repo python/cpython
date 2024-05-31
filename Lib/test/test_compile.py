@@ -1538,7 +1538,7 @@ class TestSourcePositions(unittest.TestCase):
                     ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_COMMON_CONSTANT',
             line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
@@ -1958,7 +1958,10 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_load_super_attr(self):
         source = "class C:\n  def __init__(self):\n    super().__init__()"
-        code = compile(source, "<test>", "exec").co_consts[0].co_consts[1]
+        for const in compile(source, "<test>", "exec").co_consts[0].co_consts:
+            if isinstance(const, types.CodeType):
+                code = const
+                break
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )

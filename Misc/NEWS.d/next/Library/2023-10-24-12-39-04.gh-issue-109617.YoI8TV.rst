@@ -1,2 +1,0 @@
-:mod:`ncurses`: fixed a crash that could occur on macOS 13 or earlier when
-Python was built with Apple Xcode 15's SDK.

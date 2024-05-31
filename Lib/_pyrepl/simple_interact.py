@@ -30,9 +30,9 @@ import _sitebuiltins
 import linecache
 import sys
 import code
+import ast
 from types import ModuleType
 
-from .console import Event
 from .readline import _get_reader, multiline_input
 from .unix_console import _error
 
@@ -57,11 +57,17 @@ def _strip_final_indent(text: str) -> str:
     return text
 
 
+def _clear_screen():
+    reader = _get_reader()
+    reader.scheduled_commands.append("clear_screen")
+
+
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
+    "clear": _clear_screen,
 }
 
 class InteractiveColoredConsole(code.InteractiveConsole):
@@ -75,14 +81,40 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
+    def showsyntaxerror(self, filename=None):
+        super().showsyntaxerror(colorize=self.can_colorize)
+
     def showtraceback(self):
         super().showtraceback(colorize=self.can_colorize)
+
+    def runsource(self, source, filename="<input>", symbol="single"):
+        try:
+            tree = ast.parse(source)
+        except (OverflowError, SyntaxError, ValueError):
+            self.showsyntaxerror(filename)
+            return False
+        if tree.body:
+            *_, last_stmt = tree.body
+        for stmt in tree.body:
+            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
+            the_symbol = symbol if stmt is last_stmt else "exec"
+            item = wrapper([stmt])
+            try:
+                code = compile(item, filename, the_symbol, dont_inherit=True)
+            except (OverflowError, ValueError, SyntaxError):
+                    self.showsyntaxerror(filename)
+                    return False
+
+            if code is None:
+                return True
+
+            self.runcode(code)
+        return False
 
 
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None= None, future_flags: int = 0
 ) -> None:
-    import code
     import __main__
     from .readline import _setup
     _setup()
@@ -146,7 +178,7 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
-            more = console.push(_strip_final_indent(statement), filename=input_name)  # type: ignore[call-arg]
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:

@@ -1,0 +1,2 @@
+Macros ``Py_IS_NAN``, ``Py_IS_INFINITY`` and ``Py_IS_FINITE``
+are :term:`soft deprecated`.

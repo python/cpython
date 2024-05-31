@@ -425,11 +425,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -888,6 +888,15 @@ Glossary
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
+
+   optimized scope
+      A scope where target local variable names are reliably known to the
+      compiler when the code is compiled, allowing optimization of read and
+      write access to these names. The local namespaces for functions,
+      generators, coroutines, comprehensions, and generator expressions are
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
 
    package
       A Python :term:`module` which can contain submodules or recursively,

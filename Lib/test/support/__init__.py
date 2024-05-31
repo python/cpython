@@ -535,6 +535,15 @@ def suppress_immortalization(suppress=True):
     finally:
         _testinternalcapi.set_immortalize_deferred(*old_values)
 
+def skip_if_suppress_immortalization():
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
+                                "requires immortalization of deferred objects")
+
+
 MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
@@ -1178,6 +1187,25 @@ def no_tracing(func):
                 sys.monitoring.set_events(cov, original_events)
 
     return coverage_wrapper
+
+
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
 
 
 def refcount_test(test):
