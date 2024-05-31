@@ -60,19 +60,18 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
         exists = not os.path.splitdrive(anchor)[0]
-        yield from select(anchor, dir_fd, anchor, exists)
+        paths = select(anchor, dir_fd, anchor, exists)
     else:
         # Relative pattern.
         if root_dir is None:
             root_dir = os.path.curdir
         paths = _relative_glob(select, root_dir, dir_fd)
-        try:
-            path = next(paths)  # skip empty string
+        # Skip empty string.
+        for path in paths:
             if path:
                 yield path
-            yield from paths
-        except StopIteration:
-            pass
+            break
+    yield from paths
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
