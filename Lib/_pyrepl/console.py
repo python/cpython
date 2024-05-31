@@ -19,8 +19,16 @@
 
 from __future__ import annotations
 
+import sys
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import IO
 
 
 @dataclass
@@ -35,6 +43,25 @@ class Console(ABC):
     screen: list[str] = field(default_factory=list)
     height: int = 25
     width: int = 80
+
+    def __init__(
+        self,
+        f_in: IO[bytes] | int = 0,
+        f_out: IO[bytes] | int = 1,
+        term: str = "",
+        encoding: str = "",
+    ):
+        self.encoding = encoding or sys.getdefaultencoding()
+
+        if isinstance(f_in, int):
+            self.input_fd = f_in
+        else:
+            self.input_fd = f_in.fileno()
+
+        if isinstance(f_out, int):
+            self.output_fd = f_out
+        else:
+            self.output_fd = f_out.fileno()
 
     @abstractmethod
     def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
@@ -108,5 +135,4 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def repaint(self) -> None:
-        ...
+    def repaint(self) -> None: ...

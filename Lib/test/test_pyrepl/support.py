@@ -55,7 +55,7 @@ def prepare_reader(console: Console, **kwargs):
     return reader
 
 
-def prepare_console(events: Iterable[Event], **kwargs):
+def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console = MagicMock()
     console.get_event.side_effect = events
     console.height = 100

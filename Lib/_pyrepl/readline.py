@@ -38,7 +38,14 @@ from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
-from .unix_console import UnixConsole, _error
+from .console import Console as ConsoleType
+
+Console: type[ConsoleType]
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import UnixConsole as Console, _error
+except ImportError:
+    from .windows_console import WindowsConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -328,7 +335,7 @@ class _ReadlineWrapper:
 
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
-            console = UnixConsole(self.f_in, self.f_out, encoding=ENCODING)
+            console = Console(self.f_in, self.f_out, encoding=ENCODING)
             self.reader = ReadlineAlikeReader(console=console, config=self.config)
         return self.reader
 

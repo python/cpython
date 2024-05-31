@@ -1,7 +1,11 @@
 import os
 import sys
 
-CAN_USE_PYREPL = sys.platform != "win32"
+CAN_USE_PYREPL: bool
+if sys.platform != "win32":
+    CAN_USE_PYREPL = True
+else:
+    CAN_USE_PYREPL = sys.getwindowsversion().build >= 10586  # Windows 10 TH2
 
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):

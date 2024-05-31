@@ -154,10 +154,10 @@ New Features
 A Better Interactive Interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS, Python now uses a new
-:term:`interactive` shell. When the user starts the :term:`REPL` from an
-interactive terminal, and both :mod:`curses` and :mod:`readline` are
-available, the interactive shell now supports the following new features:
+On Unix-like systems like Linux or macOS as well as Windows, Python now
+uses a new :term:`interactive` shell. When the user starts the
+:term:`REPL` from an interactive terminal the interactive shell now
+supports the following new features:
 
 * Colorized prompts.
 * Multiline editing with history preservation.
@@ -174,10 +174,13 @@ available, the interactive shell now supports the following new features:
 If the new interactive shell is not desired, it can be disabled via
 the :envvar:`PYTHON_BASIC_REPL` environment variable.
 
+The new shell requires :mod:`curses` on Unix-like systems.
+
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
-Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
+Windows support contributed by Dino Viehland and Anthony Shaw.)
 
 .. _whatsnew313-improved-error-messages:
 

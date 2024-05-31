@@ -143,18 +143,7 @@ class UnixConsole(Console):
         - term (str): Terminal name.
         - encoding (str): Encoding to use for I/O operations.
         """
-
-        self.encoding = encoding or sys.getdefaultencoding()
-
-        if isinstance(f_in, int):
-            self.input_fd = f_in
-        else:
-            self.input_fd = f_in.fileno()
-
-        if isinstance(f_out, int):
-            self.output_fd = f_out
-        else:
-            self.output_fd = f_out.fileno()
+        super().__init__(f_in, f_out, term, encoding)
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
@@ -592,14 +581,19 @@ class UnixConsole(Console):
         px_pos = 0
         j = 0
         for c in oldline:
-            if j >= px_coord: break
+            if j >= px_coord:
+                break
             j += wlen(c)
             px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
         # sequene
-        while x_coord < minlen and oldline[x_pos] == newline[x_pos] and newline[x_pos] != "\x1b":
+        while (
+            x_coord < minlen
+            and oldline[x_pos] == newline[x_pos]
+            and newline[x_pos] != "\x1b"
+        ):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
@@ -619,7 +613,11 @@ class UnixConsole(Console):
             self.__posxy = x_coord + character_width, y
 
         # if it's a single character change in the middle of the line
-        elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+        elif (
+            x_coord < minlen
+            and oldline[x_pos + 1 :] == newline[x_pos + 1 :]
+            and wlen(oldline[x_pos]) == wlen(newline[x_pos])
+        ):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
