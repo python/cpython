@@ -5981,7 +5981,9 @@ class ForwardRefTests(BaseTestCase):
             return a
 
         self.assertEqual(namespace1(), namespace1())
-        self.assertNotEqual(namespace1(), namespace2())
+        # TODO(PEP 649): Used to be assertNotEqual because get_type_hints()
+        # would mutate the ForwardRef objects. Do we need to preserve this test?
+        self.assertEqual(namespace1(), namespace2())
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
@@ -6046,7 +6048,9 @@ class ForwardRefTests(BaseTestCase):
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
-            self.assertRaises(RecursionError, cmp, r1, r2)
+            self.assertEqual(r1, r2)
+            # TODO(PEP 649): do we need to preserve this test somehow?
+            # self.assertRaises(RecursionError, cmp, r1, r2)
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
@@ -6345,10 +6349,10 @@ class InternalsTests(BaseTestCase):
             DeprecationWarning,
             (
                 "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing.ForwardRef._evaluate' is deprecated"
+                "of 'typing._evaluate_forward_ref' is deprecated"
             )
         ) as cm:
-            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
+            self.assertIs(typing._evaluate_forward_ref(f, globals(), {}, recursive_guard=frozenset()), int)
 
         self.assertEqual(cm.filename, __file__)
 
@@ -10017,7 +10021,6 @@ class SpecialAttrsTests(BaseTestCase):
             typing.ClassVar: 'ClassVar',
             typing.Concatenate: 'Concatenate',
             typing.Final: 'Final',
-            typing.ForwardRef: 'ForwardRef',
             typing.Literal: 'Literal',
             typing.NewType: 'NewType',
             typing.NoReturn: 'NoReturn',
@@ -10029,7 +10032,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
             typing.Self: 'Self',
-            # Subscribed special forms
+            # Subscripted special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
             typing.Annotated[int, 'Annotation']: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
@@ -10044,7 +10047,6 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Union[Any]: 'Any',
             typing.Union[int, float]: 'Union',
             # Incompatible special forms (tested in test_special_attrs2)
-            # - typing.ForwardRef('set[Any]')
             # - typing.NewType('TypeName', Any)
             # - typing.ParamSpec('SpecialAttrsP')
             # - typing.TypeVar('T')
@@ -10063,18 +10065,6 @@ class SpecialAttrsTests(BaseTestCase):
     TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
 
     def test_special_attrs2(self):
-        # Forward refs provide a different introspection API. __name__ and
-        # __qualname__ make little sense for forward refs as they can store
-        # complex typing expressions.
-        fr = typing.ForwardRef('set[Any]')
-        self.assertFalse(hasattr(fr, '__name__'))
-        self.assertFalse(hasattr(fr, '__qualname__'))
-        self.assertEqual(fr.__module__, 'typing')
-        # Forward refs are currently unpicklable.
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError):
-                pickle.dumps(fr, proto)
-
         self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
         self.assertEqual(
             SpecialAttrsTests.TypeName.__qualname__,

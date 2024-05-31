@@ -19,6 +19,7 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
+from annotations import ForwardRef
 import collections
 from collections import defaultdict
 import collections.abc
@@ -166,7 +167,7 @@ def _type_convert(arg, module=None, *, allow_special_forms=False):
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module, is_class=allow_special_forms)
+        return _make_forward_ref(arg, module=module, is_class=allow_special_forms)
     return arg
 
 
@@ -471,11 +472,11 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
-        return t._evaluate(globalns, localns, type_params, recursive_guard=recursive_guard)
+        return _evaluate_forward_ref(t, globalns, localns, type_params, recursive_guard=recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
-                ForwardRef(arg) if isinstance(arg, str) else arg
+                _make_forward_ref(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
             is_unpacked = t.__unpacked__
@@ -1012,102 +1013,49 @@ def TypeIs(self, parameters):
     return _GenericAlias(self, (item,))
 
 
-class ForwardRef(_Final, _root=True):
-    """Internal wrapper to hold a forward reference."""
+def _make_forward_ref(code, **kwargs):
+    forward_ref = ForwardRef(code, **kwargs)
+    # For compatibility, eagerly compile the forwardref's code.
+    forward_ref.__forward_code__
+    return forward_ref
 
-    __slots__ = ('__forward_arg__', '__forward_code__',
-                 '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__', '__forward_is_class__',
-                 '__forward_module__')
 
-    def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
-        if not isinstance(arg, str):
-            raise TypeError(f"Forward reference must be a string -- got {arg!r}")
-
-        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
-        # Unfortunately, this isn't a valid expression on its own, so we
-        # do the unpacking manually.
-        if arg.startswith('*'):
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
-        else:
-            arg_to_compile = arg
-        try:
-            code = compile(arg_to_compile, '<string>', 'eval')
-        except SyntaxError:
-            raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
-
-        self.__forward_arg__ = arg
-        self.__forward_code__ = code
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
-        self.__forward_is_argument__ = is_argument
-        self.__forward_is_class__ = is_class
-        self.__forward_module__ = module
-
-    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
-        if type_params is _sentinel:
-            _deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
-            type_params = ()
-        if self.__forward_arg__ in recursive_guard:
-            return self
-        if not self.__forward_evaluated__ or localns is not globalns:
-            if globalns is None and localns is None:
-                globalns = localns = {}
-            elif globalns is None:
-                globalns = localns
-            elif localns is None:
-                localns = globalns
-            if self.__forward_module__ is not None:
-                globalns = getattr(
-                    sys.modules.get(self.__forward_module__, None), '__dict__', globalns
-                )
-            if type_params:
-                # "Inject" type parameters into the local namespace
-                # (unless they are shadowed by assignments *in* the local namespace),
-                # as a way of emulating annotation scopes when calling `eval()`
-                locals_to_pass = {param.__name__: param for param in type_params} | localns
-            else:
-                locals_to_pass = localns
-            type_ = _type_check(
-                eval(self.__forward_code__, globalns, locals_to_pass),
-                "Forward references must evaluate to types.",
-                is_argument=self.__forward_is_argument__,
-                allow_special_forms=self.__forward_is_class__,
-            )
-            self.__forward_value__ = _eval_type(
-                type_,
-                globalns,
-                localns,
-                type_params,
-                recursive_guard=(recursive_guard | {self.__forward_arg__}),
-            )
-            self.__forward_evaluated__ = True
-        return self.__forward_value__
-
-    def __eq__(self, other):
-        if not isinstance(other, ForwardRef):
-            return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (self.__forward_arg__ == other.__forward_arg__ and
-                    self.__forward_value__ == other.__forward_value__)
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_module__ == other.__forward_module__)
-
-    def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
-
-    def __or__(self, other):
-        return Union[self, other]
-
-    def __ror__(self, other):
-        return Union[other, self]
-
-    def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ''
-        else:
-            module_repr = f', module={self.__forward_module__!r}'
-        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
+def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel, *, recursive_guard):
+    if type_params is _sentinel:
+        _deprecation_warning_for_no_type_params_passed("typing._evaluate_forward_ref")
+        type_params = ()
+    if forward_ref.__forward_arg__ in recursive_guard:
+        return forward_ref
+    if globalns is None and localns is None:
+        globalns = localns = {}
+    elif globalns is None:
+        globalns = localns
+    elif localns is None:
+        localns = globalns
+    if forward_ref.__forward_module__ is not None:
+        globalns = getattr(
+            sys.modules.get(forward_ref.__forward_module__, None), '__dict__', globalns
+        )
+    if type_params:
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
+        locals_to_pass = {param.__name__: param for param in type_params} | localns
+    else:
+        locals_to_pass = localns
+    type_ = _type_check(
+        eval(forward_ref.__forward_code__, globalns, locals_to_pass),
+        "Forward references must evaluate to types.",
+        is_argument=forward_ref.__forward_is_argument__,
+        allow_special_forms=forward_ref.__forward_is_class__,
+    )
+    return _eval_type(
+        type_,
+        globalns,
+        localns,
+        type_params,
+        recursive_guard=(recursive_guard | {forward_ref.__forward_arg__}),
+    )
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
@@ -2429,7 +2377,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value, is_argument=False, is_class=True)
+                    value = _make_forward_ref(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -2463,7 +2411,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
             # a module-level annotation or a function argument annotation
-            value = ForwardRef(
+            value = _make_forward_ref(
                 value,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
