@@ -380,7 +380,7 @@ class StreamWriter:
         else:
             # this is A LOT of data : if required and following the logic, something like 
             # (number_of_zero_bytes+1) is the number of bytes that represent the datasize
-            raise NotImplementedError("this is A LOT of data!")
+            raise NotImplementedError
 
     async def drain(self):
         """Flush the write buffer.
@@ -806,15 +806,18 @@ class StreamReader:
     
             reads 1 byte (or more) from the stream and returns the expected data bytes
         """
-        l = int.from_bytes(await self.read(1))
+        l = int.from_bytes(b := await self.read(1))
         if l > 127:
             # data length is less or equal to 7 bits, and we already have it
             return await self.read(l-128)
         elif l != 0:
             # first byte is the bytesize of the number of bytes of the data
             return await self.read(l//8+1 if l%8 else l//8)
+        elif not len(b):
+            return b''
         else:
-            # see StreamReader.readX() for a clue on how to implement this
+            # this is A LOT of data, unlikely to ever happen ; in case it does,
+            # see StreamWriter.writeX for a clue on how to implement this
             raise NotImplementedError
 
     def __aiter__(self):
