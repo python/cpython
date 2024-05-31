@@ -161,7 +161,7 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkParams(widget, name, *options)
         lastop = options.pop()
         opstring = ', '.join(options)
-        errmsg=f'bad relief "spam": must be {opstring}, or {lastop}'
+        errmsg = f'bad relief "spam": must be {opstring}, or {lastop or '""'}'
         if tk_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam',
