@@ -897,6 +897,8 @@ Decimal objects
       :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the
       rounding method in either the supplied *context* or the current context.
 
+   Decimal numbers can be rounded using the :func:`.round` function:
+
    .. describe:: round(number, ndigits=None)
 
       If *ndigits* is ``None``, returns the nearest :class:`int` to *number*,
