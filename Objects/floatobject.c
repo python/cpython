@@ -1262,11 +1262,17 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
         } while (1);
     }
 
-    /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d            '\0' */
-    char *s = PyMem_Malloc(1 + 2 + 2 +   precision + 2 + DBL_MAX_EXP + 1);
+    const size_t exp_len = ceil(log10(DBL_MAX_EXP));
+
+    /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d        '\0' */
+    size_t size =          1     + 2 +   precision + 2 + exp_len + 1;
+    if (use_alt_formatting) {
+        size += 2;
+    }
+    char *s = PyMem_Malloc(size);
 
     /* sign and prefix */
-    int si = 0;
+    size_t si = 0;
     if (copysign(1.0, x) == -1.0) {
         s[si] = '-';
         si++;
@@ -1312,9 +1318,9 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
     /* exponent */
     s[si] = upper ? 'P' : 'p';
     si++;
-    si += snprintf(s + si, DBL_MAX_EXP + 1, "%+d", e) + 1;
+    si += snprintf(s + si, exp_len + 2, "%+d", e) + 1;
 
-    return PyMem_Realloc(s, si);
+    return s;
 }
 
 /*[clinic input]
