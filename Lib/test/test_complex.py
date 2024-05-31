@@ -632,6 +632,22 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(copysign(1., complex("-nan-nanj").real), -1.)
         self.assertEqual(copysign(1., complex("-nan-nanj").imag), -1.)
 
+    def test_other_non_numeric_input_types(self):
+        class CustomStr(str): ...
+        class CustomBytes(bytes): ...
+        class CustomByteArray(bytearray): ...
+
+        factories = [bytes, bytearray, lambda b: CustomStr(b.decode()),
+                     CustomBytes, CustomByteArray]
+
+        for f in factories:
+            x = f(b"(1+1j)")
+            with self.subTest(type(x)):
+                self.assertEqual(complex(x), 1+1j)
+                with self.assertRaisesRegex(ValueError,
+                                            "arg is a malformed string"):
+                    complex(f(b'A'))
+
     def test_underscores(self):
         # check underscores
         for lit in VALID_UNDERSCORE_LITERALS:

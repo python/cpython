@@ -1,0 +1,2 @@
+Support :class:`bytes`/:class:`bytearray` in the :class:`complex`
+constructor. Patch by Sergey B Kirpichev.
