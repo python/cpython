@@ -360,6 +360,28 @@ class StreamWriter:
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
 
+    def writeX(self, data):
+        """
+            send an abritrary number of bytes ; the data is prefixed with the
+            data size so that the peer knows exactly how many bytes to read.
+            prefix is adaptative and depends on data length. totally useful
+            when bytestream is arbitrary and may contain EOF or EOT, and/or when
+            the exact number of bytes of the segment is not specified by the
+            protocol.
+        """
+        L = len(data)
+        if L < 128:
+            # count will be of the form 0b1xxxxxxx
+            self.write( (L+128).to_bytes() + data )
+        elif L <= pow(2,127*8):
+            # count will be of the form 0b0xxxxxxx, followed by number of size bytes, followed by data
+            l = L.bit_length()
+            self.write( (l).to_bytes() + L.to_bytes(l+1 if l%8 else l) + data )
+        else:
+            # this is A LOT of data : if required and following the logic, something like 
+            # (number_of_zero_bytes+1) is the number of bytes that represent the datasize
+            raise NotImplementedError("this is A LOT of data!")
+
     async def drain(self):
         """Flush the write buffer.
 
@@ -776,6 +798,24 @@ class StreamReader:
             del self._buffer[:n]
         self._maybe_resume_transport()
         return data
+
+    async def readX(self):
+        """
+            complement of StreamWriter.writeX() : read exactly the number of bytes 
+            required without prior knowledge of the data size
+    
+            reads 1 byte (or more) from the stream and returns the expected data bytes
+        """
+        l = int.from_bytes(await self.read(1))
+        if l > 127:
+            # data length is less or equal to 7 bits, and we already have it
+            return await self.read(l-128)
+        elif l != 0:
+            # first byte is the bytesize of the number of bytes of the data
+            return await self.read(l//8+1 if l%8 else l//8)
+        else:
+            # see StreamReader.readX() for a clue on how to implement this
+            raise NotImplementedError
 
     def __aiter__(self):
         return self
