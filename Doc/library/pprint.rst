@@ -97,19 +97,15 @@ Functions
 
 .. function:: isrecursive(object)
 
-   Determine if *object* requires a recursive representation.  This function is
-   subject to the same limitations as noted in :func:`saferepr` below and may raise an
-   :exc:`RecursionError` if it fails to detect a recursive object.
+   Determine if *object* requires a recursive representation.
 
 
 .. function:: saferepr(object)
 
-   Return a string representation of *object*, protected against recursion in
-   some common data structures, namely instances of :class:`dict`, :class:`list`
-   and :class:`tuple` or subclasses whose ``__repr__`` has not been overridden.  If the
-   representation of object exposes a recursive entry, the recursive reference
-   will be represented as ``<Recursion on typename with id=number>``.  The
-   representation is not otherwise formatted.
+   Return a string representation of *object*, protected against recursive data
+   structures.  If the representation of *object* exposes a recursive entry, the
+   recursive reference will be represented as ``<Recursion on typename with
+   id=number>``.  The representation is not otherwise formatted.
 
    >>> pprint.saferepr(stuff)
    "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"

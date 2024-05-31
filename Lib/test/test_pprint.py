@@ -1124,6 +1124,18 @@ deque([('brown', 2),
     'jumped over a '
     'lazy dog'}""")
 
+    def test_saferepr_custom_repr_recursion_detection(self):
+        class A:
+            def __str__(self):
+                return pprint.saferepr(self.__dict__)
+            def __repr__(self):
+                return str(self)
+
+        a = A()
+        a.self = a
+        self.assertEqual(pprint.pformat(a),
+                         f"{'self': <Recursion on A with id={id(a)}>}")
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
