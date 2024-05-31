@@ -2822,6 +2822,8 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 
     Py_FatalError("_PyObject_AssertFailed");
 }
+
+
 void
 _Py_Dealloc(PyObject *op)
 {
@@ -2847,7 +2849,6 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
-
     (*dealloc)(op);
 
 #ifdef Py_DEBUG
