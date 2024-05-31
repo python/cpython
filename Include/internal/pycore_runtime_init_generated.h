@@ -930,6 +930,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
     INIT_ID(exp), \
+    INIT_ID(explicit_curdir), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(f), \
