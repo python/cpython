@@ -66,6 +66,14 @@ _PyCriticalSection_Begin(_PyCriticalSection *c, PyObject *op);
 PyAPI_FUNC(void)
 _PyCriticalSection_End(_PyCriticalSection *c);
 
+// (private)
+PyAPI_FUNC(void)
+_PyCriticalSection2_Begin(_PyCriticalSection2 *c, PyObject *a, PyObject *b);
+
+// (private)
+PyAPI_FUNC(void)
+_PyCriticalSection2_End(_PyCriticalSection2 *c);
+
 // CPython internals should use pycore_critical_section.h instead.
 #ifdef Py_BUILD_CORE
 # undef Py_BEGIN_CRITICAL_SECTION
