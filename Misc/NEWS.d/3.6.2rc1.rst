@@ -5,8 +5,8 @@
 .. original section: Library
 .. section: Security
 
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of :cve:`2016-0718` and
+:cve:`2016-4472`. See https://sourceforge.net/p/expat/bugs/537/ for more
 information.
 
 ..

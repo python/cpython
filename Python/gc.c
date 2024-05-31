@@ -12,7 +12,6 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -2031,11 +2030,16 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
     return op;
 }
 
+
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp), presize);
+    size_t size = _PyObject_SIZE(tp);
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
+        size += _PyInlineValuesSize(tp);
+    }
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }

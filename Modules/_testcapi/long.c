@@ -52,8 +52,8 @@ pylong_asnativebytes(PyObject *module, PyObject *args)
 {
     PyObject *v;
     Py_buffer buffer;
-    Py_ssize_t n, endianness;
-    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &endianness)) {
+    Py_ssize_t n, flags;
+    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &flags)) {
         return NULL;
     }
     if (buffer.readonly) {
@@ -66,7 +66,7 @@ pylong_asnativebytes(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    Py_ssize_t res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)endianness);
+    Py_ssize_t res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)flags);
     PyBuffer_Release(&buffer);
     return res >= 0 ? PyLong_FromSsize_t(res) : NULL;
 }
@@ -76,8 +76,8 @@ static PyObject *
 pylong_fromnativebytes(PyObject *module, PyObject *args)
 {
     Py_buffer buffer;
-    Py_ssize_t n, endianness, signed_;
-    if (!PyArg_ParseTuple(args, "y*nnn", &buffer, &n, &endianness, &signed_)) {
+    Py_ssize_t n, flags, signed_;
+    if (!PyArg_ParseTuple(args, "y*nnn", &buffer, &n, &flags, &signed_)) {
         return NULL;
     }
     if (buffer.len < n) {
@@ -86,8 +86,8 @@ pylong_fromnativebytes(PyObject *module, PyObject *args)
         return NULL;
     }
     PyObject *res = signed_
-        ? PyLong_FromNativeBytes(buffer.buf, n, (int)endianness)
-        : PyLong_FromUnsignedNativeBytes(buffer.buf, n, (int)endianness);
+        ? PyLong_FromNativeBytes(buffer.buf, n, (int)flags)
+        : PyLong_FromUnsignedNativeBytes(buffer.buf, n, (int)flags);
     PyBuffer_Release(&buffer);
     return res;
 }

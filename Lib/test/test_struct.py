@@ -9,7 +9,7 @@ import sys
 import weakref
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, suppress_immortalization
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
@@ -674,6 +674,7 @@ class StructTest(unittest.TestCase):
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
 
+    @suppress_immortalization()
     def test__struct_reference_cycle_cleaned_up(self):
         # Regression test for python/cpython#94207.
 
