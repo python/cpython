@@ -156,36 +156,34 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *item;
     if (nnargs > 0){
         /* Trim placeholders from the end if needed */
-        Py_ssize_t i;
-        for (i=nnargs; i > 0; i--) {
-            item = PyTuple_GET_ITEM(nargs, i-1);
+        Py_ssize_t nnargs_old = nnargs;
+        for (; nnargs > 0; nnargs--) {
+            item = PyTuple_GET_ITEM(nargs, nnargs-1);
             if (!Py_Is(item, pto->placeholder))
                 break;
         }
-        if (i != nnargs){
-            nnargs = i;
+        if (nnargs != nnargs_old) {
             PyObject *tmp = PyTuple_GetSlice(nargs, 0, nnargs);
             Py_DECREF(nargs);
             nargs = tmp;
         }
         /* Count placeholders */
-        if (nnargs > 0){
-            for (Py_ssize_t i=0; i < nnargs; i++){
+        if (nnargs > 1){
+            for (Py_ssize_t i=0; i < nnargs - 1; i++){
                 item = PyTuple_GET_ITEM(nargs, i);
                 if (Py_Is(item, pto->placeholder))
                     nnp++;
             }
         }
     }
-    if ((pnp > 0) & (nnargs > 0)) {
-        Py_ssize_t pnargs = PyTuple_GET_SIZE(pargs);
-        Py_ssize_t anargs = pnargs;
+    if ((pnp > 0) && (nnargs > 0)) {
+        Py_ssize_t npargs = PyTuple_GET_SIZE(pargs);
+        Py_ssize_t nfargs = npargs;
         if (nnargs > pnp)
-            anargs += nnargs - pnp;
-        PyObject *aargs = PyTuple_New(anargs);
-        Py_ssize_t j = 0;
-        for (Py_ssize_t i=0; i < anargs; i++) {
-            if (i < pnargs) {
+            nfargs += nnargs - pnp;
+        PyObject *fargs = PyTuple_New(nfargs);
+        for (Py_ssize_t i=0, j=0; i < nfargs; i++) {
+            if (i < npargs) {
                 item = PyTuple_GET_ITEM(pargs, i);
                 if ((j < nnargs) & Py_Is(item, pto->placeholder)){
                     item = PyTuple_GET_ITEM(nargs, j);
@@ -197,9 +195,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 j++;
             }
             Py_INCREF(item);
-            PyTuple_SET_ITEM(aargs, i, item);
+            PyTuple_SET_ITEM(fargs, i, item);
         }
-        pto->args = aargs;
+        pto->args = fargs;
         pto->np = pnp + nnp;
         Py_DECREF(nargs);
     } else if (pargs == NULL) {
