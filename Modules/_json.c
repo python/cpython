@@ -1671,8 +1671,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
 
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
-        int r = _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
-        Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(r);
+        Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST();
+        return _PyUnicodeWriter_WriteASCIIString(writer, "[]", 2);
     }
 
     if (s->markers != Py_None) {
@@ -1737,7 +1737,8 @@ encoder_listencode_list(PyEncoderObject *s, _PyUnicodeWriter *writer,
     if (_PyUnicodeWriter_WriteChar(writer, ']'))
         goto bail;
     Py_DECREF(s_fast);
-    Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(0);
+    Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST();
+    return 0;
 
 bail:
     Py_END_CRITICAL_SECTION_SEQUENCE_FAST();

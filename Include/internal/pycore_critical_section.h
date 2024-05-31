@@ -128,11 +128,10 @@ extern "C" {
         }                                                               \
     }
 
-# define Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(value)                \
+# define Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST                         \
         if (_should_lock_cs) {                                          \
             _PyCriticalSection_End(&_cs);                               \
-        }                                                               \
-        return value;
+        }
 
 // Asserts that the mutex is locked.  The mutex must be held by the
 // top-most critical section otherwise there's the possibility
@@ -165,7 +164,7 @@ extern "C" {
 # define Py_END_CRITICAL_SECTION2()
 # define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()
-# define Py_RETURN_CRITICAL_SECTION_SEQUENCE_FAST(value) return value;
+# define Py_EXIT_CRITICAL_SECTION_SEQUENCE_FAST()
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
 #endif  /* !Py_GIL_DISABLED */
