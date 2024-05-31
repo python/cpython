@@ -50,7 +50,7 @@ struct _import_runtime_state {
         PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
-           and only if they support multiple initialization (m_size >- 0)
+           and only if they support multiple initialization (m_size >= 0)
            or are imported in the main interpreter.
            This is initialized lazily in fix_up_extension() in import.c.
            Modules are added there and looked up in _imp.find_extension(). */
@@ -191,6 +191,19 @@ extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
+
+#ifdef Py_GIL_DISABLED
+// Assuming that the GIL is enabled from a call to
+// _PyEval_EnableGILTransient(), resolve the transient request depending on the
+// state of the module argument:
+// - If module is NULL or a PyModuleObject with md_gil == Py_MOD_GIL_NOT_USED,
+//   call _PyEval_DisableGIL().
+// - Otherwise, call _PyEval_EnableGILPermanent(). If the GIL was not already
+//   enabled permanently, issue a warning referencing the module's name.
+//
+// This function may raise an exception.
+extern int _PyImport_CheckGILForModule(PyObject *module, PyObject *module_name);
+#endif
 
 #ifdef __cplusplus
 }

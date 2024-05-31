@@ -622,9 +622,14 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_frame_locals(self):
         code = """
-            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+            val = "a" in [sys._getframe().f_locals for a in [0]][0]
         """
         import sys
+        self._check_in_scopes(code, {"val": False}, ns={"sys": sys})
+
+        code = """
+            val = [sys._getframe().f_locals["a"] for a in [0]][0]
+        """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
 
     def _recursive_replace(self, maybe_code):

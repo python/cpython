@@ -3,7 +3,6 @@
 #include "parts.h"
 #include "pycore_lock.h"
 #include "pycore_pythread.h"      // PyThread_get_thread_ident_ex()
-#include "pycore_time.h"          // _PyTime_MonotonicUnchecked()
 
 #include "clinic/test_lock.c.h"
 
@@ -291,7 +290,10 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         goto exit;
     }
 
-    PyTime_t start = _PyTime_MonotonicUnchecked();
+    PyTime_t start, end;
+    if (PyTime_PerfCounter(&start) < 0) {
+        goto exit;
+    }
 
     for (Py_ssize_t i = 0; i < num_threads; i++) {
         thread_data[i].bench_data = &bench_data;
@@ -308,7 +310,9 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
     }
 
     Py_ssize_t total_iters = bench_data.total_iters;
-    PyTime_t end = _PyTime_MonotonicUnchecked();
+    if (PyTime_PerfCounter(&end) < 0) {
+        goto exit;
+    }
 
     // Return the total number of acquisitions and the number of acquisitions
     // for each thread.
@@ -320,7 +324,8 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         PyList_SET_ITEM(thread_iters, i, iter);
     }
 
-    double rate = total_iters * 1000000000.0 / (end - start);
+    assert(end != start);
+    double rate = total_iters * 1e9 / (end - start);
     res = Py_BuildValue("(dO)", rate, thread_iters);
 
 exit:
