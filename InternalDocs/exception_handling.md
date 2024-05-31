@@ -16,7 +16,7 @@ except:
 
 ```
 
-compiles into pseudo-code like the following:
+compiles into intermediate code like the following:
 
 ```
                   RESUME                   0
@@ -38,29 +38,31 @@ compiles into pseudo-code like the following:
                   STORE_NAME               1 (res)
 ```
 
-The `SETUP_FINALLY` instruction specifies that henceforth, exceptions
+`SETUP_FINALLY` and `POP_BLOCK` are pseudo-instruction. This means
+that they can appear in intermediate code but they are not bytecode
+instructions. `SETUP_FINALLY` specifies that henceforth, exceptions
 are handled by the code at label L1. The `POP_BLOCK` instruction
 reverses the effect of the last `SETUP` instruction, so that the
 active exception handler reverts to what it was before.
 
-Note that the `SETUP_FINALLY` and `POP_BLOCK` instructions have no effect
-when no exceptions are raised. The idea of zero-cost exception handling
-is to replace these instructions by metadata which is stored alongside
-the bytecode, and which is inspected only when an exception occurs.
+`SETUP_FINALLY` and `POP_BLOCK` have no effect when no exceptions
+are raised. The idea of zero-cost exception handling is to replace
+these pseudo-instructions by metadata which is stored alongside the
+bytecode, and which is inspected only when an exception occurs.
 This metadata is the exception table, and it is stored in the code
 object's `co_exceptiontable` field.
 
-When the pseudo-instructions are translated into bytecode, the
-`SETUP_FINALLY` and `POP_BLOCK` instructions are removed, and the
-exception table is constructed, mapping each instruction to the
-exception handler that covers it, if any. Instructions which
-are not covered by any exception handler within the same code
-object's bytecode, do not appear in the exception table at all.
+When the pseudo-instructions are translated into bytecode,
+`SETUP_FINALLY` and `POP_BLOCK` are removed, and the exception
+table is constructed, mapping each instruction to the exception
+handler that covers it, if any. Instructions which are not
+covered by any exception handler within the same code object's
+bytecode, do not appear in the exception table at all.
 
 For the code object in our example above, the table has a single
-entry specifying that all instructions between the `SETUP_FINALLY`
-and the `POP_BLOCK` are covered by the exception handler located
-at label `L1`.
+entry specifying that all instructions that were between the
+`SETUP_FINALLY` and the `POP_BLOCK` are covered by the exception
+handler located at label `L1`.
 
 Handling Exceptions
 -------------------
