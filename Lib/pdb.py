@@ -588,6 +588,28 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exceptions = tuple()
             self._chained_exception_index = 0
 
+    def process_cmdqueue(self):
+        """Process commands in the command queue.
+
+        The function returns in two cases:
+            1. the command queue is empty
+            2. a command to continue execution is encountered
+
+        The return value is whether a following cmdloop should be executed, or
+        True for the first case and False for the second.
+        """
+        if not self.cmdqueue:
+            return True
+
+        # The continue command is just a sentinel to break out of the loop
+        # The side effect will be overwritten by the next resuming command
+        self.cmdqueue.append('continue')
+        self._cmdloop()
+        if self.cmdqueue:
+            self.cmdqueue.pop(-1)
+            return False
+        return True
+
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
@@ -603,10 +625,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
             self.setup(frame, tb)
-            # if we have more commands to process, do not show the stack entry
-            if not self.cmdqueue:
+            # Process the cmdqueue, if cmdqueue is drained, ask for user input
+            if self.process_cmdqueue():
                 self.print_stack_entry(self.stack[self.curindex])
-            self._cmdloop()
+                self._cmdloop()
             self.forget()
 
     def displayhook(self, obj):

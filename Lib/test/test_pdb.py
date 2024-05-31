@@ -3179,6 +3179,7 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
         self.assertNotIn("SyntaxError", stdout)
         self.assertIn("a+8=9", stdout)
+        self.assertIn("-> b = 2", stdout)
 
     def test_pdbrc_empty_line(self):
         """Test that empty lines in .pdbrc are ignored."""
