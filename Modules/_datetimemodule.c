@@ -116,6 +116,9 @@ get_current_module(PyInterpreterState *interp)
     }
     PyObject *mod = NULL;
     (void)PyWeakref_GetRef(ref, &mod);
+    if (mod == Py_None) {
+        Py_CLEAR(mod);
+    }
     Py_DECREF(ref);
     return mod;
 }
