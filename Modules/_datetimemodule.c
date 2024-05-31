@@ -135,20 +135,10 @@ _get_current_state(PyObject **p_mod)
         if (PyErr_Occurred()) {
             return NULL;
         }
-        /* The static types can outlive the module, so we must
-         * temporarily load the module if one of the static types'
-         * methods needs module state.  We can cut some corners
-         * since the module was necessarily already imported successfully
-         * and the module will only be around temporarily.  We don't even
-         * need a spec.  Normally the module would have been found
-         * and the temporary module would never happen. */
-        mod = PyModule_New("_datetime");
+        /* The static types can outlive the module,
+         * so we must re-import the module. */
+        mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            return NULL;
-        }
-        ((PyModuleObject*)mod)->md_def = &datetimemodule;
-        if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
-            Py_DECREF(mod);
             return NULL;
         }
     }
