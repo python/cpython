@@ -601,9 +601,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not self.cmdqueue:
             return True
 
-        # The continue command is just a sentinel to break out of the loop
+        # The step command is just a sentinel to break out of the loop
         # The side effect will be overwritten by the next resuming command
-        self.cmdqueue.append('continue')
+        self.cmdqueue.append('step')
         self._cmdloop()
         if self.cmdqueue:
             self.cmdqueue.pop(-1)
