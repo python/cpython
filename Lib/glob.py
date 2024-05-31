@@ -108,7 +108,8 @@ def _relative_glob(select, dirname, dir_fd=None):
     """
     dirname = _StringGlobber.add_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
-    return map(slicer, select(dirname, dir_fd, dirname))
+    for path in select(dirname, dir_fd, dirname):
+        yield slicer(path)
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
