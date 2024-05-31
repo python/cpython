@@ -751,8 +751,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
             # Close any file descriptors still on the stack.
             while stack:
                 func, fd, path, entry = stack.pop()
-                if func is os.close:
+                if func is not os.close:
+                    continue
+                try:
                     os.close(fd)
+                except OSError as err:
+                    onexc(os.close, path, err)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
