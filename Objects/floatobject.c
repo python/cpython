@@ -1221,11 +1221,14 @@ char *
 _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
                 int use_alt_formatting, int upper, int float_hex)
 {
-    int e, autoprec = precision < 0;
+    int e;
     double m = frexp(fabs(x), &e);
 
+    int autoprec = precision < 0;
     if (autoprec) {
-        precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
+        /* DBL_MANT_DIG rounded up to the next integer of the form 4k+1 */
+        const double tohex_nbits = DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4;
+        precision = (tohex_nbits - 1)/4;
         if (!x && float_hex) {
             /* for compatibility with float.hex(), we keep just one
                digit of zero */
