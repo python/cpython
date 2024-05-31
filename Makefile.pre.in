@@ -1055,6 +1055,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
+		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
