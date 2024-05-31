@@ -4789,6 +4789,12 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
 
+    def test_deferred_annotations(self):
+        @dataclass
+        class A:
+            x: undefined
+            y: ClassVar[undefined]
+
 
 if __name__ == '__main__':
     unittest.main()

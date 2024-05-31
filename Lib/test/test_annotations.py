@@ -45,8 +45,9 @@ class TestForwardRefClass(unittest.TestCase):
         fr = annotations.ForwardRef("set[Any]")
         self.assertFalse(hasattr(fr, "__name__"))
         self.assertFalse(hasattr(fr, "__qualname__"))
-        self.assertEqual(fr.__module__, "typing")
-        # Forward refs are currently unpicklable.
+        self.assertEqual(fr.__module__, "annotations")
+        # Forward refs are currently unpicklable once they contain a code object.
+        fr.__forward_code__  # fill the cache
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
