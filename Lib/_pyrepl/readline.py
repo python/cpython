@@ -237,13 +237,24 @@ def _get_first_indentation(buffer: list[str]) -> str | None:
     return None
 
 
-def _is_last_char_colon(buffer: list[str]) -> bool:
-    i = len(buffer)
-    while i > 0:
-        i -= 1
-        if buffer[i] not in " \t\n":  # ignore whitespaces
-            return buffer[i] == ":"
-    return False
+def _should_auto_indent(buffer: list[str], pos: int) -> bool:
+    # check if last character before "pos" is a colon, ignoring
+    # whitespaces and comments.
+    last_char = None
+    while pos > 0:
+        pos -= 1
+        if last_char is None:
+            if buffer[pos] not in " \t\n":  # ignore whitespaces
+                last_char = buffer[pos]
+        else:
+            # even if we found a non-whitespace character before
+            # original pos, we keep going back until newline is reached
+            # to make sure we ignore comments
+            if buffer[pos] == "\n":
+                break
+            if buffer[pos] == "#":
+                last_char = None
+    return last_char == ":"
 
 
 class maybe_accept(commands.Command):
@@ -280,7 +291,7 @@ class maybe_accept(commands.Command):
                     for i in range(prevlinestart, prevlinestart + indent):
                         r.insert(r.buffer[i])
                 r.update_last_used_indentation()
-                if _is_last_char_colon(r.buffer):
+                if _should_auto_indent(r.buffer, r.pos):
                     if r.last_used_indentation is not None:
                         indentation = r.last_used_indentation
                     else:
