@@ -151,8 +151,8 @@ The following functions provide locale-independent string to number conversions.
 
    .. versionadded:: 3.1
 
-.. versionchanged:: 3.14
-   Support ``'x'`` and ``'X'`` format types for :class:`float`.
+   .. versionchanged:: 3.14
+      Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
