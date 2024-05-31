@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 import ast
 import code
 from dataclasses import dataclass, field
+import os.path
 import sys
 
 
@@ -161,7 +162,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
             tree = ast.parse(source)
-        except (OverflowError, SyntaxError, ValueError):
+        except (SyntaxError, OverflowError, ValueError):
             self.showsyntaxerror(filename)
             return False
         if tree.body:
@@ -172,9 +173,18 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = self.compile.compiler(item, filename, the_symbol, dont_inherit=True)
-            except (OverflowError, ValueError, SyntaxError):
-                    self.showsyntaxerror(filename)
-                    return False
+            except SyntaxError as e:
+                if e.args[0] == "'await' outside function":
+                    python = os.path.basename(sys.executable)
+                    e.add_note(
+                        f"Try the asyncio REPL ({python} -m asyncio) to use"
+                        f" top-level 'await' and run background asyncio tasks."
+                    )
+                self.showsyntaxerror(filename)
+                return False
+            except (OverflowError, ValueError):
+                self.showsyntaxerror(filename)
+                return False
 
             if code is None:
                 return True
