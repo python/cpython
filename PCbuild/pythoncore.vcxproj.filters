@@ -207,6 +207,9 @@
     <ClInclude Include="..\Include\rangeobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\refcount.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\setobject.h">
       <Filter>Include</Filter>
     </ClInclude>
