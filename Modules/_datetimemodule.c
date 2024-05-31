@@ -123,15 +123,44 @@ get_current_module(PyInterpreterState *interp)
     return mod;
 }
 
-#define GET_CURRENT_STATE(ST_VAR)                               \
-    NULL;                                                       \
-    PyObject *current_mod = NULL;                               \
-    do {                                                        \
-        PyInterpreterState *interp = PyInterpreterState_Get();  \
-        current_mod = get_current_module(interp);               \
-        assert(current_mod != NULL);                            \
-        ST_VAR = get_module_state(current_mod);                 \
-    } while (0)
+static PyModuleDef datetimemodule;
+
+static datetime_state *
+_get_current_state(PyObject **p_mod)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *mod = get_current_module(interp);
+    if (mod == NULL) {
+        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        /* The static types can outlive the module, so we must
+         * temporarily load the module if one of the static types'
+         * methods needs module state.  We can cut some corners
+         * since the module was necessarily already imported successfully
+         * and the module will only be around temporarily.  We don't even
+         * need a spec.  Normally the module would have been found
+         * and the temporary module would never happen. */
+        mod = PyModule_New("_datetime");
+        if (mod == NULL) {
+            return NULL;
+        }
+        ((PyModuleObject*)mod)->md_def = &datetimemodule;
+        if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+    }
+    datetime_state *st = get_module_state(mod);
+    *p_mod = mod;
+    return st;
+}
+
+#define GET_CURRENT_STATE(ST_VAR)   \
+    NULL;                           \
+    PyObject *current_mod = NULL;   \
+    ST_VAR = _get_current_state(&current_mod);
 #define RELEASE_CURRENT_STATE(ST_VAR)   \
     Py_DECREF(current_mod)
 
