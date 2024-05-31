@@ -143,8 +143,7 @@ do { \
         if (err != 0) { \
             GOTO_ERROR(error); \
         } \
-    } \
-    UPDATE_DEFERRED_STATS();
+    }
 
 
 /* Tuple access macros */

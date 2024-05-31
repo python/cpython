@@ -165,6 +165,9 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
+#ifndef Py_DEBUG
+    PyThreadState_GET()->sp_cached++;
+#endif
     assert(frame->stackpointer != NULL);
     PyObject **sp = frame->stackpointer;
     frame->stackpointer = NULL;
@@ -174,6 +177,9 @@ _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+#ifndef Py_DEBUG
+    PyThreadState_GET()->sp_cached--;
+#endif
     assert(frame->stackpointer == NULL);
     frame->stackpointer = stack_pointer;
 }

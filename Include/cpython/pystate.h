@@ -191,6 +191,7 @@ struct _ts {
     PyObject *previous_executor;
 
     uint64_t dict_global_version;
+    int sp_cached; /* Only used in debug builds */
 
 };
 

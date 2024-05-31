@@ -356,7 +356,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
-#define UPDATE_DEFERRED_STATS() ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.

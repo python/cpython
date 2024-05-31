@@ -203,8 +203,6 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
     fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
     fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
-    fprintf(out, "Object max deferred objects: %" PRIu64 "\n", stats->max_deferred_objects);
-    fprintf(out, "Object max deferred space: %" PRIu64 "\n", stats->max_deferred_space);
 }
 
 static void
@@ -321,8 +319,6 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
-    _Py_stats->object_stats.deferred_objects = 0;
-    _Py_stats->object_stats.deferred_space = 0;
 }
 
 void
