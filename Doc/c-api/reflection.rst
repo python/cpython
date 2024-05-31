@@ -42,6 +42,7 @@ Reflection
 
    See also :c:func:`PyThreadState_GetFrame`.
 
+
 .. c:function:: PyObject* PyEval_GetFrameBuiltins(void)
 
    Return a dictionary of the builtins in the current execution frame,

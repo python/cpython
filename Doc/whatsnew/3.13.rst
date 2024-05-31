@@ -2132,7 +2132,7 @@ New Features
   :c:func:`PyEval_GetFrameLocals` to the C API. These replacements for
   :c:func:`PyEval_GetBuiltins`, :c:func:`PyEval_GetGlobals`, and
   :c:func:`PyEval_GetLocals` return :term:`strong references <strong reference>`
-  rather than borrowed references. (Added as part of :pep:`667`)
+  rather than borrowed references. (Added as part of :pep:`667`.)
 
 Build Changes
 =============
