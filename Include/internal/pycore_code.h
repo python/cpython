@@ -307,7 +307,6 @@ extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 #define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
 #define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
 #define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
-#define OBJECT_STAT_ADD(name, value) do { if (_Py_stats) _Py_stats->object_stats.name += value; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
     do { if (_Py_stats && cond) _Py_stats->object_stats.name++; } while (0)
 #define EVAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.eval_calls[name]++; } while (0)
@@ -344,7 +343,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
-#define OBJECT_STAT_ADD(name, val) ((void)0)
 #define OBJECT_STAT_INC_COND(name, cond) ((void)0)
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
