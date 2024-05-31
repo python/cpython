@@ -44,13 +44,17 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     pathname = os.fspath(pathname)
-    is_bytes = isinstance(pathname, bytes)
-    if is_bytes:
+    if isinstance(pathname, bytes):
         pathname = os.fsdecode(pathname)
         if root_dir is not None:
             root_dir = os.fsdecode(root_dir)
-    anchor, parts = _split_pathname(pathname)
+        for path in _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
+            yield os.fsencode(path)
+    else:
+        yield from _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
 
+def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
+    anchor, parts = _split_pathname(pathname)
     globber = _StringGlobber(recursive=recursive, include_hidden=include_hidden)
     select = globber.selector(parts)
     if anchor:
@@ -67,8 +71,6 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         # Ensure that the empty string is not yielded when given a pattern
         # like '' or '**'.
         paths = itertools.dropwhile(operator.not_, paths)
-    if is_bytes:
-        paths = map(os.fsencode, paths)
     return paths
 
 _deprecated_function_message = (
