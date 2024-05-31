@@ -1214,19 +1214,19 @@ hex_from_char(char c) {
    use_alt_formatting - nonzero if the hexadecimal prefix should be added.
    upper - nonzero, if uppercase letters should be used for hexadecimal
            numbers, prefix and the exponent separator.
-   _hex - private flag to keep float.hex() behaviour
+   float_hex - use float.hex() format.
  */
 
 char *
 _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
-                int use_alt_formatting, int upper, int _hex)
+                int use_alt_formatting, int upper, int float_hex)
 {
     int e, autoprec = precision < 0;
     double m = frexp(fabs(x), &e);
 
     if (autoprec) {
         precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
-        if (!x && _hex) {
+        if (!x && float_hex) {
             /* for compatibility with float.hex(), we keep just one
                digit of zero */
             precision = 1;
@@ -1295,7 +1295,7 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
     }
 
     /* clear trailing zeros from mantissa */
-    if (autoprec && !_hex) {
+    if (autoprec && !float_hex) {
         while (s[si] == '0') {
             si--;
         }
