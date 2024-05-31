@@ -4,7 +4,6 @@ import os
 import re
 import fnmatch
 import functools
-import itertools
 import operator
 import sys
 
@@ -61,17 +60,19 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
         exists = not os.path.splitdrive(anchor)[0]
-        paths = select(anchor, dir_fd, anchor, exists)
+        yield from select(anchor, dir_fd, anchor, exists)
     else:
         # Relative pattern.
         if root_dir is None:
             root_dir = os.path.curdir
         paths = _relative_glob(select, root_dir, dir_fd)
-
-        # Ensure that the empty string is not yielded when given a pattern
-        # like '' or '**'.
-        paths = itertools.dropwhile(operator.not_, paths)
-    return paths
+        try:
+            path = next(paths)  # skip empty string
+            if path:
+                yield path
+            yield from paths
+        except StopIteration:
+            pass
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
