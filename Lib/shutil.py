@@ -636,6 +636,19 @@ def _rmtree_unsafe(path, onexc):
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(stack, onexc):
+    # Each stack item has four elements:
+    # * func: The first operation to perform: os.lstat, os.close or os.rmdir.
+    #   Walking a directory starts with an os.lstat() to detect symlinks; in
+    #   this case, func is updated before subsequent operations and passed to
+    #   onexc() if an error occurs.
+    # * dirfd: Open file descriptor, or None if we're processing the top-level
+    #   directory given to rmtree() and the user didn't supply dir_fd.
+    # * path: Path of file to operate upon. This is passed to onexc() if an
+    #   error occurs.
+    # * orig_entry: os.DirEntry, or None if we're processing the top-level
+    #   directory given to rmtree(), or the func is os.close. We used the
+    #   cached stat() of the entry to save a call to os.lstat() when walking
+    #   interior directories.
     func, dirfd, path, orig_entry = stack.pop()
     name = path if orig_entry is None else orig_entry.name
     try:
@@ -662,8 +675,14 @@ def _rmtree_safe_fd(stack, onexc):
             if not os.path.samestat(orig_st, os.fstat(topfd)):
                 # Symlinks to directories are forbidden, see GH-46010.
                 raise OSError("Cannot call rmtree on a symbolic link")
+            # Schedule the directory to be removed, now that we've established
+            # it isn't a symlink.
             stack.append((os.rmdir, dirfd, path, orig_entry))
         finally:
+            # Schedule the file descriptor to be closed. We omit orig_entry so
+            # that any FileNotFoundError from os.close() is reported to
+            # onexc(); normally FileNotFoundError is suppressed for operations
+            # on subdirectories, but os.close() is an exception.
             stack.append((os.close, topfd, path, None))
 
         func = os.scandir  # For error reporting.
