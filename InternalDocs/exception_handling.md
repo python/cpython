@@ -126,11 +126,13 @@ Also, sizes are limited to 2**30 as the code length cannot exceed 2**31 and each
 It also happens that depth is generally quite small.
 
 So, we need to encode:
+```
     `start` (up to 30 bits)
     `size` (up to 30 bits)
     `target` (up to 30 bits)
     `depth` (up to ~8 bits)
     `lasti` (1 bit)
+```
 
 We need a marker for the start of the entry, so the first byte of entry will have the most significant bit set.
 Since the most significant bit is reserved for marking the start of an entry, we have 7 bits per byte to encode offsets.
@@ -157,14 +159,15 @@ is encoded by first converting to the more compact four value form:
 ```
 
 which is then encoded as:
+```
     148 (MSB + 20 for start)
     8   (size)
     65  (Extend bit + 1)
     36  (Remainder of target, 100 == (1<<6)+36)
     6
+```
 
 for a total of five bytes.
-
 
 
 Script to parse the exception table
