@@ -19,10 +19,10 @@
 
 from __future__ import annotations
 
+import io
 import os
 import sys
 
-from _io import _WindowsConsoleIO
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
@@ -56,6 +56,7 @@ except:
         def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
+
 
 TYPE_CHECKING = False
 
@@ -126,7 +127,7 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
-        self.out = _WindowsConsoleIO(self.output_fd, 'w')
+        self.out = io._WindowsConsoleIO(self.output_fd, "w") # type: ignore[attr-defined]
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
@@ -279,7 +280,7 @@ class WindowsConsole(Console):
     def __write(self, text: str) -> None:
         self.out.write(text.encode(self.encoding, "replace"))
         self.out.flush()
-        
+
     @property
     def screen_xy(self) -> tuple[int, int]:
         info = CONSOLE_SCREEN_BUFFER_INFO()
@@ -301,14 +302,6 @@ class WindowsConsole(Console):
 
     def restore(self) -> None:
         pass
-
-    def get_abs_position(self, x: int, y: int) -> tuple[int, int]:
-        cur_x, cur_y = self.screen_xy
-        dx = x - self.__posxy[0]
-        dy = y - self.__posxy[1]
-        cur_x += dx
-        cur_y += dy
-        return cur_x, cur_y
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current __posxy"""
@@ -356,7 +349,7 @@ class WindowsConsole(Console):
         if not GetConsoleScreenBufferInfo(OutHandle, info):
             raise WinError(GetLastError())
 
-        return info.srWindow.Bottom # type: ignore[no-any-return]
+        return info.srWindow.Bottom  # type: ignore[no-any-return]
 
     def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
