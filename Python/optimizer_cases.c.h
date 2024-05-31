@@ -1079,7 +1079,10 @@
             break;
         }
 
-        /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 */
+        case _STORE_ATTR_WITH_HINT: {
+            stack_pointer += -2;
+            break;
+        }
 
         case _STORE_ATTR_SLOT: {
             stack_pointer += -2;
@@ -1537,10 +1540,8 @@
             _Py_UopsSymbol *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)this_instr->operand;
             sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
-            (void)func_version;
             break;
         }
 
