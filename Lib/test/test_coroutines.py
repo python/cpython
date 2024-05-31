@@ -11,6 +11,10 @@ from test import support
 from test.support import import_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 class AsyncYieldFrom:
@@ -953,11 +957,12 @@ class CoroutineTest(unittest.TestCase):
 
     def test_corotype_1(self):
         ct = types.CoroutineType
-        self.assertIn('into coroutine', ct.send.__doc__)
-        self.assertIn('inside coroutine', ct.close.__doc__)
-        self.assertIn('in coroutine', ct.throw.__doc__)
-        self.assertIn('of the coroutine', ct.__dict__['__name__'].__doc__)
-        self.assertIn('of the coroutine', ct.__dict__['__qualname__'].__doc__)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('into coroutine', ct.send.__doc__)
+            self.assertIn('inside coroutine', ct.close.__doc__)
+            self.assertIn('in coroutine', ct.throw.__doc__)
+            self.assertIn('of the coroutine', ct.__dict__['__name__'].__doc__)
+            self.assertIn('of the coroutine', ct.__dict__['__qualname__'].__doc__)
         self.assertEqual(ct.__name__, 'coroutine')
 
         async def f(): pass
@@ -2444,6 +2449,7 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
 
 
 @support.cpython_only
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):

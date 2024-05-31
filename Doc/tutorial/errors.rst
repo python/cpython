@@ -20,12 +20,12 @@ complaint you get while you are still learning Python::
    >>> while True print('Hello world')
      File "<stdin>", line 1
        while True print('Hello world')
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
-The parser repeats the offending line and displays a little 'arrow' pointing at
-the earliest point in the line where the error was detected.  The error is
-caused by (or at least detected at) the token *preceding* the arrow: in the
+The parser repeats the offending line and displays little 'arrow's pointing
+at the token in the line where the error was detected.  The error may be
+caused by the absence of a token *before* the indicated token.  In the
 example, the error is detected at the function :func:`print`, since a colon
 (``':'``) is missing before it.  File name and line number are printed so you
 know where to look in case the input came from a script.
@@ -119,9 +119,9 @@ may name multiple exceptions as a parenthesized tuple, for example::
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
-A class in an :keyword:`except` clause is compatible with an exception if it is
-the same class or a base class thereof (but not the other way around --- an
-*except clause* listing a derived class is not compatible with a base class).
+A class in an :keyword:`except` clause matches exceptions which are instances of the
+class itself or one of its derived classes (but not the other way around --- an
+*except clause* listing a derived class does not match instances of its base classes).
 For example, the following code will print B, C, D in that order::
 
    class B(Exception):

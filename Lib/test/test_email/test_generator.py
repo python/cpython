@@ -140,6 +140,39 @@ class TestGeneratorBase:
         g.flatten(msg, linesep='\n')
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_flatten_linesep(self):
+        source = 'Subject: one\n two\r three\r\n four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one two three four')
+
+        expected = 'Subject: one\n two\n three\n four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        expected = 'Subject: one two three four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_flatten_control_linesep(self):
+        source = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\v two\f three\x1c four\x1d five\x1e six')
+
+        expected = 'Subject: one\v two\f three\x1c four\x1d five\x1e six\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
     def test_set_mangle_from_via_policy(self):
         source = textwrap.dedent("""\
             Subject: test that
@@ -224,6 +257,22 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
     ioclass = io.StringIO
     typ = str
 
+    def test_flatten_unicode_linesep(self):
+        source = 'Subject: one\x85 two\u2028 three\u2029 four\r\n\r\ntest body\r\n'
+        msg = self.msgmaker(self.typ(source))
+        self.assertEqual(msg['Subject'], 'one\x85 two\u2028 three\u2029 four')
+
+        expected = 'Subject: =?utf-8?b?b25lwoUgdHdv4oCoIHRocmVl4oCp?= four\n\ntest body\n'
+        s = self.ioclass()
+        g = self.genclass(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
+        s = self.ioclass()
+        g = self.genclass(s, policy=self.policy.clone(refold_source='all'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), self.typ(expected))
+
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -231,6 +280,41 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
     genclass = BytesGenerator
     ioclass = io.BytesIO
     typ = lambda self, x: x.encode('ascii')
+
+    def test_defaults_handle_spaces_between_encoded_words_when_folded(self):
+        source = ("Уведомление о принятии в работу обращения для"
+                  " подключения услуги")
+        expected = ('Subject: =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtSDQviDQv9GA0LjQvdGP0YLQuNC4?=\n'
+                    ' =?utf-8?b?INCyINGA0LDQsdC+0YLRgyDQvtCx0YDQsNGJ0LXQvdC40Y8g0LTQu9GPINC/0L4=?=\n'
+                    ' =?utf-8?b?0LTQutC70Y7Rh9C10L3QuNGPINGD0YHQu9GD0LPQuA==?=\n\n').encode('ascii')
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_subject(self):
+        source = " Уведомление"
+        expected = b"Subject:  =?utf-8?b?0KPQstC10LTQvtC80LvQtdC90LjQtQ==?=\n\n"
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_defaults_handle_spaces_at_start_of_continuation_line(self):
+        source = " ф ффффффффффффффффффф ф ф"
+        expected = (b"Subject:  "
+                    b"=?utf-8?b?0YQg0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YTRhNGE0YQ=?=\n"
+                    b" =?utf-8?b?INGEINGE?=\n\n")
+        msg = EmailMessage()
+        msg['Subject'] = source
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
 
     def test_cte_type_7bit_handles_unknown_8bit(self):
         source = ("Subject: Maintenant je vous présente mon "

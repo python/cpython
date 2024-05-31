@@ -83,22 +83,17 @@ _PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
     return res;
 }
 
-
-/* Parse input from a file and execute it */
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
 {
-    PyObject *filename_obj;
+    PyObject *filename_obj = NULL;
     if (filename != NULL) {
         filename_obj = PyUnicode_DecodeFSDefault(filename);
         if (filename_obj == NULL) {
             PyErr_Print();
             return -1;
         }
-    }
-    else {
-        filename_obj = NULL;
     }
     int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
@@ -455,7 +450,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         v = run_pyc_file(pyc_fp, dict, dict, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
-        if (PyUnicode_CompareWithASCIIString(filename, "<stdin>") != 0 &&
+        if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
             ret = -1;
@@ -475,11 +470,11 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 
   done:
     if (set_file_name) {
-        if (PyDict_DelItemString(dict, "__file__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+            PyErr_Print();
         }
-        if (PyDict_DelItemString(dict, "__cached__")) {
-            PyErr_Clear();
+        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
+            PyErr_Print();
         }
     }
     Py_XDECREF(main_module);
@@ -1278,16 +1273,19 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL) {
-        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-        if (has_builtins < 0) {
+    if (!globals || !PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+        return NULL;
+    }
+    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+    if (has_builtins < 0) {
+        return NULL;
+    }
+    if (!has_builtins) {
+        if (PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
-        }
-        if (!has_builtins) {
-            if (PyDict_SetItemString(globals, "__builtins__",
-                                     tstate->interp->builtins) < 0) {
-                return NULL;
-            }
         }
     }
 

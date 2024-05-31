@@ -1,5 +1,5 @@
-:mod:`base64` --- Base16, Base32, Base64, Base85 Data Encodings
-===============================================================
+:mod:`!base64` --- Base16, Base32, Base64, Base85 Data Encodings
+================================================================
 
 .. module:: base64
    :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;
@@ -193,7 +193,7 @@ The modern interface provides:
 
    *wrapcol* controls whether the output should have newline (``b'\n'``)
    characters added to it. If this is non-zero, each output line will be
-   at most this many characters long.
+   at most this many characters long, excluding the trailing newline.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.
@@ -242,6 +242,24 @@ The modern interface provides:
    necessary.
 
    .. versionadded:: 3.4
+
+
+.. function:: z85encode(s)
+
+   Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
+   and return the encoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: 3.13
+
+
+.. function:: z85decode(s)
+
+   Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
+   return the decoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: 3.13
 
 
 The legacy interface:
