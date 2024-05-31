@@ -970,44 +970,44 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.StringIO.closed
+[clinic start generated code]*/
 
 static PyObject *
-stringio_closed_impl(stringio *self, void *context)
+_io_StringIO_closed_get_impl(stringio *self)
+/*[clinic end generated code: output=531ddca7954331d6 input=178d2ef24395fd49]*/
 {
     CHECK_INITIALIZED(self);
     return PyBool_FromLong(self->closed);
 }
 
-static PyObject *
-stringio_closed(stringio *self, void *context)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = stringio_closed_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+@getter
+_io.StringIO.line_buffering
+[clinic start generated code]*/
 
 static PyObject *
-stringio_line_buffering_impl(stringio *self, void *context)
+_io_StringIO_line_buffering_get_impl(stringio *self)
+/*[clinic end generated code: output=360710e0112966ae input=6a7634e7f890745e]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     Py_RETURN_FALSE;
 }
 
-static PyObject *
-stringio_line_buffering(stringio *self, void *context)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = stringio_line_buffering_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+@getter
+_io.StringIO.newlines
+[clinic start generated code]*/
 
 static PyObject *
-stringio_newlines_impl(stringio *self, void *context)
+_io_StringIO_newlines_get_impl(stringio *self)
+/*[clinic end generated code: output=35d7c0b66d7e0160 input=092a14586718244b]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -1015,16 +1015,6 @@ stringio_newlines_impl(stringio *self, void *context)
         Py_RETURN_NONE;
     }
     return PyObject_GetAttr(self->decoder, &_Py_ID(newlines));
-}
-
-static PyObject *
-stringio_newlines(stringio *self, void *context)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = stringio_newlines_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static struct PyMethodDef stringio_methods[] = {
@@ -1047,15 +1037,15 @@ static struct PyMethodDef stringio_methods[] = {
 };
 
 static PyGetSetDef stringio_getset[] = {
-    {"closed",         (getter)stringio_closed,         NULL, NULL},
-    {"newlines",       (getter)stringio_newlines,       NULL, NULL},
+    _IO_STRINGIO_CLOSED_GETSETDEF
+    _IO_STRINGIO_NEWLINES_GETSETDEF
     /*  (following comments straight off of the original Python wrapper:)
         XXX Cruft to support the TextIOWrapper API. This would only
         be meaningful if StringIO supported the buffer attribute.
         Hopefully, a better solution, than adding these pseudo-attributes,
         will be found.
     */
-    {"line_buffering", (getter)stringio_line_buffering, NULL, NULL},
+    _IO_STRINGIO_LINE_BUFFERING_GETSETDEF
     {NULL}
 };
 

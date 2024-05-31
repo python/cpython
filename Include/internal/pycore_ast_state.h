@@ -16,8 +16,6 @@ extern "C" {
 struct ast_state {
     _PyOnceFlag once;
     int finalized;
-    int recursion_depth;
-    int recursion_limit;
     PyObject *AST_type;
     PyObject *Add_singleton;
     PyObject *Add_type;
@@ -186,6 +184,7 @@ struct ast_state {
     PyObject *conversion;
     PyObject *ctx;
     PyObject *decorator_list;
+    PyObject *default_value;
     PyObject *defaults;
     PyObject *elt;
     PyObject *elts;

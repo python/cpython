@@ -1,6 +1,6 @@
 # Common test classes.
 
-class IndexLike:
+class WithIndex:
     def __init__(self, value):
         self.value = value
 
@@ -11,14 +11,14 @@ class IndexLike:
 class IntSubclass(int):
     pass
 
-class IntLike:
+class WithInt:
     def __init__(self, value):
         self.value = value
 
     def __int__(self):
         return self.value
 
-class IntAndIndexLike:
+class WithIntAndIndex:
     def __init__(self, value):
         self.value = value
 
@@ -35,7 +35,7 @@ class FloatSubclass(float):
 class OtherFloatSubclass(float):
     pass
 
-class FloatLike:
+class WithFloat:
     def __init__(self, value):
         self.value = value
 
@@ -56,7 +56,7 @@ class ComplexSubclass(complex):
 class OtherComplexSubclass(complex):
     pass
 
-class ComplexLike:
+class WithComplex:
     def __init__(self, value):
         self.value = value
 

@@ -234,7 +234,7 @@ functions:
 .. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
-   globals and locals dictionaries for the *command* string. This routine
+   globals and locals mappings for the *command* string. This routine
    executes::
 
       exec(command, globals, locals)
@@ -298,6 +298,13 @@ functions:
 
       Create a :class:`~pstats.Stats` object based on the current
       profile and print the results to stdout.
+
+      The *sort* parameter specifies the sorting order of the displayed
+      statistics. It accepts a single key or a tuple of keys to enable
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>`.
+
+      .. versionadded:: 3.13
+         :meth:`~Profile.print_stats` now accepts a tuple of keys.
 
    .. method:: dump_stats(filename)
 

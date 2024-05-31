@@ -10,8 +10,8 @@ import unittest
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
-from test.support.classes import (FloatSubclass, OtherFloatSubclass, FloatLike,
-                                  FloatLikeSubclass, IndexLike, IntLike)
+from test.support.classes import (FloatSubclass, OtherFloatSubclass, WithFloat,
+                                  FloatLikeSubclass, WithIndex, WithInt)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -185,17 +185,17 @@ class GeneralFloatCases(unittest.TestCase):
             def __float__(self):
                 return float(str(self)) + 1
 
-        self.assertEqual(float(FloatLike(42.)), 42.)
+        self.assertEqual(float(WithFloat(42.)), 42.)
         self.assertEqual(float(FloatLikeSubclass(21.)), 42.)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(float(FloatLikeSubclass(FloatSubclass(21))), 42.)
         self.assertRaises(TypeError, float, FloatLikeSubclass(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
-        self.assertRaises(TypeError, time.sleep, FloatLike(""))
+        self.assertRaises(TypeError, time.sleep, WithFloat(""))
 
         # Issue #24731
-        f = FloatLike(OtherFloatSubclass(42.))
+        f = WithFloat(OtherFloatSubclass(42.))
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(float(f), 42.)
         with self.assertWarns(DeprecationWarning):
@@ -205,9 +205,9 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(type(FloatSubclass(f)), FloatSubclass)
 
-        self.assertEqual(float(IndexLike(42)), 42.0)
-        self.assertRaises(OverflowError, float, IndexLike(2**2000))
-        self.assertRaises(TypeError, float, IntLike(42))
+        self.assertEqual(float(WithIndex(42)), 42.0)
+        self.assertRaises(OverflowError, float, WithIndex(2**2000))
+        self.assertRaises(TypeError, float, WithInt(42))
 
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):

@@ -1,3 +1,5 @@
+.. _full-grammar-specification:
+
 Full Grammar specification
 ==========================
 

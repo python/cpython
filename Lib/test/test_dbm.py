@@ -6,6 +6,13 @@ import os
 from test.support import import_helper
 from test.support import os_helper
 
+
+try:
+    from dbm import sqlite3 as dbm_sqlite3
+except ImportError:
+    dbm_sqlite3 = None
+
+
 try:
     from dbm import ndbm
 except ImportError:
@@ -212,6 +219,27 @@ class WhichDBTestCase(unittest.TestCase):
                   _bytes_fname, os_helper.FakePath(_bytes_fname)]
         for path in fnames:
             self.assertIsNone(self.dbm.whichdb(path))
+
+    @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
+    def test_whichdb_sqlite3(self):
+        # Databases created by dbm.sqlite3 are detected correctly.
+        with dbm_sqlite3.open(_fname, "c") as db:
+            db["key"] = "value"
+        self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
+
+    @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
+    def test_whichdb_sqlite3_existing_db(self):
+        # Existing sqlite3 databases are detected correctly.
+        sqlite3 = import_helper.import_module("sqlite3")
+        try:
+            # Create an empty database.
+            with sqlite3.connect(_fname) as cx:
+                cx.execute("CREATE TABLE dummy(database)")
+                cx.commit()
+        finally:
+            cx.close()
+        self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
+
 
     def setUp(self):
         self.addCleanup(cleaunup_test_dir)
