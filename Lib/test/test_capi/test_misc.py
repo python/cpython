@@ -2321,9 +2321,11 @@ class SubinterpreterTest(unittest.TestCase):
         """)
         with self.subTest("main interpreter"):
             exec(script)
+
         with self.subTest("legacy subinterpreter"):
             ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
+
         if _interpreters:
             with self.subTest("legacy subinterpreter (config)"):
                 ret = support.run_in_subinterp_with_config(
@@ -2337,6 +2339,7 @@ class SubinterpreterTest(unittest.TestCase):
                     check_multi_interp_extensions=bool(Py_GIL_DISABLED),
                 )
                 self.assertEqual(ret, 0)
+
             with self.subTest("isolated subinterpreter (config)"):
                 ret = support.run_in_subinterp_with_config(
                     script,
