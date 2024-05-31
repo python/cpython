@@ -1,5 +1,5 @@
-:mod:`xml.parsers.expat` --- Fast XML parsing using Expat
-=========================================================
+:mod:`!xml.parsers.expat` --- Fast XML parsing using Expat
+==========================================================
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
@@ -196,6 +196,42 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
+.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
+
+   .. warning::
+
+      Calling ``SetReparseDeferralEnabled(False)`` has security implications,
+      as detailed below; please make sure to understand these consequences
+      prior to using the ``SetReparseDeferralEnabled`` method.
+
+   Expat 2.6.0 introduced a security mechanism called "reparse deferral"
+   where instead of causing denial of service through quadratic runtime
+   from reparsing large tokens, reparsing of unfinished tokens is now delayed
+   by default until a sufficient amount of input is reached.
+   Due to this delay, registered handlers may — depending of the sizing of
+   input chunks pushed to Expat — no longer be called right after pushing new
+   input to the parser.  Where immediate feedback and taking over responsibility
+   of protecting against denial of service from large tokens are both wanted,
+   calling ``SetReparseDeferralEnabled(False)`` disables reparse deferral
+   for the current Expat parser instance, temporarily or altogether.
+   Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
+   deferral.
+
+   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
+   prior releases of CPython as a security fix.  Check for availability of
+   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
+   running across a variety of Python versions.
+
+   .. versionadded:: 3.13
+
+.. method:: xmlparser.GetReparseDeferralEnabled()
+
+   Returns whether reparse deferral is currently enabled for the given
+   Expat parser instance.
+
+   .. versionadded:: 3.13
+
+
 :class:`xmlparser` objects have the following attributes:
 
 
@@ -214,7 +250,8 @@ XMLParser Objects
    :meth:`CharacterDataHandler` callback whenever possible.  This can improve
    performance substantially since Expat normally breaks character data into chunks
    at every line ending.  This attribute is false by default, and may be changed at
-   any time.
+   any time. Note that when it is false, data that does not contain newlines
+   may be chunked too.
 
 
 .. attribute:: xmlparser.buffer_used
@@ -372,7 +409,10 @@ otherwise stated.
    marked content, and ignorable whitespace.  Applications which must distinguish
    these cases can use the :attr:`StartCdataSectionHandler`,
    :attr:`EndCdataSectionHandler`, and :attr:`ElementDeclHandler` callbacks to
-   collect the required information.
+   collect the required information. Note that the character data may be
+   chunked even if it is short and so you may receive more than one call to
+   :meth:`CharacterDataHandler`. Set the :attr:`buffer_text` instance attribute
+   to ``True`` to avoid that.
 
 
 .. method:: xmlparser.UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)

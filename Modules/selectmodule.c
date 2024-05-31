@@ -15,7 +15,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -297,7 +297,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     struct timeval tv, *tvp;
     int imax, omax, emax, max;
     int n;
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
 
     if (timeout_obj == Py_None)
         tvp = (struct timeval *)NULL;
@@ -619,7 +619,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
     PyObject *result_list = NULL;
     int poll_result, i, j;
     PyObject *value = NULL, *num = NULL;
-    _PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t timeout = -1, ms = -1, deadline = 0;
     int async_err = 0;
 
     if (timeout_obj != Py_None) {
@@ -817,10 +817,10 @@ static int devpoll_flush(devpollObject *self)
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
-        ** See http://bugs.python.org/issue6397.
+        ** See https://github.com/python/cpython/issues/50646.
         */
         PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
-                "Please, report at http://bugs.python.org/. "
+                "Please, report at https://github.com/python/cpython/issues/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
         return -1;
@@ -946,7 +946,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
     PyObject *result_list = NULL;
     int poll_result, i;
     PyObject *value, *num1, *num2;
-    _PyTime_t timeout, ms, deadline = 0;
+    PyTime_t timeout, ms, deadline = 0;
 
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
@@ -1559,7 +1559,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    _PyTime_t timeout = -1, ms = -1, deadline = 0;
+    PyTime_t timeout = -1, ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
@@ -2242,7 +2242,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
     struct kevent *chl = NULL;
     struct timespec timeoutspec;
     struct timespec *ptimeoutspec;
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     _selectstate *state = _selectstate_by_type(Py_TYPE(self));
 
     if (self->kqfd < 0)
@@ -2802,6 +2802,7 @@ _select_exec(PyObject *m)
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

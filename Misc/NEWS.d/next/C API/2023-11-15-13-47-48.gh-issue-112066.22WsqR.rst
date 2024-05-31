@@ -1,5 +1,0 @@
-Add :c:func:`PyDict_SetDefaultRef`: insert a key and value into a dictionary
-if the key is not already present. This is similar to
-:meth:`dict.setdefault`, but returns an integer value indicating if the key
-was already present. It is also similar to :c:func:`PyDict_SetDefault`, but
-returns a strong reference instead of a borrowed reference.

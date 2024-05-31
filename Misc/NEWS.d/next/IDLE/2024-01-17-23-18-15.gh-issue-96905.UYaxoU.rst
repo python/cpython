@@ -1,1 +1,0 @@
-In idlelib code, stop redefining built-ins 'dict' and 'object'.
