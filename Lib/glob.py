@@ -381,8 +381,15 @@ class _Globber:
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, dir_fd, rel_path, exists)
             stack = [(path, dir_fd, rel_path)]
-            while stack:
-                yield from select_recursive_step(stack, match_pos)
+            try:
+                while stack:
+                    yield from select_recursive_step(stack, match_pos)
+            finally:
+                # Close any file descriptors still on the stack.
+                while stack:
+                    path, dir_fd, rel_path = stack.pop()
+                    if path is None:
+                        os.close(dir_fd)
 
         def select_recursive_step(stack, match_pos):
             path, dir_fd, rel_path = stack.pop()
