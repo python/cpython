@@ -1232,7 +1232,7 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
     if (autoprec) {
         /* DBL_MANT_DIG rounded up to the next integer of the form 4k+1 */
         const double tohex_nbits = DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4;
-        precision = (tohex_nbits - 1)/4;
+        precision = (int) (tohex_nbits - 1)/4;
         if (!x && float_hex) {
             /* for compatibility with float.hex(), we keep just one
                digit of zero */
@@ -1266,7 +1266,9 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
         } while (1);
     }
 
-    const size_t exp_len = ceil(log10(DBL_MAX_EXP));
+    /* Conservative estimation for number of digits in the exponent.
+       IEEE quadruple precision floats should fit. */
+    const size_t exp_len = 5;
 
     /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d        '\0' */
     size_t size =          1     + 2 +   precision + 2 + exp_len + 1;
