@@ -1,1 +1,1 @@
-Improve accuracy of `os.path.normpath()` & `os.path.abspath()` on Windows.
+Improve accuracy of :func:`os.path.normpath` & :func:`os.path.abspath` on Windows.
