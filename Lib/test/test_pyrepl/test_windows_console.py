@@ -1,24 +1,24 @@
 import itertools
 import sys
 import unittest
-from _pyrepl.console import Event, Console
-from _pyrepl.windows_console import (
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    MOVE_UP,
-    MOVE_DOWN,
-    ERASE_IN_LINE,
-)
+
 from functools import partial
 from typing import Iterable
-from unittest import TestCase, main
-from unittest.mock import MagicMock, call, patch, ANY
+from unittest import TestCase
+from unittest.mock import MagicMock, call
 
 from .support import handle_all_events, code_to_events
 
 try:
-    from _pyrepl.console import Event
-    from _pyrepl.windows_console import WindowsConsole
+    from _pyrepl.console import Event, Console
+    from _pyrepl.windows_console import (
+        WindowsConsole,
+        MOVE_LEFT,
+        MOVE_RIGHT,
+        MOVE_UP,
+        MOVE_DOWN,
+        ERASE_IN_LINE,
+    )
 except ImportError:
     pass
 
