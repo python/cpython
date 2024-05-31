@@ -806,7 +806,10 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(F(3, 2) * Polar(4, 2), Polar(F(6, 1), 2))
         self.assertTypedEquals(F(3, 2) * Polar(4.0, 2), Polar(6.0, 2))
         self.assertTypedEquals(F(3, 2) * Rect(4, 3), Rect(F(6, 1), F(9, 2)))
-        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0+0j, 4.5+0j))
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument 'real' must be a real number, not complex"):
+            self.assertTypedEquals(F(3, 2) * RectComplex(4, 3),
+                                   RectComplex(6.0+0j, 4.5+0j))
         self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
         self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
         self.assertEqual(F(3, 2) * SymbolicComplex('X'), SymbolicComplex('3/2 * X'))
@@ -1632,6 +1635,12 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(TypeError,
                                  message % ("divmod()", "complex", "Fraction"),
                                  divmod, b, a)
+
+    def test_three_argument_pow(self):
+        message = "unsupported operand type(s) for ** or pow(): '%s', '%s', '%s'"
+        self.assertRaisesMessage(TypeError,
+                                 message % ("Fraction", "int", "int"),
+                                 pow, F(3), 4, 5)
 
 
 if __name__ == '__main__':
