@@ -374,6 +374,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\foo\\')", '\\\\foo\\')
         tester("ntpath.normpath('\\\\foo')", '\\\\foo')
         tester("ntpath.normpath('\\\\')", '\\\\')
+        tester("ntpath.normpath('//?/UNC/server/share/..')", '\\\\?\\UNC\\server\\share\\')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
@@ -866,46 +867,47 @@ class TestNtpath(NtpathTestCase):
         def check(paths, expected):
             tester(('ntpath.commonpath(%r)' % paths).replace('\\\\', '\\'),
                    expected)
-        def check_error(exc, paths):
-            self.assertRaises(exc, ntpath.commonpath, paths)
-            self.assertRaises(exc, ntpath.commonpath,
-                              [os.fsencode(p) for p in paths])
+        def check_error(paths, expected):
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath, paths)
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath, paths[::-1])
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath,
+                                   [os.fsencode(p) for p in paths])
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath,
+                                   [os.fsencode(p) for p in paths[::-1]])
 
         self.assertRaises(TypeError, ntpath.commonpath, None)
         self.assertRaises(ValueError, ntpath.commonpath, [])
         self.assertRaises(ValueError, ntpath.commonpath, iter([]))
-        check_error(ValueError, ['C:\\Program Files', 'Program Files'])
-        check_error(ValueError, ['C:\\Program Files', 'C:Program Files'])
-        check_error(ValueError, ['\\Program Files', 'Program Files'])
-        check_error(ValueError, ['Program Files', 'C:\\Program Files'])
 
-        check(['C:\\Program Files'], 'C:\\Program Files')
-        check(['C:\\Program Files', 'C:\\Program Files'], 'C:\\Program Files')
-        check(['C:\\Program Files\\', 'C:\\Program Files'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\', 'C:\\Program Files\\'],
-              'C:\\Program Files')
-        check(['C:\\\\Program Files', 'C:\\Program Files\\\\'],
-              'C:\\Program Files')
-        check(['C:\\.\\Program Files', 'C:\\Program Files\\.'],
-              'C:\\Program Files')
-        check(['C:\\', 'C:\\bin'], 'C:\\')
-        check(['C:\\Program Files', 'C:\\bin'], 'C:\\')
-        check(['C:\\Program Files', 'C:\\Program Files\\Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\Foo', 'C:\\Program Files\\Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files', 'C:\\Projects'], 'C:\\')
-        check(['C:\\Program Files\\', 'C:\\Projects'], 'C:\\')
+        # gh-117381: Logical error messages
+        check_error(['C:\\Foo', 'C:Foo'], "Can't mix absolute and relative paths")
+        check_error(['C:\\Foo', '\\Foo'], "Paths don't have the same drive")
+        check_error(['C:\\Foo', 'Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', '\\Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', 'Foo'], "Paths don't have the same drive")
+        check_error(['\\Foo', 'Foo'], "Can't mix rooted and not-rooted paths")
 
-        check(['C:\\Program Files\\Foo', 'C:/Program Files/Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\Foo', 'c:/program files/bar'],
-              'C:\\Program Files')
-        check(['c:/program files/bar', 'C:\\Program Files\\Foo'],
-              'c:\\program files')
+        check(['C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo', 'C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo\\', 'C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo\\', 'C:\\Foo\\'], 'C:\\Foo')
+        check(['C:\\\\Foo', 'C:\\Foo\\\\'], 'C:\\Foo')
+        check(['C:\\.\\Foo', 'C:\\Foo\\.'], 'C:\\Foo')
+        check(['C:\\', 'C:\\baz'], 'C:\\')
+        check(['C:\\Bar', 'C:\\baz'], 'C:\\')
+        check(['C:\\Foo', 'C:\\Foo\\Baz'], 'C:\\Foo')
+        check(['C:\\Foo\\Bar', 'C:\\Foo\\Baz'], 'C:\\Foo')
+        check(['C:\\Bar', 'C:\\Baz'], 'C:\\')
+        check(['C:\\Bar\\', 'C:\\Baz'], 'C:\\')
 
-        check_error(ValueError, ['C:\\Program Files', 'D:\\Program Files'])
+        check(['C:\\Foo\\Bar', 'C:/Foo/Baz'], 'C:\\Foo')
+        check(['C:\\Foo\\Bar', 'c:/foo/baz'], 'C:\\Foo')
+        check(['c:/foo/bar', 'C:\\Foo\\Baz'], 'c:\\foo')
+
+        # gh-117381: Logical error messages
+        check_error(['C:\\Foo', 'D:\\Foo'], "Paths don't have the same drive")
+        check_error(['C:\\Foo', 'D:Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', 'D:Foo'], "Paths don't have the same drive")
 
         check(['spam'], 'spam')
         check(['spam', 'spam'], 'spam')
@@ -919,20 +921,16 @@ class TestNtpath(NtpathTestCase):
 
         check([''], '')
         check(['', 'spam\\alot'], '')
-        check_error(ValueError, ['', '\\spam\\alot'])
 
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'C:\\Program Files', 'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'C:\\Program Files', 'Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'Program Files', 'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['C:\\Program Files', b'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['C:\\Program Files', b'Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['Program Files', b'C:\\Program Files\\Foo'])
+        # gh-117381: Logical error messages
+        check_error(['', '\\spam\\alot'], "Can't mix rooted and not-rooted paths")
+
+        self.assertRaises(TypeError, ntpath.commonpath, [b'C:\\Foo', 'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, [b'C:\\Foo', 'Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, [b'Foo', 'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['C:\\Foo', b'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['C:\\Foo', b'Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['Foo', b'C:\\Foo\\Baz'])
 
     @unittest.skipIf(is_emscripten, "Emscripten cannot fstat unnamed files.")
     def test_sameopenfile(self):
@@ -1097,6 +1095,27 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('SystemDrive is not defined or malformed')
         self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_isfile_anonymous_pipe(self):
+        pr, pw = os.pipe()
+        try:
+            self.assertFalse(ntpath.isfile(pr))
+        finally:
+            os.close(pr)
+            os.close(pw)
+
+    @unittest.skipIf(sys.platform != 'win32', "windows only")
+    def test_isfile_named_pipe(self):
+        import _winapi
+        named_pipe = f'//./PIPE/python_isfile_test_{os.getpid()}'
+        h = _winapi.CreateNamedPipe(named_pipe,
+                                    _winapi.PIPE_ACCESS_INBOUND,
+                                    0, 1, 0, 0, 0, 0)
+        try:
+            self.assertFalse(ntpath.isfile(named_pipe))
+        finally:
+            _winapi.CloseHandle(h)
+
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
         self.assertFalse(os.path.isfile(r"\\.\CON"))
@@ -1110,14 +1129,22 @@ class TestNtpath(NtpathTestCase):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
         # genericpath.py.
+        self.assertTrue(os.path.splitroot is nt._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is nt._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
         self.assertTrue(os.path.isdir is nt._path_isdir)
         self.assertFalse(inspect.isfunction(os.path.isdir))
         self.assertTrue(os.path.isfile is nt._path_isfile)
         self.assertFalse(inspect.isfunction(os.path.isfile))
         self.assertTrue(os.path.islink is nt._path_islink)
         self.assertFalse(inspect.isfunction(os.path.islink))
+        self.assertTrue(os.path.isjunction is nt._path_isjunction)
+        self.assertFalse(inspect.isfunction(os.path.isjunction))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
+        self.assertTrue(os.path.lexists is nt._path_lexists)
+        self.assertFalse(inspect.isfunction(os.path.lexists))
 
     @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
     def test_isdevdrive(self):

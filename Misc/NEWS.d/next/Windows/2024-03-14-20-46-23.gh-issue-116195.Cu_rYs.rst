@@ -1,1 +1,0 @@
-Improves performance of :func:`os.getppid` by using an alternate system API when available. Contributed by vxiiduu.

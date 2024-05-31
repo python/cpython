@@ -7,7 +7,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 
 // Use the limited C API
-#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API )
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
    // need limited C API version 3.5 for PyModule_AddFunctions()
 #  define Py_LIMITED_API 0x03050000
 #endif

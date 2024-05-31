@@ -34,12 +34,10 @@ import numbers
 import locale
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          check_sanitizer,
                           check_disallow_instantiation)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
-                          darwin_malloc_err_warning, is_emscripten,
-                          skip_on_s390x)
+                          darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -4718,8 +4716,32 @@ class PyWhitebox(unittest.TestCase):
 
             c.prec = 1
             x = Decimal("152587890625") ** Decimal('-0.5')
+            self.assertEqual(x, Decimal('3e-6'))
+            c.prec = 2
+            x = Decimal("152587890625") ** Decimal('-0.5')
+            self.assertEqual(x, Decimal('2.6e-6'))
+            c.prec = 3
+            x = Decimal("152587890625") ** Decimal('-0.5')
+            self.assertEqual(x, Decimal('2.56e-6'))
+            c.prec = 28
+            x = Decimal("152587890625") ** Decimal('-0.5')
+            self.assertEqual(x, Decimal('2.56e-6'))
+
             c.prec = 201
             x = Decimal(2**578) ** Decimal("-0.5")
+
+            # See https://github.com/python/cpython/issues/118027
+            # Testing for an exact power could appear to hang, in the Python
+            # version, as it attempted to compute 10**(MAX_EMAX + 1).
+            # Fixed via https://github.com/python/cpython/pull/118503.
+            c.prec = P.MAX_PREC
+            c.Emax = P.MAX_EMAX
+            c.Emin = P.MIN_EMIN
+            c.traps[P.Inexact] = 1
+            D2 = Decimal(2)
+            # If the bug is still present, the next statement won't complete.
+            res = D2 ** 117
+            self.assertEqual(res, 1 << 117)
 
     def test_py_immutability_operations(self):
         # Do operations and check that it didn't change internal objects.
@@ -5644,50 +5666,6 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal.from_float(cls(101.1)),
                              Decimal.from_float(101.1))
 
-    # Issue 41540:
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     "AIX: default ulimit: test is flaky because of extreme over-allocation")
-    @unittest.skipIf(is_emscripten, "Test is unstable on Emscripten")
-    @unittest.skipIf(check_sanitizer(address=True, memory=True),
-                     "ASAN/MSAN sanitizer defaults to crashing "
-                     "instead of returning NULL for malloc failure.")
-    # gh-114331: The test allocates 784 271 641 GiB and mimalloc does not fail
-    # to allocate it when using mimalloc on s390x.
-    @skip_on_s390x
-    def test_maxcontext_exact_arith(self):
-
-        # Make sure that exact operations do not raise MemoryError due
-        # to huge intermediate values when the context precision is very
-        # large.
-
-        # The following functions fill the available precision and are
-        # therefore not suitable for large precisions (by design of the
-        # specification).
-        MaxContextSkip = ['logical_invert', 'next_minus', 'next_plus',
-                          'logical_and', 'logical_or', 'logical_xor',
-                          'next_toward', 'rotate', 'shift']
-
-        Decimal = C.Decimal
-        Context = C.Context
-        localcontext = C.localcontext
-
-        # Here only some functions that are likely candidates for triggering a
-        # MemoryError are tested.  deccheck.py has an exhaustive test.
-        maxcontext = Context(prec=C.MAX_PREC, Emin=C.MIN_EMIN, Emax=C.MAX_EMAX)
-        with localcontext(maxcontext):
-            self.assertEqual(Decimal(0).exp(), 1)
-            self.assertEqual(Decimal(1).ln(), 0)
-            self.assertEqual(Decimal(1).log10(), 0)
-            self.assertEqual(Decimal(10**2).log10(), 2)
-            self.assertEqual(Decimal(10**223).log10(), 223)
-            self.assertEqual(Decimal(10**19).logb(), 19)
-            self.assertEqual(Decimal(4).sqrt(), 2)
-            self.assertEqual(Decimal("40E9").sqrt(), Decimal('2.0E+5'))
-            self.assertEqual(divmod(Decimal(10), 3), (3, 1))
-            self.assertEqual(Decimal(10) // 3, 3)
-            self.assertEqual(Decimal(4) / 2, 2)
-            self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
-
     def test_c_immutable_types(self):
         SignalDict = type(C.Context().flags)
         SignalDictMixin = SignalDict.__bases__[0]
@@ -5750,7 +5728,6 @@ class CWhitebox(unittest.TestCase):
         self.assertEqual(format(y, '#.1f'), '6.1')
         with C.localcontext(rounding=C.ROUND_DOWN):
             self.assertEqual(format(y, '#.1f'), '6.0')
-
 
 @requires_docstrings
 @requires_cdecimal

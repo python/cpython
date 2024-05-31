@@ -471,8 +471,11 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3567 (Reimplement line number propagation by the compiler)
 #     Python 3.13a1 3568 (Change semantics of END_FOR)
 #     Python 3.13a5 3569 (Specialize CONTAINS_OP)
+#     Python 3.13a6 3570 (Add __firstlineno__ class attribute)
+#     Python 3.14a1 3600 (Add LOAD_COMMON_CONSTANT)
+#     Python 3.14a1 3601 (Fix miscompilation of private names in generic classes)
 
-#     Python 3.14 will start with 3600
+#     Python 3.15 will start with 3700
 
 #     Please don't copy-paste the same pre-release tag for new entries above!!!
 #     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -487,7 +490,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3569).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3601).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -1463,7 +1466,7 @@ class PathFinder:
     @staticmethod
     def invalidate_caches():
         """Call the invalidate_caches() method on all path entry finders
-        stored in sys.path_importer_caches (where implemented)."""
+        stored in sys.path_importer_cache (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
             # Drop entry if finder name is a relative path. The current
             # working directory may have changed.

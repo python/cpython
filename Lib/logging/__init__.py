@@ -56,7 +56,7 @@ __date__    = "07 February 2010"
 #
 #_startTime is used as the base when calculating the relative time of events
 #
-_startTime = time.time()
+_startTime = time.time_ns()
 
 #
 #raiseExceptions is used to see if exceptions during handling should be
@@ -300,7 +300,7 @@ class LogRecord(object):
         """
         Initialize a logging record with interesting information.
         """
-        ct = time.time()
+        ct = time.time_ns()
         self.name = name
         self.msg = msg
         #
@@ -339,9 +339,14 @@ class LogRecord(object):
         self.stack_info = sinfo
         self.lineno = lineno
         self.funcName = func
-        self.created = ct
-        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
-        self.relativeCreated = (self.created - _startTime) * 1000
+        self.created = ct / 1e9  # ns to float seconds
+
+        # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
+        # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
+        # Convert to float by adding 0.0 for historical reasons. See gh-89047
+        self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
+
+        self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
             self.thread = threading.get_ident()
             self.threadName = threading.current_thread().name
@@ -572,7 +577,7 @@ class Formatter(object):
     %(lineno)d          Source line number where the logging call was issued
                         (if available)
     %(funcName)s        Function name
-    %(created)f         Time when the LogRecord was created (time.time()
+    %(created)f         Time when the LogRecord was created (time.time_ns() / 1e9
                         return value)
     %(asctime)s         Textual time when the LogRecord was created
     %(msecs)d           Millisecond portion of the creation time
