@@ -688,6 +688,8 @@ def _rmtree_safe_fd(stack, onexc):
                     # Traverse into sub-directory.
                     stack.append((os.lstat, topfd, fullname, entry))
                     continue
+            except FileNotFoundError:
+                continue
             except OSError:
                 pass
             try:
