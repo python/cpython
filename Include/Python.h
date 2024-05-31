@@ -61,6 +61,7 @@
 #include "pystats.h"
 #include "pyatomic.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
