@@ -13,7 +13,7 @@ class TestForwardRefFormat(unittest.TestCase):
         anno = annotations.get_annotations(inner, format=annotations.Format.FORWARDREF)
         fwdref = anno["arg"]
         self.assertIsInstance(fwdref, annotations.ForwardRef)
-        self.assertEqual(fwdref.__forward_arg__, 'x')
+        self.assertEqual(fwdref.__forward_arg__, "x")
         with self.assertRaises(NameError):
             fwdref.evaluate()
 
@@ -42,10 +42,10 @@ class TestForwardRefClass(unittest.TestCase):
         # Forward refs provide a different introspection API. __name__ and
         # __qualname__ make little sense for forward refs as they can store
         # complex typing expressions.
-        fr = annotations.ForwardRef('set[Any]')
-        self.assertFalse(hasattr(fr, '__name__'))
-        self.assertFalse(hasattr(fr, '__qualname__'))
-        self.assertEqual(fr.__module__, 'typing')
+        fr = annotations.ForwardRef("set[Any]")
+        self.assertFalse(hasattr(fr, "__name__"))
+        self.assertFalse(hasattr(fr, "__qualname__"))
+        self.assertEqual(fr.__module__, "typing")
         # Forward refs are currently unpicklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):

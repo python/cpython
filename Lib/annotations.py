@@ -11,20 +11,38 @@ class Format(enum.IntEnum):
     FORWARDREF = 2
     SOURCE = 3
 
+
 _Union = None
 
 
 class ForwardRef:
     """Internal wrapper to hold a forward reference."""
 
-    __slots__ = ('__forward_arg__',
-                 '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__', '__forward_is_class__',
-                 '__forward_module__', '__weakref__',
-                 '_forward_code', '_globals', '_owner', '_cell')
+    __slots__ = (
+        "__forward_arg__",
+        "__forward_evaluated__",
+        "__forward_value__",
+        "__forward_is_argument__",
+        "__forward_is_class__",
+        "__forward_module__",
+        "__weakref__",
+        "_forward_code",
+        "_globals",
+        "_owner",
+        "_cell",
+    )
 
-    def __init__(self, arg, is_argument=True, module=None, *, is_class=False,
-                 _globals=None, _owner=None, _cell=None):
+    def __init__(
+        self,
+        arg,
+        is_argument=True,
+        module=None,
+        *,
+        is_class=False,
+        _globals=None,
+        _owner=None,
+        _cell=None,
+    ):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
@@ -72,7 +90,7 @@ class ForwardRef:
             # "Inject" type parameters into the local namespace
             # (unless they are shadowed by assignments *in* the local namespace),
             # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(self._owner, '__type_params__', None)
+            type_params = getattr(self._owner, "__type_params__", None)
             if type_params:
                 locals = {param.__name__: param for param in type_params} | locals
         value = eval(code, globals=globals, locals=locals)
@@ -88,12 +106,12 @@ class ForwardRef:
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
-        if arg.startswith('*'):
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
+        if arg.startswith("*"):
+            arg_to_compile = f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
         try:
-            self._forward_code = compile(arg_to_compile, '<string>', 'eval')
+            self._forward_code = compile(arg_to_compile, "<string>", "eval")
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         return self._forward_code
@@ -102,10 +120,14 @@ class ForwardRef:
         if not isinstance(other, ForwardRef):
             return NotImplemented
         if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (self.__forward_arg__ == other.__forward_arg__ and
-                    self.__forward_value__ == other.__forward_value__)
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_module__ == other.__forward_module__)
+            return (
+                self.__forward_arg__ == other.__forward_arg__
+                and self.__forward_value__ == other.__forward_value__
+            )
+        return (
+            self.__forward_arg__ == other.__forward_arg__
+            and self.__forward_module__ == other.__forward_module__
+        )
 
     def __hash__(self):
         return hash((self.__forward_arg__, self.__forward_module__))
@@ -124,10 +146,10 @@ class ForwardRef:
 
     def __repr__(self):
         if self.__forward_module__ is None:
-            module_repr = ''
+            module_repr = ""
         else:
-            module_repr = f', module={self.__forward_module__!r}'
-        return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
+            module_repr = f", module={self.__forward_module__!r}"
+        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
 
 
 class _ForwardReffer(dict):
@@ -139,8 +161,9 @@ class _ForwardReffer(dict):
         self.is_class = is_class
 
     def __missing__(self, key):
-        return ForwardRef(key, _globals=self.globals, _owner=self.owner,
-                          is_class=self.is_class)
+        return ForwardRef(
+            key, _globals=self.globals, _owner=self.owner, is_class=self.is_class
+        )
 
 
 class Stringifier:
@@ -156,6 +179,7 @@ class Stringifier:
     def _make_binop(op: ast.AST):
         def binop(self, other):
             return Stringifier(ast.BinOp(self.node, op, self._convert(other)))
+
         return binop
 
     __add__ = _make_binop(ast.Add())
@@ -175,6 +199,7 @@ class Stringifier:
     def _make_unary_op(op):
         def unary_op(self):
             return Stringifier(ast.UnaryOp(self.node, op))
+
         return unary_op
 
     __invert__ = _make_unary_op(ast.Invert())
@@ -193,11 +218,16 @@ class Stringifier:
         return Stringifier(ast.Attribute(self.node, attr))
 
     def __call__(self, *args, **kwargs):
-        return Stringifier(ast.Call(
-            self.node,
-            [self._convert(arg) for arg in args],
-            [ast.keyword(key, self._convert(value)) for key, value in kwargs.items()]
-        ))
+        return Stringifier(
+            ast.Call(
+                self.node,
+                [self._convert(arg) for arg in args],
+                [
+                    ast.keyword(key, self._convert(value))
+                    for key, value in kwargs.items()
+                ],
+            )
+        )
 
     def __iter__(self):
         return self
@@ -231,19 +261,20 @@ def _call_dunder_annotate(annotate, format, owner=None):
                         name = freevars[i]
                     else:
                         name = "__cell__"
-                    fwdref = ForwardRef(name, _cell=cell, _owner=owner, _globals=annotate.__globals__,
-                                        is_class=is_class)
+                    fwdref = ForwardRef(
+                        name,
+                        _cell=cell,
+                        _owner=owner,
+                        _globals=annotate.__globals__,
+                        is_class=is_class,
+                    )
                     new_closure.append(types.CellType(fwdref))
                 else:
                     new_closure.append(cell)
             closure = tuple(new_closure)
         else:
             closure = None
-        func = types.FunctionType(
-            annotate.__code__,
-            globals,
-            closure=closure
-        )
+        func = types.FunctionType(annotate.__code__, globals, closure=closure)
         return func(Format.VALUE)
     elif format == Format.SOURCE:
         globals = _StringifierDict()
@@ -251,7 +282,7 @@ def _call_dunder_annotate(annotate, format, owner=None):
             annotate.__code__,
             globals,
             # TODO: also replace the closure with stringifiers
-            closure=annotate.__closure__
+            closure=annotate.__closure__,
         )
         annos = func(Format.VALUE)
         return {
@@ -260,7 +291,9 @@ def _call_dunder_annotate(annotate, format, owner=None):
         }
 
 
-def get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Format.VALUE):
+def get_annotations(
+    obj, *, globals=None, locals=None, eval_str=False, format=Format.VALUE
+):
     """Compute the annotations dict for an object.
 
     obj may be a callable, class, or module.
@@ -314,25 +347,25 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Fo
         ann = obj.__annotations__
 
         obj_globals = None
-        module_name = getattr(obj, '__module__', None)
+        module_name = getattr(obj, "__module__", None)
         if module_name:
             module = sys.modules.get(module_name, None)
             if module:
-                obj_globals = getattr(module, '__dict__', None)
+                obj_globals = getattr(module, "__dict__", None)
         obj_locals = dict(vars(obj))
         unwrap = obj
     elif isinstance(obj, types.ModuleType):
         # module
-        ann = getattr(obj, '__annotations__', None)
-        obj_globals = getattr(obj, '__dict__')
+        ann = getattr(obj, "__annotations__", None)
+        obj_globals = getattr(obj, "__dict__")
         obj_locals = None
         unwrap = None
     elif callable(obj):
         # this includes types.Function, types.BuiltinFunctionType,
         # types.BuiltinMethodType, functools.partial, functools.singledispatch,
         # "class funclike" from Lib/test/test_inspect... on and on it goes.
-        ann = getattr(obj, '__annotations__', None)
-        obj_globals = getattr(obj, '__globals__', None)
+        ann = getattr(obj, "__annotations__", None)
+        obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
     else:
@@ -352,7 +385,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Fo
 
     if unwrap is not None:
         while True:
-            if hasattr(unwrap, '__wrapped__'):
+            if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
             if isinstance(unwrap, functools.partial):
@@ -367,7 +400,8 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Fo
     if locals is None:
         locals = obj_locals
 
-    return_value = {key:
-        value if not isinstance(value, str) else eval(value, globals, locals)
-        for key, value in ann.items() }
+    return_value = {
+        key: value if not isinstance(value, str) else eval(value, globals, locals)
+        for key, value in ann.items()
+    }
     return return_value
