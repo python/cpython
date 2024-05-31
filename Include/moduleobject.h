@@ -58,10 +58,10 @@ typedef struct PyModuleDef_Base {
 } PyModuleDef_Base;
 
 #define PyModuleDef_HEAD_INIT {  \
-    PyObject_HEAD_INIT(_Py_NULL) \
-    _Py_NULL, /* m_init */       \
+    PyObject_HEAD_INIT(Py_nullptr) \
+    Py_nullptr, /* m_init */       \
     0,        /* m_index */      \
-    _Py_NULL, /* m_copy */       \
+    Py_nullptr, /* m_copy */       \
   }
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000

@@ -1,0 +1,4 @@
+Add :c:macro:`Py_nullptr` macro: a null pointer. It can be used in public
+static inline functions to avoid C++ compiler warnings. The macro uses
+``nullptr`` on C++11 and newer and on C23 and newer. Otherwise the macro
+uses the legacy ``NULL`` macro. Patch by Victor Stinner.

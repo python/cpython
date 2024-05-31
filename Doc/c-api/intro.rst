@@ -209,6 +209,14 @@ complete listing.
 
    .. versionadded:: 3.11
 
+.. c:macro:: Py_nullptr
+
+   Null pointer. The macro can be used in public static inline functions to
+   avoid C++ compiler warnings. The macro uses ``nullptr`` on C++11 and newer
+   and on C23 and newer. Otherwise the macro uses the legacy ``NULL`` macro.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_STRINGIFY(x)
 
    Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns

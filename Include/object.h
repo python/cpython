@@ -1005,7 +1005,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
         if (_tmp_old_op != NULL) { \
-            *_tmp_op_ptr = _Py_NULL; \
+            *_tmp_op_ptr = Py_nullptr; \
             Py_DECREF(_tmp_old_op); \
         } \
     } while (0)
@@ -1015,7 +1015,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
         PyObject *_tmp_old_op = (*_tmp_op_ptr); \
         if (_tmp_old_op != NULL) { \
-            PyObject *_null_ptr = _Py_NULL; \
+            PyObject *_null_ptr = Py_nullptr; \
             memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
             Py_DECREF(_tmp_old_op); \
         } \
@@ -1026,7 +1026,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
 {
-    if (op != _Py_NULL) {
+    if (op != Py_nullptr) {
         Py_INCREF(op);
     }
 }
@@ -1036,7 +1036,7 @@ static inline void Py_XINCREF(PyObject *op)
 
 static inline void Py_XDECREF(PyObject *op)
 {
-    if (op != _Py_NULL) {
+    if (op != Py_nullptr) {
         Py_DECREF(op);
     }
 }

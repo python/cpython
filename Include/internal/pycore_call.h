@@ -75,7 +75,7 @@ _PyObject_VectorcallMethodId(
 {
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
     if (!oname) {
-        return _Py_NULL;
+        return Py_nullptr;
     }
     return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
 }
@@ -84,7 +84,7 @@ static inline PyObject *
 _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 {
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return _PyObject_VectorcallMethodId(name, &self, nargsf, _Py_NULL);
+    return _PyObject_VectorcallMethodId(name, &self, nargsf, Py_nullptr);
 }
 
 static inline PyObject *
@@ -93,7 +93,7 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
     PyObject *args[2] = {self, arg};
     size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     assert(arg != NULL);
-    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
+    return _PyObject_VectorcallMethodId(name, args, nargsf, Py_nullptr);
 }
 
 

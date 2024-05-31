@@ -25,7 +25,7 @@ _testcppext_add(PyObject *Py_UNUSED(module), PyObject *args)
 {
     long i, j;
     if (!PyArg_ParseTuple(args, "ll:foo", &i, &j)) {
-        return _Py_NULL;
+        return Py_nullptr;
     }
     long res = i + j;
     return PyLong_FromLong(res);
@@ -56,8 +56,8 @@ static PyObject *
 test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj = Py_BuildValue("(ii)", 1, 2);
-    if (obj == _Py_NULL) {
-        return _Py_NULL;
+    if (obj == Py_nullptr) {
+        return Py_nullptr;
     }
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt >= 1);
@@ -101,8 +101,8 @@ static PyObject *
 test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *str = PyUnicode_FromString("abc");
-    if (str == _Py_NULL) {
-        return _Py_NULL;
+    if (str == Py_nullptr) {
+        return Py_nullptr;
     }
 
     assert(PyUnicode_Check(str));
@@ -110,7 +110,7 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // gh-92800: test PyUnicode_READ()
     const void* data = PyUnicode_DATA(str);
-    assert(data != _Py_NULL);
+    assert(data != Py_nullptr);
     int kind = PyUnicode_KIND(str);
     assert(kind == PyUnicode_1BYTE_KIND);
     assert(PyUnicode_READ(kind, data, 0) == 'a');
@@ -154,7 +154,7 @@ int VirtualPyObject::instance_count = 0;
 
 PyType_Slot VirtualPyObject_Slots[] = {
     {Py_tp_free, (void*)VirtualPyObject::dealloc},
-    {0, _Py_NULL},
+    {0, Py_nullptr},
 };
 
 PyType_Spec VirtualPyObject_Spec = {
@@ -194,13 +194,13 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 static PyMethodDef _testcppext_methods[] = {
     {"add", _testcppext_add, METH_VARARGS, _testcppext_add_doc},
-    {"test_api_casts", test_api_casts, METH_NOARGS, _Py_NULL},
-    {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
-    {"test_virtual_object", test_virtual_object, METH_NOARGS, _Py_NULL},
+    {"test_api_casts", test_api_casts, METH_NOARGS, Py_nullptr},
+    {"test_unicode", test_unicode, METH_NOARGS, Py_nullptr},
+    {"test_virtual_object", test_virtual_object, METH_NOARGS, Py_nullptr},
     // Note: _testcppext_exec currently runs all test functions directly.
     // When adding a new one, add a call there.
 
-    {_Py_NULL, _Py_NULL, 0, _Py_NULL}  /* sentinel */
+    {Py_nullptr, Py_nullptr, 0, Py_nullptr}  /* sentinel */
 };
 
 
@@ -234,7 +234,7 @@ _testcppext_exec(PyObject *module)
 
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
-    {0, _Py_NULL}
+    {0, Py_nullptr}
 };
 
 
@@ -247,9 +247,9 @@ static struct PyModuleDef _testcppext_module = {
     0,  // m_size
     _testcppext_methods,  // m_methods
     _testcppext_slots,  // m_slots
-    _Py_NULL,  // m_traverse
-    _Py_NULL,  // m_clear
-    _Py_NULL,  // m_free
+    Py_nullptr,  // m_traverse
+    Py_nullptr,  // m_clear
+    Py_nullptr,  // m_free
 };
 
 #define _FUNC_NAME(NAME) PyInit_ ## NAME

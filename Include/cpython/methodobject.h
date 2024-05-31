@@ -45,7 +45,7 @@ static inline PyCFunction PyCFunction_GET_FUNCTION(PyObject *func) {
 static inline PyObject* PyCFunction_GET_SELF(PyObject *func_obj) {
     PyCFunctionObject *func = _PyCFunctionObject_CAST(func_obj);
     if (func->m_ml->ml_flags & METH_STATIC) {
-        return _Py_NULL;
+        return Py_nullptr;
     }
     return func->m_self;
 }
@@ -61,6 +61,6 @@ static inline PyTypeObject* PyCFunction_GET_CLASS(PyObject *func_obj) {
     if (func->m_ml->ml_flags & METH_METHOD) {
         return _PyCMethodObject_CAST(func)->mm_class;
     }
-    return _Py_NULL;
+    return Py_nullptr;
 }
 #define PyCFunction_GET_CLASS(func) PyCFunction_GET_CLASS(_PyObject_CAST(func))
