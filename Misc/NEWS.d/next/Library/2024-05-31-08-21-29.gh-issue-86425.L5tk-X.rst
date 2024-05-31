@@ -1,0 +1,1 @@
+`pprint.isrecursive` and `pprint.saferepr` can now handle instances of classes with overriding `__repr__` methods defined.
