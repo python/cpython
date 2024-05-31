@@ -125,7 +125,7 @@ class IsTestBase(unittest.TestCase):
             self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
-        support.check__all__(self, inspect, not_exported=("modulesbyfile",))
+        support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
 
 def generator_function_example(self):
     for i in range(2):
@@ -1591,11 +1591,6 @@ class TestClassesAndFunctions(unittest.TestCase):
             pass
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
-
-    def test_annotation_format(self):
-        self.assertIs(inspect.VALUE, inspect.AnnotationsFormat.VALUE)
-        self.assertEqual(inspect.VALUE.value, 1)
-        self.assertEqual(inspect.VALUE, 1)
 
     def test_get_annotations_with_stock_annotations(self):
         def foo(a:int, b:str): pass

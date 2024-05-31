@@ -1,4 +1,4 @@
-import inspect
+import annotations
 import textwrap
 import types
 import unittest
@@ -373,12 +373,12 @@ class DeferredEvaluationTests(unittest.TestCase):
                 self.assertIsInstance(annotate, types.FunctionType)
                 self.assertEqual(annotate.__name__, "__annotate__")
                 with self.assertRaises(NotImplementedError):
-                    annotate(inspect.FORWARDREF)
+                    annotate(annotations.Format.FORWARDREF)
                 with self.assertRaises(NotImplementedError):
-                    annotate(inspect.SOURCE)
+                    annotate(annotations.Format.SOURCE)
                 with self.assertRaises(NotImplementedError):
                     annotate(None)
-                self.assertEqual(annotate(inspect.VALUE), {"x": int})
+                self.assertEqual(annotate(annotations.Format.VALUE), {"x": int})
 
     def test_comprehension_in_annotation(self):
         # This crashed in an earlier version of the code

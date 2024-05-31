@@ -2,6 +2,7 @@
 
 import ast
 import enum
+import functools
 import sys
 import types
 

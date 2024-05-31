@@ -5,6 +5,18 @@ import pickle
 import unittest
 
 
+class TestFormat(unittest.TestCase):
+    def test_enum(self):
+        self.assertEqual(annotations.Format.VALUE.value, 1)
+        self.assertEqual(annotations.Format.VALUE, 1)
+
+        self.assertEqual(annotations.Format.FORWARDREF.value, 2)
+        self.assertEqual(annotations.Format.FORWARDREF, 2)
+
+        self.assertEqual(annotations.Format.SOURCE.value, 3)
+        self.assertEqual(annotations.Format.SOURCE, 3)
+
+
 class TestForwardRefFormat(unittest.TestCase):
     def test_closure(self):
         def inner(arg: x):
