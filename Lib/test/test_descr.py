@@ -1593,8 +1593,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("classmethod shouldn't accept keyword args")
 
         cm = classmethod(f)
-        cm_dict = {'__annotations__': {},
-                   '__doc__': (
+        cm_dict = {'__doc__': (
                        "f docstring"
                        if support.HAVE_DOCSTRINGS
                        else None
@@ -1609,6 +1608,41 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(cm.__dict__, {"x" : 42, **cm_dict})
         del cm.x
         self.assertNotHasAttr(cm, "x")
+
+    def test_classmethod_staticmethod_annotations(self):
+        for deco in (classmethod, staticmethod):
+            @deco
+            def unannotated(cls): pass
+            @deco
+            def annotated(cls) -> int: pass
+
+            for method in (annotated, unannotated):
+                with self.subTest(deco=deco, method=method):
+                    original_annotations = dict(method.__wrapped__.__annotations__)
+                    self.assertNotIn('__annotations__', method.__dict__)
+                    self.assertEqual(method.__annotations__, original_annotations)
+                    self.assertIn('__annotations__', method.__dict__)
+
+                    new_annotations = {"a": "b"}
+                    method.__annotations__ = new_annotations
+                    self.assertEqual(method.__annotations__, new_annotations)
+                    self.assertEqual(method.__wrapped__.__annotations__, original_annotations)
+
+                    del method.__annotations__
+                    self.assertEqual(method.__annotations__, original_annotations)
+
+                    original_annotate = method.__wrapped__.__annotate__
+                    self.assertNotIn('__annotate__', method.__dict__)
+                    self.assertIs(method.__annotate__, original_annotate)
+                    self.assertIn('__annotate__', method.__dict__)
+
+                    new_annotate = lambda: {"annotations": 1}
+                    method.__annotate__ = new_annotate
+                    self.assertIs(method.__annotate__, new_annotate)
+                    self.assertIs(method.__wrapped__.__annotate__, original_annotate)
+
+                    del method.__annotate__
+                    self.assertIs(method.__annotate__, original_annotate)
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
