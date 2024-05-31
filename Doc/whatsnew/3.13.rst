@@ -1664,9 +1664,6 @@ Pending Removal in Python 3.14
   * ``master_open()``: use :func:`pty.openpty`.
   * ``slave_open()``: use :func:`pty.openpty`.
 
-* :func:`shutil.rmtree` *onerror* parameter is deprecated in 3.12,
-  and will be removed in 3.14: use the *onexc* parameter instead.
-
 * :mod:`sqlite3`:
 
   * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
@@ -1841,6 +1838,9 @@ although there is currently no date scheduled for their removal.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
+  Python 3.12; use the *onexc* parameter instead.
 
 * :mod:`ssl` options and protocols:
 
@@ -2168,6 +2168,10 @@ Build Changes
   It is licensed under the MIT license; see :ref:`mimalloc license <mimalloc-license>`.
   The bundled mimalloc has custom changes, see :gh:`113141` for details.
   (Contributed by Dino Viehland in :gh:`109914`.)
+
+* On POSIX systems, the pkg-config (``.pc``) filenames now include the ABI
+  flags.  For example, the free-threaded build generates ``python-3.13t.pc``
+  and the debug build generates ``python-3.13d.pc``.
 
 
 Porting to Python 3.13

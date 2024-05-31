@@ -47,6 +47,25 @@ except ImportError:
     pass
 #
 
+# This is copied from test_import/__init__.py.
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
 pickle_loads = {pickle.loads, pickle._loads}
 
 pickle_choices = [(pickle, pickle, proto)
@@ -6383,6 +6402,7 @@ class IranTest(ZoneInfoTest):
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+@no_rerun("the encapsulated datetime C API does not support reloading")
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests

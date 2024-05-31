@@ -101,20 +101,6 @@ get_module_state_by_def(PyTypeObject *cls)
     return get_module_state(mod);
 }
 
-static inline ctypes_state *
-get_module_state_by_def_final(PyTypeObject *cls)
-{
-    if (cls->tp_mro == NULL) {
-        return NULL;
-    }
-    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
-    if (mod == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    return get_module_state(mod);
-}
-
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
@@ -506,6 +492,20 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
         return _stginfo_from_type(state, (PyTypeObject *)obj, result);
     }
     return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+
+/* A variant of PyStgInfo_FromType that doesn't need the state,
+ * so it can be called from finalization functions when the module
+ * state is torn down. Does no checks; cannot fail.
+ * This inlines the current implementation PyObject_GetTypeData,
+ * so it might break in the future.
+ */
+static inline StgInfo *
+_PyStgInfo_FromType_NoState(PyObject *type)
+{
+    size_t type_basicsize =_Py_SIZE_ROUND_UP(PyType_Type.tp_basicsize,
+                                             ALIGNOF_MAX_ALIGN_T);
+    return (StgInfo *)((char *)type + type_basicsize);
 }
 
 // Initialize StgInfo on a newly created type

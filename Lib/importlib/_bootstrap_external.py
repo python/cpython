@@ -472,6 +472,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3568 (Change semantics of END_FOR)
 #     Python 3.13a5 3569 (Specialize CONTAINS_OP)
 #     Python 3.13a6 3570 (Add __firstlineno__ class attribute)
+#     Python 3.13b1 3571 (Fix miscompilation of private names in generic classes)
 
 #     Python 3.14 will start with 3600
 
@@ -488,7 +489,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3570).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3571).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

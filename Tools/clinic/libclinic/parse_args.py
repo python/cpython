@@ -38,6 +38,8 @@ def declare_parser(
         p for p in f.parameters.values()
         if not p.is_positional_only() and not p.is_vararg()
     ])
+
+    condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
     if limited_capi:
         declarations = """
             #define KWTUPLE NULL
@@ -50,6 +52,9 @@ def declare_parser(
             #  define KWTUPLE NULL
             #endif
         """
+
+        codegen.add_include('pycore_runtime.h', '_Py_SINGLETON()',
+                            condition=condition)
     else:
         # XXX Why do we not statically allocate the tuple
         # for non-builtin modules?
@@ -73,9 +78,10 @@ def declare_parser(
             #endif  // !Py_BUILD_CORE
         """ % num_keywords
 
-        condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
-        codegen.add_include('pycore_gc.h', 'PyGC_Head', condition=condition)
-        codegen.add_include('pycore_runtime.h', '_Py_ID()', condition=condition)
+        codegen.add_include('pycore_gc.h', 'PyGC_Head',
+                            condition=condition)
+        codegen.add_include('pycore_runtime.h', '_Py_ID()',
+                            condition=condition)
 
     declarations += """
             static const char * const _keywords[] = {{{keywords_c} NULL}};
