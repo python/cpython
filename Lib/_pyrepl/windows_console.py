@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import io
+from multiprocessing import Value
 import os
 import sys
 
@@ -127,7 +128,11 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
-        self.out = io._WindowsConsoleIO(self.output_fd, "w") # type: ignore[attr-defined]
+        try:
+            self.out = io._WindowsConsoleIO(self.output_fd, "w")  # type: ignore[attr-defined]
+        except ValueError:
+            # Console I/O is redirected, fallback...
+            self.out = None
 
     def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
         """
@@ -278,8 +283,11 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
-        self.out.write(text.encode(self.encoding, "replace"))
-        self.out.flush()
+        if self.out is not None:
+            self.out.write(text.encode(self.encoding, "replace"))
+            self.out.flush()
+        else:
+            os.write(self.output_fd, text.encode(self.encoding, "replace"))
 
     @property
     def screen_xy(self) -> tuple[int, int]:

@@ -32,7 +32,7 @@ class WindowsConsoleTests(TestCase):
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
         console._getscrollbacksize = MagicMock(42)
-        console.out.write = MagicMock()
+        console.out = MagicMock()
 
         height = kwargs.get("height", 25)
         width = kwargs.get("width", 80)
