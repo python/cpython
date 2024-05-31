@@ -9,6 +9,7 @@ import threading
 import types
 import warnings
 
+from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
@@ -29,10 +30,10 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         def callback():
             global return_code
             global repl_future
-            global repl_future_interrupted
+            global keyboard_interrupted
 
             repl_future = None
-            repl_future_interrupted = False
+            keyboard_interrupted = False
 
             func = types.FunctionType(code, self.locals)
             try:
@@ -42,7 +43,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.loop.stop()
                 return
             except KeyboardInterrupt as ex:
-                repl_future_interrupted = True
+                keyboard_interrupted = True
                 future.set_exception(ex)
                 return
             except BaseException as ex:
@@ -68,7 +69,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             self.loop.stop()
             return
         except BaseException:
-            if repl_future_interrupted:
+            if keyboard_interrupted:
                 self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
@@ -88,11 +89,17 @@ class REPLThread(threading.Thread):
             )
 
             console.write(banner)
+
             if startup_path := os.getenv("PYTHONSTARTUP"):
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
                     exec(startup_code, console.locals)
+
+            ps1 = getattr(sys, "ps1", ">>> ")
+            if can_colorize():
+                ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
+            console.write(f"{ps1}import asyncio\n")
 
             try:
                 import errno
@@ -146,7 +153,7 @@ if __name__ == '__main__':
     console = AsyncIOInteractiveConsole(repl_locals, loop)
 
     repl_future = None
-    repl_future_interrupted = False
+    keyboard_interrupted = False
 
     try:
         import readline  # NoQA
@@ -177,9 +184,9 @@ if __name__ == '__main__':
         try:
             loop.run_forever()
         except KeyboardInterrupt:
+            keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
-                repl_future_interrupted = True
             continue
         else:
             break
