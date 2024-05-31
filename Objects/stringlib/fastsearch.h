@@ -256,7 +256,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 
        The local period of the cut is the minimal length of a string w
        such that (left endswith w or w endswith left)
-       and (right startswith w or w startswith left).
+       and (right startswith w or w startswith right).
 
        The Critical Factorization Theorem says that this maximal local
        period is the global period of the string.
