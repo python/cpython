@@ -6573,48 +6573,61 @@ dnl have_panel=[no, panelw, panel]
 have_curses=no
 have_panel=no
 
-AH_TEMPLATE([HAVE_NCURSESW], [Define to 1 if you have the `ncursesw' library.])
-AC_CHECK_HEADERS([curses.h ncurses.h])
+dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
+dnl Sets 'have_curses' and 'have_panel'.
+AC_DEFUN([PY_CHECK_CURSES], [dnl
+AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
+AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
+PKG_CHECK_MODULES(curses_var, [$1],
+  [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
+   AS_VAR_SET([have_curses], [$1])
+   AS_VAR_SET([CURSES_CFLAGS], [$curses_var[_CFLAGS]])
+   AS_VAR_SET([CURSES_LIBS], [$curses_var[_LIBS]])],
+  [AC_CHECK_HEADERS([ncurses.h curses.h $1/curses.h $1/ncurses.h],
+                    [AS_VAR_SET([have_curses], [$1])])])
+AS_VAR_IF([have_curses], [$1],
+  [PKG_CHECK_MODULES(panel_var, [$2],
+    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you hve the '$2' library])
+     AS_VAR_SET([have_panel], [$2])
+     AS_VAR_SET([PANEL_CFLAGS], [$panel_var[_CFLAGS]])
+     AS_VAR_SET([PANEL_LIBS], [$panel_var[_LIBS]])],
+    [AC_CHECK_HEADERS([panel.h $1/panel.h],
+                      [AS_VAR_SET([have_panel], [$2])])])])
+AS_VAR_POPDEF([curses_var])
+AS_VAR_POPDEF([panel_var])])
 
-AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
-  if test "$ac_sys_system" != "Darwin"; then
-    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-    PKG_CHECK_MODULES([CURSES], [ncursesw], [
-      AC_DEFINE([HAVE_NCURSESW], [1])
-      have_curses=ncursesw
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ncursesw], [initscr], [
-          AC_DEFINE([HAVE_NCURSESW], [1])
-          have_curses=ncursesw
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
-        ])
-      ])
-    ])
-  fi
+PY_CHECK_CURSES([ncursesw], [panelw])
+AS_VAR_IF([have_curses], [no], [PY_CHECK_CURSES([ncurses], [panel])])
+AS_CASE([$have_curses],
+        [ncursesw],
+        [CURSES_CFLAGS=${CURSES_CFLAGS-""}
+         CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}],
+        [ncurses],
+        [CURSES_CFLAGS=${CURSES_CFLAGS-""}
+         CURSES_LIBS=${CURSES_LIBS-"-lncurses"}])
+AS_CASE([$have_panel],
+        [panelw],
+        [PANEL_CFLAGS=${PANEL_CFLAGS-""}
+         PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}],
+        [panel],
+        [PANEL_CFLAGS=${PANEL_CFLAGS-""}
+         PANEL_LIBS=${PANEL_LIBS-"-lpanel"}])
+# TODO: rewrite these using AC_COMPILE_IFELSE
+#AS_IF([test "have_curses" != "no"],
+#      [WITH_SAVE_ENV([CPPFLAGS="$CURSES_CFLAGS $CPPFLAGS"
+#                      LDFLAGS="$CURSES_LIBS $LDFLAGS"
+#                      AC_CHECK_FUNC([initscr], [], [have_curses=no])])])
+#AS_IF([test "have_panel" != "no"],
+#      [WITH_SAVE_ENV([CPPFLAGS="$PANEL_CFLAGS $CPPFLAGS"
+#                      LDFLAGS="$PANEL_LIBS $LDFLAGS"
+#                      AC_CHECK_FUNC([update_panels], [], [have_panel=no])])])
 
-  AS_VAR_IF([have_curses], [no], [
-    PKG_CHECK_MODULES([CURSES], [ncurses], [
-      have_curses=ncurses
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ncurses], [initscr], [
-          have_curses=ncurses
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncurses"}
-        ])
-      ])
-    ])
-  ])
-
-])dnl ac_cv_header_ncurses_h = yes
-
+AS_IF([test "have_curses" != "no"], [
 dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
+AS_VAR_IF([ac_sys_system], [Darwin], [
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
   dnl System-supplied ncurses combines libncurses/libpanel and supports wide
   dnl characters, so we can use it like ncursesw.
@@ -6624,65 +6637,12 @@ if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
 
   AS_VAR_APPEND([CURSES_CFLAGS], [" -D_XOPEN_SOURCE_EXTENDED=1"])
-  AC_DEFINE([HAVE_NCURSESW], [1])
-fi
+])
 
 dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
 
-AC_MSG_CHECKING([curses module flags])
-AS_VAR_IF([have_curses], [no], [
-  AC_MSG_RESULT([no])
-], [
-  AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
-])
-
-dnl check for ncurses' panel/panelw library
-AC_CHECK_HEADERS([panel.h])
-
-AS_VAR_IF([ac_cv_header_panel_h], [yes], [
-
-  if test "$ac_sys_system" != "Darwin"; then
-    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-    AS_VAR_IF([have_curses], [ncursesw], [
-      PKG_CHECK_MODULES([PANEL], [panelw], [
-        have_panel=panelw
-      ], [
-        WITH_SAVE_ENV([
-          AC_CHECK_LIB([panelw], [update_panels], [
-            have_panel=panelw
-            PANEL_CFLAGS=${PANEL_CFLAGS-""}
-            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
-          ])
-        ])
-      ])
-    ])
-  fi
-
-  AS_VAR_IF([have_curses], [ncurses], [
-    PKG_CHECK_MODULES([PANEL], [panel], [
-      have_panel=panel
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([panel], [update_panels], [
-          have_panel=panel
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanel"}
-        ])
-      ])
-    ])
-  ])
-
-])dnl ac_cv_header_panel_h = yes
-
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
-
-AC_MSG_CHECKING([panel flags])
-AS_VAR_IF([have_panel], [no], [
-  AC_MSG_RESULT([no])
-], [
-  AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
-])
 
 # first curses header check
 ac_save_cppflags="$CPPFLAGS"
@@ -6774,6 +6734,7 @@ PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 CPPFLAGS=$ac_save_cppflags
+])dnl have_curses != no
 
 AC_MSG_NOTICE([checking for device files])
 
