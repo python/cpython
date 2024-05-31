@@ -80,11 +80,7 @@ class CAPIComplexTest(unittest.TestCase):
         # Test types with __complex__ dunder method
         self.assertEqual(realasdouble(Complex()), 4.25)
         self.assertRaises(TypeError, realasdouble, BadComplex())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(realasdouble(BadComplex2()), 4.25)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, realasdouble, BadComplex2())
+        self.assertRaises(TypeError, realasdouble, BadComplex2())
         self.assertRaises(RuntimeError, realasdouble, BadComplex3())
 
         # Test types with __float__ dunder method
@@ -112,18 +108,13 @@ class CAPIComplexTest(unittest.TestCase):
         # Test types with __complex__ dunder method
         self.assertEqual(imagasdouble(Complex()), 0.5)
         self.assertRaises(TypeError, imagasdouble, BadComplex())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(imagasdouble(BadComplex2()), 0.5)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, imagasdouble, BadComplex2())
+        self.assertRaises(TypeError, imagasdouble, BadComplex2())
         self.assertRaises(RuntimeError, imagasdouble, BadComplex3())
 
         # Test types with __float__ dunder method
         self.assertEqual(imagasdouble(Float()), 0.0)
         self.assertRaises(TypeError, imagasdouble, BadFloat())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(imagasdouble(BadFloat2()), 0.0)
+        self.assertRaises(TypeError, imagasdouble, BadFloat2())
 
         self.assertRaises(TypeError, imagasdouble, object())
 
