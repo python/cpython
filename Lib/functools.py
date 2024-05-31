@@ -878,8 +878,8 @@ def singledispatch(func):
                     f"Invalid first argument to `register()`. "
                     f"{cls!r} is not a class or union type."
                 )
-            ann = getattr(cls, '__annotations__', {})
-            if not ann:
+            ann = getattr(cls, '__annotate__', None)
+            if ann is None:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {cls!r}. "
                     f"Use either `@register(some_class)` or plain `@register` "
@@ -889,12 +889,18 @@ def singledispatch(func):
 
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
-            argname, cls = next(iter(get_type_hints(func).items()))
+            from annotations import Format, ForwardRef
+            argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
                 if _is_union_type(cls):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} not all arguments are classes."
+                    )
+                elif isinstance(cls, ForwardRef):
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} is an unresolved forward reference."
                     )
                 else:
                     raise TypeError(

@@ -19,6 +19,7 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
+import annotations
 from annotations import ForwardRef
 import collections
 from collections import defaultdict
@@ -461,7 +462,8 @@ class _Sentinel:
 _sentinel = _Sentinel()
 
 
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset()):
+def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
+               format=annotations.Format.VALUE):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -472,7 +474,8 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
-        return _evaluate_forward_ref(t, globalns, localns, type_params, recursive_guard=recursive_guard)
+        return _evaluate_forward_ref(t, globalns, localns, type_params,
+                                     recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
@@ -489,7 +492,8 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
 
         ev_args = tuple(
             _eval_type(
-                a, globalns, localns, type_params, recursive_guard=recursive_guard
+                a, globalns, localns, type_params, recursive_guard=recursive_guard,
+                format=format
             )
             for a in t.__args__
         )
@@ -1020,7 +1024,8 @@ def _make_forward_ref(code, **kwargs):
     return forward_ref
 
 
-def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel, *, recursive_guard):
+def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel, *,
+                          recursive_guard, format=annotations.Format.VALUE):
     if type_params is _sentinel:
         _deprecation_warning_for_no_type_params_passed("typing._evaluate_forward_ref")
         type_params = ()
@@ -1043,8 +1048,15 @@ def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel,
         locals_to_pass = {param.__name__: param for param in type_params} | localns
     else:
         locals_to_pass = localns
+    try:
+        value = eval(forward_ref.__forward_code__, globalns, locals_to_pass)
+    except NameError:
+        if format is annotations.Format.FORWARDREF:
+            return forward_ref
+        else:
+            raise
     type_ = _type_check(
-        eval(forward_ref.__forward_code__, globalns, locals_to_pass),
+        value,
         "Forward references must evaluate to types.",
         is_argument=forward_ref.__forward_is_argument__,
         allow_special_forms=forward_ref.__forward_is_class__,
@@ -1055,6 +1067,7 @@ def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel,
         localns,
         type_params,
         recursive_guard=(recursive_guard | {forward_ref.__forward_arg__}),
+        format=format,
     )
 
 
@@ -2320,7 +2333,8 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
-def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
+def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
+                   *, format=annotations.Format.VALUE):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
@@ -2357,13 +2371,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     if isinstance(obj, type):
         hints = {}
         for base in reversed(obj.__mro__):
+            ann = annotations.get_annotations(base, format=format)
+            if format is annotations.Format.SOURCE:
+                hints.update(ann)
+                continue
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
                 base_globals = globalns
-            ann = getattr(base, '__annotations__', {})
-            if isinstance(ann, types.GetSetDescriptorType):
-                ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
             if localns is None and globalns is None:
                 # This is surprising, but required.  Before Python 3.10,
@@ -2378,9 +2393,18 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     value = type(None)
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
-                value = _eval_type(value, base_globals, base_locals, base.__type_params__)
+                value = _eval_type(value, base_globals, base_locals, base.__type_params__,
+                                   format=format)
                 hints[name] = value
-        return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+        if include_extras or format is annotations.Format.SOURCE:
+            return hints
+        else:
+            return {k: _strip_annotations(t) for k, t in hints.items()}
+
+    hints = annotations.get_annotations(obj, format=format)
+    hints = dict(hints)
+    if format is annotations.Format.SOURCE:
+        return hints
 
     if globalns is None:
         if isinstance(obj, types.ModuleType):
@@ -2395,15 +2419,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             localns = globalns
     elif localns is None:
         localns = globalns
-    hints = getattr(obj, '__annotations__', None)
-    if hints is None:
-        # Return empty annotations for something that _could_ have them.
-        if isinstance(obj, _allowed_types):
-            return {}
-        else:
-            raise TypeError('{!r} is not a module, class, method, '
-                            'or function.'.format(obj))
-    hints = dict(hints)
     type_params = getattr(obj, "__type_params__", ())
     for name, value in hints.items():
         if value is None:
@@ -2416,7 +2431,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        hints[name] = _eval_type(value, globalns, localns, type_params)
+        hints[name] = _eval_type(value, globalns, localns, type_params, format=format)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 

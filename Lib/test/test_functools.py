@@ -3036,6 +3036,27 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
 
+    def test_forward_reference(self):
+        @functools.singledispatch
+        def f(arg, arg2=None):
+            return "default"
+
+        @f.register
+        def _(arg: str, arg2: undefined = None):
+            return "forward reference"
+
+        self.assertEqual(f(1), "default")
+        self.assertEqual(f(""), "forward reference")
+
+    def test_unresolved_forward_reference(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "is an unresolved forward reference"):
+            @f.register
+            def _(arg: undefined):
+                return "forward reference"
 
 class CachedCostItem:
     _cost = 1
