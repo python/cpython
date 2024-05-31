@@ -236,6 +236,11 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     struct _qsbr_shared *shared = &tstate->interp->qsbr;
     struct _PyThreadStateImpl *tstate_imp = (_PyThreadStateImpl*) tstate;
 
+    // gh-119369: GIL must be released (if held) to prevent deadlocks, because
+    // we might not have an active tstate, which means taht blocking on PyMutex
+    // locks will not implicitly release the GIL.
+    assert(!tstate->_status.holds_gil);
+
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex
     // because the array may have been resized (changing tstate->qsbr) while
