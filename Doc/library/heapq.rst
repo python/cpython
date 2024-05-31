@@ -1,5 +1,5 @@
-:mod:`heapq` --- Heap queue algorithm
-=====================================
+:mod:`!heapq` --- Heap queue algorithm
+======================================
 
 .. module:: heapq
    :synopsis: Heap queue algorithm (a.k.a. priority queue).
@@ -17,7 +17,9 @@ This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
 Heaps are binary trees for which every parent node has a value less than or
-equal to any of its children.  This implementation uses arrays for which
+equal to any of its children.  We refer to this condition as the heap invariant.
+
+This implementation uses arrays for which
 ``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k*, counting
 elements from zero.  For the sake of comparison, non-existing elements are
 considered to be infinite.  The interesting property of a heap is that its
@@ -270,7 +272,7 @@ winner.  The simplest algorithmic way to remove it and find the "next" winner is
 to move some loser (let's say cell 30 in the diagram above) into the 0 position,
 and then percolate this new 0 down the tree, exchanging values, until the
 invariant is re-established. This is clearly logarithmic on the total number of
-items in the tree. By iterating over all items, you get an O(n log n) sort.
+items in the tree. By iterating over all items, you get an *O*\ (*n* log *n*) sort.
 
 A nice feature of this sort is that you can efficiently insert new items while
 the sort is going on, provided that the inserted items are not "better" than the
@@ -319,4 +321,3 @@ applications, and I think it is good to keep a 'heap' module around. :-)
    backwards, and this was also used to avoid the rewinding time. Believe me, real
    good tape sorts were quite spectacular to watch! From all times, sorting has
    always been a Great Art! :-)
-

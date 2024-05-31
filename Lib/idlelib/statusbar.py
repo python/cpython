@@ -43,6 +43,7 @@ def _multistatus_bar(parent):  # htest #
     button.pack(side='bottom')
     frame.pack()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_statusbar', verbosity=2, exit=False)

@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import unittest
 from ctypes import (Structure, CDLL, CFUNCTYPE,
@@ -6,6 +5,8 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 dll = CDLL(_ctypes_test.__file__)
@@ -219,6 +220,17 @@ class AsParamPropertyWrapper:
 
 class AsParamPropertyWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamPropertyWrapper
+
+
+class AsParamNestedWrapperTestCase(BasicWrapTestCase):
+    """Test that _as_parameter_ is evaluated recursively.
+
+    The _as_parameter_ attribute can be another object which
+    defines its own _as_parameter_ attribute.
+    """
+
+    def wrap(self, param):
+        return AsParamWrapper(AsParamWrapper(AsParamWrapper(param)))
 
 
 if __name__ == '__main__':

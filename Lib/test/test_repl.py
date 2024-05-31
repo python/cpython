@@ -7,7 +7,8 @@ import subprocess
 from textwrap import dedent
 from test import support
 from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
-from test.support.script_helper import kill_python
+from test.support.script_helper import kill_python, assert_python_ok
+from test.support.import_helper import import_module
 
 
 if not has_subprocess_support:
@@ -64,6 +65,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory(self):
+        import_module("_testcapi")
         # Issue #30696: Fix the interactive interpreter looping endlessly when
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
@@ -192,6 +194,9 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
+
+    def test_asyncio_repl_is_ok(self):
+        assert_python_ok("-m", "asyncio")
 
 
 
