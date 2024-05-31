@@ -646,6 +646,8 @@ def _rmtree_safe_fd(stack, onexc):
             os.rmdir(name, dir_fd=dirfd)
             return
 
+        # Note: To guard against symlink races, we use the standard
+        # lstat()/open()/fstat() trick.
         assert func is os.lstat
         if orig_entry is None:
             orig_st = os.lstat(name, dir_fd=dirfd)
@@ -682,11 +684,13 @@ def _rmtree_safe_fd(stack, onexc):
                 continue
             except OSError as err:
                 onexc(os.unlink, fullname, err)
-
-    except OSError as err:
-        if orig_entry is None or not isinstance(err, FileNotFoundError):
+    except FileNotFoundError as err:
+        if orig_entry is None:
             err.filename = path
             onexc(func, path, err)
+    except OSError as err:
+        err.filename = path
+        onexc(func, path, err)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
@@ -739,8 +743,6 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         # While the unsafe rmtree works fine on bytes, the fd based does not.
         if isinstance(path, bytes):
             path = os.fsdecode(path)
-        # Note: To guard against symlink races, we use the standard
-        # lstat()/open()/fstat() trick.
         stack = [(os.lstat, dir_fd, path, None)]
         try:
             while stack:
