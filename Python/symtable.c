@@ -248,8 +248,7 @@ static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
 static int symtable_visit_params(struct symtable *st, asdl_arg_seq *args);
-static int symtable_visit_annotation(struct symtable *st, expr_ty annotation,
-                                     struct _symtable_entry *parent_ste, void *key);
+static int symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key);
 static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, stmt_ty, arguments_ty, expr_ty,
@@ -1361,9 +1360,9 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
     /* The entry is owned by the stack. Borrow it for st_cur. */
     st->st_cur = ste;
 
-    /* Annotation blocks shouldn't have any affect on the symbol table since in
-     * the compilation stage, they will all be transformed to strings. They are
-     * only created if future 'annotations' feature is activated. */
+    /* If "from __future__ import annotations" is active,
+     * annotation blocks shouldn't have any affect on the symbol table since in
+     * the compilation stage, they will all be transformed to strings. */
     if (st->st_future->ff_features & CO_FUTURE_ANNOTATIONS && ste->ste_type == AnnotationBlock) {
         return 1;
     }
@@ -1843,7 +1842,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         else {
             VISIT(st, expr, s->v.AnnAssign.target);
         }
-        if (!symtable_visit_annotation(st, s->v.AnnAssign.annotation, st->st_cur,
+        if (!symtable_visit_annotation(st, s->v.AnnAssign.annotation,
                                        (void *)((uintptr_t)st->st_cur->ste_id + 1))) {
             VISIT_QUIT(st, 0);
         }
@@ -2486,9 +2485,9 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 }
 
 static int
-symtable_visit_annotation(struct symtable *st, expr_ty annotation,
-                          struct _symtable_entry *parent_ste, void *key)
+symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
+    struct _symtable_entry *parent_ste = st->st_cur;
     int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
     if (future_annotations) {
         if(!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
@@ -2497,8 +2496,8 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
         }
     }
     else {
-        if (st->st_cur->ste_annotation_block == NULL) {
-            _Py_block_ty current_type = st->st_cur->ste_type;
+        if (parent_ste->ste_annotation_block == NULL) {
+            _Py_block_ty current_type = parent_ste->ste_type;
             if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
                                       key, LOCATION(annotation))) {
                 VISIT_QUIT(st, 0);
@@ -2525,7 +2524,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation,
             }
         }
         else {
-            if (!symtable_enter_existing_block(st, st->st_cur->ste_annotation_block)) {
+            if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
                 VISIT_QUIT(st, 0);
             }
         }
