@@ -107,13 +107,13 @@ def load_raw_data(input: Path) -> RawData:
                     if key.startswith("uops[") and key[5:6] != "_":
                         key = "uops[_" + key[5:]
 
-                    # Data about JIT stencils isn't cumulative
-                    if "code_size" in key or "data_size" in key:
+                    # TODO: Add validation, presumably metadata should match across
+                    # all input files?
+                    if "metadata" in key:
                         stats[key.strip()] = int(value)
                     else:
                         stats[key.strip()] += int(value)
             stats["__nfiles__"] += 1
-
         data = dict(stats)
         data.update(_load_metadata_from_source())
         return data
@@ -224,8 +224,8 @@ class OpcodeStats:
     def get_code_sizes(self) -> dict[str, int]:
         sizes = {}
         for name, opcode_stat in self._data.items():
-            if "code_size" in opcode_stat:
-                sizes[name] = opcode_stat["code_size"]
+            if "metadata.code_size" in opcode_stat:
+                sizes[name] = opcode_stat["metadata.code_size"]
         return sizes
 
     @functools.cache

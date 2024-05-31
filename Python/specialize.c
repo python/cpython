@@ -297,13 +297,13 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         if (possible_name){
             fprintf(
                 out,
-                "uops[%s].code_size : %d\n",
+                "uops[%s].metadata.code_size : %d\n",
                 possible_name,
                 stats->opcode[i].code_size
             );
             fprintf(
                 out,
-                "uops[%s].data_size : %d\n",
+                "uops[%s].metadata.data_size : %d\n",
                 possible_name,
                 stats->opcode[i].data_size
             );
