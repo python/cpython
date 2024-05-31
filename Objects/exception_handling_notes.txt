@@ -92,6 +92,16 @@ If there is an entry, then:
  3. push the exception to the stack.
  4. jump to the target offset and resume execution.
 
+Currently, the only opcode that requires the lasti flag to be set is RERAISE.
+That is, if the jump described by an exception table points to an offset where
+a RERAISE (with a non-zero oparg) occurs, the lasti is expected to be on the
+stack, and therefore the lasti flag of the exception table entry must be set.
+The last example gives an illustration of this. The first table entry describes
+a jump where no RERAISE is executed. The second entry describes a jump where a
+RERAISE with oparg 1 is executed. This means that the RERAISE will consume the
+TOS and assume it is the lasti that was pushed when the exception occurred, as
+instructed by the lasti flag.
+
 
 Format of the exception table
 -----------------------------
