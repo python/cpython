@@ -154,7 +154,7 @@ _PyType_GetModuleState(PyTypeObject *type)
 extern int _PyStaticType_InitBuiltin(PyInterpreterState *, PyTypeObject *type);
 extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTypeObject *);
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
-extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
+extern void _PyStaticType_FiniBuiltin(PyInterpreterState *, PyTypeObject *);
 
 // Export for 'math' shared extension, used via _PyType_IsReady() static inline
 // function

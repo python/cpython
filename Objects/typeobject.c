@@ -5686,7 +5686,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
 }
 
 void
-_PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
+_PyStaticType_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 {
     assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
     assert(_Py_IsImmortal((PyObject *)type));
