@@ -1,7 +1,7 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, tcl_version,
+from test.test_tkinter.support import (AbstractTkTest, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -22,7 +22,7 @@ class AbstractWidgetTest(AbstractTkTest):
             return self._scaling
 
     def _str(self, value):
-        if not self._stringify and self.wantobjects and tcl_version >= (8, 6):
+        if not self._stringify and self.wantobjects and tk_version >= (8, 6):
             return value
         if isinstance(value, tuple):
             return ' '.join(map(self._str, value))
@@ -74,7 +74,7 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkIntegerParam(self, widget, name, *values, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
-        if tcl_version < (8, 7) or name == 'underline':
+        if tk_version < (8, 7) or name == 'underline':
             self.checkInvalidParam(widget, name, '',
                     errmsg='expected integer but got ""')
         else:
@@ -156,13 +156,13 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkReliefParam(self, widget, name):
         options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
-        if tcl_version >= (8, 7) and name in ('overrelief', 'proxyrelief'):
+        if tk_version >= (8, 7) and name in ('overrelief', 'proxyrelief'):
             options.append('')
         self.checkParams(widget, name, *options)
         lastop = options.pop()
         opstring = ', '.join(options)
         errmsg=f'bad relief "spam": must be {opstring}, or {lastop}'
-        if tcl_version < (8, 6):
+        if tk_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg=errmsg)

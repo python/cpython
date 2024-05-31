@@ -1,8 +1,10 @@
 #include <stdbool.h>
 
 #include <Python.h>
+#include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
+#include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
 
-#include "tokenizer.h"
+#include "lexer/state.h"
 #include "pegen.h"
 #include "string_parser.h"
 
@@ -11,7 +13,18 @@
 static int
 warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
+    if (p->call_invalid_rules) {
+        // Do not report warnings if we are in the second pass of the parser
+        // to avoid showing the warning twice.
+        return 0;
+    }
     unsigned char c = *first_invalid_escape;
+    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {
+        // in this case the tokenizer has already emitted a warning,
+        // see Parser/tokenizer/helpers.c:warn_invalid_escape_sequence
+        return 0;
+    }
+
     int octal = ('4' <= c && c <= '7');
     PyObject *msg =
         octal
@@ -31,7 +44,7 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
     if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
                                  t->lineno, NULL, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+            /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
 

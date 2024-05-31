@@ -6,7 +6,7 @@ The CPython interpreter is defined in C, meaning that the semantics of the
 bytecode instructions, the dispatching mechanism, error handling, and
 tracing and instrumentation are all intermixed.
 
-This document proposes defining a custom C-like DSL for defining the 
+This document proposes defining a custom C-like DSL for defining the
 instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
@@ -15,6 +15,7 @@ These tools would be used to:
 * Generate the tier 2 interpreter
 * Generate documentation for instructions
 * Generate metadata about instructions, such as stack use (done).
+* Generate the tier 2 optimizer's abstract interpreter.
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -45,7 +46,7 @@ passes from the semantic definition, reducing errors.
 
 As we improve the performance of CPython, we need to optimize larger regions
 of code, use more complex optimizations and, ultimately, translate to machine
-code. 
+code.
 
 All of these steps introduce the possibility of more bugs, and require more code
 to be written. One way to mitigate this is through the use of code generators.
@@ -61,23 +62,23 @@ blocks as the instructions for the tier 1 (PEP 659) interpreter.
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
 
-By using a code generator and using a common source for the instructions, or 
+By using a code generator and using a common source for the instructions, or
 parts of instructions, we can reduce the potential for errors considerably.
 
 
 ## Specification
 
-This specification is at an early stage and is likely to change considerably.
+This specification is a work in progress.
+We update it as the need arises.
 
-Syntax
-------
+### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
 and a piece of C code describing its semantics::
- 
+
 ```
   file:
-    (definition | family)+
+    (definition | family | pseudo)+
 
   definition:
     "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
@@ -85,9 +86,7 @@ and a piece of C code describing its semantics::
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
-    |
-    "super" "(" NAME ")" "=" NAME ("+" NAME)* ";"
- 
+
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
 
@@ -110,7 +109,7 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME
+    NAME ["*"]
 
   stream:
     NAME "/" size
@@ -122,7 +121,16 @@ and a piece of C code describing its semantics::
     object "[" C-expression "]"
 
   family:
-    "family" "(" NAME ")" = "{" NAME ("," NAME)+ "}" ";"
+    "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  pseudo:
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -130,8 +138,6 @@ The following definitions may occur:
 * `inst`: A normal instruction, as previously defined by `TARGET(NAME)` in `ceval.c`.
 * `op`: A part instruction from which macros can be constructed.
 * `macro`: A bytecode instruction constructed from ops and cache effects.
-* `super`: A super-instruction, such as `LOAD_FAST__LOAD_FAST`, constructed from
-  normal or macro instructions.
 
 `NAME` can be any ASCII identifier that is a C identifier and not a C or Python keyword.
 `foo_1` is legal. `$` is not legal, nor is `struct` or `class`.
@@ -140,6 +146,7 @@ The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
 end of the instruction.
+
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the
@@ -159,14 +166,31 @@ By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
 
+### Special instruction annotations
+
+Instruction headers may be prefixed by one or more annotations. The non-exhaustive
+list of annotations and their meanings are as follows:
+
+* `override`. For external use by other interpreter definitions to override the current
+   instruction definition.
+* `pure`. This instruction has no side effects.
+* 'tierN'. This instruction only used by tier N interpreter.
+
+### Special functions/macros
+
 The C code may include special functions that are understood by the tools as
 part of the DSL.
 
 Those functions include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler if `cond` is true.
+* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+* `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
+
+Note that the use of `DECREF_INPUTS()` is optional -- manual calls
+to `Py_DECREF()` or other approaches are also acceptable
+(e.g. calling an API that "steals" a reference).
 
 Variables can either be defined in the input, output, or in the C code.
 Variables defined in the input may not be assigned in the C code.
@@ -187,17 +211,39 @@ These requirements result in the following constraints on the use of
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
 
-Semantics
----------
+(There is some wiggle room: these rules apply to dynamic code paths,
+not to static occurrences in the source code.)
+
+If code detects an error condition before the first `DECREF` of an input,
+two idioms are valid:
+
+- Use `goto error`.
+- Use a block containing the appropriate `DECREF` calls ending in
+  `ERROR_IF(true, error)`.
+
+An example of the latter would be:
+```cc
+    res = PyObject_Add(left, right);
+    if (res == NULL) {
+        DECREF_INPUTS();
+        ERROR_IF(true, error);
+    }
+```
+
+### Semantics
 
 The underlying execution model is a stack machine.
 Operations pop values from the stack, and push values to the stack.
 They also can look at, and consume, values from the instruction stream.
 
-All members of a family must have the same stack and instruction stream effect.
+All members of a family
+(which represents a specializable instruction and its specializations)
+must have the same stack and instruction stream effect.
 
-Examples
---------
+The same is true for all members of a pseudo instruction
+(which is mapped by the bytecode compiler to one of its members).
+
+## Examples
 
 (Another source of examples can be found in the [tests](test_generator.py).)
 
@@ -233,27 +279,6 @@ This would generate:
         PyObject *value = PEEK(1);
         SETLOCAL(oparg, value);
         STACK_SHRINK(1);
-        DISPATCH();
-    }
-```
-
-### Super-instruction definition
-
-```C
-    super ( LOAD_FAST__LOAD_FAST ) = LOAD_FAST + LOAD_FAST ;
-```
-This might get translated into the following:
-```C
-    TARGET(LOAD_FAST__LOAD_FAST) {
-        PyObject *value;
-        value = frame->f_localsplus[oparg];
-        Py_INCREF(value);
-        PUSH(value);
-        NEXTOPARG();
-        next_instr++;
-        value = frame->f_localsplus[oparg];
-        Py_INCREF(value);
-        PUSH(value);
         DISPATCH();
     }
 ```
@@ -339,14 +364,26 @@ For explanations see "Generating the interpreter" below.)
     }
 ```
 
-### Define an instruction family
-These opcodes all share the same instruction format):
+### Defining an instruction family
+
+A _family_ maps a specializable instruction to its specializations.
+
+Example: These opcodes all share the same instruction format):
 ```C
-    family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT } ;
+    family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
 
-Generating the interpreter
-==========================
+### Defining a pseudo instruction
+
+A _pseudo instruction_ is used by the bytecode compiler to represent a set of possible concrete instructions.
+
+Example: `JUMP` may expand to `JUMP_FORWARD` or `JUMP_BACKWARD`:
+```C
+    pseudo(JUMP) = { JUMP_FORWARD, JUMP_BACKWARD };
+```
+
+
+## Generating the interpreter
 
 The generated C code for a single instruction includes a preamble and dispatch at the end
 which can be easily inserted. What is more complex is ensuring the correct stack effects
@@ -394,16 +431,14 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
                 stack_pointer += 1;
             }
             s1 = res;
-        }   
+        }
         next_instr += (1 + 1 + 2 + 1 + 4);
         stack_pointer[-1] = s1;
         DISPATCH();
     }
 ```
 
-Other tools
-===========
+## Other tools
 
 From the instruction definitions we can generate the stack marking code used in `frame.set_lineno()`,
 and the tables for use by disassemblers.
-

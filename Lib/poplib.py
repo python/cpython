@@ -451,7 +451,6 @@ if HAVE_SSL:
     __all__.append("POP3_SSL")
 
 if __name__ == "__main__":
-    import sys
     a = POP3(sys.argv[1])
     print(a.getwelcome())
     a.user(sys.argv[2])

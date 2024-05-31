@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """     turtlegraphics-example-suite:
 
              tdemo_forest.py

@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(monitoring_use_tool_id__doc__,
 "use_tool_id($module, tool_id, name, /)\n"
@@ -29,7 +25,7 @@ monitoring_use_tool_id(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!_PyArg_CheckPositional("use_tool_id", nargs, 2, 2)) {
         goto exit;
     }
-    tool_id = _PyLong_AsInt(args[0]);
+    tool_id = PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -57,7 +53,7 @@ monitoring_free_tool_id(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int tool_id;
 
-    tool_id = _PyLong_AsInt(arg);
+    tool_id = PyLong_AsInt(arg);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -84,7 +80,7 @@ monitoring_get_tool(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int tool_id;
 
-    tool_id = _PyLong_AsInt(arg);
+    tool_id = PyLong_AsInt(arg);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -117,11 +113,11 @@ monitoring_register_callback(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!_PyArg_CheckPositional("register_callback", nargs, 3, 3)) {
         goto exit;
     }
-    tool_id = _PyLong_AsInt(args[0]);
+    tool_id = PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    event = _PyLong_AsInt(args[1]);
+    event = PyLong_AsInt(args[1]);
     if (event == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -150,7 +146,7 @@ monitoring_get_events(PyObject *module, PyObject *arg)
     int tool_id;
     int _return_value;
 
-    tool_id = _PyLong_AsInt(arg);
+    tool_id = PyLong_AsInt(arg);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -185,11 +181,11 @@ monitoring_set_events(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("set_events", nargs, 2, 2)) {
         goto exit;
     }
-    tool_id = _PyLong_AsInt(args[0]);
+    tool_id = PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    event_set = _PyLong_AsInt(args[1]);
+    event_set = PyLong_AsInt(args[1]);
     if (event_set == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -222,7 +218,7 @@ monitoring_get_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (!_PyArg_CheckPositional("get_local_events", nargs, 2, 2)) {
         goto exit;
     }
-    tool_id = _PyLong_AsInt(args[0]);
+    tool_id = PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -260,12 +256,12 @@ monitoring_set_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (!_PyArg_CheckPositional("set_local_events", nargs, 3, 3)) {
         goto exit;
     }
-    tool_id = _PyLong_AsInt(args[0]);
+    tool_id = PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
     code = args[1];
-    event_set = _PyLong_AsInt(args[2]);
+    event_set = PyLong_AsInt(args[2]);
     if (event_set == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -308,4 +304,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=11cc0803875b3ffa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14ffc0884a6de50a input=a9049054013a1b77]*/

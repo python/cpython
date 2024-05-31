@@ -172,6 +172,13 @@ def _encode(data, name='data'):
             "if you want to send it encoded in UTF-8." %
             (name.title(), data[err.start:err.end], name)) from None
 
+def _strip_ipv6_iface(enc_name: bytes) -> bytes:
+    """Remove interface scope from IPv6 address."""
+    enc_name, percent, _ = enc_name.partition(b"%")
+    if percent:
+        assert enc_name.startswith(b'['), enc_name
+        enc_name += b']'
+    return enc_name
 
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
@@ -658,6 +665,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def peek(self, n=-1):
@@ -682,6 +691,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def _read1_chunked(self, n):
@@ -925,17 +936,23 @@ class HTTPConnection:
                 host = host[:i]
             else:
                 port = self.default_port
-            if host and host[0] == '[' and host[-1] == ']':
-                host = host[1:-1]
+        if host and host[0] == '[' and host[-1] == ']':
+            host = host[1:-1]
 
         return (host, port)
 
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def _wrap_ipv6(self, ip):
+        if b':' in ip and ip[0] != b'['[0]:
+            return b"[" + ip + b"]"
+        return ip
+
     def _tunnel(self):
         connect = b"CONNECT %s:%d %s\r\n" % (
-            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._wrap_ipv6(self._tunnel_host.encode("idna")),
+            self._tunnel_port,
             self._http_vsn_str.encode("ascii"))
         headers = [connect]
         for header, value in self._tunnel_headers.items():
@@ -970,13 +987,12 @@ class HTTPConnection:
         received from the proxy server to the CONNECT request
         sent to set the tunnel.
 
-        If the CONNECT request was not sent, the method returns
-        an empty dictionary.
+        If the CONNECT request was not sent, the method returns None.
         """
         return (
             _parse_header_lines(self._raw_proxy_headers)
             if self._raw_proxy_headers is not None
-            else {}
+            else None
         )
 
     def connect(self):
@@ -1009,7 +1025,7 @@ class HTTPConnection:
                 response.close()
 
     def send(self, data):
-        """Send `data' to the server.
+        """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
         file-like object that supports a .read() method, or an iterable object.
         """
@@ -1121,10 +1137,10 @@ class HTTPConnection:
                    skip_accept_encoding=False):
         """Send a request to the server.
 
-        `method' specifies an HTTP request method, e.g. 'GET'.
-        `url' specifies the object being requested, e.g. '/index.html'.
-        `skip_host' if True does not add automatically a 'Host:' header
-        `skip_accept_encoding' if True does not add automatically an
+        'method' specifies an HTTP request method, e.g. 'GET'.
+        'url' specifies the object being requested, e.g. '/index.html'.
+        'skip_host' if True does not add automatically a 'Host:' header
+        'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
 
@@ -1195,7 +1211,7 @@ class HTTPConnection:
                         netloc_enc = netloc.encode("ascii")
                     except UnicodeEncodeError:
                         netloc_enc = netloc.encode("idna")
-                    self.putheader('Host', netloc_enc)
+                    self.putheader('Host', _strip_ipv6_iface(netloc_enc))
                 else:
                     if self._tunnel_host:
                         host = self._tunnel_host
@@ -1211,9 +1227,9 @@ class HTTPConnection:
 
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
-
-                    if host.find(':') >= 0:
-                        host_enc = b'[' + host_enc + b']'
+                    host_enc = self._wrap_ipv6(host_enc)
+                    if ":" in host:
+                        host_enc = _strip_ipv6_iface(host_enc)
 
                     if port == self.default_port:
                         self.putheader('Host', host_enc)

@@ -28,7 +28,7 @@ from fileinput import FileInput
 from itertools import chain
 from http.cookies import Morsel
 try:
-    from multiprocessing.managers import ValueProxy
+    from multiprocessing.managers import ValueProxy, DictProxy, ListProxy
     from multiprocessing.pool import ApplyResult
     from multiprocessing.queues import SimpleQueue as MPSimpleQueue
     from multiprocessing.queues import Queue as MPQueue
@@ -36,6 +36,8 @@ try:
 except ImportError:
     # _multiprocessing module is optional
     ValueProxy = None
+    DictProxy = None
+    ListProxy = None
     ApplyResult = None
     MPSimpleQueue = None
     MPQueue = None
@@ -47,7 +49,7 @@ except ImportError:
     ShareableList = None
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType, AsyncGeneratorType
+from types import GenericAlias, MappingProxyType, AsyncGeneratorType, CoroutineType, GeneratorType
 from tempfile import TemporaryDirectory, SpooledTemporaryFile
 from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
@@ -118,6 +120,7 @@ class BaseTest(unittest.TestCase):
                      KeysView, ItemsView, ValuesView,
                      Sequence, MutableSequence,
                      MappingProxyType, AsyncGeneratorType,
+                     GeneratorType, CoroutineType,
                      DirEntry,
                      chain,
                      LoggerAdapter, StreamHandler,
@@ -134,7 +137,7 @@ class BaseTest(unittest.TestCase):
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
-        generic_types.extend((ValueProxy, ApplyResult,
+        generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
 
     def test_subscriptable(self):
@@ -209,6 +212,9 @@ class BaseTest(unittest.TestCase):
     def test_repr(self):
         class MyList(list):
             pass
+        class MyGeneric:
+            __class_getitem__ = classmethod(GenericAlias)
+
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
@@ -220,6 +226,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
         self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
+
+        # gh-105488
+        self.assertTrue(repr(MyGeneric[int]).endswith('MyGeneric[int]'))
+        self.assertTrue(repr(MyGeneric[[]]).endswith('MyGeneric[[]]'))
+        self.assertTrue(repr(MyGeneric[[int, str]]).endswith('MyGeneric[[int, str]]'))
 
     def test_exposed_type(self):
         import types

@@ -3,9 +3,7 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 from test.support import captured_stdout, import_helper, STDLIB_DIR
-import _imp
 import contextlib
-import marshal
 import os.path
 import types
 import unittest

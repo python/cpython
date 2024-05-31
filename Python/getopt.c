@@ -29,10 +29,6 @@
 #include <wchar.h>
 #include "pycore_getopt.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int _PyOS_opterr = 1;                 /* generate error messages */
 Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
 const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
@@ -172,8 +168,3 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 
     return option;
 }
-
-#ifdef __cplusplus
-}
-#endif
-

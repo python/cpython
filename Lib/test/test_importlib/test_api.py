@@ -10,7 +10,6 @@ from test.support import import_helper
 from test.support import os_helper
 import types
 import unittest
-import warnings
 
 
 class ImportModuleTests:
