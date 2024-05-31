@@ -1196,27 +1196,33 @@ dummy_func(
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                        (PyDictObject *)BUILTINS(),
+                                        name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                            * an exception if the key doesn't exist */
+                            format_exc_check_arg(tstate, PyExc_NameError,
+                                                NAME_ERROR_MSG, name);
+                        }
+                        ERROR_IF(true, error);
+                    }
                     Py_INCREF(v);
                 }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
                 else {
-                    if (PyDict_CheckExact(BUILTINS())) {
-                        v = PyDict_GetItemWithError(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (!_PyErr_Occurred(tstate)) {
-                                format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                        Py_INCREF(v);
-                    }
-                    else {
+                    /* Slow-path if globals or builtins is not a dict */
+
+                    /* namespace 1: globals */
+                    v = PyObject_GetItem(GLOBALS(), name);
+                    if (v == NULL) {
+                        ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
+                        _PyErr_Clear(tstate);
+
+                        /* namespace 2: builtins */
                         v = PyObject_GetItem(BUILTINS(), name);
                         if (v == NULL) {
                             if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -1224,7 +1230,7 @@ dummy_func(
                                             tstate, PyExc_NameError,
                                             NAME_ERROR_MSG, name);
                             }
-                            goto error;
+                            ERROR_IF(true, error);
                         }
                     }
                 }
