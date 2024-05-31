@@ -1,6 +1,11 @@
-import itertools
 import sys
 import unittest
+
+if sys.platform != 'win32':
+    raise unittest.SkipTest("test only relevant on win32")
+
+
+import itertools
 from functools import partial
 from typing import Iterable
 from unittest import TestCase
@@ -22,7 +27,6 @@ except ImportError:
     pass
 
 
-@unittest.skipIf(sys.platform != "win32", "Test class specifically for Windows")
 class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
