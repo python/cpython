@@ -1134,7 +1134,7 @@ deque([('brown', 2),
         a = A()
         a.self = a
         self.assertEqual(pprint.pformat(a),
-                         f"{'self': <Recursion on A with id={id(a)}>}")
+                         f"{{'self': <Recursion on A with id={id(a)}>}}")
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
