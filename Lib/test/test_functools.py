@@ -210,6 +210,43 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
+    def test_placeholders_trailing_trim(self):
+        PH = self.module.Placeholder
+        for args in [(PH,), (PH, 0), (0, PH), (0, PH, 1, PH, PH, PH)]:
+            expected, n = tuple(args), len(args)
+            while n and args[n-1] is PH:
+                n -= 1
+            expected = expected[:n]
+            p = self.partial(capture, *args)
+            self.assertTrue(p.args == expected)
+
+    def test_placeholders(self):
+        PH = self.module.Placeholder
+        # 1 Placeholder
+        args = (PH, 0)
+        p = self.partial(capture, *args)
+        got, empty = p('x')
+        self.assertTrue(('x', 0) == got and empty == {})
+        # 2 Placeholders
+        args = (PH, 0, PH, 1)
+        p = self.partial(capture, *args)
+        with self.assertRaises(TypeError):
+            got, empty = p('x')
+        got, empty = p('x', 'y')
+        expected = ('x', 0, 'y', 1)
+        self.assertTrue(expected == got and empty == {})
+
+    def test_placeholders_optimization(self):
+        PH = self.module.Placeholder
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p, PH, 1, 2, 3)
+        expected = (PH, 0, 1, 2, 3)
+        self.assertTrue(expected == p2.args)
+        p3 = self.partial(p2, -1, 4)
+        got, empty = p3(5)
+        expected = (-1, 0, 1, 2, 3, 4, 5)
+        self.assertTrue(expected == got and empty == {})
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)

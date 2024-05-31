@@ -25,6 +25,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
+    PyTypeObject *placeholder_type;
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -41,6 +42,30 @@ get_functools_state(PyObject *module)
 
 /* partial object **********************************************************/
 
+
+typedef struct {
+    PyObject_HEAD
+} placeholderobject;
+
+
+PyDoc_STRVAR(placeholder_doc, "placeholder for partial arguments");
+
+
+static PyType_Slot placeholder_type_slots[] = {
+    {Py_tp_doc, (void *)placeholder_doc},
+    {0, 0}
+};
+
+static PyType_Spec placeholder_type_spec = {
+    .name = "partial.Placeholder",
+    .basicsize = sizeof(placeholderobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+             Py_TPFLAGS_IMMUTABLETYPE |
+             Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = placeholder_type_slots
+};
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *fn;
@@ -48,6 +73,8 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
+    PyObject *placeholder; /* Placeholder for positional arguments */
+    Py_ssize_t np;         /* Number of placeholders */
     vectorcallfunc vectorcall;
 } partialobject;
 
@@ -72,6 +99,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *func, *pargs, *nargs, *pkw;
     partialobject *pto;
+    Py_ssize_t pnp = 0;
 
     if (PyTuple_GET_SIZE(args) < 1) {
         PyErr_SetString(PyExc_TypeError,
@@ -98,6 +126,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             pargs = part->args;
             pkw = part->kw;
             func = part->fn;
+            pnp = part->np;
             assert(PyTuple_Check(pargs));
             assert(PyDict_Check(pkw));
         }
@@ -120,11 +149,63 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
-    if (pargs == NULL) {
-        pto->args = nargs;
+
+    pto->placeholder = (PyObject *) state->placeholder_type;
+    Py_ssize_t nnp = 0;
+    Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
+    PyObject *item;
+    if (nnargs > 0){
+        /* Trim placeholders from the end if needed */
+        Py_ssize_t nnargs_old = nnargs;
+        for (; nnargs > 0; nnargs--) {
+            item = PyTuple_GET_ITEM(nargs, nnargs-1);
+            if (!Py_Is(item, pto->placeholder))
+                break;
+        }
+        if (nnargs != nnargs_old) {
+            PyObject *tmp = PyTuple_GetSlice(nargs, 0, nnargs);
+            Py_DECREF(nargs);
+            nargs = tmp;
+        }
+        /* Count placeholders */
+        if (nnargs > 1){
+            for (Py_ssize_t i=0; i < nnargs - 1; i++){
+                item = PyTuple_GET_ITEM(nargs, i);
+                if (Py_Is(item, pto->placeholder))
+                    nnp++;
+            }
+        }
     }
-    else {
+    if ((pnp > 0) && (nnargs > 0)) {
+        Py_ssize_t npargs = PyTuple_GET_SIZE(pargs);
+        Py_ssize_t nfargs = npargs;
+        if (nnargs > pnp)
+            nfargs += nnargs - pnp;
+        PyObject *fargs = PyTuple_New(nfargs);
+        for (Py_ssize_t i=0, j=0; i < nfargs; i++) {
+            if (i < npargs) {
+                item = PyTuple_GET_ITEM(pargs, i);
+                if ((j < nnargs) & Py_Is(item, pto->placeholder)){
+                    item = PyTuple_GET_ITEM(nargs, j);
+                    j++;
+                    pnp--;
+                }
+            } else {
+                item = PyTuple_GET_ITEM(nargs, j);
+                j++;
+            }
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(fargs, i, item);
+        }
+        pto->args = fargs;
+        pto->np = pnp + nnp;
+        Py_DECREF(nargs);
+    } else if (pargs == NULL) {
+        pto->args = nargs;
+        pto->np = nnp;
+    } else {
         pto->args = PySequence_Concat(pargs, nargs);
+        pto->np = pnp + nnp;
         Py_DECREF(nargs);
         if (pto->args == NULL) {
             Py_DECREF(pto);
@@ -217,13 +298,19 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
     /* pto->kw is mutable, so need to check every time */
     if (PyDict_GET_SIZE(pto->kw)) {
         return partial_vectorcall_fallback(tstate, pto, args, nargsf, kwnames);
     }
+    Py_ssize_t np = pto->np;
+    if (nargs < np) {
+        PyErr_SetString(PyExc_TypeError,
+                        "unfilled placeholders in 'partial' call");
+        return NULL;
+    }
 
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nargs_total = nargs;
     if (kwnames != NULL) {
         nargs_total += PyTuple_GET_SIZE(kwnames);
@@ -251,6 +338,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     }
 
     Py_ssize_t newnargs_total = pto_nargs + nargs_total;
+    newnargs_total = newnargs_total - np;
 
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject *ret;
@@ -267,12 +355,28 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         }
     }
 
-    /* Copy to new stack, using borrowed references */
-    memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
-    memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
-
-    ret = _PyObject_VectorcallTstate(tstate, pto->fn,
-                                     stack, pto_nargs + nargs, kwnames);
+    Py_ssize_t nargs_new;
+    if (np) {
+        nargs_new = pto_nargs + nargs - np;
+        Py_ssize_t j = 0;   // Placeholder counter
+        for (Py_ssize_t i=0; i < pto_nargs; i++) {
+            if (Py_Is(pto_args[i], pto->placeholder)){
+                memcpy(stack + i, args + j, 1 * sizeof(PyObject*));
+                j += 1;
+            } else {
+                memcpy(stack + i, pto_args + i, 1 * sizeof(PyObject*));
+            }
+        }
+        if (nargs_total > np){
+            memcpy(stack + pto_nargs, args + np, (nargs_total - np) * sizeof(PyObject*));
+        }
+    } else {
+        nargs_new = pto_nargs + nargs;
+        /* Copy to new stack, using borrowed references */
+        memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
+        memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
+    }
+    ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack, nargs_new, kwnames);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
@@ -304,6 +408,14 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
 
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t np = pto->np;
+    if (nargs < np) {
+        PyErr_SetString(PyExc_TypeError,
+                        "unfilled placeholders in 'partial' call");
+        return NULL;
+    }
+
     /* Merge keywords */
     PyObject *kwargs2;
     if (PyDict_GET_SIZE(pto->kw) == 0) {
@@ -328,8 +440,33 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     }
 
     /* Merge positional arguments */
-    /* Note: tupleconcat() is optimized for empty tuples */
-    PyObject *args2 = PySequence_Concat(pto->args, args);
+    PyObject *args2;
+    if (np) {
+        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+        Py_ssize_t nargs_new = pto_nargs + nargs - np;
+        args2 = PyTuple_New(nargs_new);
+        PyObject *pto_args = pto->args;
+        PyObject *item;
+        Py_ssize_t j = 0;   // Placeholder counter
+        for (Py_ssize_t i=0; i < pto_nargs; i++) {
+            item = PyTuple_GET_ITEM(pto_args, i);
+            if (Py_Is(item, pto->placeholder)){
+                item = PyTuple_GET_ITEM(args, j);
+                j += 1;
+            }
+            PyTuple_SET_ITEM(args2, i, item);
+        }
+        if (nargs > np){
+            for (Py_ssize_t i=pto_nargs; i < nargs_new; i++) {
+                item = PyTuple_GET_ITEM(args, j);
+                PyTuple_SET_ITEM(args2, i, item);
+                j += 1;
+            }
+        }
+    } else {
+        /* Note: tupleconcat() is optimized for empty tuples */
+        args2 = PySequence_Concat(pto->args, args);
+    }
     if (args2 == NULL) {
         Py_XDECREF(kwargs2);
         return NULL;
@@ -354,6 +491,8 @@ static PyMemberDef partial_memberlist[] = {
      "tuple of arguments to future partial calls"},
     {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
+    {"np",              Py_T_PYSSIZET,      OFF(np),        Py_READONLY,
+     "number of placeholders"},
     {"__weaklistoffset__", Py_T_PYSSIZET,
      offsetof(partialobject, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET,
@@ -1489,6 +1628,15 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
+    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+        &placeholder_type_spec, NULL);
+    if (state->placeholder_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->placeholder_type) < 0) {
+        return -1;
+    }
+
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
@@ -1533,6 +1681,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
+    Py_VISIT(state->placeholder_type);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1544,6 +1693,7 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
+    Py_CLEAR(state->placeholder_type);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);

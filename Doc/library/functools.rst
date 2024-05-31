@@ -358,6 +358,18 @@ The :mod:`functools` module defines the following functions:
       >>> basetwo('10010')
       18
 
+   If ``Placeholder`` sentinels are present in *args*, they will be filled first
+   when :func:`partial` is called. This allows custom selection of positional arguments
+   to be pre-filled when constructing :ref:`partial object<partial-objects>`.
+   If ``Placeholder`` sentinels are used, all of them must be filled at call time.:
+
+      >>> from functools import partial, Placeholder
+      >>> say_to_world = partial(print, Placeholder, 'world!')
+      >>> say_to_world('Hello')
+      Hello world!
+
+   .. versionchanged:: 3.14
+      Support for ``Placeholder`` in *args*
 
 .. class:: partialmethod(func, /, *args, **keywords)
 
