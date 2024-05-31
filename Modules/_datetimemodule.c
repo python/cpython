@@ -98,7 +98,7 @@ get_module_state(PyObject *module)
 }
 
 
-#define INTERP_KEY "cached-datetime-module"
+#define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
 static PyObject *
 get_current_module(PyInterpreterState *interp)
@@ -108,7 +108,7 @@ get_current_module(PyInterpreterState *interp)
         return NULL;
     }
     PyObject *ref = NULL;
-    if (PyDict_GetItemStringRef(dict, INTERP_KEY, &ref) < 0) {
+    if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
         return NULL;
     }
     if (ref == NULL) {
@@ -144,7 +144,7 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
-    int rc = PyDict_SetItemString(dict, INTERP_KEY, ref);
+    int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
     Py_DECREF(ref);
     return rc;
 }
@@ -163,7 +163,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
 
     if (expected != NULL) {
         PyObject *ref = NULL;
-        if (PyDict_GetItemStringRef(dict, INTERP_KEY, &ref) < 0) {
+        if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
             goto error;
         }
         if (ref != NULL) {
@@ -178,7 +178,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
         }
     }
 
-    if (PyDict_DelItemString(dict, INTERP_KEY) < 0) {
+    if (PyDict_DelItem(dict, INTERP_KEY) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
             goto error;
         }
