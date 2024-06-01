@@ -2286,33 +2286,30 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
     def test_datetime_capi_type_check(self):
-        script = textwrap.dedent(f"""
+        script = textwrap.dedent("""
             try:
                 import _datetime
             except ImportError:
                 _datetime = None
 
-            def run(type_checker, obj):
-                if not type_checker(obj, True):  # exact check
-                    raise TypeError(f'{{type(obj)}} is not C API type')
-
-            module = None
-            if _datetime:
+            def load_module():
                 import importlib.machinery
                 import importlib.util
                 fullname = '_testcapi_datetime'
                 origin = importlib.util.find_spec('_testcapi').origin
+                if origin == 'built-in':
+                    return  # WASI
                 loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
                 spec = importlib.util.spec_from_loader(fullname, loader)
-                try:
-                    module = importlib.util.module_from_spec(spec)
-                except ImportError:
-                    is_wasi = {support.is_wasi}  # current WASI has no dlopen
-                    if not is_wasi:
-                        raise
-
-            if _datetime and module:
+                module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
+                return module
+
+            def run(type_checker, obj):
+                if not type_checker(obj, True):  # exact check
+                    raise TypeError(f'{type(obj)} is not C API type')
+
+            if _datetime and (module := load_module()):
                 run(module.check_date,     _datetime.date.today())
                 run(module.check_datetime, _datetime.datetime.now())
                 run(module.check_time,     _datetime.time(12, 30))
