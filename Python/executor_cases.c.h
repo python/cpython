@@ -1405,35 +1405,7 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
-            PyObject *mod_or_class_dict;
-            PyObject *v;
-            oparg = CURRENT_OPARG();
-            mod_or_class_dict = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                JUMP_TO_ERROR();
-            }
-            if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    JUMP_TO_ERROR();
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        JUMP_TO_ERROR();
-                    }
-                    if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        JUMP_TO_ERROR();
-                    }
-                }
-            }
-            Py_DECREF(mod_or_class_dict);
-            stack_pointer[-1] = v;
-            break;
-        }
+        /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
