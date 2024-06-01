@@ -496,17 +496,42 @@ parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
         start = 0;                      \
     }
 
+Py_ssize_t
+fast_find_internal(const char *str, Py_ssize_t len,
+                   const char *sub, Py_ssize_t sub_len,
+                   Py_ssize_t start, Py_ssize_t end,
+                   int direction)
+{
+    if (end - start < sub_len)
+        return -1;
+    else if (sub_len == 1) {
+        Py_ssize_t res;
+        if (direction > 0)
+            res = stringlib_find_char(str + start, end - start, *sub);
+        else
+            res = stringlib_rfind_char(str + start, end - start, *sub);
+        if (res >= 0)
+            res += start;
+        return res;
+    }
+    else {
+        if (direction > 0)
+            return stringlib_find_slice(str, len, sub, sub_len, start, end);
+        else
+            return stringlib_rfind_slice(str, len, sub, sub_len, start, end);
+    }
+}
+
 Py_LOCAL_INLINE(Py_ssize_t)
 find_internal(const char *str, Py_ssize_t len,
               const char *function_name, PyObject *subobj,
               Py_ssize_t start, Py_ssize_t end,
-              int dir)
+              int direction)
 {
     char byte;
     Py_buffer subbuf;
     const char *sub;
     Py_ssize_t sub_len;
-    Py_ssize_t res;
 
     if (!parse_args_finds_byte(function_name, &subobj, &byte)) {
         return -2;
@@ -525,30 +550,8 @@ find_internal(const char *str, Py_ssize_t len,
     }
 
     ADJUST_INDICES(start, end, len);
-    if (end - start < sub_len)
-        res = -1;
-    else if (sub_len == 1) {
-        if (dir > 0)
-            res = stringlib_find_char(
-                str + start, end - start,
-                *sub);
-        else
-            res = stringlib_rfind_char(
-                str + start, end - start,
-                *sub);
-        if (res >= 0)
-            res += start;
-    }
-    else {
-        if (dir > 0)
-            res = stringlib_find_slice(
-                str, len,
-                sub, sub_len, start, end);
-        else
-            res = stringlib_rfind_slice(
-                str, len,
-                sub, sub_len, start, end);
-    }
+    Py_ssize_t res = fast_find_internal(str, len, sub, sub_len, start, end,
+                                        direction);
 
     if (subobj)
         PyBuffer_Release(&subbuf);
@@ -577,12 +580,26 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         return find_internal(str, len, function_name, subseq, start, end,
                              direction);
     }
-    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t)) {
+    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char) ||
+        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char *) ||
+        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t))
+    {
         PyErr_SetString(PyExc_OverflowError, "tuple is too long");
         return -2;
     }
-    Py_ssize_t *sub_lengths = PyMem_RawMalloc(((size_t)tuple_len) *
-                                              sizeof(Py_ssize_t));
+    char *bytes = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(char));
+    const char **subs = NULL;
+    Py_ssize_t *sub_lengths = NULL;
+    if (!bytes) {
+        PyErr_NoMemory();
+        return -2;
+    }
+    subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(char *));
+    if (!subs) {
+        PyErr_NoMemory();
+        return -2;
+    }
+    sub_lengths = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(Py_ssize_t));
     if (!sub_lengths) {
         PyErr_NoMemory();
         return -2;
@@ -590,20 +607,26 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
     Py_ssize_t result = -1;
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+        char byte = bytes[i];
         Py_buffer subbuf;
+        const char *sub;
         Py_ssize_t sub_len;
-        if (!PyObject_CheckBuffer(subseq)) {
-            sub_len = 1;
+        if (!parse_args_finds_byte(function_name, &subseq, &byte)) {
+            return -2;
         }
-        else if (PyObject_GetBuffer(subseq, &subbuf, PyBUF_SIMPLE) != 0)
-        {
-            result = -2;
-            goto exit;
-        }
-        else {
+        else if (subseq) {
+            if (PyObject_GetBuffer(subseq, &subbuf, PyBUF_SIMPLE) != 0) {
+                return -2;
+            }
+            sub = subbuf.buf;
             sub_len = subbuf.len;
             PyBuffer_Release(&subbuf);
         }
+        else {
+            sub = &byte;
+            sub_len = 1;
+        }
+        subs[i] = sub;
         sub_lengths[i] = sub_len;
     }
     ADJUST_INDICES(start, end, len);
@@ -618,16 +641,17 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 cur_end = start - 1 + FIND_CHUNK_SIZE;
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+                const char *sub = subs[i];
                 Py_ssize_t sub_len = sub_lengths[i];
                 Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
-                    new_result = find_internal(str, len, function_name, subseq,
-                                               start, end, +1);
+                    new_result = fast_find_internal(str, len, sub, sub_len,
+                                                    start, end, +1);
                 }
                 else {
-                    new_result = find_internal(str, len, function_name, subseq,
-                                               start, cur_end + sub_len, +1);
+                    new_result = fast_find_internal(str, len, sub, sub_len,
+                                                    start, cur_end + sub_len,
+                                                    +1);
                 }
                 if (new_result == -2) {
                     result = -2;
@@ -656,17 +680,17 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 cur_start = start;
             }
             for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *subseq = PyTuple_GET_ITEM(subobj, i);
+                const char *sub = subs[i];
                 Py_ssize_t sub_len = sub_lengths[i];
                 Py_ssize_t new_result;
                 if (cur_end >= end - sub_len) { // Guard overflow
-                    new_result = find_internal(str, len, function_name, subseq,
-                                               cur_start, end, -1);
+                    new_result = fast_find_internal(str, len, sub, sub_len,
+                                                    cur_start, end, -1);
                 }
                 else {
-                    new_result = find_internal(str, len, function_name, subseq,
-                                               cur_start, cur_end + sub_len,
-                                               -1);
+                    new_result = fast_find_internal(str, len, sub, sub_len,
+                                                    cur_start,
+                                                    cur_end + sub_len, -1);
                 }
                 if (new_result == -2) {
                     result = -2;
@@ -684,6 +708,8 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         }
     }
 exit:
+    PyMem_RawFree(bytes);
+    PyMem_RawFree(subs);
     PyMem_RawFree(sub_lengths);
     return result;
 }
