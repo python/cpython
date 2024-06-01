@@ -502,7 +502,7 @@ _Py_fast_find(const char *str, Py_ssize_t len,
               Py_ssize_t start, Py_ssize_t end,
               int direction)
 {
-    if (end - start < sub_len)
+    if (sub_len > end - start)
         return -1;
     else if (sub_len == 1) {
         Py_ssize_t result;
