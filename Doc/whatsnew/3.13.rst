@@ -97,7 +97,7 @@ Interpreter improvements:
 * :pep:`667`: The :func:`locals` builtin now has
   :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
   returned mapping. Python debuggers and similar tools may now more reliably
-  update local variables in optimized frames even during concurrent code
+  update local variables in optimized scopes even during concurrent code
   execution.
 
 New typing features:
@@ -265,6 +265,21 @@ for most code execution scopes, but changes
 comprehensions, and generator expressions) to explicitly return independent
 snapshots of the currently assigned local variables, including locally
 referenced nonlocal variables captured in closures.
+
+This change to the semantics of :func:`locals` in optimized scopes also affects the default
+behaviour of code execution functions that implicitly target ``locals()`` if no explicit
+namespace is provided (such as :func:`exec` and :func:`eval`). In previous versions, whether
+or not changes could be accessed by calling ``locals()`` after calling the code execution
+function was implementation dependent. In CPython specifically, such code would typically
+appear to work as desired, but could sometimes fail in optimized scopes based on other code
+(including debuggers and code execution tracing tools) potentially resetting the shared
+snapshot in that scope. Now, the code will always run against an independent snapshot of the
+local variables in optimized scopes, and hence the changes will never be visible in
+subsequent calls to ``locals()``. To access the changes made in these cases, an explicit
+namespace reference must now be passed to the relevant function. Alternatively, it may make
+sense to update affected code to use a higher level code execution API that returns the
+resulting code execution namespace (e.g. :func:`runpy.run_path` when executing Python
+files from disk).
 
 To ensure debuggers and similar tools can reliably update local variables in
 scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
@@ -2143,6 +2158,11 @@ New Features
   destruction the same way the :mod:`tracemalloc` module does. (Contributed
   by Pablo Galindo in :gh:`93502`.)
 
+* Add :c:func:`PyEval_GetFrameBuiltins`, :c:func:`PyEval_GetFrameGlobals`, and
+  :c:func:`PyEval_GetFrameLocals` to the C API. These replacements for
+  :c:func:`PyEval_GetBuiltins`, :c:func:`PyEval_GetGlobals`, and
+  :c:func:`PyEval_GetLocals` return :term:`strong references <strong reference>`
+  rather than borrowed references. (Added as part of :pep:`667`.)
 
 Build Changes
 =============
@@ -2230,7 +2250,10 @@ Changes in the Python API
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
   requires explicit calls to update the initially returned dictionary with the
-  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
+  results of subsequent calls to ``locals()``. Code execution functions that
+  implicitly target ``locals()`` (such as ``exec`` and ``eval``) must be
+  passed an explicit namespace to access their results in an optimized scope.
+  (Changed as part of :pep:`667`.)
 
 * Calling :func:`locals` from a comprehension at module or class scope
   (including via ``exec`` or ``eval``) once more behaves as if the comprehension
@@ -2317,6 +2340,21 @@ Changes in the C API
 * :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
+
+* Calling :c:func:`PyFrame_GetLocals` or :c:func:`PyEval_GetLocals` in an
+  :term:`optimized scope` now returns a write-through proxy rather than a
+  snapshot that gets updated at ill-specified times. If a snapshot is desired,
+  it must be created explicitly (e.g. with :c:func:`PyDict_Copy`) or by calling
+  the new :c:func:`PyEval_GetFrameLocals` API. (Changed as part of :pep:`667`.)
+
+* :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
+  no longer have any effect. Calling these functions has been redundant since
+  Python 3.11, when  :c:func:`PyFrame_GetLocals`  was first introduced.
+  (Changed as part of :pep:`667`.)
+
+* :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
+  is redundant now that :c:func:`PyFrame_GetLocals` returns a write-through proxy
+  for :term:`optimized scopes <optimized scope>`. (Changed as part of :pep:`667`.)
 
 Removed C APIs
 --------------
