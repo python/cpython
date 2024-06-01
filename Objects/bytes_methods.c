@@ -564,8 +564,9 @@ find_internal(const char *str, Py_ssize_t len,
 #define RFIND_CHUNK_SIZE FIND_CHUNK_SIZE
 
 static Py_ssize_t
-find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
-                    PyObject *subobj, Py_ssize_t start, Py_ssize_t end,
+find_first_internal(const char *str, Py_ssize_t len,
+                    const char *function_name, PyObject *subobj,
+                    Py_ssize_t start, Py_ssize_t end,
                     int direction)
 {
     if (!PyTuple_Check(subobj)) {
