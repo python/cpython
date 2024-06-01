@@ -1006,9 +1006,9 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         self.addCleanup(self.file.close)
         super().setUp()
 
-    def make_socket(self, cleanup=True):
+    def make_socket(self, cleanup=True, blocking=False):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setblocking(False)
+        sock.setblocking(blocking)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024)
         if cleanup:
@@ -1070,6 +1070,11 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
                                                           0, None))
         self.assertEqual(self.file.tell(), 0)
 
+    def test_blocking_socket(self):
+        self.loop.set_debug(True)
+        sock = self.make_socket(blocking=True)
+        with self.assertRaisesRegex(ValueError, "must be non-blocking"):
+            self.run_loop(self.loop.sock_sendfile(sock, self.file))
 
 if __name__ == '__main__':
     unittest.main()
