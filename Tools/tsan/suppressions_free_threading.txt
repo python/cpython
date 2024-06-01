@@ -75,8 +75,6 @@ race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
 race_top:PyInterpreterState_ThreadHead
 race_top:_PyObject_TryGetInstanceAttribute
-race_top:_Py_qsbr_unregister
-race_top:_Py_qsbr_poll
 race_top:PyThreadState_Next
 race_top:Py_TYPE
 race_top:PyUnstable_InterpreterFrame_GetLine
