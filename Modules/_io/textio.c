@@ -1740,6 +1740,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
             Py_DECREF(b);
             return NULL;
         }
+        // Since Python 3.12, allocating GC object won't trigger GC and release
+        // GIL. See https://github.com/python/cpython/issues/97922
+        assert(!PyList_CheckExact(self->pending_bytes));
         PyList_SET_ITEM(list, 0, self->pending_bytes);
         PyList_SET_ITEM(list, 1, b);
         self->pending_bytes = list;
