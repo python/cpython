@@ -718,6 +718,24 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__annotations__, {})
         self.assertEqual(wrapper.__type_params__, ())
 
+    def test_update_wrapper_annotations(self):
+        def inner(x: int): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, inner)
+        self.assertEqual(wrapper.__annotations__, {'x': int})
+        self.assertIs(wrapper.__annotate__, inner.__annotate__)
+
+        def with_forward_ref(x: undefined): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, with_forward_ref)
+
+        self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+
+        undefined = str
+        self.assertEqual(wrapper.__annotations__, {'x': undefined})
+
 
 class TestWraps(TestUpdateWrapper):
 
