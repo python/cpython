@@ -3098,7 +3098,7 @@ class _TypedDictMeta(type):
         if not hasattr(tp_dict, '__orig_bases__'):
             tp_dict.__orig_bases__ = bases
 
-        annotations = {}
+        new_annotations = {}
         if "__annotations__" in ns:
             own_annotations = ns["__annotations__"]
         elif "__annotate__" in ns:
@@ -3121,7 +3121,7 @@ class _TypedDictMeta(type):
             # keys have Required/NotRequired/ReadOnly qualifiers, and create
             # a new __annotate__ function for the resulting TypedDict that
             # combines the annotations from this class and its parents.
-            annotations.update(base.__annotations__)
+            new_annotations.update(base.__annotations__)
 
             base_required = base.__dict__.get('__required_keys__', set())
             required_keys |= base_required
@@ -3134,7 +3134,7 @@ class _TypedDictMeta(type):
             readonly_keys.update(base.__dict__.get('__readonly_keys__', ()))
             mutable_keys.update(base.__dict__.get('__mutable_keys__', ()))
 
-        annotations.update(own_annotations)
+        new_annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
             qualifiers = set(_get_typeddict_qualifiers(annotation_type))
             if Required in qualifiers:
@@ -3166,7 +3166,7 @@ class _TypedDictMeta(type):
             f"Required keys overlap with optional keys in {name}:"
             f" {required_keys=}, {optional_keys=}"
         )
-        tp_dict.__annotations__ = annotations
+        tp_dict.__annotations__ = new_annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
         tp_dict.__readonly_keys__ = frozenset(readonly_keys)

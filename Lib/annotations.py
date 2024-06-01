@@ -369,6 +369,8 @@ def get_annotations(
         obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
+    elif (ann := getattr(obj, "__annotations__", None)) is not None:
+        obj_globals = obj_locals = unwrap = None
     else:
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
 
