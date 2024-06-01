@@ -9179,6 +9179,7 @@ any_find_first_slice(PyObject *str, const char *function_name,
     }
 
     /* STORE SUBSTRINGS */
+    int kind = PyUnicode_KIND(str);
     Py_ssize_t len = PyUnicode_GET_LENGTH(str);
     ADJUST_INDICES(start, end, len);
     Py_ssize_t subs_len = 0;
@@ -9190,6 +9191,10 @@ any_find_first_slice(PyObject *str, const char *function_name,
                         "not %.100s", function_name,
                         Py_TYPE(substr)->tp_name);
             goto exit;
+        }
+        int sub_kind = PyUnicode_KIND(substr);
+        if (sub_kind > kind) {
+            continue;
         }
         Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
         if (sub_len <= end - start) {
