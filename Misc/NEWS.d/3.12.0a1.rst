@@ -560,7 +560,7 @@ versions prior to 3.11
 .. nonce: 9lmTCC
 .. section: Core and Builtins
 
-Remove two cases of undefined behavoir, by adding NULL checks.
+Remove two cases of undefined behavior, by adding NULL checks.
 
 ..
 
@@ -2591,7 +2591,7 @@ Update bundled pip to 22.2.2.
 
 Fix :class:`asyncio.TaskGroup` to propagate exception when
 :exc:`asyncio.CancelledError` was replaced with another exception by a
-context manger. Patch by Kumar Aditya and Guido van Rossum.
+context manager. Patch by Kumar Aditya and Guido van Rossum.
 
 ..
 
@@ -3498,7 +3498,7 @@ Illia Volochii.
 .. nonce: tjfu9L
 .. section: Library
 
-Deprecate :data:`sqlite3.version` and :data:`sqlite3.version_info`.
+Deprecate :data:`!version` and :data:`!version_info`.
 
 ..
 
@@ -3561,8 +3561,8 @@ with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 .. nonce: mkYl5q
 .. section: Library
 
-Implement Enum __contains__ that returns True or False to replace the
-deprecated behaviour that would sometimes raise a TypeError.
+Implement ``Enum.__contains__`` that returns ``True`` or ``False`` to replace the
+deprecated behaviour that would sometimes raise a :exc:`TypeError`.
 
 ..
 
@@ -3729,7 +3729,7 @@ In a very special case, the email package tried to append the nonexistent
 .. nonce: e6uKxj
 .. section: Library
 
-Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
+Fix :func:`ast.unparse` when ``ImportFrom.level`` is ``None``
 
 ..
 
@@ -3791,7 +3791,7 @@ the :c:type:`time_t` type in C.
 .. section: Library
 
 Fixed crash resulting from calling bisect.insort() or bisect.insort_left()
-with the key argument not equal to None.
+with the key argument not equal to ``None``.
 
 ..
 
@@ -4080,7 +4080,7 @@ replacement strings containing group references by 2--3 times.
 .. section: Library
 
 Fix findtext in the xml module to only give an empty string when the text
-attribute is set to None.
+attribute is set to ``None``.
 
 ..
 
@@ -4476,7 +4476,7 @@ they are deprecated. Contributed by C.A.M. Gerlach.
 .. nonce: we7AFm
 .. section: Documentation
 
-Replaced incorrectly written true/false values in documentiation. Patch by
+Replaced incorrectly written true/false values in documentation. Patch by
 Robert O'Shea
 
 ..

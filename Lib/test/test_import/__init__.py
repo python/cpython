@@ -31,7 +31,7 @@ from test.support import os_helper
 from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
-    requires_gil_enabled, Py_GIL_DISABLED)
+    requires_gil_enabled, Py_GIL_DISABLED, no_rerun)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
@@ -118,25 +118,6 @@ def remove_files(name):
               name + "$py.class"):
         unlink(f)
     rmtree('__pycache__')
-
-
-def no_rerun(reason):
-    """Skip rerunning for a particular test.
-
-    WARNING: Use this decorator with care; skipping rerunning makes it
-    impossible to find reference leaks. Provide a clear reason for skipping the
-    test using the 'reason' parameter.
-    """
-    def deco(func):
-        _has_run = False
-        def wrapper(self):
-            nonlocal _has_run
-            if _has_run:
-                self.skipTest(reason)
-            func(self)
-            _has_run = True
-        return wrapper
-    return deco
 
 
 if _testsinglephase is not None:
@@ -2454,10 +2435,6 @@ class SinglephaseInitTests(unittest.TestCase):
         # Start fresh.
         cls.clean_up()
 
-    @classmethod
-    def tearDownClass(cls):
-        restore__testsinglephase()
-
     def tearDown(self):
         # Clean up the module.
         self.clean_up()
@@ -2891,6 +2868,16 @@ class SinglephaseInitTests(unittest.TestCase):
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_check_state_first(self):
+        for variant in ['', '_with_reinit', '_with_state']:
+            name = f'{self.NAME}{variant}_check_cache_first'
+            with self.subTest(name):
+                mod = self._load_dynamic(name, self.ORIGIN)
+                self.assertEqual(mod.__name__, name)
+                sys.modules.pop(name, None)
+                _testinternalcapi.clear_extension(name, self.ORIGIN)
+
     # Currently, for every single-phrase init module loaded
     # in multiple interpreters, those interpreters share a
     # PyModuleDef for that object, which can be a problem.
@@ -3014,20 +3001,20 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
         #  * mod init func ran for the first time (since reset)
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is still set (owned by main interpreter)
         #  * module's global state was initialized, not reset
 
         # Use a subinterpreter that sticks around.
         loaded_interp1 = self.import_in_subinterp(interpid1)
         self.check_common(loaded_interp1)
-        self.check_semi_fresh(loaded_interp1, loaded_main, base)
+        self.check_copied(loaded_interp1, base)
 
         # At this point:
         #  * alive in 1 interpreter (interp1)
         #  * module def still in _PyRuntime.imports.extensions
-        #  * mod init func ran for the second time (since reset)
-        #  * m_copy was copied from interp1 (was NULL)
-        #  * module's global state was updated, not reset
+        #  * mod init func did not run again
+        #  * m_copy was not changed
+        #  * module's global state was not touched
 
         # Use a subinterpreter while the previous one is still alive.
         loaded_interp2 = self.import_in_subinterp(interpid2)
@@ -3038,8 +3025,8 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 2 interpreters (interp1, interp2)
         #  * module def still in _PyRuntime.imports.extensions
         #  * mod init func did not run again
-        #  * m_copy was copied from interp2 (was from interp1)
-        #  * module's global state was updated, not reset
+        #  * m_copy was not changed
+        #  * module's global state was not touched
 
     @requires_subinterpreters
     def test_basic_multiple_interpreters_reset_each(self):

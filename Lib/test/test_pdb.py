@@ -1453,6 +1453,58 @@ def test_post_mortem():
     """
 
 
+def test_pdb_return_to_different_file():
+    """When pdb returns to a different file, it should not skip if f_trace is
+       not already set
+
+    >>> import pprint
+
+    >>> class A:
+    ...    def __repr__(self):
+    ...        return 'A'
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pprint.pprint(A())
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'b A.__repr__',
+    ...     'continue',
+    ...     'return',
+    ...     'next',
+    ...     'return',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[2]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b A.__repr__
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_return_to_different_file[1]>:3
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()
+    -> return 'A'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_return_to_different_file[1]>(3)__repr__()->'A'
+    -> return 'A'
+    (Pdb) next
+    > ...pprint.py..._safe_repr()
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py..._safe_repr()->('A'...)
+    -> return rep,...
+    (Pdb) return
+    --Return--
+    > ...pprint.py...format()->('A'...)
+    -> return...
+    (Pdb) continue
+    A
+    """
+
+
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.
 
@@ -2224,8 +2276,71 @@ def test_pdb_multiline_statement():
     (Pdb) c
     """
 
+def test_pdb_closure():
+    """Test for all expressions/statements that involve closure
+
+    >>> k = 0
+    >>> g = 1
+    >>> def test_function():
+    ...     x = 2
+    ...     g = 3
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'k',
+    ...     'g',
+    ...     'y = y',
+    ...     'global g; g',
+    ...     'global g; (lambda: g)()',
+    ...     '(lambda: x)()',
+    ...     '(lambda: g)()',
+    ...     'lst = [n for n in range(10) if (n % x) == 0]',
+    ...     'lst',
+    ...     'sum(n for n in lst if n > x)',
+    ...     'x = 1; raise Exception()',
+    ...     'x',
+    ...     'def f():',
+    ...     '  return x',
+    ...     '',
+    ...     'f()',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_closure[2]>(4)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) k
+    0
+    (Pdb) g
+    3
+    (Pdb) y = y
+    *** NameError: name 'y' is not defined
+    (Pdb) global g; g
+    1
+    (Pdb) global g; (lambda: g)()
+    1
+    (Pdb) (lambda: x)()
+    2
+    (Pdb) (lambda: g)()
+    3
+    (Pdb) lst = [n for n in range(10) if (n % x) == 0]
+    (Pdb) lst
+    [0, 2, 4, 6, 8]
+    (Pdb) sum(n for n in lst if n > x)
+    18
+    (Pdb) x = 1; raise Exception()
+    *** Exception
+    (Pdb) x
+    1
+    (Pdb) def f():
+    ...     return x
+    ...
+    (Pdb) f()
+    1
+    (Pdb) c
+    """
+
 def test_pdb_show_attribute_and_item():
-    """Test for multiline statement
+    """Test for expressions with command prefix
 
     >>> def test_function():
     ...     n = lambda x: x
@@ -2440,7 +2555,7 @@ def test_pdb_issue_gh_94215():
 def test_pdb_issue_gh_101673():
     """See GH-101673
 
-    Make sure ll won't revert local variable assignment
+    Make sure ll and switching frames won't revert local variable assignment
 
     >>> def test_function():
     ...    a = 1
@@ -2449,6 +2564,10 @@ def test_pdb_issue_gh_101673():
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     '!a = 2',
     ...     'll',
+    ...     'p a',
+    ...     'u',
+    ...     'p a',
+    ...     'd',
     ...     'p a',
     ...     'continue'
     ... ]):
@@ -2460,6 +2579,16 @@ def test_pdb_issue_gh_101673():
       1         def test_function():
       2            a = 1
       3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[1]>(11)<module>()
+    -> test_function()
+    (Pdb) p a
+    *** NameError: name 'a' is not defined
+    (Pdb) d
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) p a
     2
     (Pdb) continue

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """
 The Python Debugger Pdb
 =======================
@@ -77,10 +75,12 @@ import dis
 import code
 import glob
 import token
+import types
 import codeop
 import pprint
 import signal
 import inspect
+import textwrap
 import tokenize
 import traceback
 import linecache
@@ -390,9 +390,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary is updated from the actual frame
-        # locals whenever the .f_locals accessor is called, so we
-        # cache it here to ensure that modifications are not overwritten.
+        # The f_locals dictionary used to be updated from the actual frame
+        # locals whenever the .f_locals accessor was called, so it was
+        # cached here to ensure that modifications were not overwritten. While
+        # the caching is no longer required now that f_locals is a direct proxy
+        # on optimized frames, it's also harmless, so the code structure has
+        # been left unchanged.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
@@ -624,11 +627,96 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.completenames = completenames
         return
 
+    def _exec_in_closure(self, source, globals, locals):
+        """ Run source code in closure so code object created within source
+            can find variables in locals correctly
+
+            returns True if the source is executed, False otherwise
+        """
+
+        # Determine if the source should be executed in closure. Only when the
+        # source compiled to multiple code objects, we should use this feature.
+        # Otherwise, we can just raise an exception and normal exec will be used.
+
+        code = compile(source, "<string>", "exec")
+        if not any(isinstance(const, CodeType) for const in code.co_consts):
+            return False
+
+        # locals could be a proxy which does not support pop
+        # copy it first to avoid modifying the original locals
+        locals_copy = dict(locals)
+
+        locals_copy["__pdb_eval__"] = {
+            "result": None,
+            "write_back": {}
+        }
+
+        # If the source is an expression, we need to print its value
+        try:
+            compile(source, "<string>", "eval")
+        except SyntaxError:
+            pass
+        else:
+            source = "__pdb_eval__['result'] = " + source
+
+        # Add write-back to update the locals
+        source = ("try:\n" +
+                  textwrap.indent(source, "  ") + "\n" +
+                  "finally:\n" +
+                  "  __pdb_eval__['write_back'] = locals()")
+
+        # Build a closure source code with freevars from locals like:
+        # def __pdb_outer():
+        #   var = None
+        #   def __pdb_scope():  # This is the code object we want to execute
+        #     nonlocal var
+        #     <source>
+        #   return __pdb_scope.__code__
+        source_with_closure = ("def __pdb_outer():\n" +
+                               "\n".join(f"  {var} = None" for var in locals_copy) + "\n" +
+                               "  def __pdb_scope():\n" +
+                               "\n".join(f"    nonlocal {var}" for var in locals_copy) + "\n" +
+                               textwrap.indent(source, "    ") + "\n" +
+                               "  return __pdb_scope.__code__"
+                               )
+
+        # Get the code object of __pdb_scope()
+        # The exec fills locals_copy with the __pdb_outer() function and we can call
+        # that to get the code object of __pdb_scope()
+        ns = {}
+        try:
+            exec(source_with_closure, {}, ns)
+        except Exception:
+            return False
+        code = ns["__pdb_outer"]()
+
+        cells = tuple(types.CellType(locals_copy.get(var)) for var in code.co_freevars)
+
+        try:
+            exec(code, globals, locals_copy, closure=cells)
+        except Exception:
+            return False
+
+        # get the data we need from the statement
+        pdb_eval = locals_copy["__pdb_eval__"]
+
+        # __pdb_eval__ should not be updated back to locals
+        pdb_eval["write_back"].pop("__pdb_eval__")
+
+        # Write all local variables back to locals
+        locals.update(pdb_eval["write_back"])
+        eval_result = pdb_eval["result"]
+        if eval_result is not None:
+            print(repr(eval_result))
+
+        return True
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
+            buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
                 with self._disable_command_completion():
@@ -661,7 +749,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                exec(code, globals, locals)
+                if not self._exec_in_closure(buffer, globals, locals):
+                    exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin

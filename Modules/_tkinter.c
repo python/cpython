@@ -318,6 +318,7 @@ typedef struct {
     const Tcl_ObjType *BignumType;
     const Tcl_ObjType *ListType;
     const Tcl_ObjType *StringType;
+    const Tcl_ObjType *UTF32StringType;
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
@@ -588,14 +589,40 @@ Tkapp_New(const char *screenName, const char *className,
     }
 
     v->OldBooleanType = Tcl_GetObjType("boolean");
-    v->BooleanType = Tcl_GetObjType("booleanString");
-    v->ByteArrayType = Tcl_GetObjType("bytearray");
+    {
+        Tcl_Obj *value;
+        int boolValue;
+
+        /* Tcl 8.5 "booleanString" type is not registered
+           and is renamed to "boolean" in Tcl 9.0.
+           Based on approach suggested at
+           https://core.tcl-lang.org/tcl/info/3bb3bcf2da5b */
+        value = Tcl_NewStringObj("true", -1);
+        Tcl_GetBooleanFromObj(NULL, value, &boolValue);
+        v->BooleanType = value->typePtr;
+        Tcl_DecrRefCount(value);
+
+        // "bytearray" type is not registered in Tcl 9.0
+        value = Tcl_NewByteArrayObj(NULL, 0);
+        v->ByteArrayType = value->typePtr;
+        Tcl_DecrRefCount(value);
+    }
     v->DoubleType = Tcl_GetObjType("double");
+    /* TIP 484 suggests retrieving the "int" type without Tcl_GetObjType("int")
+       since it is no longer registered in Tcl 9.0. But even though Tcl 8.7
+       only uses the "wideInt" type on platforms with 32-bit long, it still has
+       a registered "int" type, which FromObj() should recognize just in case. */
     v->IntType = Tcl_GetObjType("int");
+    if (v->IntType == NULL) {
+        Tcl_Obj *value = Tcl_NewIntObj(0);
+        v->IntType = value->typePtr;
+        Tcl_DecrRefCount(value);
+    }
     v->WideIntType = Tcl_GetObjType("wideInt");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
     v->StringType = Tcl_GetObjType("string");
+    v->UTF32StringType = Tcl_GetObjType("utf32string");
 
     /* Delete the 'exit' command, which can screw things up */
     Tcl_DeleteCommand(v->interp, "exit");
@@ -1124,14 +1151,6 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         return PyFloat_FromDouble(value->internalRep.doubleValue);
     }
 
-    if (value->typePtr == tkapp->IntType) {
-        long longValue;
-        if (Tcl_GetLongFromObj(interp, value, &longValue) == TCL_OK)
-            return PyLong_FromLong(longValue);
-        /* If there is an error in the long conversion,
-           fall through to wideInt handling. */
-    }
-
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType) {
         result = fromWideIntObj(tkapp, value);
@@ -1176,15 +1195,10 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         return result;
     }
 
-    if (value->typePtr == tkapp->StringType) {
+    if (value->typePtr == tkapp->StringType ||
+        value->typePtr == tkapp->UTF32StringType)
+    {
         return unicodeFromTclObj(value);
-    }
-
-    if (tkapp->BooleanType == NULL &&
-        strcmp(value->typePtr->name, "booleanString") == 0) {
-        /* booleanString type is not registered in Tcl */
-        tkapp->BooleanType = value->typePtr;
-        return fromBoolean(tkapp, value);
     }
 
     if (tkapp->BignumType == NULL &&
@@ -2248,7 +2262,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
 
 /* Client data struct */
 typedef struct {
-    PyObject *self;
+    TkappObject *self;
     PyObject *func;
 } PythonCmd_ClientData;
 
@@ -2272,6 +2286,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     PyObject *args, *res;
     int i;
     Tcl_Obj *obj_res;
+    int objargs = data->self->wantobjects >= 2;
 
     ENTER_PYTHON
 
@@ -2280,7 +2295,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
         return PythonCmd_Error(interp);
 
     for (i = 0; i < (objc - 1); i++) {
-        PyObject *s = unicodeFromTclObj(objv[i + 1]);
+        PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
+                              : unicodeFromTclObj(objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
             return PythonCmd_Error(interp);
@@ -2383,7 +2399,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    data->self = Py_NewRef(self);
+    Py_INCREF(self);
+    data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
@@ -2897,10 +2914,10 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
     int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|p:wantobjects", &wantobjects))
+    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
         return NULL;
     if (wantobjects == -1)
-        return PyBool_FromLong(((TkappObject*)self)->wantobjects);
+        return PyLong_FromLong(((TkappObject*)self)->wantobjects);
     ((TkappObject*)self)->wantobjects = wantobjects;
 
     Py_RETURN_NONE;
@@ -2972,6 +2989,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
+    Py_XDECREF(((TkappObject *)self)->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
@@ -3085,7 +3103,7 @@ _tkinter.create
     baseName: str = ""
     className: str = "Tk"
     interactive: bool = False
-    wantobjects: bool = False
+    wantobjects: int = 0
     wantTk: bool = True
         if false, then Tk_Init() doesn't get called
     sync: bool = False
@@ -3101,7 +3119,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=09afef9adea70a19]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=7e382ba431bed537]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

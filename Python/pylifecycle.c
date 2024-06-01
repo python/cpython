@@ -854,6 +854,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyCode_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyDtoa_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1826,6 +1831,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+
+    _PyCode_Fini(interp);
 
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.

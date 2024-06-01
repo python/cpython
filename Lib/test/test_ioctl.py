@@ -66,23 +66,15 @@ class IoctlTests(unittest.TestCase):
         # Test with a larger buffer, just for the record.
         self._check_ioctl_mutate_len(2048)
 
-    def test_ioctl_signed_unsigned_code_param(self):
-        if not pty:
-            raise unittest.SkipTest('pty module required')
+    @unittest.skipIf(pty is None, 'pty module required')
+    def test_ioctl_set_window_size(self):
         mfd, sfd = pty.openpty()
         try:
-            if termios.TIOCSWINSZ < 0:
-                set_winsz_opcode_maybe_neg = termios.TIOCSWINSZ
-                set_winsz_opcode_pos = termios.TIOCSWINSZ & 0xffffffff
-            else:
-                set_winsz_opcode_pos = termios.TIOCSWINSZ
-                set_winsz_opcode_maybe_neg, = struct.unpack("i",
-                        struct.pack("I", termios.TIOCSWINSZ))
-
-            our_winsz = struct.pack("HHHH",80,25,0,0)
-            # test both with a positive and potentially negative ioctl code
-            new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_pos, our_winsz)
-            new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_maybe_neg, our_winsz)
+            # (rows, columns, xpixel, ypixel)
+            our_winsz = struct.pack("HHHH", 20, 40, 0, 0)
+            result = fcntl.ioctl(mfd, termios.TIOCSWINSZ, our_winsz)
+            new_winsz = struct.unpack("HHHH", result)
+            self.assertEqual(new_winsz[:2], (20, 40))
         finally:
             os.close(mfd)
             os.close(sfd)

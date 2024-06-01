@@ -1731,7 +1731,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
         else {
-            res = _PyObjectDict_SetItem(tp, dictptr, name, value);
+            res = _PyObjectDict_SetItem(tp, obj, dictptr, name, value);
         }
     }
     else {
@@ -1789,7 +1789,9 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(obj);
     Py_XSETREF(*dictptr, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -2088,13 +2090,9 @@ notimplemented_dealloc(PyObject *notimplemented)
 static int
 notimplemented_bool(PyObject *v)
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "NotImplemented should not be used in a boolean context",
-                     1) < 0)
-    {
-        return -1;
-    }
-    return 1;
+    PyErr_SetString(PyExc_TypeError,
+                    "NotImplemented should not be used in a boolean context");
+    return -1;
 }
 
 static PyNumberMethods notimplemented_as_number = {
@@ -2429,6 +2427,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(PyType_IS_GC(Py_TYPE(op)));
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->gc.immortalize.enabled) {
         // gh-117696: immortalize objects instead of using deferred reference
@@ -2436,7 +2435,6 @@ _PyObject_SetDeferredRefcount(PyObject *op)
         _Py_SetImmortal(op);
         return;
     }
-    op->ob_gc_bits |= _PyGC_BITS_DEFERRED;
     op->ob_ref_local += 1;
     op->ob_ref_shared = _Py_REF_QUEUED;
 #endif
