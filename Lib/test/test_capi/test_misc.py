@@ -2324,31 +2324,12 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
 
         if _interpreters:
-            with self.subTest("legacy subinterpreter (config)"):
-                ret = support.run_in_subinterp_with_config(
-                    script,
-                    own_gil=False,
-                    use_main_obmalloc=True,
-                    allow_fork=True,
-                    allow_exec=True,
-                    allow_threads=True,
-                    allow_daemon_threads=True,
-                    check_multi_interp_extensions=bool(Py_GIL_DISABLED),
-                )
-                self.assertEqual(ret, 0)
-
-            with self.subTest("isolated subinterpreter (config)"):
-                ret = support.run_in_subinterp_with_config(
-                    script,
-                    own_gil=True,
-                    use_main_obmalloc=False,
-                    allow_fork=False,
-                    allow_exec=False,
-                    allow_threads=True,
-                    allow_daemon_threads=False,
-                    check_multi_interp_extensions=True,
-                )
-                self.assertEqual(ret, 0)
+            for name in ('legacy', 'isolated'):
+                with self.subTest(f'{name} (config)'):
+                    config = dict(_interpreters.new_config(name).__dict__)
+                    config['gil'] = {'shared': 1, 'own': 2}[config['gil']]
+                    ret = support.run_in_subinterp_with_config(script, **config)
+                    self.assertEqual(ret, 0)
 
 
 @requires_subinterpreters
