@@ -1,0 +1,1 @@
+Make :mod:`termios` ``ioctl()`` constants positive. Patch by Victor Stinner.
