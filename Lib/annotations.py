@@ -236,7 +236,7 @@ class Stringifier:
     def __next__(self):
         return Stringifier(ast.Starred(self.node))
 
-    def __str__(self):
+    def __repr__(self):
         return ast.unparse(self.node)
 
 

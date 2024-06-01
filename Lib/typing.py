@@ -2921,8 +2921,12 @@ def _make_eager_annotate(types):
         if format in (annotations.Format.VALUE, annotations.Format.FORWARDREF):
             return checked_types
         else:
-            return {n: t if isinstance(t, str) else _type_repr(t) for n, t in types.items()}
+            return _convert_to_source(types)
     return annotate
+
+
+def _convert_to_source(types):
+    return {n: t if isinstance(t, str) else _type_repr(t) for n, t in types.items()}
 
 
 # attributes prohibited to set in NamedTuple class syntax
@@ -3127,15 +3131,19 @@ class _TypedDictMeta(type):
         if not hasattr(tp_dict, '__orig_bases__'):
             tp_dict.__orig_bases__ = bases
 
-        new_annotations = {}
         if "__annotations__" in ns:
+            own_annotate = None
             own_annotations = ns["__annotations__"]
         elif "__annotate__" in ns:
-            own_annotations = ns["__annotate__"](annotations.Format.VALUE)
+            own_annotate = ns["__annotate__"]
+            own_annotations = annotations.call_annotate_function(
+                own_annotate, annotations.Format.FORWARDREF, owner=tp_dict
+            )
         else:
+            own_annotate = None
             own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
-        own_annotations = {
+        own_checked_annotations = {
             n: _type_check(tp, msg, module=tp_dict.__module__)
             for n, tp in own_annotations.items()
         }
@@ -3145,13 +3153,6 @@ class _TypedDictMeta(type):
         mutable_keys = set()
 
         for base in bases:
-            # TODO: Avoid eagerly evaluating annotations in VALUE format.
-            # Instead, evaluate in FORWARDREF format to figure out which
-            # keys have Required/NotRequired/ReadOnly qualifiers, and create
-            # a new __annotate__ function for the resulting TypedDict that
-            # combines the annotations from this class and its parents.
-            new_annotations.update(base.__annotations__)
-
             base_required = base.__dict__.get('__required_keys__', set())
             required_keys |= base_required
             optional_keys -= base_required
@@ -3163,8 +3164,7 @@ class _TypedDictMeta(type):
             readonly_keys.update(base.__dict__.get('__readonly_keys__', ()))
             mutable_keys.update(base.__dict__.get('__mutable_keys__', ()))
 
-        new_annotations.update(own_annotations)
-        for annotation_key, annotation_type in own_annotations.items():
+        for annotation_key, annotation_type in own_checked_annotations.items():
             qualifiers = set(_get_typeddict_qualifiers(annotation_type))
             if Required in qualifiers:
                 is_required = True
@@ -3195,7 +3195,32 @@ class _TypedDictMeta(type):
             f"Required keys overlap with optional keys in {name}:"
             f" {required_keys=}, {optional_keys=}"
         )
-        tp_dict.__annotations__ = new_annotations
+
+        def __annotate__(format):
+            annos = {}
+            for base in bases:
+                if base is Generic:
+                    continue
+                base_annotate = base.__annotate__
+                if base_annotate is None:
+                    continue
+                base_annos = annotations.call_annotate_function(base.__annotate__, format, owner=base)
+                annos.update(base_annos)
+            if own_annotate is not None:
+                own = annotations.call_annotate_function(own_annotate, format, owner=tp_dict)
+                if format != annotations.Format.SOURCE:
+                    own = {
+                        n: _type_check(tp, msg, module=tp_dict.__module__)
+                        for n, tp in own.items()
+                    }
+            elif format == annotations.Format.SOURCE:
+                own = _convert_to_source(own_annotations)
+            else:
+                own = own_checked_annotations
+            annos.update(own)
+            return annos
+
+        tp_dict.__annotate__ = __annotate__
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
         tp_dict.__readonly_keys__ = frozenset(readonly_keys)
