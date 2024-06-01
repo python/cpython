@@ -880,10 +880,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
                    seen.add(k)
                    yield element
 
-   def unique(iterable, key=None):
+   def unique(iterable, key=None, reverse=False):
       "Yield unique elements in sorted order. Supports unhashable inputs."
       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      return unique_justseen(sorted(iterable, key=key), key=key)
+      return unique_justseen(sorted(iterable, key=key, reverse=reverse), key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
@@ -1614,6 +1614,8 @@ The following recipes have a more mathematical flavor:
     [[1, 2], [3, 4]]
     >>> list(unique('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'D']
+    >>> list(unique('ABBcCAD', str.casefold, reverse=True))
+    ['D', 'c', 'B', 'A']
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)
