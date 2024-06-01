@@ -9,6 +9,12 @@ from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
 
+def times_three(fn):
+    @functools.wraps(fn)
+    def wrapper(a, b):
+        return fn(a*3, b*3)
+    return wrapper
+
 
 class TestFormat(unittest.TestCase):
     def test_enum(self):
@@ -82,94 +88,127 @@ class TestGetAnnotations(unittest.TestCase):
 
         self.assertEqual(annotations.get_annotations(C()), {"x": int, "y": str})
 
-    def test_get_annotations_with_stock_annotations(self):
+    def test_custom_format_eval_str(self):
+        def foo(): pass
+        with self.assertRaises(ValueError):
+            annotations.get_annotations(foo, format=annotations.Format.FORWARDREF, eval_str=True)
+            annotations.get_annotations(foo, format=annotations.Format.SOURCE, eval_str=True)
+
+    def test_stock_annotations(self):
         def foo(a:int, b:str): pass
-        self.assertEqual(annotations.get_annotations(foo), {'a': int, 'b': str})
+        for format in (annotations.Format.VALUE, annotations.Format.FORWARDREF):
+            with self.subTest(format=format):
+                self.assertEqual(annotations.get_annotations(foo, format=format), {'a': int, 'b': str})
+        self.assertEqual(annotations.get_annotations(foo, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str'})
 
         foo.__annotations__ = {'a': 'foo', 'b':'str'}
-        self.assertEqual(annotations.get_annotations(foo), {'a': 'foo', 'b': 'str'})
+        for format in annotations.Format:
+            with self.subTest(format=format):
+                self.assertEqual(annotations.get_annotations(foo, format=format), {'a': 'foo', 'b': 'str'})
 
         self.assertEqual(annotations.get_annotations(foo, eval_str=True, locals=locals()), {'a': foo, 'b': str})
         self.assertEqual(annotations.get_annotations(foo, eval_str=True, globals=locals()), {'a': foo, 'b': str})
 
+    def test_stock_annotations_in_module(self):
         isa = inspect_stock_annotations
-        self.assertEqual(annotations.get_annotations(isa), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.MyClass), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.function), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function2), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function3), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(annotations), {}) # annotations module has no annotations
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function), {})
 
-        self.assertEqual(annotations.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function3, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(annotations, eval_str=True), {})
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, eval_str=True), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function, eval_str=True), {})
+        for kwargs in [
+            {},
+            {'eval_str': False},
+            {'format': annotations.Format.VALUE},
+            {'format': annotations.Format.FORWARDREF},
+            {'format': annotations.Format.VALUE, 'eval_str': False},
+            {'format': annotations.Format.FORWARDREF, 'eval_str': False},
+        ]:
+            with self.subTest(**kwargs):
+                self.assertEqual(annotations.get_annotations(isa, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.MyClass, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.function, **kwargs), {'a': int, 'b': str, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function2, **kwargs), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function3, **kwargs), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+                self.assertEqual(annotations.get_annotations(annotations, **kwargs), {}) # annotations module has no annotations
+                self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, **kwargs), {})
+                self.assertEqual(annotations.get_annotations(isa.unannotated_function, **kwargs), {})
 
-        self.assertEqual(annotations.get_annotations(isa, eval_str=False), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.MyClass, eval_str=False), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.function, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function2, eval_str=False), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function3, eval_str=False), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(annotations, eval_str=False), {})
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, eval_str=False), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function, eval_str=False), {})
+        for kwargs in [
+            {"eval_str": True},
+            {"format": annotations.Format.VALUE, "eval_str": True},
+        ]:
+            with self.subTest(**kwargs):
+                self.assertEqual(annotations.get_annotations(isa, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.MyClass, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.function, **kwargs), {'a': int, 'b': str, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function2, **kwargs), {'a': int, 'b': str, 'c': isa.MyClass, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function3, **kwargs), {'a': int, 'b': str, 'c': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(annotations, **kwargs), {})
+                self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, **kwargs), {})
+                self.assertEqual(annotations.get_annotations(isa.unannotated_function, **kwargs), {})
 
-        def times_three(fn):
-            @functools.wraps(fn)
-            def wrapper(a, b):
-                return fn(a*3, b*3)
-            return wrapper
+        self.assertEqual(annotations.get_annotations(isa, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str'})
+        self.assertEqual(annotations.get_annotations(isa.MyClass, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str'})
+        self.assertEqual(annotations.get_annotations(isa.function, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+        self.assertEqual(annotations.get_annotations(isa.function2, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str', 'c': 'MyClass', 'return': 'MyClass'})
+        self.assertEqual(annotations.get_annotations(isa.function3, format=annotations.Format.SOURCE), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+        self.assertEqual(annotations.get_annotations(annotations, format=annotations.Format.SOURCE), {})
+        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, format=annotations.Format.SOURCE), {})
+        self.assertEqual(annotations.get_annotations(isa.unannotated_function, format=annotations.Format.SOURCE), {})
+
+    def test_stock_annotations_on_wrapper(self):
+        isa = inspect_stock_annotations
 
         wrapped = times_three(isa.function)
         self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
         self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
         self.assertEqual(annotations.get_annotations(wrapped), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(annotations.get_annotations(wrapped, format=annotations.Format.FORWARDREF),
+                         {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(annotations.get_annotations(wrapped, format=annotations.Format.SOURCE),
+                         {'a': 'int', 'b': 'str', 'return': 'MyClass'})
         self.assertEqual(annotations.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
         self.assertEqual(annotations.get_annotations(wrapped, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
 
-    def test_get_annotations_with_stringized_annotations(self):
+    def test_stringized_annotations_in_module(self):
         isa = inspect_stringized_annotations
-        self.assertEqual(annotations.get_annotations(isa), {'a': 'int', 'b': 'str'})
-        self.assertEqual(annotations.get_annotations(isa.MyClass), {'a': 'int', 'b': 'str'})
-        self.assertEqual(annotations.get_annotations(isa.function), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(isa.function2), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(isa.function3), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function), {})
+        for kwargs in [
+            {},
+            {'eval_str': False},
+            {'format': annotations.Format.VALUE},
+            {'format': annotations.Format.FORWARDREF},
+            {'format': annotations.Format.SOURCE},
+            {'format': annotations.Format.VALUE, 'eval_str': False},
+            {'format': annotations.Format.FORWARDREF, 'eval_str': False},
+            {'format': annotations.Format.SOURCE, 'eval_str': False},
+        ]:
+            with self.subTest(**kwargs):
+                self.assertEqual(annotations.get_annotations(isa, **kwargs), {'a': 'int', 'b': 'str'})
+                self.assertEqual(annotations.get_annotations(isa.MyClass, **kwargs), {'a': 'int', 'b': 'str'})
+                self.assertEqual(annotations.get_annotations(isa.function, **kwargs), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+                self.assertEqual(annotations.get_annotations(isa.function2, **kwargs), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
+                self.assertEqual(annotations.get_annotations(isa.function3, **kwargs), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
+                self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, **kwargs), {})
+                self.assertEqual(annotations.get_annotations(isa.unannotated_function, **kwargs), {})
 
-        self.assertEqual(annotations.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
-        self.assertEqual(annotations.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(annotations.get_annotations(isa.function3, eval_str=True), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, eval_str=True), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function, eval_str=True), {})
+        for kwargs in [
+            {"eval_str": True},
+            {"format": annotations.Format.VALUE, "eval_str": True},
+        ]:
+            with self.subTest(**kwargs):
+                self.assertEqual(annotations.get_annotations(isa, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.MyClass, **kwargs), {'a': int, 'b': str})
+                self.assertEqual(annotations.get_annotations(isa.function, **kwargs), {'a': int, 'b': str, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function2, **kwargs), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
+                self.assertEqual(annotations.get_annotations(isa.function3, **kwargs), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+                self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, **kwargs), {})
+                self.assertEqual(annotations.get_annotations(isa.unannotated_function, **kwargs), {})
 
-        self.assertEqual(annotations.get_annotations(isa, eval_str=False), {'a': 'int', 'b': 'str'})
-        self.assertEqual(annotations.get_annotations(isa.MyClass, eval_str=False), {'a': 'int', 'b': 'str'})
-        self.assertEqual(annotations.get_annotations(isa.function, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(isa.function2, eval_str=False), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
-        self.assertEqual(annotations.get_annotations(isa.function3, eval_str=False), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
-        self.assertEqual(annotations.get_annotations(isa.UnannotatedClass, eval_str=False), {})
-        self.assertEqual(annotations.get_annotations(isa.unannotated_function, eval_str=False), {})
-
+    def test_stringized_annotations_in_empty_module(self):
         isa2 = inspect_stringized_annotations_2
         self.assertEqual(annotations.get_annotations(isa2), {})
         self.assertEqual(annotations.get_annotations(isa2, eval_str=True), {})
         self.assertEqual(annotations.get_annotations(isa2, eval_str=False), {})
 
-        def times_three(fn):
-            @functools.wraps(fn)
-            def wrapper(a, b):
-                return fn(a*3, b*3)
-            return wrapper
-
+    def test_stringized_annotations_on_wrapper(self):
+        isa = inspect_stringized_annotations
         wrapped = times_three(isa.function)
         self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
         self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
@@ -177,6 +216,8 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(annotations.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
         self.assertEqual(annotations.get_annotations(wrapped, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
 
+    def test_stringized_annotations_on_class(self):
+        isa = inspect_stringized_annotations
         # test that local namespace lookups work
         self.assertEqual(annotations.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(annotations.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})

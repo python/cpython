@@ -400,13 +400,23 @@ def get_annotations(
         although if obj is a wrapped function (using
         functools.update_wrapper()) it is first unwrapped.
     """
+    if eval_str and format != Format.VALUE:
+        raise ValueError("eval_str=True is only supported with format=Format.VALUE")
+
     annotate = getattr(obj, "__annotate__", None)
-    # TODO remove format != VALUE condition
-    if annotate is not None and format != Format.VALUE:
+    if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
-    elif isinstance(obj, type):
+        if not isinstance(ann, dict):
+            raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
+        if not eval_str:
+            return dict(ann)
+    else:
+        ann = None
+
+    if isinstance(obj, type):
         # class
-        ann = getattr(obj, '__annotations__', None)
+        if ann is None:
+            ann = getattr(obj, '__annotations__', None)
 
         obj_globals = None
         module_name = getattr(obj, "__module__", None)
@@ -418,7 +428,8 @@ def get_annotations(
         unwrap = obj
     elif isinstance(obj, types.ModuleType):
         # module
-        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            ann = getattr(obj, "__annotations__", None)
         obj_globals = getattr(obj, "__dict__")
         obj_locals = None
         unwrap = None
@@ -426,7 +437,8 @@ def get_annotations(
         # this includes types.Function, types.BuiltinFunctionType,
         # types.BuiltinMethodType, functools.partial, functools.singledispatch,
         # "class funclike" from Lib/test/test_inspect... on and on it goes.
-        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            ann = getattr(obj, "__annotations__", None)
         obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
