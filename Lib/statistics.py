@@ -953,12 +953,14 @@ def kde(data, h, kernel='normal', *, cumulative=False):
 
         case 'quartic' | 'biweight':
             K = lambda t: 15/16 * (1.0 - t * t) ** 2
-            W = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
+            W = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
+                                  (t**5, t**3, t, 1.0))
             support = 1.0
 
         case 'triweight':
             K = lambda t: 35/32 * (1.0 - t * t) ** 3
-            W = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
+            W = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
+                                  (t**7, t**5, t**3, t, 1.0))
             support = 1.0
 
         case 'cosine':
@@ -974,12 +976,10 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if support is None:
 
         def pdf(x):
-            n = len(data)
-            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+            return sum(K((x - x_i) / h) for x_i in data) / (len(data) * h)
 
         def cdf(x):
-            n = len(data)
-            return sum(W((x - x_i) / h) for x_i in data) / n
+            return sum(W((x - x_i) / h) for x_i in data) / len(data)
 
     else:
 
@@ -1732,7 +1732,7 @@ def _quartic_invcdf_estimate(p):
 
 _quartic_invcdf = _newton_raphson(
     f_inv_estimate = _quartic_invcdf_estimate,
-    f = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2,
+    f = lambda t: sumprod((3/16, -5/8, 15/16, 1/2), (t**5, t**3, t, 1.0)),
     f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
 
 def _triweight_invcdf_estimate(p):
@@ -1742,7 +1742,8 @@ def _triweight_invcdf_estimate(p):
 
 _triweight_invcdf = _newton_raphson(
     f_inv_estimate = _triweight_invcdf_estimate,
-    f = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2,
+    f = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
+                          (t**7, t**5, t**3, t, 1.0)),
     f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
 
 _kernel_invcdfs = {
