@@ -4214,7 +4214,8 @@ os.link
     *
     src_dir_fd : dir_fd = None
     dst_dir_fd : dir_fd = None
-    follow_symlinks: bool = True
+    follow_symlinks: bool(c_default="LINK_DEFAULT_FOLLOW_SYMLINKS", \
+                          py_default="(sys.platform != 'wasi')") = LINK_DEFAULT_FOLLOW_SYMLINKS
 
 Create a hard link to a file.
 
@@ -4232,7 +4233,7 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=b0095ebbcbaa7e04]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=bd7817ad101821bb]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;

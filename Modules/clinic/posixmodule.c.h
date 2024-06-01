@@ -1423,7 +1423,7 @@ os_getcwdb(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(os_link__doc__,
 "link($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None,\n"
-"     follow_symlinks=True)\n"
+"     follow_symlinks=(sys.platform != \'wasi\'))\n"
 "--\n"
 "\n"
 "Create a hard link to a file.\n"
@@ -12795,4 +12795,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=300bd1c54dc43765 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00b1db90c342cc8b input=a9049054013a1b77]*/
