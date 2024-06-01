@@ -9155,10 +9155,33 @@ any_find_first_slice(PyObject *str, const char *function_name,
         }
         return any_find_slice(str, subobj, start, end, direction);
     }
+    Py_ssize_t result = -2; // Error
+    PyObject **substrs = NULL;
+    Py_ssize_t *sub_lengths = NULL;
+
+    /* ALLOCATE MEMORY */
     Py_ssize_t tuple_len = PyTuple_GET_SIZE(subobj);
-    if (tuple_len == 0) {
-        return -1;
+    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *) ||
+        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t))
+    {
+        PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+        goto exit;
     }
+    substrs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(PyObject *));
+    if (!substrs) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    sub_lengths = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(Py_ssize_t));
+    if (!sub_lengths) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+
+    /* STORE SUBSTRINGS */
+    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+    ADJUST_INDICES(start, end, len);
+    Py_ssize_t subs_len = 0;
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *substr = PyTuple_GET_ITEM(subobj, i);
         if (!PyUnicode_Check(substr)) {
@@ -9166,16 +9189,25 @@ any_find_first_slice(PyObject *str, const char *function_name,
                         "tuple for %.200s must only contain str, "
                         "not %.100s", function_name,
                         Py_TYPE(substr)->tp_name);
-            return -2;
+            goto exit;
+        }
+        Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
+        if (sub_len <= end - start) {
+            substrs[subs_len] = substr;
+            sub_lengths[subs_len] = sub_len;
+            subs_len++;
         }
     }
-    if (tuple_len == 1) {
-        PyObject *substr = PyTuple_GET_ITEM(subobj, 0);
-        return any_find_slice(str, substr, start, end, direction);
+
+    /* FIND SUBSTRINGS */
+    result = -1; // Not found (yet)
+    if (subs_len == 0) {
+        goto exit;
     }
-    Py_ssize_t result = -1;
-    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
-    ADJUST_INDICES(start, end, len);
+    if (subs_len == 1) {
+        result = any_find_slice(str, substrs[0], start, end, direction);
+        goto exit;
+    }
     if (direction > 0) {
         assert(FIND_CHUNK_SIZE > 0);
         for (; result == -1; start += FIND_CHUNK_SIZE) {
@@ -9186,10 +9218,10 @@ any_find_first_slice(PyObject *str, const char *function_name,
             else {
                 cur_end = start - 1 + FIND_CHUNK_SIZE;
             }
-            for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
+            for (Py_ssize_t i = 0; i < subs_len; i++) {
                 Py_ssize_t new_result;
+                PyObject *substr = substrs[i];
+                Py_ssize_t sub_len = sub_lengths[i];
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = any_find_slice(str, substr, start, end, +1);
                 }
@@ -9198,11 +9230,13 @@ any_find_first_slice(PyObject *str, const char *function_name,
                                                 cur_end + sub_len, +1);
                 }
                 if (new_result == -2) {
-                    return -2;
+                    result = -2;
+                    goto exit;
                 }
                 if (new_result != -1) {
                     if (new_result == start) {
-                        return start;
+                        result = start;
+                        goto exit;
                     }
                     cur_end = new_result - 1;
                     result = new_result;
@@ -9221,10 +9255,10 @@ any_find_first_slice(PyObject *str, const char *function_name,
             if (cur_start < start) {
                 cur_start = start;
             }
-            for (Py_ssize_t i = 0; i < tuple_len; i++) {
-                PyObject *substr = PyTuple_GET_ITEM(subobj, i);
-                Py_ssize_t sub_len = PyUnicode_GET_LENGTH(substr);
+            for (Py_ssize_t i = 0; i < subs_len; i++) {
                 Py_ssize_t new_result;
+                PyObject *substr = substrs[i];
+                Py_ssize_t sub_len = sub_lengths[i];
                 if (cur_end >= end - sub_len) { // Guard overflow
                     new_result = any_find_slice(str, substr, cur_start, end,
                                                 -1);
@@ -9234,11 +9268,13 @@ any_find_first_slice(PyObject *str, const char *function_name,
                                                 cur_end + sub_len, -1);
                 }
                 if (new_result == -2) {
-                    return -2;
+                    result = -2;
+                    goto exit;
                 }
                 if (new_result != -1) {
                     if (new_result == cur_end) {
-                        return cur_end;
+                        result = cur_end;
+                        goto exit;
                     }
                     cur_start = new_result + 1;
                     result = new_result;
@@ -9246,6 +9282,9 @@ any_find_first_slice(PyObject *str, const char *function_name,
             }
         }
     }
+exit:
+    PyMem_RawFree(substrs);
+    PyMem_RawFree(sub_lengths);
     return result;
 }
 
