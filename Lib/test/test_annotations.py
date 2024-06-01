@@ -63,3 +63,9 @@ class TestForwardRefClass(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
+
+
+class TestGetAnnotations(unittest.TestCase):
+    def test_builtin_type(self):
+        self.assertEqual(annotations.get_annotations(int), {})
+        self.assertEqual(annotations.get_annotations(object), {})

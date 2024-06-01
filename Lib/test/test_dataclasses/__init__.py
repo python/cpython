@@ -4813,6 +4813,10 @@ class TestKeywordArgs(unittest.TestCase):
             x: undefined
             y: ClassVar[undefined]
 
+        fs = fields(A)
+        self.assertEqual(len(fs), 1)
+        self.assertEqual(fs[0].name, 'x')
+
 
 if __name__ == '__main__':
     unittest.main()

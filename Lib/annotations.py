@@ -345,7 +345,7 @@ def get_annotations(
         ann = _call_dunder_annotate(annotate, format)
     elif isinstance(obj, type):
         # class
-        ann = obj.__annotations__
+        ann = getattr(obj, '__annotations__', None)
 
         obj_globals = None
         module_name = getattr(obj, "__module__", None)
