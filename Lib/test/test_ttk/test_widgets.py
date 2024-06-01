@@ -57,6 +57,11 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
 
+    def test_configure_relief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'relief',
+                              allow_empty=(tk_version >= (8, 7)))
+
     def test_configure_underline(self):
         StandardOptionsTests.test_configure_underline(self, empty_value='')
 
@@ -132,11 +137,6 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Frame(self.root, **kwargs)
 
-    def test_configure_relief(self):
-        widget = self.create()
-        self.checkReliefParam(widget, 'relief',
-                              allow_empty=(tk_version >= (8, 7)))
-
 
 @add_standard_options(StandardTtkOptionsTests)
 class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
@@ -163,11 +163,6 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         self.checkParam(widget, 'labelwidget', label, expected='.foo')
         label.destroy()
 
-    def test_configure_relief(self):
-        widget = self.create()
-        self.checkReliefParam(widget, 'relief',
-                              allow_empty=(tk_version >= (8, 7)))
-
 
 class AbstractLabelTest(AbstractWidgetTest):
 
@@ -185,15 +180,11 @@ class AbstractLabelTest(AbstractWidgetTest):
                 errmsg='image "spam" doesn\'t exist')
 
     def test_configure_compound(self):
-        options = 'none text image center top bottom left right'.split()
+        values = 'none text image center top bottom left right'.split()
         if tk_version >= (8, 7):
-            options.append('')
-        errmsg = (
-            'bad compound "{}": must be'
-            f' {", ".join(options[:-1])}, or {options[-1] or '""'}'
-            )
+            values.append('')
         widget = self.create()
-        self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
+        self.checkEnumParam(widget, 'compound', *values)
 
     def test_configure_state(self):
         widget = self.create()
@@ -222,11 +213,6 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
-
-    def test_configure_relief(self):
-        widget = self.create()
-        self.checkReliefParam(widget, 'relief',
-                              allow_empty=(tk_version >= (8, 7)))
 
 
 @add_standard_options(StandardTtkOptionsTests)
@@ -646,19 +632,19 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
             self.assertRaises(tkinter.TclError, self.paned.pane, 2)
         good_child.destroy()
         other_child.destroy()
-        if tk_version < (8, 7):
+        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
             # BUG: Crash in Tk 8.7b1
             self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
     def test_forget(self):
-        if tk_version < (8, 7):
+        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
             # BUG: Crash in Tk 8.7b1
             self.assertRaises(tkinter.TclError, self.paned.forget, None)
             self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
         self.paned.add(ttk.Label(self.root))
         self.paned.forget(0)
-        if tk_version < (8, 7):
+        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
             # BUG: Crash in Tk 8.7b1
             self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
@@ -703,7 +689,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
             (str(child3), str(child2), str(child)))
 
     def test_pane(self):
-        if tk_version < (8, 7):
+        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
             # BUG: Crash in Tk 8.7b1
             self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 

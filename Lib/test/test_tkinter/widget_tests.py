@@ -126,9 +126,10 @@ class AbstractWidgetTest(AbstractTkTest):
                     name,
                     ', '.join(values[:-1]),
                     ',' if len(values) > 2 else '',
-                    values[-1])
-            self.checkInvalidParam(widget, name, '',
-                                   errmsg='ambiguous' + errmsg2)
+                    values[-1] or '""')
+            if '' not in values:
+                self.checkInvalidParam(widget, name, '',
+                                       errmsg='ambiguous' + errmsg2)
             errmsg = 'bad' + errmsg2
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 

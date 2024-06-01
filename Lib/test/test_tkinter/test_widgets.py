@@ -1428,14 +1428,11 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_type(self):
         widget = self.create()
-        opts = ('normal, tearoff, or menubar'
-                if widget.info_patchlevel() < (8, 7) else
-                'menubar, normal, or tearoff')
-        self.checkEnumParam(
-            widget, 'type',
-            'normal', 'tearoff', 'menubar',
-            errmsg='bad type "{}": must be ' + opts,
-            )
+        if tk_version >= (8, 7):
+            values = ('menubar', 'normal', 'tearoff')
+        else:
+            values = ('normal', 'tearoff', 'menubar')
+        self.checkEnumParam(widget, 'type', *values)
 
     def test_entryconfigure(self):
         m1 = self.create()
