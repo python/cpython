@@ -497,10 +497,10 @@ parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
     }
 
 Py_ssize_t
-fast_find_internal(const char *str, Py_ssize_t len,
-                   const char *sub, Py_ssize_t sub_len,
-                   Py_ssize_t start, Py_ssize_t end,
-                   int direction)
+_Py_fast_find(const char *str, Py_ssize_t len,
+              const char *sub, Py_ssize_t sub_len,
+              Py_ssize_t start, Py_ssize_t end,
+              int direction)
 {
     if (end - start < sub_len)
         return -1;
@@ -551,7 +551,7 @@ find_internal(const char *str, Py_ssize_t len,
     }
 
     ADJUST_INDICES(start, end, len);
-    return fast_find_internal(str, len, sub, sub_len, start, end, dir);
+    return _Py_fast_find(str, len, sub, sub_len, start, end, dir);
 }
 
 #define FIND_CHUNK_SIZE 1000
@@ -636,8 +636,8 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
         goto exit;
     }
     if (subs_len == 1) {
-        result = fast_find_internal(str, len, subs[0], sub_lengths[0], start,
-                                    end, direction);
+        result = _Py_fast_find(str, len, subs[0], sub_lengths[0], start, end,
+                               direction);
         goto exit;
     }
     if (direction > 0) {
@@ -655,13 +655,12 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 const char *sub = subs[i];
                 Py_ssize_t sub_len = sub_lengths[i];
                 if (cur_end >= end - sub_len) { // Guard overflow
-                    new_result = fast_find_internal(str, len, sub, sub_len,
-                                                    start, end, +1);
+                    new_result = _Py_fast_find(str, len, sub, sub_len, start,
+                                               end, +1);
                 }
                 else {
-                    new_result = fast_find_internal(str, len, sub, sub_len,
-                                                    start, cur_end + sub_len,
-                                                    +1);
+                    new_result = _Py_fast_find(str, len, sub, sub_len, start,
+                                               cur_end + sub_len, +1);
                 }
                 if (new_result != -1) {
                     if (new_result == start) {
@@ -690,13 +689,13 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
                 const char *sub = subs[i];
                 Py_ssize_t sub_len = sub_lengths[i];
                 if (cur_end >= end - sub_len) { // Guard overflow
-                    new_result = fast_find_internal(str, len, sub, sub_len,
-                                                    cur_start, end, -1);
+                    new_result = _Py_fast_find(str, len, sub, sub_len,
+                                               cur_start, end, -1);
                 }
                 else {
-                    new_result = fast_find_internal(str, len, sub, sub_len,
-                                                    cur_start,
-                                                    cur_end + sub_len, -1);
+                    new_result = _Py_fast_find(str, len, sub, sub_len,
+                                               cur_start, cur_end + sub_len,
+                                               -1);
                 }
                 if (new_result != -1) {
                     if (new_result == cur_end) {
