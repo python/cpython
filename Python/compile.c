@@ -1920,7 +1920,6 @@ compiler_visit_annotations(struct compiler *c, location loc,
        Return -1 on error, or a combination of flags to add to the function.
        */
     Py_ssize_t annotations_len = 0;
-    int future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
 
     PySTEntryObject *ste;
     int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
@@ -1930,7 +1929,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     assert(ste != NULL);
     bool annotations_used = ste->ste_annotations_used;
 
-    if (annotations_used && !future_annotations) {
+    if (annotations_used) {
         if (compiler_setup_annotations_scope(c, loc, (void *)args,
                                              ste->ste_name) < 0) {
             Py_DECREF(ste);
@@ -1940,25 +1939,17 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_DECREF(ste);
 
     if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (annotations_used && !future_annotations) {
+        if (annotations_used) {
             compiler_exit_scope(c);
         }
         return ERROR;
     }
 
-    if (future_annotations) {
-        if (annotations_len) {
-            ADDOP_I(c, loc, BUILD_TUPLE, annotations_len * 2);
-            return MAKE_FUNCTION_ANNOTATIONS;
-        }
-    }
-    else {
-        if (annotations_used) {
-            RETURN_IF_ERROR(
-                compiler_leave_annotations_scope(c, loc, annotations_len)
-            );
-            return MAKE_FUNCTION_ANNOTATE;
-        }
+    if (annotations_used) {
+        RETURN_IF_ERROR(
+            compiler_leave_annotations_scope(c, loc, annotations_len)
+        );
+        return MAKE_FUNCTION_ANNOTATE;
     }
 
     return 0;
