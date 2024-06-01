@@ -2464,6 +2464,26 @@ class Tk(Misc, Wm):
         if not sys.flags.ignore_environment:
             # Issue #16248: Honor the -E flag to avoid code injection.
             self.readprofile(baseName, className)
+        # Fix for HiDPI screens on Windows
+        # CALL BEFORE ANY TK OPERATIONS!
+        # URL for arguments for the ...Awareness call below.
+        # https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
+        if sys.platform == 'win32':
+            import ctypes
+            try:
+                # >= win 8.1
+                PROCESS_SYSTEM_DPI_AWARE: int = 1  # Int required
+                ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
+                # Ensures that the window size is not reduced due to DPI adjustments,
+                # maintaining the original size
+                ScaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0)
+                self.tk.call('tk', 'scaling', ScaleFactor/75)
+            except (ImportError, AttributeError, OSError):
+                try:
+                    # win 8.0 or less
+                    ctypes.windll.user32.SetProcessDPIAware()
+                except Exception:
+                    pass
 
     def loadtk(self):
         if not self._tkloaded:
