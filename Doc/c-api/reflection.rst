@@ -19,10 +19,23 @@ Reflection
 
    .. deprecated:: 3.13
 
-      Use :c:func:`PyEval_GetFrameLocals` instead.
+      To avoid creating a reference cycle in :term:`optimized scopes <optimized scope>`,
+      use either :c:func:`PyEval_GetFrameLocals` to obtain the same behaviour as calling
+      :func:`locals` in Python code, or else call :c:func:`PyFrame_GetLocals` on the result
+      of :c:func:`PyEval_GetFrame` to get the same result as this function without having to
+      cache the proxy instance on the underlying frame.
 
-   Return a dictionary of the local variables in the current execution frame,
+   Return the :attr:`~frame.f_locals` attribute of the currently executing frame,
    or ``NULL`` if no frame is currently executing.
+
+   If the frame refers to an :term:`optimized scope`, this returns a
+   write-through proxy object that allows modifying the locals.
+   In all other cases (classes, modules, :func:`exec`, :func:`eval`) it returns
+   the mapping representing the frame locals directly (as described for
+   :func:`locals`).
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, return a proxy object for optimized scopes.
 
 
 .. c:function:: PyObject* PyEval_GetGlobals(void)
@@ -56,6 +69,10 @@ Reflection
    Return a dictionary of the local variables in the current execution frame,
    or ``NULL`` if no frame is currently executing. Equivalent to calling
    :func:`locals` in Python code.
+
+   To access :attr:`~frame.f_locals` on the current frame without making an independent
+   snapshot in :term:`optimized scopes <optimized scope>`, call :c:func:`PyFrame_GetLocals`
+   on the result of :c:func:`PyEval_GetFrame`.
 
    .. versionadded:: 3.13
 
