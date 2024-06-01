@@ -4020,17 +4020,23 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         chunk_size = 8192
 
         class MockIO(self.MockRawIO):
+            written = False
             def write(self, data):
-                t.write("efg")
+                if not self.written:
+                    self.written = True
+                    t.write("middle")
                 return super().write(data)
 
         buf = MockIO()
         t = self.TextIOWrapper(buf)
-        t.write("a" * (chunk_size - 1))
-        t.write("bcd")
+        t.write("abc")
+        t.write("def")
+        # writing data which size >= chunk_size cause flushing buffer before write.
+        t.write("g" * chunk_size)
         t.flush()
 
-        self.assertEqual([b"a" * (chunk_size - 1), b"efgbcd"], buf._write_stack)
+        self.assertEqual([b"abcdef", b"middle", b"g"*chunk_size],
+                         buf._write_stack)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
