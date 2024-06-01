@@ -2907,14 +2907,22 @@ class SupportsRound[T](Protocol):
         pass
 
 
-def _make_nmtuple(name, types, module, defaults = ()):
-    fields = [n for n, t in types]
-    types = {n: _type_check(t, f"field {n} annotation must be a type")
-             for n, t in types}
+def _make_nmtuple(name, fields, annotate_func, module, defaults = ()):
     nm_tpl = collections.namedtuple(name, fields,
                                     defaults=defaults, module=module)
-    nm_tpl.__annotations__ = nm_tpl.__new__.__annotations__ = types
+    nm_tpl.__annotate__ = nm_tpl.__new__.__annotate__ = annotate_func
     return nm_tpl
+
+
+def _make_eager_annotate(types):
+    checked_types = {key: _type_check(val, f"field {key} annotation must be a type")
+                     for key, val in types.items()}
+    def annotate(format):
+        if format in (annotations.Format.VALUE, annotations.Format.FORWARDREF):
+            return checked_types
+        else:
+            return {n: t if isinstance(t, str) else _type_repr(t) for n, t in types.items()}
+    return annotate
 
 
 # attributes prohibited to set in NamedTuple class syntax
@@ -2922,7 +2930,7 @@ _prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
                          '_fields', '_field_defaults',
                          '_make', '_replace', '_asdict', '_source'})
 
-_special = frozenset({'__module__', '__name__', '__annotations__'})
+_special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__'})
 
 
 class NamedTupleMeta(type):
@@ -2935,12 +2943,29 @@ class NamedTupleMeta(type):
         bases = tuple(tuple if base is _NamedTuple else base for base in bases)
         if "__annotations__" in ns:
             types = ns["__annotations__"]
+            field_names = list(types)
+            annotate = _make_eager_annotate(types)
         elif "__annotate__" in ns:
-            types = ns["__annotate__"](annotations.Format.VALUE)
+            original_annotate = ns["__annotate__"]
+            types = annotations.call_annotate_function(original_annotate, annotations.Format.FORWARDREF)
+            field_names = list(types)
+
+            # For backward compatibility, type-check all the types at creation time
+            for typ in types.values():
+                _type_check(typ, "field annotation must be a type")
+
+            def annotate(format):
+                annos = annotations.call_annotate_function(original_annotate, format)
+                if format != annotations.Format.SOURCE:
+                    return {key: _type_check(val, f"field {key} annotation must be a type")
+                            for key, val in annos.items()}
+                return annos
         else:
-            types = {}
+            # Empty NamedTuple
+            field_names = []
+            annotate = lambda format: {}
         default_names = []
-        for field_name in types:
+        for field_name in field_names:
             if field_name in ns:
                 default_names.append(field_name)
             elif default_names:
@@ -2948,7 +2973,7 @@ class NamedTupleMeta(type):
                                 f"cannot follow default field"
                                 f"{'s' if len(default_names) > 1 else ''} "
                                 f"{', '.join(default_names)}")
-        nm_tpl = _make_nmtuple(typename, types.items(),
+        nm_tpl = _make_nmtuple(typename, field_names, annotate,
                                defaults=[ns[n] for n in default_names],
                                module=ns['__module__'])
         nm_tpl.__bases__ = bases
@@ -3039,7 +3064,11 @@ def NamedTuple(typename, fields=_sentinel, /, **kwargs):
         import warnings
         warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
         fields = kwargs.items()
-    nt = _make_nmtuple(typename, fields, module=_caller())
+    types = {n: _type_check(t, f"field {n} annotation must be a type")
+             for n, t in fields}
+    field_names = [n for n, _ in fields]
+
+    nt = _make_nmtuple(typename, field_names, _make_eager_annotate(types), module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
 
