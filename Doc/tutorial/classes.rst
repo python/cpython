@@ -337,11 +337,8 @@ code will print the value ``16``, without leaving a trace::
    print(x.counter)
    del x.counter
 
-The other kind of instance attribute reference is a *method*. In the following
-discussion, we’ll use the term method exclusively to mean methods of class
-instance objects, unless explicitly stated otherwise. (In other words, we are
-not referring to built-in methods such as ``alist.append`` where ``alist`` is
-a :class:`list` object.)
+The other kind of instance attribute reference is a *method*. A method is a
+function that "belongs to" an object.
 
 .. index:: pair: object; method
 
