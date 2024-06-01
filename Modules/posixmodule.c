@@ -4277,7 +4277,12 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #ifdef HAVE_LINKAT
     if ((src_dir_fd != DEFAULT_DIR_FD) ||
         (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (follow_symlinks)) {
+#ifdef __APPLE__
+        (!follow_symlinks)
+#else
+        (follow_symlinks)
+#endif
+    ) {
 
         if (HAVE_LINKAT_RUNTIME) {
 

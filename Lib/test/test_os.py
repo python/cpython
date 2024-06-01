@@ -2499,6 +2499,20 @@ class LinkTests(unittest.TestCase):
 
         self.assertFalse(os.path.islink(self.file3))
 
+    @unittest.skipUnless(
+        hasattr(os, 'symlink') and
+        hasattr(os.path, 'islink') and
+        os.link in os.supports_follow_symlinks and
+        not support.is_wasi,
+        'requires os.symlink, os.path.islink and supports follow_symlinks'
+    )
+    def test_follow_symlinks_false(self):
+        create_file(self.file1)
+        os.symlink(self.file1, self.file2)
+        os.link(self.file2, self.file3, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(self.file3))
+
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class PosixUidGidTests(unittest.TestCase):
     # uid_t and gid_t are 32-bit unsigned integers on Linux
