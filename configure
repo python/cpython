@@ -829,12 +829,8 @@ SRCDIRS
 THREADHEADERS
 PANEL_LIBS
 PANEL_CFLAGS
-NCURSES_LIBS
-NCURSES_CFLAGS
-PANELW_LIBS
-PANELW_CFLAGS
-NCURSESW_LIBS
-NCURSESW_CFLAGS
+CURSES_LIBS
+CURSES_CFLAGS
 LIBEDIT_LIBS
 LIBEDIT_CFLAGS
 LIBREADLINE_LIBS
@@ -1173,12 +1169,8 @@ LIBREADLINE_CFLAGS
 LIBREADLINE_LIBS
 LIBEDIT_CFLAGS
 LIBEDIT_LIBS
-NCURSESW_CFLAGS
-NCURSESW_LIBS
-PANELW_CFLAGS
-PANELW_LIBS
-NCURSES_CFLAGS
-NCURSES_LIBS
+CURSES_CFLAGS
+CURSES_LIBS
 PANEL_CFLAGS
 PANEL_LIBS
 LIBB2_CFLAGS
@@ -2013,17 +2005,9 @@ Some influential environment variables:
               C compiler flags for LIBEDIT, overriding pkg-config
   LIBEDIT_LIBS
               linker flags for LIBEDIT, overriding pkg-config
-  NCURSESW_CFLAGS
-              C compiler flags for NCURSESW, overriding pkg-config
-  NCURSESW_LIBS
-              linker flags for NCURSESW, overriding pkg-config
-  PANELW_CFLAGS
-              C compiler flags for PANELW, overriding pkg-config
-  PANELW_LIBS linker flags for PANELW, overriding pkg-config
-  NCURSES_CFLAGS
-              C compiler flags for NCURSES, overriding pkg-config
-  NCURSES_LIBS
-              linker flags for NCURSES, overriding pkg-config
+  CURSES_CFLAGS
+              C compiler flags for CURSES, overriding pkg-config
+  CURSES_LIBS linker flags for CURSES, overriding pkg-config
   PANEL_CFLAGS
               C compiler flags for PANEL, overriding pkg-config
   PANEL_LIBS  linker flags for PANEL, overriding pkg-config
@@ -25885,6 +25869,7 @@ have_panel=no
 
 
 
+# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
 
 
 
@@ -25892,8 +25877,8 @@ pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncursesw" >&5
 printf %s "checking for ncursesw... " >&6; }
 
-if test -n "$NCURSESW_CFLAGS"; then
-    pkg_cv_NCURSESW_CFLAGS="$NCURSESW_CFLAGS"
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
@@ -25901,7 +25886,7 @@ if test -n "$NCURSESW_CFLAGS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_NCURSESW_CFLAGS=`$PKG_CONFIG --cflags "ncursesw" 2>/dev/null`
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncursesw" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -25909,8 +25894,8 @@ fi
  else
     pkg_failed=untried
 fi
-if test -n "$NCURSESW_LIBS"; then
-    pkg_cv_NCURSESW_LIBS="$NCURSESW_LIBS"
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
@@ -25918,7 +25903,7 @@ if test -n "$NCURSESW_LIBS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_NCURSESW_LIBS=`$PKG_CONFIG --libs "ncursesw" 2>/dev/null`
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncursesw" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -25939,14 +25924,20 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncursesw" 2>&1`
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncursesw" 2>&1`
         else
-	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncursesw" 2>&1`
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncursesw" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$NCURSESW_PKG_ERRORS" >&5
+	echo "$CURSES_PKG_ERRORS" >&5
 
-	       for ac_header in ncurses.h curses.h ncursesw/curses.h ncursesw/ncurses.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+            for ac_header in ncursesw/curses.h ncursesw/ncurses.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -25959,10 +25950,22 @@ _ACEOF
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	       for ac_header in ncurses.h curses.h ncursesw/curses.h ncursesw/ncurses.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+            for ac_header in ncursesw/curses.h ncursesw/ncurses.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -25975,17 +25978,21 @@ _ACEOF
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 else
-	NCURSESW_CFLAGS=$pkg_cv_NCURSESW_CFLAGS
-	NCURSESW_LIBS=$pkg_cv_NCURSESW_LIBS
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
    have_curses=ncursesw
-   CURSES_CFLAGS=$NCURSESW_CFLAGS
-   CURSES_LIBS=$NCURSESW_LIBS
 fi
 if test "x$have_curses" = xncursesw
 then :
@@ -25994,8 +26001,8 @@ pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
 printf %s "checking for panelw... " >&6; }
 
-if test -n "$PANELW_CFLAGS"; then
-    pkg_cv_PANELW_CFLAGS="$PANELW_CFLAGS"
+if test -n "$PANEL_CFLAGS"; then
+    pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
@@ -26003,7 +26010,7 @@ if test -n "$PANELW_CFLAGS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_PANELW_CFLAGS=`$PKG_CONFIG --cflags "panelw" 2>/dev/null`
+  pkg_cv_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panelw" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -26011,8 +26018,8 @@ fi
  else
     pkg_failed=untried
 fi
-if test -n "$PANELW_LIBS"; then
-    pkg_cv_PANELW_LIBS="$PANELW_LIBS"
+if test -n "$PANEL_LIBS"; then
+    pkg_cv_PANEL_LIBS="$PANEL_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panelw\""; } >&5
@@ -26020,7 +26027,7 @@ if test -n "$PANELW_LIBS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_PANELW_LIBS=`$PKG_CONFIG --libs "panelw" 2>/dev/null`
+  pkg_cv_PANEL_LIBS=`$PKG_CONFIG --libs "panelw" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -26041,53 +26048,69 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PANELW_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panelw" 2>&1`
+	        PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panelw" 2>&1`
         else
-	        PANELW_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panelw" 2>&1`
+	        PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panelw" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$PANELW_PKG_ERRORS" >&5
+	echo "$PANEL_PKG_ERRORS" >&5
 
-	       for ac_header in panel.h ncursesw/panel.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $PANEL_CFLAGS"
+              for ac_header in ncursesw/panel.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "ncursesw/panel.h" "ac_cv_header_ncursesw_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_panel_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_NCURSESW_PANEL_H 1" >>confdefs.h
  have_panel=panelw
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	       for ac_header in panel.h ncursesw/panel.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $PANEL_CFLAGS"
+              for ac_header in ncursesw/panel.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "ncursesw/panel.h" "ac_cv_header_ncursesw_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_panel_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_NCURSESW_PANEL_H 1" >>confdefs.h
  have_panel=panelw
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 else
-	PANELW_CFLAGS=$pkg_cv_PANELW_CFLAGS
-	PANELW_LIBS=$pkg_cv_PANELW_LIBS
+	PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
+	PANEL_LIBS=$pkg_cv_PANEL_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_PANELW 1" >>confdefs.h
 
      have_panel=panelw
-     PANEL_CFLAGS=$PANELW_CFLAGS
-     PANEL_LIBS=$PANELW_LIBS
 fi
 fi
 
@@ -26101,8 +26124,8 @@ pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses" >&5
 printf %s "checking for ncurses... " >&6; }
 
-if test -n "$NCURSES_CFLAGS"; then
-    pkg_cv_NCURSES_CFLAGS="$NCURSES_CFLAGS"
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
@@ -26110,7 +26133,7 @@ if test -n "$NCURSES_CFLAGS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_NCURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -26118,8 +26141,8 @@ fi
  else
     pkg_failed=untried
 fi
-if test -n "$NCURSES_LIBS"; then
-    pkg_cv_NCURSES_LIBS="$NCURSES_LIBS"
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
@@ -26127,7 +26150,7 @@ if test -n "$NCURSES_LIBS"; then
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_NCURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -26148,14 +26171,20 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        NCURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
         else
-	        NCURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$NCURSES_PKG_ERRORS" >&5
+	echo "$CURSES_PKG_ERRORS" >&5
 
-	       for ac_header in ncurses.h curses.h ncurses/curses.h ncurses/ncurses.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+            for ac_header in ncurses/curses.h ncurses/ncurses.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -26168,10 +26197,22 @@ _ACEOF
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	       for ac_header in ncurses.h curses.h ncurses/curses.h ncurses/ncurses.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+            for ac_header in ncurses/curses.h ncurses/ncurses.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -26184,17 +26225,21 @@ _ACEOF
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 else
-	NCURSES_CFLAGS=$pkg_cv_NCURSES_CFLAGS
-	NCURSES_LIBS=$pkg_cv_NCURSES_LIBS
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_NCURSES 1" >>confdefs.h
 
    have_curses=ncurses
-   CURSES_CFLAGS=$NCURSES_CFLAGS
-   CURSES_LIBS=$NCURSES_LIBS
 fi
 if test "x$have_curses" = xncurses
 then :
@@ -26257,35 +26302,53 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PANEL_PKG_ERRORS" >&5
 
-	       for ac_header in panel.h ncurses/panel.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $PANEL_CFLAGS"
+              for ac_header in ncurses/panel.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "ncurses/panel.h" "ac_cv_header_ncurses_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_panel_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_NCURSES_PANEL_H 1" >>confdefs.h
  have_panel=panel
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	       for ac_header in panel.h ncurses/panel.h
+	save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $PANEL_CFLAGS"
+              for ac_header in ncurses/panel.h
 do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
+  ac_fn_c_check_header_compile "$LINENO" "ncurses/panel.h" "ac_cv_header_ncurses_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_panel_h" = xyes
 then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
+  printf "%s\n" "#define HAVE_NCURSES_PANEL_H 1" >>confdefs.h
  have_panel=panel
 fi
 
 done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 else
 	PANEL_CFLAGS=$pkg_cv_PANEL_CFLAGS
 	PANEL_LIBS=$pkg_cv_PANEL_LIBS
@@ -26295,8 +26358,6 @@ printf "%s\n" "yes" >&6; }
 printf "%s\n" "#define HAVE_PANEL 1" >>confdefs.h
 
      have_panel=panel
-     PANEL_CFLAGS=$PANEL_CFLAGS
-     PANEL_LIBS=$PANEL_LIBS
 fi
 fi
 
@@ -26322,15 +26383,183 @@ case $have_panel in #(
   *) :
      ;;
 esac
-# TODO: rewrite these using AC_COMPILE_IFELSE
-#AS_IF([test "have_curses" != "no"],
-#      [WITH_SAVE_ENV([CPPFLAGS="$CURSES_CFLAGS $CPPFLAGS"
-#                      LDFLAGS="$CURSES_LIBS $LDFLAGS"
-#                      AC_CHECK_FUNC([initscr], [], [have_curses=no])])])
-#AS_IF([test "have_panel" != "no"],
-#      [WITH_SAVE_ENV([CPPFLAGS="$PANEL_CFLAGS $CPPFLAGS"
-#                      LDFLAGS="$PANEL_LIBS $LDFLAGS"
-#                      AC_CHECK_FUNC([update_panels], [], [have_panel=no])])])
+
+
+
+# If pkg-config failed, try manually.
+if test "x$have_curses" = xno
+then :
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+     as_fn_append LIBS " $CURSES_LIBS"
+            for ac_header in curses.h ncurses.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
+printf %s "checking for library containing initscr... " >&6; }
+if test ${ac_cv_search_initscr+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char initscr ();
+int
+main (void)
+{
+return initscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ncurses ncursesw
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_initscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_initscr+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_initscr+y}
+then :
+
+else $as_nop
+  ac_cv_search_initscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_initscr" >&5
+printf "%s\n" "$ac_cv_search_initscr" >&6; }
+ac_res=$ac_cv_search_initscr
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_curses=yes
+          CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+fi
+
+fi
+
+done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+fi
+if test "x$have_panel" = xno
+then :
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+as_fn_append CPPFLAGS " $PANEL_CFLAGS"
+     as_fn_append LIBS " $PANEL_LIBS"
+            for ac_header in panel.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_panel_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing update_panels" >&5
+printf %s "checking for library containing update_panels... " >&6; }
+if test ${ac_cv_search_update_panels+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char update_panels ();
+int
+main (void)
+{
+return update_panels ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' panel panelw
+do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_search_update_panels=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext
+  if test ${ac_cv_search_update_panels+y}
+then :
+  break
+fi
+done
+if test ${ac_cv_search_update_panels+y}
+then :
+
+else $as_nop
+  ac_cv_search_update_panels=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_update_panels" >&5
+printf "%s\n" "$ac_cv_search_update_panels" >&6; }
+ac_res=$ac_cv_search_update_panels
+if test "$ac_res" != no
+then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_panel=yes
+          PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
+fi
+
+fi
+
+done
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+fi
 
 if test "have_curses" != "no"
 then :
@@ -26345,19 +26574,25 @@ then :
 
 fi
 
-
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
-
-# first curses header check
-ac_save_cppflags="$CPPFLAGS"
-if test "$cross_compiling" = no; then
-  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
-fi
 
 # On Solaris, term.h requires curses.h
 ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
-#ifdef HAVE_CURSES_H
-#include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
 #endif
 
 "
@@ -26377,7 +26612,24 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
+
 int
 main (void)
 {
@@ -26407,10 +26659,6 @@ printf "%s\n" "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
 fi
 
-# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
-# structs since version 5.7.  If the macro is defined as zero before including
-# [n]curses.h, ncurses will expose fields of the structs regardless of the
-# configuration.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 printf %s "checking whether WINDOW has _flags... " >&6; }
 if test ${ac_cv_window_has_flags+y}
@@ -26420,8 +26668,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-  #define NCURSES_OPAQUE 0
-  #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26466,8 +26728,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26512,8 +26788,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26558,8 +26848,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26604,8 +26908,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26650,8 +26968,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26696,8 +27028,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26742,8 +27088,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26788,8 +27148,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26834,8 +27208,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26880,8 +27268,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
@@ -26926,8 +27328,22 @@ else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
+#define NCURSES_OPAQUE 0
+#ifdef HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#endif
+#ifdef HAVE_NCURSESW_NCURSES_H
+#  include <ncursesw/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#endif
+#ifdef HAVE_NCURSES_NCURSES_H
+#  include <ncurses/ncurses.h>
+#endif
+#ifdef HAVE_NCURSES_H
+#  include <ncurses.h>
+#endif
 
 int
 main (void)
