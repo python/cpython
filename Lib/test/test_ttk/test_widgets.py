@@ -214,6 +214,11 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
 
+    def test_keys(self):
+        if get_tk_patchlevel(self.root) == (8, 7, 0, 'beta', 1):
+            self.skipTest('Bug in Tk8.7b1')
+        super().test_keys()
+
 
 @add_standard_options(StandardTtkOptionsTests)
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
@@ -285,7 +290,10 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
 
         cbtn['command'] = ''
         res = cbtn.invoke()
-        self.assertFalse(str(res))
+        if tk_version >= (8, 7):
+            self.assertFalse(res, ())
+        else:
+            self.assertEqual(str(res), '')
         self.assertLessEqual(len(success), 1)
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
@@ -523,7 +531,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
             self.assertEqual(self.combo.get(), getval)
             self.assertEqual(self.combo.current(), currval)
 
-        self.assertEqual(self.combo['values'], '')
+        self.assertIn(self.combo['values'], ((), ''))
         check_get_current('', -1)
 
         self.checkParam(self.combo, 'values', 'mon tue wed thur',
