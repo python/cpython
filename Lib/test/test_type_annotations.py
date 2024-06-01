@@ -395,5 +395,5 @@ class DeferredEvaluationTests(unittest.TestCase):
         f = ns["f"]
         self.assertIsInstance(f.__annotate__, types.FunctionType)
         annos = {"x": "int", "return": "int"}
-        self.assertEqual(f.__annotate__(inspect.VALUE), annos)
+        self.assertEqual(f.__annotate__(annotations.Format.VALUE), annos)
         self.assertEqual(f.__annotations__, annos)
