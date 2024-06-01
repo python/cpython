@@ -2444,7 +2444,7 @@ class TestKDE(unittest.TestCase):
             with self.subTest(kernel=kernel):
                 cdf = kde([0.0], h=1.0, kernel=kernel, cumulative=True)
                 for x in xarr:
-                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
+                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=6)
 
     @support.requires_resource('cpu')
     def test_kde_random(self):
