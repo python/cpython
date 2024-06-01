@@ -817,12 +817,12 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
 _kernel_specs = {}
 
 def _register(*kernels):
-    "Load kernel pdf, cdf, invcdf, and support into _kernel_specs."
-    def deco(builder):
-        spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), builder()))
+    "Load a kernel's pdf, cdf, invcdf, and support into _kernel_specs."
+    def deco(spec_builder):
+        spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), spec_builder()))
         for kernel in kernels:
             _kernel_specs[kernel] = spec
-        return builder
+        return spec_builder
     return deco
 
 @_register('normal', 'gauss')
@@ -875,12 +875,12 @@ def _triangular_kernel():
 @_register('parabolic', 'epanechnikov')
 def _parabolic_kernel():
     pdf = lambda t: 3/4 * (1.0 - t * t)
-    cdf = lambda t: -1/4 * t**3 + 3/4 * t + 1/2                                   # ??? sumprod
-    invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)                  # ??? pi
+    cdf = lambda t: sumprod((-1/4, 3/4, 1/2), (t**3, t, 1.0))
+    invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)
     support = 1.0
     return pdf, cdf, invcdf, support
 
-def _quartic_invcdf_estimate(p):                                                  # ??? move inside _quartic_kernel
+def _quartic_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.4258865685331 - 1.0
     if p >= 0.004 < 0.499:
@@ -892,7 +892,7 @@ def _quartic_kernel():
     pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
-    invcdf = _newton_raphson(_quartic_invcdf_estimate, cdf, pdf)
+    invcdf = _newton_raphson(_quartic_invcdf_estimate, f=cdf, f_prime=pdf)
     support = 1.0
     return pdf, cdf, invcdf, support
 
@@ -906,7 +906,7 @@ def _triweight_kernel():
     pdf = lambda t: 35/32 * (1.0 - t * t) ** 3
     cdf = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
                             (t**7, t**5, t**3, t, 1.0))
-    invcdf = _newton_raphson(_triweight_invcdf_estimate, cdf, pdf)
+    invcdf = _newton_raphson(_triweight_invcdf_estimate, f=cdf, f_prime=pdf)
     support = 1.0
     return pdf, cdf, invcdf, support
 
@@ -916,9 +916,10 @@ def _cosine_kernel():
     c2 = pi / 2
     pdf = lambda t: c1 * cos(c2 * t)
     cdf = lambda t: 1/2 * sin(c2 * t) + 1/2
-    invcdf = lambda p: 2.0 * asin(2.0 * p - 1.0) / pi  # ??? pi
+    invcdf = lambda p: 2.0 * asin(2.0 * p - 1.0) / pi
     support = 1.0
     return pdf, cdf, invcdf, support
+
 
 def kde(data, h, kernel='normal', *, cumulative=False):
     """Kernel Density Estimation:  Create a continuous probability density
