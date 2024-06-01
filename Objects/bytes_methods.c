@@ -502,23 +502,29 @@ _Py_fast_find(const char *str, Py_ssize_t len,
               Py_ssize_t start, Py_ssize_t end,
               int direction)
 {
-    if (sub_len > end - start)
+    if (sub_len > end - start) {
         return -1;
+    }
     else if (sub_len == 1) {
         Py_ssize_t result;
-        if (direction > 0)
+        if (direction > 0) {
             result = stringlib_find_char(str + start, end - start, *sub);
-        else
+        }
+        else {
             result = stringlib_rfind_char(str + start, end - start, *sub);
-        if (result >= 0)
+        }
+        if (result >= 0) {
             result += start;
+        }
         return result;
     }
     else {
-        if (direction > 0)
+        if (direction > 0) {
             return stringlib_find_slice(str, len, sub, sub_len, start, end);
-        else
+        }
+        else {
             return stringlib_rfind_slice(str, len, sub, sub_len, start, end);
+        }
     }
 }
 
