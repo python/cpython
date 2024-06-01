@@ -849,7 +849,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
+       "Yield unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') → A B C D A B
        # unique_justseen('ABBcCAD', str.casefold) → A B c A D
        if key is None:
@@ -857,7 +857,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def unique_everseen(iterable, key=None):
-       "List unique elements, preserving order. Remember all elements ever seen."
+       "Yield unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') → A B C D
        # unique_everseen('ABBcCAD', str.casefold) → A B c D
        seen = set()
@@ -871,6 +871,11 @@ and :term:`generators <generator>` which incur interpreter overhead.
                if k not in seen:
                    seen.add(k)
                    yield element
+
+   def unique(iterable, key=None, reverse=False):
+      "Yield unique elements in sorted order. Supports unhashable inputs."
+      # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
+      return unique_justseen(sorted(iterable, key=key, reverse=reverse), key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
@@ -1592,6 +1597,13 @@ The following recipes have a more mathematical flavor:
     'A'
     >>> ''.join(input_iterator)
     'AAABBBCCDAABBB'
+
+    >>> list(unique([[1, 2], [3, 4], [1, 2]]))
+    [[1, 2], [3, 4]]
+    >>> list(unique('ABBcCAD', str.casefold))
+    ['A', 'B', 'c', 'D']
+    >>> list(unique('ABBcCAD', str.casefold, reverse=True))
+    ['D', 'c', 'B', 'A']
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)
