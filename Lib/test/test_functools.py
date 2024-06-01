@@ -732,6 +732,8 @@ class TestUpdateWrapper(unittest.TestCase):
         functools.update_wrapper(wrapper, with_forward_ref)
 
         self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+        with self.assertRaises(NameError):
+            wrapper.__annotations__
 
         undefined = str
         self.assertEqual(wrapper.__annotations__, {'x': undefined})
