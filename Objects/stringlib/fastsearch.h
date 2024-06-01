@@ -406,21 +406,18 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
+
             Py_ssize_t i = Py_MAX(cut, memory);
-            for (; i < gap_jump_end; i++) {
+            for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Early right half mismatch: jump by gap.\n");
-                    assert(gap >= i - cut + 1);
-                    window_last += gap;
-                    memory = 0;
-                    goto periodicwindowloop;
-                }
-            }
-            for (Py_ssize_t i = gap_jump_end; i < len_needle; i++) {
-                if (needle[i] != window[i]) {
-                    LOG("Late right half mismatch.\n");
-                    assert(i - cut + 1 > gap);
-                    window_last += i - cut + 1;
+                    if (i < gap_jump_end) {
+                        LOG("Early right half mismatch: jump by gap.\n");
+                        window_last += gap;
+                    }
+                    else {
+                        LOG("Late right half mismatch: jump by n (>gap)\n");
+                        window_last += i - cut + 1;
+                    }
                     memory = 0;
                     goto periodicwindowloop;
                 }
@@ -472,19 +469,18 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
-            for (Py_ssize_t i = cut; i < gap_jump_end; i++) {
+
+            Py_ssize_t i = cut;
+            for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Early right half mismatch: jump by gap.\n");
-                    assert(gap >= i - cut + 1);
-                    window_last += gap;
-                    goto windowloop;
-                }
-            }
-            for (Py_ssize_t i = gap_jump_end; i < len_needle; i++) {
-                if (needle[i] != window[i]) {
-                    LOG("Late right half mismatch.\n");
-                    assert(i - cut + 1 > gap);
-                    window_last += i - cut + 1;
+                    if (i < gap_jump_end) {
+                        LOG("Early right half mismatch: jump by gap.\n");
+                        window_last += gap;
+                    }
+                    else {
+                        LOG("Late right half mismatch: jump by n (>gap)\n");
+                        window_last += i - cut + 1;
+                    }
                     goto windowloop;
                 }
             }
