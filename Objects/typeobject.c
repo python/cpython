@@ -4615,9 +4615,8 @@ _PyType_FromMetaclass_impl(
             if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
                 PyErr_Format(
                     PyExc_TypeError,
-                    "Creating immutable type %s from mutable base %s",
-                    spec->name,
-                    b->tp_name
+                    "Creating immutable type %s from mutable base %N",
+                    spec->name, b
                 );
                 goto finally;
             }

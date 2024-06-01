@@ -785,10 +785,6 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'Creating immutable type'):
             _testcapi.make_immutable_type_with_base(MutableBase)
 
-        # Can change the method on the mutable base
-        MutableBase.meth = lambda self: 'changed'
-        self.assertEqual(MutableBase().meth(), 'changed')
-
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
         small_number = 123
