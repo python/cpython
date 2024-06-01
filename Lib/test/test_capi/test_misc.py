@@ -778,9 +778,7 @@ class CAPITest(unittest.TestCase):
                     _testcapi.create_type_from_repeated_slots(variant)
 
     def test_immutable_type_with_mutable_base(self):
-        class MutableBase:
-            def meth(self):
-                return 'original'
+        class MutableBase: ...
 
         with self.assertRaisesRegex(TypeError, 'Creating immutable type'):
             _testcapi.make_immutable_type_with_base(MutableBase)
