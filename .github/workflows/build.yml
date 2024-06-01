@@ -388,7 +388,7 @@ jobs:
       id: cache-hypothesis-database
       uses: actions/cache@v4
       with:
-        path: ./hypothesis
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
           - hypothesis-database-
@@ -416,7 +416,7 @@ jobs:
       if: always()
       with:
         name: hypothesis-example-db
-        path: .hypothesis/examples/
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
 
   build_asan:

@@ -18,6 +18,7 @@
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
+#include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -2006,6 +2007,25 @@ has_inline_values(PyObject *self, PyObject *obj)
     Py_RETURN_FALSE;
 }
 
+
+/*[clinic input]
+gh_119213_getargs
+
+    spam: object = None
+
+Test _PyArg_Parser.kwtuple
+[clinic start generated code]*/
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam)
+/*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
+{
+    // It must never have been called in the main interprer
+    assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
+    return Py_NewRef(spam);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2096,6 +2116,7 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
+    GH_119213_GETARGS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
