@@ -505,13 +505,11 @@ def fmean(data, weights=None):
             n = len(data)
         except TypeError:
             # Handle iterators that do not define __len__().
-            n = 0
-            def count(iterable):
-                nonlocal n
-                for n, x in enumerate(iterable, start=1):
-                    yield x
-            data = count(data)
-        total = fsum(data)
+            counter = count()
+            total = fsum(map(itemgetter(0), zip(data, counter)))
+            n = next(counter)
+        else:
+            total = fsum(data)
         if not n:
             raise StatisticsError('fmean requires at least one data point')
         return total / n
