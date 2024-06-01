@@ -1719,19 +1719,26 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
-    // Prevent to concatenate more than chunk_size data.
-    while (self->pending_bytes &&
-            bytes_len + self->pending_bytes_count > self->chunk_size) {
-        if (_textiowrapper_writeflush(self) < 0) {
-            Py_DECREF(b);
-            return NULL;
+    // We should avoid concatinating huge data.
+    // Flush the buffer before adding b to the buffer if b is not small.
+    // https://github.com/python/cpython/issues/87426
+    if (bytes_len >= self->chunk_size) {
+        // _textiowrapper_writeflush() calls buffer.write().
+        // self->pending_bytes can be appended during buffer->write()
+        // or other thread.
+        // We need to loop until buffer becomes empty.
+        // https://github.com/python/cpython/issues/118138
+        // https://github.com/python/cpython/issues/119506
+        while (self->pending_bytes != NULL) {
+            if (_textiowrapper_writeflush(self) < 0) {
+                Py_DECREF(b);
+                return NULL;
+            }
         }
-        // _textiowrapper_writeflush() releases GIL during write.
-        // self->pending_bytes and self->pending_bytes_count may be changed now.
     }
 
     if (self->pending_bytes == NULL) {
-        self->pending_bytes_count = 0;
+        assert(self->pending_bytes_count == 0);
         self->pending_bytes = b;
     }
     else if (!PyList_CheckExact(self->pending_bytes)) {
