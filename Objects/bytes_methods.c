@@ -627,12 +627,11 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
             sub = byte;
             sub_len = 1;
         }
-        if (sub_len > end - start) {
-            continue;
+        if (sub_len <= end - start) {
+            subs[subs_len] = sub;
+            sub_lengths[subs_len] = sub_len;
+            subs_len++;
         }
-        subs[subs_len] = sub;
-        sub_lengths[subs_len] = sub_len;
-        subs_len++;
     }
 
     /* FIND SUBSTRINGS */
