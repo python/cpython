@@ -803,6 +803,123 @@ def multimode(data):
     return [value for value, count in counts.items() if count == maxcount]
 
 
+## Kernel Density Estimation ###############################################
+
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
+
+_kernel_specs = {}
+
+def _register(*kernels):
+    "Load kernel pdf, cdf, invcdf, and support into _kernel_specs."
+    def deco(builder):
+        spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), builder()))
+        for kernel in kernels:
+            _kernel_specs[kernel] = spec
+        return builder
+    return deco
+
+@_register('normal', 'gauss')
+def _normal_kernel():
+    sqrt2pi = sqrt(2 * pi)
+    sqrt2 = sqrt(2)
+    pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
+    cdf = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+    invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)
+    support = None
+    return pdf, cdf, invcdf, support
+
+@_register('logistic')
+def _logistic_kernel():
+    # 1.0 / (exp(t) + 2.0 + exp(-t))
+    pdf = lambda t: 1/2 / (1.0 + cosh(t))
+    cdf = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+    invcdf = lambda p: log(p / (1.0 - p))
+    support = None
+    return pdf, cdf, invcdf, support
+
+@_register('sigmoid')
+def _sigmoid_kernel():
+    # (2/pi) / (exp(t) + exp(-t))
+    c1 = 1 / pi
+    c2 = 2 / pi
+    c3 = pi / 2
+    pdf = lambda t: c1 / cosh(t)
+    cdf = lambda t: c2 * atan(exp(t))
+    invcdf = lambda p: log(tan(p * c3))
+    support = None
+    return pdf, cdf, invcdf, support
+
+@_register('rectangular', 'uniform')
+def _rectangular_kernel():
+    pdf = lambda t: 1/2
+    cdf = lambda t: 1/2 * t + 1/2
+    invcdf = lambda p: 2.0 * p - 1.0
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
+@_register('triangular')
+def _triangular_kernel():
+    pdf = lambda t: 1.0 - abs(t)
+    cdf = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
+    invcdf = lambda p: sqrt(2.0*p) - 1.0 if p < 1/2 else 1.0 - sqrt(2.0 - 2.0*p)
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
+@_register('parabolic', 'epanechnikov')
+def _parabolic_kernel():
+    pdf = lambda t: 3/4 * (1.0 - t * t)
+    cdf = lambda t: -1/4 * t**3 + 3/4 * t + 1/2                                   # ??? sumprod
+    invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)                  # ??? pi
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
+def _quartic_invcdf_estimate(p):                                                  # ??? move inside _quartic_kernel
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.4258865685331 - 1.0
+    if p >= 0.004 < 0.499:
+        x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
+    return x * sign
+
+@_register('quartic', 'biweight')
+def _quartic_kernel():
+    pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
+    cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
+                            (t**5, t**3, t, 1.0))
+    invcdf = _newton_raphson(_quartic_invcdf_estimate, cdf, pdf)
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
+def _triweight_invcdf_estimate(p):
+    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    x = (2.0 * p) ** 0.3400218741872791 - 1.0
+    return x * sign
+
+@_register('triweight')
+def _triweight_kernel():
+    pdf = lambda t: 35/32 * (1.0 - t * t) ** 3
+    cdf = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
+                            (t**7, t**5, t**3, t, 1.0))
+    invcdf = _newton_raphson(_triweight_invcdf_estimate, cdf, pdf)
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
+@_register('cosine')
+def _cosine_kernel():
+    c1 = pi / 4
+    c2 = pi / 2
+    pdf = lambda t: c1 * cos(c2 * t)
+    cdf = lambda t: 1/2 * sin(c2 * t) + 1/2
+    invcdf = lambda p: 2.0 * asin(2.0 * p - 1.0) / pi  # ??? pi
+    support = 1.0
+    return pdf, cdf, invcdf, support
+
 def kde(data, h, kernel='normal', *, cumulative=False):
     """Kernel Density Estimation:  Create a continuous probability density
     function or cumulative distribution function from discrete samples.
@@ -913,65 +1030,12 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     if h <= 0.0:
         raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
 
-    match kernel:
-
-        case 'normal' | 'gauss':
-            sqrt2pi = sqrt(2 * pi)
-            sqrt2 = sqrt(2)
-            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
-            W = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
-            support = None
-
-        case 'logistic':
-            # 1.0 / (exp(t) + 2.0 + exp(-t))
-            K = lambda t: 1/2 / (1.0 + cosh(t))
-            W = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
-            support = None
-
-        case 'sigmoid':
-            # (2/pi) / (exp(t) + exp(-t))
-            c1 = 1 / pi
-            c2 = 2 / pi
-            K = lambda t: c1 / cosh(t)
-            W = lambda t: c2 * atan(exp(t))
-            support = None
-
-        case 'rectangular' | 'uniform':
-            K = lambda t: 1/2
-            W = lambda t: 1/2 * t + 1/2
-            support = 1.0
-
-        case 'triangular':
-            K = lambda t: 1.0 - abs(t)
-            W = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
-            support = 1.0
-
-        case 'parabolic' | 'epanechnikov':
-            K = lambda t: 3/4 * (1.0 - t * t)
-            W = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
-            support = 1.0
-
-        case 'quartic' | 'biweight':
-            K = lambda t: 15/16 * (1.0 - t * t) ** 2
-            W = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
-                                  (t**5, t**3, t, 1.0))
-            support = 1.0
-
-        case 'triweight':
-            K = lambda t: 35/32 * (1.0 - t * t) ** 3
-            W = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
-                                  (t**7, t**5, t**3, t, 1.0))
-            support = 1.0
-
-        case 'cosine':
-            c1 = pi / 4
-            c2 = pi / 2
-            K = lambda t: c1 * cos(c2 * t)
-            W = lambda t: 1/2 * sin(c2 * t) + 1/2
-            support = 1.0
-
-        case _:
-            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+    kernel_spec = _kernel_specs.get(kernel)
+    if kernel_spec is None:
+        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+    K = kernel_spec['pdf']
+    W = kernel_spec['cdf']
+    support = kernel_spec['support']
 
     if support is None:
 
@@ -1013,6 +1077,51 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     else:
         pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
         return pdf
+
+def kde_random(data, h, kernel='normal', *, seed=None):
+    """Return a function that makes a random selection from the estimated
+    probability density function created by kde(data, h, kernel).
+
+    Providing a *seed* allows reproducible selections within a single
+    thread.  The seed may be an integer, float, str, or bytes.
+
+    A StatisticsError will be raised if the *data* sequence is empty.
+
+    Example:
+
+    >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+    >>> rand = kde_random(data, h=1.5, seed=8675309)
+    >>> new_selections = [rand() for i in range(10)]
+    >>> [round(x, 1) for x in new_selections]
+    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
+
+    """
+
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    kernel_spec = _kernel_specs.get(kernel)
+    if kernel_spec is None:
+        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+    invcdf = kernel_spec['invcdf']
+
+    prng = _random.Random(seed)
+    random = prng.random
+    choice = prng.choice
+
+    def rand():
+        return choice(data) + h * invcdf(random())
+
+    rand.__doc__ = f'Random KDE selection with {h=!r} and {kernel=!r}'
+
+    return rand
 
 
 # Notes on methods for computing quantiles
@@ -1710,97 +1819,3 @@ class NormalDist:
 
     def __setstate__(self, state):
         self._mu, self._sigma = state
-
-
-## kde_random() ##############################################################
-
-def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
-    def f_inv(y):
-        "Return x such that f(x) ≈ y within the specified tolerance."
-        x = f_inv_estimate(y)
-        while abs(diff := f(x) - y) > tolerance:
-            x -= diff / f_prime(x)
-        return x
-    return f_inv
-
-def _quartic_invcdf_estimate(p):
-    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
-    x = (2.0 * p) ** 0.4258865685331 - 1.0
-    if p >= 0.004 < 0.499:
-        x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
-    return x * sign
-
-_quartic_invcdf = _newton_raphson(
-    f_inv_estimate = _quartic_invcdf_estimate,
-    f = lambda t: sumprod((3/16, -5/8, 15/16, 1/2), (t**5, t**3, t, 1.0)),
-    f_prime = lambda t: 15/16 * (1.0 - t * t) ** 2)
-
-def _triweight_invcdf_estimate(p):
-    sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
-    x = (2.0 * p) ** 0.3400218741872791 - 1.0
-    return x * sign
-
-_triweight_invcdf = _newton_raphson(
-    f_inv_estimate = _triweight_invcdf_estimate,
-    f = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
-                          (t**7, t**5, t**3, t, 1.0)),
-    f_prime = lambda t: 35/32 * (1.0 - t * t) ** 3)
-
-_kernel_invcdfs = {
-    'normal': NormalDist().inv_cdf,
-    'logistic': lambda p: log(p / (1 - p)),
-    'sigmoid': lambda p: log(tan(p * pi/2)),
-    'rectangular': lambda p: 2*p - 1,
-    'parabolic': lambda p: 2 * cos((acos(2*p-1) + pi) / 3),
-    'quartic': _quartic_invcdf,
-    'triweight': _triweight_invcdf,
-    'triangular': lambda p: sqrt(2*p) - 1 if p < 1/2 else 1 - sqrt(2 - 2*p),
-    'cosine': lambda p: 2 * asin(2*p - 1) / pi,
-}
-_kernel_invcdfs['gauss'] = _kernel_invcdfs['normal']
-_kernel_invcdfs['uniform'] = _kernel_invcdfs['rectangular']
-_kernel_invcdfs['epanechnikov'] = _kernel_invcdfs['parabolic']
-_kernel_invcdfs['biweight'] = _kernel_invcdfs['quartic']
-
-def kde_random(data, h, kernel='normal', *, seed=None):
-    """Return a function that makes a random selection from the estimated
-    probability density function created by kde(data, h, kernel).
-
-    Providing a *seed* allows reproducible selections within a single
-    thread.  The seed may be an integer, float, str, or bytes.
-
-    A StatisticsError will be raised if the *data* sequence is empty.
-
-    Example:
-
-    >>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-    >>> rand = kde_random(data, h=1.5, seed=8675309)
-    >>> new_selections = [rand() for i in range(10)]
-    >>> [round(x, 1) for x in new_selections]
-    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
-
-    """
-    n = len(data)
-    if not n:
-        raise StatisticsError('Empty data sequence')
-
-    if not isinstance(data[0], (int, float)):
-        raise TypeError('Data sequence must contain ints or floats')
-
-    if h <= 0.0:
-        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
-
-    kernel_invcdf = _kernel_invcdfs.get(kernel)
-    if kernel_invcdf is None:
-        raise StatisticsError(f'Unknown kernel name: {kernel!r}')
-
-    prng = _random.Random(seed)
-    random = prng.random
-    choice = prng.choice
-
-    def rand():
-        return choice(data) + h * kernel_invcdf(random())
-
-    rand.__doc__ = f'Random KDE selection with {h=!r} and {kernel=!r}'
-
-    return rand
