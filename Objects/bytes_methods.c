@@ -496,7 +496,7 @@ parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
         start = 0;                      \
     }
 
-Py_ssize_t
+static Py_ssize_t
 _Py_fast_find(const char *str, Py_ssize_t len,
               const char *sub, Py_ssize_t sub_len,
               Py_ssize_t start, Py_ssize_t end,
