@@ -815,13 +815,7 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
-            _Py_UopsSymbol *v;
-            v = sym_new_not_null(ctx);
-            if (v == NULL) goto out_of_space;
-            stack_pointer[-1] = v;
-            break;
-        }
+        /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
         /* _LOAD_NAME is not a viable micro-op for tier 2 */
 
