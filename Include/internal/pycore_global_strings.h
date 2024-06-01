@@ -236,7 +236,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_abstract_)
         STRUCT_FOR_ID(_active)
         STRUCT_FOR_ID(_align_)
-        STRUCT_FOR_ID(_annotation)
         STRUCT_FOR_ID(_anonymous_)
         STRUCT_FOR_ID(_argtypes_)
         STRUCT_FOR_ID(_as_parameter_)
