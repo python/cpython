@@ -724,6 +724,11 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(x, '.3x'), '1.fe1p+0')
         self.assertEqual(format(x, '.1x'), '1.0p+1')
         self.assertEqual(format(x, '#.1x'), '0x1.0p+1')
+        x = float.fromhex('1.08p+0')
+        self.assertEqual(format(x, 'x'), '1.08p+0')
+        self.assertEqual(format(x, '.1x'), '1.0p+0')
+        x = float.fromhex('1.98p+0')
+        self.assertEqual(format(x, '.1x'), '1.ap+0')
 
         # conversion to string should fail
         self.assertRaises(ValueError, format, 3.0, "s")

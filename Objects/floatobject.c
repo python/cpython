@@ -1251,10 +1251,13 @@ _Py_float_to_hex(double x, int precision, int always_add_sign,
     if (!autoprec) {
         do {
             double frac = ldexp(m, 4*precision);
-            frac -= floor(frac);
+            double ipart = floor(frac);
+            frac -= ipart;
             frac *= 16.0;
             if (frac >= 8.0) {
-                m += ldexp(1.0, -4*precision);
+                if (frac != 8.0 || (int)(ipart) & 0x1) {
+                    m += ldexp(1.0, -4*precision);
+                }
             }
             if ((int)(m) & 0x2) {
                 m /= 2.0;
