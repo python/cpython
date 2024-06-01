@@ -2488,45 +2488,37 @@ static int
 symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
     struct _symtable_entry *parent_ste = st->st_cur;
-    int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
-    if (future_annotations) {
-        if(!symtable_enter_block(st, &_Py_ID(_annotation), AnnotationBlock,
-                                 key, LOCATION(annotation))) {
+    if (parent_ste->ste_annotation_block == NULL) {
+        _Py_block_ty current_type = parent_ste->ste_type;
+        if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
+                                    key, LOCATION(annotation))) {
             VISIT_QUIT(st, 0);
+        }
+        parent_ste->ste_annotation_block =
+            (struct _symtable_entry *)Py_NewRef(st->st_cur);
+        int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
+        if (current_type == ClassBlock && !future_annotations) {
+            st->st_cur->ste_can_see_class_scope = 1;
+            if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
+                return 0;
+            }
+        }
+
+        _Py_DECLARE_STR(format, ".format");
+        // The generated __annotate__ function takes a single parameter with the
+        // internal name ".format".
+        if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM,
+                                LOCATION(annotation))) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(format), USE,
+                                LOCATION(annotation))) {
+            return 0;
         }
     }
     else {
-        if (parent_ste->ste_annotation_block == NULL) {
-            _Py_block_ty current_type = parent_ste->ste_type;
-            if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
-                                      key, LOCATION(annotation))) {
-                VISIT_QUIT(st, 0);
-            }
-            parent_ste->ste_annotation_block =
-                (struct _symtable_entry *)Py_NewRef(st->st_cur);
-            if (current_type == ClassBlock) {
-                st->st_cur->ste_can_see_class_scope = 1;
-                if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(annotation))) {
-                    return 0;
-                }
-            }
-
-            _Py_DECLARE_STR(format, ".format");
-            // The generated __annotate__ function takes a single parameter with the
-            // internal name ".format".
-            if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM,
-                                  LOCATION(annotation))) {
-                return 0;
-            }
-            if (!symtable_add_def(st, &_Py_STR(format), USE,
-                                  LOCATION(annotation))) {
-                return 0;
-            }
-        }
-        else {
-            if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
-                VISIT_QUIT(st, 0);
-            }
+        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
+            VISIT_QUIT(st, 0);
         }
     }
     VISIT(st, expr, annotation);

@@ -384,3 +384,16 @@ class DeferredEvaluationTests(unittest.TestCase):
         # This crashed in an earlier version of the code
         ns = run_code("x: [y for y in range(10)]")
         self.assertEqual(ns["__annotate__"](1), {"x": list(range(10))})
+
+    def test_future_annotations(self):
+        code = """
+        from __future__ import annotations
+
+        def f(x: int) -> int: pass
+        """
+        ns = run_code(textwrap.dedent(code))
+        f = ns["f"]
+        self.assertIsInstance(f.__annotate__, types.FunctionType)
+        annos = {"x": "int", "return": "int"}
+        self.assertEqual(f.__annotate__(inspect.VALUE), annos)
+        self.assertEqual(f.__annotations__, annos)
