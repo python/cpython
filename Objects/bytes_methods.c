@@ -598,7 +598,6 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
 
     /* STORE SUBSTRINGS */
     ADJUST_INDICES(start, end, len);
-    Py_ssize_t slice_len = end - start;
     Py_ssize_t subs_len = 0;
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         Py_buffer subbuf;
@@ -622,7 +621,7 @@ find_first_internal(const char *str, Py_ssize_t len, const char *function_name,
             sub = byte;
             sub_len = 1;
         }
-        if (sub_len > slice_len) {
+        if (sub_len > end - start) {
             continue;
         }
         subs[subs_len] = sub;
