@@ -5982,9 +5982,7 @@ class ForwardRefTests(BaseTestCase):
             return a
 
         self.assertEqual(namespace1(), namespace1())
-        # TODO(PEP 649): Used to be assertNotEqual because get_type_hints()
-        # would mutate the ForwardRef objects. Do we need to preserve this test?
-        self.assertEqual(namespace1(), namespace2())
+        self.assertNotEqual(namespace1(), namespace2())
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
@@ -6049,9 +6047,7 @@ class ForwardRefTests(BaseTestCase):
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
-            self.assertEqual(r1, r2)
-            # TODO(PEP 649): do we need to preserve this test somehow?
-            # self.assertRaises(RecursionError, cmp, r1, r2)
+            self.assertRaises(RecursionError, cmp, r1, r2)
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
@@ -6350,10 +6346,10 @@ class InternalsTests(BaseTestCase):
             DeprecationWarning,
             (
                 "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing._evaluate_forward_ref' is deprecated"
+                "of 'typing.ForwardRef._evaluate' is deprecated"
             )
         ) as cm:
-            self.assertIs(typing._evaluate_forward_ref(f, globals(), {}, recursive_guard=frozenset()), int)
+            self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
 
         self.assertEqual(cm.filename, __file__)
 

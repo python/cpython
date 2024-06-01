@@ -14,6 +14,7 @@ class Format(enum.IntEnum):
 
 
 _Union = None
+_sentinel = object()
 
 
 class ForwardRef:
@@ -36,12 +37,12 @@ class ForwardRef:
     def __init__(
         self,
         arg,
-        is_argument=True,
-        module=None,
         *,
+        module=None,
+        owner=None,
+        is_argument=True,
         is_class=False,
         _globals=None,
-        _owner=None,
         _cell=None,
     ):
         if not isinstance(arg, str):
@@ -56,15 +57,15 @@ class ForwardRef:
         self._forward_code = None
         self._globals = _globals
         self._cell = _cell
-        self._owner = _owner
+        self._owner = owner
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
 
-    def evaluate(self, *, globals=None, locals=None):
+    def evaluate(self, *, globals=None, locals=None, type_params=None, owner=None):
         """Evaluate the forward reference and return the value.
 
-        If the forward reference is not evaluatable, raise a SyntaxError.
+        If the forward reference is not evaluatable, raise an exception.
         """
         if self.__forward_evaluated__:
             return self.__forward_value__
@@ -77,27 +78,63 @@ class ForwardRef:
                 self.__forward_evaluated__ = True
                 self.__forward_value__ = value
                 return value
+        if owner is None:
+            owner = self._owner
+        if owner is None and type_params is None:
+            raise TypeError("Either 'owner' or 'type_params' must be provided")
 
-        code = self.__forward_code__
         if globals is None:
             globals = self._globals
         if globals is None:
-            globals = {}
+            if isinstance(owner, type):
+                module_name = getattr(owner, "__module__", None)
+                if module_name:
+                    module = sys.modules.get(module_name, None)
+                    if module:
+                        globals = getattr(module, "__dict__", None)
+            elif isinstance(owner, types.ModuleType):
+                globals = getattr(owner, "__dict__", None)
+            elif callable(owner):
+                globals = getattr(owner, "__globals__", None)
+        if self.__forward_module__ is not None:
+            globals = getattr(
+                sys.modules.get(self.__forward_module__, None), '__dict__', globals
+            )
+
         if locals is None:
             locals = {}
             if isinstance(self._owner, type):
                 locals.update(vars(self._owner))
-        if self._owner is not None:
+
+        if type_params is None and self._owner is not None:
             # "Inject" type parameters into the local namespace
             # (unless they are shadowed by assignments *in* the local namespace),
             # as a way of emulating annotation scopes when calling `eval()`
             type_params = getattr(self._owner, "__type_params__", None)
-            if type_params:
-                locals = {param.__name__: param for param in type_params} | locals
+        if type_params is not None:
+            locals = {param.__name__: param for param in type_params} | locals
+
+        code = self.__forward_code__
         value = eval(code, globals=globals, locals=locals)
         self.__forward_evaluated__ = True
         self.__forward_value__ = value
         return value
+
+    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
+        import typing
+        import warnings
+
+        if type_params is _sentinel:
+            typing._deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
+            type_params = ()
+        warnings._deprecated(
+            "ForwardRef._evaluate",
+            "{name} is a private API and is retained for compatibility, but will be removed"
+            " in Python 3.16. Use ForwardRef.evaluate() or typing.evaluate_forward_ref() instead.",
+            remove=(3, 16),
+        )
+        return typing.evaluate_forward_ref(self, globals=globalns, locals=localns, type_params=type_params,
+                                           _recursive_guard=recursive_guard)
 
     @property
     def __forward_code__(self):
@@ -163,7 +200,7 @@ class _ForwardReffer(dict):
 
     def __missing__(self, key):
         return ForwardRef(
-            key, _globals=self.globals, _owner=self.owner, is_class=self.is_class
+            key, _globals=self.globals, owner=self.owner, is_class=self.is_class
         )
 
 
@@ -287,7 +324,7 @@ def call_annotate_function(annotate, format, owner=None):
                     fwdref = ForwardRef(
                         name,
                         _cell=cell,
-                        _owner=owner,
+                        owner=owner,
                         _globals=annotate.__globals__,
                         is_class=is_class,
                     )
@@ -366,7 +403,7 @@ def get_annotations(
     annotate = getattr(obj, "__annotate__", None)
     # TODO remove format != VALUE condition
     if annotate is not None and format != Format.VALUE:
-        ann = call_annotate_function(annotate, format)
+        ann = call_annotate_function(annotate, format, owner=obj)
     elif isinstance(obj, type):
         # class
         ann = getattr(obj, '__annotations__', None)

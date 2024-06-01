@@ -127,6 +127,7 @@ __all__ = [
     'cast',
     'clear_overloads',
     'dataclass_transform',
+    'evaluate_forward_ref',
     'final',
     'get_args',
     'get_origin',
@@ -462,7 +463,7 @@ _sentinel = _Sentinel()
 
 
 def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=annotations.Format.VALUE):
+               format=annotations.Format.VALUE, owner=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -473,8 +474,9 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
-        return _evaluate_forward_ref(t, globalns, localns, type_params,
-                                     recursive_guard=recursive_guard, format=format)
+        return evaluate_forward_ref(t, globals=globalns, locals=localns,
+                                    type_params=type_params, owner=owner,
+                                    _recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         if isinstance(t, GenericAlias):
             args = tuple(
@@ -492,7 +494,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard,
-                format=format
+                format=format, owner=owner,
             )
             for a in t.__args__
         )
@@ -1023,37 +1025,54 @@ def _make_forward_ref(code, **kwargs):
     return forward_ref
 
 
-def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel, *,
-                          recursive_guard, format=annotations.Format.VALUE):
+def evaluate_forward_ref(
+    forward_ref,
+    *,
+    owner=None,
+    globals=None,
+    locals=None,
+    type_params=None,
+    format=annotations.Format.VALUE,
+    _recursive_guard=frozenset(),
+):
+    """Evaluate a forward reference as a type hint.
+
+    This is similar to calling the ForwardRef.evaluate() method,
+    but unlike that method, evaluate_forward_ref() also:
+    * Recursively evaluates forward references nested within the type hint.
+    * Rejects certain objects that are not valid type hints.
+    * Replaces type hints that evaluate to None with types.NoneType.
+    * Supports the *FORWARDREF* and *SOURCE* formats.
+
+    *forward_ref* must be an instance of ForwardRef. *owner*, if given,
+    should be the object that holds the annotations that the forward reference
+    derived from, such as a module, class object, or function. It is used to
+    infer the namespaces to use for looking up names. *globals* and *locals*
+    can also be explicitly given to provide the global and local namespaces.
+    *type_params* is a tuple of type parameters that are in scope when
+    evaluating the forward reference. This parameter must be provided (though
+    it may be an empty tuple) if *owner* is not given and the forward reference
+    does not already have an owner set. *format* specifies the format of the
+    annotation and is a member of the annoations.Format enum.
+
+    """
     if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._evaluate_forward_ref")
+        _deprecation_warning_for_no_type_params_passed("typing.evaluate_forward_ref")
         type_params = ()
-    if forward_ref.__forward_arg__ in recursive_guard:
+    if format == annotations.Format.SOURCE:
+        return forward_ref.__forward_arg__
+    if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
-    if globalns is None and localns is None:
-        globalns = localns = {}
-    elif globalns is None:
-        globalns = localns
-    elif localns is None:
-        localns = globalns
-    if forward_ref.__forward_module__ is not None:
-        globalns = getattr(
-            sys.modules.get(forward_ref.__forward_module__, None), '__dict__', globalns
-        )
-    if type_params:
-        # "Inject" type parameters into the local namespace
-        # (unless they are shadowed by assignments *in* the local namespace),
-        # as a way of emulating annotation scopes when calling `eval()`
-        locals_to_pass = {param.__name__: param for param in type_params} | localns
-    else:
-        locals_to_pass = localns
+
     try:
-        value = eval(forward_ref.__forward_code__, globalns, locals_to_pass)
+        value = forward_ref.evaluate(globals=globals, locals=locals,
+                                     type_params=type_params, owner=owner)
     except NameError:
-        if format is annotations.Format.FORWARDREF:
+        if format == annotations.Format.FORWARDREF:
             return forward_ref
         else:
             raise
+
     type_ = _type_check(
         value,
         "Forward references must evaluate to types.",
@@ -1062,11 +1081,12 @@ def _evaluate_forward_ref(forward_ref, globalns, localns, type_params=_sentinel,
     )
     return _eval_type(
         type_,
-        globalns,
-        localns,
+        globals,
+        locals,
         type_params,
-        recursive_guard=(recursive_guard | {forward_ref.__forward_arg__}),
+        recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
+        owner=owner,
     )
 
 
@@ -2393,7 +2413,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
-                                   format=format)
+                                   format=format, owner=obj)
                 hints[name] = value
         if include_extras or format is annotations.Format.SOURCE:
             return hints
@@ -2430,7 +2450,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        hints[name] = _eval_type(value, globalns, localns, type_params, format=format)
+        hints[name] = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 
