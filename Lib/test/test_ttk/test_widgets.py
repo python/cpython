@@ -777,7 +777,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
 
         cbtn2['command'] = ''
         res = cbtn2.invoke()
-        if tk_version >= (8, 7):
+        if tk_version >= (8, 7) and self.wantobjects:
             self.assertEqual(res, ())
         else:
             self.assertEqual(str(res), '')
