@@ -2,7 +2,7 @@
 
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
-#include "pycore_floatobject.h"   // _Py_dg_dtoa_hex()
+#include "pycore_floatobject.h"   // _Py_float_to_hex()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 
 #include <locale.h>               // localeconv()
@@ -884,8 +884,8 @@ char * PyOS_double_to_string(double val,
            type of the stdlib behaves differently wrt the '#' option. */
         if (format_code == 'x') {
             PyMem_Free(buf);
-            return _Py_dg_dtoa_hex(val, precision, flags & Py_DTSF_SIGN,
-                                   flags & Py_DTSF_ALT, upper, 0);
+            return _Py_float_to_hex(val, precision, flags & Py_DTSF_SIGN,
+                                    flags & Py_DTSF_ALT, upper, 0);
         }
 
         PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
@@ -994,9 +994,9 @@ format_float_short(double d, char format_code,
     Py_ssize_t decpt, digits_len, vdigits_start, vdigits_end;
 
     if (format_code == 'x' && Py_IS_FINITE(d)) {
-        return _Py_dg_dtoa_hex(d, precision, always_add_sign,
-                               use_alt_formatting,
-                               float_strings == uc_float_strings, 0);
+        return _Py_float_to_hex(d, precision, always_add_sign,
+                                use_alt_formatting,
+                                float_strings == uc_float_strings, 0);
     }
 
     _Py_SET_53BIT_PRECISION_HEADER;

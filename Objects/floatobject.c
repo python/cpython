@@ -1222,8 +1222,8 @@ hex_from_char(char c) {
  */
 
 char *
-_Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
-                int use_alt_formatting, int upper, int float_hex)
+_Py_float_to_hex(double x, int precision, int always_add_sign,
+                 int use_alt_formatting, int upper, int float_hex)
 {
     int e;
     double m = frexp(fabs(x), &e);
@@ -1354,7 +1354,7 @@ float_hex_impl(PyObject *self)
         return float_repr((PyFloatObject *)self);
     }
 
-    char *buf = _Py_dg_dtoa_hex(x, -1, 0, 1, 0, 1);
+    char *buf = _Py_float_to_hex(x, -1, 0, 1, 0, 1);
 
     if (buf) {
         result = PyUnicode_FromString(buf);

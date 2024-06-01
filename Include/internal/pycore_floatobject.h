@@ -55,8 +55,8 @@ extern PyObject* _Py_string_to_number_with_underscores(
 
 extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
 
-extern char * _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
-                              int use_alt_formatting, int upper, int float_hex);
+extern char * _Py_float_to_hex(double x, int precision, int always_add_sign,
+                               int use_alt_formatting, int upper, int float_hex);
 
 #ifdef __cplusplus
 }
