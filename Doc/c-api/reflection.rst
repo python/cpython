@@ -7,17 +7,29 @@ Reflection
 
 .. c:function:: PyObject* PyEval_GetBuiltins(void)
 
+   .. deprecated:: 3.13
+
+      Use :c:func:`PyEval_GetFrameBuiltins` instead.
+
    Return a dictionary of the builtins in the current execution frame,
    or the interpreter of the thread state if no frame is currently executing.
 
 
 .. c:function:: PyObject* PyEval_GetLocals(void)
 
+   .. deprecated:: 3.13
+
+      Use :c:func:`PyEval_GetFrameLocals` instead.
+
    Return a dictionary of the local variables in the current execution frame,
    or ``NULL`` if no frame is currently executing.
 
 
 .. c:function:: PyObject* PyEval_GetGlobals(void)
+
+   .. deprecated:: 3.13
+
+      Use :c:func:`PyEval_GetFrameGlobals` instead.
 
    Return a dictionary of the global variables in the current execution frame,
    or ``NULL`` if no frame is currently executing.
@@ -29,6 +41,32 @@ Reflection
    currently executing.
 
    See also :c:func:`PyThreadState_GetFrame`.
+
+
+.. c:function:: PyObject* PyEval_GetFrameBuiltins(void)
+
+   Return a dictionary of the builtins in the current execution frame,
+   or the interpreter of the thread state if no frame is currently executing.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: PyObject* PyEval_GetFrameLocals(void)
+
+   Return a dictionary of the local variables in the current execution frame,
+   or ``NULL`` if no frame is currently executing. Equivalent to calling
+   :func:`locals` in Python code.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: PyObject* PyEval_GetFrameGlobals(void)
+
+   Return a dictionary of the global variables in the current execution frame,
+   or ``NULL`` if no frame is currently executing. Equivalent to calling
+   :func:`globals` in Python code.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: const char* PyEval_GetFuncName(PyObject *func)
