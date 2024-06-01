@@ -1432,7 +1432,8 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
             values = ('menubar', 'normal', 'tearoff')
         else:
             values = ('normal', 'tearoff', 'menubar')
-        self.checkEnumParam(widget, 'type', *values)
+        self.checkEnumParam(widget, 'type', *values,
+                            allow_empty=tk_version < (8, 7))
 
     def test_entryconfigure(self):
         m1 = self.create()

@@ -184,7 +184,7 @@ class AbstractLabelTest(AbstractWidgetTest):
         if tk_version >= (8, 7):
             values.append('')
         widget = self.create()
-        self.checkEnumParam(widget, 'compound', *values)
+        self.checkEnumParam(widget, 'compound', *values, allow_empty=True)
 
     def test_configure_state(self):
         widget = self.create()
