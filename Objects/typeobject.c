@@ -5743,7 +5743,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type,
 }
 
 
-void
+static void
 fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
                  int isbuiltin, int final)
 {
