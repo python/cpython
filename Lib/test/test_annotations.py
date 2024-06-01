@@ -72,7 +72,7 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_custom_object_with_annotations(self):
         class C:
-            def __init__(self, x: int, y: str):
+            def __init__(self, x: int = 0, y: str = ""):
                 self.__annotations__ = {"x": int, "y": str}
 
         self.assertEqual(annotations.get_annotations(C()), {"x": int, "y": str})
