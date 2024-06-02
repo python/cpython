@@ -560,21 +560,18 @@ def get_annotations(
     if eval_str and format != Format.VALUE:
         raise ValueError("eval_str=True is only supported with format=Format.VALUE")
 
-    annotate = getattr(obj, "__annotate__", None)
-    if annotate is not None:
-        ann = call_annotate_function(annotate, format, owner=obj)
-        if not isinstance(ann, dict):
-            raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-        if not eval_str:
+    # For VALUE format, we look at __annotations__ directly.
+    if format != Format.VALUE:
+        annotate = getattr(obj, "__annotate__", None)
+        if annotate is not None:
+            ann = call_annotate_function(annotate, format, owner=obj)
+            if not isinstance(ann, dict):
+                raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
             return dict(ann)
-    else:
-        ann = None
 
+    ann = getattr(obj, "__annotations__", None)
     if isinstance(obj, type):
         # class
-        if ann is None:
-            ann = getattr(obj, "__annotations__", None)
-
         obj_globals = None
         module_name = getattr(obj, "__module__", None)
         if module_name:
@@ -585,8 +582,6 @@ def get_annotations(
         unwrap = obj
     elif isinstance(obj, types.ModuleType):
         # module
-        if ann is None:
-            ann = getattr(obj, "__annotations__", None)
         obj_globals = getattr(obj, "__dict__")
         obj_locals = None
         unwrap = None
@@ -594,12 +589,10 @@ def get_annotations(
         # this includes types.Function, types.BuiltinFunctionType,
         # types.BuiltinMethodType, functools.partial, functools.singledispatch,
         # "class funclike" from Lib/test/test_inspect... on and on it goes.
-        if ann is None:
-            ann = getattr(obj, "__annotations__", None)
         obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
-    elif (ann := getattr(obj, "__annotations__", None)) is not None:
+    elif ann is not None:
         obj_globals = obj_locals = unwrap = None
     else:
         raise TypeError(f"{obj!r} is not a module, class, or callable.")

@@ -213,11 +213,16 @@ class TestSourceFormat(unittest.TestCase):
 
     def test_unsupported_operations(self):
         format_msg = "Cannot stringify annotation containing string formatting"
-        def f(fstring: f"{a}"): pass
+
+        def f(fstring: f"{a}"):
+            pass
+
         with self.assertRaisesRegex(TypeError, format_msg):
             annotations.get_annotations(f, format=annotations.Format.SOURCE)
 
-        def f(fstring_format: f"{a:02d}"): pass
+        def f(fstring_format: f"{a:02d}"):
+            pass
+
         with self.assertRaisesRegex(TypeError, format_msg):
             annotations.get_annotations(f, format=annotations.Format.SOURCE)
 
@@ -569,5 +574,24 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(
             annotations.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True),
+            {"x": int},
+        )
+
+    def test_modify_annotations(self):
+        def f(x: int):
+            pass
+
+        self.assertEqual(annotations.get_annotations(f), {"x": int})
+        self.assertEqual(
+            annotations.get_annotations(f, format=annotations.Format.FORWARDREF),
+            {"x": int},
+        )
+
+        f.__annotations__["x"] = str
+        # The modification is reflected in VALUE (the default)
+        self.assertEqual(annotations.get_annotations(f), {"x": str})
+        # ... but not in FORWARDREF, which uses __annotate__
+        self.assertEqual(
+            annotations.get_annotations(f, format=annotations.Format.FORWARDREF),
             {"x": int},
         )

@@ -6637,7 +6637,7 @@ class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_modules(self):
         ann_module_type_hints = {'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
-        self.assertEqual(gth(ann_module2), {'i': int, 'j': int, 'x': float})
+        self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
     @skip("known bug")
