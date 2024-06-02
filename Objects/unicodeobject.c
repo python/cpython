@@ -9055,80 +9055,74 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     }
 
 static Py_ssize_t
-fast_find(const void *str, int kind, Py_ssize_t len,
-          const void *sub, int sub_kind, Py_ssize_t sub_len,
+fast_find(const void *buf1, int kind1, Py_ssize_t len1,
+          const void *buf2, int kind2, Py_ssize_t len2,
           Py_ssize_t start, Py_ssize_t end,
-          int isascii, int direction)
+          int isascii1, int direction)
 {
     Py_ssize_t result;
 
-    assert(sub_kind <= kind);
+    assert(kind2 <= kind1);
     assert(start >= 0);
-    assert(end <= len);
-    if (sub_len > end - start) {
+    assert(end <= len1);
+    if (end - start < len2)
         return -1;
-    }
-    else if (sub_len == 1) {
-        Py_UCS4 ch = PyUnicode_READ(sub_kind, sub, 0);
-        result = findchar((const char *)str + kind * start, kind, end - start,
-                          ch, direction);
-        if (result == -1) {
+
+    if (len2 == 1) {
+        Py_UCS4 ch = PyUnicode_READ(kind2, buf2, 0);
+        result = findchar((const char *)buf1 + kind1*start,
+                          kind1, end - start, ch, direction);
+        if (result == -1)
             return -1;
-        }
-        return start + result;
+        else
+            return start + result;
     }
 
-    if (sub_kind != kind) {
-        sub = unicode_askind(sub_kind, sub, sub_len, kind);
-        if (!sub) {
+    if (kind2 != kind1) {
+        buf2 = unicode_askind(kind2, buf2, len2, kind1);
+        if (!buf2)
             return -2;
-        }
     }
 
     if (direction > 0) {
-        switch (kind) {
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
-            if (isascii) {
-                result = asciilib_find_slice(str, len, sub, sub_len, start, end);
-            }
-            else {
-                result = ucs1lib_find_slice(str, len, sub, sub_len, start, end);
-            }
+            if (isascii1)
+                result = asciilib_find_slice(buf1, len1, buf2, len2, start, end);
+            else
+                result = ucs1lib_find_slice(buf1, len1, buf2, len2, start, end);
             break;
         case PyUnicode_2BYTE_KIND:
-            result = ucs2lib_find_slice(str, len, sub, sub_len, start, end);
+            result = ucs2lib_find_slice(buf1, len1, buf2, len2, start, end);
             break;
         case PyUnicode_4BYTE_KIND:
-            result = ucs4lib_find_slice(str, len, sub, sub_len, start, end);
+            result = ucs4lib_find_slice(buf1, len1, buf2, len2, start, end);
             break;
         default:
             Py_UNREACHABLE();
         }
     }
     else {
-        switch (kind) {
+        switch (kind1) {
         case PyUnicode_1BYTE_KIND:
-            if (isascii) {
-                result = asciilib_rfind_slice(str, len, sub, sub_len, start, end);
-            }
-            else {
-                result = ucs1lib_rfind_slice(str, len, sub, sub_len, start, end);
-            }
+            if (isascii1)
+                result = asciilib_rfind_slice(buf1, len1, buf2, len2, start, end);
+            else
+                result = ucs1lib_rfind_slice(buf1, len1, buf2, len2, start, end);
             break;
         case PyUnicode_2BYTE_KIND:
-            result = ucs2lib_rfind_slice(str, len, sub, sub_len, start, end);
+            result = ucs2lib_rfind_slice(buf1, len1, buf2, len2, start, end);
             break;
         case PyUnicode_4BYTE_KIND:
-            result = ucs4lib_rfind_slice(str, len, sub, sub_len, start, end);
+            result = ucs4lib_rfind_slice(buf1, len1, buf2, len2, start, end);
             break;
         default:
             Py_UNREACHABLE();
         }
     }
 
-    if (sub_kind != kind) {
-        PyMem_Free((void *)sub);
-    }
+    if (kind2 != kind1)
+        PyMem_Free((void *)buf2);
 
     return result;
 }
