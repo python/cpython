@@ -165,27 +165,20 @@ def get_weekends_count(start_date , end_date):
             end_date_weekday = end_date.weekday()
             first_day_of_week_dayoftheweek = start_date_weekday
             total_days = (end_date - start_date).days + 1 #caution
-
             div = int(total_days / 7)
             rem = int(total_days % 7)
-
             num_weekends = div * 2
-            
             for i in range(rem):
                 if(first_day_of_week_dayoftheweek + i) % 7 in (5,6):
                     num_weekends += 1
-
             # print("WEEKENDS NO.",num_weekends)
             num_weekdays = (total_days - num_weekends)
             # print("WEEKDAYS NO.", num_weekdays)
-
             # # Exclude holidays from weekdays
             # for holiday in holidays:
             #     if start_date <= holiday <= end_date and holiday.weekday() not in (5, 6):
             #         num_weekdays -= 1
-
             return num_weekends
-
 
 def monthrange(year, month):
     """Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for
