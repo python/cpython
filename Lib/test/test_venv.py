@@ -45,11 +45,11 @@ if is_android or is_apple_mobile or is_emscripten or is_wasi:
     raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
-def check_output(cmd, encoding=None):
+def check_output(cmd, encoding=None, env=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env={**os.environ, "PYTHONHOME": ""})
+        env={**os.environ, "PYTHONHOME": ""} if env is None else env)
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
@@ -652,7 +652,7 @@ class BasicTest(BaseTest):
         if asan_options := os.environ.get("ASAN_OPTIONS"):
             # prevent https://github.com/python/cpython/issues/104839
             child_env["ASAN_OPTIONS"] = asan_options
-        subprocess.check_call(cmd, stderr=subprocess.DEVNULL, env=child_env)
+        check_output(cmd, env=child_env)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
         cmd = [self.envpy(), '-S', '-c', 'import sys; print(sys.path)']
