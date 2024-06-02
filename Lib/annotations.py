@@ -243,6 +243,27 @@ class Stringifier:
     __floordiv__ = _make_binop(ast.FloorDiv())
     __pow__ = _make_binop(ast.Pow())
 
+    def _make_compare(op):
+        def compare(self, other):
+            return Stringifier(ast.Compare(left=self.node, ops=[op], comparators=[self._convert(other)]))
+
+        return compare
+
+    __lt__ = _make_compare(ast.Lt())
+    __le__ = _make_compare(ast.LtE())
+    __eq__ = _make_compare(ast.Eq())
+    __ne__ = _make_compare(ast.NotEq())
+    __gt__ = _make_compare(ast.Gt())
+    __ge__ = _make_compare(ast.GtE())
+
+    # Doesn't work because the return type is always coerced to a bool
+    # __contains__ = _make_compare(ast.In())
+
+    # Must implement this since we set __eq__. We hash by identity so that
+    # stringifiers in dict keys are kept separate.
+    def __hash__(self):
+        return id(self)
+
     def _make_unary_op(op):
         def unary_op(self):
             return Stringifier(ast.UnaryOp(op, self.node))
@@ -254,6 +275,10 @@ class Stringifier:
     __neg__ = _make_unary_op(ast.USub())
 
     def __getitem__(self, other):
+        # Special case, to avoid stringifying references to class-scoped variables
+        # as '__classdict__["x"]'.
+        if isinstance(self.node, ast.Name) and self.node.id == "__classdict__":
+            raise KeyError
         if isinstance(other, tuple):
             elts = [self._convert(elt) for elt in other]
             other = ast.Tuple(elts)
