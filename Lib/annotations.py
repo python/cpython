@@ -15,24 +15,26 @@ class Format(enum.IntEnum):
 
 _Union = None
 _sentinel = object()
+_slots = (
+    "__forward_evaluated__",
+    "__forward_value__",
+    "__forward_is_argument__",
+    "__forward_is_class__",
+    "__forward_module__",
+    "__weakref__",
+    "__arg__",
+    "__ast_node__",
+    "__code__",
+    "__globals__",
+    "__owner__",
+    "__cell__",
+)
 
 
 class ForwardRef:
     """Internal wrapper to hold a forward reference."""
 
-    __slots__ = (
-        "__forward_arg__",
-        "__forward_evaluated__",
-        "__forward_value__",
-        "__forward_is_argument__",
-        "__forward_is_class__",
-        "__forward_module__",
-        "__weakref__",
-        "_forward_code",
-        "_globals",
-        "_owner",
-        "_cell",
-    )
+    __slots__ = _slots
 
     def __init__(
         self,
@@ -48,16 +50,17 @@ class ForwardRef:
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
-        self.__forward_arg__ = arg
+        self.__arg__ = arg
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
-        self._forward_code = None
-        self._globals = _globals
-        self._cell = _cell
-        self._owner = owner
+        self.__code__ = None
+        self.__ast_node__ = None
+        self.__globals__ = _globals
+        self.__cell__ = _cell
+        self.__owner__ = owner
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -69,9 +72,9 @@ class ForwardRef:
         """
         if self.__forward_evaluated__:
             return self.__forward_value__
-        if self._cell is not None:
+        if self.__cell__ is not None:
             try:
-                value = self._cell.cell_contents
+                value = self.__cell__.cell_contents
             except ValueError:
                 pass
             else:
@@ -79,12 +82,12 @@ class ForwardRef:
                 self.__forward_value__ = value
                 return value
         if owner is None:
-            owner = self._owner
+            owner = self.__owner__
         if owner is None and type_params is None:
             raise TypeError("Either 'owner' or 'type_params' must be provided")
 
         if globals is None:
-            globals = self._globals
+            globals = self.__globals__
         if globals is None:
             if isinstance(owner, type):
                 module_name = getattr(owner, "__module__", None)
@@ -103,14 +106,14 @@ class ForwardRef:
 
         if locals is None:
             locals = {}
-            if isinstance(self._owner, type):
-                locals.update(vars(self._owner))
+            if isinstance(self.__owner__, type):
+                locals.update(vars(self.__owner__))
 
-        if type_params is None and self._owner is not None:
+        if type_params is None and self.__owner__ is not None:
             # "Inject" type parameters into the local namespace
             # (unless they are shadowed by assignments *in* the local namespace),
             # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(self._owner, "__type_params__", None)
+            type_params = getattr(self.__owner__, "__type_params__", None)
         if type_params is not None:
             locals = {param.__name__: param for param in type_params} | locals
 
@@ -137,9 +140,18 @@ class ForwardRef:
                                            _recursive_guard=recursive_guard)
 
     @property
+    def __forward_arg__(self):
+        if self.__arg__ is not None:
+            return self.__arg__
+        if self.__ast_node__ is not None:
+            self.__arg__ = ast.unparse(self.__ast_node__)
+            return self.__arg__
+        raise RuntimeError("Forward reference is not initialized")
+
+    @property
     def __forward_code__(self):
-        if self._forward_code is not None:
-            return self._forward_code
+        if self.__code__ is not None:
+            return self.__code__
         arg = self.__forward_arg__
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
@@ -149,10 +161,10 @@ class ForwardRef:
         else:
             arg_to_compile = arg
         try:
-            self._forward_code = compile(arg_to_compile, "<string>", "eval")
+            self.__code__ = compile(arg_to_compile, "<string>", "eval")
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
-        return self._forward_code
+        return self.__code__
 
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
@@ -193,39 +205,43 @@ class ForwardRef:
         return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
 
 
-class _ForwardReffer(dict):
-    def __init__(self, namespace, globals, owner, is_class):
-        super().__init__(namespace)
-        self.namespace = namespace
-        self.globals = globals
-        self.owner = owner
-        self.is_class = is_class
+class _Stringifier:
+    # Must match the slots on ForwardRef, so we can turn an instance of one into an
+    # instance of the other in place.
+    __slots__ = _slots
 
-    def __missing__(self, key):
-        return ForwardRef(
-            key, _globals=self.globals, owner=self.owner, is_class=self.is_class
-        )
+    def __init__(self, node, globals=None, owner=None, is_class=False, cell=None):
+        assert isinstance(node, ast.AST)
+        self.__arg__ = None
+        self.__forward_evaluated__ = False
+        self.__forward_value__ = None
+        self.__forward_is_argument__ = False
+        self.__forward_is_class__ = is_class
+        self.__forward_module__ = None
+        self.__code__ = None
+        self.__ast_node__ = node
+        self.__globals__ = globals
+        self.__cell__ = cell
+        self.__owner__ = owner
 
-
-class Stringifier:
-    def __init__(self, node):
-        self.node = node
-
-    def _convert(self, other):
-        if isinstance(other, Stringifier):
-            return other.node
+    def __convert(self, other):
+        if isinstance(other, _Stringifier):
+            return other.__ast_node__
         elif isinstance(other, slice):
             return ast.Slice(
-                lower=self._convert(other.start) if other.start is not None else None,
-                upper=self._convert(other.stop) if other.stop is not None else None,
-                step=self._convert(other.step) if other.step is not None else None,
+                lower=self.__convert(other.start) if other.start is not None else None,
+                upper=self.__convert(other.stop) if other.stop is not None else None,
+                step=self.__convert(other.step) if other.step is not None else None,
             )
         else:
-            return ast.Name(id=repr(other))
+            return ast.Constant(value=other)
+
+    def __make_new(self, node):
+        return _Stringifier(node, self.__globals__, self.__owner__, self.__forward_is_class__)
 
     def _make_binop(op: ast.AST):
         def binop(self, other):
-            return Stringifier(ast.BinOp(self.node, op, self._convert(other)))
+            return self.__make_new(ast.BinOp(self.__ast_node__, op, self.__convert(other)))
 
         return binop
 
@@ -247,7 +263,7 @@ class Stringifier:
 
     def _make_compare(op):
         def compare(self, other):
-            return Stringifier(ast.Compare(left=self.node, ops=[op], comparators=[self._convert(other)]))
+            return self.__make_new(ast.Compare(left=self.__ast_node__, ops=[op], comparators=[self.__convert(other)]))
 
         return compare
 
@@ -270,7 +286,7 @@ class Stringifier:
 
     def _make_unary_op(op):
         def unary_op(self):
-            return Stringifier(ast.UnaryOp(op, self.node))
+            return self.__make_new(ast.UnaryOp(op, self.__ast_node__))
 
         return unary_op
 
@@ -283,40 +299,53 @@ class Stringifier:
     def __getitem__(self, other):
         # Special case, to avoid stringifying references to class-scoped variables
         # as '__classdict__["x"]'.
-        if isinstance(self.node, ast.Name) and self.node.id == "__classdict__":
+        if isinstance(self.__ast_node__, ast.Name) and self.__ast_node__.id == "__classdict__":
             raise KeyError
         if isinstance(other, tuple):
-            elts = [self._convert(elt) for elt in other]
+            elts = [self.__convert(elt) for elt in other]
             other = ast.Tuple(elts)
         else:
-            other = self._convert(other)
-        return Stringifier(ast.Subscript(self.node, other))
+            other = self.__convert(other)
+        assert isinstance(other, ast.AST), repr(other)
+        return self.__make_new(ast.Subscript(self.__ast_node__, other))
 
     def __getattr__(self, attr):
-        return Stringifier(ast.Attribute(self.node, attr))
+        return self.__make_new(ast.Attribute(self.__ast_node__, attr))
 
     def __call__(self, *args, **kwargs):
-        return Stringifier(
+        return self.__make_new(
             ast.Call(
-                self.node,
-                [self._convert(arg) for arg in args],
+                self.__ast_node__,
+                [self.__convert(arg) for arg in args],
                 [
-                    ast.keyword(key, self._convert(value))
+                    ast.keyword(key, self.__convert(value))
                     for key, value in kwargs.items()
                 ],
             )
         )
 
     def __iter__(self):
-        yield Stringifier(ast.Starred(self.node))
+        yield self.__make_new(ast.Starred(self.__ast_node__))
 
     def __repr__(self):
-        return ast.unparse(self.node)
+        return ast.unparse(self.__ast_node__)
 
 
 class _StringifierDict(dict):
+    def __init__(self, namespace, globals=None, owner=None, is_class=False):
+        super().__init__(namespace)
+        self.namespace = namespace
+        self.globals = globals
+        self.owner = owner
+        self.is_class = is_class
+        self.stringifiers = []
+
     def __missing__(self, key):
-        return Stringifier(ast.Name(key))
+        fwdref = _Stringifier(
+            ast.Name(id=key), globals=self.globals, owner=self.owner, is_class=self.is_class
+        )
+        self.stringifiers.append(fwdref)
+        return fwdref
 
 
 def call_annotate_function(annotate, format, owner=None):
@@ -346,7 +375,7 @@ def call_annotate_function(annotate, format, owner=None):
     if format == Format.FORWARDREF:
         namespace = {**annotate.__builtins__, **annotate.__globals__}
         is_class = isinstance(owner, type)
-        globals = _ForwardReffer(namespace, annotate.__globals__, owner, is_class)
+        globals = _StringifierDict(namespace, annotate.__globals__, owner, is_class)
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars
             new_closure = []
@@ -358,13 +387,14 @@ def call_annotate_function(annotate, format, owner=None):
                         name = freevars[i]
                     else:
                         name = "__cell__"
-                    fwdref = ForwardRef(
-                        name,
-                        _cell=cell,
+                    fwdref = _Stringifier(
+                        ast.Name(id=name),
+                        cell=cell,
                         owner=owner,
-                        _globals=annotate.__globals__,
+                        globals=annotate.__globals__,
                         is_class=is_class,
                     )
+                    globals.stringifiers.append(fwdref)
                     new_closure.append(types.CellType(fwdref))
                 else:
                     new_closure.append(cell)
@@ -372,9 +402,12 @@ def call_annotate_function(annotate, format, owner=None):
         else:
             closure = None
         func = types.FunctionType(annotate.__code__, globals, closure=closure)
-        return func(Format.VALUE)
+        result = func(Format.VALUE)
+        for obj in globals.stringifiers:
+            obj.__class__ = ForwardRef
+        return result
     elif format == Format.SOURCE:
-        globals = _StringifierDict()
+        globals = _StringifierDict({})
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars
             new_closure = []
@@ -383,7 +416,7 @@ def call_annotate_function(annotate, format, owner=None):
                     name = freevars[i]
                 else:
                     name = "__cell__"
-                fwdref = Stringifier(ast.Name(id=name))
+                fwdref = _Stringifier(ast.Name(id=name))
                 new_closure.append(types.CellType(fwdref))
             closure = tuple(new_closure)
         else:
