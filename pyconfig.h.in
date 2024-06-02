@@ -899,10 +899,10 @@
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
-/* Define if you hve the 'panel' library */
+/* Define if you have the 'panel' library */
 #undef HAVE_PANEL
 
-/* Define if you hve the 'panelw' library */
+/* Define if you have the 'panelw' library */
 #undef HAVE_PANELW
 
 /* Define to 1 if you have the <panel.h> header file. */

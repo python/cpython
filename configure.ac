@@ -6568,8 +6568,8 @@ fi
 
 dnl check for ncurses/ncursesw and panel/panelw
 dnl NOTE: old curses is not detected.
-dnl have_curses=[no, ncursesw, ncurses]
-dnl have_panel=[no, panelw, panel]
+dnl have_curses=[no, yes]
+dnl have_panel=[no, yes]
 have_curses=no
 have_panel=no
 
@@ -6583,19 +6583,12 @@ AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
 AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
 PKG_CHECK_MODULES([CURSES], [$1],
   [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
-   AS_VAR_SET([have_curses], [$1])],
-  [WITH_SAVE_ENV(
-    [AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
-     AC_CHECK_HEADERS([$1/curses.h $1/ncurses.h],
-                      [AS_VAR_SET([have_curses], [$1])])])])
-AS_VAR_IF([have_curses], [$1],
-  [PKG_CHECK_MODULES([PANEL], [$2],
-    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you hve the '$2' library])
-     AS_VAR_SET([have_panel], [$2])],
-    [WITH_SAVE_ENV(
-      [AS_VAR_APPEND([CPPFLAGS], [" $PANEL_CFLAGS"])
-       AC_CHECK_HEADERS([$1/panel.h],
-                        [AS_VAR_SET([have_panel], [$2])])])])])
+   AS_VAR_SET([have_curses], [yes])
+   PKG_CHECK_MODULES([PANEL], [$2],
+    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
+     AS_VAR_SET([have_panel], [yes])],
+    [AS_VAR_SET([have_panel], [no])])],
+  [AS_VAR_SET([have_curses=no])])
 AS_VAR_POPDEF([curses_var])
 AS_VAR_POPDEF([panel_var])])
 
@@ -6603,20 +6596,31 @@ AS_VAR_POPDEF([panel_var])])
 PY_CHECK_CURSES([ncursesw], [panelw])
 AS_VAR_IF([have_curses], [no],
           [PY_CHECK_CURSES([ncurses], [panel])])
-AS_CASE([$have_curses],
-        [ncursesw],
-        [CURSES_CFLAGS=${CURSES_CFLAGS-""}
-         CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}],
-        [ncurses],
-        [CURSES_CFLAGS=${CURSES_CFLAGS-""}
-         CURSES_LIBS=${CURSES_LIBS-"-lncurses"}])
-AS_CASE([$have_panel],
-        [panelw],
-        [PANEL_CFLAGS=${PANEL_CFLAGS-""}
-         PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}],
-        [panel],
-        [PANEL_CFLAGS=${PANEL_CFLAGS-""}
-         PANEL_LIBS=${PANEL_LIBS-"-lpanel"}])
+
+WITH_SAVE_ENV([
+  # Make sure we've got the header defines.
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
+  AC_CHECK_HEADERS(m4_normalize([
+    curses.h ncurses.h panel.h
+    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
+    ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
+  ]))
+
+  # Check that we're able to link with crucial curses/panel functions. This
+  # also serves as a fallback in case pkg-config failed.
+  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS"])
+  AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
+    [AS_VAR_IF([have_curses], [no],
+      [AS_VAR_SET([have_curses], [yes])
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+       AC_SEARCH_LIBS(
+         [update_panels], [panel panelw],
+         [AS_VAR_IF([have_panel], [no],
+           [AS_VAR_SET([have_panel], [yes])
+            PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
+         [AS_VAR_SET([have_panel], [no])])])],
+    [AS_VAR_SET([have_curses], [no])])
+])
 
 dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
 dnl structs since version 5.7.  If the macro is defined as zero before including
@@ -6639,28 +6643,6 @@ AC_DEFUN([_CURSES_INCLUDES],dnl
 #  include <curses.h>
 #endif
 ])
-
-# If pkg-config failed, try manually.
-AS_VAR_IF([have_curses], [no],
-  [WITH_SAVE_ENV(
-    [AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
-     AS_VAR_APPEND([LIBS], [" $CURSES_LIBS"])
-     AC_CHECK_HEADERS(
-       [curses.h ncurses.h],
-       [AC_SEARCH_LIBS(
-         [initscr], [ncurses ncursesw],
-         [AS_VAR_SET([have_curses], [yes])
-          CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])])])])
-AS_VAR_IF([have_panel], [no],
-  [WITH_SAVE_ENV(
-    [AS_VAR_APPEND([CPPFLAGS], [" $PANEL_CFLAGS"])
-     AS_VAR_APPEND([LIBS], [" $PANEL_LIBS"])
-     AC_CHECK_HEADERS(
-       [panel.h],
-       [AC_SEARCH_LIBS(
-         [update_panels], [panel panelw],
-         [AS_VAR_SET([have_panel], [yes])
-          PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])])])])
 
 AS_IF([test "have_curses" != "no"], [
 dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
