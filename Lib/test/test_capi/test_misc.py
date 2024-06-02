@@ -2285,6 +2285,7 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
+    @requires_subinterpreters
     def test_datetime_capi_type_check(self):
         script = textwrap.dedent("""
             try:
@@ -2297,8 +2298,6 @@ class SubinterpreterTest(unittest.TestCase):
                 import importlib.util
                 fullname = '_testcapi_datetime'
                 origin = importlib.util.find_spec('_testcapi').origin
-                if origin == 'built-in':
-                    return
                 loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
                 spec = importlib.util.spec_from_loader(fullname, loader)
                 module = importlib.util.module_from_spec(spec)
@@ -2318,13 +2317,12 @@ class SubinterpreterTest(unittest.TestCase):
         """)
         with self.subTest('main'):
             exec(script)
-        if _interpreters:
-            for name in ('legacy', 'isolated'):
-                with self.subTest(name):
-                    config = dict(_interpreters.new_config(name).__dict__)
-                    config['gil'] = {'shared': 1, 'own': 2}[config['gil']]
-                    ret = support.run_in_subinterp_with_config(script, **config)
-                    self.assertEqual(ret, 0)
+        for name in ('legacy', 'isolated'):
+            with self.subTest(name):
+                config = dict(_interpreters.new_config(name).__dict__)
+                config['gil'] = {'shared': 1, 'own': 2}[config['gil']]
+                ret = support.run_in_subinterp_with_config(script, **config)
+                self.assertEqual(ret, 0)
 
 
 @requires_subinterpreters
