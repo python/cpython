@@ -1,3 +1,3 @@
-:func:`pydoc.Helper.help` and :func:`pydoc.Helper.showtopic` now respect a
-configured *output* argument to :class:`pydoc.Helper` and not use the
+:meth:`!help` and :meth:`!showtopic` methods now respect a
+configured *output* argument to :class:`!pydoc.Helper` and not use the
 pager in such cases. Patch by Enrico Tröger.
