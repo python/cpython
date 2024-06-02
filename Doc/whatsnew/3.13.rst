@@ -289,7 +289,7 @@ updated shared  ``dict`` instance with undefined runtime semantics.
 
 See :pep:`667` for more details, including related C API changes and deprecations. Porting
 notes are also provided below for the affected :ref:`Python APIs <pep667-porting-notes-py>`
-and :ref:`C APIs <pep667-porting-notes-c>`
+and :ref:`C APIs <pep667-porting-notes-c>`.
 
 (PEP and implementation contributed by Mark Shannon and Tian Gao in
 :gh:`74929`. Documentation updates provided by Guido van Rossum and
