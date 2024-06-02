@@ -9138,7 +9138,7 @@ any_find_slice(PyObject* s1, PyObject* s2,
 
     kind1 = PyUnicode_KIND(s1);
     kind2 = PyUnicode_KIND(s2);
-    if (kind2 > kind1)
+    if (kind1 < kind2)
         return -1;
 
     isascii1 = PyUnicode_IS_ASCII(s1);
@@ -11567,7 +11567,10 @@ unicode_find_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
 /*[clinic end generated code: output=da52b0913b08a960 input=a236fecd6e36a36a]*/
 {
     Py_ssize_t result = any_find_first_slice(str, "find", sub, start, end, +1);
-    return result < 0 ? -1 : result;
+    if (result < 0) {
+        return -1;
+    }
+    return result;
 }
 
 static PyObject *
@@ -11629,7 +11632,10 @@ unicode_index_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
     }
-    return result < 0 ? -1 : result;
+    else if (result < 0) {
+        return -1;
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -12725,7 +12731,10 @@ unicode_rfind_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
 {
     Py_ssize_t result = any_find_first_slice(str, "rfind", sub, start, end,
                                              -1);
-    return result < 0 ? -1 : result;
+    if (result < 0) {
+        return -1;
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -12747,7 +12756,10 @@ unicode_rindex_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
     }
-    return result < 0 ? -1 : result;
+    else if (result < 0) {
+        return -1;
+    }
+    return result;
 }
 
 /*[clinic input]
