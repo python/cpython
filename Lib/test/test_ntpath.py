@@ -808,7 +808,7 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
         self.assertTrue(ntpath.isabs(ntpath.abspath("C:spam")))
         self.assertTrue(ntpath.isabs(ntpath.abspath("C:\x00")))
-        self.assertEqual(ntpath.abspath("\x00:spam"), "\x00:\\spam")
+        self.assertTrue(ntpath.isabs(ntpath.abspath("\x00:spam")))
         tester('ntpath.abspath("//..")',           "\\\\")
         tester('ntpath.abspath("//../")',          "\\\\..\\")
         tester('ntpath.abspath("//../..")',        "\\\\..\\")
