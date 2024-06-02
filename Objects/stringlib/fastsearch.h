@@ -471,7 +471,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
-
             Py_ssize_t i = cut;
             for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
