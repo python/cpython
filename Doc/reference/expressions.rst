@@ -1367,7 +1367,8 @@ This operation can be customized using the special :meth:`~object.__add__` and
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
 
-This operation can be customized using the special :meth:`~object.__sub__` and :meth:`~object.__rsub__` methods.
+This operation can be customized using the special :meth:`~object.__sub__`
+and :meth:`~object.__rsub__` methods.
 
 
 .. _shifting:
