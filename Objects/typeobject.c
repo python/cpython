@@ -4613,16 +4613,12 @@ _PyType_FromMetaclass_impl(
                 goto finally;
             }
             if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning,
-                    0,
-                    "Creating immutable type %s from mutable base %s is "
-                    "deprecated, and slated to be disallowed in Python 3.14.",
-                    spec->name,
-                    b->tp_name))
-                {
-                    goto finally;
-                }
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "Creating immutable type %s from mutable base %N",
+                    spec->name, b
+                );
+                goto finally;
             }
         }
     }
