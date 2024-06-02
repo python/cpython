@@ -2347,11 +2347,14 @@ Changes in the C API
 .. _pep667-porting-notes-c:
 
 * The effects of mutating the dictionary returned from :c:func:`PyEval_GetLocals` in an
-  :term:`optimized scope` have changed. Changes made this way will now *only* be visible to
-  subsequent :c:func:`PyEval_GetLocals` calls in that frame, as :c:func:`PyFrame_GetLocals`,
-  :func:`locals`, and :attr:`FrameType.f_locals <frame.f_locals>` no longer access the same
-  underlying cached dictionary. The recommended code update depends on how the function was
-  being used, so refer to the deprecation notice on the function for details.
+  :term:`optimized scope` have changed. New dict entries added this way will now *only* be
+  visible to subsequent :c:func:`PyEval_GetLocals` calls in that frame, as
+  :c:func:`PyFrame_GetLocals`, :func:`locals`, and
+  :attr:`FrameType.f_locals <frame.f_locals>` no longer access the same underlying cached
+  dictionary. Changes made to entries for actual variable names and names added via the
+  write-through proxy interfaces will be overwritten on subsequent calls to
+  :c:func:`PyEval_GetLocals` in that frame. The recommended code update depends on how the
+  function was being used, so refer to the deprecation notice on the function for details.
   (Changed as part of :pep:`667`.)
 
 * Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope` now returns a
