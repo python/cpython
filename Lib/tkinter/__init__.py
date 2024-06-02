@@ -2474,10 +2474,6 @@ class Tk(Misc, Wm):
                 # >= win 8.1
                 PROCESS_SYSTEM_DPI_AWARE: int = 1  # Int required
                 ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-                # Ensures that the window size is not reduced due to DPI adjustments,
-                # maintaining the original size
-                ScaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0)
-                self.tk.call('tk', 'scaling', ScaleFactor/75)
             except (ImportError, AttributeError, OSError):
                 try:
                     # win 8.0 or less
