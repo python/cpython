@@ -137,6 +137,41 @@ class TestSourceFormat(unittest.TestCase):
             "args": "*a",
         })
 
+    def test_reverse_ops(self):
+        def f(
+            radd: 1 + a,
+            rsub: 1 - a,
+            rmul: 1 * a,
+            rmatmul: 1 @ a,
+            rtruediv: 1 / a,
+            rmod: 1 % a,
+            rlshift: 1 << a,
+            rrshift: 1 >> a,
+            ror: 1 | a,
+            rxor: 1 ^ a,
+            rand: 1 & a,
+            rfloordiv: 1 // a,
+            rpow: 1 ** a,
+        ):
+            pass
+
+        anno = annotations.get_annotations(f, format=annotations.Format.SOURCE)
+        self.assertEqual(anno, {
+            "radd": "1 + a",
+            "rsub": "1 - a",
+            "rmul": "1 * a",
+            "rmatmul": "1 @ a",
+            "rtruediv": "1 / a",
+            "rmod": "1 % a",
+            "rlshift": "1 << a",
+            "rrshift": "1 >> a",
+            "ror": "1 | a",
+            "rxor": "1 ^ a",
+            "rand": "1 & a",
+            "rfloordiv": "1 // a",
+            "rpow": "1 ** a",
+        })
+
     def test_nested_expressions(self):
         def f(
             nested: list[Annotated[set[int], "set of ints", 4j]],

@@ -265,6 +265,28 @@ class _Stringifier:
 
     del _make_binop
 
+    def _make_rbinop(op: ast.AST):
+        def rbinop(self, other):
+            return self.__make_new(ast.BinOp(self.__convert(other), op, self.__ast_node__))
+
+        return rbinop
+
+    __radd__ = _make_rbinop(ast.Add())
+    __rsub__ = _make_rbinop(ast.Sub())
+    __rmul__ = _make_rbinop(ast.Mult())
+    __rmatmul__ = _make_rbinop(ast.MatMult())
+    __rtruediv__ = _make_rbinop(ast.Div())
+    __rmod__ = _make_rbinop(ast.Mod())
+    __rlshift__ = _make_rbinop(ast.LShift())
+    __rrshift__ = _make_rbinop(ast.RShift())
+    __ror__ = _make_rbinop(ast.BitOr())
+    __rxor__ = _make_rbinop(ast.BitXor())
+    __rand__ = _make_rbinop(ast.BitAnd())
+    __rfloordiv__ = _make_rbinop(ast.FloorDiv())
+    __rpow__ = _make_rbinop(ast.Pow())
+
+    del _make_rbinop
+
     def _make_compare(op):
         def compare(self, other):
             return self.__make_new(ast.Compare(left=self.__ast_node__, ops=[op], comparators=[self.__convert(other)]))
