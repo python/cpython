@@ -581,7 +581,7 @@ else:  # use native Windows method on Windows
         path = os.fspath(path)
         if not isabs(path):
             if isinstance(path, bytes):
-                sep = b'/'
+                sep = b'\\'
                 cwd = os.getcwdb()
             else:
                 sep = '/'
