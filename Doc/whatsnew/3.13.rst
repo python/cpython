@@ -287,8 +287,9 @@ returns a write-through proxy to the frame's local and locally referenced
 nonlocal variables in these scopes, rather than returning an inconsistently
 updated shared  ``dict`` instance with undefined runtime semantics.
 
-See :pep:`667` for more details, including related C API changes and
-deprecations.
+See :pep:`667` for more details, including related C API changes and deprecations. Porting
+notes are also provided below for the affected :ref:`Python APIs <pep667-porting-notes-py>`
+and :ref:`C APIs <pep667-porting-notes-c>`.
 
 (PEP and implementation contributed by Mark Shannon and Tian Gao in
 :gh:`74929`. Documentation updates provided by Guido van Rossum and
@@ -2246,6 +2247,8 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
+.. _pep667-porting-notes-py:
+
 * Calling :func:`locals` in an :term:`optimized scope` now produces an
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
@@ -2341,15 +2344,27 @@ Changes in the C API
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
 
-* Calling :c:func:`PyFrame_GetLocals` or :c:func:`PyEval_GetLocals` in an
-  :term:`optimized scope` now returns a write-through proxy rather than a
-  snapshot that gets updated at ill-specified times. If a snapshot is desired,
-  it must be created explicitly (e.g. with :c:func:`PyDict_Copy`) or by calling
-  the new :c:func:`PyEval_GetFrameLocals` API. (Changed as part of :pep:`667`.)
+.. _pep667-porting-notes-c:
+
+* The effects of mutating the dictionary returned from :c:func:`PyEval_GetLocals` in an
+  :term:`optimized scope` have changed. New dict entries added this way will now *only* be
+  visible to subsequent :c:func:`PyEval_GetLocals` calls in that frame, as
+  :c:func:`PyFrame_GetLocals`, :func:`locals`, and
+  :attr:`FrameType.f_locals <frame.f_locals>` no longer access the same underlying cached
+  dictionary. Changes made to entries for actual variable names and names added via the
+  write-through proxy interfaces will be overwritten on subsequent calls to
+  :c:func:`PyEval_GetLocals` in that frame. The recommended code update depends on how the
+  function was being used, so refer to the deprecation notice on the function for details.
+  (Changed as part of :pep:`667`.)
+
+* Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope` now returns a
+  write-through proxy rather than a snapshot that gets updated at ill-specified times.
+  If a snapshot is desired, it must be created explicitly (e.g. with :c:func:`PyDict_Copy`)
+  or by calling the new :c:func:`PyEval_GetFrameLocals` API. (Changed as part of :pep:`667`.)
 
 * :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
   no longer have any effect. Calling these functions has been redundant since
-  Python 3.11, when  :c:func:`PyFrame_GetLocals`  was first introduced.
+  Python 3.11, when :c:func:`PyFrame_GetLocals` was first introduced.
   (Changed as part of :pep:`667`.)
 
 * :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
@@ -2508,6 +2523,11 @@ Deprecated C APIs
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
   (Contributed by Victor Stinner in :gh:`105927`.)
+
+* Deprecate the :c:func:`PyEval_GetBuiltins`, :c:func:`PyEval_GetGlobals`, and
+  :c:func:`PyEval_GetLocals` functions, which return a :term:`borrowed reference`.
+  Refer to the deprecation notices on each function for their recommended replacements.
+  (Soft deprecated as part of :pep:`667`.)
 
 Pending Removal in Python 3.14
 ------------------------------
