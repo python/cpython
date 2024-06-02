@@ -1015,7 +1015,7 @@ function.
 
          >>> def test(a=1, b=2, c=3):
          ...     pass
-         ... 
+         ...
          >>> boundargs = signature(test).bind(a=10, c=13)
          >>> boundargs.args
          (10,)
