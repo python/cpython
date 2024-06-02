@@ -227,6 +227,37 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(annotations.get_annotations(int), {})
         self.assertEqual(annotations.get_annotations(object), {})
 
+    def test_format(self):
+        def f1(a: int):
+            pass
+
+        def f2(a: undefined):
+            pass
+
+        self.assertEqual(
+            annotations.get_annotations(f1, format=annotations.Format.VALUE), {"a": int}
+        )
+        self.assertEqual(annotations.get_annotations(f1, format=1), {"a": int})
+
+        fwd = annotations.ForwardRef("undefined")
+        self.assertEqual(
+            annotations.get_annotations(f2, format=annotations.Format.FORWARDREF),
+            {"a": fwd},
+        )
+        self.assertEqual(annotations.get_annotations(f2, format=2), {"a": fwd})
+
+        self.assertEqual(
+            annotations.get_annotations(f1, format=annotations.Format.SOURCE),
+            {"a": "int"},
+        )
+        self.assertEqual(annotations.get_annotations(f1, format=3), {"a": "int"})
+
+        with self.assertRaises(ValueError):
+            annotations.get_annotations(f1, format=0)
+
+        with self.assertRaises(ValueError):
+            annotations.get_annotations(f1, format=4)
+
     def test_custom_object_with_annotations(self):
         class C:
             def __init__(self, x: int = 0, y: str = ""):

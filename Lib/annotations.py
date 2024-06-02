@@ -503,6 +503,8 @@ def call_annotate_function(annotate, format, owner=None):
         # Should be impossible because __annotate__ functions must not raise
         # NotImplementedError for this format.
         raise RuntimeError("annotate function does not support VALUE format")
+    else:
+        raise ValueError(f"Invalid format: {format!r}")
 
 
 def get_annotations(
