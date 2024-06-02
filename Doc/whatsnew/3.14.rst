@@ -209,7 +209,7 @@ Others
 
 * The :func:`int` built-in will no longer delegate to
   :meth:`~object.__trunc__`. Classes that want to support conversion to
-  :func:`int` must implement either :meth:`~object.__int__` or
+  integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
