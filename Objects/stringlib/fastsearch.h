@@ -412,10 +412,12 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 if (needle[i] != window[i]) {
                     if (i < gap_jump_end) {
                         LOG("Early right half mismatch: jump by gap.\n");
+                        assert(gap >= i - cut + 1);
                         window_last += gap;
                     }
                     else {
                         LOG("Late right half mismatch: jump by n (>gap)\n");
+                        assert(i - cut + 1 > gap);
                         window_last += i - cut + 1;
                     }
                     memory = 0;
@@ -475,10 +477,12 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 if (needle[i] != window[i]) {
                     if (i < gap_jump_end) {
                         LOG("Early right half mismatch: jump by gap.\n");
+                        assert(i < gap + cut);
                         window_last += gap;
                     }
                     else {
                         LOG("Late right half mismatch: jump by n (>gap)\n");
+                        assert(i >= gap + cut);
                         window_last += i - cut + 1;
                     }
                     goto windowloop;
