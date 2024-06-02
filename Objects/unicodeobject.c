@@ -9244,7 +9244,7 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
             if (sub_len != 1 && sub_kind != kind) {
                 sub = unicode_askind(sub_kind, sub, sub_len, kind);
                 if (!sub) {
-                    return -2;
+                    goto exit;
                 }
                 heap_subs[subs_len] = sub;
             }
@@ -9292,10 +9292,6 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
                                            sub_len, start, cur_end + sub_len,
                                            isascii, +1);
                 }
-                if (new_result == -2) {
-                    result = -2;
-                    goto exit;
-                }
                 if (new_result != -1) {
                     if (new_result == start) {
                         result = start;
@@ -9335,10 +9331,6 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
                     new_result = fast_find(str, kind, len, sub, sub_kind,
                                            sub_len, cur_start,
                                            cur_end + sub_len, isascii, -1);
-                }
-                if (new_result == -2) {
-                    result = -2;
-                    goto exit;
                 }
                 if (new_result != -1) {
                     if (new_result == cur_end) {
