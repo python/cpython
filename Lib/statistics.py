@@ -805,24 +805,15 @@ def multimode(data):
 
 ## Kernel Density Estimation ###############################################
 
-def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
-    def f_inv(y):
-        "Return x such that f(x) ≈ y within the specified tolerance."
-        x = f_inv_estimate(y)
-        while abs(diff := f(x) - y) > tolerance:
-            x -= diff / f_prime(x)
-        return x
-    return f_inv
-
 _kernel_specs = {}
 
 def _register(*kernels):
-    "Load a kernel's pdf, cdf, invcdf, and support into _kernel_specs."
-    def deco(spec_builder):
-        spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), spec_builder()))
+    "Load the kernel's pdf, cdf, invcdf, and support into _kernel_specs."
+    def deco(builder):
+        spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), builder()))
         for kernel in kernels:
             _kernel_specs[kernel] = spec
-        return spec_builder
+        return builder
     return deco
 
 @_register('normal', 'gauss')
@@ -880,6 +871,15 @@ def _parabolic_kernel():
     support = 1.0
     return pdf, cdf, invcdf, support
 
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
+
 def _quartic_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.4258865685331 - 1.0
@@ -920,6 +920,9 @@ def _cosine_kernel():
     support = 1.0
     return pdf, cdf, invcdf, support
 
+del _register, _normal_kernel, _logistic_kernel, _sigmoid_kernel
+del _rectangular_kernel, _triangular_kernel, _parabolic_kernel
+del _quartic_kernel, _triweight_kernel, _cosine_kernel
 
 def kde(data, h, kernel='normal', *, cumulative=False):
     """Kernel Density Estimation:  Create a continuous probability density
