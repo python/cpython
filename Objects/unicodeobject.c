@@ -9186,6 +9186,7 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
 
     /* ALLOCATE MEMORY */
     result = -2; // Error
+    subs_len = 0;
     tuple_len = PyTuple_GET_SIZE(subobj);
     if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(void *) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(int) ||
@@ -9221,7 +9222,6 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
     isascii = PyUnicode_IS_ASCII(strobj);
     len = PyUnicode_GET_LENGTH(strobj);
     ADJUST_INDICES(start, end, len);
-    subs_len = 0;
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *substr;
         int sub_kind, sub_isascii;
