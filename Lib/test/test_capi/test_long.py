@@ -722,8 +722,8 @@ class LongTests(unittest.TestCase):
                     f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
 
     def test_long_sign(self):
-        # Test PyLong_Sign()
-        sign = _testcapi.pylong_sign
+        # Test PyLong_GetSign()
+        sign = _testcapi.pylong_getsign
         self.assertEqual(sign(1), 1)
         self.assertEqual(sign(123456), 1)
         self.assertEqual(sign(-2), -1)

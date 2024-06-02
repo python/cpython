@@ -2130,7 +2130,7 @@ New Features
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
-* Add :c:func:`PyLong_Sign` function to test sign of :class:`int` objects.
+* Add :c:func:`PyLong_GetSign` function to test sign of :class:`int` objects.
   Contributed by Sergey B Kirpichev.
 
 * Add :c:func:`PyType_GetFullyQualifiedName` function to get the type's fully

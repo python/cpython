@@ -771,7 +771,7 @@ _PyLong_Sign(PyObject *vv)
 }
 
 int
-PyLong_Sign(PyObject *vv, int *sign)
+PyLong_GetSign(PyObject *vv, int *sign)
 {
     if (vv == NULL) {
         PyErr_BadInternalCall();

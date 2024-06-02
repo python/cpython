@@ -94,11 +94,11 @@ pylong_fromnativebytes(PyObject *module, PyObject *args)
 
 
 static PyObject *
-pylong_sign(PyObject *module, PyObject *arg)
+pylong_getsign(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     int sign;
-    if (PyLong_Sign(arg, &sign) == -1) {
+    if (PyLong_GetSign(arg, &sign) == -1) {
         return NULL;
     }
     return PyLong_FromLong(sign);
@@ -122,7 +122,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
-    {"pylong_sign",                 pylong_sign,                METH_O},
+    {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
     {NULL},
 };

@@ -494,7 +494,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
-.. c:function:: int PyLong_Sign(PyObject *obj, int *sign)
+.. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
 
    Retrieve the sign of integer object *obj* (``0``, ``-1`` or ``+1`` for zero,
    negative or positive integer, respectively) in a variable *sign*.

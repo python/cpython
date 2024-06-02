@@ -1,1 +1,1 @@
-Add :c:func:`PyLong_Sign` function.  Patch by Sergey B Kirpichev.
+Add :c:func:`PyLong_GetSign` function.  Patch by Sergey B Kirpichev.
