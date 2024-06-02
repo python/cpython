@@ -489,6 +489,277 @@ def multimode(data):
     return [value for value, count in counts.items() if count == maxcount]
 
 
+## Measures of spread ######################################################
+
+# See http://mathworld.wolfram.com/Variance.html
+#     http://mathworld.wolfram.com/SampleVariance.html
+
+
+def variance(data, xbar=None):
+    """Return the sample variance of data.
+
+    data should be an iterable of Real-valued numbers, with at least two
+    values. The optional argument xbar, if given, should be the mean of
+    the data. If it is missing or None, the mean is automatically calculated.
+
+    Use this function when your data is a sample from a population. To
+    calculate the variance from the entire population, see ``pvariance``.
+
+    Examples:
+
+    >>> data = [2.75, 1.75, 1.25, 0.25, 0.5, 1.25, 3.5]
+    >>> variance(data)
+    1.3720238095238095
+
+    If you have already calculated the mean of your data, you can pass it as
+    the optional second argument ``xbar`` to avoid recalculating it:
+
+    >>> m = mean(data)
+    >>> variance(data, m)
+    1.3720238095238095
+
+    This function does not check that ``xbar`` is actually the mean of
+    ``data``. Giving arbitrary values for ``xbar`` may lead to invalid or
+    impossible results.
+
+    Decimals and Fractions are supported:
+
+    >>> from decimal import Decimal as D
+    >>> variance([D("27.5"), D("30.25"), D("30.25"), D("34.5"), D("41.75")])
+    Decimal('31.01875')
+
+    >>> from fractions import Fraction as F
+    >>> variance([F(1, 6), F(1, 2), F(5, 3)])
+    Fraction(67, 108)
+
+    """
+    T, ss, c, n = _ss(data, xbar)
+    if n < 2:
+        raise StatisticsError('variance requires at least two data points')
+    return _convert(ss / (n - 1), T)
+
+
+def pvariance(data, mu=None):
+    """Return the population variance of ``data``.
+
+    data should be a sequence or iterable of Real-valued numbers, with at least one
+    value. The optional argument mu, if given, should be the mean of
+    the data. If it is missing or None, the mean is automatically calculated.
+
+    Use this function to calculate the variance from the entire population.
+    To estimate the variance from a sample, the ``variance`` function is
+    usually a better choice.
+
+    Examples:
+
+    >>> data = [0.0, 0.25, 0.25, 1.25, 1.5, 1.75, 2.75, 3.25]
+    >>> pvariance(data)
+    1.25
+
+    If you have already calculated the mean of the data, you can pass it as
+    the optional second argument to avoid recalculating it:
+
+    >>> mu = mean(data)
+    >>> pvariance(data, mu)
+    1.25
+
+    Decimals and Fractions are supported:
+
+    >>> from decimal import Decimal as D
+    >>> pvariance([D("27.5"), D("30.25"), D("30.25"), D("34.5"), D("41.75")])
+    Decimal('24.815')
+
+    >>> from fractions import Fraction as F
+    >>> pvariance([F(1, 4), F(5, 4), F(1, 2)])
+    Fraction(13, 72)
+
+    """
+    T, ss, c, n = _ss(data, mu)
+    if n < 1:
+        raise StatisticsError('pvariance requires at least one data point')
+    return _convert(ss / n, T)
+
+
+def stdev(data, xbar=None):
+    """Return the square root of the sample variance.
+
+    See ``variance`` for arguments and other details.
+
+    >>> stdev([1.5, 2.5, 2.5, 2.75, 3.25, 4.75])
+    1.0810874155219827
+
+    """
+    T, ss, c, n = _ss(data, xbar)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+
+
+def pstdev(data, mu=None):
+    """Return the square root of the population variance.
+
+    See ``pvariance`` for arguments and other details.
+
+    >>> pstdev([1.5, 2.5, 2.5, 2.75, 3.25, 4.75])
+    0.986893273527251
+
+    """
+    T, ss, c, n = _ss(data, mu)
+    if n < 1:
+        raise StatisticsError('pstdev requires at least one data point')
+    mss = ss / n
+    if issubclass(T, Decimal):
+        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
+    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+
+
+## Statistics for relations between two inputs #############################
+
+# See https://en.wikipedia.org/wiki/Covariance
+#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+#     https://en.wikipedia.org/wiki/Simple_linear_regression
+
+
+def covariance(x, y, /):
+    """Covariance
+
+    Return the sample covariance of two inputs *x* and *y*. Covariance
+    is a measure of the joint variability of two inputs.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+    >>> covariance(x, y)
+    0.75
+    >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> covariance(x, z)
+    -7.5
+    >>> covariance(z, x)
+    -7.5
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('covariance requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('covariance requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
+    return sxy / (n - 1)
+
+
+def correlation(x, y, /, *, method='linear'):
+    """Pearson's correlation coefficient
+
+    Return the Pearson's correlation coefficient for two inputs. Pearson's
+    correlation coefficient *r* takes values between -1 and +1. It measures
+    the strength and direction of a linear relationship.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> correlation(x, x)
+    1.0
+    >>> correlation(x, y)
+    -1.0
+
+    If *method* is "ranked", computes Spearman's rank correlation coefficient
+    for two inputs.  The data is replaced by ranks.  Ties are averaged
+    so that equal values receive the same rank.  The resulting coefficient
+    measures the strength of a monotonic relationship.
+
+    Spearman's rank correlation coefficient is appropriate for ordinal
+    data or for continuous data that doesn't meet the linear proportion
+    requirement for Pearson's correlation coefficient.
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('correlation requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('correlation requires at least two data points')
+    if method not in {'linear', 'ranked'}:
+        raise ValueError(f'Unknown method: {method!r}')
+    if method == 'ranked':
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
+    syy = sumprod(y, y)
+    try:
+        return sxy / _sqrtprod(sxx, syy)
+    except ZeroDivisionError:
+        raise StatisticsError('at least one of the inputs is constant')
+
+
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
+
+
+def linear_regression(x, y, /, *, proportional=False):
+    """Slope and intercept for simple linear regression.
+
+    Return the slope and intercept of simple linear regression
+    parameters estimated using ordinary least squares. Simple linear
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of a linear function:
+
+        y = slope * x + intercept + noise
+
+    where *slope* and *intercept* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of the dependent
+    variable).
+
+    The parameters are returned as a named tuple.
+
+    >>> x = [1, 2, 3, 4, 5]
+    >>> noise = NormalDist().samples(5, seed=42)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.17495..., intercept=1.00925...)
+
+    If *proportional* is true, the independent variable *x* and the
+    dependent variable *y* are assumed to be directly proportional.
+    The data is fit to a line passing through the origin.
+
+    Since the *intercept* will always be 0.0, the underlying linear
+    function simplifies to:
+
+        y = slope * x + noise
+
+    >>> y = [3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
+    LinearRegression(slope=2.90475..., intercept=0.0)
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('linear regression requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('linear regression requires at least two data points')
+    if not proportional:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]  # List because used three times below
+        y = (yi - ybar for yi in y)  # Generator because only used once below
+    sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
+    sxx = sumprod(x, x)
+    try:
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
+    except ZeroDivisionError:
+        raise StatisticsError('x is constant')
+    intercept = 0.0 if proportional else ybar - slope * xbar
+    return LinearRegression(slope=slope, intercept=intercept)
+
+
 ## Kernel Density Estimation ###############################################
 
 _kernel_specs = {}
@@ -816,8 +1087,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     return rand
 
 
-############################################################################
-# Notes on methods for computing quantiles
+## Quantiles ###############################################################
 #
 # There is no one perfect way to compute quantiles.  Here we offer
 # two methods that serve common needs.  Most other packages
@@ -899,277 +1169,6 @@ def quantiles(data, *, n=4, method='exclusive'):
         return result
 
     raise ValueError(f'Unknown method: {method!r}')
-
-
-## Measures of spread ######################################################
-
-# See http://mathworld.wolfram.com/Variance.html
-#     http://mathworld.wolfram.com/SampleVariance.html
-
-
-def variance(data, xbar=None):
-    """Return the sample variance of data.
-
-    data should be an iterable of Real-valued numbers, with at least two
-    values. The optional argument xbar, if given, should be the mean of
-    the data. If it is missing or None, the mean is automatically calculated.
-
-    Use this function when your data is a sample from a population. To
-    calculate the variance from the entire population, see ``pvariance``.
-
-    Examples:
-
-    >>> data = [2.75, 1.75, 1.25, 0.25, 0.5, 1.25, 3.5]
-    >>> variance(data)
-    1.3720238095238095
-
-    If you have already calculated the mean of your data, you can pass it as
-    the optional second argument ``xbar`` to avoid recalculating it:
-
-    >>> m = mean(data)
-    >>> variance(data, m)
-    1.3720238095238095
-
-    This function does not check that ``xbar`` is actually the mean of
-    ``data``. Giving arbitrary values for ``xbar`` may lead to invalid or
-    impossible results.
-
-    Decimals and Fractions are supported:
-
-    >>> from decimal import Decimal as D
-    >>> variance([D("27.5"), D("30.25"), D("30.25"), D("34.5"), D("41.75")])
-    Decimal('31.01875')
-
-    >>> from fractions import Fraction as F
-    >>> variance([F(1, 6), F(1, 2), F(5, 3)])
-    Fraction(67, 108)
-
-    """
-    T, ss, c, n = _ss(data, xbar)
-    if n < 2:
-        raise StatisticsError('variance requires at least two data points')
-    return _convert(ss / (n - 1), T)
-
-
-def pvariance(data, mu=None):
-    """Return the population variance of ``data``.
-
-    data should be a sequence or iterable of Real-valued numbers, with at least one
-    value. The optional argument mu, if given, should be the mean of
-    the data. If it is missing or None, the mean is automatically calculated.
-
-    Use this function to calculate the variance from the entire population.
-    To estimate the variance from a sample, the ``variance`` function is
-    usually a better choice.
-
-    Examples:
-
-    >>> data = [0.0, 0.25, 0.25, 1.25, 1.5, 1.75, 2.75, 3.25]
-    >>> pvariance(data)
-    1.25
-
-    If you have already calculated the mean of the data, you can pass it as
-    the optional second argument to avoid recalculating it:
-
-    >>> mu = mean(data)
-    >>> pvariance(data, mu)
-    1.25
-
-    Decimals and Fractions are supported:
-
-    >>> from decimal import Decimal as D
-    >>> pvariance([D("27.5"), D("30.25"), D("30.25"), D("34.5"), D("41.75")])
-    Decimal('24.815')
-
-    >>> from fractions import Fraction as F
-    >>> pvariance([F(1, 4), F(5, 4), F(1, 2)])
-    Fraction(13, 72)
-
-    """
-    T, ss, c, n = _ss(data, mu)
-    if n < 1:
-        raise StatisticsError('pvariance requires at least one data point')
-    return _convert(ss / n, T)
-
-
-def stdev(data, xbar=None):
-    """Return the square root of the sample variance.
-
-    See ``variance`` for arguments and other details.
-
-    >>> stdev([1.5, 2.5, 2.5, 2.75, 3.25, 4.75])
-    1.0810874155219827
-
-    """
-    T, ss, c, n = _ss(data, xbar)
-    if n < 2:
-        raise StatisticsError('stdev requires at least two data points')
-    mss = ss / (n - 1)
-    if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
-
-
-def pstdev(data, mu=None):
-    """Return the square root of the population variance.
-
-    See ``pvariance`` for arguments and other details.
-
-    >>> pstdev([1.5, 2.5, 2.5, 2.75, 3.25, 4.75])
-    0.986893273527251
-
-    """
-    T, ss, c, n = _ss(data, mu)
-    if n < 1:
-        raise StatisticsError('pstdev requires at least one data point')
-    mss = ss / n
-    if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
-
-
-## Statistics for relations between two inputs #############################
-
-# See https://en.wikipedia.org/wiki/Covariance
-#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
-#     https://en.wikipedia.org/wiki/Simple_linear_regression
-
-
-def covariance(x, y, /):
-    """Covariance
-
-    Return the sample covariance of two inputs *x* and *y*. Covariance
-    is a measure of the joint variability of two inputs.
-
-    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
-    >>> covariance(x, y)
-    0.75
-    >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-    >>> covariance(x, z)
-    -7.5
-    >>> covariance(z, x)
-    -7.5
-
-    """
-    n = len(x)
-    if len(y) != n:
-        raise StatisticsError('covariance requires that both inputs have same number of data points')
-    if n < 2:
-        raise StatisticsError('covariance requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
-    return sxy / (n - 1)
-
-
-def correlation(x, y, /, *, method='linear'):
-    """Pearson's correlation coefficient
-
-    Return the Pearson's correlation coefficient for two inputs. Pearson's
-    correlation coefficient *r* takes values between -1 and +1. It measures
-    the strength and direction of a linear relationship.
-
-    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-    >>> correlation(x, x)
-    1.0
-    >>> correlation(x, y)
-    -1.0
-
-    If *method* is "ranked", computes Spearman's rank correlation coefficient
-    for two inputs.  The data is replaced by ranks.  Ties are averaged
-    so that equal values receive the same rank.  The resulting coefficient
-    measures the strength of a monotonic relationship.
-
-    Spearman's rank correlation coefficient is appropriate for ordinal
-    data or for continuous data that doesn't meet the linear proportion
-    requirement for Pearson's correlation coefficient.
-    """
-    n = len(x)
-    if len(y) != n:
-        raise StatisticsError('correlation requires that both inputs have same number of data points')
-    if n < 2:
-        raise StatisticsError('correlation requires at least two data points')
-    if method not in {'linear', 'ranked'}:
-        raise ValueError(f'Unknown method: {method!r}')
-    if method == 'ranked':
-        start = (n - 1) / -2            # Center rankings around zero
-        x = _rank(x, start=start)
-        y = _rank(y, start=start)
-    else:
-        xbar = fsum(x) / n
-        ybar = fsum(y) / n
-        x = [xi - xbar for xi in x]
-        y = [yi - ybar for yi in y]
-    sxy = sumprod(x, y)
-    sxx = sumprod(x, x)
-    syy = sumprod(y, y)
-    try:
-        return sxy / _sqrtprod(sxx, syy)
-    except ZeroDivisionError:
-        raise StatisticsError('at least one of the inputs is constant')
-
-
-LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
-
-
-def linear_regression(x, y, /, *, proportional=False):
-    """Slope and intercept for simple linear regression.
-
-    Return the slope and intercept of simple linear regression
-    parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between an independent variable
-    *x* and a dependent variable *y* in terms of a linear function:
-
-        y = slope * x + intercept + noise
-
-    where *slope* and *intercept* are the regression parameters that are
-    estimated, and noise represents the variability of the data that was
-    not explained by the linear regression (it is equal to the
-    difference between predicted and actual values of the dependent
-    variable).
-
-    The parameters are returned as a named tuple.
-
-    >>> x = [1, 2, 3, 4, 5]
-    >>> noise = NormalDist().samples(5, seed=42)
-    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
-    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.17495..., intercept=1.00925...)
-
-    If *proportional* is true, the independent variable *x* and the
-    dependent variable *y* are assumed to be directly proportional.
-    The data is fit to a line passing through the origin.
-
-    Since the *intercept* will always be 0.0, the underlying linear
-    function simplifies to:
-
-        y = slope * x + noise
-
-    >>> y = [3 * x[i] + noise[i] for i in range(5)]
-    >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
-    LinearRegression(slope=2.90475..., intercept=0.0)
-
-    """
-    n = len(x)
-    if len(y) != n:
-        raise StatisticsError('linear regression requires that both inputs have same number of data points')
-    if n < 2:
-        raise StatisticsError('linear regression requires at least two data points')
-    if not proportional:
-        xbar = fsum(x) / n
-        ybar = fsum(y) / n
-        x = [xi - xbar for xi in x]  # List because used three times below
-        y = (yi - ybar for yi in y)  # Generator because only used once below
-    sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
-    sxx = sumprod(x, x)
-    try:
-        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
-    except ZeroDivisionError:
-        raise StatisticsError('x is constant')
-    intercept = 0.0 if proportional else ybar - slope * xbar
-    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################
