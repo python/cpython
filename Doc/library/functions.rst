@@ -1004,9 +1004,8 @@ are always available.  They are listed here in alphabetical order.
       115
 
    If the argument defines :meth:`~object.__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If the argument defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If the argument defines :meth:`~object.__trunc__`,
-   it returns ``x.__trunc__()``.
+   ``int(x)`` returns ``x.__int__()``.  If the argument defines
+   :meth:`~object.__index__`, it returns ``x.__index__()``.
    For floating point numbers, this truncates towards zero.
 
    If the argument is not a number or if *base* is given, then it must be a string,
@@ -1045,15 +1044,15 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`~object.__trunc__` is deprecated.
-
-   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
       the limit is exceeded while converting a string to an :class:`int` or
       when converting an :class:`int` into a string would exceed the limit.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
+
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 .. function:: isinstance(object, classinfo)
 

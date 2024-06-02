@@ -732,7 +732,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__subclasscheck__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__subclasshook__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__truediv__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__trunc__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__type_params__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__typing_is_unpacked_typevartuple__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__typing_prepare_subst__));

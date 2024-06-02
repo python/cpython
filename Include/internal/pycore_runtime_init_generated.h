@@ -730,7 +730,6 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
-    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
