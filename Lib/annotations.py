@@ -205,9 +205,6 @@ class ForwardRef:
             from typing import Union as _Union
         return _Union[other, self]
 
-    def __getitem__(self, arg):
-        return types.GenericAlias(self, arg)
-
     def __repr__(self):
         if self.__forward_module__ is None:
             module_repr = ""
