@@ -62,6 +62,8 @@ class TestForwardRefFormat(unittest.TestCase):
 
 class TestSourceFormat(unittest.TestCase):
     def test_closure(self):
+        x = 0
+
         def inner(arg: x):
             pass
 

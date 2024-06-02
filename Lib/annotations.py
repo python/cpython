@@ -344,12 +344,20 @@ def call_annotate_function(annotate, format, owner=None):
         return func(Format.VALUE)
     elif format == Format.SOURCE:
         globals = _StringifierDict()
-        func = types.FunctionType(
-            annotate.__code__,
-            globals,
-            # TODO: also replace the closure with stringifiers
-            closure=annotate.__closure__,
-        )
+        if annotate.__closure__:
+            freevars = annotate.__code__.co_freevars
+            new_closure = []
+            for i, cell in enumerate(annotate.__closure__):
+                if i < len(freevars):
+                    name = freevars[i]
+                else:
+                    name = "__cell__"
+                fwdref = Stringifier(ast.Name(id=name))
+                new_closure.append(types.CellType(fwdref))
+            closure = tuple(new_closure)
+        else:
+            closure = None
+        func = types.FunctionType(annotate.__code__, globals, closure=closure)
         annos = func(Format.VALUE)
         return {
             key: val if isinstance(val, str) else repr(val)
