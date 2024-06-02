@@ -2435,16 +2435,17 @@ class TestKDE(unittest.TestCase):
         self.assertGreater(f_hat(100), 0.0)
 
     def test_kde_kernel_invcdfs(self):
-        kernel_invcdfs = statistics._kernel_invcdfs
+        kernel_specs = statistics._kernel_specs
         kde = statistics.kde
 
         # Verify that cdf / invcdf will round trip
         xarr = [i/100 for i in range(-100, 101)]
-        for kernel, invcdf in kernel_invcdfs.items():
+        for kernel, spec in kernel_specs.items():
+            invcdf = spec['invcdf']
             with self.subTest(kernel=kernel):
                 cdf = kde([0.0], h=1.0, kernel=kernel, cumulative=True)
                 for x in xarr:
-                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=5)
+                    self.assertAlmostEqual(invcdf(cdf(x)), x, places=6)
 
     @support.requires_resource('cpu')
     def test_kde_random(self):
