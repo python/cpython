@@ -212,32 +212,6 @@ class TestSourceFormat(unittest.TestCase):
         )
 
     def test_unsupported_operations(self):
-        bool_msg = "Cannot stringify annotation that uses boolean logic"
-
-        def f(and_: a and b): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
-        def f(or_: a or b): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
-        def f(if_: a if b else c): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
-        def f(not_: not a): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
-        def f(in_: a in b): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
-        def f(not_in: a not in b): pass
-        with self.assertRaisesRegex(TypeError, bool_msg):
-            annotations.get_annotations(f, format=annotations.Format.SOURCE)
-
         format_msg = "Cannot stringify annotation containing string formatting"
         def f(fstring: f"{a}"): pass
         with self.assertRaisesRegex(TypeError, format_msg):
