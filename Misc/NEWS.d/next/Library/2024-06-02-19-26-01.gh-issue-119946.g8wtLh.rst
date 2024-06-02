@@ -1,0 +1,1 @@
+Allow Enum classes to have mixins derived from an abstract base class (ABC).
