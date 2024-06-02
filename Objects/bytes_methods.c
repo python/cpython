@@ -593,7 +593,7 @@ find_first_internal(const char *str, Py_ssize_t len,
     result = -2; // Error
     tuple_len = PyTuple_GET_SIZE(subobj);
     if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char) ||
-        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char*) ||
+        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char *) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t))
     {
         PyErr_SetString(PyExc_OverflowError, "tuple is too long");
@@ -604,7 +604,7 @@ find_first_internal(const char *str, Py_ssize_t len,
         PyErr_NoMemory();
         goto exit;
     }
-    subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(char*));
+    subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(char *));
     if (!subs) {
         PyErr_NoMemory();
         goto exit;

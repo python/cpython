@@ -9078,12 +9078,6 @@ fast_find(const void *buf1, int kind1, Py_ssize_t len1,
             return start + result;
     }
 
-    if (kind2 != kind1) {
-        buf2 = unicode_askind(kind2, buf2, len2, kind1);
-        if (!buf2)
-            return -2;
-    }
-
     if (direction > 0) {
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
@@ -9121,9 +9115,6 @@ fast_find(const void *buf1, int kind1, Py_ssize_t len1,
         }
     }
 
-    if (kind2 != kind1)
-        PyMem_Free((void *)buf2);
-
     return result;
 }
 
@@ -9152,8 +9143,18 @@ any_find_slice(PyObject* s1, PyObject* s2,
 
     buf1 = PyUnicode_DATA(s1);
     buf2 = PyUnicode_DATA(s2);
+    if (len2 != 1 && kind2 != kind1) {
+        buf2 = unicode_askind(kind2, buf2, len2, kind1);
+        if (!buf2)
+            return -2;
+    }
+
     result = fast_find(buf1, kind1, len1, buf2, kind2, len2, start, end,
                        isascii1, direction);
+
+    assert((len2 != 1 && kind2 != kind1) == (buf2 != PyUnicode_DATA(s2)));
+    if (len2 != 1 && kind2 != kind1)
+        PyMem_Free((void *)buf2);
 
     return result;
 }
@@ -9177,7 +9178,7 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
         return any_find_slice(strobj, subobj, start, end, direction);
     }
     Py_ssize_t result, tuple_len, len, subs_len;
-    const void **subs = NULL;
+    const void **heap_subs = NULL, **subs = NULL;
     int *sub_kinds = NULL;
     Py_ssize_t *sub_lens = NULL;
     const void *str;
@@ -9186,14 +9187,19 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
     /* ALLOCATE MEMORY */
     result = -2; // Error
     tuple_len = PyTuple_GET_SIZE(subobj);
-    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(void*) ||
+    if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(void *) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(int) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t))
     {
         PyErr_SetString(PyExc_OverflowError, "tuple is too long");
         goto exit;
     }
-    subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(void*));
+    heap_subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(void *));
+    if (!heap_subs) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    subs = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(void *));
     if (!subs) {
         PyErr_NoMemory();
         goto exit;
@@ -9234,7 +9240,15 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
         if (sub_kind <= kind && (sub_isascii || !isascii) &&
             sub_len <= end - start)
         {
-            subs[subs_len] = PyUnicode_DATA(substr);
+            const void *sub = PyUnicode_DATA(substr);
+            if (sub_len != 1 && sub_kind != kind) {
+                sub = unicode_askind(sub_kind, sub, sub_len, kind);
+                if (!sub) {
+                    return -2;
+                }
+                heap_subs[subs_len] = sub;
+            }
+            subs[subs_len] = sub;
             sub_kinds[subs_len] = sub_kind;
             sub_lens[subs_len] = sub_len;
             subs_len++;
@@ -9338,6 +9352,12 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
         }
     }
 exit:
+    if (heap_subs) {
+        for (Py_ssize_t i = 0; i < subs_len; i++) {
+            PyMem_Free((void *)heap_subs[i]);
+        }
+    }
+    PyMem_RawFree(heap_subs);
     PyMem_RawFree(subs);
     PyMem_RawFree(sub_kinds);
     PyMem_RawFree(sub_lens);
