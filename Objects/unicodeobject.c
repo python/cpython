@@ -4702,8 +4702,9 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     const char *p = start;
 
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    assert(_Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T));
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
+        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
+    {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help allocation */
@@ -4948,9 +4949,7 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
     const char *end = s + size;
     Py_ssize_t decoded = 0;
     Py_UCS1 *dest = (Py_UCS1*)writer->data + writer->pos * writer->kind;
-    if (writer->kind == PyUnicode_1BYTE_KIND
-        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
-    {
+    if (writer->kind == PyUnicode_1BYTE_KIND) {
         decoded = ascii_decode(s, end, dest);
         writer->pos += decoded;
 
