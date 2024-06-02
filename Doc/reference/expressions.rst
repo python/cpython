@@ -1300,6 +1300,9 @@ This operation can be customized using the special :meth:`~object.__mul__` and
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
 
+This operation can be customized using the special :meth:`~object.__matmul__` and
+:meth:`~object.__rmatmul__` methods.
+
 .. versionadded:: 3.5
 
 .. index::
@@ -1392,9 +1395,11 @@ The shifting operations have lower priority than the arithmetic operations:
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-This operation can be customized using the special :meth:`~object.__lshift__`,
-:meth:`~object.__rlshift__`, :meth:`~object.__rshift__` and
-:meth:`~object.__rrshift__` methods.
+The left shift operation can be customized using the special :meth:`~object.__lshift__`
+and :meth:`~object.__rlshift__` methods.
+
+The right shift operation can be customized using the special :meth:`~object.__rshift__`
+and :meth:`~object.__rrshift__` methods.
 
 .. index:: pair: exception; ValueError
 
