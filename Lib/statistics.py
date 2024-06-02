@@ -807,7 +807,7 @@ def multimode(data):
 
 _kernel_specs = {}
 
-def _register(*kernels):
+def register(*kernels):
     "Load the kernel's pdf, cdf, invcdf, and support into _kernel_specs."
     def deco(builder):
         spec = dict(zip(('pdf', 'cdf', 'invcdf', 'support'), builder()))
@@ -816,8 +816,8 @@ def _register(*kernels):
         return builder
     return deco
 
-@_register('normal', 'gauss')
-def _normal_kernel():
+@register('normal', 'gauss')
+def normal_kernel():
     sqrt2pi = sqrt(2 * pi)
     sqrt2 = sqrt(2)
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
@@ -826,8 +826,8 @@ def _normal_kernel():
     support = None
     return pdf, cdf, invcdf, support
 
-@_register('logistic')
-def _logistic_kernel():
+@register('logistic')
+def logistic_kernel():
     # 1.0 / (exp(t) + 2.0 + exp(-t))
     pdf = lambda t: 1/2 / (1.0 + cosh(t))
     cdf = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
@@ -835,8 +835,8 @@ def _logistic_kernel():
     support = None
     return pdf, cdf, invcdf, support
 
-@_register('sigmoid')
-def _sigmoid_kernel():
+@register('sigmoid')
+def sigmoid_kernel():
     # (2/pi) / (exp(t) + exp(-t))
     c1 = 1 / pi
     c2 = 2 / pi
@@ -847,24 +847,24 @@ def _sigmoid_kernel():
     support = None
     return pdf, cdf, invcdf, support
 
-@_register('rectangular', 'uniform')
-def _rectangular_kernel():
+@register('rectangular', 'uniform')
+def rectangular_kernel():
     pdf = lambda t: 1/2
     cdf = lambda t: 1/2 * t + 1/2
     invcdf = lambda p: 2.0 * p - 1.0
     support = 1.0
     return pdf, cdf, invcdf, support
 
-@_register('triangular')
-def _triangular_kernel():
+@register('triangular')
+def triangular_kernel():
     pdf = lambda t: 1.0 - abs(t)
     cdf = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
     invcdf = lambda p: sqrt(2.0*p) - 1.0 if p < 1/2 else 1.0 - sqrt(2.0 - 2.0*p)
     support = 1.0
     return pdf, cdf, invcdf, support
 
-@_register('parabolic', 'epanechnikov')
-def _parabolic_kernel():
+@register('parabolic', 'epanechnikov')
+def parabolic_kernel():
     pdf = lambda t: 3/4 * (1.0 - t * t)
     cdf = lambda t: sumprod((-1/4, 3/4, 1/2), (t**3, t, 1.0))
     invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)
@@ -887,8 +887,8 @@ def _quartic_invcdf_estimate(p):
         x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
     return x * sign
 
-@_register('quartic', 'biweight')
-def _quartic_kernel():
+@register('quartic', 'biweight')
+def quartic_kernel():
     pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
@@ -901,8 +901,8 @@ def _triweight_invcdf_estimate(p):
     x = (2.0 * p) ** 0.3400218741872791 - 1.0
     return x * sign
 
-@_register('triweight')
-def _triweight_kernel():
+@register('triweight')
+def triweight_kernel():
     pdf = lambda t: 35/32 * (1.0 - t * t) ** 3
     cdf = lambda t: sumprod((-5/32, 21/32, -35/32, 35/32, 1/2),
                             (t**7, t**5, t**3, t, 1.0))
@@ -910,8 +910,8 @@ def _triweight_kernel():
     support = 1.0
     return pdf, cdf, invcdf, support
 
-@_register('cosine')
-def _cosine_kernel():
+@register('cosine')
+def cosine_kernel():
     c1 = pi / 4
     c2 = pi / 2
     pdf = lambda t: c1 * cos(c2 * t)
@@ -920,9 +920,9 @@ def _cosine_kernel():
     support = 1.0
     return pdf, cdf, invcdf, support
 
-del _register, _normal_kernel, _logistic_kernel, _sigmoid_kernel
-del _rectangular_kernel, _triangular_kernel, _parabolic_kernel
-del _quartic_kernel, _triweight_kernel, _cosine_kernel
+del register, normal_kernel, logistic_kernel, sigmoid_kernel
+del rectangular_kernel, triangular_kernel, parabolic_kernel
+del quartic_kernel, triweight_kernel, cosine_kernel
 
 
 def kde(data, h, kernel='normal', *, cumulative=False):
