@@ -60,6 +60,89 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertEqual(fwdref.evaluate(globals={"doesntexist": 1}), 1)
 
 
+class TestSourceFormat(unittest.TestCase):
+    def test_closure(self):
+        def inner(arg: x):
+            pass
+
+        anno = annotations.get_annotations(inner, format=annotations.Format.SOURCE)
+        self.assertEqual(anno, {"arg": "x"})
+
+    def test_function(self):
+        def f(x: int, y: doesntexist):
+            pass
+
+        anno = annotations.get_annotations(f, format=annotations.Format.SOURCE)
+        self.assertEqual(anno, {"x": "int", "y": "doesntexist"})
+
+    def test_expressions(self):
+        def f(
+            add: a + b,
+            sub: a + b,
+            mul: a * b,
+            matmul: a @ b,
+            truediv: a / b,
+            mod: a % b,
+            lshift: a << b,
+            rshift: a >> b,
+            or_: a | b,
+            xor: a ^ b,
+            and_: a & b,
+            floordiv: a // b,
+            pow_: a ** b,
+            invert: ~a,
+            neg: -a,
+            pos: +a,
+            getitem: a[b],
+            getattr: a.b,
+            call: a(b, *c, d=e),  # **kwargs are not supported
+            *args: *a,
+        ):
+            pass
+        anno = annotations.get_annotations(f, format=annotations.Format.SOURCE)
+        self.assertEqual(anno, {
+            "add": "a + b",
+            "sub": "a + b",
+            "mul": "a * b",
+            "matmul": "a @ b",
+            "truediv": "a / b",
+            "mod": "a % b",
+            "lshift": "a << b",
+            "rshift": "a >> b",
+            "or_": "a | b",
+            "xor": "a ^ b",
+            "and_": "a & b",
+            "floordiv": "a // b",
+            "pow_": "a ** b",
+            "invert": "~a",
+            "neg": "-a",
+            "pos": "+a",
+            "getitem": "a[b]",
+            "getattr": "a.b",
+            "call": "a(b, *c, d=e)",
+            "args": "*a",
+        })
+
+    def test_nested_expressions(self):
+        def f(
+            nested: list[Annotated[set[int], "set of ints", 4j]],
+            set: {a + b},  # single element because order is not guaranteed
+            dict: {a + b: c + d, "key": e + g},
+            list: [a, b, c],
+            tuple: (a, b, c),
+            slice: (a[b:c], a[b:c:d], a[:c], a[b:], a[:], a[::d], a[b::d]),
+        ): pass
+        anno = annotations.get_annotations(f, format=annotations.Format.SOURCE)
+        self.assertEqual(anno, {
+            "nested": "list[Annotated[set[int], 'set of ints', 4j]]",
+            "set": "{a + b}",
+            "dict": "{a + b: c + d, 'key': e + g}",
+            "list": "[a, b, c]",
+            "tuple": "(a, b, c)",
+            "slice": "(a[b:c], a[b:c:d], a[:c], a[b:], a[:], a[::d], a[b::d])",
+        })
+
+
 class TestForwardRefClass(unittest.TestCase):
     def test_special_attrs(self):
         # Forward refs provide a different introspection API. __name__ and

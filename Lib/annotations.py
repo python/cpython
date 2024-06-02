@@ -182,6 +182,9 @@ class ForwardRef:
             from typing import Union as _Union
         return _Union[other, self]
 
+    def __getitem__(self, arg):
+        return types.GenericAlias(self, arg)
+
     def __repr__(self):
         if self.__forward_module__ is None:
             module_repr = ""
@@ -211,6 +214,12 @@ class Stringifier:
     def _convert(self, other):
         if isinstance(other, Stringifier):
             return other.node
+        elif isinstance(other, slice):
+            return ast.Slice(
+                lower=self._convert(other.start) if other.start is not None else None,
+                upper=self._convert(other.stop) if other.stop is not None else None,
+                step=self._convert(other.step) if other.step is not None else None,
+            )
         else:
             return ast.Name(id=repr(other))
 
@@ -224,25 +233,25 @@ class Stringifier:
     __sub__ = _make_binop(ast.Sub())
     __mul__ = _make_binop(ast.Mult())
     __matmul__ = _make_binop(ast.MatMult())
-    __div__ = _make_binop(ast.Div())
+    __truediv__ = _make_binop(ast.Div())
     __mod__ = _make_binop(ast.Mod())
     __lshift__ = _make_binop(ast.LShift())
     __rshift__ = _make_binop(ast.RShift())
     __or__ = _make_binop(ast.BitOr())
     __xor__ = _make_binop(ast.BitXor())
-    __and__ = _make_binop(ast.And())
+    __and__ = _make_binop(ast.BitAnd())
     __floordiv__ = _make_binop(ast.FloorDiv())
     __pow__ = _make_binop(ast.Pow())
 
     def _make_unary_op(op):
         def unary_op(self):
-            return Stringifier(ast.UnaryOp(self.node, op))
+            return Stringifier(ast.UnaryOp(op, self.node))
 
         return unary_op
 
     __invert__ = _make_unary_op(ast.Invert())
-    __pos__ = _make_binop(ast.UAdd())
-    __neg__ = _make_binop(ast.USub())
+    __pos__ = _make_unary_op(ast.UAdd())
+    __neg__ = _make_unary_op(ast.USub())
 
     def __getitem__(self, other):
         if isinstance(other, tuple):
@@ -268,10 +277,7 @@ class Stringifier:
         )
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        return Stringifier(ast.Starred(self.node))
+        yield Stringifier(ast.Starred(self.node))
 
     def __repr__(self):
         return ast.unparse(self.node)
