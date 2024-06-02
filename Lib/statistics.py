@@ -153,365 +153,6 @@ class StatisticsError(ValueError):
     pass
 
 
-## Private utilities #######################################################
-
-def _sum(data):
-    """_sum(data) -> (type, sum, count)
-
-    Return a high-precision sum of the given numeric data as a fraction,
-    together with the type to be converted to and the count of items.
-
-    Examples
-    --------
-
-    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
-    (<class 'float'>, Fraction(19, 2), 5)
-
-    Some sources of round-off error will be avoided:
-
-    # Built-in sum returns zero.
-    >>> _sum([1e50, 1, -1e50] * 1000)
-    (<class 'float'>, Fraction(1000, 1), 3000)
-
-    Fractions and Decimals are also supported:
-
-    >>> from fractions import Fraction as F
-    >>> _sum([F(2, 3), F(7, 5), F(1, 4), F(5, 6)])
-    (<class 'fractions.Fraction'>, Fraction(63, 20), 4)
-
-    >>> from decimal import Decimal as D
-    >>> data = [D("0.1375"), D("0.2108"), D("0.3061"), D("0.0419")]
-    >>> _sum(data)
-    (<class 'decimal.Decimal'>, Fraction(6963, 10000), 4)
-
-    Mixed types are currently treated as an error, except that int is
-    allowed.
-    """
-    count = 0
-    types = set()
-    types_add = types.add
-    partials = {}
-    partials_get = partials.get
-    for typ, values in groupby(data, type):
-        types_add(typ)
-        for n, d in map(_exact_ratio, values):
-            count += 1
-            partials[d] = partials_get(d, 0) + n
-    if None in partials:
-        # The sum will be a NAN or INF. We can ignore all the finite
-        # partials, and just look at this special one.
-        total = partials[None]
-        assert not _isfinite(total)
-    else:
-        # Sum all the partial sums using builtin sum.
-        total = sum(Fraction(n, d) for d, n in partials.items())
-    T = reduce(_coerce, types, int)  # or raise TypeError
-    return (T, total, count)
-
-
-def _ss(data, c=None):
-    """Return the exact mean and sum of square deviations of sequence data.
-
-    Calculations are done in a single pass, allowing the input to be an iterator.
-
-    If given *c* is used the mean; otherwise, it is calculated from the data.
-    Use the *c* argument with care, as it can lead to garbage results.
-
-    """
-    if c is not None:
-        T, ssd, count = _sum((d := x - c) * d for x in data)
-        return (T, ssd, c, count)
-    count = 0
-    types = set()
-    types_add = types.add
-    sx_partials = defaultdict(int)
-    sxx_partials = defaultdict(int)
-    for typ, values in groupby(data, type):
-        types_add(typ)
-        for n, d in map(_exact_ratio, values):
-            count += 1
-            sx_partials[d] += n
-            sxx_partials[d] += n * n
-    if not count:
-        ssd = c = Fraction(0)
-    elif None in sx_partials:
-        # The sum will be a NAN or INF. We can ignore all the finite
-        # partials, and just look at this special one.
-        ssd = c = sx_partials[None]
-        assert not _isfinite(ssd)
-    else:
-        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
-        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
-        # This formula has poor numeric properties for floats,
-        # but with fractions it is exact.
-        ssd = (count * sxx - sx * sx) / count
-        c = sx / count
-    T = reduce(_coerce, types, int)  # or raise TypeError
-    return (T, ssd, c, count)
-
-
-def _isfinite(x):
-    try:
-        return x.is_finite()  # Likely a Decimal.
-    except AttributeError:
-        return math.isfinite(x)  # Coerces to float first.
-
-
-def _coerce(T, S):
-    """Coerce types T and S to a common type, or raise TypeError.
-
-    Coercion rules are currently an implementation detail. See the CoerceTest
-    test class in test_statistics for details.
-    """
-    # See http://bugs.python.org/issue24068.
-    assert T is not bool, "initial type T is bool"
-    # If the types are the same, no need to coerce anything. Put this
-    # first, so that the usual case (no coercion needed) happens as soon
-    # as possible.
-    if T is S:  return T
-    # Mixed int & other coerce to the other type.
-    if S is int or S is bool:  return T
-    if T is int:  return S
-    # If one is a (strict) subclass of the other, coerce to the subclass.
-    if issubclass(S, T):  return S
-    if issubclass(T, S):  return T
-    # Ints coerce to the other type.
-    if issubclass(T, int):  return S
-    if issubclass(S, int):  return T
-    # Mixed fraction & float coerces to float (or float subclass).
-    if issubclass(T, Fraction) and issubclass(S, float):
-        return S
-    if issubclass(T, float) and issubclass(S, Fraction):
-        return T
-    # Any other combination is disallowed.
-    msg = "don't know how to coerce %s and %s"
-    raise TypeError(msg % (T.__name__, S.__name__))
-
-
-def _exact_ratio(x):
-    """Return Real number x to exact (numerator, denominator) pair.
-
-    >>> _exact_ratio(0.25)
-    (1, 4)
-
-    x is expected to be an int, Fraction, Decimal or float.
-    """
-
-    # XXX We should revisit whether using fractions to accumulate exact
-    # ratios is the right way to go.
-
-    # The integer ratios for binary floats can have numerators or
-    # denominators with over 300 decimal digits.  The problem is more
-    # acute with decimal floats where the default decimal context
-    # supports a huge range of exponents from Emin=-999999 to
-    # Emax=999999.  When expanded with as_integer_ratio(), numbers like
-    # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
-    # numerators or denominators that will slow computation.
-
-    # When the integer ratios are accumulated as fractions, the size
-    # grows to cover the full range from the smallest magnitude to the
-    # largest.  For example, Fraction(3.14E+300) + Fraction(3.14E-300),
-    # has a 616 digit numerator.  Likewise,
-    # Fraction(Decimal('3.14E+5000')) + Fraction(Decimal('3.14E-5000'))
-    # has 10,003 digit numerator.
-
-    # This doesn't seem to have been problem in practice, but it is a
-    # potential pitfall.
-
-    try:
-        return x.as_integer_ratio()
-    except AttributeError:
-        pass
-    except (OverflowError, ValueError):
-        # float NAN or INF.
-        assert not _isfinite(x)
-        return (x, None)
-    try:
-        # x may be an Integral ABC.
-        return (x.numerator, x.denominator)
-    except AttributeError:
-        msg = f"can't convert type '{type(x).__name__}' to numerator/denominator"
-        raise TypeError(msg)
-
-
-def _convert(value, T):
-    """Convert value to given numeric type T."""
-    if type(value) is T:
-        # This covers the cases where T is Fraction, or where value is
-        # a NAN or INF (Decimal or float).
-        return value
-    if issubclass(T, int) and value.denominator != 1:
-        T = float
-    try:
-        # FIXME: what do we do if this overflows?
-        return T(value)
-    except TypeError:
-        if issubclass(T, Decimal):
-            return T(value.numerator) / T(value.denominator)
-        else:
-            raise
-
-
-def _fail_neg(values, errmsg='negative value'):
-    """Iterate over values, failing if any are less than zero."""
-    for x in values:
-        if x < 0:
-            raise StatisticsError(errmsg)
-        yield x
-
-
-def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
-    """Rank order a dataset. The lowest value has rank 1.
-
-    Ties are averaged so that equal values receive the same rank:
-
-        >>> data = [31, 56, 31, 25, 75, 18]
-        >>> _rank(data)
-        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
-
-    The operation is idempotent:
-
-        >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
-        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
-
-    It is possible to rank the data in reverse order so that the
-    highest value has rank 1.  Also, a key-function can extract
-    the field to be ranked:
-
-        >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
-        >>> _rank(goals, key=itemgetter(1), reverse=True)
-        [2.0, 1.0, 3.0]
-
-    Ranks are conventionally numbered starting from one; however,
-    setting *start* to zero allows the ranks to be used as array indices:
-
-        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
-        >>> scores = [8.1, 7.3, 9.4, 8.3]
-        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
-        ['Bronze', 'Certificate', 'Gold', 'Silver']
-
-    """
-    # If this function becomes public at some point, more thought
-    # needs to be given to the signature.  A list of ints is
-    # plausible when ties is "min" or "max".  When ties is "average",
-    # either list[float] or list[Fraction] is plausible.
-
-    # Default handling of ties matches scipy.stats.mstats.spearmanr.
-    if ties != 'average':
-        raise ValueError(f'Unknown tie resolution method: {ties!r}')
-    if key is not None:
-        data = map(key, data)
-    val_pos = sorted(zip(data, count()), reverse=reverse)
-    i = start - 1
-    result = [0] * len(val_pos)
-    for _, g in groupby(val_pos, key=itemgetter(0)):
-        group = list(g)
-        size = len(group)
-        rank = i + (size + 1) / 2
-        for value, orig_pos in group:
-            result[orig_pos] = rank
-        i += size
-    return result
-
-
-def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
-    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
-    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
-    a = math.isqrt(n // m)
-    return a | (a*a*m != n)
-
-
-# For 53 bit precision floats, the bit width used in
-# _float_sqrt_of_frac() is 109.
-_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
-
-
-def _float_sqrt_of_frac(n: int, m: int) -> float:
-    """Square root of n/m as a float, correctly rounded."""
-    # See principle and proof sketch at: https://bugs.python.org/msg407078
-    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
-    if q >= 0:
-        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
-        denominator = 1
-    else:
-        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
-        denominator = 1 << -q
-    return numerator / denominator   # Convert to float
-
-
-def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
-    """Square root of n/m as a Decimal, correctly rounded."""
-    # Premise:  For decimal, computing (n/m).sqrt() can be off
-    #           by 1 ulp from the correctly rounded result.
-    # Method:   Check the result, moving up or down a step if needed.
-    if n <= 0:
-        if not n:
-            return Decimal('0.0')
-        n, m = -n, -m
-
-    root = (Decimal(n) / Decimal(m)).sqrt()
-    nr, dr = root.as_integer_ratio()
-
-    plus = root.next_plus()
-    np, dp = plus.as_integer_ratio()
-    # test: n / m > ((root + plus) / 2) ** 2
-    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
-        return plus
-
-    minus = root.next_minus()
-    nm, dm = minus.as_integer_ratio()
-    # test: n / m < ((root + minus) / 2) ** 2
-    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
-        return minus
-
-    return root
-
-
-def _mean_stdev(data):
-    """In one pass, compute the mean and sample standard deviation as floats."""
-    T, ss, xbar, n = _ss(data)
-    if n < 2:
-        raise StatisticsError('stdev requires at least two data points')
-    mss = ss / (n - 1)
-    try:
-        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
-    except AttributeError:
-        # Handle Nans and Infs gracefully
-        return float(xbar), float(xbar) / float(ss)
-
-
-def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
-    def f_inv(y):
-        "Return x such that f(x) ≈ y within the specified tolerance."
-        x = f_inv_estimate(y)
-        while abs(diff := f(x) - y) > tolerance:
-            x -= diff / f_prime(x)
-        return x
-    return f_inv
-
-
-def _sqrtprod(x: float, y: float) -> float:
-    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
-    h = sqrt(x * y)
-    if not isfinite(h):
-        if isinf(h) and not isinf(x) and not isinf(y):
-            # Finite inputs overflowed, so scale down, and recompute.
-            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
-            return _sqrtprod(scale * x, scale * y) / scale
-        return h
-    if not h:
-        if x and y:
-            # Non-zero inputs underflowed, so scale up, and recompute.
-            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
-            scale = 2.0 ** 537
-            return _sqrtprod(scale * x, scale * y) / scale
-        return h
-    # Improve accuracy with a differential correction.
-    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-    d = sumprod((x, h), (y, -h))
-    return h + d / (2.0 * h)
-
-
 ## Measures of central tendency (averages) #################################
 
 def mean(data):
@@ -915,6 +556,15 @@ def parabolic_kernel():
     invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)
     support = 1.0
     return pdf, cdf, invcdf, support
+
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
 
 def _quartic_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
@@ -1826,3 +1476,331 @@ class NormalDist:
 
     def __setstate__(self, state):
         self._mu, self._sigma = state
+
+
+## Private utilities #######################################################
+
+def _sum(data):
+    """_sum(data) -> (type, sum, count)
+
+    Return a high-precision sum of the given numeric data as a fraction,
+    together with the type to be converted to and the count of items.
+
+    Examples
+    --------
+
+    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
+    (<class 'float'>, Fraction(19, 2), 5)
+
+    Some sources of round-off error will be avoided:
+
+    # Built-in sum returns zero.
+    >>> _sum([1e50, 1, -1e50] * 1000)
+    (<class 'float'>, Fraction(1000, 1), 3000)
+
+    Fractions and Decimals are also supported:
+
+    >>> from fractions import Fraction as F
+    >>> _sum([F(2, 3), F(7, 5), F(1, 4), F(5, 6)])
+    (<class 'fractions.Fraction'>, Fraction(63, 20), 4)
+
+    >>> from decimal import Decimal as D
+    >>> data = [D("0.1375"), D("0.2108"), D("0.3061"), D("0.0419")]
+    >>> _sum(data)
+    (<class 'decimal.Decimal'>, Fraction(6963, 10000), 4)
+
+    Mixed types are currently treated as an error, except that int is
+    allowed.
+    """
+    count = 0
+    types = set()
+    types_add = types.add
+    partials = {}
+    partials_get = partials.get
+    for typ, values in groupby(data, type):
+        types_add(typ)
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            partials[d] = partials_get(d, 0) + n
+    if None in partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = partials[None]
+        assert not _isfinite(total)
+    else:
+        # Sum all the partial sums using builtin sum.
+        total = sum(Fraction(n, d) for d, n in partials.items())
+    T = reduce(_coerce, types, int)  # or raise TypeError
+    return (T, total, count)
+
+
+def _ss(data, c=None):
+    """Return the exact mean and sum of square deviations of sequence data.
+
+    Calculations are done in a single pass, allowing the input to be an iterator.
+
+    If given *c* is used the mean; otherwise, it is calculated from the data.
+    Use the *c* argument with care, as it can lead to garbage results.
+
+    """
+    if c is not None:
+        T, ssd, count = _sum((d := x - c) * d for x in data)
+        return (T, ssd, c, count)
+    count = 0
+    types = set()
+    types_add = types.add
+    sx_partials = defaultdict(int)
+    sxx_partials = defaultdict(int)
+    for typ, values in groupby(data, type):
+        types_add(typ)
+        for n, d in map(_exact_ratio, values):
+            count += 1
+            sx_partials[d] += n
+            sxx_partials[d] += n * n
+    if not count:
+        ssd = c = Fraction(0)
+    elif None in sx_partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        ssd = c = sx_partials[None]
+        assert not _isfinite(ssd)
+    else:
+        sx = sum(Fraction(n, d) for d, n in sx_partials.items())
+        sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
+        # This formula has poor numeric properties for floats,
+        # but with fractions it is exact.
+        ssd = (count * sxx - sx * sx) / count
+        c = sx / count
+    T = reduce(_coerce, types, int)  # or raise TypeError
+    return (T, ssd, c, count)
+
+
+def _isfinite(x):
+    try:
+        return x.is_finite()  # Likely a Decimal.
+    except AttributeError:
+        return math.isfinite(x)  # Coerces to float first.
+
+
+def _coerce(T, S):
+    """Coerce types T and S to a common type, or raise TypeError.
+
+    Coercion rules are currently an implementation detail. See the CoerceTest
+    test class in test_statistics for details.
+    """
+    # See http://bugs.python.org/issue24068.
+    assert T is not bool, "initial type T is bool"
+    # If the types are the same, no need to coerce anything. Put this
+    # first, so that the usual case (no coercion needed) happens as soon
+    # as possible.
+    if T is S:  return T
+    # Mixed int & other coerce to the other type.
+    if S is int or S is bool:  return T
+    if T is int:  return S
+    # If one is a (strict) subclass of the other, coerce to the subclass.
+    if issubclass(S, T):  return S
+    if issubclass(T, S):  return T
+    # Ints coerce to the other type.
+    if issubclass(T, int):  return S
+    if issubclass(S, int):  return T
+    # Mixed fraction & float coerces to float (or float subclass).
+    if issubclass(T, Fraction) and issubclass(S, float):
+        return S
+    if issubclass(T, float) and issubclass(S, Fraction):
+        return T
+    # Any other combination is disallowed.
+    msg = "don't know how to coerce %s and %s"
+    raise TypeError(msg % (T.__name__, S.__name__))
+
+
+def _exact_ratio(x):
+    """Return Real number x to exact (numerator, denominator) pair.
+
+    >>> _exact_ratio(0.25)
+    (1, 4)
+
+    x is expected to be an int, Fraction, Decimal or float.
+    """
+
+    try:
+        return x.as_integer_ratio()
+    except AttributeError:
+        pass
+    except (OverflowError, ValueError):
+        # float NAN or INF.
+        assert not _isfinite(x)
+        return (x, None)
+    try:
+        # x may be an Integral ABC.
+        return (x.numerator, x.denominator)
+    except AttributeError:
+        msg = f"can't convert type '{type(x).__name__}' to numerator/denominator"
+        raise TypeError(msg)
+
+
+def _convert(value, T):
+    """Convert value to given numeric type T."""
+    if type(value) is T:
+        # This covers the cases where T is Fraction, or where value is
+        # a NAN or INF (Decimal or float).
+        return value
+    if issubclass(T, int) and value.denominator != 1:
+        T = float
+    try:
+        # FIXME: what do we do if this overflows?
+        return T(value)
+    except TypeError:
+        if issubclass(T, Decimal):
+            return T(value.numerator) / T(value.denominator)
+        else:
+            raise
+
+
+def _fail_neg(values, errmsg='negative value'):
+    """Iterate over values, failing if any are less than zero."""
+    for x in values:
+        if x < 0:
+            raise StatisticsError(errmsg)
+        yield x
+
+
+def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
+    """Rank order a dataset. The lowest value has rank 1.
+
+    Ties are averaged so that equal values receive the same rank:
+
+        >>> data = [31, 56, 31, 25, 75, 18]
+        >>> _rank(data)
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    The operation is idempotent:
+
+        >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
+        [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
+
+    It is possible to rank the data in reverse order so that the
+    highest value has rank 1.  Also, a key-function can extract
+    the field to be ranked:
+
+        >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
+        >>> _rank(goals, key=itemgetter(1), reverse=True)
+        [2.0, 1.0, 3.0]
+
+    Ranks are conventionally numbered starting from one; however,
+    setting *start* to zero allows the ranks to be used as array indices:
+
+        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
+        >>> scores = [8.1, 7.3, 9.4, 8.3]
+        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
+        ['Bronze', 'Certificate', 'Gold', 'Silver']
+
+    """
+    # If this function becomes public at some point, more thought
+    # needs to be given to the signature.  A list of ints is
+    # plausible when ties is "min" or "max".  When ties is "average",
+    # either list[float] or list[Fraction] is plausible.
+
+    # Default handling of ties matches scipy.stats.mstats.spearmanr.
+    if ties != 'average':
+        raise ValueError(f'Unknown tie resolution method: {ties!r}')
+    if key is not None:
+        data = map(key, data)
+    val_pos = sorted(zip(data, count()), reverse=reverse)
+    i = start - 1
+    result = [0] * len(val_pos)
+    for _, g in groupby(val_pos, key=itemgetter(0)):
+        group = list(g)
+        size = len(group)
+        rank = i + (size + 1) / 2
+        for value, orig_pos in group:
+            result[orig_pos] = rank
+        i += size
+    return result
+
+
+def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
+    """Square root of n/m, rounded to the nearest integer using round-to-odd."""
+    # Reference: https://www.lri.fr/~melquion/doc/05-imacs17_1-expose.pdf
+    a = math.isqrt(n // m)
+    return a | (a*a*m != n)
+
+
+# For 53 bit precision floats, the bit width used in
+# _float_sqrt_of_frac() is 109.
+_sqrt_bit_width: int = 2 * sys.float_info.mant_dig + 3
+
+
+def _float_sqrt_of_frac(n: int, m: int) -> float:
+    """Square root of n/m as a float, correctly rounded."""
+    # See principle and proof sketch at: https://bugs.python.org/msg407078
+    q = (n.bit_length() - m.bit_length() - _sqrt_bit_width) // 2
+    if q >= 0:
+        numerator = _integer_sqrt_of_frac_rto(n, m << 2 * q) << q
+        denominator = 1
+    else:
+        numerator = _integer_sqrt_of_frac_rto(n << -2 * q, m)
+        denominator = 1 << -q
+    return numerator / denominator   # Convert to float
+
+
+def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
+    """Square root of n/m as a Decimal, correctly rounded."""
+    # Premise:  For decimal, computing (n/m).sqrt() can be off
+    #           by 1 ulp from the correctly rounded result.
+    # Method:   Check the result, moving up or down a step if needed.
+    if n <= 0:
+        if not n:
+            return Decimal('0.0')
+        n, m = -n, -m
+
+    root = (Decimal(n) / Decimal(m)).sqrt()
+    nr, dr = root.as_integer_ratio()
+
+    plus = root.next_plus()
+    np, dp = plus.as_integer_ratio()
+    # test: n / m > ((root + plus) / 2) ** 2
+    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
+        return plus
+
+    minus = root.next_minus()
+    nm, dm = minus.as_integer_ratio()
+    # test: n / m < ((root + minus) / 2) ** 2
+    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
+        return minus
+
+    return root
+
+
+def _mean_stdev(data):
+    """In one pass, compute the mean and sample standard deviation as floats."""
+    T, ss, xbar, n = _ss(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    try:
+        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
+    except AttributeError:
+        # Handle Nans and Infs gracefully
+        return float(xbar), float(xbar) / float(ss)
+
+
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+    h = sqrt(x * y)
+    if not isfinite(h):
+        if isinf(h) and not isinf(x) and not isinf(y):
+            # Finite inputs overflowed, so scale down, and recompute.
+            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    if not h:
+        if x and y:
+            # Non-zero inputs underflowed, so scale up, and recompute.
+            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
+            scale = 2.0 ** 537
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    # Improve accuracy with a differential correction.
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+    d = sumprod((x, h), (y, -h))
+    return h + d / (2.0 * h)
