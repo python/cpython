@@ -595,8 +595,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             1. the command queue is empty
             2. a command to continue execution is encountered
 
-        The return value is whether a following cmdloop should be executed, or
-        True for the first case and False for the second.
+        The return value is True if a following cmdloop should be executed, and False otherwise.
         """
         if not self.cmdqueue:
             return True
