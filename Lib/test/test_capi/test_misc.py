@@ -2293,7 +2293,11 @@ class SubinterpreterTest(unittest.TestCase):
             except ImportError:
                 _datetime = None
 
-            def load_module():
+            def run(type_checker, obj):
+                if not type_checker(obj, True):  # exact check
+                    raise TypeError(f'{type(obj)} is not C API type')
+
+            if _datetime:
                 import importlib.machinery
                 import importlib.util
                 fullname = '_testcapi_datetime'
@@ -2302,13 +2306,7 @@ class SubinterpreterTest(unittest.TestCase):
                 spec = importlib.util.spec_from_loader(fullname, loader)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                return module
 
-            def run(type_checker, obj):
-                if not type_checker(obj, True):  # exact check
-                    raise TypeError(f'{type(obj)} is not C API type')
-
-            if _datetime and (module := load_module()):
                 run(module.check_date,     _datetime.date.today())
                 run(module.check_datetime, _datetime.datetime.now())
                 run(module.check_time,     _datetime.time(12, 30))
