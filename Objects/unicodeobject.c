@@ -11555,7 +11555,7 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
 str.find as unicode_find -> Py_ssize_t
 
     self as str: self
-    sub as subobj: object
+    sub: object
     start: slice_index(accept={int, NoneType}, c_default='0') = None
     end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
     /
@@ -11567,12 +11567,11 @@ Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_find_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=80175735a6d549d0 input=51e7b530950ab304]*/
+/*[clinic end generated code: output=da52b0913b08a960 input=a236fecd6e36a36a]*/
 {
-    Py_ssize_t result = any_find_first_slice(str, "find", subobj, start, end,
-                                             +1);
+    Py_ssize_t result = any_find_first_slice(str, "find", sub, start, end, +1);
     return result < 0 ? -1 : result;
 }
 
@@ -11626,11 +11625,11 @@ Raises ValueError when the substring is not found.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_index_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_index_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=c9af24adf2f1f99e input=f0033cf1698b6108]*/
+/*[clinic end generated code: output=4f3129c11e833e01 input=f0033cf1698b6108]*/
 {
-    Py_ssize_t result = any_find_first_slice(str, "index", subobj, start, end,
+    Py_ssize_t result = any_find_first_slice(str, "index", sub, start, end,
                                              +1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
@@ -12725,11 +12724,11 @@ Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_rfind_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=9d316eee7b9f9bf0 input=23ae7964e8f70b35]*/
+/*[clinic end generated code: output=0576fddc53b8616e input=23ae7964e8f70b35]*/
 {
-    Py_ssize_t result = any_find_first_slice(str, "rfind", subobj, start, end,
+    Py_ssize_t result = any_find_first_slice(str, "rfind", sub, start, end,
                                              -1);
     return result < 0 ? -1 : result;
 }
@@ -12744,11 +12743,11 @@ Raises ValueError when the substring is not found.
 [clinic start generated code]*/
 
 static Py_ssize_t
-unicode_rindex_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_rindex_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=847d553d0dc10a86 input=990f3925b149c1bc]*/
+/*[clinic end generated code: output=137ad2933d200f38 input=990f3925b149c1bc]*/
 {
-    Py_ssize_t result = any_find_first_slice(str, "rindex", subobj, start, end,
+    Py_ssize_t result = any_find_first_slice(str, "rindex", sub, start, end,
                                              -1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");

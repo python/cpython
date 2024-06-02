@@ -369,14 +369,14 @@ PyDoc_STRVAR(unicode_find__doc__,
     {"find", _PyCFunction_CAST(unicode_find), METH_FASTCALL, unicode_find__doc__},
 
 static Py_ssize_t
-unicode_find_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_find_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                   Py_ssize_t end);
 
 static PyObject *
 unicode_find(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *subobj;
+    PyObject *sub;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -384,7 +384,7 @@ unicode_find(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
         goto exit;
     }
-    subobj = args[0];
+    sub = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -398,7 +398,7 @@ unicode_find(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_find_impl(str, subobj, start, end);
+    _return_value = unicode_find_impl(str, sub, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -421,14 +421,14 @@ PyDoc_STRVAR(unicode_index__doc__,
     {"index", _PyCFunction_CAST(unicode_index), METH_FASTCALL, unicode_index__doc__},
 
 static Py_ssize_t
-unicode_index_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_index_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                    Py_ssize_t end);
 
 static PyObject *
 unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *subobj;
+    PyObject *sub;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -436,7 +436,7 @@ unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
     }
-    subobj = args[0];
+    sub = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -450,7 +450,7 @@ unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_index_impl(str, subobj, start, end);
+    _return_value = unicode_index_impl(str, sub, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1064,14 +1064,14 @@ PyDoc_STRVAR(unicode_rfind__doc__,
     {"rfind", _PyCFunction_CAST(unicode_rfind), METH_FASTCALL, unicode_rfind__doc__},
 
 static Py_ssize_t
-unicode_rfind_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_rfind_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                    Py_ssize_t end);
 
 static PyObject *
 unicode_rfind(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *subobj;
+    PyObject *sub;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -1079,7 +1079,7 @@ unicode_rfind(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
         goto exit;
     }
-    subobj = args[0];
+    sub = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1093,7 +1093,7 @@ unicode_rfind(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_rfind_impl(str, subobj, start, end);
+    _return_value = unicode_rfind_impl(str, sub, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1116,14 +1116,14 @@ PyDoc_STRVAR(unicode_rindex__doc__,
     {"rindex", _PyCFunction_CAST(unicode_rindex), METH_FASTCALL, unicode_rindex__doc__},
 
 static Py_ssize_t
-unicode_rindex_impl(PyObject *str, PyObject *subobj, Py_ssize_t start,
+unicode_rindex_impl(PyObject *str, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end);
 
 static PyObject *
 unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *subobj;
+    PyObject *sub;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     Py_ssize_t _return_value;
@@ -1131,7 +1131,7 @@ unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
         goto exit;
     }
-    subobj = args[0];
+    sub = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1145,7 +1145,7 @@ unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    _return_value = unicode_rindex_impl(str, subobj, start, end);
+    _return_value = unicode_rindex_impl(str, sub, start, end);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1872,4 +1872,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fb071b9e4dc87fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb38686a525c786a input=a9049054013a1b77]*/
