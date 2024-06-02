@@ -1067,6 +1067,90 @@ Querying file type and status
    .. versionadded:: 3.5
 
 
+Reading and writing files
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
+
+   Open the file pointed to by the path, like the built-in :func:`open`
+   function does::
+
+      >>> p = Path('setup.py')
+      >>> with p.open() as f:
+      ...     f.readline()
+      ...
+      '#!/usr/bin/env python3\n'
+
+
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
+
+   Return the decoded contents of the pointed-to file as a string::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
+
+
+.. method:: Path.read_bytes()
+
+   Return the binary contents of the pointed-to file as a bytes object::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
+
+   Open the file pointed to in text mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
+
+
+.. method:: Path.write_bytes(data)
+
+   Open the file pointed to in bytes mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   An existing file of the same name is overwritten.
+
+   .. versionadded:: 3.5
+
+
 Other methods
 ^^^^^^^^^^^^^
 
@@ -1360,18 +1444,6 @@ example because the path doesn't exist).
       The *exist_ok* parameter was added.
 
 
-.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to by the path, like the built-in :func:`open`
-   function does::
-
-      >>> p = Path('setup.py')
-      >>> with p.open() as f:
-      ...     f.readline()
-      ...
-      '#!/usr/bin/env python3\n'
-
-
 .. method:: Path.owner(*, follow_symlinks=True)
 
    Return the name of the user owning the file. :exc:`KeyError` is raised
@@ -1387,37 +1459,6 @@ example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-
-.. method:: Path.read_bytes()
-
-   Return the binary contents of the pointed-to file as a bytes object::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.read_text(encoding=None, errors=None, newline=None)
-
-   Return the decoded contents of the pointed-to file as a string::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   The file is opened and then closed. The optional parameters have the same
-   meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.13
-      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
@@ -1591,42 +1632,6 @@ example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
-
-
-.. method:: Path.write_bytes(data)
-
-   Open the file pointed to in bytes mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   An existing file of the same name is overwritten.
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to in text mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   An existing file of the same name is overwritten. The optional parameters
-   have the same meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.10
-      The *newline* parameter was added.
 
 
 .. _pathlib-pattern-language:
