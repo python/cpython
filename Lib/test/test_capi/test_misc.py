@@ -2317,9 +2317,9 @@ class SubinterpreterTest(unittest.TestCase):
             exec(script)
         for name in ('legacy', 'isolated'):
             with self.subTest(name):
-                config = dict(_interpreters.new_config(name).__dict__)
-                config['gil'] = {'shared': 1, 'own': 2}[config['gil']]
-                ret = support.run_in_subinterp_with_config(script, **config)
+                config = _interpreters.new_config(name)
+                config.gil = {'shared': 1, 'own': 2}[config.gil]
+                ret = support.run_in_subinterp_with_config(script, **config.__dict__)
                 self.assertEqual(ret, 0)
 
 
