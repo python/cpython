@@ -9231,8 +9231,8 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
         sub_kind = PyUnicode_KIND(substr);
         sub_isascii = PyUnicode_IS_ASCII(substr);
         sub_len = PyUnicode_GET_LENGTH(substr);
-        if (!(sub_kind > kind || !sub_isascii && isascii ||
-              sub_len > end - start))
+        if (sub_kind <= kind && (sub_isascii || !isascii) &&
+            sub_len <= end - start)
         {
             subs[subs_len] = PyUnicode_DATA(substr);
             sub_kinds[subs_len] = sub_kind;
