@@ -186,6 +186,12 @@ class TestReader(TestCase):
         self.assertEqual(l, 4)
 
         # Handles ANSI escape sequences
+        ps1 = "\033[0;32m>>> \033[0m"
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, "\033[0;32m>>> \033[0m")
+        self.assertEqual(l, 4)
+
+        # Handles ANSI escape sequences bracketed in \001 .. \002
         ps1 = "\001\033[0;32m\002>>> \001\033[0m\002"
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m>>> \033[0m")

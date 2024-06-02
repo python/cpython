@@ -1,2 +1,1 @@
-Fix _pyrepl crash when using custom prompt with ANSI escape codes. Patch by
-Daniel Hollas.
+Fix _pyrepl crash when using custom prompt with ANSI escape codes.
