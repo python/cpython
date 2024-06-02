@@ -6612,14 +6612,13 @@ WITH_SAVE_ENV([
   AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
-       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
-       AC_SEARCH_LIBS(
-         [update_panels], [panel panelw],
-         [AS_VAR_IF([have_panel], [no],
-           [AS_VAR_SET([have_panel], [yes])
-            PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
-         [AS_VAR_SET([have_panel], [no])])])],
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
     [AS_VAR_SET([have_curses], [no])])
+  AC_SEARCH_LIBS([update_panels], [panel panelw],
+    [AS_VAR_IF([have_panel], [no],
+      [AS_VAR_SET([have_panel], [yes])
+       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
+    [AS_VAR_SET([have_panel], [no])])
 ])
 
 dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
@@ -6664,8 +6663,11 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-# On Solaris, term.h requires curses.h
-AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
+WITH_SAVE_ENV([
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
+  # On Solaris, term.h requires curses.h
+  AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
+])
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
@@ -7655,7 +7657,7 @@ PY_STDLIB_MOD([_curses],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
 )
 PY_STDLIB_MOD([_curses_panel],
-  [test "$have_panel" = "yes"], [],
+  [test "$have_curses" = "yes" && test "$have_panel" = "yes"], [],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],
