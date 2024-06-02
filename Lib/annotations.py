@@ -105,7 +105,7 @@ class ForwardRef:
                 globals = getattr(owner, "__globals__", None)
         if self.__forward_module__ is not None:
             globals = getattr(
-                sys.modules.get(self.__forward_module__, None), '__dict__', globals
+                sys.modules.get(self.__forward_module__, None), "__dict__", globals
             )
 
         if locals is None:
@@ -132,7 +132,9 @@ class ForwardRef:
         import warnings
 
         if type_params is _sentinel:
-            typing._deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
+            typing._deprecation_warning_for_no_type_params_passed(
+                "typing.ForwardRef._evaluate"
+            )
             type_params = ()
         warnings._deprecated(
             "ForwardRef._evaluate",
@@ -140,8 +142,13 @@ class ForwardRef:
             " in Python 3.16. Use ForwardRef.evaluate() or typing.evaluate_forward_ref() instead.",
             remove=(3, 16),
         )
-        return typing.evaluate_forward_ref(self, globals=globalns, locals=localns, type_params=type_params,
-                                           _recursive_guard=recursive_guard)
+        return typing.evaluate_forward_ref(
+            self,
+            globals=globalns,
+            locals=localns,
+            type_params=type_params,
+            _recursive_guard=recursive_guard,
+        )
 
     @property
     def __forward_arg__(self):
@@ -241,11 +248,15 @@ class _Stringifier:
             return ast.Constant(value=other)
 
     def __make_new(self, node):
-        return _Stringifier(node, self.__globals__, self.__owner__, self.__forward_is_class__)
+        return _Stringifier(
+            node, self.__globals__, self.__owner__, self.__forward_is_class__
+        )
 
     def _make_binop(op: ast.AST):
         def binop(self, other):
-            return self.__make_new(ast.BinOp(self.__ast_node__, op, self.__convert(other)))
+            return self.__make_new(
+                ast.BinOp(self.__ast_node__, op, self.__convert(other))
+            )
 
         return binop
 
@@ -267,7 +278,9 @@ class _Stringifier:
 
     def _make_rbinop(op: ast.AST):
         def rbinop(self, other):
-            return self.__make_new(ast.BinOp(self.__convert(other), op, self.__ast_node__))
+            return self.__make_new(
+                ast.BinOp(self.__convert(other), op, self.__ast_node__)
+            )
 
         return rbinop
 
@@ -289,7 +302,13 @@ class _Stringifier:
 
     def _make_compare(op):
         def compare(self, other):
-            return self.__make_new(ast.Compare(left=self.__ast_node__, ops=[op], comparators=[self.__convert(other)]))
+            return self.__make_new(
+                ast.Compare(
+                    left=self.__ast_node__,
+                    ops=[op],
+                    comparators=[self.__convert(other)],
+                )
+            )
 
         return compare
 
@@ -325,7 +344,10 @@ class _Stringifier:
     def __getitem__(self, other):
         # Special case, to avoid stringifying references to class-scoped variables
         # as '__classdict__["x"]'.
-        if isinstance(self.__ast_node__, ast.Name) and self.__ast_node__.id == "__classdict__":
+        if (
+            isinstance(self.__ast_node__, ast.Name)
+            and self.__ast_node__.id == "__classdict__"
+        ):
             raise KeyError
         if isinstance(other, tuple):
             elts = [self.__convert(elt) for elt in other]
@@ -368,7 +390,10 @@ class _StringifierDict(dict):
 
     def __missing__(self, key):
         fwdref = _Stringifier(
-            ast.Name(id=key), globals=self.globals, owner=self.owner, is_class=self.is_class
+            ast.Name(id=key),
+            globals=self.globals,
+            owner=self.owner,
+            is_class=self.is_class,
         )
         self.stringifiers.append(fwdref)
         return fwdref
@@ -546,7 +571,7 @@ def get_annotations(
     if isinstance(obj, type):
         # class
         if ann is None:
-            ann = getattr(obj, '__annotations__', None)
+            ann = getattr(obj, "__annotations__", None)
 
         obj_globals = None
         module_name = getattr(obj, "__module__", None)
