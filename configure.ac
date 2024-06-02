@@ -6612,14 +6612,15 @@ WITH_SAVE_ENV([
   AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
-       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+       AS_VAR_APPEND([LIBS], [" $ac_cv_search_initscr"])])],
     [AS_VAR_SET([have_curses], [no])])
   AC_SEARCH_LIBS([update_panels], [panel panelw],
     [AS_VAR_IF([have_panel], [no],
       [AS_VAR_SET([have_panel], [yes])
-       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
+       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
+       AS_VAR_APPEND([LIBS], [" $ac_cv_search_update_panels"])])],
     [AS_VAR_SET([have_panel], [no])])
-])
 
 dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
 dnl structs since version 5.7.  If the macro is defined as zero before including
@@ -6736,6 +6737,7 @@ PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
+])dnl save env
 
 AC_MSG_NOTICE([checking for device files])
 

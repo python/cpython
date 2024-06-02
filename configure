@@ -26305,6 +26305,7 @@ then :
 then :
   have_curses=yes
        CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+       as_fn_append LIBS " $ac_cv_search_initscr"
 fi
 else $as_nop
   have_curses=no
@@ -26370,17 +26371,11 @@ then :
 then :
   have_panel=yes
        PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
+       as_fn_append LIBS " $ac_cv_search_update_panels"
 fi
 else $as_nop
   have_panel=no
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 
@@ -27190,6 +27185,12 @@ fi
 CPPFLAGS=$ac_save_cppflags
 
 fi
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
