@@ -301,7 +301,7 @@ def harmonic_mean(data, weights=None):
         raise StatisticsError('Weighted sum must be positive')
     return _convert(sum_weights / total, T)
 
-# FIXME: investigate ways to calculate medians without sorting? Quickselect?
+
 def median(data):
     """Return the median (middle value) of numeric data.
 
@@ -338,6 +338,9 @@ def median_low(data):
     3
 
     """
+    # Potentially the sorting step could be replaced with a quickselect.
+    # However, it would require an excellent implementation to beat our
+    # highly optimized builtin sort.
     data = sorted(data)
     n = len(data)
     if n == 0:
