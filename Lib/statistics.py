@@ -189,6 +189,7 @@ def fmean(data, weights=None):
 
     """
     if weights is None:
+
         try:
             n = len(data)
         except TypeError:
@@ -515,10 +516,6 @@ def multimode(data):
 
 ## Measures of spread ######################################################
 
-# See http://mathworld.wolfram.com/Variance.html
-#     http://mathworld.wolfram.com/SampleVariance.html
-
-
 def variance(data, xbar=None):
     """Return the sample variance of data.
 
@@ -557,6 +554,8 @@ def variance(data, xbar=None):
     Fraction(67, 108)
 
     """
+    # http://mathworld.wolfram.com/SampleVariance.html
+
     T, ss, c, n = _ss(data, xbar)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
@@ -598,6 +597,8 @@ def pvariance(data, mu=None):
     Fraction(13, 72)
 
     """
+    # http://mathworld.wolfram.com/Variance.html
+
     T, ss, c, n = _ss(data, mu)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
@@ -1118,7 +1119,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
 
 
 ## Quantiles ###############################################################
-#
+
 # There is no one perfect way to compute quantiles.  Here we offer
 # two methods that serve common needs.  Most other packages
 # surveyed offered at least one or both of these two, making them
@@ -1172,7 +1173,9 @@ def quantiles(data, *, n=4, method='exclusive'):
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
+
     data = sorted(data)
+
     ld = len(data)
     if ld < 2:
         if ld == 1:
@@ -1211,6 +1214,7 @@ def _normal_dist_inv_cdf(p, mu, sigma):
     # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
     # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
     q = p - 0.5
+
     if fabs(q) <= 0.425:
         r = 0.180625 - q * q
         # Hash sum: 55.88319_28806_14901_4439
@@ -1232,6 +1236,7 @@ def _normal_dist_inv_cdf(p, mu, sigma):
                      1.0)
         x = num / den
         return mu + (x * sigma)
+
     r = p if q <= 0.0 else 1.0 - p
     r = sqrt(-log(r))
     if r <= 5.0:
@@ -1272,9 +1277,11 @@ def _normal_dist_inv_cdf(p, mu, sigma):
                      1.36929_88092_27358_05310e-1) * r +
                      5.99832_20655_58879_37690e-1) * r +
                      1.0)
+
     x = num / den
     if q < 0.0:
         x = -x
+
     return mu + (x * sigma)
 
 
