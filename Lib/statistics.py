@@ -621,11 +621,6 @@ def pstdev(data, mu=None):
 
 ## Statistics for relations between two inputs #############################
 
-# See https://en.wikipedia.org/wiki/Covariance
-#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
-#     https://en.wikipedia.org/wiki/Simple_linear_regression
-
-
 def covariance(x, y, /):
     """Covariance
 
@@ -643,6 +638,7 @@ def covariance(x, y, /):
     -7.5
 
     """
+    # https://en.wikipedia.org/wiki/Covariance
     n = len(x)
     if len(y) != n:
         raise StatisticsError('covariance requires that both inputs have same number of data points')
@@ -676,7 +672,10 @@ def correlation(x, y, /, *, method='linear'):
     Spearman's rank correlation coefficient is appropriate for ordinal
     data or for continuous data that doesn't meet the linear proportion
     requirement for Pearson's correlation coefficient.
+
     """
+    # https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+    # https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both inputs have same number of data points')
@@ -743,6 +742,7 @@ def linear_regression(x, y, /, *, proportional=False):
     LinearRegression(slope=2.90475..., intercept=0.0)
 
     """
+    # https://en.wikipedia.org/wiki/Simple_linear_regression
     n = len(x)
     if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
