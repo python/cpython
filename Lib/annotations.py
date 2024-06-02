@@ -375,6 +375,12 @@ class _Stringifier:
     def __repr__(self):
         return ast.unparse(self.__ast_node__)
 
+    def __bool__(self):
+        raise TypeError("Cannot stringify annotation that uses boolean logic")
+
+    def __format__(self, format_spec):
+        raise TypeError("Cannot stringify annotation containing string formatting")
+
 
 class _StringifierDict(dict):
     def __init__(self, namespace, globals=None, owner=None, is_class=False):
