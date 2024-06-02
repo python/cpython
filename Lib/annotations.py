@@ -243,6 +243,8 @@ class Stringifier:
     __floordiv__ = _make_binop(ast.FloorDiv())
     __pow__ = _make_binop(ast.Pow())
 
+    del _make_binop
+
     def _make_compare(op):
         def compare(self, other):
             return Stringifier(ast.Compare(left=self.node, ops=[op], comparators=[self._convert(other)]))
@@ -255,6 +257,8 @@ class Stringifier:
     __ne__ = _make_compare(ast.NotEq())
     __gt__ = _make_compare(ast.Gt())
     __ge__ = _make_compare(ast.GtE())
+
+    del _make_compare
 
     # Doesn't work because the return type is always coerced to a bool
     # __contains__ = _make_compare(ast.In())
@@ -273,6 +277,8 @@ class Stringifier:
     __invert__ = _make_unary_op(ast.Invert())
     __pos__ = _make_unary_op(ast.UAdd())
     __neg__ = _make_unary_op(ast.USub())
+
+    del _make_unary_op
 
     def __getitem__(self, other):
         # Special case, to avoid stringifying references to class-scoped variables
