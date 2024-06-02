@@ -9055,8 +9055,8 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     }
 
 static Py_ssize_t
-fast_find(const void *str, int kind, int len,
-          const void *sub, int sub_kind, int sub_len,
+fast_find(const void *str, int kind, Py_ssize_t len,
+          const void *sub, int sub_kind, Py_ssize_t sub_len,
           Py_ssize_t start, Py_ssize_t end,
           int isascii, int direction)
 {

@@ -729,20 +729,20 @@ exit:
 }
 
 PyObject *
-_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *subobj,
+_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
                Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_first_internal(str, len, "find", subobj, start,
-                                            end, +1);
+    Py_ssize_t result = find_first_internal(str, len, "find", sub, start, end,
+                                            +1);
     return result == -2 ? NULL : PyLong_FromSsize_t(result);
 }
 
 PyObject *
-_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *subobj,
+_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_first_internal(str, len, "index", subobj, start,
-                                            end, +1);
+    Py_ssize_t result = find_first_internal(str, len, "index", sub, start, end,
+                                            +1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "subsection not found");
     }
@@ -750,19 +750,19 @@ _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *subobj,
 }
 
 PyObject *
-_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *subobj,
+_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
                 Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_first_internal(str, len, "rfind", subobj, start,
-                                            end, -1);
+    Py_ssize_t result = find_first_internal(str, len, "rfind", sub, start, end,
+                                            -1);
     return result == -2 ? NULL : PyLong_FromSsize_t(result);
 }
 
 PyObject *
-_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *subobj,
+_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *sub,
                  Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_first_internal(str, len, "rindex", subobj, start,
+    Py_ssize_t result = find_first_internal(str, len, "rindex", sub, start,
                                             end, -1);
     if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "subsection not found");
