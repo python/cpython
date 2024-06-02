@@ -3088,12 +3088,15 @@ Introspection helpers
      *obj*'s :ref:`type parameter <type-params>` namespace. If *globalns* or
      *localns* is not given, appropriate namespace dictionaries are inferred
      from *obj*.
-   * :const:`None` is replaced with :class:`types.NoneType`.
+   * ``None`` is replaced with :class:`types.NoneType`.
    * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an empty dictionary is
      returned.
-   * If *obj* is a class ``C``, the function returns only the class's own annotations,
-     but also those of all base classes. This is done by merging all the ``__annotations__`` along
-     ``C.__mro__`` in reverse order.
+   * If *obj* is a class ``C``, the function returns a dictionary that merges
+     annotations from ``C``'s base classes with those on ``C`` directly. This
+     is done by traversing ``C.__mro__`` and iteratively combining
+     ``__annotations__`` dictionaries. Annotations on classes appearing
+     earlier in the :term:`method resolution order` always take precedence over
+     annotations on classes appearing later in the method resolution order.
 
    See also :func:`inspect.get_annotations`, a lower-level function that
    returns annotations more directly.
