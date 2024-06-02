@@ -2298,7 +2298,7 @@ class SubinterpreterTest(unittest.TestCase):
                 fullname = '_testcapi_datetime'
                 origin = importlib.util.find_spec('_testcapi').origin
                 if origin == 'built-in':
-                    return  # WASI
+                    return
                 loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
                 spec = importlib.util.spec_from_loader(fullname, loader)
                 module = importlib.util.module_from_spec(spec)
@@ -2316,16 +2316,11 @@ class SubinterpreterTest(unittest.TestCase):
                 run(module.check_delta,    _datetime.timedelta(1))
                 run(module.check_tzinfo,   _datetime.tzinfo())
         """)
-        with self.subTest("main interpreter"):
+        with self.subTest('main'):
             exec(script)
-
-        with self.subTest("legacy subinterpreter"):
-            ret = support.run_in_subinterp(script)
-            self.assertEqual(ret, 0)
-
         if _interpreters:
             for name in ('legacy', 'isolated'):
-                with self.subTest(f'{name} (config)'):
+                with self.subTest(name):
                     config = dict(_interpreters.new_config(name).__dict__)
                     config['gil'] = {'shared': 1, 'own': 2}[config['gil']]
                     ret = support.run_in_subinterp_with_config(script, **config)
