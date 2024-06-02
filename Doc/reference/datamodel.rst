@@ -1344,13 +1344,13 @@ Special read-only attributes
        ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
    * - .. attribute:: frame.f_locals
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`local variables <naming>`.
        If the frame refers to an :term:`optimized scope`,
        this may return a write-through proxy object.
 
        .. versionchanged:: 3.13
-          Return a proxy for functions and comprehensions.
+          Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
      - The dictionary used by the frame to look up
