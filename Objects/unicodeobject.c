@@ -9346,10 +9346,7 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
 exit:
     if (heap_subs) {
         for (Py_ssize_t i = 0; i < subs_len; i++) {
-            void *heap_sub = heap_subs[i];
-            if (heap_sub) {
-                PyMem_Free(heap_sub);
-            }
+            PyMem_Free((void *)heap_subs[i]);
         }
     }
     PyMem_RawFree(heap_subs);
