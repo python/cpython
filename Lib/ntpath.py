@@ -584,7 +584,7 @@ else:  # use native Windows method on Windows
                 sep = b'\\'
                 cwd = os.getcwdb()
             else:
-                sep = '/'
+                sep = '\\'
                 cwd = os.getcwd()
             drive, root, path = splitroot(path)
             if drive and drive != splitroot(cwd)[0]:
