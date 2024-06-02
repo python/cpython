@@ -1322,7 +1322,6 @@ class StrTest(string_tests.StringLikeTest,
 
         # test number formatter errors:
         self.assertRaises(ValueError, '{0:x}'.format, 1j)
-        self.assertRaises(ValueError, '{0:x}'.format, 1.0)
         self.assertRaises(ValueError, '{0:X}'.format, 1j)
         self.assertRaises(ValueError, '{0:X}'.format, 1.0)
         self.assertRaises(ValueError, '{0:o}'.format, 1j)

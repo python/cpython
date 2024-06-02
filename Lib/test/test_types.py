@@ -527,7 +527,7 @@ class TypesTests(unittest.TestCase):
 
         # confirm format options expected to fail on floats, such as integer
         # presentation types
-        for format_spec in 'sbcdoxX':
+        for format_spec in 'sbcdoX':
             self.assertRaises(ValueError, format, 0.0, format_spec)
             self.assertRaises(ValueError, format, 1.0, format_spec)
             self.assertRaises(ValueError, format, -1.0, format_spec)

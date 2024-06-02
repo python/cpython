@@ -705,7 +705,7 @@ class FormatTestCase(unittest.TestCase):
 
         # confirm format options expected to fail on floats, such as integer
         # presentation types
-        for format_spec in 'sbcdoxX':
+        for format_spec in 'sbcdoX':
             self.assertRaises(ValueError, format, 0.0, format_spec)
             self.assertRaises(ValueError, format, 1.0, format_spec)
             self.assertRaises(ValueError, format, -1.0, format_spec)
@@ -719,6 +719,61 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(NAN, 'F'), 'NAN')
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
+
+    def test_format_hex(self):
+        # Test format(value, 'x')
+        self.assertEqual(format(1.0, 'x'), '1.0000000000000p+0')
+        self.assertEqual(format(1.0, '#x'), '0x1.0000000000000p+0')
+
+        # test '+', ' ' and '-' format sign
+        self.assertEqual(format(0.0, '+x'), '+0.0p+0')
+        self.assertEqual(format(0.0, ' x'), ' 0.0p+0')
+        self.assertEqual(format(0.0, '-x'), '0.0p+0')
+        self.assertEqual(format(-0.0, '+x'), '-0.0p+0')
+        self.assertEqual(format(-0.0, ' x'), '-0.0p+0')
+        self.assertEqual(format(-0.0, '-x'), '-0.0p+0')
+
+        self.assertEqual(format(1.5, '+x'), '+1.8000000000000p+0')
+        self.assertEqual(format(1.5, ' x'), ' 1.8000000000000p+0')
+        self.assertEqual(format(1.5, '-x'), '1.8000000000000p+0')
+        self.assertEqual(format(-1.5, '+x'), '-1.8000000000000p+0')
+        self.assertEqual(format(-1.5, ' x'), '-1.8000000000000p+0')
+        self.assertEqual(format(-1.5, '-x'), '-1.8000000000000p+0')
+
+        # test fill and align
+        self.assertEqual(format(0.0, '12x'),   '      0.0p+0')
+        self.assertEqual(format(0.0, '<12x'),  '0.0p+0      ')
+        self.assertEqual(format(0.0, '^12x'),  '   0.0p+0   ')
+        self.assertEqual(format(0.0, '^+12x'), '  +0.0p+0   ')
+        self.assertEqual(format(0.0, '_^12x'), '___0.0p+0___')
+        self.assertEqual(format(0.0, '=12x'),  '      0.0p+0')
+        self.assertEqual(format(0.0, '=+12x'), '+     0.0p+0')
+        self.assertEqual(format(-0.0, '=12x'), '-     0.0p+0')
+
+        # precision is not supported
+        with self.assertRaises(ValueError):
+            format(1.0, '.1x')
+
+        # test some specific values
+        self.assertEqual(format(0.1, 'x'), '1.999999999999ap-4')
+        self.assertEqual(format(3.14159, 'x'), '1.921f9f01b866ep+1')
+        self.assertEqual(format(1/7, 'x'), '1.2492492492492p-3')
+
+        # roundtrip: hex => float => hex
+        for value in (
+            '0x1.a934f0979a371p-2',  # math.log(10, 256)
+            '0x1.999999999999ap-4',  # 0.1
+            '0x1.921f9f01b866ep+1',  # 3.14159
+        ):
+            with self.subTest(value=value):
+                self.assertEqual(format(float.fromhex(value), '#x'),
+                                 value)
+
+        # 'x' format doesn't call the hex() method
+        class MyFloat(float):
+            def hex(self):
+                return 'myhex'
+        self.assertEqual(format(MyFloat(0.0), 'x'), '0.0p+0')
 
     @support.requires_IEEE_754
     def test_format_testfile(self):

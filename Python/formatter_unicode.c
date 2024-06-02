@@ -1044,6 +1044,7 @@ format_float_internal(PyObject *value,
                       _PyUnicodeWriter *writer)
 {
     char *buf = NULL;       /* buffer returned from PyOS_double_to_string */
+    PyObject *hex_str = NULL;
     Py_ssize_t n_digits;
     Py_ssize_t n_remainder;
     Py_ssize_t n_total;
@@ -1085,41 +1086,62 @@ format_float_internal(PyObject *value,
         default_precision = 0;
     }
 
-    if (type == 'n')
+    if (type == 'n') {
         /* 'n' is the same as 'g', except for the locale used to
            format the result. We take care of that later. */
         type = 'g';
-
-    val = PyFloat_AsDouble(value);
-    if (val == -1.0 && PyErr_Occurred())
-        goto done;
-
-    if (type == '%') {
-        type = 'f';
-        val *= 100;
-        add_pct = 1;
     }
 
-    if (precision < 0)
-        precision = default_precision;
-    else if (type == 'r')
-        type = 'g';
+    if (type == 'x') {
+        if (format->precision >= 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "formatting float as hex doesn't support precision");
+            goto done;
+        }
 
-    /* Cast "type", because if we're in unicode we need to pass an
-       8-bit char. This is safe, because we've restricted what "type"
-       can be. */
-    buf = PyOS_double_to_string(val, (char)type, precision, flags,
-                                &float_type);
-    if (buf == NULL)
-        goto done;
-    n_digits = strlen(buf);
+        hex_str = _PyFloat_Hex(value, format->alternate);
+        if (hex_str == NULL) {
+            goto done;
+        }
 
-    if (add_pct) {
-        /* We know that buf has a trailing zero (since we just called
-           strlen() on it), and we don't use that fact any more. So we
-           can just write over the trailing zero. */
-        buf[n_digits] = '%';
-        n_digits += 1;
+        assert(PyUnicode_Check(hex_str));
+        assert(PyUnicode_KIND(hex_str) == PyUnicode_1BYTE_KIND);
+        buf = (char*)PyUnicode_1BYTE_DATA(hex_str);
+        n_digits = PyUnicode_GET_LENGTH(hex_str);
+    }
+    else {
+        val = PyFloat_AsDouble(value);
+        if (val == -1.0 && PyErr_Occurred()) {
+            goto done;
+        }
+
+        if (type == '%') {
+            type = 'f';
+            val *= 100;
+            add_pct = 1;
+        }
+
+        if (precision < 0)
+            precision = default_precision;
+        else if (type == 'r')
+            type = 'g';
+
+        /* Cast "type", because if we're in unicode we need to pass an
+           8-bit char. This is safe, because we've restricted what "type"
+           can be. */
+        buf = PyOS_double_to_string(val, (char)type, precision, flags,
+                                    &float_type);
+        if (buf == NULL)
+            goto done;
+        n_digits = strlen(buf);
+
+        if (add_pct) {
+            /* We know that buf has a trailing zero (since we just called
+               strlen() on it), and we don't use that fact any more. So we
+               can just write over the trailing zero. */
+            buf[n_digits] = '%';
+            n_digits += 1;
+        }
     }
 
     if (format->sign != '+' && format->sign != ' '
@@ -1129,14 +1151,21 @@ format_float_internal(PyObject *value,
     {
         /* Fast path */
         result = _PyUnicodeWriter_WriteASCIIString(writer, buf, n_digits);
-        PyMem_Free(buf);
+        if (hex_str != NULL) {
+            Py_XDECREF(hex_str);
+        }
+        else {
+            PyMem_Free(buf);
+        }
         return result;
     }
 
     /* Since there is no unicode version of PyOS_double_to_string,
        just use the 8 bit version and then convert to unicode. */
     unicode_tmp = _PyUnicode_FromASCII(buf, n_digits);
-    PyMem_Free(buf);
+    if (hex_str == NULL) {
+        PyMem_Free(buf);
+    }
     if (unicode_tmp == NULL)
         goto done;
 
@@ -1178,6 +1207,7 @@ format_float_internal(PyObject *value,
                          &locale, 0);
 
 done:
+    Py_XDECREF(hex_str);
     Py_XDECREF(unicode_tmp);
     free_locale_info(&locale);
     return result;
@@ -1573,6 +1603,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'g':
     case 'G':
     case 'n':
+    case 'x':
     case '%':
         /* no conversion, already a float.  do the formatting */
         return format_float_internal(obj, &format, writer);

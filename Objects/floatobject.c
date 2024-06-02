@@ -1211,22 +1211,10 @@ hex_from_char(char c) {
 
 /* TOHEX_NBITS is DBL_MANT_DIG rounded up to the next integer
    of the form 4k+1. */
-#define TOHEX_NBITS DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4
+#define TOHEX_NBITS (DBL_MANT_DIG + 3 - (DBL_MANT_DIG + 2) % 4)
 
-/*[clinic input]
-float.hex
-
-Return a hexadecimal representation of a floating-point number.
-
->>> (-0.1).hex()
-'-0x1.999999999999ap-4'
->>> 3.14159.hex()
-'0x1.921f9f01b866ep+1'
-[clinic start generated code]*/
-
-static PyObject *
-float_hex_impl(PyObject *self)
-/*[clinic end generated code: output=0ebc9836e4d302d4 input=bec1271a33d47e67]*/
+PyObject*
+_PyFloat_Hex(PyObject *self, int fmt_0x_prefix)
 {
     double x, m;
     int e, shift, i, si, esign;
@@ -1239,11 +1227,15 @@ float_hex_impl(PyObject *self)
     if (isnan(x) || isinf(x))
         return float_repr((PyFloatObject *)self);
 
+    const char *prefix;
     if (x == 0.0) {
-        if (copysign(1.0, x) == -1.0)
-            return PyUnicode_FromString("-0x0.0p+0");
-        else
-            return PyUnicode_FromString("0x0.0p+0");
+        if (copysign(1.0, x) == -1.0) {
+            prefix = (fmt_0x_prefix ? "-0x" : "-");
+        }
+        else {
+            prefix = (fmt_0x_prefix ? "0x" : "");
+        }
+        return PyUnicode_FromFormat("%s0.0p+0", prefix);
     }
 
     m = frexp(fabs(x), &e);
@@ -1272,10 +1264,32 @@ float_hex_impl(PyObject *self)
     else
         esign = (int)'+';
 
-    if (x < 0.0)
-        return PyUnicode_FromFormat("-0x%sp%c%d", s, esign, e);
-    else
-        return PyUnicode_FromFormat("0x%sp%c%d", s, esign, e);
+    if (x < 0.0) {
+        prefix = (fmt_0x_prefix ? "-0x" : "-");
+    }
+    else {
+        prefix = (fmt_0x_prefix ? "0x" :"");
+    }
+    return PyUnicode_FromFormat("%s%sp%c%d", prefix, s, esign, e);
+}
+
+
+/*[clinic input]
+float.hex
+
+Return a hexadecimal representation of a floating-point number.
+
+>>> (-0.1).hex()
+'-0x1.999999999999ap-4'
+>>> 3.14159.hex()
+'0x1.921f9f01b866ep+1'
+[clinic start generated code]*/
+
+static PyObject *
+float_hex_impl(PyObject *self)
+/*[clinic end generated code: output=0ebc9836e4d302d4 input=bec1271a33d47e67]*/
+{
+    return _PyFloat_Hex(self, 1);
 }
 
 /* Convert a hexadecimal string to a float. */

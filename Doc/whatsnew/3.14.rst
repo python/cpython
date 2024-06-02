@@ -75,6 +75,10 @@ New Features
 Other Language Changes
 ======================
 
+* Add ``x`` format to :meth:`!float.format`: similar formatting than
+  :meth:`float.hex` without the ``'0x'`` prefix. The alternate format ``#x``
+  uses the ``'0x'`` prefix.
+  (Contributed by Victor Stinner in :gh:`113804`.)
 
 
 New Modules

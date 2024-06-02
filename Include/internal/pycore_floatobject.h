@@ -55,6 +55,8 @@ extern PyObject* _Py_string_to_number_with_underscores(
 
 extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
 
+extern PyObject* _PyFloat_Hex(PyObject *self, int fmt_0x_prefix);
+
 
 #ifdef __cplusplus
 }

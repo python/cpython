@@ -1,0 +1,3 @@
+Add ``x`` format to :meth:`!float.format`: similar formatting than
+:meth:`float.hex` without the ``'0x'`` prefix. The alternate format ``#x``
+uses the ``'0x'`` prefix. Patch by Victor Stinner.

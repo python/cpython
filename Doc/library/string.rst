@@ -571,6 +571,12 @@ The available presentation types for :class:`float` and
    |         | the current locale setting to insert the appropriate     |
    |         | number separator characters.                             |
    +---------+----------------------------------------------------------+
+   | ``'x'`` | For :class:`float`, hex format. Outputs the number in    |
+   |         | base 16, using lower-case letters for the digits above 9.|
+   |         | The alternate form adds ``'0x'`` prefix.                 |
+   |         |                                                          |
+   |         | Precision is not support.                                |
+   +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
@@ -587,6 +593,9 @@ The available presentation types for :class:`float` and
    |         | The overall effect is to match the output of :func:`str` |
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
+
+.. versionchanged:: 3.14
+   Added the ``'x'`` format.
 
 
 .. _formatexamples:
