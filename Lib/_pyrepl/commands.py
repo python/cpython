@@ -219,6 +219,11 @@ class interrupt(FinishCommand):
         os.kill(os.getpid(), signal.SIGINT)
 
 
+class ctrl_c(Command):
+    def do(self) -> None:
+        raise KeyboardInterrupt
+
+
 class suspend(Command):
     def do(self) -> None:
         import signal
