@@ -3083,23 +3083,23 @@ Introspection helpers
    This is often the same as ``obj.__annotations__``, but this function makes
    the following changes to the annotations dictionary:
 
-   * Forward references encoded as string literals or :class:`ForwardRef` objects
-     are handled by evaluating them in *globalns*, *localns*, and (where applicable)
-     *obj*'s :ref:`type parameter <type-params>` namespace. If *globalns* or
-     *localns* is not given, appropriate namespace dictionaries are inferred
-     from *obj*.
+   * Forward references encoded as string literals or :class:`ForwardRef`
+     objects are handled by evaluating them in *globalns*, *localns*, and
+     (where applicable) *obj*'s :ref:`type parameter <type-params>` namespace.
+     If *globalns* or *localns* is not given, appropriate namespace
+     dictionaries are inferred from *obj*.
    * ``None`` is replaced with :class:`types.NoneType`.
-   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an empty dictionary is
-     returned.
+   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an
+     empty dictionary is returned.
    * If *obj* is a class ``C``, the function returns a dictionary that merges
      annotations from ``C``'s base classes with those on ``C`` directly. This
      is done by traversing ``C.__mro__`` and iteratively combining
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
-   * The function recursively replaces all occurrences of ``Annotated[T, ...]`` with ``T``,
-     unless *include_extras* is set to ``True`` (see :class:`Annotated` for
-     more information).
+   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+     with ``T``, unless *include_extras* is set to ``True`` (see
+     :class:`Annotated` for more information).
 
    See also :func:`inspect.get_annotations`, a lower-level function that
    returns annotations more directly.
