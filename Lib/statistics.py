@@ -924,6 +924,7 @@ del _register, _normal_kernel, _logistic_kernel, _sigmoid_kernel
 del _rectangular_kernel, _triangular_kernel, _parabolic_kernel
 del _quartic_kernel, _triweight_kernel, _cosine_kernel
 
+
 def kde(data, h, kernel='normal', *, cumulative=False):
     """Kernel Density Estimation:  Create a continuous probability density
     function or cumulative distribution function from discrete samples.
@@ -1082,6 +1083,7 @@ def kde(data, h, kernel='normal', *, cumulative=False):
         pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
         return pdf
 
+
 def kde_random(data, h, kernel='normal', *, seed=None):
     """Return a function that makes a random selection from the estimated
     probability density function created by kde(data, h, kernel).
@@ -1128,6 +1130,7 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     return rand
 
 
+############################################################################
 # Notes on methods for computing quantiles
 # ----------------------------------------
 #
