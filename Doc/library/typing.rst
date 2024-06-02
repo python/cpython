@@ -3097,6 +3097,9 @@ Introspection helpers
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
+   * The function recursively replaces all occurrences of ``Annotated[T, ...]`` with ``T``,
+     unless *include_extras* is set to ``True`` (see :class:`Annotated` for
+     more information).
 
    See also :func:`inspect.get_annotations`, a lower-level function that
    returns annotations more directly.
