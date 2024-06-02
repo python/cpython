@@ -170,6 +170,7 @@ def mean(data):
     Decimal('0.5625')
 
     If ``data`` is empty, StatisticsError will be raised.
+
     """
     T, total, n = _sum(data)
     if n < 1:
@@ -185,6 +186,7 @@ def fmean(data, weights=None):
 
     >>> fmean([3.5, 4.0, 5.25])
     4.25
+
     """
     if weights is None:
         try:
@@ -196,18 +198,25 @@ def fmean(data, weights=None):
             n = next(counter)
         else:
             total = fsum(data)
+
         if not n:
             raise StatisticsError('fmean requires at least one data point')
+
         return total / n
+
     if not isinstance(weights, (list, tuple)):
         weights = list(weights)
+
     try:
         num = sumprod(data, weights)
     except ValueError:
         raise StatisticsError('data and weights must be the same length')
+
     den = fsum(weights)
+
     if not den:
         raise StatisticsError('sum of weights must be non-zero')
+
     return num / den
 
 
@@ -224,9 +233,11 @@ def geometric_mean(data):
 
     >>> round(geometric_mean([54, 24, 36]), 9)
     36.0
+
     """
     n = 0
     found_zero = False
+
     def count_positive(iterable):
         nonlocal n, found_zero
         for n, x in enumerate(iterable, start=1):
@@ -237,12 +248,14 @@ def geometric_mean(data):
             else:
                 raise StatisticsError('No negative inputs allowed', x)
     total = fsum(map(log, count_positive(data)))
+
     if not n:
         raise StatisticsError('Must have a non-empty dataset')
     if math.isnan(total):
         return math.nan
     if found_zero:
         return math.nan if total == math.inf else 0.0
+
     return exp(total / n)
 
 
@@ -268,10 +281,13 @@ def harmonic_mean(data, weights=None):
 
     If ``data`` is empty, or any element is less than zero,
     ``harmonic_mean`` will raise ``StatisticsError``.
+
     """
     if iter(data) is data:
         data = list(data)
+
     errmsg = 'harmonic mean does not support negative values'
+
     n = len(data)
     if n < 1:
         raise StatisticsError('harmonic_mean requires at least one data point')
@@ -283,6 +299,7 @@ def harmonic_mean(data, weights=None):
             return x
         else:
             raise TypeError('unsupported type')
+
     if weights is None:
         weights = repeat(1, n)
         sum_weights = n
@@ -292,13 +309,16 @@ def harmonic_mean(data, weights=None):
         if len(weights) != n:
             raise StatisticsError('Number of weights does not match data size')
         _, sum_weights, _ = _sum(w for w in _fail_neg(weights, errmsg))
+
     try:
         data = _fail_neg(data, errmsg)
         T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
+
     if total <= 0:
         raise StatisticsError('Weighted sum must be positive')
+
     return _convert(sum_weights / total, T)
 
 
@@ -484,6 +504,7 @@ def multimode(data):
     ['b', 'd', 'f']
     >>> multimode('')
     []
+
     """
     counts = Counter(iter(data))
     if not counts:
@@ -683,6 +704,7 @@ def correlation(x, y, /, *, method='linear'):
         raise StatisticsError('correlation requires at least two data points')
     if method not in {'linear', 'ranked'}:
         raise ValueError(f'Unknown method: {method!r}')
+
     if method == 'ranked':
         start = (n - 1) / -2            # Center rankings around zero
         x = _rank(x, start=start)
@@ -692,9 +714,11 @@ def correlation(x, y, /, *, method='linear'):
         ybar = fsum(y) / n
         x = [xi - xbar for xi in x]
         y = [yi - ybar for yi in y]
+
     sxy = sumprod(x, y)
     sxx = sumprod(x, x)
     syy = sumprod(y, y)
+
     try:
         return sxy / _sqrtprod(sxx, syy)
     except ZeroDivisionError:
@@ -748,17 +772,21 @@ def linear_regression(x, y, /, *, proportional=False):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
+
     if not proportional:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
         x = [xi - xbar for xi in x]  # List because used three times below
         y = (yi - ybar for yi in y)  # Generator because only used once below
+
     sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
     sxx = sumprod(x, x)
+
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
+
     intercept = 0.0 if proportional else ybar - slope * xbar
     return LinearRegression(slope=slope, intercept=intercept)
 
@@ -1062,7 +1090,6 @@ def kde_random(data, h, kernel='normal', *, seed=None):
     [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
 
     """
-
     n = len(data)
     if not n:
         raise StatisticsError('Empty data sequence')
@@ -1141,6 +1168,7 @@ def quantiles(data, *, n=4, method='exclusive'):
     If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
+
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
@@ -1513,6 +1541,7 @@ def _sum(data):
 
     Mixed types are currently treated as an error, except that int is
     allowed.
+
     """
     count = 0
     types = set()
@@ -1548,6 +1577,7 @@ def _ss(data, c=None):
     if c is not None:
         T, ssd, count = _sum((d := x - c) * d for x in data)
         return (T, ssd, c, count)
+
     count = 0
     types = set()
     types_add = types.add
@@ -1559,6 +1589,7 @@ def _ss(data, c=None):
             count += 1
             sx_partials[d] += n
             sxx_partials[d] += n * n
+
     if not count:
         ssd = c = Fraction(0)
     elif None in sx_partials:
@@ -1573,6 +1604,7 @@ def _ss(data, c=None):
         # but with fractions it is exact.
         ssd = (count * sxx - sx * sx) / count
         c = sx / count
+
     T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, ssd, c, count)
 
@@ -1589,6 +1621,7 @@ def _coerce(T, S):
 
     Coercion rules are currently an implementation detail. See the CoerceTest
     test class in test_statistics for details.
+
     """
     # See http://bugs.python.org/issue24068.
     assert T is not bool, "initial type T is bool"
@@ -1622,8 +1655,8 @@ def _exact_ratio(x):
     (1, 4)
 
     x is expected to be an int, Fraction, Decimal or float.
-    """
 
+    """
     try:
         return x.as_integer_ratio()
     except AttributeError:
@@ -1632,6 +1665,7 @@ def _exact_ratio(x):
         # float NAN or INF.
         assert not _isfinite(x)
         return (x, None)
+
     try:
         # x may be an Integral ABC.
         return (x.numerator, x.denominator)
@@ -1788,13 +1822,16 @@ def _mean_stdev(data):
 
 def _sqrtprod(x: float, y: float) -> float:
     "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+
     h = sqrt(x * y)
+
     if not isfinite(h):
         if isinf(h) and not isinf(x) and not isinf(y):
             # Finite inputs overflowed, so scale down, and recompute.
             scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
             return _sqrtprod(scale * x, scale * y) / scale
         return h
+
     if not h:
         if x and y:
             # Non-zero inputs underflowed, so scale up, and recompute.
@@ -1802,6 +1839,7 @@ def _sqrtprod(x: float, y: float) -> float:
             scale = 2.0 ** 537
             return _sqrtprod(scale * x, scale * y) / scale
         return h
+
     # Improve accuracy with a differential correction.
     # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
     d = sumprod((x, h), (y, -h))
