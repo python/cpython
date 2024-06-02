@@ -15,6 +15,10 @@ class Format(enum.IntEnum):
 
 _Union = None
 _sentinel = object()
+
+# Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
+# preserved for compatibility with the old typing.ForwardRef class. The remaining
+# names are private.
 _slots = (
     "__forward_evaluated__",
     "__forward_value__",
@@ -372,7 +376,52 @@ def call_annotate_function(annotate, format, owner=None):
         return annotate(format)
     except NotImplementedError:
         pass
-    if format == Format.FORWARDREF:
+    if format == Format.SOURCE:
+        # SOURCE is implemented by calling the annotate function in a special
+        # environment where every name lookup results in an instance of _Stringifier.
+        # _Stringifier supports every dunder operation and returns a new _Stringifier.
+        # At the end, we get a dictionary that mostly contains _Stringifier objects (or
+        # possibly constants if the annotate function uses them directly). We then
+        # convert each of those into a string to get an approximation of the
+        # original source.
+        globals = _StringifierDict({})
+        if annotate.__closure__:
+            freevars = annotate.__code__.co_freevars
+            new_closure = []
+            for i, cell in enumerate(annotate.__closure__):
+                if i < len(freevars):
+                    name = freevars[i]
+                else:
+                    name = "__cell__"
+                fwdref = _Stringifier(ast.Name(id=name))
+                new_closure.append(types.CellType(fwdref))
+            closure = tuple(new_closure)
+        else:
+            closure = None
+        func = types.FunctionType(annotate.__code__, globals, closure=closure)
+        annos = func(Format.VALUE)
+        return {
+            key: val if isinstance(val, str) else repr(val)
+            for key, val in annos.items()
+        }
+    elif format == Format.FORWARDREF:
+        # FORWARDREF is implemented similarly to SOURCE, but there are two changes,
+        # at the beginning and the end of the process.
+        # First, while SOURCE uses an empty dictionary as the namespace, so that all
+        # name lookups result in _Stringifier objects, FORWARDREF uses the globals
+        # and builtins, so that defined names map to their real values.
+        # Second, instead of returning strings, we want to return either real values
+        # or ForwardRef objects. To do this, we keep track of all _Stringifier objects
+        # created while the annotation is being evaluated, and at the end we convert
+        # them all to ForwardRef objects by assigning to __class__. To make this
+        # technique work, we have to ensure that the _Stringifier and ForwardRef
+        # classes share the same attributes.
+        # We use this technique because while the annotations are being evaluated,
+        # we want to support all operations that the language allows, including even
+        # __getattr__ and __eq__, and return new _Stringifier objects so we can accurately
+        # reconstruct the source. But in the dictionary that we eventually return, we
+        # want to return objects with more user-friendly behavior, such as an __eq__
+        # that returns a bool and an defined set of attributes.
         namespace = {**annotate.__builtins__, **annotate.__globals__}
         is_class = isinstance(owner, type)
         globals = _StringifierDict(namespace, annotate.__globals__, owner, is_class)
@@ -406,28 +455,9 @@ def call_annotate_function(annotate, format, owner=None):
         for obj in globals.stringifiers:
             obj.__class__ = ForwardRef
         return result
-    elif format == Format.SOURCE:
-        globals = _StringifierDict({})
-        if annotate.__closure__:
-            freevars = annotate.__code__.co_freevars
-            new_closure = []
-            for i, cell in enumerate(annotate.__closure__):
-                if i < len(freevars):
-                    name = freevars[i]
-                else:
-                    name = "__cell__"
-                fwdref = _Stringifier(ast.Name(id=name))
-                new_closure.append(types.CellType(fwdref))
-            closure = tuple(new_closure)
-        else:
-            closure = None
-        func = types.FunctionType(annotate.__code__, globals, closure=closure)
-        annos = func(Format.VALUE)
-        return {
-            key: val if isinstance(val, str) else repr(val)
-            for key, val in annos.items()
-        }
     elif format == Format.VALUE:
+        # Should be impossible because __annotate__ functions must not raise
+        # NotImplementedError for this format.
         raise RuntimeError("annotate function does not support VALUE format")
 
 
