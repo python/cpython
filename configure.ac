@@ -6599,7 +6599,7 @@ AS_VAR_IF([have_curses], [no],
 
 WITH_SAVE_ENV([
   # Make sure we've got the header defines.
-  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
   AC_CHECK_HEADERS(m4_normalize([
     curses.h ncurses.h panel.h
     ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
@@ -6608,7 +6608,7 @@ WITH_SAVE_ENV([
 
   # Check that we're able to link with crucial curses/panel functions. This
   # also serves as a fallback in case pkg-config failed.
-  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS"])
+  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
   AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
@@ -7651,11 +7651,11 @@ PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
-  [], [test "$have_curses" != "no"],
+  [test "$have_curses" = "yes"], [],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
 )
 PY_STDLIB_MOD([_curses_panel],
-  [], [test "$have_panel" != "no"],
+  [test "$have_panel" = "yes"], [],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],

@@ -26185,7 +26185,7 @@ save_LIBS=$LIBS
 
 
   # Make sure we've got the header defines.
-  as_fn_append CPPFLAGS " $CURSES_CFLAGS"
+  as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
   ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
 if test "x$ac_cv_header_curses_h" = xyes
 then :
@@ -26244,7 +26244,7 @@ fi
 
   # Check that we're able to link with crucial curses/panel functions. This
   # also serves as a fallback in case pkg-config failed.
-  as_fn_append LIBS " $CURSES_LIBS"
+  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
 printf %s "checking for library containing initscr... " >&6; }
 if test ${ac_cv_search_initscr+y}
@@ -30243,9 +30243,9 @@ printf %s "checking for stdlib extension module _curses... " >&6; }
         if test "$py_cv_module__curses" != "n/a"
 then :
 
-    if true
+    if test "$have_curses" = "yes"
 then :
-  if test "$have_curses" != "no"
+  if true
 then :
   py_cv_module__curses=yes
 else $as_nop
@@ -30282,9 +30282,9 @@ printf %s "checking for stdlib extension module _curses_panel... " >&6; }
         if test "$py_cv_module__curses_panel" != "n/a"
 then :
 
-    if true
+    if test "$have_panel" = "yes"
 then :
-  if test "$have_panel" != "no"
+  if true
 then :
   py_cv_module__curses_panel=yes
 else $as_nop
