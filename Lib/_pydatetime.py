@@ -966,7 +966,7 @@ class date:
     @classmethod
     def fromtimestamp(cls, t):
         "Construct a date from a POSIX timestamp (like time.time())."
-        y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
+        y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(float(t))
         return cls(y, m, d)
 
     @classmethod
@@ -1805,6 +1805,7 @@ class datetime(date):
     @classmethod
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
+        t = float(t)
         import warnings
         warnings.warn("datetime.datetime.utcfromtimestamp() is deprecated and scheduled "
                       "for removal in a future version. Use timezone-aware "
