@@ -9219,7 +9219,6 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *substr;
         int sub_kind, sub_isascii;
-        const void *sub;
         Py_ssize_t sub_len;
 
         substr = PyTuple_GET_ITEM(subobj, i);
@@ -9230,17 +9229,12 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
             goto exit;
         }
         sub_kind = PyUnicode_KIND(substr);
-        if (sub_kind > kind) {
-            continue;
-        }
         sub_isascii = PyUnicode_IS_ASCII(substr);
-        if (!sub_isascii && isascii) {
-            continue;
-        }
-        sub = PyUnicode_DATA(substr);
         sub_len = PyUnicode_GET_LENGTH(substr);
-        if (sub_len <= end - start) {
-            subs[subs_len] = sub;
+        if (!(sub_kind > kind || !sub_isascii && isascii ||
+              sub_len > end - start))
+        {
+            subs[subs_len] = PyUnicode_DATA(substr);
             sub_kinds[subs_len] = sub_kind;
             sub_lens[subs_len] = sub_len;
             subs_len++;
