@@ -147,13 +147,13 @@ from collections import Counter, namedtuple, defaultdict
 _SQRT2 = sqrt(2.0)
 _random = random
 
-# === Exceptions ===
+## Exceptions ##############################################################
 
 class StatisticsError(ValueError):
     pass
 
 
-# === Private utilities ===
+## Private utilities #######################################################
 
 def _sum(data):
     """_sum(data) -> (type, sum, count)
@@ -467,7 +467,52 @@ def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
     return root
 
 
-# === Measures of central tendency (averages) ===
+def _mean_stdev(data):
+    """In one pass, compute the mean and sample standard deviation as floats."""
+    T, ss, xbar, n = _ss(data)
+    if n < 2:
+        raise StatisticsError('stdev requires at least two data points')
+    mss = ss / (n - 1)
+    try:
+        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
+    except AttributeError:
+        # Handle Nans and Infs gracefully
+        return float(xbar), float(xbar) / float(ss)
+
+
+def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
+    def f_inv(y):
+        "Return x such that f(x) ≈ y within the specified tolerance."
+        x = f_inv_estimate(y)
+        while abs(diff := f(x) - y) > tolerance:
+            x -= diff / f_prime(x)
+        return x
+    return f_inv
+
+
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+    h = sqrt(x * y)
+    if not isfinite(h):
+        if isinf(h) and not isinf(x) and not isinf(y):
+            # Finite inputs overflowed, so scale down, and recompute.
+            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    if not h:
+        if x and y:
+            # Non-zero inputs underflowed, so scale up, and recompute.
+            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
+            scale = 2.0 ** 537
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    # Improve accuracy with a differential correction.
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+    d = sumprod((x, h), (y, -h))
+    return h + d / (2.0 * h)
+
+
+## Measures of central tendency (averages) #################################
 
 def mean(data):
     """Return the sample arithmetic mean of data.
@@ -871,15 +916,6 @@ def parabolic_kernel():
     support = 1.0
     return pdf, cdf, invcdf, support
 
-def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
-    def f_inv(y):
-        "Return x such that f(x) ≈ y within the specified tolerance."
-        x = f_inv_estimate(y)
-        while abs(diff := f(x) - y) > tolerance:
-            x -= diff / f_prime(x)
-        return x
-    return f_inv
-
 def _quartic_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.4258865685331 - 1.0
@@ -1132,7 +1168,6 @@ def kde_random(data, h, kernel='normal', *, seed=None):
 
 ############################################################################
 # Notes on methods for computing quantiles
-# ----------------------------------------
 #
 # There is no one perfect way to compute quantiles.  Here we offer
 # two methods that serve common needs.  Most other packages
@@ -1216,7 +1251,7 @@ def quantiles(data, *, n=4, method='exclusive'):
     raise ValueError(f'Unknown method: {method!r}')
 
 
-# === Measures of spread ===
+## Measures of spread ######################################################
 
 # See http://mathworld.wolfram.com/Variance.html
 #     http://mathworld.wolfram.com/SampleVariance.html
@@ -1343,41 +1378,7 @@ def pstdev(data, mu=None):
     return _float_sqrt_of_frac(mss.numerator, mss.denominator)
 
 
-def _mean_stdev(data):
-    """In one pass, compute the mean and sample standard deviation as floats."""
-    T, ss, xbar, n = _ss(data)
-    if n < 2:
-        raise StatisticsError('stdev requires at least two data points')
-    mss = ss / (n - 1)
-    try:
-        return float(xbar), _float_sqrt_of_frac(mss.numerator, mss.denominator)
-    except AttributeError:
-        # Handle Nans and Infs gracefully
-        return float(xbar), float(xbar) / float(ss)
-
-def _sqrtprod(x: float, y: float) -> float:
-    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
-    h = sqrt(x * y)
-    if not isfinite(h):
-        if isinf(h) and not isinf(x) and not isinf(y):
-            # Finite inputs overflowed, so scale down, and recompute.
-            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
-            return _sqrtprod(scale * x, scale * y) / scale
-        return h
-    if not h:
-        if x and y:
-            # Non-zero inputs underflowed, so scale up, and recompute.
-            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
-            scale = 2.0 ** 537
-            return _sqrtprod(scale * x, scale * y) / scale
-        return h
-    # Improve accuracy with a differential correction.
-    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-    d = sumprod((x, h), (y, -h))
-    return h + d / (2.0 * h)
-
-
-# === Statistics for relations between two inputs ===
+## Statistics for relations between two inputs #############################
 
 # See https://en.wikipedia.org/wiki/Covariance
 #     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
@@ -1522,7 +1523,6 @@ def linear_regression(x, y, /, *, proportional=False):
 
 
 ## Normal Distribution #####################################################
-
 
 def _normal_dist_inv_cdf(p, mu, sigma):
     # There is no closed-form solution to the inverse CDF for the normal
