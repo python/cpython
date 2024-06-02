@@ -402,68 +402,8 @@ class IntTestCases(unittest.TestCase):
             class JustTrunc(base):
                 def __trunc__(self):
                     return 42
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(int(JustTrunc()), 42)
-
-            class ExceptionalTrunc(base):
-                def __trunc__(self):
-                    1 / 0
-            with self.assertRaises(ZeroDivisionError), \
-                 self.assertWarns(DeprecationWarning):
-                int(ExceptionalTrunc())
-
-            for trunc_result_base in (object, Classic):
-                class Index(trunc_result_base):
-                    def __index__(self):
-                        return 42
-
-                class TruncReturnsNonInt(base):
-                    def __trunc__(self):
-                        return Index()
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(int(TruncReturnsNonInt()), 42)
-
-                class Intable(trunc_result_base):
-                    def __int__(self):
-                        return 42
-
-                class TruncReturnsNonIndex(base):
-                    def __trunc__(self):
-                        return Intable()
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(int(TruncReturnsNonInt()), 42)
-
-                class NonIntegral(trunc_result_base):
-                    def __trunc__(self):
-                        # Check that we avoid infinite recursion.
-                        return NonIntegral()
-
-                class TruncReturnsNonIntegral(base):
-                    def __trunc__(self):
-                        return NonIntegral()
-                try:
-                    with self.assertWarns(DeprecationWarning):
-                        int(TruncReturnsNonIntegral())
-                except TypeError as e:
-                    self.assertEqual(str(e),
-                                      "__trunc__ returned non-Integral"
-                                      " (type NonIntegral)")
-                else:
-                    self.fail("Failed to raise TypeError with %s" %
-                              ((base, trunc_result_base),))
-
-                # Regression test for bugs.python.org/issue16060.
-                class BadInt(trunc_result_base):
-                    def __int__(self):
-                        return 42.0
-
-                class TruncReturnsBadInt(base):
-                    def __trunc__(self):
-                        return BadInt()
-
-                with self.assertRaises(TypeError), \
-                     self.assertWarns(DeprecationWarning):
-                    int(TruncReturnsBadInt())
+            with self.assertRaises(TypeError):
+                int(JustTrunc())
 
     def test_int_subclass_with_index(self):
         class MyIndex(int):
@@ -514,18 +454,6 @@ class IntTestCases(unittest.TestCase):
             def __int__(self):
                 return True
 
-        class TruncReturnsBadIndex:
-            def __trunc__(self):
-                return BadIndex()
-
-        class TruncReturnsBadInt:
-            def __trunc__(self):
-                return BadInt()
-
-        class TruncReturnsIntSubclass:
-            def __trunc__(self):
-                return True
-
         bad_int = BadIndex()
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
@@ -548,26 +476,6 @@ class IntTestCases(unittest.TestCase):
             n = int(bad_int)
         self.assertEqual(n, 1)
         self.assertIs(type(n), int)
-
-        bad_int = TruncReturnsBadIndex()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
-
-        bad_int = TruncReturnsBadInt()
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, int, bad_int)
-
-        good_int = TruncReturnsIntSubclass()
-        with self.assertWarns(DeprecationWarning):
-            n = int(good_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
-        with self.assertWarns(DeprecationWarning):
-            n = IntSubclass(good_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), IntSubclass)
 
     def test_error_message(self):
         def check(s, base=None):

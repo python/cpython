@@ -97,7 +97,7 @@ Interpreter improvements:
 * :pep:`667`: The :func:`locals` builtin now has
   :ref:`defined semantics <whatsnew313-locals-semantics>` when mutating the
   returned mapping. Python debuggers and similar tools may now more reliably
-  update local variables in optimized frames even during concurrent code
+  update local variables in optimized scopes even during concurrent code
   execution.
 
 New typing features:
@@ -154,10 +154,10 @@ New Features
 A Better Interactive Interpreter
 --------------------------------
 
-On Unix-like systems like Linux or macOS, Python now uses a new
-:term:`interactive` shell. When the user starts the :term:`REPL` from an
-interactive terminal, and both :mod:`curses` and :mod:`readline` are
-available, the interactive shell now supports the following new features:
+On Unix-like systems like Linux or macOS as well as Windows, Python now
+uses a new :term:`interactive` shell. When the user starts the
+:term:`REPL` from an interactive terminal the interactive shell now
+supports the following new features:
 
 * Colorized prompts.
 * Multiline editing with history preservation.
@@ -174,10 +174,13 @@ available, the interactive shell now supports the following new features:
 If the new interactive shell is not desired, it can be disabled via
 the :envvar:`PYTHON_BASIC_REPL` environment variable.
 
+The new shell requires :mod:`curses` on Unix-like systems.
+
 For more on interactive mode, see :ref:`tut-interac`.
 
 (Contributed by Pablo Galindo Salgado, Łukasz Langa, and
-Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.)
+Lysandros Nikolaou in :gh:`111201` based on code from the PyPy project.
+Windows support contributed by Dino Viehland and Anthony Shaw.)
 
 .. _whatsnew313-improved-error-messages:
 
@@ -263,14 +266,30 @@ comprehensions, and generator expressions) to explicitly return independent
 snapshots of the currently assigned local variables, including locally
 referenced nonlocal variables captured in closures.
 
+This change to the semantics of :func:`locals` in optimized scopes also affects the default
+behaviour of code execution functions that implicitly target ``locals()`` if no explicit
+namespace is provided (such as :func:`exec` and :func:`eval`). In previous versions, whether
+or not changes could be accessed by calling ``locals()`` after calling the code execution
+function was implementation dependent. In CPython specifically, such code would typically
+appear to work as desired, but could sometimes fail in optimized scopes based on other code
+(including debuggers and code execution tracing tools) potentially resetting the shared
+snapshot in that scope. Now, the code will always run against an independent snapshot of the
+local variables in optimized scopes, and hence the changes will never be visible in
+subsequent calls to ``locals()``. To access the changes made in these cases, an explicit
+namespace reference must now be passed to the relevant function. Alternatively, it may make
+sense to update affected code to use a higher level code execution API that returns the
+resulting code execution namespace (e.g. :func:`runpy.run_path` when executing Python
+files from disk).
+
 To ensure debuggers and similar tools can reliably update local variables in
 scopes affected by this change, :attr:`FrameType.f_locals <frame.f_locals>` now
 returns a write-through proxy to the frame's local and locally referenced
 nonlocal variables in these scopes, rather than returning an inconsistently
 updated shared  ``dict`` instance with undefined runtime semantics.
 
-See :pep:`667` for more details, including related C API changes and
-deprecations.
+See :pep:`667` for more details, including related C API changes and deprecations. Porting
+notes are also provided below for the affected :ref:`Python APIs <pep667-porting-notes-py>`
+and :ref:`C APIs <pep667-porting-notes-c>`.
 
 (PEP and implementation contributed by Mark Shannon and Tian Gao in
 :gh:`74929`. Documentation updates provided by Guido van Rossum and
@@ -655,6 +674,18 @@ copy
   :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
+ctypes
+------
+
+* The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>` in
+  :class:`~ctypes.Structure` and :class:`~ctypes.Union` was improved to better
+  match platform defaults (GCC/Clang or MSC). In particular, fields no longer
+  overlap.
+  (Contributed by Matthias Görgens in :gh:`97702`.)
+* A :attr:`ctypes.Structure._layout_` class attribute can be set
+  to help match a non-default ABI.
+  (Contributed by Petr Viktorin in :gh:`97702`.)
 
 dbm
 ---
@@ -1664,9 +1695,6 @@ Pending Removal in Python 3.14
   * ``master_open()``: use :func:`pty.openpty`.
   * ``slave_open()``: use :func:`pty.openpty`.
 
-* :func:`shutil.rmtree` *onerror* parameter is deprecated in 3.12,
-  and will be removed in 3.14: use the *onexc* parameter instead.
-
 * :mod:`sqlite3`:
 
   * :data:`!version` and :data:`!version_info`.
@@ -1841,6 +1869,9 @@ although there is currently no date scheduled for their removal.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
+  Python 3.12; use the *onexc* parameter instead.
 
 * :mod:`ssl` options and protocols:
 
@@ -2128,6 +2159,11 @@ New Features
   destruction the same way the :mod:`tracemalloc` module does. (Contributed
   by Pablo Galindo in :gh:`93502`.)
 
+* Add :c:func:`PyEval_GetFrameBuiltins`, :c:func:`PyEval_GetFrameGlobals`, and
+  :c:func:`PyEval_GetFrameLocals` to the C API. These replacements for
+  :c:func:`PyEval_GetBuiltins`, :c:func:`PyEval_GetGlobals`, and
+  :c:func:`PyEval_GetLocals` return :term:`strong references <strong reference>`
+  rather than borrowed references. (Added as part of :pep:`667`.)
 
 Build Changes
 =============
@@ -2169,6 +2205,10 @@ Build Changes
   The bundled mimalloc has custom changes, see :gh:`113141` for details.
   (Contributed by Dino Viehland in :gh:`109914`.)
 
+* On POSIX systems, the pkg-config (``.pc``) filenames now include the ABI
+  flags.  For example, the free-threaded build generates ``python-3.13t.pc``
+  and the debug build generates ``python-3.13d.pc``.
+
 
 Porting to Python 3.13
 ======================
@@ -2207,11 +2247,16 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
+.. _pep667-porting-notes-py:
+
 * Calling :func:`locals` in an :term:`optimized scope` now produces an
   independent snapshot on each call, and hence no longer implicitly updates
   previously returned references. Obtaining the legacy CPython behaviour now
   requires explicit calls to update the initially returned dictionary with the
-  results of subsequent calls to ``locals()``. (Changed as part of :pep:`667`.)
+  results of subsequent calls to ``locals()``. Code execution functions that
+  implicitly target ``locals()`` (such as ``exec`` and ``eval``) must be
+  passed an explicit namespace to access their results in an optimized scope.
+  (Changed as part of :pep:`667`.)
 
 * Calling :func:`locals` from a comprehension at module or class scope
   (including via ``exec`` or ``eval``) once more behaves as if the comprehension
@@ -2298,6 +2343,33 @@ Changes in the C API
 * :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
   to :c:func:`PyUnstable_Code_GetFirstFree`.
   (Contributed by Bogdan Romanyuk in :gh:`115781`.)
+
+.. _pep667-porting-notes-c:
+
+* The effects of mutating the dictionary returned from :c:func:`PyEval_GetLocals` in an
+  :term:`optimized scope` have changed. New dict entries added this way will now *only* be
+  visible to subsequent :c:func:`PyEval_GetLocals` calls in that frame, as
+  :c:func:`PyFrame_GetLocals`, :func:`locals`, and
+  :attr:`FrameType.f_locals <frame.f_locals>` no longer access the same underlying cached
+  dictionary. Changes made to entries for actual variable names and names added via the
+  write-through proxy interfaces will be overwritten on subsequent calls to
+  :c:func:`PyEval_GetLocals` in that frame. The recommended code update depends on how the
+  function was being used, so refer to the deprecation notice on the function for details.
+  (Changed as part of :pep:`667`.)
+
+* Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope` now returns a
+  write-through proxy rather than a snapshot that gets updated at ill-specified times.
+  If a snapshot is desired, it must be created explicitly (e.g. with :c:func:`PyDict_Copy`)
+  or by calling the new :c:func:`PyEval_GetFrameLocals` API. (Changed as part of :pep:`667`.)
+
+* :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
+  no longer have any effect. Calling these functions has been redundant since
+  Python 3.11, when :c:func:`PyFrame_GetLocals` was first introduced.
+  (Changed as part of :pep:`667`.)
+
+* :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
+  is redundant now that :c:func:`PyFrame_GetLocals` returns a write-through proxy
+  for :term:`optimized scopes <optimized scope>`. (Changed as part of :pep:`667`.)
 
 Removed C APIs
 --------------
@@ -2451,6 +2523,11 @@ Deprecated C APIs
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
   (Contributed by Victor Stinner in :gh:`105927`.)
+
+* Deprecate the :c:func:`PyEval_GetBuiltins`, :c:func:`PyEval_GetGlobals`, and
+  :c:func:`PyEval_GetLocals` functions, which return a :term:`borrowed reference`.
+  Refer to the deprecation notices on each function for their recommended replacements.
+  (Soft deprecated as part of :pep:`667`.)
 
 Pending Removal in Python 3.14
 ------------------------------

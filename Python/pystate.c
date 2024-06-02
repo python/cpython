@@ -1751,7 +1751,7 @@ decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
-tstate_delete_common(PyThreadState *tstate)
+tstate_delete_common(PyThreadState *tstate, int release_gil)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     tstate_verify_not_active(tstate);
@@ -1793,10 +1793,6 @@ tstate_delete_common(PyThreadState *tstate)
 
     HEAD_UNLOCK(runtime);
 
-#ifdef Py_GIL_DISABLED
-    _Py_qsbr_unregister(tstate);
-#endif
-
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
     if (tstate->_status.bound_gilstate) {
@@ -1806,6 +1802,14 @@ tstate_delete_common(PyThreadState *tstate)
 
     // XXX Move to PyThreadState_Clear()?
     clear_datastack(tstate);
+
+    if (release_gil) {
+        _PyEval_ReleaseLock(tstate->interp, tstate, 1);
+    }
+
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_unregister(tstate);
+#endif
 
     tstate->_status.finalized = 1;
 }
@@ -1818,7 +1822,7 @@ zapthreads(PyInterpreterState *interp)
        when the threads are all really dead (XXX famous last words). */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        tstate_delete_common(tstate);
+        tstate_delete_common(tstate, 0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
@@ -1829,7 +1833,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate);
+    tstate_delete_common(tstate, 0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -1842,8 +1846,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    tstate_delete_common(tstate);
-    _PyEval_ReleaseLock(tstate->interp, tstate, 1);
+    tstate_delete_common(tstate, 1);  // release GIL as part of call
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2808,12 +2811,18 @@ PyGILState_Release(PyGILState_STATE oldstate)
         /* can't have been locked when we created it */
         assert(oldstate == PyGILState_UNLOCKED);
         // XXX Unbind tstate here.
+        // gh-119585: `PyThreadState_Clear()` may call destructors that
+        // themselves use PyGILState_Ensure and PyGILState_Release, so make
+        // sure that gilstate_counter is not zero when calling it.
+        ++tstate->gilstate_counter;
         PyThreadState_Clear(tstate);
+        --tstate->gilstate_counter;
         /* Delete the thread-state.  Note this releases the GIL too!
          * It's vital that the GIL be held here, to avoid shutdown
          * races; see bugs 225673 and 1061968 (that nasty bug has a
          * habit of coming back).
          */
+        assert(tstate->gilstate_counter == 0);
         assert(current_fast_get() == tstate);
         _PyThreadState_DeleteCurrent(tstate);
     }
