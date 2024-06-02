@@ -974,6 +974,7 @@ Reading and writing files
       ...
       '#!/usr/bin/env python3\n'
 
+
 .. method:: Path.read_text(encoding=None, errors=None)
 
    Return the decoded contents of the pointed-to file as a string::
