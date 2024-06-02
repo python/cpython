@@ -778,7 +778,7 @@ PyLong_Sign(PyObject *vv, int *sign)
         return -1;
     }
     if (!PyLong_Check(vv)) {
-        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
         return -1;
     }
 
