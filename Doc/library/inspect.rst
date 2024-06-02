@@ -1006,11 +1006,11 @@ function.
 
       The allocation in :attr:`args` and :attr:`kwargs` may not match the
       inserted *args* and *kwargs* in :meth:`Signature.bind` or
-      :meth:`Signature.bind_partial`. This concerns argument of the kind
-      *POSITIONAL_OR_KEYWORD* in cases where they can be passed ambiguous
-      as args or kwargs. In cases of ambiguity the dynamically computation
-      of args and kwargs always simplifies the given arguments as much as
-      possible, by dropping keywords and saving them positional in args.
+      :meth:`Signature.bind_partial`. This concerns arguments of the kind
+      *POSITIONAL_OR_KEYWORD* in cases where they can be passed ambiguously
+      as args or kwargs. In cases of ambiguity the dynamic computation of
+      args and kwargs always simplifies the given arguments as much as
+      possible, by dropping keywords and saving them positionally in args.
       For example::
 
          >>> def test(a=1, b=2, c=3):
