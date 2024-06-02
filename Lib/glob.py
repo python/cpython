@@ -10,7 +10,8 @@ import operator
 import stat
 import sys
 
-__all__ = ["glob", "iglob", "escape"]
+
+__all__ = ["glob", "iglob", "escape", "translate"]
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
@@ -339,24 +340,27 @@ class _Globber:
 
     # Low-level methods
 
-    lstat = staticmethod(os.lstat)
-    scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
-    concat_path = operator.add
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        return contextlib.nullcontext(path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path.
+        """
+        return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir().
+        """
+        return entry
 
     # High-level methods
 
@@ -512,46 +516,26 @@ class _Globber:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        else:
-            try:
-                self.lstat(path)
-                yield path
-            except OSError:
-                pass
+        elif self.lexists(path):
+            yield path
 
-    @classmethod
-    def walk(cls, root, top_down, on_error, follow_symlinks):
-        """Walk the directory tree from the given root, similar to os.walk().
-        """
-        paths = [root]
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-            try:
-                with cls.scandir(path) as scandir_it:
-                    dirnames = []
-                    filenames = []
-                    if not top_down:
-                        paths.append((path, dirnames, filenames))
-                    for entry in scandir_it:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(cls.parse_entry(entry))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-            else:
-                if top_down:
-                    yield path, dirnames, filenames
-                    if dirnames:
-                        prefix = cls.add_slash(path)
-                        paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
+
+class _StringGlobber(_Globber):
+    lexists = staticmethod(os.path.lexists)
+    scandir = staticmethod(os.scandir)
+    parse_entry = operator.attrgetter('path')
+    concat_path = operator.add
+
+    if os.name == 'nt':
+        @staticmethod
+        def add_slash(pathname):
+            tail = os.path.splitroot(pathname)[2]
+            if not tail or tail[-1] in '\\/':
+                return pathname
+            return f'{pathname}\\'
+    else:
+        @staticmethod
+        def add_slash(pathname):
+            if not pathname or pathname[-1] == '/':
+                return pathname
+            return f'{pathname}/'

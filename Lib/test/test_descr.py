@@ -1593,8 +1593,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             self.fail("classmethod shouldn't accept keyword args")
 
         cm = classmethod(f)
-        cm_dict = {'__annotations__': {},
-                   '__doc__': (
+        cm_dict = {'__doc__': (
                        "f docstring"
                        if support.HAVE_DOCSTRINGS
                        else None
@@ -1609,6 +1608,41 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(cm.__dict__, {"x" : 42, **cm_dict})
         del cm.x
         self.assertNotHasAttr(cm, "x")
+
+    def test_classmethod_staticmethod_annotations(self):
+        for deco in (classmethod, staticmethod):
+            @deco
+            def unannotated(cls): pass
+            @deco
+            def annotated(cls) -> int: pass
+
+            for method in (annotated, unannotated):
+                with self.subTest(deco=deco, method=method):
+                    original_annotations = dict(method.__wrapped__.__annotations__)
+                    self.assertNotIn('__annotations__', method.__dict__)
+                    self.assertEqual(method.__annotations__, original_annotations)
+                    self.assertIn('__annotations__', method.__dict__)
+
+                    new_annotations = {"a": "b"}
+                    method.__annotations__ = new_annotations
+                    self.assertEqual(method.__annotations__, new_annotations)
+                    self.assertEqual(method.__wrapped__.__annotations__, original_annotations)
+
+                    del method.__annotations__
+                    self.assertEqual(method.__annotations__, original_annotations)
+
+                    original_annotate = method.__wrapped__.__annotate__
+                    self.assertNotIn('__annotate__', method.__dict__)
+                    self.assertIs(method.__annotate__, original_annotate)
+                    self.assertIn('__annotate__', method.__dict__)
+
+                    new_annotate = lambda: {"annotations": 1}
+                    method.__annotate__ = new_annotate
+                    self.assertIs(method.__annotate__, new_annotate)
+                    self.assertIs(method.__wrapped__.__annotate__, original_annotate)
+
+                    del method.__annotate__
+                    self.assertIs(method.__annotate__, original_annotate)
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
@@ -4594,18 +4628,16 @@ class ClassPropertiesAndMethods(unittest.TestCase):
     def test_not_implemented(self):
         # Testing NotImplemented...
         # all binary methods should be able to return a NotImplemented
-        import operator
 
         def specialmethod(self, other):
             return NotImplemented
 
         def check(expr, x, y):
-            try:
-                exec(expr, {'x': x, 'y': y, 'operator': operator})
-            except TypeError:
-                pass
-            else:
-                self.fail("no TypeError from %r" % (expr,))
+            with (
+                self.subTest(expr=expr, x=x, y=y),
+                self.assertRaises(TypeError),
+            ):
+                exec(expr, {'x': x, 'y': y})
 
         N1 = sys.maxsize + 1    # might trigger OverflowErrors instead of
                                 # TypeErrors
@@ -4626,12 +4658,23 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 ('__and__',      'x & y',                   'x &= y'),
                 ('__or__',       'x | y',                   'x |= y'),
                 ('__xor__',      'x ^ y',                   'x ^= y')]:
-            rname = '__r' + name[2:]
+            # Defines 'left' magic method:
             A = type('A', (), {name: specialmethod})
             a = A()
             check(expr, a, a)
             check(expr, a, N1)
             check(expr, a, N2)
+            # Defines 'right' magic method:
+            rname = '__r' + name[2:]
+            B = type('B', (), {rname: specialmethod})
+            b = B()
+            check(expr, b, b)
+            check(expr, a, b)
+            check(expr, b, a)
+            check(expr, b, N1)
+            check(expr, b, N2)
+            check(expr, N1, b)
+            check(expr, N2, b)
             if iexpr:
                 check(iexpr, a, a)
                 check(iexpr, a, N1)
@@ -5005,6 +5048,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 cls.lst = [2**i for i in range(10000)]
         X.descr
 
+    @support.suppress_immortalization()
     def test_remove_subclass(self):
         # bpo-46417: when the last subclass of a type is deleted,
         # remove_subclass() clears the internal dictionary of subclasses:
@@ -5079,7 +5123,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = list(it)
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+                                '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])
 
@@ -5090,7 +5135,7 @@ class DictProxyTests(unittest.TestCase):
         it = self.C.__dict__.values()
         self.assertNotIsInstance(it, list)
         values = list(it)
-        self.assertEqual(len(values), 6)
+        self.assertEqual(len(values), 7)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                         'trace function introduces __local__')
@@ -5100,7 +5145,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = [item[0] for item in it]
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+                                '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])
 

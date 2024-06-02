@@ -51,12 +51,14 @@ int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
 int _PyTestCapi_Init_Buffer(PyObject *module);
 int _PyTestCapi_Init_PyAtomic(PyObject *module);
+int _PyTestCapi_Init_Run(PyObject *module);
 int _PyTestCapi_Init_File(PyObject *module);
 int _PyTestCapi_Init_Codec(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *module);
 int _PyTestCapi_Init_Hash(PyObject *module);
 int _PyTestCapi_Init_Time(PyObject *module);
+int _PyTestCapi_Init_Monitoring(PyObject *module);
 int _PyTestCapi_Init_Object(PyObject *module);
 
 #endif // Py_TESTCAPI_PARTS_H

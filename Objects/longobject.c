@@ -401,12 +401,12 @@ PyLong_FromDouble(double dval)
     double frac;
     int i, ndig, expo, neg;
     neg = 0;
-    if (Py_IS_INFINITY(dval)) {
+    if (isinf(dval)) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot convert float infinity to integer");
         return NULL;
     }
-    if (Py_IS_NAN(dval)) {
+    if (isnan(dval)) {
         PyErr_SetString(PyExc_ValueError,
                         "cannot convert float NaN to integer");
         return NULL;
@@ -3811,7 +3811,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
     memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
         /* Efficient squaring per HAC, Algorithm 14.16:
-         * http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
+         * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
          * via exploiting that each entry in the multiplication
          * pyramid appears twice (except for the size_a squares).
@@ -5019,7 +5019,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else if (i <= HUGE_EXP_CUTOFF / PyLong_SHIFT ) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
-        /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
+        /* https://cacr.uwaterloo.ca/hac/about/chap14.pdf            */
 
         /* Find the first significant exponent bit. Search right to left
          * because we're primarily trying to cut overhead for small powers.
@@ -6307,7 +6307,7 @@ int.to_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        sys.byteorder as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Determines whether two's complement is used to represent the integer.
@@ -6320,7 +6320,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=d42ecfb545039d71]*/
+/*[clinic end generated code: output=89c801df114050a3 input=a0103d0e9ad85c2b]*/
 {
     int little_endian;
     PyObject *bytes;
@@ -6371,7 +6371,7 @@ int.from_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        sys.byteorder as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Indicates whether two's complement is used to represent the integer.
@@ -6382,7 +6382,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=33326dccdd655553]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=2ff527997fe7b0c5]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;

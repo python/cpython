@@ -4,6 +4,7 @@ import collections
 import copy
 import datetime
 import functools
+import gc
 import importlib
 import inspect
 import io
@@ -25,6 +26,7 @@ import unicodedata
 import unittest
 import unittest.mock
 import warnings
+import weakref
 
 
 try:
@@ -32,7 +34,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
+from test.support import cpython_only, import_helper, suppress_immortalization
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -766,6 +768,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
+    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -814,6 +817,21 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
+    def test_getsource_on_generated_class(self):
+        A = type('A', (), {})
+        self.assertEqual(inspect.getsourcefile(A), __file__)
+        self.assertEqual(inspect.getfile(A), __file__)
+        self.assertIs(inspect.getmodule(A), sys.modules[__name__])
+        self.assertRaises(OSError, inspect.getsource, A)
+        self.assertRaises(OSError, inspect.getsourcelines, A)
+        self.assertIsNone(inspect.getcomments(A))
+
+    def test_getsource_on_class_without_firstlineno(self):
+        __firstlineno__ = 1
+        class C:
+            nonlocal __firstlineno__
+        self.assertRaises(OSError, inspect.getsource, C)
 
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
@@ -2302,6 +2320,13 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+        class Bar(Foo): pass
+
+        bar = Bar()
+        bar.a = 5
+        self.assertEqual(inspect.getattr_static(bar, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_mutated_mro(self):
         test = self
         test.called = False
@@ -2405,6 +2430,22 @@ class TestGetattrStatic(unittest.TestCase):
             inspect.getattr_static(Foo(), 'really_could_be_anything')
 
         self.assertFalse(test.called)
+
+    @suppress_immortalization()
+    def test_cache_does_not_cause_classes_to_persist(self):
+        # regression test for gh-118013:
+        # check that the internal _shadowed_dict cache does not cause
+        # dynamically created classes to have extended lifetimes even
+        # when no other strong references to those classes remain.
+        # Since these classes can themselves hold strong references to
+        # other objects, this can cause unexpected memory consumption.
+        class Foo: pass
+        Foo.instance = Foo()
+        weakref_to_class = weakref.ref(Foo)
+        inspect.getattr_static(Foo.instance, 'whatever', 'irrelevant')
+        del Foo
+        gc.collect()
+        self.assertIsNone(weakref_to_class())
 
 
 class TestGetGeneratorState(unittest.TestCase):
@@ -3044,6 +3085,13 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(builtin):
                 self.assertEqual(inspect.signature(builtin),
                                  inspect.signature(template))
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_parsing_with_defaults(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        meth = _testcapi.DocStringUnrepresentableSignatureTest.with_default
+        self.assertEqual(str(inspect.signature(meth)), '(self, /, x=1)')
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
@@ -4066,6 +4114,28 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
+    def test_signature_on_callable_objects_with_text_signature_attr(self):
+        class C:
+            __text_signature__ = '(a, /, b, c=True)'
+            def __call__(self, *args, **kwargs):
+                pass
+
+        self.assertEqual(self.signature(C), ((), ...))
+        self.assertEqual(self.signature(C()),
+                         ((('a', ..., ..., "positional_only"),
+                           ('b', ..., ..., "positional_or_keyword"),
+                           ('c', True, ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
+        c = C()
+        c.__text_signature__ = '(x, y)'
+        self.assertEqual(self.signature(c),
+                         ((('x', ..., ..., "positional_or_keyword"),
+                           ('y', ..., ..., "positional_or_keyword"),
+                          ),
+                          ...))
+
     def test_signature_on_wrapper(self):
         class Wrapper:
             def __call__(self, b):
@@ -4644,6 +4714,16 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
 
+    def test_signature_on_non_comparable(self):
+        class NoncomparableCallable:
+            def __call__(self, a):
+                pass
+            def __eq__(self, other):
+                1/0
+        self.assertEqual(self.signature(NoncomparableCallable()),
+                         ((('a', ..., ..., 'positional_or_keyword'),),
+                          ...))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -5009,14 +5089,29 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, 30, c_po=31, foo=4, bar=5),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        self.assertEqual(self.call(test, 1, 2, 30, foo=4, bar=5, c_po=31),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
+
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
+
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def without_var_kwargs(c_po=3, d_po=4, /):
+            return c_po, d_po
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "positional-only arguments passed as keyword arguments: 'c_po, d_po'",
+        ):
+            self.call(without_var_kwargs, c_po=33, d_po=44)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
@@ -5338,6 +5433,8 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_sys_module_has_signatures(self):
         no_signature = {'getsizeof', 'set_asyncgen_hooks'}
+        no_signature |= {name for name in ['getobjects']
+                         if hasattr(sys, name)}
         self._test_module_has_signatures(sys, no_signature)
 
     def test_abc_module_has_signatures(self):

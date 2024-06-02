@@ -1,3 +1,5 @@
+#ifdef _Py_TIER2
+
 /*
  * This file contains the support code for CPython's uops optimizer.
  * It also performs some simple optimizations.
@@ -295,20 +297,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->oparg = ARG;            \
     INST->operand = OPERAND;
 
-#define OUT_OF_SPACE_IF_NULL(EXPR)     \
-    do {                               \
-        if ((EXPR) == NULL) {          \
-            goto out_of_space;         \
-        }                              \
-    } while (0);
-
-#define _LOAD_ATTR_NOT_NULL \
-    do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx)); \
-    OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx)); \
-    } while (0);
-
-
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
@@ -320,11 +308,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_has_type _Py_uop_sym_has_type
+#define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
-#define sym_set_null _Py_uop_sym_set_null
-#define sym_set_non_null _Py_uop_sym_set_non_null
-#define sym_set_type _Py_uop_sym_set_type
-#define sym_set_const _Py_uop_sym_set_const
+#define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
+#define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
+#define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -362,6 +351,30 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
+/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
+ * PyCodeObject *. Retrieve the code object if possible.
+ */
+static PyCodeObject *
+get_code(_PyUOpInstruction *op)
+{
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
+    PyCodeObject *co = NULL;
+    uint64_t operand = op->operand;
+    if (operand == 0) {
+        return NULL;
+    }
+    if (operand & 1) {
+        co = (PyCodeObject *)(operand & ~1);
+    }
+    else {
+        PyFunctionObject *func = (PyFunctionObject *)operand;
+        assert(PyFunction_Check(func));
+        co = (PyCodeObject *)func->func_code;
+    }
+    assert(PyCode_Check(co));
+    return co;
+}
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -376,19 +389,25 @@ optimize_uops(
     _Py_UOpsContext context;
     _Py_UOpsContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
+    int curr_space = 0;
+    int max_space = 0;
+    _PyUOpInstruction *first_valid_check_stack = NULL;
+    _PyUOpInstruction *corresponding_check_stack = NULL;
 
-    if (_Py_uop_abstractcontext_init(ctx) < 0) {
-        goto out_of_space;
-    }
+    _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
     if (frame == NULL) {
         return -1;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
 
     _PyUOpInstruction *this_instr = NULL;
-    for (int i = 0; i < trace_len; i++) {
+    for (int i = 0; !ctx->done; i++) {
+        assert(i < trace_len);
         this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
@@ -416,13 +435,35 @@ optimize_uops(
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
     }
+    if (ctx->out_of_space) {
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Out of space in abstract interpreter\n");
+    }
+    if (ctx->contradiction) {
+        // Attempted to push a "bottom" (contradiction) symbol onto the stack.
+        // This means that the abstract interpreter has hit unreachable code.
+        // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+        // bottom indicates type instability, so we are probably better off
+        // retrying later.
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Hit bottom in abstract interpreter\n");
+        _Py_uop_abstractcontext_fini(ctx);
+        return 0;
+    }
+
+    /* Either reached the end or cannot optimize further, but there
+     * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
+    if (first_valid_check_stack != NULL) {
+        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
+        assert(max_space > 0);
+        assert(max_space <= INT_MAX);
+        assert(max_space <= INT32_MAX);
+        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
+        first_valid_check_stack->operand = max_space;
+    }
     return trace_len;
 
-out_of_space:
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Out of space in abstract interpreter\n");
-    goto done;
 error:
     DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");
@@ -432,21 +473,6 @@ error:
     _Py_uop_abstractcontext_fini(ctx);
     return -1;
 
-hit_bottom:
-    // Attempted to push a "bottom" (contradition) symbol onto the stack.
-    // This means that the abstract interpreter has hit unreachable code.
-    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
-    // bottom indicates type instability, so we are probably better off
-    // retrying later.
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Hit bottom in abstract interpreter\n");
-    _Py_uop_abstractcontext_fini(ctx);
-    return 0;
-done:
-    /* Cannot optimize further, but there would be no benefit
-     * in retrying later */
-    _Py_uop_abstractcontext_fini(ctx);
-    return trace_len;
 }
 
 
@@ -462,6 +488,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
+            case _START_EXECUTOR:
+                may_have_escaped = false;
+                break;
             case _SET_IP:
                 buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
@@ -508,13 +537,12 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 return pc + 1;
             default:
             {
-                bool needs_ip = false;
+                /* _PUSH_FRAME doesn't escape or error, but it
+                 * does need the IP for the return address */
+                bool needs_ip = opcode == _PUSH_FRAME;
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
-                }
-                if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
                     if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
@@ -530,124 +558,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         }
     }
     Py_UNREACHABLE();
-}
-
-/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
- * PyCodeObject *. Retrieve the code object if possible.
- */
-static PyCodeObject *
-get_co(_PyUOpInstruction *op)
-{
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
-    PyCodeObject *co = NULL;
-    uint64_t operand = op->operand;
-    if (operand == 0) {
-        return NULL;
-    }
-    if (operand & 1) {
-        co = (PyCodeObject *)(operand & ~1);
-    }
-    else {
-        PyFunctionObject *func = (PyFunctionObject *)operand;
-        assert(PyFunction_Check(func));
-        co = (PyCodeObject *)func->func_code;
-    }
-    assert(PyCode_Check(co));
-    return co;
-}
-
-static void
-peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
-{
-    PyCodeObject *co = _PyFrame_GetCode(frame);
-    int curr_space = 0;
-    int max_space = 0;
-    _PyUOpInstruction *first_valid_check_stack = NULL;
-    _PyUOpInstruction *corresponding_check_stack = NULL;
-    for (int pc = 0; pc < buffer_size; pc++) {
-        int opcode = buffer[pc].opcode;
-        switch(opcode) {
-            case _LOAD_CONST: {
-                assert(co != NULL);
-                PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
-                buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-                buffer[pc].operand = (uintptr_t)val;
-                break;
-            }
-            case _CHECK_PEP_523: {
-                /* Setting the eval frame function invalidates
-                 * all executors, so no need to check dynamically */
-                if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                    buffer[pc].opcode = _NOP;
-                }
-                break;
-            }
-            case _CHECK_STACK_SPACE: {
-                assert(corresponding_check_stack == NULL);
-                corresponding_check_stack = &buffer[pc];
-                break;
-            }
-            case _PUSH_FRAME: {
-                assert(corresponding_check_stack != NULL);
-                co = get_co(&buffer[pc]);
-                if (co == NULL) {
-                    // should be about to _EXIT_TRACE anyway
-                    goto finish;
-                }
-                int framesize = co->co_framesize;
-                assert(framesize > 0);
-                curr_space += framesize;
-                if (curr_space < 0 || curr_space > INT32_MAX) {
-                    // won't fit in signed 32-bit int
-                    goto finish;
-                }
-                max_space = curr_space > max_space ? curr_space : max_space;
-                if (first_valid_check_stack == NULL) {
-                    first_valid_check_stack = corresponding_check_stack;
-                }
-                else {
-                    // delete all but the first valid _CHECK_STACK_SPACE
-                    corresponding_check_stack->opcode = _NOP;
-                }
-                corresponding_check_stack = NULL;
-                break;
-            }
-            case _POP_FRAME: {
-                assert(corresponding_check_stack == NULL);
-                assert(co != NULL);
-                int framesize = co->co_framesize;
-                assert(framesize > 0);
-                assert(framesize <= curr_space);
-                curr_space -= framesize;
-                co = get_co(&buffer[pc]);
-                if (co == NULL) {
-                    // might be impossible, but bailing is still safe
-                    goto finish;
-                }
-                break;
-            }
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                goto finish;
-#ifdef Py_DEBUG
-            case _CHECK_STACK_SPACE_OPERAND: {
-                /* We should never see _CHECK_STACK_SPACE_OPERANDs.
-                 * They are only created at the end of this pass. */
-                Py_UNREACHABLE();
-            }
-#endif
-        }
-    }
-    Py_UNREACHABLE();
-finish:
-    if (first_valid_check_stack != NULL) {
-        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
-        assert(max_space > 0);
-        assert(max_space <= INT_MAX);
-        assert(max_space <= INT32_MAX);
-        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand = max_space;
-    }
 }
 
 //  0 - failure, no error raised, just fall back to Tier 1
@@ -669,8 +579,6 @@ _Py_uop_analyze_and_optimize(
         return err;
     }
 
-    peephole_opt(frame, buffer, length);
-
     length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
         length, curr_stacklen, dependencies);
@@ -685,3 +593,5 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_successes);
     return length;
 }
+
+#endif /* _Py_TIER2 */
