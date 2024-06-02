@@ -9134,27 +9134,28 @@ any_find_slice(PyObject* s1, PyObject* s2,
 {
     int kind1, kind2, isascii1, isascii2;
     const void *buf1, *buf2;
-    Py_ssize_t len1, len2;
+    Py_ssize_t len1, len2, result;
 
     kind1 = PyUnicode_KIND(s1);
     kind2 = PyUnicode_KIND(s2);
-    if (kind2 > kind1) {
+    if (kind2 > kind1)
         return -1;
-    }
 
     isascii1 = PyUnicode_IS_ASCII(s1);
     isascii2 = PyUnicode_IS_ASCII(s2);
-    if (!isascii2 && isascii1) {
+    if (!isascii2 && isascii1)
         return -1;
-    }
 
-    buf1 = PyUnicode_DATA(s1);
-    buf2 = PyUnicode_DATA(s2);
     len1 = PyUnicode_GET_LENGTH(s1);
     len2 = PyUnicode_GET_LENGTH(s2);
     ADJUST_INDICES(start, end, len1);
-    return fast_find(buf1, kind1, len1, buf2, kind2, len2, start, end,
-                     isascii1, direction);
+
+    buf1 = PyUnicode_DATA(s1);
+    buf2 = PyUnicode_DATA(s2);
+    result = fast_find(buf1, kind1, len1, buf2, kind2, len2, start, end,
+                       isascii1, direction);
+
+    return result;
 }
 
 #define FIND_CHUNK_SIZE 1000

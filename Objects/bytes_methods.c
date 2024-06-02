@@ -500,34 +500,38 @@ static Py_ssize_t
 _Py_fast_find(const char *str, Py_ssize_t len,
               const char *sub, Py_ssize_t sub_len,
               Py_ssize_t start, Py_ssize_t end,
-              int direction)
+              int dir)
 {
+    Py_ssize_t res;
+
     assert(start >= 0);
     assert(end <= len);
-    if (sub_len > end - start) {
-        return -1;
-    }
+    if (end - start < sub_len)
+        res = -1;
     else if (sub_len == 1) {
-        Py_ssize_t result;
-        if (direction > 0) {
-            result = stringlib_find_char(str + start, end - start, *sub);
-        }
-        else {
-            result = stringlib_rfind_char(str + start, end - start, *sub);
-        }
-        if (result == -1) {
-            return -1;
-        }
-        return start + result;
+        if (dir > 0)
+            res = stringlib_find_char(
+                str + start, end - start,
+                *sub);
+        else
+            res = stringlib_rfind_char(
+                str + start, end - start,
+                *sub);
+        if (res >= 0)
+            res += start;
     }
     else {
-        if (direction > 0) {
-            return stringlib_find_slice(str, len, sub, sub_len, start, end);
-        }
-        else {
-            return stringlib_rfind_slice(str, len, sub, sub_len, start, end);
-        }
+        if (dir > 0)
+            res = stringlib_find_slice(
+                str, len,
+                sub, sub_len, start, end);
+        else
+            res = stringlib_rfind_slice(
+                str, len,
+                sub, sub_len, start, end);
     }
+
+    return res;
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
@@ -540,6 +544,7 @@ find_internal(const char *str, Py_ssize_t len,
     Py_buffer subbuf;
     const char *sub;
     Py_ssize_t sub_len;
+    Py_ssize_t res;
 
     if (!parse_args_finds_byte(function_name, &subobj, &byte)) {
         return -2;
@@ -551,7 +556,6 @@ find_internal(const char *str, Py_ssize_t len,
 
         sub = subbuf.buf;
         sub_len = subbuf.len;
-        PyBuffer_Release(&subbuf);
     }
     else {
         sub = &byte;
@@ -559,7 +563,12 @@ find_internal(const char *str, Py_ssize_t len,
     }
 
     ADJUST_INDICES(start, end, len);
-    return _Py_fast_find(str, len, sub, sub_len, start, end, dir);
+    res = _Py_fast_find(str, len, sub, sub_len, start, end, dir);
+
+    if (subobj)
+        PyBuffer_Release(&subbuf);
+
+    return res;
 }
 
 #define FIND_CHUNK_SIZE 1000
