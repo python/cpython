@@ -601,16 +601,17 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
       global: set of all symbol names explicitly declared as global
 */
 
-#define SET_SCOPE(DICT, NAME, I) { \
-    PyObject *o = PyLong_FromLong(I); \
-    if (!o) \
-        return 0; \
-    if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+#define SET_SCOPE(DICT, NAME, I) \
+    do { \
+        PyObject *o = PyLong_FromLong(I); \
+        if (!o) \
+            return 0; \
+        if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+            Py_DECREF(o); \
+            return 0; \
+        } \
         Py_DECREF(o); \
-        return 0; \
-    } \
-    Py_DECREF(o); \
-}
+    } while(0)
 
 /* Decide on scope of name, given flags.
 
@@ -1562,39 +1563,45 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     return --(ST)->recursion_depth,(X)
 
 #define VISIT(ST, TYPE, V) \
-    if (!symtable_visit_ ## TYPE((ST), (V))) \
-        VISIT_QUIT((ST), 0);
+    do { \
+        if (!symtable_visit_ ## TYPE((ST), (V))) { \
+            VISIT_QUIT((ST), 0); \
+        } \
+    } while(0)
 
-#define VISIT_SEQ(ST, TYPE, SEQ) { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-}
+#define VISIT_SEQ(ST, TYPE, SEQ) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-}
+#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = (START); i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) {     \
-    int i = 0; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!elt) continue; /* can be NULL */ \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);             \
-    } \
-}
+#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) \
+    do { \
+        int i = 0; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!elt) continue; /* can be NULL */ \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);             \
+        } \
+    } while(0)
 
 static int
 symtable_record_directive(struct symtable *st, identifier name, int lineno,
@@ -2261,11 +2268,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Slice_kind:
         if (e->v.Slice.lower)
-            VISIT(st, expr, e->v.Slice.lower)
+            VISIT(st, expr, e->v.Slice.lower);
         if (e->v.Slice.upper)
-            VISIT(st, expr, e->v.Slice.upper)
+            VISIT(st, expr, e->v.Slice.upper);
         if (e->v.Slice.step)
-            VISIT(st, expr, e->v.Slice.step)
+            VISIT(st, expr, e->v.Slice.step);
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
