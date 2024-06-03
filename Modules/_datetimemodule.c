@@ -7169,7 +7169,9 @@ init_static_types(PyInterpreterState *interp, int reloading)
     _globals.interp_count += 1;
     PyMutex_Unlock(&_globals.mutex);
 
-    // XXX Add one callback per type?
+    /* It could make sense to add a separate callback
+     * for each of the types.  However, for now we can take the simpler
+     * approach of a single callback. */
     if (PyUnstable_AtExit(interp, callback_for_interp_exit, NULL) < 0) {
         callback_for_interp_exit(NULL);
         return -1;
