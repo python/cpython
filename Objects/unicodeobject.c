@@ -1625,7 +1625,7 @@ unicode_modifiable(PyObject *unicode)
     assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1)
         return 0;
-    if (_PyUnicode_HASH(unicode) != -1)
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(unicode)) != -1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
@@ -10819,9 +10819,10 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != -1);
-    Py_hash_t hash = _PyUnicode_HASH(left);
-    if (hash != -1 && hash != _PyUnicode_HASH(right_uni)) {
+    Py_hash_t right_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(right_uni));
+    assert(right_hash != -1);
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(left));
+    if (hash != -1 && hash != right_hash) {
         return 0;
     }
 
@@ -11306,12 +11307,14 @@ unicode_hash(PyObject *self)
 #ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
 #endif
-    if (_PyUnicode_HASH(self) != -1)
-        return _PyUnicode_HASH(self);
-
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(self));
+    if (hash != -1) {
+        return hash;
+    }
     x = _Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
-    _PyUnicode_HASH(self) = x;
+
+    FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
     return x;
 }
 
