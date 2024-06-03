@@ -187,8 +187,6 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
     PyObject *exc = PyErr_GetRaisedException();
 
-    PyObject *current = NULL;
-
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         goto error;
@@ -200,7 +198,10 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
             goto error;
         }
         if (ref != NULL) {
+            PyObject *current = NULL;
             int rc = PyWeakref_GetRef(ref, &current);
+            /* We only need "current" for pointer comparison. */
+            Py_XDECREF(current);
             Py_DECREF(ref);
             if (rc < 0) {
                 goto error;
@@ -222,7 +223,6 @@ error:
     PyErr_WriteUnraisable(NULL);
 
 finally:
-    Py_XDECREF(current);
     PyErr_SetRaisedException(exc);
 }
 
