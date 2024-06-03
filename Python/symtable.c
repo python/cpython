@@ -2301,7 +2301,7 @@ symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, ident
         if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
             return 0;
 
-        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_EXTRA_FLAGS;
+        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_ATTR_EXTRA_FLAGS;
         st->st_cur->ste_extra_flags |= (is_default == 1 ? InTypeParamDefault : (
             e->kind == Tuple_kind ? InTypeParamConstraint : InTypeParamBound
         ));
@@ -2753,7 +2753,7 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
     if (type == AnnotationBlock)
         PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
     else if (type == TypeVarBoundBlock) {
-        enum _extra_flags flags = st->st_cur->ste_extra_flags;
+        _extra_flags_t flags = st->st_cur->ste_extra_flags;
         PyErr_Format(
             PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_PARAM_BLOCK, name, (
                 (flags & InTypeVar) ? "a TypeVar" :
