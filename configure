@@ -26395,15 +26395,8 @@ fi
 
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-  as_fn_append CPPFLAGS " $CURSES_CFLAGS"
-  # On Solaris, term.h requires curses.h
-  ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
+# On Solaris, term.h requires curses.h
+ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
 #define NCURSES_OPAQUE 0
 #if defined(HAVE_NCURSESW_NCURSES_H)
 #  include <ncursesw/ncurses.h>
@@ -26425,13 +26418,6 @@ then :
   printf "%s\n" "#define HAVE_TERM_H 1" >>confdefs.h
 
 fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement

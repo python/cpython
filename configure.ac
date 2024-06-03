@@ -6664,11 +6664,8 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-WITH_SAVE_ENV([
-  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
-  # On Solaris, term.h requires curses.h
-  AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
-])
+# On Solaris, term.h requires curses.h
+AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
