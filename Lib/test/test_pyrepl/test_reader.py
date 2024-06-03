@@ -168,8 +168,8 @@ class TestReader(TestCase):
 
         expected = (
             "def foo():\n"
-            "\n"
-            "\n"
+            "    \n"
+            "    \n"
             "    a = 1\n"
             "    \n"
             "    "    # HistoricalReader will trim trailing whitespace
