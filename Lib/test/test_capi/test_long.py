@@ -735,7 +735,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, getsign, 1.0)
         self.assertRaises(TypeError, getsign, Index(123))
 
-        # CRACHES(getsign)
+        # CRASHES getsign(NULL)
 
 
 if __name__ == "__main__":
