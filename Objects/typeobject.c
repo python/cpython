@@ -279,6 +279,47 @@ lookup_tp_dict(PyTypeObject *self)
     return self->tp_dict;
 }
 
+static inline int
+cleanup_tp_dict(PyTypeObject *self)
+{
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
+        assert(state != NULL);
+        if (!_Py_IsMainInterpreter(interp)) {
+            PyInterpreterState *main_interp = _PyInterpreterState_Main();
+            static_builtin_state *main_state = _PyStaticType_GetState(main_interp, self);
+            assert(main_state != NULL);
+
+            PyObject* keys_to_remove = PyList_New(0);
+            if (!keys_to_remove) {
+                return -1;
+            }
+            Py_ssize_t i = 0;
+            PyObject *key, *value;
+            while (PyDict_Next(state->tp_dict, &i, &key, &value)) {
+                if (!PyDict_Contains(main_state->tp_dict, key)) {
+                    if (PyList_Append(keys_to_remove, key) < 0) {
+                        Py_DECREF(keys_to_remove);
+                        return -1;
+                    }
+                }
+            }
+
+            Py_ssize_t list_size = PyList_Size(keys_to_remove);
+            for (Py_ssize_t i = 0; i < list_size; i++) {
+                PyObject* key = PyList_GetItem(keys_to_remove, i);
+                if (PyDict_DelItem(state->tp_dict, key) < 0) {
+                    Py_DECREF(keys_to_remove);
+                    return -1;
+                }
+            }
+            Py_DECREF(keys_to_remove);
+        }
+    }
+    return 0;
+}
+
 PyObject *
 _PyType_GetDict(PyTypeObject *self)
 {
@@ -7856,6 +7897,9 @@ type_ready_fill_dict(PyTypeObject *type)
         return -1;
     }
     if (type_dict_set_doc(type) < 0) {
+        return -1;
+    }
+    if (cleanup_tp_dict(type) < 0) {
         return -1;
     }
     return 0;
