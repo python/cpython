@@ -57,6 +57,11 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
+    def test_encode_bytes_with_default(self):
+        def default(obj):
+            if isinstance(obj, bytes):
+                return obj.decode()
+        self.assertEqual(self.dumps({b'a': 1}, default=default), '{"a": 1}')
 
 class TestPyDump(TestDump, PyTest): pass
 

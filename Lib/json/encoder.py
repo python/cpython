@@ -355,55 +355,64 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         else:
             items = dct.items()
         for key, value in items:
-            if isinstance(key, str):
-                pass
-            # JavaScript is weakly typed for these, so it makes sense to
-            # also allow them.  Many encoders seem to do something like this.
-            elif isinstance(key, float):
-                # see comment for int/float in _make_iterencode
-                key = _floatstr(key)
-            elif key is True:
-                key = 'true'
-            elif key is False:
-                key = 'false'
-            elif key is None:
-                key = 'null'
-            elif isinstance(key, int):
-                # see comment for int/float in _make_iterencode
-                key = _intstr(key)
-            elif _skipkeys:
-                continue
-            else:
-                raise TypeError(f'keys must be str, int, float, bool or None, '
-                                f'not {key.__class__.__name__}')
-            if first:
-                first = False
-            else:
-                yield item_separator
-            yield _encoder(key)
-            yield _key_separator
-            if isinstance(value, str):
-                yield _encoder(value)
-            elif value is None:
-                yield 'null'
-            elif value is True:
-                yield 'true'
-            elif value is False:
-                yield 'false'
-            elif isinstance(value, int):
-                # see comment for int/float in _make_iterencode
-                yield _intstr(value)
-            elif isinstance(value, float):
-                # see comment for int/float in _make_iterencode
-                yield _floatstr(value)
-            else:
-                if isinstance(value, (list, tuple)):
-                    chunks = _iterencode_list(value, _current_indent_level)
-                elif isinstance(value, dict):
-                    chunks = _iterencode_dict(value, _current_indent_level)
+            for retry in True, False:
+                if isinstance(key, str):
+                    pass
+                # JavaScript is weakly typed for these, so it makes sense to
+                # also allow them.  Many encoders seem to do something like this.
+                elif isinstance(key, float):
+                    # see comment for int/float in _make_iterencode
+                    key = _floatstr(key)
+                elif key is True:
+                    key = 'true'
+                elif key is False:
+                    key = 'false'
+                elif key is None:
+                    key = 'null'
+                elif isinstance(key, int):
+                    # see comment for int/float in _make_iterencode
+                    key = _intstr(key)
+                elif _skipkeys:
+                    break
                 else:
-                    chunks = _iterencode(value, _current_indent_level)
-                yield from chunks
+                    if retry:
+                        try:
+                            key = _default(key)
+                        except Exception:
+                            pass
+                        else:
+                            continue
+                    raise TypeError(f'keys must be str, int, float, bool or None, '
+                                    f'not {key.__class__.__name__}')
+            else:
+                if first:
+                    first = False
+                else:
+                    yield item_separator
+                yield _encoder(key)
+                yield _key_separator
+                if isinstance(value, str):
+                    yield _encoder(value)
+                elif value is None:
+                    yield 'null'
+                elif value is True:
+                    yield 'true'
+                elif value is False:
+                    yield 'false'
+                elif isinstance(value, int):
+                    # see comment for int/float in _make_iterencode
+                    yield _intstr(value)
+                elif isinstance(value, float):
+                    # see comment for int/float in _make_iterencode
+                    yield _floatstr(value)
+                else:
+                    if isinstance(value, (list, tuple)):
+                        chunks = _iterencode_list(value, _current_indent_level)
+                    elif isinstance(value, dict):
+                        chunks = _iterencode_dict(value, _current_indent_level)
+                    else:
+                        chunks = _iterencode(value, _current_indent_level)
+                    yield from chunks
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level

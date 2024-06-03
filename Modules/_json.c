@@ -1483,6 +1483,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 {
     PyObject *keystr = NULL;
     PyObject *encoded;
+    PyObject *newobj;
 
     if (PyUnicode_Check(key)) {
         keystr = Py_NewRef(key);
@@ -1502,10 +1503,15 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
         return 0;
     }
     else {
-        PyErr_Format(PyExc_TypeError,
-                     "keys must be str, int, float, bool or None, "
-                     "not %.100s", Py_TYPE(key)->tp_name);
-        return -1;
+        newobj = PyObject_CallOneArg(s->defaultfn, key);
+        if (newobj == NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s", Py_TYPE(key)->tp_name);
+            return -1;
+        }
+        return encoder_encode_key_value(s, writer, first, newobj, value,
+                                        newline_indent, item_separator);
     }
 
     if (keystr == NULL) {
