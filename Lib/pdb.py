@@ -595,13 +595,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             1. the command queue is empty
             2. a command to continue execution is encountered
 
-        The return value is True if a following cmdloop should be executed, and False otherwise.
+        The return value is
+            True - if the user input is expected after processing,
+            False - otherwise.
         """
         if not self.cmdqueue:
             return True
 
-        # The step command is just a sentinel to break out of the loop
-        # The side effect will be overwritten by the next resuming command
+        # It's possible that cmdqueue does not contain any command that resumes
+        # execution, and _cmdloop will stuck in the loop waiting for user input
+        # in that case. To prevent that, we append a sentinel command (step) at
+        # the end of the queue. This makes sure we can break out of the loop.
+        # If the sentinel command is consumed, we know extra user input is
+        # needed. Otherwise we can pop the sentinel command and return.
+        # The side effect of the sentinel command is that we would execute a
+        # set_step(), but that side effect will be overwritten by the actual
+        # resuming command by the user later.
         self.cmdqueue.append('step')
         self._cmdloop()
         if self.cmdqueue:
