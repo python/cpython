@@ -828,6 +828,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(c_call));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(c_exception));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(c_return));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cached_datetime_module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cached_statements));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cadata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cafile));
