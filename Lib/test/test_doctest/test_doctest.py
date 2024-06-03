@@ -1035,7 +1035,7 @@ replaced with any other string:
     ...     >>> x = 12
     ...     >>> print(x//0)
     ...     Traceback (most recent call last):
-    ...     ZeroDivisionError: integer division or modulo by zero
+    ...     ZeroDivisionError: division by zero
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -1052,7 +1052,7 @@ unexpected exception:
     ...     >>> print('pre-exception output', x//0)
     ...     pre-exception output
     ...     Traceback (most recent call last):
-    ...     ZeroDivisionError: integer division or modulo by zero
+    ...     ZeroDivisionError: division by zero
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -1063,7 +1063,7 @@ unexpected exception:
         print('pre-exception output', x//0)
     Exception raised:
         ...
-        ZeroDivisionError: integer division or modulo by zero
+        ZeroDivisionError: division by zero
     TestResults(failed=1, attempted=2)
 
 Exception messages may contain newlines:
@@ -1258,7 +1258,7 @@ unexpected exception:
     Exception raised:
         Traceback (most recent call last):
         ...
-        ZeroDivisionError: integer division or modulo by zero
+        ZeroDivisionError: division by zero
     TestResults(failed=1, attempted=1)
 
     >>> _colorize.COLORIZE = save_colorize

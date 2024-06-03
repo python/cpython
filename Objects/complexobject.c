@@ -523,7 +523,7 @@ complex_div(PyObject *v, PyObject *w)
     errno = 0;
     quot = _Py_c_quot(a, b);
     if (errno == EDOM) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return NULL;
     }
     return PyComplex_FromCComplex(quot);
@@ -554,7 +554,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "0.0 to a negative or complex power");
+                        "zero to a negative or complex power");
         return NULL;
     }
     else if (errno == ERANGE) {

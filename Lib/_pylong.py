@@ -530,7 +530,7 @@ def int_divmod(a, b):
     Its time complexity is O(n**1.58), where n = #bits(a) + #bits(b).
     """
     if b == 0:
-        raise ZeroDivisionError
+        raise ZeroDivisionError('division by zero')
     elif b < 0:
         q, r = int_divmod(-a, -b)
         return q, -r
