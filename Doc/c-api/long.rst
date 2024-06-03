@@ -496,11 +496,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
 
-   Get the sign of the integer object *obj*: ``0``, ``-1`` or ``+1`` for zero,
-   negative or positive integer, respectively.
+   Get the sign of the integer object *obj*.
+   
+   On success, set *\*sign* to the integer sign  (0, -1 or +1 for zero, negative or
+   positive integer, respectively) and return 0.
 
-   Return ``0`` on success, else ``-1`` with an exception set.  This function
-   always succeeds if *obj* is a :c:type:`PyLongObject` or its subtype.
+   On failure, return -1 with an exception set.  This function always succeeds
+   if *obj* is a :c:type:`PyLongObject` or its subtype.
 
    .. versionadded:: 3.14
 
