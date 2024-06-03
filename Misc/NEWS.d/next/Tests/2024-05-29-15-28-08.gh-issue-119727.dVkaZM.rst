@@ -1,0 +1,2 @@
+Add ``--single-process`` command line option to Python test runner (regrtest).
+Patch by Victor Stinner.
