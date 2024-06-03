@@ -7130,12 +7130,14 @@ callback_for_interp_exit(void *Py_UNUSED(data))
 
     assert(_globals.interp_count > 0);
     PyMutex_Lock(&_globals.mutex);
-    int64_t final = !_globals.interp_count;
     _globals.interp_count -= 1;
+    int final = !_globals.interp_count;
     PyMutex_Unlock(&_globals.mutex);
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
-        PyTypeObject *type = capi_types[i];
+    /* They must be done in reverse order so subclasses are finalized
+     * before base classes. */
+    for (size_t i = Py_ARRAY_LENGTH(capi_types); i > 0; i--) {
+        PyTypeObject *type = capi_types[i-1];
         _PyStaticType_FiniForExtension(interp, type, final);
     }
 }
@@ -7153,6 +7155,8 @@ init_static_types(PyInterpreterState *interp, int reloading)
     PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
     PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
+    /* Bases classes must be initialized before subclasses,
+     * so capi_types must have the types in the appropriate order. */
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
         PyTypeObject *type = capi_types[i];
         if (_PyStaticType_InitForExtension(interp, type) < 0) {
