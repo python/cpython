@@ -601,7 +601,8 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
       global: set of all symbol names explicitly declared as global
 */
 
-#define SET_SCOPE(DICT, NAME, I) do { \
+#define SET_SCOPE(DICT, NAME, I) \
+    do { \
         PyObject *o = PyLong_FromLong(I); \
         if (!o) \
             return 0; \
