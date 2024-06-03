@@ -52,6 +52,16 @@ typedef struct {
     PyObject *epoch;
 } datetime_state;
 
+/* The module has a fixed number of static objects, due to being exposed
+ * through the datetime C-API.  There are five types exposed directly,
+ * one type exposed indirectly, and one singleton constant (UTC).
+ *
+ * Each of these objects is hidden behind a macro in the same way as
+ * the per-module objects stored in module state.  The macros for the
+ * static objects don't need to be passed a state, but the consistency
+ * of doing so is more clear.  We use a dedicated noop macro, NO_STATE,
+ * to make the special case obvious. */
+
 #define NO_STATE NULL
 
 #define DATE_TYPE(st) &PyDateTime_DateType
