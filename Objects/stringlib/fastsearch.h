@@ -769,6 +769,15 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             return STRINGLIB(count_char)(s, n, p[0], maxcount);
         }
     }
+    else if (n == m) {
+        /* use special case when both strings are of equal length */
+        int res = memcmp(s, p, m * sizeof(STRINGLIB_CHAR));
+        if (mode == FAST_COUNT){
+            return res == 0 ? 1 : 0;
+        } else {
+            return res == 0 ? 0 : -1;
+        }
+    }
 
     if (mode != FAST_RSEARCH) {
         if (n < 2500 || (m < 100 && n < 30000) || m < 6) {
