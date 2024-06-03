@@ -116,5 +116,5 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 /* For use by the gcd function in mathmodule.c */
 PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 
-// Get the number of bits of an integer
+// Get the number of bits of an integer.
 PyAPI_FUNC(Py_ssize_t) PyLong_GetNumBits(PyObject *obj);
