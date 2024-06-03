@@ -1,0 +1,1 @@
+:func:`json.dump` now uses the `default` function as a fallback to serialize dict keys.
