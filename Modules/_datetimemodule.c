@@ -7171,6 +7171,7 @@ init_static_types(PyInterpreterState *interp, int reloading)
 
     // XXX Add one callback per type?
     if (PyUnstable_AtExit(interp, callback_for_interp_exit, NULL) < 0) {
+        callback_for_interp_exit(NULL);
         return -1;
     }
 
