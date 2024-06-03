@@ -7655,11 +7655,11 @@ PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
-  [test "$have_curses" = "yes"], [],
+  [], [test "$have_curses" = "yes"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
 )
 PY_STDLIB_MOD([_curses_panel],
-  [test "$have_curses" = "yes" && test "$have_panel" = "yes"], [],
+  [], [test "$have_curses" = "yes" && test "$have_panel" = "yes"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],

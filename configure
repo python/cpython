@@ -30258,9 +30258,9 @@ printf %s "checking for stdlib extension module _curses... " >&6; }
         if test "$py_cv_module__curses" != "n/a"
 then :
 
-    if test "$have_curses" = "yes"
+    if true
 then :
-  if true
+  if test "$have_curses" = "yes"
 then :
   py_cv_module__curses=yes
 else $as_nop
@@ -30297,9 +30297,9 @@ printf %s "checking for stdlib extension module _curses_panel... " >&6; }
         if test "$py_cv_module__curses_panel" != "n/a"
 then :
 
-    if test "$have_curses" = "yes" && test "$have_panel" = "yes"
+    if true
 then :
-  if true
+  if test "$have_curses" = "yes" && test "$have_panel" = "yes"
 then :
   py_cv_module__curses_panel=yes
 else $as_nop
