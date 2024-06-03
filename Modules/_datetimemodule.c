@@ -219,7 +219,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_Print();
+    PyErr_WriteUnraisable(NULL);
 
 finally:
     Py_XDECREF(current);
