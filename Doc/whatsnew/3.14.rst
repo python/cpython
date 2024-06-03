@@ -255,6 +255,9 @@ C API Changes
 New Features
 ------------
 
+* Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
+  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
+
 Porting to Python 3.14
 ----------------------
 
