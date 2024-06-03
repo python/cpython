@@ -796,7 +796,7 @@ executing that callback::
        if result:
            stack.pop_all()
 
-This allows the intended cleanup up behaviour to be made explicit up front,
+This allows the intended cleanup behaviour to be made explicit up front,
 rather than requiring a separate flag variable.
 
 If a particular application uses this pattern a lot, it can be simplified

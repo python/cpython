@@ -102,12 +102,6 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         int compile_mode);
 
 // Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
-        PyObject *instructions,
-        PyObject *consts,
-        int nlocals);
-
-// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *instructions);
