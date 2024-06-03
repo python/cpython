@@ -12,10 +12,15 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
+import os
+import sys
 from glob import _Globber, _no_recurse_symlinks
 from errno import ENOTDIR, ELOOP
-from shutil import _fastcopy
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+try:
+    import posix
+except ImportError:
+    posix = None
 
 
 __all__ = ["UnsupportedOperation"]
@@ -24,6 +29,25 @@ __all__ = ["UnsupportedOperation"]
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
+
+
+def _get_copy_blocksize(infd):
+    """Determine blocksize for fastcopying on Linux.
+    Hopefully the whole file will be copied in a single call.
+    The copying itself should be performed in a loop 'till EOF is
+    reached (0 return) so a blocksize smaller or bigger than the actual
+    file size should not make any difference, also in case the file
+    content changes while being copied.
+    """
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8 MiB
+    except OSError:
+        blocksize = 2 ** 27  # 128 MiB
+    # On 32-bit architectures truncate to 1 GiB to avoid OverflowError,
+    # see gh-82500.
+    if sys.maxsize < 2 ** 32:
+        blocksize = min(blocksize, 2 ** 30)
+    return blocksize
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -537,7 +561,8 @@ class PathBase(PurePathBase):
                 st.st_dev == other_st.st_dev)
 
     def _samefile_safe(self, other_path):
-        """Like samefile(), but returns False rather than raising OSError.
+        """
+        Like samefile(), but returns False rather than raising OSError.
         """
         try:
             return self.samefile(other_path)
@@ -794,29 +819,90 @@ class PathBase(PurePathBase):
 
     def copy(self, target, follow_symlinks=True):
         """
-        Copy this file and its metadata to the given target. Returns the path
-        of the new file.
-
-        If this file is a symlink and *follow_symlinks* is true (the default),
-        the symlink's target is copied. Otherwise, the symlink is recreated at
-        the target.
+        Copy the contents of this file to the given target. If this file is a
+        symlink and follow_symlinks is false, a symlink will be created at the
+        target.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        if target.is_dir():
-            target /= self.name
         if self._samefile_safe(target):
             raise OSError(f"{self!r} and {target!r} are the same file")
         if not follow_symlinks and self.is_symlink():
             target.symlink_to(self.readlink())
-            return target
+            return
+        with self.open('rb') as source_f:
+            try:
+                with target.open('wb') as target_f:
+                    try:
+                        # Use fast FD-based implementation if file objects are
+                        # backed by FDs, and the OS supports it.
+                        copyfd = self._copyfd
+                        source_fd = source_f.fileno()
+                        target_fd = target_f.fileno()
+                    except Exception:
+                        # Otherwise use file objects' read() and write().
+                        read_source = source_f.read
+                        write_target = target_f.write
+                        while buf := read_source(1024 * 1024):
+                            write_target(buf)
+                    else:
+                        try:
+                            copyfd(source_fd, target_fd)
+                        except OSError as err:
+                            # Produce more useful error messages.
+                            err.filename = str(self)
+                            err.filename2 = str(target)
+                            raise err
+            except IsADirectoryError as e:
+                if not target.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {target}') from e
+                else:
+                    raise
 
-        with self.open('rb') as f_source:
-            with target.open('wb') as f_target:
-                _fastcopy(f_source, f_target)
+    if hasattr(os, 'copy_file_range'):
+        @staticmethod
+        def _copyfd(source_fd, target_fd):
+            """
+            Copy data from one regular mmap-like fd to another by using a
+            high-performance copy_file_range(2) syscall that gives filesystems
+            an opportunity to implement the use of reflinks or server-side
+            copy.
+            This should work on Linux >= 4.5 only.
+            """
+            blocksize = _get_copy_blocksize(source_fd)
+            offset = 0
+            while True:
+                sent = os.copy_file_range(source_fd, target_fd, blocksize,
+                                          offset_dst=offset)
+                if sent == 0:
+                    break  # EOF
+                offset += sent
 
-        # FIXME: how do we copy metadata between PathBase instances?
-        return target
+    elif hasattr(os, 'sendfile'):
+        @staticmethod
+        def _copyfd(source_fd, target_fd):
+            """Copy data from one regular mmap-like fd to another by using
+            high-performance sendfile(2) syscall.
+            This should work on Linux >= 2.6.33 only.
+            """
+            blocksize = _get_copy_blocksize(source_fd)
+            offset = 0
+            while True:
+                sent = os.sendfile(target_fd, source_fd, offset, blocksize)
+                if sent == 0:
+                    break  # EOF
+                offset += sent
+
+    elif hasattr(posix, '_fcopyfile'):
+        @staticmethod
+        def _copyfd(source_fd, target_fd):
+            """
+            Copy a regular file content using high-performance fcopyfile(3)
+            syscall (macOS).
+            """
+            posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
 
     def rename(self, target):
         """

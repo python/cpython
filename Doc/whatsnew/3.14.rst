@@ -95,8 +95,8 @@ Added :func:`ast.compare` for comparing two ASTs.
 pathlib
 -------
 
-* Add :meth:`pathlib.Path.copy`, which copies a file to a target file or
-  directory, like :func:`shutil.copy2`.
+* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
+  another, like :func:`shutil.copyfile`.
   (Contributed by Barney Gale in :gh:`73991`.)
 
 
