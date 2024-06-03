@@ -211,7 +211,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
         }
     }
 
-    /* We use None to to identify tha the module was previously loaded. */
+    /* We use None to identify that the module was previously loaded. */
     if (PyDict_SetItem(dict, INTERP_KEY, Py_None) < 0) {
         goto error;
     }
