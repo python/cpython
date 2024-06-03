@@ -8,6 +8,9 @@ on:
         required: false
         type: boolean
         default: false
+      os-matrix:
+        required: false
+        type: string
 
 jobs:
   build_macos:
