@@ -381,8 +381,7 @@ class PrettyPrinter:
 
     _dispatch[bytearray.__repr__] = _pprint_bytearray
 
-    def _pprint_mappingproxy(self, object, stream, indent, allowance,
-                             context, level):
+    def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
         stream.write('mappingproxy(')
         self._format(object.copy(), stream, indent + 13, allowance + 1,
                      context, level)
