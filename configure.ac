@@ -6612,14 +6612,12 @@ WITH_SAVE_ENV([
   AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
-       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
-       AS_VAR_APPEND([LIBS], [" $ac_cv_search_initscr"])])],
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
     [AS_VAR_SET([have_curses], [no])])
   AC_SEARCH_LIBS([update_panels], [panel panelw],
     [AS_VAR_IF([have_panel], [no],
       [AS_VAR_SET([have_panel], [yes])
-       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
-       AS_VAR_APPEND([LIBS], [" $ac_cv_search_update_panels"])])],
+       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
     [AS_VAR_SET([have_panel], [no])])
 
 dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
