@@ -320,7 +320,7 @@ def join(split_command):
 
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
-def quote(s, always=False):
+def quote(s, *, always=False):
     """Return a shell-escaped version of the string *s*."""
     if not s:
         return "''"

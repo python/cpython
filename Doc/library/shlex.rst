@@ -49,7 +49,7 @@ The :mod:`shlex` module defines the following functions:
    .. versionadded:: 3.8
 
 
-.. function:: quote(s, always=False)
+.. function:: quote(s, *, always=False)
 
    Return a shell-escaped version of the string *s*.  The returned value is a
    string that can safely be used as one token in a shell command line, for
