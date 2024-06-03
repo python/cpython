@@ -70,6 +70,7 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
+
 #define LOCATION(x) \
  (x)->lineno, (x)->col_offset, (x)->end_lineno, (x)->end_col_offset
 
