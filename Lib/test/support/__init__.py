@@ -529,11 +529,11 @@ def suppress_immortalization(suppress=True):
         yield
         return
 
-    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    _testinternalcapi.suppress_immortalization(True)
     try:
         yield
     finally:
-        _testinternalcapi.set_immortalize_deferred(*old_values)
+        _testinternalcapi.suppress_immortalization(False)
 
 def skip_if_suppress_immortalization():
     try:

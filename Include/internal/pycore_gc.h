@@ -347,15 +347,11 @@ struct _gc_runtime_state {
 
     /* gh-117783: Deferred reference counting is not fully implemented yet, so
        as a temporary measure we treat objects using deferred referenence
-       counting as immortal. */
-    struct {
-        /* Immortalize objects instead of marking them as using deferred
-           reference counting. */
-        int enabled;
-
-        /* Set enabled=1 when the first background thread is created. */
-        int enable_on_thread_created;
-    } immortalize;
+       counting as immortal. The value may be zero, one, or a negative number:
+        0: immortalize deferred RC objects once the first thread is created
+        1: immortalize all deferred RC objects immediately
+        <0: suppressed; don't immortalize objects */
+    int immortalize;
 #endif
 };
 
