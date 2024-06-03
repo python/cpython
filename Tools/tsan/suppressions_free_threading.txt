@@ -15,14 +15,10 @@ race:set_allocator_unlocked
 # These entries are for warnings that trigger in a library function, as called
 # by a CPython function.
 
-# https://gist.github.com/swtaarrs/9d41251e603fa6dedd604191a6da820d
-race:park_detached_threads
 # https://gist.github.com/swtaarrs/8e0e365e1d9cecece3269a2fb2f2b8b8
 race:sock_recv_impl
 # https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
 race:free_threadstate
-# https://gist.github.com/swtaarrs/cd6aec2006e0c1b561b68d65e9f1a872
-race:_PyParkingLot_Park
 
 
 # These warnings trigger directly in a CPython function.
@@ -33,8 +29,6 @@ race_top:_mi_heap_delayed_free_partial
 race_top:_PyEval_EvalFrameDefault
 race_top:_PyImport_AcquireLock
 race_top:_PyImport_ReleaseLock
-# https://gist.github.com/mpage/0a24eb2dd458441ededb498e9b0e5de8
-race_top:_PyParkingLot_Park
 race_top:_PyType_HasFeature
 race_top:assign_version_tag
 race_top:insertdict
@@ -47,8 +41,6 @@ race_top:set_contains_key
 # https://gist.github.com/colesbury/d13d033f413b4ad07929d044bed86c35
 race_top:set_discard_entry
 race_top:set_inheritable
-race_top:start_the_world
-race_top:tstate_set_detached
 race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
 race_top:_PyImport_AcquireLock
@@ -64,7 +56,6 @@ race_top:list_get_item_ref
 race_top:make_pending_calls
 race_top:set_add_entry
 race_top:should_intern_string
-race_top:llist_insert_tail
 race_top:_Py_slot_tp_getattr_hook
 race_top:add_threadstate
 race_top:dump_traceback
