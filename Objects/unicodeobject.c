@@ -9248,6 +9248,9 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
                 }
                 heap_subs[subs_len] = sub;
             }
+            else {
+                heap_subs[subs_len] = NULL;
+            }
             subs[subs_len] = sub;
             sub_kinds[subs_len] = sub_kind;
             sub_lens[subs_len] = sub_len;
