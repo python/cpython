@@ -2078,7 +2078,7 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: named expression cannot be used within a TypeVar constraint
 
-   >>> def f[T=((x:=3))](): pass
+   >>> def f[T = ((x:=3))](): pass
    Traceback (most recent call last):
       ...
    SyntaxError: named expression cannot be used within a TypeVar default
@@ -2093,7 +2093,7 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: named expression cannot be used within a TypeVar constraint
 
-   >>> async def f[T=((x:=3))](): pass
+   >>> async def f[T = ((x:=3))](): pass
    Traceback (most recent call last):
       ...
    SyntaxError: named expression cannot be used within a TypeVar default
@@ -2108,7 +2108,7 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: named expression cannot be used within a TypeVar constraint
 
-   >>> type A[T=((x:=3))] = int
+   >>> type A[T = ((x:=3))] = int
    Traceback (most recent call last):
       ...
    SyntaxError: named expression cannot be used within a TypeVar default
@@ -2123,17 +2123,17 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within a TypeVar constraint
 
-   >>> def f[T=(yield)](): pass
+   >>> def f[T = (yield)](): pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a TypeVar default
 
-   >>> def f[*Ts=(yield)](): pass
+   >>> def f[*Ts = (yield)](): pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a TypeVarTuple default
 
-   >>> def f[**Ps=[(yield), int]](): pass
+   >>> def f[**P = [(yield), int]](): pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a ParamSpec default
@@ -2148,7 +2148,7 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within a TypeVar constraint
 
-   >>> type A[T=(yield 3)] = int
+   >>> type A[T = (yield 3)] = int
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a TypeVar default
@@ -2173,17 +2173,17 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within a TypeVar constraint
 
-   >>> class A[T=(yield)]: pass
+   >>> class A[T = (yield)]: pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a TypeVar default
 
-   >>> class A[*Ts=(yield)]: pass
+   >>> class A[*Ts = (yield)]: pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a TypeVarTuple default
 
-   >>> class A[**Ps=[(yield), int]]: pass
+   >>> class A[**P = [(yield), int]]: pass
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a ParamSpec default
