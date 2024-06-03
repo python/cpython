@@ -1228,7 +1228,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth == 0) {
+    if (depth <= 0) {
         return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
