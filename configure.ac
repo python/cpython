@@ -6566,7 +6566,7 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
-dnl check for ncurses/ncursesw and panel/panelw
+dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.
 dnl have_curses=[no, yes]
 dnl have_panel=[no, yes]
@@ -6601,20 +6601,20 @@ WITH_SAVE_ENV([
   # Make sure we've got the header defines.
   AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
   AC_CHECK_HEADERS(m4_normalize([
-    curses.h ncurses.h panel.h
-    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
     ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
+    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
+    curses.h ncurses.h panel.h
   ]))
 
   # Check that we're able to link with crucial curses/panel functions. This
   # also serves as a fallback in case pkg-config failed.
   AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
-  AC_SEARCH_LIBS([initscr], [ncurses ncursesw],
+  AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
        CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
     [AS_VAR_SET([have_curses], [no])])
-  AC_SEARCH_LIBS([update_panels], [panel panelw],
+  AC_SEARCH_LIBS([update_panels], [panelw panel],
     [AS_VAR_IF([have_panel], [no],
       [AS_VAR_SET([have_panel], [yes])
        PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],

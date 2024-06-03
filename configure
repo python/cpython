@@ -26186,22 +26186,22 @@ save_LIBS=$LIBS
 
   # Make sure we've got the header defines.
   as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
-  ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
-if test "x$ac_cv_header_curses_h" = xyes
+  ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_curses_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_CURSES_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
-if test "x$ac_cv_header_ncurses_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "ncursesw/ncurses.h" "ac_cv_header_ncursesw_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_ncurses_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_NCURSES_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_NCURSESW_NCURSES_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
-if test "x$ac_cv_header_panel_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "ncursesw/panel.h" "ac_cv_header_ncursesw_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncursesw_panel_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_NCURSESW_PANEL_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "ncurses/curses.h" "ac_cv_header_ncurses_curses_h" "$ac_includes_default"
@@ -26222,22 +26222,22 @@ then :
   printf "%s\n" "#define HAVE_NCURSES_PANEL_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
-if test "x$ac_cv_header_ncursesw_curses_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "curses.h" "ac_cv_header_curses_h" "$ac_includes_default"
+if test "x$ac_cv_header_curses_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_CURSES_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "ncursesw/ncurses.h" "ac_cv_header_ncursesw_ncurses_h" "$ac_includes_default"
-if test "x$ac_cv_header_ncursesw_ncurses_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "ncurses.h" "ac_cv_header_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_NCURSESW_NCURSES_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_NCURSES_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "ncursesw/panel.h" "ac_cv_header_ncursesw_panel_h" "$ac_includes_default"
-if test "x$ac_cv_header_ncursesw_panel_h" = xyes
+ac_fn_c_check_header_compile "$LINENO" "panel.h" "ac_cv_header_panel_h" "$ac_includes_default"
+if test "x$ac_cv_header_panel_h" = xyes
 then :
-  printf "%s\n" "#define HAVE_NCURSESW_PANEL_H 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_PANEL_H 1" >>confdefs.h
 
 fi
 
@@ -26267,7 +26267,7 @@ return initscr ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' ncurses ncursesw
+for ac_lib in '' ncursesw ncurses
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
@@ -26332,7 +26332,7 @@ return update_panels ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' panel panelw
+for ac_lib in '' panelw panel
 do
   if test -z "$ac_lib"; then
     ac_res="none required"
