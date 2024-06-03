@@ -180,8 +180,10 @@ class BaseTest:
 
         if self.contains_bytes:
             self.checkequal(-1, 'hello', 'find', 42)
+            self.checkequal(-1, 'hello', 'find', (42,))
         else:
             self.checkraises(TypeError, 'hello', 'find', 42)
+            self.checkraises(TypeError, 'hello', 'find', (42,))
 
         self.checkequal(0, '', 'find', '')
         self.checkequal(-1, '', 'find', '', 1, 1)
@@ -230,7 +232,7 @@ class BaseTest:
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'find', ('aa', 'bb'), 0, 3)
         self.checkequal(2, '__aa__bb__', 'find', ('aa', 'bb'), 0, 4)
-        self.checkraises(TypeError, 'hello', 'find', (1.0, 2.0))
+        self.checkraises(TypeError, 'hello', 'find', (None,))
         s = '_' * (N - 2) + 'aaaa' + '_' * (N - 2)
         self.checkequal((N - 2), s, 'find', ('aaaa', 'bb'))
         self.checkequal(2, 'foobar', 'find', ('ob', 'oba'))
@@ -242,6 +244,7 @@ class BaseTest:
         s = 'ab' + 'c' * (10 * N)
         self.checkequal(1, s, 'find', ('c' * (10 * N), 'b' + 'c' * (10 * N)))
         self.checkequal(0, 'foobar', 'find', ('foo', 'bar'))
+        self.checkequal(-1, 'foo', 'find', ('foobar',))
 
     def test_rfind(self):
         self.checkequal(9,  'abcdefghiabc', 'rfind', 'abc')
@@ -264,8 +267,10 @@ class BaseTest:
 
         if self.contains_bytes:
             self.checkequal(-1, 'hello', 'rfind', 42)
+            self.checkequal(-1, 'hello', 'rfind', (42,))
         else:
             self.checkraises(TypeError, 'hello', 'rfind', 42)
+            self.checkraises(TypeError, 'hello', 'rfind', (42,))
 
         # For a variety of combinations,
         #    verify that str.rfind() matches __contains__
@@ -308,18 +313,19 @@ class BaseTest:
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 0, 10)
         self.checkequal(-1, '__aa__bb__', 'rfind', ('aa', 'bb'), 7, 10)
         self.checkequal(6, '__aa__bb__', 'rfind', ('aa', 'bb'), 6, 10)
-        self.checkraises(TypeError, 'hello', 'rfind', (1.0, 2.0))
+        self.checkraises(TypeError, 'hello', 'rfind', (None,))
         s = '_' * (N - 2) + 'aaaa' + '_' * (N - 2)
         self.checkequal((N - 2), s, 'rfind', ('aaaa', 'bb'))
         self.checkequal(2, 'foobar', 'rfind', ('oba', 'ob'))
         self.checkequal(2, 'foobar', 'rfind', ('oob', 'ob'))
-        self.checkequal(0, '', 'rfind', ('', '_'))
+        self.checkequal(1, '_', 'rfind', ('', 'a'))
         self.checkequal(4, '__abcd__', 'rfind', ('ab', 'cd'))
         self.checkequal(3, '__abc__', 'rfind', ('ab', 'bc'))
         self.checkequal(0, 'b' * N + 'a', 'rfind', ('b' * N, 'c'))
         s = 'ab' + 'c' * (10 * N)
         self.checkequal(2, s, 'rfind', ('c' * (10 * N), 'b' + 'c' * (10 * N)))
         self.checkequal(3, 'foo', 'rfind', ('', 'foo'))
+        self.checkequal(-1, 'foo', 'rfind', ('foobar',))
 
     def test_index(self):
         self.checkequal(0, 'abcdefghiabc', 'index', '')
