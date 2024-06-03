@@ -514,10 +514,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    * Return the number of bits on success: greater than or equal to zero.
    * Set an exception and return ``-1`` on error.
    * Set an :exc:`OverflowError` exception, and return ``-1`` if the number
-     of bits doesn't fit into ``Py_ssize_t``.
+     of bits doesn't fit into :c:type:`Py_ssize_t`.
 
-   Calling the ``bit_length()`` method should be preferred to support integers
-   larger than ``Py_ssize_t`` bits and to avoid ``OverflowError``.
+   Calling the :py:meth:`bit_length` method should be preferred to support integers
+   larger than :c:type:`Py_ssize_t` bits and to avoid :exc:`!OverflowError`.
 
    .. versionadded:: 3.14
 
