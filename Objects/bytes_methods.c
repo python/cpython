@@ -586,6 +586,7 @@ find_first_internal(const char *str, Py_ssize_t len,
     }
     Py_ssize_t result, tuple_len, subs_len;
     char *bytes = NULL;
+    Py_buffer *buffers = NULL;
     const char **subs = NULL;
     Py_ssize_t *sub_lens = NULL;
 
@@ -593,6 +594,7 @@ find_first_internal(const char *str, Py_ssize_t len,
     result = -2; // Error
     tuple_len = PyTuple_GET_SIZE(subobj);
     if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char) ||
+        (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_buffer) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char *) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_ssize_t))
     {
@@ -601,6 +603,11 @@ find_first_internal(const char *str, Py_ssize_t len,
     }
     bytes = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(char));
     if (!bytes) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    buffers = PyMem_RawMalloc(((size_t)tuple_len) * sizeof(Py_buffer));
+    if (!buffers) {
         PyErr_NoMemory();
         goto exit;
     }
@@ -621,21 +628,21 @@ find_first_internal(const char *str, Py_ssize_t len,
     for (Py_ssize_t i = 0; i < tuple_len; i++) {
         PyObject *subseq;
         char *byte, *sub;
-        Py_buffer subbuf;
+        Py_buffer *buffer;
         Py_ssize_t sub_len;
 
         subseq = PyTuple_GET_ITEM(subobj, i);
         byte = &bytes[subs_len];
+        buffer = &buffers[i];
         if (!parse_args_finds_byte(function_name, &subseq, byte)) {
             goto exit;
         }
         else if (subseq) {
-            if (PyObject_GetBuffer(subseq, &subbuf, PyBUF_SIMPLE) != 0) {
+            if (PyObject_GetBuffer(subseq, buffer, PyBUF_SIMPLE) != 0) {
                 goto exit;
             }
-            sub = subbuf.buf;
-            sub_len = subbuf.len;
-            PyBuffer_Release(&subbuf);
+            sub = buffer->buf;
+            sub_len = buffer->len;
         }
         else {
             sub = byte;
@@ -732,6 +739,12 @@ find_first_internal(const char *str, Py_ssize_t len,
     }
 exit:
     PyMem_RawFree(bytes);
+    if (buffers) {
+        for (Py_ssize_t i = 0; i < tuple_len; i++) {
+            PyBuffer_Release(&buffers[i]);
+        }
+    }
+    PyMem_RawFree(buffers);
     PyMem_RawFree(subs);
     PyMem_RawFree(sub_lens);
     return result;
