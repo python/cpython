@@ -29,30 +29,6 @@ typedef enum _comprehension_type {
     SetComprehension = 3,
     GeneratorExpression = 4 } _Py_comprehension_ty;
 
-/* Additional flags that are set temporarily on a ``_symtable_entry`` object.
- *
- * Those flags are only used to add some information on the current context.
- */
-typedef enum _extra_flags_e {
-    // Mutually exclusive flags indicating the kind of type variable
-    // being processed. Use this flag to avoid passing or checking
-    // twice the kind of a ``type_param_ty`` object.
-    InTypeVar = 1,
-    InTypeVarTuple = 2,
-    InParamSpec = (1 << 2),
-
-    // Mutually exclusive flags indicating which component of
-    // a type parameters block is being processed. Those flags
-    // are used in conjunction with 'InTypeVar', 'InTypeVarTuple'
-    // or 'InParamSpec' but not all combinations are supported.
-    InTypeParamBound = (1 << 3),
-    InTypeParamConstraint = (1 << 4),
-    InTypeParamDefault = (1 << 5),
-} _extra_flags_t;
-
-#define CLEAR_TYPE_PARAM_KIND_EXTRA_FLAGS ~(InTypeVar | InTypeVarTuple | InParamSpec)
-#define CLEAR_TYPE_PARAM_ATTR_EXTRA_FLAGS ~(InTypeParamBound | InTypeParamConstraint | InTypeParamDefault)
-
 /* source location information */
 typedef struct {
     int lineno;
@@ -107,7 +83,7 @@ typedef struct _symtable_entry {
     PyObject *ste_directives;/* locations of global and nonlocal statements */
     PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
     _Py_block_ty ste_type;
-    _extra_flags_t ste_extra_flags; /* extra temporary flags */
+    const char *ste_description; /* describe what is being done (used in error messages) */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
