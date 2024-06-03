@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-if sys.platform != 'win32':
+if sys.platform != "win32":
     raise unittest.SkipTest("test only relevant on win32")
 
 

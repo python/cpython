@@ -199,8 +199,8 @@ jobs:
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # macos-14 is M1, macos-13 is Intel
-      os-matrix: '["macos-14", "macos-13"]'
+      # Cirrus is M1, macos-13 is default GHA Intel
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-13"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -210,8 +210,8 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # macos-14-large is Intel with 12 cores (most parallelism)
-      os-matrix: '["macos-14"]'
+      # Cirrus is M1
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma"]'
 
   build_ubuntu:
     name: 'Ubuntu'
