@@ -310,10 +310,7 @@ class SelectSelector(_BaseSelectorImpl):
     def select(self, timeout=None):
         timeout = None if timeout is None else max(timeout, 0)
         ready = []
-        try:
-            r, w, _ = self._select(self._readers, self._writers, [], timeout)
-        except InterruptedError:
-            return ready
+        r, w, _ = self._select(self._readers, self._writers, [], timeout)
         r = frozenset(r)
         w = frozenset(w)
         rw = r | w
@@ -394,10 +391,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             # zero to wait *at least* timeout seconds.
             timeout = math.ceil(timeout * 1e3)
         ready = []
-        try:
-            fd_event_list = self._selector.poll(timeout)
-        except InterruptedError:
-            return ready
+        fd_event_list = self._selector.poll(timeout)
 
         fd_to_key_get = self._fd_to_key.get
         for fd, event in fd_event_list:
@@ -448,10 +442,7 @@ if hasattr(select, 'epoll'):
             max_ev = len(self._fd_to_key) or 1
 
             ready = []
-            try:
-                fd_event_list = self._selector.poll(timeout, max_ev)
-            except InterruptedError:
-                return ready
+            fd_event_list = self._selector.poll(timeout, max_ev)
 
             fd_to_key = self._fd_to_key
             for fd, event in fd_event_list:
@@ -544,10 +535,7 @@ if hasattr(select, 'kqueue'):
             # (using max). See https://bugs.python.org/issue29255
             max_ev = self._max_events or 1
             ready = []
-            try:
-                kev_list = self._selector.control(None, max_ev, timeout)
-            except InterruptedError:
-                return ready
+            kev_list = self._selector.control(None, max_ev, timeout)
 
             fd_to_key_get = self._fd_to_key.get
             for kev in kev_list:
