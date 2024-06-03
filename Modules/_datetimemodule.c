@@ -111,26 +111,37 @@ get_module_state(PyObject *module)
 #define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
 static PyObject *
-get_current_module(PyInterpreterState *interp)
+get_current_module(PyInterpreterState *interp, int *p_reloading)
 {
+    PyObject *mod = NULL;
+    int reloading = 0;
+
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
-        return NULL;
+        goto error;
     }
     PyObject *ref = NULL;
     if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
-        return NULL;
+        goto error;
     }
-    if (ref == NULL) {
-        return NULL;
+    if (ref != NULL) {
+        reloading = 1;
+        if (ref != Py_None) {
+            (void)PyWeakref_GetRef(ref, &mod);
+            if (mod == Py_None) {
+                Py_CLEAR(mod);
+            }
+            Py_DECREF(ref);
+        }
     }
-    PyObject *mod = NULL;
-    (void)PyWeakref_GetRef(ref, &mod);
-    if (mod == Py_None) {
-        Py_CLEAR(mod);
+    if (p_reloading != NULL) {
+        *p_reloading = reloading;
     }
-    Py_DECREF(ref);
     return mod;
+
+error:
+    assert(PyErr_Occurred());
+    return NULL;
 }
 
 static PyModuleDef datetimemodule;
@@ -139,7 +150,7 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp);
+    PyObject *mod = get_current_module(interp, NULL);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
         if (PyErr_Occurred()) {
@@ -184,8 +195,6 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
     PyObject *exc = PyErr_GetRaisedException();
 
-    PyObject *current = NULL;
-
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         goto error;
@@ -197,7 +206,10 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
             goto error;
         }
         if (ref != NULL) {
+            PyObject *current = NULL;
             int rc = PyWeakref_GetRef(ref, &current);
+            /* We only need "current" for pointer comparison. */
+            Py_XDECREF(current);
             Py_DECREF(ref);
             if (rc < 0) {
                 goto error;
@@ -208,19 +220,17 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
         }
     }
 
-    if (PyDict_DelItem(dict, INTERP_KEY) < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            goto error;
-        }
+    /* We use None to identify that the module was previously loaded. */
+    if (PyDict_SetItem(dict, INTERP_KEY, Py_None) < 0) {
+        goto error;
     }
 
     goto finally;
 
 error:
-    PyErr_Print();
+    PyErr_WriteUnraisable(NULL);
 
 finally:
-    Py_XDECREF(current);
     PyErr_SetRaisedException(exc);
 }
 
@@ -6947,13 +6957,18 @@ static PyTypeObject PyDateTime_DateTimeType = {
 };
 
 /* ---------------------------------------------------------------------------
- * Module methods and initialization.
+ * datetime C-API.
  */
 
-static PyMethodDef module_methods[] = {
-    {NULL, NULL}
+static PyTypeObject * const capi_types[] = {
+    &PyDateTime_DateType,
+    &PyDateTime_DateTimeType,
+    &PyDateTime_TimeType,
+    &PyDateTime_DeltaType,
+    &PyDateTime_TZInfoType,
+    /* Indirectly, via the utc object. */
+    &PyDateTime_TimeZoneType,
 };
-
 
 /* The C-API is process-global.  This violates interpreter isolation
  * due to the objects stored here.  Thus each of those objects must
@@ -7003,6 +7018,11 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
     Py_DECREF(delta);
     return tz;
 }
+
+
+/* ---------------------------------------------------------------------------
+ * Module state lifecycle.
+ */
 
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
@@ -7105,19 +7125,44 @@ clear_state(datetime_state *st)
     return 0;
 }
 
-static int
-_datetime_exec(PyObject *module)
-{
-    int rc = -1;
-    datetime_state *st = get_module_state(module);
 
+/* ---------------------------------------------------------------------------
+ * Global module state.
+ */
+
+// If we make _PyStaticType_*ForExtension() public
+// then all this should be managed by the runtime.
+
+static struct {
+    PyMutex mutex;
+    int64_t interp_count;
+} _globals = {0};
+
+static void
+callback_for_interp_exit(void *Py_UNUSED(data))
+{
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *old_module = get_current_module(interp);
-    if (PyErr_Occurred()) {
-        assert(old_module == NULL);
-        goto error;
+
+    assert(_globals.interp_count > 0);
+    PyMutex_Lock(&_globals.mutex);
+    _globals.interp_count -= 1;
+    int final = !_globals.interp_count;
+    PyMutex_Unlock(&_globals.mutex);
+
+    /* They must be done in reverse order so subclasses are finalized
+     * before base classes. */
+    for (size_t i = Py_ARRAY_LENGTH(capi_types); i > 0; i--) {
+        PyTypeObject *type = capi_types[i-1];
+        _PyStaticType_FiniForExtension(interp, type, final);
     }
-    /* We actually set the "current" module right before a successful return. */
+}
+
+static int
+init_static_types(PyInterpreterState *interp, int reloading)
+{
+    if (reloading) {
+        return 0;
+    }
 
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
@@ -7125,18 +7170,65 @@ _datetime_exec(PyObject *module)
     PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
     PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
-    PyTypeObject *capi_types[] = {
-        &PyDateTime_DateType,
-        &PyDateTime_DateTimeType,
-        &PyDateTime_TimeType,
-        &PyDateTime_DeltaType,
-        &PyDateTime_TZInfoType,
-        /* Indirectly, via the utc object. */
-        &PyDateTime_TimeZoneType,
-    };
+    /* Bases classes must be initialized before subclasses,
+     * so capi_types must have the types in the appropriate order. */
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
+        PyTypeObject *type = capi_types[i];
+        if (_PyStaticType_InitForExtension(interp, type) < 0) {
+            return -1;
+        }
+    }
+
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.interp_count >= 0);
+    _globals.interp_count += 1;
+    PyMutex_Unlock(&_globals.mutex);
+
+    /* It could make sense to add a separate callback
+     * for each of the types.  However, for now we can take the simpler
+     * approach of a single callback. */
+    if (PyUnstable_AtExit(interp, callback_for_interp_exit, NULL) < 0) {
+        callback_for_interp_exit(NULL);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Module methods and initialization.
+ */
+
+static PyMethodDef module_methods[] = {
+    {NULL, NULL}
+};
+
+
+static int
+_datetime_exec(PyObject *module)
+{
+    int rc = -1;
+    datetime_state *st = get_module_state(module);
+    int reloading = 0;
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *old_module = get_current_module(interp, &reloading);
+    if (PyErr_Occurred()) {
+        assert(old_module == NULL);
+        goto error;
+    }
+    /* We actually set the "current" module right before a successful return. */
+
+    if (init_static_types(interp, reloading) < 0) {
+        goto error;
+    }
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
-        if (PyModule_AddType(module, capi_types[i]) < 0) {
+        PyTypeObject *type = capi_types[i];
+        const char *name = _PyType_Name(type);
+        assert(name != NULL);
+        if (PyModule_AddObjectRef(module, name, (PyObject *)type) < 0) {
             goto error;
         }
     }
@@ -7145,11 +7237,8 @@ _datetime_exec(PyObject *module)
         goto error;
     }
 
-    /* For now we only set the objects on the static types once.
-     * We will relax that once each types __dict__ is per-interpreter. */
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
-      if (PyDict_GetItemString(dict, c) == NULL) {      \
         assert(!PyErr_Occurred());                      \
         PyObject *value = (value_expr);                 \
         if (value == NULL) {                            \
@@ -7160,30 +7249,29 @@ _datetime_exec(PyObject *module)
             goto error;                                 \
         }                                               \
         Py_DECREF(value);                               \
-      }                                                 \
     } while(0)
 
     /* timedelta values */
-    PyObject *d = PyDateTime_DeltaType.tp_dict;
+    PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
     DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
     DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
     DATETIME_ADD_MACRO(d, "max",
                        new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
 
     /* date values */
-    d = PyDateTime_DateType.tp_dict;
+    d = _PyType_GetDict(&PyDateTime_DateType);
     DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
     DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
     DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
 
     /* time values */
-    d = PyDateTime_TimeType.tp_dict;
+    d = _PyType_GetDict(&PyDateTime_TimeType);
     DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
     DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
     DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
     /* datetime values */
-    d = PyDateTime_DateTimeType.tp_dict;
+    d = _PyType_GetDict(&PyDateTime_DateTimeType);
     DATETIME_ADD_MACRO(d, "min",
                        new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
     DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
@@ -7191,7 +7279,7 @@ _datetime_exec(PyObject *module)
     DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
     /* timezone values */
-    d = PyDateTime_TimeZoneType.tp_dict;
+    d = _PyType_GetDict(&PyDateTime_TimeZoneType);
     if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
         goto error;
     }
@@ -7266,7 +7354,7 @@ finally:
 
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _datetime_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
@@ -7288,17 +7376,16 @@ module_clear(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     clear_current_module(interp, mod);
 
+    // We take care of the static types via an interpreter atexit hook.
+    // See callback_for_interp_exit() above.
+
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    datetime_state *st = get_module_state((PyObject *)mod);
-    clear_state(st);
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    clear_current_module(interp, (PyObject *)mod);
+    (void)module_clear((PyObject *)mod);
 }
 
 static PyModuleDef datetimemodule = {
