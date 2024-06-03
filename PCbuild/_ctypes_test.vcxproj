@@ -94,6 +94,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_ctypes\_ctypes_test.h" />
+    <ClInclude Include="..\Modules\_ctypes\_ctypes_test_generated.c.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes_test.c" />
