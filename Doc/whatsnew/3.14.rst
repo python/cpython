@@ -183,6 +183,12 @@ ___
   Use :func:`pty.openpty` instead.
   (Contributed by Nikita Sobolev in :gh:`118824`.)
 
+shlex
+-----
+
+* Add keyword-only argument of *always* to :func:`shlex.quote` for forcing
+  the escaping of the string passed to it.
+
 sqlite3
 -------
 
