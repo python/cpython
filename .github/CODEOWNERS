@@ -34,6 +34,7 @@ Python/ceval*.h               @markshannon
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
+Python/instruction_sequence.c @iritkatriel
 Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
@@ -74,11 +75,8 @@ Programs/python.c             @ericsnowcurrently
 Tools/build/generate_global_objects.py  @ericsnowcurrently
 
 # Exceptions
-Lib/traceback.py              @iritkatriel
 Lib/test/test_except*.py      @iritkatriel
-Lib/test/test_traceback.py    @iritkatriel
 Objects/exceptions.c          @iritkatriel
-Python/traceback.c            @iritkatriel
 
 # Hashing
 **/*hashlib*                  @gpshead @tiran
