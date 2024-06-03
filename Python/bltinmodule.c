@@ -870,15 +870,15 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     // gh-118527: Disable immortalization of code constants for explicit
     // compile() calls to get consistent frozen outputs between the default
     // and free-threaded builds.
+    // Subtract two to suppress immortalization (so that 1 -> -1)
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int old_value = interp->gc.immortalize.enable_on_thread_created;
-    interp->gc.immortalize.enable_on_thread_created = 0;
+    _Py_atomic_add_int(&interp->gc.immortalize, -2);
 #endif
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
 
 #ifdef Py_GIL_DISABLED
-    interp->gc.immortalize.enable_on_thread_created = old_value;
+    _Py_atomic_add_int(&interp->gc.immortalize, 2);
 #endif
 
     Py_XDECREF(source_copy);
