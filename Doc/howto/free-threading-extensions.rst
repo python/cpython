@@ -12,10 +12,10 @@ called :term:`free threading`.  This document describes how to adapt C API
 extensions to support free threading.
 
 
-Identifying the Free Threaded Build in C
+Identifying the Free-Threaded Build in C
 ========================================
 
-The CPython C API exposes the ``Py_GIL_DISABLED`` macro: in the freethreaded
+The CPython C API exposes the ``Py_GIL_DISABLED`` macro: in the free-threaded
 build it's defined to ``1``, and in the regular build it's not defined.
 You can use it to enable code that only runs under the free-threaded build::
 
@@ -65,7 +65,7 @@ Single-Phase Initialization
 Extensions that use single-phase initialization (i.e.,
 :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
-only defined in the freethreaded build, so you should guard the call with
+only defined in the free-threaded build, so you should guard the call with
 ``#ifdef Py_GIL_DISABLED`` to avoid compilation errors in the regular build.
 
 ::
@@ -94,8 +94,8 @@ General API Guidelines
 
 Most of the C API is thread-safe, but there are some exceptions.
 
-* **Struct Fields**: Accessing struct fields directly is not thread-safe if
-  the field may be concurrently modified.
+* **Struct Fields**: Accessing fields in Python C API objects or structs
+  directly is not thread-safe if the field may be concurrently modified.
 * **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM` and
   :c:macro:`PyList_SET_ITEM` do not perform any error checking or locking.
   These macros are not thread-safe if the container object may be modified
@@ -181,17 +181,6 @@ where this was only a best practice and not a hard requirement.
    :c:func:`PyObject_Malloc`.
 
 
-Limited C API
-=============
-
-The free-threaded build does not currently support the
-:ref:`limited C API <limited-c-api>` or the stable ABI.  If you use
-`setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
-your extension and currently set ``py_limited_api=True`` you can use
-``py_limited_api=not sysconfig.get_config_var("Py_GIL_DISABLED")`` to opt out
-of the limited API when building with the free-threaded build.
-
-
 Thread State and GIL APIs
 =========================
 
@@ -228,3 +217,45 @@ depend on your extension, but some common patterns include:
   to thread local storage. C11 and C++11 provide the ``thread_local`` or
   ``_Thread_local`` for
   `thread-local storage <https://en.cppreference.com/w/c/language/storage_duration>`_.
+
+
+Building Extensions for the Free-Threaded Build
+===============================================
+
+C API extensions need to be built specifically for the free-threaded build.
+The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
+
+* `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
+  free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
+* `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
+  free-threaded build on Linux and Windows if you set
+  `CIBW_FREE_THREADED_SUPPORT <https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support>`_.
+
+Limited C API and Stable ABI
+............................
+
+The free-threaded build does not currently support the
+:ref:`limited C API <limited-c-api>` or the stable ABI.  If you use
+`setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
+your extension and currently set ``py_limited_api=True`` you can use
+``py_limited_api=not sysconfig.get_config_var("Py_GIL_DISABLED")`` to opt out
+of the limited API when building with the free-threaded build.
+
+.. note::
+    You will need to build separate wheels specifically for the free-threaded
+    build.  If you currently use the stable ABI, you can continue to build a
+    single wheel for multiple non-free-threaded Python versions.
+
+
+Windows
+.......
+
+Due to a limitation of the official Windows installer, you will need to
+manually define ``Py_GIL_DISABLED=1`` when building extensions from source.
+
+
+macOS
+.....
+
+The offical macOS binaries do not currently support the free-threaded build
+as of 3.13b1.  You will need to build Python from source.
