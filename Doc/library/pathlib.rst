@@ -1,6 +1,5 @@
-
-:mod:`pathlib` --- Object-oriented filesystem paths
-===================================================
+:mod:`!pathlib` --- Object-oriented filesystem paths
+====================================================
 
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths
@@ -450,6 +449,10 @@ Pure paths provide the following methods and properties:
 
    This is commonly called the file extension.
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 .. attribute:: PurePath.suffixes
 
    A list of the path's suffixes, often called file extensions::
@@ -460,6 +463,10 @@ Pure paths provide the following methods and properties:
       ['.tar', '.gz']
       >>> PurePosixPath('my/library').suffixes
       []
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
 
 
 .. attribute:: PurePath.stem
@@ -628,8 +635,8 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   When *walk_up* is False (the default), the path must start with *other*.
-   When the argument is True, ``..`` entries may be added to form the
+   When *walk_up* is false (the default), the path must start with *other*.
+   When the argument is true, ``..`` entries may be added to form the
    relative path. In all other cases, such as the paths referencing
    different drives, :exc:`ValueError` is raised.::
 
@@ -713,6 +720,11 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix. In previous
+      versions, :exc:`ValueError` is raised if a single dot is supplied.
 
 
 .. method:: PurePath.with_segments(*pathsegments)
@@ -809,8 +821,8 @@ bugs or failures in your application)::
    UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
 
-File URIs
-^^^^^^^^^
+Parsing and generating URIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Concrete path objects can be created from, and represented as, 'file' URIs
 conforming to :rfc:`8089`.
@@ -870,12 +882,8 @@ conforming to :rfc:`8089`.
    it strictly impure.
 
 
-Methods
-^^^^^^^
-
-Concrete paths provide the following methods in addition to pure paths
-methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist).
+Querying file type and status
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionchanged:: 3.8
 
@@ -885,6 +893,269 @@ call fails (for example because the path doesn't exist).
    :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
+
+.. versionchanged:: 3.14
+
+   The methods given above now return ``False`` instead of raising any
+   :exc:`OSError` exception from the operating system. In previous versions,
+   some kinds of :exc:`OSError` exception are raised, and others suppressed.
+   The new behaviour is consistent with :func:`os.path.exists`,
+   :func:`os.path.isdir`, etc. Use :meth:`~Path.stat` to retrieve the file
+   status without suppressing exceptions.
+
+
+.. method:: Path.stat(*, follow_symlinks=True)
+
+   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
+   The result is looked up at each call to this method.
+
+   This method normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``, or use :meth:`~Path.lstat`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_size
+      956
+      >>> p.stat().st_mtime
+      1327883547.852554
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.lstat()
+
+   Like :meth:`Path.stat` but, if the path points to a symbolic link, return
+   the symbolic link's information rather than its target's.
+
+
+.. method:: Path.exists(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to an existing file or directory.
+   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Use :meth:`Path.stat` to distinguish between these cases.
+
+   This method normally follows symlinks; to check if a symlink exists, add
+   the argument ``follow_symlinks=False``.
+
+   ::
+
+      >>> Path('.').exists()
+      True
+      >>> Path('setup.py').exists()
+      True
+      >>> Path('/etc').exists()
+      True
+      >>> Path('nonexistentfile').exists()
+      False
+
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_file(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a regular file. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a regular file. Use :meth:`Path.stat` to
+   distinguish between these cases.
+
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_dir(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a directory. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
+   between these cases.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_symlink()
+
+   Return ``True`` if the path points to a symbolic link, even if that symlink
+   is broken. ``False`` will be returned if the path is invalid, inaccessible
+   or missing, or if it points to something other than a symbolic link. Use
+   :meth:`Path.stat` to distinguish between these cases.
+
+
+.. method:: Path.is_junction()
+
+   Return ``True`` if the path points to a junction, and ``False`` for any other
+   type of file. Currently only Windows supports junctions.
+
+   .. versionadded:: 3.12
+
+
+.. method:: Path.is_mount()
+
+   Return ``True`` if the path is a :dfn:`mount point`: a point in a
+   file system where a different file system has been mounted.  On POSIX, the
+   function checks whether *path*'s parent, :file:`path/..`, is on a different
+   device than *path*, or whether :file:`path/..` and *path* point to the same
+   i-node on the same device --- this should detect mount points for all Unix
+   and POSIX variants.  On Windows, a mount point is considered to be a drive
+   letter root (e.g. ``c:\``), a UNC share (e.g. ``\\server\share``), or a
+   mounted filesystem directory.
+
+   .. versionadded:: 3.7
+
+   .. versionchanged:: 3.12
+      Windows support was added.
+
+.. method:: Path.is_socket()
+
+   Return ``True`` if the path points to a Unix socket. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a Unix socket. Use :meth:`Path.stat` to
+   distinguish between these cases.
+
+
+.. method:: Path.is_fifo()
+
+   Return ``True`` if the path points to a FIFO. ``False`` will be returned if
+   the path is invalid, inaccessible or missing, or if it points to something
+   other than a FIFO. Use :meth:`Path.stat` to distinguish between these
+   cases.
+
+
+.. method:: Path.is_block_device()
+
+   Return ``True`` if the path points to a block device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a block device. Use :meth:`Path.stat` to
+   distinguish between these cases.
+
+
+.. method:: Path.is_char_device()
+
+   Return ``True`` if the path points to a character device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a character device. Use :meth:`Path.stat` to
+   distinguish between these cases.
+
+
+.. method:: Path.samefile(other_path)
+
+   Return whether this path points to the same file as *other_path*, which
+   can be either a Path object, or a string.  The semantics are similar
+   to :func:`os.path.samefile` and :func:`os.path.samestat`.
+
+   An :exc:`OSError` can be raised if either file cannot be accessed for some
+   reason.
+
+   ::
+
+      >>> p = Path('spam')
+      >>> q = Path('eggs')
+      >>> p.samefile(q)
+      False
+      >>> p.samefile('spam')
+      True
+
+   .. versionadded:: 3.5
+
+
+Reading and writing files
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
+
+   Open the file pointed to by the path, like the built-in :func:`open`
+   function does::
+
+      >>> p = Path('setup.py')
+      >>> with p.open() as f:
+      ...     f.readline()
+      ...
+      '#!/usr/bin/env python3\n'
+
+
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
+
+   Return the decoded contents of the pointed-to file as a string::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
+
+
+.. method:: Path.read_bytes()
+
+   Return the binary contents of the pointed-to file as a bytes object::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
+
+   Open the file pointed to in text mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
+
+
+.. method:: Path.write_bytes(data)
+
+   Open the file pointed to in bytes mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   An existing file of the same name is overwritten.
+
+   .. versionadded:: 3.5
+
+
+Other methods
+^^^^^^^^^^^^^
+
+Some of these methods can raise an :exc:`OSError` if a system call fails (for
+example because the path doesn't exist).
 
 
 .. classmethod:: Path.cwd()
@@ -910,25 +1181,6 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.stat(*, follow_symlinks=True)
-
-   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
-   The result is looked up at each call to this method.
-
-   This method normally follows symlinks; to stat a symlink add the argument
-   ``follow_symlinks=False``, or use :meth:`~Path.lstat`.
-
-   ::
-
-      >>> p = Path('setup.py')
-      >>> p.stat().st_size
-      956
-      >>> p.stat().st_mtime
-      1327883547.852554
-
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
-
 .. method:: Path.chmod(mode, *, follow_symlinks=True)
 
    Change the file mode and permissions, like :func:`os.chmod`.
@@ -947,27 +1199,6 @@ call fails (for example because the path doesn't exist).
       33060
 
    .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
-
-.. method:: Path.exists(*, follow_symlinks=True)
-
-   Return ``True`` if the path points to an existing file or directory.
-
-   This method normally follows symlinks; to check if a symlink exists, add
-   the argument ``follow_symlinks=False``.
-
-   ::
-
-      >>> Path('.').exists()
-      True
-      >>> Path('setup.py').exists()
-      True
-      >>> Path('/etc').exists()
-      True
-      >>> Path('nonexistentfile').exists()
-      False
-
-   .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.
 
 .. method:: Path.expanduser()
@@ -1064,105 +1295,6 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.is_dir(*, follow_symlinks=True)
-
-   Return ``True`` if the path points to a directory, ``False`` if it points
-   to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-   This method normally follows symlinks; to exclude symlinks to directories,
-   add the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.is_file(*, follow_symlinks=True)
-
-   Return ``True`` if the path points to a regular file, ``False`` if it
-   points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-   This method normally follows symlinks; to exclude symlinks, add the
-   argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.is_junction()
-
-   Return ``True`` if the path points to a junction, and ``False`` for any other
-   type of file. Currently only Windows supports junctions.
-
-   .. versionadded:: 3.12
-
-
-.. method:: Path.is_mount()
-
-   Return ``True`` if the path is a :dfn:`mount point`: a point in a
-   file system where a different file system has been mounted.  On POSIX, the
-   function checks whether *path*'s parent, :file:`path/..`, is on a different
-   device than *path*, or whether :file:`path/..` and *path* point to the same
-   i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  On Windows, a mount point is considered to be a drive
-   letter root (e.g. ``c:\``), a UNC share (e.g. ``\\server\share``), or a
-   mounted filesystem directory.
-
-   .. versionadded:: 3.7
-
-   .. versionchanged:: 3.12
-      Windows support was added.
-
-
-.. method:: Path.is_symlink()
-
-   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
-
-   ``False`` is also returned if the path doesn't exist; other errors (such
-   as permission errors) are propagated.
-
-
-.. method:: Path.is_socket()
-
-   Return ``True`` if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-
-.. method:: Path.is_fifo()
-
-   Return ``True`` if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-
-.. method:: Path.is_block_device()
-
-   Return ``True`` if the path points to a block device (or a symbolic link
-   pointing to a block device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-
-.. method:: Path.is_char_device()
-
-   Return ``True`` if the path points to a character device (or a symbolic link
-   pointing to a character device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.iterdir()
@@ -1287,12 +1419,6 @@ call fails (for example because the path doesn't exist).
    symbolic link's mode is changed rather than its target's.
 
 
-.. method:: Path.lstat()
-
-   Like :meth:`Path.stat` but, if the path points to a symbolic link, return
-   the symbolic link's information rather than its target's.
-
-
 .. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
 
    Create a new directory at this given path.  If *mode* is given, it is
@@ -1318,18 +1444,6 @@ call fails (for example because the path doesn't exist).
       The *exist_ok* parameter was added.
 
 
-.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to by the path, like the built-in :func:`open`
-   function does::
-
-      >>> p = Path('setup.py')
-      >>> with p.open() as f:
-      ...     f.readline()
-      ...
-      '#!/usr/bin/env python3\n'
-
-
 .. method:: Path.owner(*, follow_symlinks=True)
 
    Return the name of the user owning the file. :exc:`KeyError` is raised
@@ -1345,37 +1459,6 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-
-.. method:: Path.read_bytes()
-
-   Return the binary contents of the pointed-to file as a bytes object::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.read_text(encoding=None, errors=None, newline=None)
-
-   Return the decoded contents of the pointed-to file as a string::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   The file is opened and then closed. The optional parameters have the same
-   meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.13
-      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
@@ -1482,27 +1565,6 @@ call fails (for example because the path doesn't exist).
    Remove this directory.  The directory must be empty.
 
 
-.. method:: Path.samefile(other_path)
-
-   Return whether this path points to the same file as *other_path*, which
-   can be either a Path object, or a string.  The semantics are similar
-   to :func:`os.path.samefile` and :func:`os.path.samestat`.
-
-   An :exc:`OSError` can be raised if either file cannot be accessed for some
-   reason.
-
-   ::
-
-      >>> p = Path('spam')
-      >>> q = Path('eggs')
-      >>> p.samefile(q)
-      False
-      >>> p.samefile('spam')
-      True
-
-   .. versionadded:: 3.5
-
-
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
    Make this path a symbolic link pointing to *target*.
@@ -1570,42 +1632,6 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
-
-
-.. method:: Path.write_bytes(data)
-
-   Open the file pointed to in bytes mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   An existing file of the same name is overwritten.
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to in text mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   An existing file of the same name is overwritten. The optional parameters
-   have the same meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.10
-      The *newline* parameter was added.
 
 
 .. _pathlib-pattern-language:

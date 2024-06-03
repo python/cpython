@@ -120,11 +120,19 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
-   Get the *frame*'s :attr:`~frame.f_locals` attribute (:class:`dict`).
+   Get the *frame*'s :attr:`~frame.f_locals` attribute.
+   If the frame refers to an :term:`optimized scope`, this returns a
+   write-through proxy object that allows modifying the locals.
+   In all other cases (classes, modules, :func:`exec`, :func:`eval`) it returns
+   the mapping representing the frame locals directly (as described for
+   :func:`locals`).
 
    Return a :term:`strong reference`.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, return a proxy object for optimized scopes.
 
 
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)

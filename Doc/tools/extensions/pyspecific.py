@@ -27,13 +27,7 @@ from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.writers.text import TextWriter, TextTranslator
-
-try:
-    # Sphinx 6+
-    from sphinx.util.display import status_iterator
-except ImportError:
-    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
-    from sphinx.util import status_iterator
+from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
@@ -610,7 +604,7 @@ def parse_monitoring_event(env, sig, signode):
 
 
 def process_audit_events(app, doctree, fromdocname):
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         break
     else:
         return
@@ -669,7 +663,7 @@ def process_audit_events(app, doctree, fromdocname):
 
         body += row
 
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         node.replace_self(table)
 
 
