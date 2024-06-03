@@ -89,15 +89,13 @@ class Regrtest:
         self.cmdline_args: TestList = ns.args
 
         # Workers
-        self.sequentially: bool = ns.sequentially
-        if self.sequentially:
-            num_workers = 0  # run sequentially
-        elif ns.use_mp is None:
-            num_workers = 0  # run sequentially
+        self.single_process: bool = ns.single_process
+        if self.single_process or ns.use_mp is None:
+            num_workers = 0   # run sequentially in a single process
         elif ns.use_mp <= 0:
-            num_workers = -1  # use the number of CPUs
+            num_workers = -1  # run in parallel, use the number of CPUs
         else:
-            num_workers = ns.use_mp
+            num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
         self.worker_json: StrJSON | None = ns.worker_json
 
@@ -239,7 +237,7 @@ class Regrtest:
 
     def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
-        if self.num_workers == 0 and not self.sequentially:
+        if self.num_workers == 0 and not self.single_process:
             # Always run tests in fresh processes to have more deterministic
             # initial state. Don't re-run tests in parallel but limit to a
             # single worker process to have side effects (on the system load
@@ -260,7 +258,7 @@ class Regrtest:
         self.logger.set_tests(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
-        if not self.sequentially:
+        if not self.single_process:
             msg = f"{msg} in subprocesses"
             self.log(msg)
             self._run_tests_mp(runtests, self.num_workers)
@@ -381,7 +379,7 @@ class Regrtest:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        msg = f"Run {tests} sequentially"
+        msg = f"Run {tests} sequentially in a single process"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
@@ -609,7 +607,7 @@ class Regrtest:
             keep_environ = True
 
         if cross_compile and hostrunner:
-            if self.num_workers == 0 and not self.sequentially:
+            if self.num_workers == 0 and not self.single_process:
                 # For now use only two cores for cross-compiled builds;
                 # hostrunner can be expensive.
                 regrtest_opts.extend(['-j', '2'])
