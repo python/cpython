@@ -25931,11 +25931,11 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CURSES_PKG_ERRORS" >&5
 
-	have_curses=no=
+	have_curses=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	have_curses=no=
+	have_curses=no
 else
 	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
 	CURSES_LIBS=$pkg_cv_CURSES_LIBS
@@ -26085,11 +26085,11 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CURSES_PKG_ERRORS" >&5
 
-	have_curses=no=
+	have_curses=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	have_curses=no=
+	have_curses=no
 else
 	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
 	CURSES_LIBS=$pkg_cv_CURSES_LIBS

@@ -6588,7 +6588,7 @@ PKG_CHECK_MODULES([CURSES], [$1],
     [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
      AS_VAR_SET([have_panel], [yes])],
     [AS_VAR_SET([have_panel], [no])])],
-  [AS_VAR_SET([have_curses=no])])
+  [AS_VAR_SET([have_curses], [no])])
 AS_VAR_POPDEF([curses_var])
 AS_VAR_POPDEF([panel_var])])
 
