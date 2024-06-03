@@ -1,6 +1,7 @@
 import unittest
 import sys
 import test.support as support
+from test.support import bigmemtest
 
 from test.support import import_helper
 
@@ -751,6 +752,17 @@ class LongTests(unittest.TestCase):
                     numbits(invalid_type)
 
         # CRASHES numbits(NULL)
+
+    # The test is always skipped on 64-bit platforms, it requires way too much
+    # memory. It's only run on 32-bit platforms.
+    @bigmemtest(size=(_testcapi.PY_SSIZE_T_MAX // sys.int_info.bits_per_digit
+                      * sys.int_info.sizeof_digit) + sys.getsizeof(123),
+                memuse=1, dry_run=False)
+    def test_long_getnumbits_overflow(self, size):
+        numbits = _testcapi.pylong_getnumbits
+        big_int = 1 << _testcapi.PY_SSIZE_T_MAX
+        with self.assertRaises(OverflowError):
+            numbits(big_int)
 
 
 if __name__ == "__main__":
