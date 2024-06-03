@@ -9241,15 +9241,15 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
             sub_len <= end - start)
         {
             const void *sub = PyUnicode_DATA(substr);
-            if (sub_len != 1 && sub_kind != kind) {
+            if (sub_len == 1 || sub_kind == kind) {
+                heap_subs[subs_len] = NULL;
+            }
+            else {
                 sub = unicode_askind(sub_kind, sub, sub_len, kind);
                 if (!sub) {
                     goto exit;
                 }
                 heap_subs[subs_len] = sub;
-            }
-            else {
-                heap_subs[subs_len] = NULL;
             }
             subs[subs_len] = sub;
             sub_kinds[subs_len] = sub_kind;
