@@ -38,7 +38,7 @@ compiles into intermediate code like the following:
                   STORE_NAME               1 (res)
 ```
 
-`SETUP_FINALLY` and `POP_BLOCK` are pseudo-instruction. This means
+`SETUP_FINALLY` and `POP_BLOCK` are pseudo-instructions. This means
 that they can appear in intermediate code but they are not bytecode
 instructions. `SETUP_FINALLY` specifies that henceforth, exceptions
 are handled by the code at label L1. The `POP_BLOCK` instruction
