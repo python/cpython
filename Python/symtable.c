@@ -70,10 +70,6 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
-#define DUPLICATE_ARGUMENT \
-"duplicate argument '%U' in function definition"
-
-
 #define LOCATION(x) \
  (x)->lineno, (x)->col_offset, (x)->end_lineno, (x)->end_col_offset
 
@@ -361,6 +357,9 @@ static void dump_symtable(PySTEntryObject* ste)
     Py_DECREF(empty);
 }
 #endif
+
+#define DUPLICATE_ARGUMENT \
+"duplicate argument '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
