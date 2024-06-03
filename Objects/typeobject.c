@@ -202,26 +202,38 @@ static void
 managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
                                int isbuiltin, int initial)
 {
-    size_t index = interp->types.builtins.num_initialized;
-    if (!isbuiltin) {
-        PyMutex_Lock(&interp->types.mutex);
-        index = interp->types.for_extensions.next_index;
-        interp->types.for_extensions.next_index++;
-        PyMutex_Unlock(&interp->types.mutex);
-    }
-
+    size_t index;
     if (initial) {
         assert(!managed_static_type_index_is_set(self));
+        if (isbuiltin) {
+            index = interp->types.builtins.num_initialized;
+            assert(index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+        }
+        else {
+            PyMutex_Lock(&interp->types.mutex);
+            index = interp->types.for_extensions.next_index;
+            interp->types.for_extensions.next_index++;
+            PyMutex_Unlock(&interp->types.mutex);
+            assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
+        }
         managed_static_type_index_set(self, index);
     }
     else {
-        assert(managed_static_type_index_get(self) == index);
+        index = managed_static_type_index_get(self);
+        if (isbuiltin) {
+            assert(index == interp->types.builtins.num_initialized);
+            assert(index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+        }
+        else {
+            assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
+        }
     }
+
     managed_static_type_state *state = isbuiltin
         ? &(interp->types.builtins.initialized[index])
         : &(interp->types.for_extensions.initialized[index]);
 
-    /* It should only be called once for each builtin type. */
+    /* It should only be called once for each builtin type per interpreter. */
     assert(state->type == NULL);
     state->type = self;
     state->isbuiltin = isbuiltin;
