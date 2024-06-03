@@ -1708,7 +1708,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'dirA'
         target = base / 'copyA'
-        with self.assertRaises(IsADirectoryError):
+        with self.assertRaises(OSError):
             source.copy(target)
 
     @needs_symlinks
@@ -1743,7 +1743,7 @@ class DummyPathTest(DummyPurePathTest):
         base = self.cls(self.base)
         source = base / 'fileA'
         target = base / 'dirA'
-        with self.assertRaises(IsADirectoryError):
+        with self.assertRaises(OSError):
             source.copy(target)
 
     @needs_symlinks

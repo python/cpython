@@ -15,8 +15,12 @@ import functools
 import os
 import sys
 from glob import _Globber, _no_recurse_symlinks
-from errno import ENOTDIR, ELOOP
+from errno import ENOTDIR, ELOOP, EBADF, EOPNOTSUPP, ETXTBSY, EXDEV
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 try:
     import posix
 except ImportError:
@@ -48,6 +52,69 @@ def _get_copy_blocksize(infd):
     if sys.maxsize < 2 ** 32:
         blocksize = min(blocksize, 2 ** 30)
     return blocksize
+
+
+if fcntl and hasattr(fcntl, 'FICLONE'):
+    def _clonefd(source_fd, target_fd):
+        """
+        Perform a lightweight copy of two files, where the data blocks are
+        copied only when modified. This is known as Copy on Write (CoW),
+        instantaneous copy or reflink.
+        """
+        fcntl.ioctl(target_fd, fcntl.FICLONE, source_fd)
+else:
+    _clonefd = None
+
+
+if posix and hasattr(posix, '_fcopyfile'):
+    def _copyfd(source_fd, target_fd):
+        """
+        Copy a regular file content using high-performance fcopyfile(3)
+        syscall (macOS).
+        """
+        posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
+elif hasattr(os, 'copy_file_range'):
+    def _copyfd(source_fd, target_fd):
+        """
+        Copy data from one regular mmap-like fd to another by using a
+        high-performance copy_file_range(2) syscall that gives filesystems
+        an opportunity to implement the use of reflinks or server-side
+        copy.
+        This should work on Linux >= 4.5 only.
+        """
+        blocksize = _get_copy_blocksize(source_fd)
+        offset = 0
+        while True:
+            sent = os.copy_file_range(source_fd, target_fd, blocksize,
+                                      offset_dst=offset)
+            if sent == 0:
+                break  # EOF
+            offset += sent
+elif hasattr(os, 'sendfile'):
+    def _copyfd(source_fd, target_fd):
+        """Copy data from one regular mmap-like fd to another by using
+        high-performance sendfile(2) syscall.
+        This should work on Linux >= 2.6.33 only.
+        """
+        blocksize = _get_copy_blocksize(source_fd)
+        offset = 0
+        while True:
+            sent = os.sendfile(target_fd, source_fd, offset, blocksize)
+            if sent == 0:
+                break  # EOF
+            offset += sent
+else:
+    _copyfd = None
+
+
+def _copyfileobj(source_f, target_f):
+    """
+    Copy data from file-like object source_f to file-like object target_f.
+    """
+    read_source = source_f.read
+    write_target = target_f.write
+    while buf := read_source(1024 * 1024):
+        write_target(buf)
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -834,25 +901,31 @@ class PathBase(PurePathBase):
             try:
                 with target.open('wb') as target_f:
                     try:
-                        # Use fast FD-based implementation if file objects are
-                        # backed by FDs, and the OS supports it.
-                        copyfd = self._copyfd
                         source_fd = source_f.fileno()
                         target_fd = target_f.fileno()
                     except Exception:
-                        # Otherwise use file objects' read() and write().
-                        read_source = source_f.read
-                        write_target = target_f.write
-                        while buf := read_source(1024 * 1024):
-                            write_target(buf)
-                    else:
-                        try:
-                            copyfd(source_fd, target_fd)
-                        except OSError as err:
-                            # Produce more useful error messages.
-                            err.filename = str(self)
-                            err.filename2 = str(target)
-                            raise err
+                        return _copyfileobj(source_f, target_f)
+                    try:
+                        # Use OS copy-on-write where available.
+                        if _clonefd:
+                            try:
+                                return _clonefd(source_fd, target_fd)
+                            except OSError as err:
+                                if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
+                                    raise err
+
+                        # Use OS copy where available.
+                        if _copyfd:
+                            return _copyfd(source_fd, target_fd)
+
+                        # Last resort: copy between file objects.
+                        return _copyfileobj(source_f, target_f)
+                    except OSError as err:
+                        # Produce more useful error messages.
+                        err.filename = str(self)
+                        err.filename2 = str(target)
+                        raise err
+
             except IsADirectoryError as e:
                 if not target.exists():
                     # Raise a less confusing exception.
@@ -860,49 +933,6 @@ class PathBase(PurePathBase):
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
-
-    if hasattr(os, 'copy_file_range'):
-        @staticmethod
-        def _copyfd(source_fd, target_fd):
-            """
-            Copy data from one regular mmap-like fd to another by using a
-            high-performance copy_file_range(2) syscall that gives filesystems
-            an opportunity to implement the use of reflinks or server-side
-            copy.
-            This should work on Linux >= 4.5 only.
-            """
-            blocksize = _get_copy_blocksize(source_fd)
-            offset = 0
-            while True:
-                sent = os.copy_file_range(source_fd, target_fd, blocksize,
-                                          offset_dst=offset)
-                if sent == 0:
-                    break  # EOF
-                offset += sent
-
-    elif hasattr(os, 'sendfile'):
-        @staticmethod
-        def _copyfd(source_fd, target_fd):
-            """Copy data from one regular mmap-like fd to another by using
-            high-performance sendfile(2) syscall.
-            This should work on Linux >= 2.6.33 only.
-            """
-            blocksize = _get_copy_blocksize(source_fd)
-            offset = 0
-            while True:
-                sent = os.sendfile(target_fd, source_fd, offset, blocksize)
-                if sent == 0:
-                    break  # EOF
-                offset += sent
-
-    elif hasattr(posix, '_fcopyfile'):
-        @staticmethod
-        def _copyfd(source_fd, target_fd):
-            """
-            Copy a regular file content using high-performance fcopyfile(3)
-            syscall (macOS).
-            """
-            posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
 
     def rename(self, target):
         """
