@@ -210,8 +210,8 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # Cirrus is M1
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma"]'
+      # macos-14 is default GHA Apple Silicon
+      os-matrix: '["macos-14"]'
 
   build_ubuntu:
     name: 'Ubuntu'
