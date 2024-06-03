@@ -37,7 +37,6 @@ race_top:_PyImport_ReleaseLock
 race_top:_PyParkingLot_Park
 race_top:_PyType_HasFeature
 race_top:assign_version_tag
-race_top:gc_restore_tid
 race_top:insertdict
 race_top:lookup_tp_dict
 race_top:mi_heap_visit_pages
@@ -45,6 +44,8 @@ race_top:PyMember_GetOne
 race_top:PyMember_SetOne
 race_top:new_reference
 race_top:set_contains_key
+# https://gist.github.com/colesbury/d13d033f413b4ad07929d044bed86c35
+race_top:set_discard_entry
 race_top:set_inheritable
 race_top:start_the_world
 race_top:tstate_set_detached
@@ -64,8 +65,6 @@ race_top:list_get_item_ref
 race_top:make_pending_calls
 race_top:set_add_entry
 race_top:should_intern_string
-race_top:worklist_pop
-race_top:_PyEval_IsGILEnabled
 race_top:llist_insert_tail
 race_top:_Py_slot_tp_getattr_hook
 race_top:add_threadstate
@@ -77,8 +76,6 @@ race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
 race_top:PyInterpreterState_ThreadHead
 race_top:_PyObject_TryGetInstanceAttribute
-race_top:_Py_qsbr_unregister
-race_top:_Py_qsbr_poll
 race_top:PyThreadState_Next
 race_top:Py_TYPE
 race_top:PyUnstable_InterpreterFrame_GetLine
@@ -86,7 +83,6 @@ race_top:sock_close
 race_top:tstate_delete_common
 race_top:tstate_is_freed
 race_top:type_modified_unlocked
-race_top:update_refs
 race_top:write_thread_id
 race_top:PyThreadState_Clear
 
