@@ -121,7 +121,7 @@ def get_tcltk_lib(ns):
 
 
 def get_layout(ns):
-    def in_build(f, dest="", new_name=None):
+    def in_build(f, dest="", new_name=None, no_lib=False):
         n, _, x = f.rpartition(".")
         n = new_name or n
         src = ns.build / f
@@ -136,7 +136,7 @@ def get_layout(ns):
             pdb = src.with_suffix(".pdb")
             if pdb.is_file():
                 yield dest + n + ".pdb", pdb
-        if ns.include_dev:
+        if ns.include_dev and not no_lib:
             lib = src.with_suffix(".lib")
             if lib.is_file():
                 yield "libs/" + n + ".lib", lib
@@ -202,7 +202,9 @@ def get_layout(ns):
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
-    for dest, src in rglob(ns.build, "*.pyd"):
+    dest="" if ns.flat_dlls else "DLLs/"
+
+    for _, src in rglob(ns.build, "*.pyd"):
         if ns.include_freethreaded:
             if not src.match("*.cp*t-win*.pyd"):
                 continue
@@ -217,14 +219,14 @@ def get_layout(ns):
             continue
         if src in TCLTK_PYDS_ONLY and not ns.include_tcltk:
             continue
-        yield from in_build(src.name, dest="" if ns.flat_dlls else "DLLs/")
+        yield from in_build(src.name, dest=dest, no_lib=True)
 
-    for dest, src in rglob(ns.build, "*.dll"):
+    for _, src in rglob(ns.build, "*.dll"):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
             continue
         if src in EXCLUDE_FROM_DLLS:
             continue
-        yield from in_build(src.name, dest="" if ns.flat_dlls else "DLLs/")
+        yield from in_build(src.name, no_lib=True)
 
     if ns.zip_lib:
         zip_name = PYTHON_ZIP_NAME
