@@ -1633,7 +1633,7 @@ unicode_modifiable(PyObject *unicode)
     assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1)
         return 0;
-    if (_PyUnicode_HASH(unicode) != -1)
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(unicode)) != -1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
@@ -4702,8 +4702,9 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     const char *p = start;
 
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    assert(_Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T));
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
+        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
+    {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help allocation */
@@ -4948,9 +4949,7 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
     const char *end = s + size;
     Py_ssize_t decoded = 0;
     Py_UCS1 *dest = (Py_UCS1*)writer->data + writer->pos * writer->kind;
-    if (writer->kind == PyUnicode_1BYTE_KIND
-        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
-    {
+    if (writer->kind == PyUnicode_1BYTE_KIND) {
         decoded = ascii_decode(s, end, dest);
         writer->pos += decoded;
 
@@ -10901,9 +10900,10 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-    assert(_PyUnicode_HASH(right_uni) != -1);
-    Py_hash_t hash = _PyUnicode_HASH(left);
-    if (hash != -1 && hash != _PyUnicode_HASH(right_uni)) {
+    Py_hash_t right_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(right_uni));
+    assert(right_hash != -1);
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(left));
+    if (hash != -1 && hash != right_hash) {
         return 0;
     }
 
@@ -11388,12 +11388,14 @@ unicode_hash(PyObject *self)
 #ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
 #endif
-    if (_PyUnicode_HASH(self) != -1)
-        return _PyUnicode_HASH(self);
-
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(self));
+    if (hash != -1) {
+        return hash;
+    }
     x = _Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
-    _PyUnicode_HASH(self) = x;
+
+    FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
     return x;
 }
 

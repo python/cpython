@@ -86,7 +86,7 @@ worklist_pop(struct worklist *worklist)
     PyObject *op = (PyObject *)worklist->head;
     if (op != NULL) {
         worklist->head = op->ob_tid;
-        op->ob_tid = 0;
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     }
     return op;
 }
@@ -189,6 +189,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
 static void
 gc_restore_tid(PyObject *op)
 {
+    assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
     mi_segment_t *segment = _mi_ptr_segment(op);
     if (_Py_REF_IS_MERGED(op->ob_ref_shared)) {
         op->ob_tid = 0;
@@ -676,7 +677,6 @@ call_weakref_callbacks(struct collection_state *state)
             Py_DECREF(temp);
         }
 
-        gc_restore_tid(op);
         Py_DECREF(op);  // drop worklist reference
     }
 }
@@ -703,11 +703,9 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        // gh-117783: immortalize objects that would use deferred refcounting
-        // once the first non-main thread is created.
-        gcstate->immortalize.enable_on_thread_created = 1;
-    }
+    // gh-117783: immortalize objects that would use deferred refcounting
+    // once the first non-main thread is created (but not in subinterpreters).
+    gcstate->immortalize = _Py_IsMainInterpreter(interp) ? 0 : -1;
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -986,7 +984,6 @@ cleanup_worklist(struct worklist *worklist)
 {
     PyObject *op;
     while ((op = worklist_pop(worklist)) != NULL) {
-        gc_restore_tid(op);
         gc_clear_unreachable(op);
         Py_DECREF(op);
     }
@@ -1809,8 +1806,10 @@ _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
-    gc_visit_heaps(interp, &immortalize_visitor, &args);
-    interp->gc.immortalize.enabled = 1;
+    if (interp->gc.immortalize == 0) {
+        gc_visit_heaps(interp, &immortalize_visitor, &args);
+        interp->gc.immortalize = 1;
+    }
     _PyEval_StartTheWorld(interp);
 }
 

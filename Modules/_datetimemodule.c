@@ -52,6 +52,16 @@ typedef struct {
     PyObject *epoch;
 } datetime_state;
 
+/* The module has a fixed number of static objects, due to being exposed
+ * through the datetime C-API.  There are five types exposed directly,
+ * one type exposed indirectly, and one singleton constant (UTC).
+ *
+ * Each of these objects is hidden behind a macro in the same way as
+ * the per-module objects stored in module state.  The macros for the
+ * static objects don't need to be passed a state, but the consistency
+ * of doing so is more clear.  We use a dedicated noop macro, NO_STATE,
+ * to make the special case obvious. */
+
 #define NO_STATE NULL
 
 #define DATE_TYPE(st) &PyDateTime_DateType
@@ -158,12 +168,10 @@ _get_current_state(PyObject **p_mod)
     return st;
 }
 
-#define GET_CURRENT_STATE(ST_VAR)   \
-    NULL;                           \
-    PyObject *current_mod = NULL;   \
-    ST_VAR = _get_current_state(&current_mod);
-#define RELEASE_CURRENT_STATE(ST_VAR)   \
-    Py_DECREF(current_mod)
+#define GET_CURRENT_STATE(MOD_VAR)  \
+    _get_current_state(&MOD_VAR)
+#define RELEASE_CURRENT_STATE(ST_VAR, MOD_VAR)  \
+    Py_DECREF(MOD_VAR)
 
 static int
 set_current_module(PyInterpreterState *interp, PyObject *mod)
@@ -2060,7 +2068,8 @@ delta_to_microseconds(PyDateTime_Delta *self)
     PyObject *x3 = NULL;
     PyObject *result = NULL;
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2098,7 +2107,7 @@ Done:
     Py_XDECREF(x1);
     Py_XDECREF(x2);
     Py_XDECREF(x3);
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }
 
@@ -2138,7 +2147,8 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2183,7 +2193,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 Done:
     Py_XDECREF(tuple);
     Py_XDECREF(num);
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 
 BadDivmod:
@@ -2721,7 +2731,8 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *self = NULL;
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     /* Argument objects. */
     PyObject *day = NULL;
@@ -2826,7 +2837,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_DECREF(x);
 
 Done:
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return self;
 
 #undef CLEANUP
@@ -2939,11 +2950,12 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (total_microseconds == NULL)
         return NULL;
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     Py_DECREF(total_microseconds);
     return total_seconds;
 }
@@ -3696,11 +3708,12 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         week = 0;
     }
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     if (v == NULL) {
         return NULL;
     }
@@ -6409,10 +6422,11 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    datetime_state *st = GET_CURRENT_STATE(st);
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
-    RELEASE_CURRENT_STATE(st);
+    RELEASE_CURRENT_STATE(st, current_mod);
     if (delta == NULL)
         return NULL;
 
@@ -6649,11 +6663,12 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        datetime_state *st = GET_CURRENT_STATE(st);
+        PyObject *current_mod = NULL;
+        datetime_state *st = GET_CURRENT_STATE(current_mod);
 
         PyObject *delta;
         delta = datetime_subtract((PyObject *)self, CONST_EPOCH(st));
-        RELEASE_CURRENT_STATE(st);
+        RELEASE_CURRENT_STATE(st, current_mod);
         if (delta == NULL)
             return NULL;
         result = delta_total_seconds(delta, NULL);
