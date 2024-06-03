@@ -602,15 +602,15 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
 */
 
 #define SET_SCOPE(DICT, NAME, I) do { \
-    PyObject *o = PyLong_FromLong(I); \
-    if (!o) \
-        return 0; \
-    if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+        PyObject *o = PyLong_FromLong(I); \
+        if (!o) \
+            return 0; \
+        if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+            Py_DECREF(o); \
+            return 0; \
+        } \
         Py_DECREF(o); \
-        return 0; \
-    } \
-    Py_DECREF(o); \
-} while(0)
+    } while(0)
 
 /* Decide on scope of name, given flags.
 
@@ -1561,42 +1561,46 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 #define VISIT_QUIT(ST, X) \
     return --(ST)->recursion_depth,(X)
 
-#define VISIT(ST, TYPE, V) do { \
-    if (!symtable_visit_ ## TYPE((ST), (V))) { \
-        VISIT_QUIT((ST), 0); \
-    } \
-} while(0)
+#define VISIT(ST, TYPE, V) \
+    do { \
+        if (!symtable_visit_ ## TYPE((ST), (V))) { \
+            VISIT_QUIT((ST), 0); \
+        } \
+    } while(0)
 
-#define VISIT_SEQ(ST, TYPE, SEQ) do { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-} while(0)
+#define VISIT_SEQ(ST, TYPE, SEQ) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) do { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-} while(0)
+#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = (START); i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) do { \
-    int i = 0; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!elt) continue; /* can be NULL */ \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);             \
-    } \
-} while(0)
+#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) \
+    do { \
+        int i = 0; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!elt) continue; /* can be NULL */ \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);             \
+        } \
+    } while(0)
 
 static int
 symtable_record_directive(struct symtable *st, identifier name, int lineno,
