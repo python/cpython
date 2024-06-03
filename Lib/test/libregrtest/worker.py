@@ -14,9 +14,9 @@ from .utils import (
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
-NEED_TTY = set('''
-    test_ioctl
-'''.split())
+NEED_TTY = {
+    'test_ioctl',
+}
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
