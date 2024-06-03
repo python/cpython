@@ -49,7 +49,6 @@ race_top:set_discard_entry
 race_top:set_inheritable
 race_top:start_the_world
 race_top:tstate_set_detached
-race_top:unicode_hash
 race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
 race_top:_PyImport_AcquireLock
