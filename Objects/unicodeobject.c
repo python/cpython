@@ -9058,7 +9058,7 @@ static Py_ssize_t
 fast_find(const void *buf1, int kind1, Py_ssize_t len1,
           const void *buf2, int kind2, Py_ssize_t len2,
           Py_ssize_t start, Py_ssize_t end,
-          int isascii1, int direction)
+          int isascii, int direction)
 {
     Py_ssize_t result;
 
@@ -9081,7 +9081,7 @@ fast_find(const void *buf1, int kind1, Py_ssize_t len1,
     if (direction > 0) {
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
-            if (isascii1)
+            if (isascii)
                 result = asciilib_find_slice(buf1, len1, buf2, len2, start, end);
             else
                 result = ucs1lib_find_slice(buf1, len1, buf2, len2, start, end);
@@ -9099,7 +9099,7 @@ fast_find(const void *buf1, int kind1, Py_ssize_t len1,
     else {
         switch (kind1) {
         case PyUnicode_1BYTE_KIND:
-            if (isascii1)
+            if (isascii)
                 result = asciilib_rfind_slice(buf1, len1, buf2, len2, start, end);
             else
                 result = ucs1lib_rfind_slice(buf1, len1, buf2, len2, start, end);
