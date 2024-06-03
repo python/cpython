@@ -1,0 +1,2 @@
+Fix specialization of :class:`typing.Generic` class with a broken ``__eq__``
+method. Patch by Jelle Zijlstra.
