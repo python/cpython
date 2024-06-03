@@ -53,9 +53,16 @@ The :mod:`shlex` module defines the following functions:
 
    Return a shell-escaped version of the string *s*.  The returned value is a
    string that can safely be used as one token in a shell command line, for
-   cases where you cannot use a list. If the *always* keyword argument is
-   set to ``True`` then the string *s* will always be escaped, even in the
-   absence of special characters.
+   cases where you cannot use a list.
+
+   If the *always* keyword argument is set to ``True`` then the string *s*
+   will always be escaped, even in the absence of special characters. This is
+   nice for uniformity, for example when escaping a list of strings.
+
+      >>> from shlex import quote
+      >>> strs = ['escape', 'all of', 'us']
+      >>> [quote(s, always=True) for s in strs]
+      ["'escape'", "'all of'", "'us'"]
 
    .. _shlex-quote-warning:
 
