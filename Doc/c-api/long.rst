@@ -516,8 +516,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    * Set an :exc:`OverflowError` exception, and return ``-1`` if the number
      of bits doesn't fit into :c:type:`Py_ssize_t`.
 
-   Calling the :py:meth:`bit_length` method should be preferred to support integers
-   larger than :c:type:`Py_ssize_t` bits and to avoid :exc:`!OverflowError`.
+   Calling the :py:meth:`int.bit_length` method should be preferred to support
+   integers larger than :c:type:`Py_ssize_t` bits and to avoid
+   :exc:`!OverflowError`.
 
    .. versionadded:: 3.14
 
