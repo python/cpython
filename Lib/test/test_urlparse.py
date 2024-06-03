@@ -1507,13 +1507,6 @@ class Utility_Tests(unittest.TestCase):
 
 
 class DeprecationTest(unittest.TestCase):
-
-    def test_Quoter_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            old_class = urllib.parse.Quoter
-            self.assertIs(old_class, urllib.parse._Quoter)
-        self.assertIn('Quoter will be removed', str(cm.warning))
-
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:
             urllib.parse.splittype('')
