@@ -2355,7 +2355,7 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        _PyStaticType_Dealloc(interp, type);
+        _PyStaticType_FiniBuiltin(interp, type);
     }
 }
 

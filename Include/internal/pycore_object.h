@@ -589,7 +589,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(
+        managed_static_type_state *state = _PyStaticType_GetState(
                                                 interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }

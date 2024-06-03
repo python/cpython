@@ -718,7 +718,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
         return;
     }
 
-    _PyStaticType_Dealloc(interp, type);
+    _PyStaticType_FiniBuiltin(interp, type);
 
     if (_Py_IsMainInterpreter(interp)) {
         // Undo _PyStructSequence_InitBuiltinWithFlags().
