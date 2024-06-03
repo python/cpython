@@ -58,8 +58,8 @@
 #define ANNOTATION_NOT_ALLOWED \
 "%s cannot be used within an annotation"
 
-#define TYPEVAR_BOUND_NOT_ALLOWED \
-"%s cannot be used within a TypeVar bound"
+#define EXPR_NOT_ALLOWED_IN_TYPE_PARAM_BLOCK \
+"%s cannot be used within %s%s"
 
 #define TYPEALIAS_NOT_ALLOWED \
 "%s cannot be used within a type alias"
@@ -106,6 +106,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_mangled_names = NULL;
 
     ste->ste_type = block;
+    ste->ste_extra_flags = 0;
     ste->ste_nested = 0;
     ste->ste_free = 0;
     ste->ste_varargs = 0;
@@ -1339,6 +1340,8 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
      */
     if (prev) {
         ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
+        /* inherit already set flags */
+        ste->ste_extra_flags = prev->ste_extra_flags;
     }
     /* No need to inherit ste_mangled_names in classes, where all names
      * are mangled. */
@@ -2291,12 +2294,18 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 }
 
 static int
-symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key)
+symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key, int is_default)
 {
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
         if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
             return 0;
+
+        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_EXTRA_FLAGS;
+        st->st_cur->ste_extra_flags |= (is_default == 1 ? InTypeParamDefault : (
+            e->kind == Tuple_kind ? InTypeParamConstraint : InTypeParamBound
+        ));
+
         st->st_cur->ste_can_see_class_scope = is_in_class;
         if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
             VISIT_QUIT(st, 0);
@@ -2321,6 +2330,9 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
 
+        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_KIND_EXTRA_FLAGS;
+        st->st_cur->ste_extra_flags |= InTypeVar;
+
         // We must use a different key for the bound and default. The obvious choice would be to
         // use the .bound and .default_value pointers, but that fails when the expression immediately
         // inside the bound or default is a comprehension: we would reuse the same key for
@@ -2328,11 +2340,11 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, 0)) {
             VISIT_QUIT(st, 0);
         }
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1))) {
+                                                        (void *)((uintptr_t)tp + 1), 1)) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2340,8 +2352,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
+
+        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_KIND_EXTRA_FLAGS;
+        st->st_cur->ste_extra_flags |= InTypeVarTuple;
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, 1)) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2349,8 +2365,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
+
+        st->st_cur->ste_extra_flags &= CLEAR_TYPE_PARAM_KIND_EXTRA_FLAGS;
+        st->st_cur->ste_extra_flags |= InParamSpec;
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, 1)) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2732,8 +2752,22 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
     enum _block_type type = st->st_cur->ste_type;
     if (type == AnnotationBlock)
         PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
-    else if (type == TypeVarBoundBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEVAR_BOUND_NOT_ALLOWED, name);
+    else if (type == TypeVarBoundBlock) {
+        enum _extra_flags flags = st->st_cur->ste_extra_flags;
+        PyErr_Format(
+            PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_PARAM_BLOCK, name, (
+                (flags & InTypeVar) ? "a TypeVar" :
+                (flags & InTypeVarTuple) ? "a TypeVarTuple" :
+                (flags & InParamSpec) ? "a ParamSpec" :
+                "a TypeVar, TypeVarTuple or a ParamSpec"
+            ), (
+                (flags & InTypeParamBound) ? " bound" :
+                (flags & InTypeParamConstraint) ? " constraint" :
+                (flags & InTypeParamDefault) ? " default" :
+                ""
+            )
+        );
+    }
     else if (type == TypeAliasBlock)
         PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
     else if (type == TypeParamBlock)
