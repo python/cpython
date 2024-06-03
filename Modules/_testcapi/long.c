@@ -96,8 +96,8 @@ pylong_fromnativebytes(PyObject *module, PyObject *args)
 static PyObject *
 pylong_getsign(PyObject *module, PyObject *arg)
 {
-    NULLABLE(arg);
     int sign;
+    NULLABLE(arg);
     if (PyLong_GetSign(arg, &sign) == -1) {
         return NULL;
     }

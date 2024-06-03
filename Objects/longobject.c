@@ -773,10 +773,6 @@ _PyLong_Sign(PyObject *vv)
 int
 PyLong_GetSign(PyObject *vv, int *sign)
 {
-    if (vv == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
     if (!PyLong_Check(vv)) {
         PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
         return -1;
