@@ -703,11 +703,9 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        // gh-117783: immortalize objects that would use deferred refcounting
-        // once the first non-main thread is created.
-        gcstate->immortalize.enable_on_thread_created = 1;
-    }
+    // gh-117783: immortalize objects that would use deferred refcounting
+    // once the first non-main thread is created (but not in subinterpreters).
+    gcstate->immortalize = _Py_IsMainInterpreter(interp) ? 0 : -1;
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -1808,8 +1806,10 @@ _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
-    gc_visit_heaps(interp, &immortalize_visitor, &args);
-    interp->gc.immortalize.enabled = 1;
+    if (interp->gc.immortalize == 0) {
+        gc_visit_heaps(interp, &immortalize_visitor, &args);
+        interp->gc.immortalize = 1;
+    }
     _PyEval_StartTheWorld(interp);
 }
 
