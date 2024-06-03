@@ -1322,7 +1322,7 @@ PEP 594: dead batteries (and other module removals)
   * :mod:`!sunau`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!telnetlib`, use the projects :pypi:`telnetlib3 ` or
+  * :mod:`!telnetlib`, use the projects :pypi:`telnetlib3` or
     :pypi:`Exscript` instead.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
