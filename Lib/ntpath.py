@@ -580,21 +580,21 @@ else:  # use native Windows method on Windows
             pass
         path = os.fspath(path)
         if not isabs(path):
-            if isinstance(path, bytes):
+            if is_bytes := isinstance(path, bytes):
                 sep = b'\\'
-                cwd = os.getcwdb()
             else:
                 sep = '\\'
-                cwd = os.getcwd()
             drive, root, path = splitroot(path)
-            if drive and drive != splitroot(cwd)[0]:
+            # Either drive or root can be nonempty, but not both.
+            if drive or root:
                 try:
-                    path = join(_getfullpathname(drive), path)
+                    path = join(_getfullpathname(drive + root), path)
                 except (OSError, ValueError):
-                    # Invalid drive \x00: on Windows; assume root directory
+                    # Drive "\0:" cannot exist; use the root directory.
                     path = drive + sep + path
             else:
-                path = join(cwd, root + path)
+                cwd = os.getcwdb() if is_bytes else os.getcwd()
+                path = join(cwd, path)
         return normpath(path)
 
 try:
