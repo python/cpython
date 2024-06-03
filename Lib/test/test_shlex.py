@@ -337,6 +337,18 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
+    def testQuoteAlways(self):
+        strs = ['hello', 'to the', 'world', 'escape me', 'no-escape-needed']
+
+        # guarantee escaping all strings
+        strs_always_escaped = [shlex.quote(s, always=True) for s in strs]
+        self.assertTrue(all(s.startswith("'") for s in strs_always_escaped))
+
+        # just escape when necessary ('to the', 'escape me')
+        strs_necessary_escaped = [shlex.quote(s, always=False) for s in strs]
+        self.assertFalse(all(s.startswith("'")
+                             for s in strs_necessary_escaped))
+
     def testJoin(self):
         for split_command, command in [
             (['a ', 'b'], "'a ' b"),
