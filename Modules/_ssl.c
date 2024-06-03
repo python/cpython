@@ -4403,6 +4403,7 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
     int res = SSL_CTX_set1_groups_list(self->ctx, PyBytes_AS_STRING(name_bytes));
     Py_DECREF(name_bytes);
     if (!res) {
+        PyErr_Format(PyExc_ValueError,"unknown elliptic curves %R", name_bytes);
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
