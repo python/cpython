@@ -300,6 +300,7 @@ Improve :exc:`SyntaxError` message for empty type param brackets.
 .. nonce: qDEB66
 .. section: Core and Builtins
 
+Fix :func:`os.path.normpath` for UNC paths on Windows.
 Speed up :func:`os.path.splitroot` with a native implementation.
 
 ..
