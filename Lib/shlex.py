@@ -322,7 +322,10 @@ _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
 def quote(s, always=False):
     """Return a shell-escaped version of the string *s*."""
-    if always or not s or _find_unsafe(s) is not None:
+    if not s:
+        return "''"
+
+    if always or _find_unsafe(s) is not None:
         # use single quotes, and put single quotes into double quotes
         # the string $'b is then quoted as '$'"'"'b'
         return "'" + s.replace("'", "'\"'\"'") + "'"
