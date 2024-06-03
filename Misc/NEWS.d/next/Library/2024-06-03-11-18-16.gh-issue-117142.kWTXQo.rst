@@ -1,2 +1,2 @@
-The ``ctypes`` module may now be imported in all subinterpreters, including
+The :mod:`ctypes` module may now be imported in all subinterpreters, including
 those that have their own GIL.
