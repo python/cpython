@@ -119,7 +119,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
-#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
+#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT) && !defined(_Py_THREAD_SANITIZER)
         PyTime_t now;
         // silently ignore error: cannot report error to the caller
         (void)PyTime_MonotonicRaw(&now);
