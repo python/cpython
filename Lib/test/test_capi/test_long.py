@@ -721,6 +721,22 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(expect_u, fromnativebytes(v_be, n, 4, 1),
                     f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
 
+    def test_long_getsign(self):
+        # Test PyLong_GetSign()
+        getsign = _testcapi.pylong_getsign
+        self.assertEqual(getsign(1), 1)
+        self.assertEqual(getsign(123456), 1)
+        self.assertEqual(getsign(-2), -1)
+        self.assertEqual(getsign(0), 0)
+        self.assertEqual(getsign(True), 1)
+        self.assertEqual(getsign(IntSubclass(-11)), -1)
+        self.assertEqual(getsign(False), 0)
+
+        self.assertRaises(TypeError, getsign, 1.0)
+        self.assertRaises(TypeError, getsign, Index(123))
+
+        # CRASHES getsign(NULL)
+
 
 if __name__ == "__main__":
     unittest.main()
