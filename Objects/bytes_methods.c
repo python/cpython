@@ -584,7 +584,7 @@ find_first_internal(const char *str, Py_ssize_t len,
         return find_internal(str, len, function_name, subobj, start, end,
                              direction);
     }
-    Py_ssize_t result, tuple_len, subs_len;
+    Py_ssize_t result, buffers_len, tuple_len, subs_len;
     char *bytes = NULL;
     Py_buffer *buffers = NULL;
     const char **subs = NULL;
@@ -592,6 +592,7 @@ find_first_internal(const char *str, Py_ssize_t len,
 
     /* ALLOCATE MEMORY */
     result = -2; // Error
+    buffers_len = 0;
     tuple_len = PyTuple_GET_SIZE(subobj);
     if ((size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(char) ||
         (size_t)tuple_len > (size_t)PY_SSIZE_T_MAX / sizeof(Py_buffer) ||
@@ -633,7 +634,7 @@ find_first_internal(const char *str, Py_ssize_t len,
 
         subseq = PyTuple_GET_ITEM(subobj, i);
         byte = &bytes[subs_len];
-        buffer = &buffers[i];
+        buffer = &buffers[buffers_len];
         if (!parse_args_finds_byte(function_name, &subseq, byte)) {
             goto exit;
         }
@@ -643,6 +644,7 @@ find_first_internal(const char *str, Py_ssize_t len,
             }
             sub = buffer->buf;
             sub_len = buffer->len;
+            buffers_len++;
         }
         else {
             sub = byte;
@@ -740,7 +742,7 @@ find_first_internal(const char *str, Py_ssize_t len,
 exit:
     PyMem_RawFree(bytes);
     if (buffers) {
-        for (Py_ssize_t i = 0; i < tuple_len; i++) {
+        for (Py_ssize_t i = 0; i < buffers_len; i++) {
             PyBuffer_Release(&buffers[i]);
         }
     }

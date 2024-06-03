@@ -9177,7 +9177,7 @@ any_find_first_slice(PyObject *strobj, const char *function_name,
         }
         return any_find_slice(strobj, subobj, start, end, direction);
     }
-    Py_ssize_t result, tuple_len, len, subs_len;
+    Py_ssize_t result, subs_len, tuple_len, len;
     const void **heap_subs = NULL, **subs = NULL;
     int *sub_kinds = NULL;
     Py_ssize_t *sub_lens = NULL;
