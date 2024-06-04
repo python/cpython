@@ -181,8 +181,7 @@ class Stack:
         out.start_line()
         for var in self.variables:
             if not var.peek:
-                type = var.type or ""
-                cast = f"({cast_type})" if (type and type.strip() != "_PyStackRef") else ""
+                cast = f"({cast_type})" if var.type else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":

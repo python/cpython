@@ -149,7 +149,6 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             _PyStackRef value;
             value = stack_pointer[-1];
-
             spam();
             stack_pointer += -1;
             DISPATCH();
@@ -191,7 +190,6 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
-
             spam();
             stack_pointer[-1] = res;
             DISPATCH();
@@ -214,9 +212,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef left;
             _PyStackRef res;
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             spam();
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -240,9 +236,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef left;
             _PyStackRef result;
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             spam();
             stack_pointer[-1] = result;
             DISPATCH();
@@ -269,7 +263,6 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef arg;
             _PyStackRef rest;
             arg = stack_pointer[-1];
-
             stack_pointer[-1] = rest;
             DISPATCH();
         }
@@ -282,7 +275,6 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef arg;
             _PyStackRef res;
             arg = stack_pointer[-1];
-
             DEOPT_IF(xxx, OP1);
             stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
@@ -341,9 +333,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef left;
             _PyStackRef res;
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             if (cond) goto pop_2_label;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -365,7 +355,6 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             _PyStackRef value;
             value = stack_pointer[-1];
-
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
@@ -420,9 +409,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef res;
             // _OP1
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
@@ -431,7 +418,6 @@ class TestGeneratedCases(unittest.TestCase):
             /* Skip 2 cache entries */
             // OP2
             arg2 = stack_pointer[-3];
-
             {
                 uint32_t extra = read_u32(&this_instr[4].cache);
                 (void)extra;
@@ -450,9 +436,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef right;
             _PyStackRef left;
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             op1(left, right);
@@ -470,11 +454,8 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef res;
             /* Skip 5 cache entries */
             right = stack_pointer[-1];
-
             left = stack_pointer[-2];
-
             arg2 = stack_pointer[-3];
-
             res = op3(arg2, left, right);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -555,14 +536,12 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef *values;
             _PyStackRef below;
             above = stack_pointer[-1];
-
             values = &stack_pointer[-1 - oparg*2];
             below = stack_pointer[-2 - oparg*2];
-
             spam();
             stack_pointer += -2 - oparg*2;
             DISPATCH();
-        }        
+        }
     """
         self.run_cases_test(input, output)
 
@@ -627,7 +606,6 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef extra;
             values = &stack_pointer[-oparg];
             extra = stack_pointer[-1 - oparg];
-
             if (oparg == 0) { stack_pointer += -1 - oparg; goto somewhere; }
             stack_pointer += -1 - oparg;
             DISPATCH();
@@ -653,12 +631,8 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef output = Py_STACKREF_NULL;
             _PyStackRef zz;
             cc = stack_pointer[-1];
-
-            if ((oparg & 1) == 1) {
-                input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)];
-            }
+            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
             aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
-
             output = spam(oparg, input);
             stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
             if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
@@ -692,11 +666,8 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef res;
             // A
             right = stack_pointer[-1];
-
             middle = stack_pointer[-2];
-
             left = stack_pointer[-3];
-
             {
                 # Body of A
             }
@@ -842,7 +813,6 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
 
-
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -930,9 +900,9 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
-            arg1 = (stack_pointer[-1]);
+            arg1 = stack_pointer[-1];
             eggs();
-            stack_pointer[-1] = (out);
+            stack_pointer[-1] = out;
             break;
         }
 
@@ -970,8 +940,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP2: {
             _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
-            arg1 = (stack_pointer[-1]);
-            stack_pointer[-1] = (out);
+            arg1 = stack_pointer[-1];
+            stack_pointer[-1] = out;
             break;
         }
         """
