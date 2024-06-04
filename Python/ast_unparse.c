@@ -356,14 +356,14 @@ append_ast_frozenset(_PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
-    APPEND_STR(" {{");
+    APPEND_STR("({{");
     elem_count = asdl_seq_LEN(e->v.FrozenSet.elts);
     for (i = 0; i < elem_count; i++) {
         APPEND_STR_IF(i > 0, ", ");
         APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.FrozenSet.elts, i), PR_TEST);
     }
 
-    APPEND_STR_FINISH("}} ");
+    APPEND_STR_FINISH("}})");
 }
 
 static int

@@ -300,6 +300,12 @@ class UnparseTestCase(ASTTestCase):
             ast.parse('{*()}')
         )
 
+    def test_empty_frozenset(self):
+        self.assertASTEqual(
+            ast.parse(ast.unparse(ast.FrozenSet(elts=[]))),
+            ast.parse('{{*()}}')
+        )
+
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
 
