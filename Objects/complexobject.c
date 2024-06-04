@@ -53,11 +53,66 @@ _Py_c_neg(Py_complex a)
 }
 
 Py_complex
-_Py_c_prod(Py_complex a, Py_complex b)
+_Py_c_prod(Py_complex z, Py_complex w)
 {
     Py_complex r;
-    r.real = a.real*b.real - a.imag*b.imag;
-    r.imag = a.real*b.imag + a.imag*b.real;
+    double a = z.real, b = z.imag, c = w.real, d = w.imag;
+    double ac = a*c, bd = b*d, ad = a*d, bc = b*c;
+
+    r.real = ac - bd;
+    r.imag = ad + bc;
+
+    /* Recover infinities that computed as nan+nanj.  See e.g. the C11,
+       Annex G.5.2, routine _Cmultd(). */
+    if (isnan(r.real) && isnan(r.imag)) {
+        int recalc = 0;
+
+        if (isinf(a) || isinf(b)) {  /* z is infinite */
+            /* "Box" the infinity and change nans in the other factor to 0 */
+            a = copysign(isinf(a) ? 1.0 : 0.0, a);
+            b = copysign(isinf(b) ? 1.0 : 0.0, b);
+            if (isnan(c)) {
+                c = copysign(0.0, c);
+            }
+            if (isnan(d)) {
+                d = copysign(0.0, d);
+            }
+            recalc = 1;
+        }
+        if (isinf(c) || isinf(d)) {  /* w is infinite */
+            /* "Box" the infinity and change nans in the other factor to 0 */
+            c = copysign(isinf(c) ? 1.0 : 0.0, c);
+            d = copysign(isinf(d) ? 1.0 : 0.0, d);
+            if (isnan(a)) {
+                a = copysign(0.0, a);
+            }
+            if (isnan(b)) {
+                b = copysign(0.0, b);
+            }
+            recalc = 1;
+        }
+        if (!recalc && (isinf(ac) || isinf(bd) || isinf(ad) || isinf(bc))) {
+            /* Recover infinities from overflow by changing nans to 0 */
+            if (isnan(a)) {
+                a = copysign(0.0, a);
+            }
+            if (isnan(b)) {
+                b = copysign(0.0, b);
+            }
+            if (isnan(c)) {
+                c = copysign(0.0, c);
+            }
+            if (isnan(d)) {
+                d = copysign(0.0, d);
+            }
+            recalc = 1;
+        }
+        if (recalc) {
+            r.real = Py_INFINITY*(a*c - b*d);
+            r.imag = Py_INFINITY*(a*d + b*c);
+        }
+    }
+
     return r;
 }
 
