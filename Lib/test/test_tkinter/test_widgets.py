@@ -150,6 +150,10 @@ class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
         self.checkPixelsParam(widget, 'highlightthickness',
                               0, 1.3, 2.6, 6, -2, '10p')
 
+    if tk_version == (8, 7):
+        def test_configure_underline(self):
+            StandardOptionsTests.test_configure_underline(self, empty_value=-1)
+
 
 @add_standard_options(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
