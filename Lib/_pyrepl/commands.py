@@ -221,6 +221,7 @@ class interrupt(FinishCommand):
 
 class ctrl_c(Command):
     def do(self) -> None:
+        self.reader.finish()
         raise KeyboardInterrupt
 
 
