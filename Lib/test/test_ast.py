@@ -1840,6 +1840,11 @@ class ASTValidatorTests(unittest.TestCase):
         s = ast.Set([ast.Name("x", ast.Store())])
         self.expr(s, "must have Load context")
 
+    def test_frozenset(self):
+        self.expr(ast.FrozenSet([None]), "None disallowed")
+        s = ast.FrozenSet([ast.Name("x", ast.Store())])
+        self.expr(s, "must have Load context")
+
     def _check_comprehension(self, fac):
         self.expr(fac([]), "comprehension with no generators")
         g = ast.comprehension(ast.Name("x", ast.Load()),
