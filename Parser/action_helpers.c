@@ -543,22 +543,30 @@ _make_posargs(Parser *p,
               asdl_arg_seq *plain_names,
               asdl_seq *names_with_default,
               asdl_arg_seq **posargs) {
-    if (plain_names != NULL && names_with_default != NULL) {
-        asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
-        if (!names_with_default_names) {
-            return -1;
+
+    if (names_with_default != NULL) {
+        if (plain_names != NULL) {
+            asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
+            if (!names_with_default_names) {
+                return -1;
+            }
+            *posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
+                    p,(asdl_seq*)plain_names, (asdl_seq*)names_with_default_names);
         }
-        *posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
-                p,(asdl_seq*)plain_names, (asdl_seq*)names_with_default_names);
-    }
-    else if (plain_names == NULL && names_with_default != NULL) {
-        *posargs = _get_names(p, names_with_default);
-    }
-    else if (plain_names != NULL && names_with_default == NULL) {
-        *posargs = plain_names;
+        else {
+            *posargs = _get_names(p, names_with_default);
+        }
     }
     else {
-        *posargs = _Py_asdl_arg_seq_new(0, p->arena);
+        if (plain_names != NULL) {
+            // With the current grammar, we never get here.
+            // If that has changed, remove the assert, and test thoroughly.
+            assert(0);
+            *posargs = plain_names;
+        }
+        else {
+            *posargs = _Py_asdl_arg_seq_new(0, p->arena);
+        }
     }
     return *posargs == NULL ? -1 : 0;
 }
