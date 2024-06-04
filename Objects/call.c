@@ -1067,10 +1067,12 @@ PyObject_VectorcallStackRefSlow(PyObject *callable,
     return res;
 }
 
+
 PyObject *
 PyObject_Vectorcall_StackRef(PyObject *callable,
                            const _PyStackRef *tagged, size_t nargsf, PyObject *kwnames)
 {
+#ifdef Py_GIL_DISABLED
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     if (kwnames != NULL) {
         assert(PyTuple_CheckExact(kwnames));
@@ -1083,6 +1085,10 @@ PyObject_Vectorcall_StackRef(PyObject *callable,
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
     _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
+#else
+    (void)PyObject_VectorcallStackRefSlow;
+    return PyObject_Vectorcall(callable, (PyObject **)tagged, nargsf, kwnames);
+#endif
 }
 
 static PyObject *
@@ -1107,6 +1113,7 @@ PyObject *
 PyObject_TypeVectorcall_StackRef(PyTypeObject *callable,
                                const _PyStackRef *tagged, size_t nargsf, PyObject *kwnames)
 {
+#ifdef Py_GIL_DISABLED
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1115,6 +1122,10 @@ PyObject_TypeVectorcall_StackRef(PyTypeObject *callable,
     // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
     _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return callable->tp_vectorcall((PyObject *)callable, args + 1, nargsf, kwnames);
+#else
+    (void)PyObject_TypeVectorcall_StackRefSlow;
+    return callable->tp_vectorcall((PyObject *)callable, (PyObject **)tagged, nargsf, kwnames);
+#endif
 }
 
 static PyObject *
@@ -1139,6 +1150,7 @@ PyObject_PyCFunctionFastCall_StackRef(PyCFunctionFast cfunc,
                                     PyObject *self,
                                     const _PyStackRef *tagged, Py_ssize_t nargsf)
 {
+#ifdef Py_GIL_DISABLED
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1146,6 +1158,10 @@ PyObject_PyCFunctionFastCall_StackRef(PyCFunctionFast cfunc,
     }
     _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf);
+#else
+    (void)PyObject_PyCFunctionFastCall_StackRefSlow;
+    return cfunc(self, (PyObject **)tagged, nargsf);
+#endif
 }
 
 static PyObject *
@@ -1172,6 +1188,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_StackRef(PyCFunctionFastWithKeywords cf
                                     const _PyStackRef *tagged, Py_ssize_t nargsf,
                                     PyObject *kwds)
 {
+#ifdef Py_GIL_DISABLED
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1181,6 +1198,10 @@ PyObject_PyCFunctionFastWithKeywordsCall_StackRef(PyCFunctionFastWithKeywords cf
     }
     _Py_untag_stack_borrowed(args + 1, tagged, nargs);
     return cfunc(self, args + 1, nargsf, kwds);
+#else
+    (void)PyObject_PyCFunctionFastWithKeywordsCall_StackRefSlow;
+    return cfunc(self, (PyObject **)tagged, nargsf, kwds);
+#endif
 }
 
 // Export for the stable ABI
