@@ -2266,30 +2266,25 @@ class SubinterpreterTest(unittest.TestCase):
     @requires_subinterpreters
     def test_datetime_capi_type_check(self):
         script = textwrap.dedent("""
-            try:
-                import _datetime
-            except ImportError:
-                _datetime = None
+            import importlib.machinery
+            import importlib.util
+            fullname = '_testcapi_datetime'
+            origin = importlib.util.find_spec('_testcapi').origin
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            spec = importlib.util.spec_from_loader(fullname, loader)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
             def run(type_checker, obj):
                 if not type_checker(obj, True):  # exact check
                     raise TypeError(f'{type(obj)} is not C API type')
 
-            if _datetime:
-                import importlib.machinery
-                import importlib.util
-                fullname = '_testcapi_datetime'
-                origin = importlib.util.find_spec('_testcapi').origin
-                loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
-                spec = importlib.util.spec_from_loader(fullname, loader)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                run(module.datetime_check_date,     _datetime.date.today())
-                run(module.datetime_check_datetime, _datetime.datetime.now())
-                run(module.datetime_check_time,     _datetime.time(12, 30))
-                run(module.datetime_check_delta,    _datetime.timedelta(1))
-                run(module.datetime_check_tzinfo,   _datetime.tzinfo())
+            import _datetime
+            run(module.datetime_check_date,     _datetime.date.today())
+            run(module.datetime_check_datetime, _datetime.datetime.now())
+            run(module.datetime_check_time,     _datetime.time(12, 30))
+            run(module.datetime_check_delta,    _datetime.timedelta(1))
+            run(module.datetime_check_tzinfo,   _datetime.tzinfo())
         """)
         with self.subTest('main'):
             exec(script)
@@ -2303,17 +2298,17 @@ class SubinterpreterTest(unittest.TestCase):
     def test_datetime_capi_type_check_allos(self):
         script = textwrap.dedent("""
             try:
-                import _datetime
+                import _testcapi as module
             except ImportError:
-                _datetime = None
+                module = None
 
             def run(type_checker, obj):
                 if not type_checker(obj, True):  # exact check
                     raise TypeError(f'{type(obj)} is not C API type')
 
-            if _datetime:
-                import _testcapi as module
+            if module:
                 module.test_datetime_capi()
+                import _datetime
                 run(module.datetime_check_date,     _datetime.date.today())
                 run(module.datetime_check_datetime, _datetime.datetime.now())
                 run(module.datetime_check_time,     _datetime.time(12, 30))
