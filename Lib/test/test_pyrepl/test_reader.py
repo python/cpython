@@ -193,8 +193,7 @@ class TestReader(TestCase):
             readline_completer=rlcompleter.Completer(namespace).complete
         )
         reader, _ = handle_all_events(events, prepare_reader=completing_reader)
-        print(reader.screen)
-        self.assert_screen_equals(reader, code)
+        self.assertEqual(reader.calc_screen(), code.split("\n"))
 
     def test_prompt_length(self):
         # Handles simple ASCII prompt

@@ -149,8 +149,8 @@ def run_multiline_interactive_console(
             assert not more
             input_n += 1
         except KeyboardInterrupt:
-            console.write("KeyboardInterrupt\n")
+            console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
-            console.write("MemoryError\n")
+            console.write("\nMemoryError\n")
             console.resetbuffer()
