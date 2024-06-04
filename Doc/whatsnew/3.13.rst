@@ -1006,7 +1006,7 @@ random
 ------
 
 * Add a :ref:`command-line interface <random-cli>`.
-  (Contributed by Hugo van Kemenade in :gh:`54321`.)
+  (Contributed by Hugo van Kemenade in :gh:`118131`.)
 
 re
 --
