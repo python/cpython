@@ -1318,9 +1318,10 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`~object.__truediv__`,
-:meth:`~object.__rtruediv__`, :meth:`~object.__floordiv__` and
-:meth:`~object.__rfloordiv__` methods.
+The division operation can be customized using the special :meth:`~object.__truediv__`
+and :meth:`~object.__rtruediv__` methods.
+The floor division operation can be customized using the special
+:meth:`~object.__floordiv__` and :meth:`~object.__rfloordiv__` methods.
 
 .. index::
    single: modulo
@@ -1397,7 +1398,6 @@ the left or right by the number of bits given by the second argument.
 
 The left shift operation can be customized using the special :meth:`~object.__lshift__`
 and :meth:`~object.__rlshift__` methods.
-
 The right shift operation can be customized using the special :meth:`~object.__rshift__`
 and :meth:`~object.__rrshift__` methods.
 
