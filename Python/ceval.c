@@ -1478,7 +1478,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         localsplus[total_args] = u;
     }
     else if (argcount > n) {
-        /* Too many postional args. Error is reported later */
+        /* Too many positional args. Error is reported later */
         for (j = n; j < argcount; j++) {
             Py_DECREF(args[j]);
         }

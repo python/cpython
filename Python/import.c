@@ -1961,7 +1961,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
      *
      * However, for single-phase init the module's init function will
      * create the module, create other objects (and allocate other
-     * memory), populate it and its module state, and initialze static
+     * memory), populate it and its module state, and initialize static
      * types.  Some modules store other objects and data in global C
      * variables and register callbacks with the runtime/stdlib or
      * even external libraries (which is part of why we can't just
