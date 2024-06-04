@@ -2,7 +2,7 @@
 
 .. _monitoring:
 
-Monitorong C API
+Monitoring C API
 ================
 
 Added in version 3.13.

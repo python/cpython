@@ -219,6 +219,11 @@ class interrupt(FinishCommand):
         os.kill(os.getpid(), signal.SIGINT)
 
 
+class ctrl_c(Command):
+    def do(self) -> None:
+        raise KeyboardInterrupt
+
+
 class suspend(Command):
     def do(self) -> None:
         import signal
@@ -360,7 +365,12 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
-        if len(text) == 1 and r.pos == len(r.buffer):
+        if (
+            len(text) == 1 and
+            r.pos == len(r.buffer) and
+            not r.cmpltn_menu_visible and  # type: ignore[attr-defined]
+            not r.cmpltn_message_visible  # type: ignore[attr-defined]
+        ):
             r.calc_screen = r.append_to_screen
 
 
@@ -475,3 +485,4 @@ class disable_bracketed_paste(Command):
         self.reader.paste_mode = False
         self.reader.in_bracketed_paste = False
         self.reader.dirty = True
+        self.reader.calc_screen = self.reader.calc_complete_screen
