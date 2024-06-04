@@ -1038,8 +1038,7 @@
                 func = stack_pointer[-2 - oparg];
                 PyStackRef_CLOSE(callable);
             }
-            // _CHECK_FUNCTION_EXACT_ARGS
-            self_or_null = self;
+            // _CHECK_FUNCTION_VERSION
             callable = func;
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
@@ -1047,6 +1046,13 @@
                 DEOPT_IF(!PyFunction_Check(callable_o), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 DEOPT_IF(func->func_version != func_version, CALL);
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
+            {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyFunction_Check(callable_o));
+                PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null)), CALL);
             }
@@ -2014,8 +2020,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _PyStackRef self_or_null;
             _PyStackRef callable;
+            _PyStackRef self_or_null;
             _PyStackRef *args;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
@@ -2023,8 +2029,7 @@
             {
                 DEOPT_IF(tstate->interp->eval_frame, CALL);
             }
-            // _CHECK_FUNCTION_EXACT_ARGS
-            self_or_null = stack_pointer[-1 - oparg];
+            // _CHECK_FUNCTION_VERSION
             callable = stack_pointer[-2 - oparg];
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
@@ -2032,6 +2037,13 @@
                 DEOPT_IF(!PyFunction_Check(callable_o), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 DEOPT_IF(func->func_version != func_version, CALL);
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS
+            self_or_null = stack_pointer[-1 - oparg];
+            {
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+                assert(PyFunction_Check(callable_o));
+                PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null)), CALL);
             }
@@ -4662,18 +4674,35 @@
                 goto error;
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
-                    goto error;
-                }
-                if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                        (PyDictObject *)BUILTINS(),
+                        name);
+                    if (v_o == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                             * an exception if the key doesn't exist */
+                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                NAME_ERROR_MSG, name);
+                        }
                         goto error;
                     }
+                }
+                else {
+                    /* Slow-path if globals or builtins is not a dict */
+                    /* namespace 1: globals */
+                    if (PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0) goto pop_1_error;
                     if (v_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        goto error;
+                        /* namespace 2: builtins */
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) goto pop_1_error;
+                        if (v_o == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                tstate, PyExc_NameError,
+                                NAME_ERROR_MSG, name);
+                            if (true) goto pop_1_error;
+                        }
                     }
                 }
             }
@@ -5046,7 +5075,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_CELL);
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via the f_locals proxy before MAKE_CELL has run).
             PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -5881,47 +5910,53 @@
             _PyStackRef owner;
             _PyStackRef value;
             /* Skip 1 cache entry */
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
+            }
+            // _STORE_ATTR_WITH_HINT
             value = stack_pointer[-2];
-            uint32_t type_version = read_u32(&this_instr[2].cache);
-            uint16_t hint = read_u16(&this_instr[4].cache);
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyTypeObject *tp = Py_TYPE(owner_o);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            DEOPT_IF(dict == NULL, STORE_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
-            PyObject *old_value;
-            uint64_t new_version;
-            if (DK_IS_UNICODE(dict->ma_keys)) {
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                DEOPT_IF(ep->me_key != name, STORE_ATTR);
-                old_value = ep->me_value;
-                DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                ep->me_value = PyStackRef_AsPyObjectNew(value);
+            {
+                uint16_t hint = read_u16(&this_instr[4].cache);
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
+                DEOPT_IF(dict == NULL, STORE_ATTR);
+                assert(PyDict_CheckExact((PyObject *)dict));
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+                DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
+                PyObject *old_value;
+                uint64_t new_version;
+                if (DK_IS_UNICODE(dict->ma_keys)) {
+                    PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+                    DEOPT_IF(ep->me_key != name, STORE_ATTR);
+                    old_value = ep->me_value;
+                    DEOPT_IF(old_value == NULL, STORE_ATTR);
+                    new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
+                    ep->me_value = PyStackRef_AsPyObjectNew(value);
+                }
+                else {
+                    PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+                    DEOPT_IF(ep->me_key != name, STORE_ATTR);
+                    old_value = ep->me_value;
+                    DEOPT_IF(old_value == NULL, STORE_ATTR);
+                    new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
+                    ep->me_value = PyStackRef_AsPyObjectNew(value);
+                }
+                Py_DECREF(old_value);
+                STAT_INC(STORE_ATTR, hit);
+                /* Ensure dict is GC tracked if it needs to be */
+                if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
+                    _PyObject_GC_TRACK(dict);
+                }
+                /* PEP 509 */
+                dict->ma_version_tag = new_version;
+                PyStackRef_CLOSE(owner);
             }
-            else {
-                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                DEOPT_IF(ep->me_key != name, STORE_ATTR);
-                old_value = ep->me_value;
-                DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                ep->me_value = PyStackRef_AsPyObjectNew(value);
-            }
-            Py_DECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(PyStackRef_AsPyObjectBorrow(value))) {
-                _PyObject_GC_TRACK(dict);
-            }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
-            PyStackRef_CLOSE(owner);
             stack_pointer += -2;
             DISPATCH();
         }

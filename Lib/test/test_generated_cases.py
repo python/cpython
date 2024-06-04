@@ -485,7 +485,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_no_flags(self):
         input = """
-        pseudo(OP) = {
+        pseudo(OP, (in -- out1, out2)) = {
             OP1,
         };
 
@@ -504,7 +504,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_with_flags(self):
         input = """
-        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+        pseudo(OP, (in1, in2 --), (HAS_ARG, HAS_JUMP)) = {
             OP1,
         };
 

@@ -246,7 +246,7 @@ dict_next_version(PyInterpreterState *interp)
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
 #endif
 
-void
+PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
                   PyDictObject *mp,

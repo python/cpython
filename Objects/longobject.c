@@ -401,12 +401,12 @@ PyLong_FromDouble(double dval)
     double frac;
     int i, ndig, expo, neg;
     neg = 0;
-    if (Py_IS_INFINITY(dval)) {
+    if (isinf(dval)) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot convert float infinity to integer");
         return NULL;
     }
-    if (Py_IS_NAN(dval)) {
+    if (isnan(dval)) {
         PyErr_SetString(PyExc_ValueError,
                         "cannot convert float NaN to integer");
         return NULL;
@@ -768,6 +768,18 @@ _PyLong_Sign(PyObject *vv)
         return _PyLong_CompactSign(v);
     }
     return _PyLong_NonCompactSign(v);
+}
+
+int
+PyLong_GetSign(PyObject *vv, int *sign)
+{
+    if (!PyLong_Check(vv)) {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
+    }
+
+    *sign = _PyLong_Sign(vv);
+    return 0;
 }
 
 static int
@@ -3109,8 +3121,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
     PyLongObject *z;
 
     if (size_b == 0) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer division or modulo by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3173,7 +3184,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
 
     if (size_b == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer modulo by zero");
+                        "division by zero");
         return -1;
     }
     if (size_a < size_b ||
