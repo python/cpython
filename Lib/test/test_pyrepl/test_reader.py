@@ -179,6 +179,22 @@ class TestReader(TestCase):
         self.assert_screen_equals(reader, expected)
         self.assertTrue(reader.finished)
 
+    def test_keyboard_interrupt_clears_screen(self):
+        namespace = {"itertools": itertools}
+        code = "import itertools\nitertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),  # Two tabs for completion
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+            Event(evt='key', data='\x03', raw=bytearray(b'\x03')),  # Ctrl-C
+        ])
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+        self.assertEqual(reader.calc_screen(), code.split("\n"))
+
     def test_prompt_length(self):
         # Handles simple ASCII prompt
         ps1 = ">>> "
