@@ -115,7 +115,7 @@ struct types_state {
     // tp_version_tag % TYPE_VERSION_CACHE_SIZE
     // once was equal to the index in the table.
     // They are cleared when the type object is deallocated.
-    PyTypeObject* type_version_cache[TYPE_VERSION_CACHE_SIZE];
+    PyTypeObject *type_version_cache[TYPE_VERSION_CACHE_SIZE];
 };
 
 
