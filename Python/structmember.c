@@ -6,6 +6,24 @@
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_object.h"
+#include "pycore_critical_section.h"
+
+
+static inline PyObject *
+_PyMember_GetOneObject(const char *addr, const char *obj_addr, PyMemberDef *l)
+{
+    PyObject *v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+    if (v == NULL) {
+        PyObject *obj = (PyObject *) obj_addr;
+        PyTypeObject *tp = Py_TYPE(obj);
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.200s' object has no attribute '%s'",
+                     tp->tp_name, l->name);
+    }
+    return v;
+}
+
+
 
 
 PyObject *
@@ -78,27 +96,16 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case Py_T_OBJECT_EX:
 #ifndef Py_GIL_DISABLED
-        v = *(PyObject **)addr;
-        if (v == NULL) {
-            PyObject *obj = (PyObject *)obj_addr;
-            PyTypeObject *tp = Py_TYPE(obj);
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.200s' object has no attribute '%s'",
-                         tp->tp_name, l->name);
-        }
+        v = _PyMember_GetOneObject(addr, obj_addr, l);
         Py_XINCREF(v);
 #else
-        do {
-            v = FT_ATOMIC_LOAD_PTR(*addr);
-            if (v == NULL) {
-                PyObject *obj = (PyObject *)obj_addr;
-                PyTypeObject *tp = Py_TYPE(obj);
-                PyErr_Format(PyExc_AttributeError,
-                             "'%.200s' object has no attribute '%s'",
-                             tp->tp_name, l->name);
-                break;
+            v = _PyMember_GetOneObject(addr, obj_addr, l);
+            if (v != NULL && !_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *)obj_addr);
+                        v = _PyMember_GetOneObject(addr, obj_addr, l);
+                        Py_XINCREF(v);
+                Py_END_CRITICAL_SECTION();
             }
-        } while (!_Py_TryIncref(v));  // if refcount == 0: retry
 #endif
         break;
     case Py_T_LONGLONG:
@@ -135,6 +142,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     }
 
+    PyObject *obj = (PyObject *) addr;
     addr += l->offset;
 
     if ((l->flags & Py_READONLY))
@@ -298,15 +306,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
-#ifndef Py_GIL_DISABLED
-        oldv = *(PyObject **)addr;
-        *(PyObject **)addr = Py_XNewRef(v);
-#else
-        if (v != NULL)
-            _PyObject_SetMaybeWeakref(v);
-        // without setting _Py_REF_MAYBE_WEAKREF,
-        // we may get an infinite loop in PyMember_GetOne
-        oldv = FT_ATOMIC_EXCHANGE_PTR(addr, Py_XNewRef(v));
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
+#endif
+        oldv = FT_ATOMIC_LOAD_PTR(*(PyObject **)addr);
+        FT_ATOMIC_STORE_PTR(*(PyObject **)addr, Py_XNewRef(v));
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
 #endif
         Py_XDECREF(oldv);
         break;
