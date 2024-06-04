@@ -75,6 +75,8 @@ def handle_all_events(
             reader.handle1()
     except StopIteration:
         pass
+    except KeyboardInterrupt:
+        pass
     return reader, console
 
 
