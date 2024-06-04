@@ -62,10 +62,12 @@
 #define SUCCESS 0
 #define ERROR -1
 
-#define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+#define RETURN_IF_ERROR(X) \
+    do { \
+        if ((X) == -1) {        \
+            return ERROR;       \
+        } \
+    } while (0)
 
 #define IS_TOP_LEVEL_AWAIT(C) ( \
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -950,42 +952,46 @@ codegen_addop_j(instr_sequence *seq, location loc,
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
-#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
-    if ((CALL) < 0) { \
-        compiler_exit_scope((C)); \
-        return ERROR; \
-    } \
-}
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) \
+    do { \
+        if ((CALL) < 0) { \
+            compiler_exit_scope((C)); \
+            return ERROR; \
+        } \
+    } while(0)
 
 #define ADDOP(C, LOC, OP) \
     RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
-#define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
+#define ADDOP_IN_SCOPE(C, LOC, OP) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
     RETURN_IF_ERROR(compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), (O)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
-#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return ERROR; \
-    } \
-    if (compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), __new_const) < 0) { \
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O) \
+    do { \
+        PyObject *__new_const = (O); \
+        if (__new_const == NULL) { \
+            return ERROR; \
+        } \
+        if (compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), __new_const) < 0) { \
+            Py_DECREF(__new_const); \
+            return ERROR; \
+        } \
         Py_DECREF(__new_const); \
-        return ERROR; \
-    } \
-    Py_DECREF(__new_const); \
-}
+    } while(0)
 
-#define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
+#define ADDOP_N(C, LOC, OP, O, TYPE) \
+    do { \
+        assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+        if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
+            Py_DECREF((O)); \
+            return ERROR; \
+        } \
         Py_DECREF((O)); \
-        return ERROR; \
-    } \
-    Py_DECREF((O)); \
-}
+    } while(0)
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
     RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
@@ -1019,31 +1025,33 @@ codegen_addop_j(instr_sequence *seq, location loc,
 */
 
 #define VISIT(C, TYPE, V) \
-    RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), (V)));
+    RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), (V)))
 
 #define VISIT_IN_SCOPE(C, TYPE, V) \
     RETURN_IF_ERROR_IN_SCOPE((C), compiler_visit_ ## TYPE((C), (V)))
 
-#define VISIT_SEQ(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), elt)); \
-    } \
-}
-
-#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (compiler_visit_ ## TYPE((C), elt) < 0) { \
-            compiler_exit_scope(C); \
-            return ERROR; \
+#define VISIT_SEQ(C, TYPE, SEQ) \
+    do { \
+        int _i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
+            RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), elt)); \
         } \
-    } \
-}
+    } while(0)
+
+#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) \
+    do { \
+        int _i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
+            if (compiler_visit_ ## TYPE((C), elt) < 0) { \
+                compiler_exit_scope(C); \
+                return ERROR; \
+            } \
+        } \
+    } while(0)
 
 
 static int
@@ -2537,7 +2545,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
         RETURN_IF_ERROR_IN_SCOPE(
             c, codegen_addop_i(INSTR_SEQUENCE(c), CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC, loc)
-        )
+        );
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
@@ -3900,7 +3908,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Return_kind:
         return compiler_return(c, s);
     case Delete_kind:
-        VISIT_SEQ(c, expr, s->v.Delete.targets)
+        VISIT_SEQ(c, expr, s->v.Delete.targets);
         break;
     case Assign_kind:
     {
@@ -5923,7 +5931,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     pos++;
     if (pos == asdl_seq_LEN(s->v.AsyncWith.items)) {
         /* BLOCK code */
-        VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
+        VISIT_SEQ(c, stmt, s->v.AsyncWith.body);
     }
     else {
         RETURN_IF_ERROR(compiler_async_with(c, s, pos));
@@ -6017,7 +6025,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     pos++;
     if (pos == asdl_seq_LEN(s->v.With.items)) {
         /* BLOCK code */
-        VISIT_SEQ(c, stmt, s->v.With.body)
+        VISIT_SEQ(c, stmt, s->v.With.body);
     }
     else {
         RETURN_IF_ERROR(compiler_with(c, s, pos));
@@ -6386,7 +6394,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
             if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
-                VISIT(c, annexpr, s->v.AnnAssign.annotation)
+                VISIT(c, annexpr, s->v.AnnAssign.annotation);
             }
             else {
                 VISIT(c, expr, s->v.AnnAssign.annotation);
