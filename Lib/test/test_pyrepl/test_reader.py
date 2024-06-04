@@ -5,6 +5,7 @@ from unittest import TestCase
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
 from _pyrepl.console import Event
+from _pyrepl.reader import Reader
 
 
 class TestReader(TestCase):
@@ -169,8 +170,8 @@ class TestReader(TestCase):
 
         expected = (
             "def foo():\n"
-            "\n"
-            "\n"
+            "    \n"
+            "    \n"
             "    a = 1\n"
             "    \n"
             "    "    # HistoricalReader will trim trailing whitespace
@@ -194,3 +195,34 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events, prepare_reader=completing_reader)
         print(reader.screen)
         self.assert_screen_equals(reader, code)
+
+    def test_prompt_length(self):
+        # Handles simple ASCII prompt
+        ps1 = ">>> "
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, ps1)
+        self.assertEqual(l, 4)
+
+        # Handles ANSI escape sequences
+        ps1 = "\033[0;32m>>> \033[0m"
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, "\033[0;32m>>> \033[0m")
+        self.assertEqual(l, 4)
+
+        # Handles ANSI escape sequences bracketed in \001 .. \002
+        ps1 = "\001\033[0;32m\002>>> \001\033[0m\002"
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, "\033[0;32m>>> \033[0m")
+        self.assertEqual(l, 4)
+
+        # Handles wide characters in prompt
+        ps1 = "樂>> "
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, ps1)
+        self.assertEqual(l, 5)
+
+        # Handles wide characters AND ANSI sequences together
+        ps1 = "\001\033[0;32m\002樂>\001\033[0m\002> "
+        prompt, l = Reader.process_prompt(ps1)
+        self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
+        self.assertEqual(l, 5)
