@@ -411,7 +411,7 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'troughcolor')
 
-    def test_configure_underline(self, *, empty_value=-1):
+    def test_configure_underline(self, *, empty_value=''):
         widget = self.create()
         if tk_version >= (8, 7):
             self.checkParams(widget, 'underline', 0, 1, 10)

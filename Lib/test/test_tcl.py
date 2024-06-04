@@ -219,10 +219,18 @@ class TclTest(unittest.TestCase):
         with open(filename, 'wb') as f:
             f.write(b"""
             set a "<\xed\xa0\xbd\xed\xb2\xbb>"
+            """)
+        if tcl_version >= (9, 0):
+            self.assertRaises(TclError, tcl.evalfile, filename)
+        else:
+            tcl.evalfile(filename)
+            self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
+
+        with open(filename, 'wb') as f:
+            f.write(b"""
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
         self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
 
     def testEvalFileException(self):
