@@ -8421,6 +8421,12 @@ socket_exec(PyObject *m)
 #ifdef  IP_RECVTOS
     ADD_INT_MACRO(m, IP_RECVTOS);
 #endif
+#ifdef  IP_RECVERR
+    ADD_INT_MACRO(m, IP_RECVERR);
+#endif
+#ifdef  IP_RECVTTL
+    ADD_INT_MACRO(m, IP_RECVTTL);
+#endif
 #ifdef  IP_RECVDSTADDR
     ADD_INT_MACRO(m, IP_RECVDSTADDR);
 #endif
