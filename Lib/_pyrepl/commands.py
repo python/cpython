@@ -365,12 +365,7 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
-        if (
-            len(text) == 1 and
-            r.pos == len(r.buffer) and
-            not r.cmpltn_menu_visible and  # type: ignore[attr-defined]
-            not r.cmpltn_message_visible  # type: ignore[attr-defined]
-        ):
+        if len(text) == 1 and r.pos == len(r.buffer):
             r.calc_screen = r.append_to_screen
 
 
