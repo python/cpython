@@ -10,6 +10,7 @@ from _symtable import (
 )
 
 import weakref
+from enum import StrEnum
 
 __all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
 
@@ -43,6 +44,16 @@ class SymbolTableFactory:
 _newSymbolTable = SymbolTableFactory()
 
 
+class SymbolTableType(StrEnum):
+    MODULE = "module"
+    FUNCTION = "function"
+    CLASS = "class"
+    ANNOTATION = "annotation"
+    TYPE_VARIABLE = "type variable"
+    TYPE_ALIAS = "type alias"
+    TYPE_PARAMETERS = "type parameters"
+
+
 class SymbolTable:
 
     def __init__(self, raw_table, filename):
@@ -66,23 +77,23 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values returned are 'class', 'module', 'function',
-        'annotation', 'TypeVar bound', 'type alias', and 'type parameter'.
+        The values returned are one of the values in
+        the ``SymbolTableType`` enumeration.
         """
         if self._table.type == _symtable.TYPE_MODULE:
-            return "module"
+            return SymbolTableType.MODULE.value
         if self._table.type == _symtable.TYPE_FUNCTION:
-            return "function"
+            return SymbolTableType.FUNCTION.value
         if self._table.type == _symtable.TYPE_CLASS:
-            return "class"
+            return SymbolTableType.CLASS.value
         if self._table.type == _symtable.TYPE_ANNOTATION:
-            return "annotation"
-        if self._table.type == _symtable.TYPE_TYPE_VAR_BOUND:
-            return "TypeVar bound"
+            return SymbolTableType.ANNOTATION.value
+        if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
+            return SymbolTableType.TYPE_VARIABLE.value
         if self._table.type == _symtable.TYPE_TYPE_ALIAS:
-            return "type alias"
-        if self._table.type == _symtable.TYPE_TYPE_PARAM:
-            return "type parameter"
+            return SymbolTableType.TYPE_ALIAS.value
+        if self._table.type == _symtable.TYPE_TYPE_PARAMETERS:
+            return SymbolTableType.TYPE_PARAMETERS.value
         assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
