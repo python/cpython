@@ -78,8 +78,7 @@ def write_uop(
         if braces:
             out.emit(f"// {uop.name}\n")
         for var in reversed(uop.stack.inputs):
-            for line in stack.pop(var):
-                out.emit(line)
+            out.emit(stack.pop(var))
         if braces:
             out.emit("{\n")
         if not uop.properties.stores_sp:

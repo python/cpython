@@ -71,7 +71,7 @@
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: /* {fprintf(stderr, "OP %s\n", _PyOpcode_OpName[opcode]);} */
+#  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
 #  define TARGET(op) case op: TARGET_##op:

@@ -106,13 +106,12 @@ def write_uop(
         for var in reversed(prototype.stack.inputs):
             res = stack.pop(var)
             if not skip_inputs:
-                for line in res:
-                    out.emit(line)
+                out.emit(res)
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                temp = stack.push(var)
+                res = stack.push(var)
                 if not var.peek or is_override:
-                    out.emit(temp)
+                    out.emit(res)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -140,10 +139,9 @@ def write_uop(
         if prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
                 if not var.peek or is_override:
-                    for line in stack.push(var):
-                        out.emit(line)
+                    out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *", should_tag=False)
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 

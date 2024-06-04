@@ -140,10 +140,9 @@ class Stack:
                 return ""
             elif popped.name in UNUSED:
                 self.defined.add(var.name)
-                if indirect:
-                    return (
-                        f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
-                    )
+                return (
+                    f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
+                )
             elif var.name in UNUSED:
                 return ""
             else:
@@ -178,7 +177,7 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *", should_tag: bool = True) -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
