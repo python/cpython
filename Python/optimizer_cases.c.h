@@ -948,7 +948,9 @@
                 // with the key, in which case we can't trust the version
                 if (type) {
                     sym_set_type_version(owner, type_version);
-                    assert(PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type) == 0);
+                    int res = PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    // should never fail because we reserved a slot
+                    assert(res == 0);
                     _Py_BloomFilter_Add(dependencies, type);
                 }
             }
