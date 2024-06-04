@@ -386,15 +386,6 @@ class LongTest(unittest.TestCase):
                 return 42
         self.assertRaises(TypeError, int, JustLong())
 
-        class LongTrunc:
-            # __long__ should be ignored in 3.x
-            def __long__(self):
-                return 42
-            def __trunc__(self):
-                return 1729
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(int(LongTrunc()), 1729)
-
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
         # that of the pure Python version above.
