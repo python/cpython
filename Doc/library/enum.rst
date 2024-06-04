@@ -629,7 +629,7 @@ Data Types
       of two, starting with ``1``.
 
    .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
-      is now::
+      is now:
 
          >>> Color(0) # doctest: +SKIP
          <Color: 0>
