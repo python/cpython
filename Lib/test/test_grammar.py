@@ -1517,6 +1517,7 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] (3, 4)]')
         check('[{1, 2} (3, 4)]')
         check('[{1: 2} (3, 4)]')
+        check('[{{1, 2}} (3, 4)]')
         check('[[i for i in range(5)] (3, 4)]')
         check('[{i for i in range(5)} (3, 4)]')
         check('[(i for i in range(5)) (3, 4)]')
@@ -1534,6 +1535,7 @@ class GrammarTests(unittest.TestCase):
 
         msg=r'is not subscriptable; perhaps you missed a comma\?'
         check('[{1, 2} [i, j]]')
+        check('[{{1, 2}} [i, j]]')
         check('[{i for i in range(5)} [i, j]]')
         check('[(i for i in range(5)) [i, j]]')
         check('[(lambda x, y: x) [i, j]]')
@@ -1565,6 +1567,8 @@ class GrammarTests(unittest.TestCase):
         msg=r'indices must be integers or slices, not dict;'
         check('[[1, 2] [{3: 4}]]')
         check('[[1, 2] [{i: i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not frozenset;'
+        check('[[1, 2] [{{3, 4}}]]')
         msg=r'indices must be integers or slices, not generator;'
         check('[[1, 2] [(i for i in range(5))]]')
         msg=r'indices must be integers or slices, not function;'
@@ -1649,7 +1653,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(str(L), '[1, (1,), (1, 2), (1, 2, 3)]')
 
     def test_atoms(self):
-        ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictsetmaker] '}' | NAME | NUMBER | STRING
+        ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictsetmaker] '}' | '{{' testlist '}}' | NAME | NUMBER | STRING
         ### dictsetmaker: (test ':' test (',' test ':' test)* [',']) | (test (',' test)* [','])
 
         x = (1)
@@ -1674,6 +1678,11 @@ class GrammarTests(unittest.TestCase):
         x = {'one', 1,}
         x = {'one', 'two', 'three'}
         x = {2, 3, 4,}
+
+        x = {{'one'}}
+        x = {{'one', 1,}}
+        x = {{'one', 'two', 'three'}}
+        x = {{2, 3, 4,}}
 
         x = x
         x = 'x'
