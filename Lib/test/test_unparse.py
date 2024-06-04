@@ -294,6 +294,9 @@ class UnparseTestCase(ASTTestCase):
     def test_set_literal(self):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
 
+    def test_frozenset_literal(self):
+        self.check_ast_roundtrip("{{'a', 'b', 'c'}}")
+
     def test_empty_set(self):
         self.assertASTEqual(
             ast.parse(ast.unparse(ast.Set(elts=[]))),
