@@ -4,7 +4,7 @@ import operator
 import os
 import posixpath
 import sys
-from glob import _StringGlobber
+from glob import _Globber
 from itertools import chain
 from _collections_abc import Sequence
 
@@ -101,7 +101,7 @@ class PurePath(PurePathBase):
         '_hash',
     )
     parser = os.path
-    _globber = _StringGlobber
+    _globber = _Globber
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
