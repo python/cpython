@@ -1408,6 +1408,34 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 2)
 
+
+    @unittest.expectedFailure
+    def test_guard_type_version_not_removed_escaping(self):
+        """
+        Verify that the guard type version is not removed if have an escaping function
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                # eval should be escaping and so should cause optimization to stop and preserve both type versions
+                eval("None")
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        # Note: This will actually be 1 for noe
+        # https://github.com/python/cpython/pull/119365#discussion_r1626220129
+        self.assertEqual(guard_type_version_count, 2)
+
+
     def test_guard_type_version_executor_invalidated(self):
         """
         Verify that the executor is invalided on a type change.
