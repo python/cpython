@@ -3976,6 +3976,35 @@ class ConfigDictTest(BaseTest):
         }
         logging.config.dictConfig(config)
 
+    # gh-118868: check if kwargs are passed to logging QueueHandler
+    def test_kwargs_passing(self):
+        class CustomQueueHandler(logging.handlers.QueueHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(queue.Queue())
+                self.custom_kwargs = kwargs
+
+        custom_kwargs = {'foo': 'bar'}
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'custom': {
+                    'class': CustomQueueHandler,
+                    **custom_kwargs
+                },
+            },
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['custom']
+            }
+        }
+
+        logging.config.dictConfig(config)
+
+        handler = logging.getHandlerByName('custom')
+        self.assertEqual(handler.custom_kwargs, custom_kwargs)
+
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
