@@ -168,10 +168,10 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
                 oldvalue = PyStackRef_FromPyObjectSteal(PyCell_GET(cell));
                 if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
                     PyCell_SET(cell, Py_XNewRef(value));
-                    PyStackRef_CLOSE(oldvalue);
+                    PyStackRef_XCLOSE(oldvalue);
                 }
             } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-                PyStackRef_SET(fast[i], PyStackRef_FromPyObjectNew(value));
+                PyStackRef_XSET(fast[i], PyStackRef_FromPyObjectNew(value));
             }
             return 0;
         }
@@ -1543,7 +1543,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_CLOSE(_PyFrame_StackPop(f->f_frame));
+            PyStackRef_XCLOSE(_PyFrame_StackPop(f->f_frame));
         }
         start_stack = pop_value(start_stack);
     }

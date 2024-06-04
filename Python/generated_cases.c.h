@@ -780,7 +780,7 @@
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
             PyStackRef_CLOSE(start);
             PyStackRef_CLOSE(stop);
-            PyStackRef_CLOSE(step);
+            PyStackRef_XCLOSE(step);
             if (slice_o == NULL) { stack_pointer += -2 - ((oparg == 3) ? 1 : 0); goto error; }
             slice = PyStackRef_FromPyObjectSteal(slice_o);
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
@@ -1480,7 +1480,7 @@
             }
             PyStackRef_CLOSE(func_st);
             PyStackRef_CLOSE(callargs_st);
-            PyStackRef_CLOSE(kwargs_st);
+            PyStackRef_XCLOSE(kwargs_st);
             assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
             if (PyStackRef_IsNull(result)) { stack_pointer += -3 - (oparg & 1); goto error; }
             stack_pointer[-3 - (oparg & 1)] = result;

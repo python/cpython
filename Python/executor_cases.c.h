@@ -4363,7 +4363,7 @@
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
             PyStackRef_CLOSE(start);
             PyStackRef_CLOSE(stop);
-            PyStackRef_CLOSE(step);
+            PyStackRef_XCLOSE(step);
             if (slice_o == NULL) JUMP_TO_ERROR();
             slice = PyStackRef_FromPyObjectSteal(slice_o);
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;

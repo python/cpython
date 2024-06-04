@@ -136,7 +136,7 @@ def replace_decrefs(
             if var.condition == "1":
                 out.emit(f"PyStackRef_CLOSE({var.name});\n")
             elif var.condition != "0":
-                out.emit(f"PyStackRef_CLOSE({var.name});\n")
+                out.emit(f"PyStackRef_XCLOSE({var.name});\n")
         else:
             out.emit(f"PyStackRef_CLOSE({var.name});\n")
 

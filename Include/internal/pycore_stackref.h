@@ -137,6 +137,15 @@ _Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
         PyStackRef_CLOSE(_tmp_old_dst); \
     } while (0)
 
+
+#define PyStackRef_XSET(dst, src) \
+    do { \
+        _PyStackRef *_tmp_dst_ptr = &(dst); \
+        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        PyStackRef_XCLOSE(_tmp_old_dst); \
+    } while (0)
+
 #define PyStackRef_CLEAR(op) \
     do { \
         _PyStackRef *_tmp_op_ptr = &(op); \
@@ -156,11 +165,16 @@ PyStackRef_CLOSE(_PyStackRef tagged)
         // The GC unsets deferred objects right before clearing.
         return;
     }
-
-    Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged));
-#else
-    Py_XDECREF(PyStackRef_AsPyObjectBorrow(tagged));
 #endif
+    Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged));
+}
+
+static inline void
+PyStackRef_XCLOSE(_PyStackRef tagged)
+{
+    if (!PyStackRef_IsNull(tagged)) {
+        PyStackRef_CLOSE(tagged);
+    }
 }
 
 static inline _PyStackRef
@@ -174,10 +188,18 @@ PyStackRef_DUP(_PyStackRef tagged)
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
     return tagged;
-#else
-    Py_XINCREF(PyStackRef_AsPyObjectBorrow(tagged));
-    return tagged;
 #endif
+    Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
+    return tagged;
+}
+
+static inline _PyStackRef
+PyStackRef_XDUP(_PyStackRef tagged)
+{
+    if (!PyStackRef_IsNull(tagged)) {
+        return PyStackRef_DUP(tagged);
+    }
+    return tagged;
 }
 
 

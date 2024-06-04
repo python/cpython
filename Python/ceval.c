@@ -897,7 +897,7 @@ exception_unwind:
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyStackRef_CLOSE(POP());
+                    PyStackRef_XCLOSE(POP());
                 }
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -908,7 +908,7 @@ exception_unwind:
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyStackRef_CLOSE(POP());
+                PyStackRef_XCLOSE(POP());
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
