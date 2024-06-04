@@ -1763,11 +1763,12 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.set_ecdh_curve(curve_name)
 
-   Set the curve name for Elliptic Curve-based Diffie-Hellman (ECDH) key
+   Set the curve names for Elliptic Curve-based Diffie-Hellman (ECDH) key
    exchange.  ECDH is significantly faster than regular DH while arguably
-   as secure.  The *curve_name* parameter should be a string describing
-   a well-known elliptic curve, for example ``prime256v1`` for a widely
-   supported curve.
+   as secure.  The *curve_name* parameter should be a colon separated string describing
+   one or more well-known elliptic curves, for example ``prime256v1`` for a widely
+   supported curve, or ``prime256v1:brainpoolP384r1`` to specify two curves that will be
+   used on a client hello.
 
    This setting doesn't apply to client sockets.  You can also use the
    :data:`OP_SINGLE_ECDH_USE` option to further improve security.
