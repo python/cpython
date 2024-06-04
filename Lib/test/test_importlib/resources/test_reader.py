@@ -10,8 +10,7 @@ from importlib.readers import MultiplexedPath, NamespaceReader
 class MultiplexedPathTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = pathlib.Path(__file__).parent / 'namespacedata01'
-        cls.folder = str(path)
+        cls.folder = pathlib.Path(__file__).parent / 'namespacedata01'
 
     def test_init_no_paths(self):
         with self.assertRaises(FileNotFoundError):
@@ -19,7 +18,7 @@ class MultiplexedPathTest(unittest.TestCase):
 
     def test_init_file(self):
         with self.assertRaises(NotADirectoryError):
-            MultiplexedPath(os.path.join(self.folder, 'binary.file'))
+            MultiplexedPath(self.folder / 'binary.file')
 
     def test_iterdir(self):
         contents = {path.name for path in MultiplexedPath(self.folder).iterdir()}
@@ -27,10 +26,12 @@ class MultiplexedPathTest(unittest.TestCase):
             contents.remove('__pycache__')
         except (KeyError, ValueError):
             pass
-        self.assertEqual(contents, {'binary.file', 'utf-16.file', 'utf-8.file'})
+        self.assertEqual(
+            contents, {'subdirectory', 'binary.file', 'utf-16.file', 'utf-8.file'}
+        )
 
     def test_iterdir_duplicate(self):
-        data01 = os.path.abspath(os.path.join(__file__, '..', 'data01'))
+        data01 = pathlib.Path(__file__).parent.joinpath('data01')
         contents = {
             path.name for path in MultiplexedPath(self.folder, data01).iterdir()
         }
@@ -60,17 +61,17 @@ class MultiplexedPathTest(unittest.TestCase):
             path.open()
 
     def test_join_path(self):
-        prefix = os.path.abspath(os.path.join(__file__, '..'))
-        data01 = os.path.join(prefix, 'data01')
+        data01 = pathlib.Path(__file__).parent.joinpath('data01')
+        prefix = str(data01.parent)
         path = MultiplexedPath(self.folder, data01)
         self.assertEqual(
             str(path.joinpath('binary.file'))[len(prefix) + 1 :],
             os.path.join('namespacedata01', 'binary.file'),
         )
-        self.assertEqual(
-            str(path.joinpath('subdirectory'))[len(prefix) + 1 :],
-            os.path.join('data01', 'subdirectory'),
-        )
+        sub = path.joinpath('subdirectory')
+        assert isinstance(sub, MultiplexedPath)
+        assert 'namespacedata01' in str(sub)
+        assert 'data01' in str(sub)
         self.assertEqual(
             str(path.joinpath('imaginary'))[len(prefix) + 1 :],
             os.path.join('namespacedata01', 'imaginary'),
@@ -82,9 +83,9 @@ class MultiplexedPathTest(unittest.TestCase):
         assert not path.joinpath('imaginary/foo.py').exists()
 
     def test_join_path_common_subdir(self):
-        prefix = os.path.abspath(os.path.join(__file__, '..'))
-        data01 = os.path.join(prefix, 'data01')
-        data02 = os.path.join(prefix, 'data02')
+        data01 = pathlib.Path(__file__).parent.joinpath('data01')
+        data02 = pathlib.Path(__file__).parent.joinpath('data02')
+        prefix = str(data01.parent)
         path = MultiplexedPath(data01, data02)
         self.assertIsInstance(path.joinpath('subdirectory'), MultiplexedPath)
         self.assertEqual(

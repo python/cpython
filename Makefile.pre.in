@@ -1055,6 +1055,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
+		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
@@ -2437,6 +2438,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/data03/namespace/portion1 \
 		test/test_importlib/resources/data03/namespace/portion2 \
 		test/test_importlib/resources/namespacedata01 \
+		test/test_importlib/resources/namespacedata01/subdirectory \
 		test/test_importlib/resources/zipdata01 \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
