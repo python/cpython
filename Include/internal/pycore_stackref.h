@@ -17,12 +17,17 @@ typedef union {
 } _PyStackRef;
 
 
-#define Py_TAG_INT      (0)
 #define Py_TAG_DEFERRED (1)
-#define Py_TAG_RESERVED (2)
-#define Py_TAG_PTR      (3)
 
-#define Py_TAG          (Py_TAG_PTR)
+// To catch where stackrefs leak out to the heap,
+// in both current and future code.
+#ifdef Py_DEBUG
+#   define Py_TAG_PTR   (3)
+#   define Py_TAG       (3)
+#else
+#   define Py_TAG_PTR   (0)
+#   define Py_TAG       (1)
+#endif
 
 static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
 
@@ -81,8 +86,7 @@ static inline PyObject *
 PyStackRef_AsPyObjectNew(_PyStackRef tagged)
 {
     if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
-        assert(PyStackRef_IsNull(tagged) ||
-            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
+        assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
         return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
     }
     return PyStackRef_AsPyObjectBorrow(tagged);
@@ -133,23 +137,16 @@ PyStackRef_CLOSE(_PyStackRef tagged)
     Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged));
 }
 
-static inline void
+static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef tagged)
 {
     if (PyStackRef_IsDeferred(tagged)) {
         assert(PyStackRef_IsNull(tagged) ||
             _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
-        return;
+        return tagged;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
-}
-
-
-static inline _PyStackRef
-PyStackRef_DUPNEW(_PyStackRef obj)
-{
-    PyStackRef_DUP(obj);
-    return obj;
+    return tagged;
 }
 
 

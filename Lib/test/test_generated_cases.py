@@ -842,7 +842,7 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
 
-@unittest.skipIf(True, reason="TODO REENABLE ME WHEN FINAL")
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()

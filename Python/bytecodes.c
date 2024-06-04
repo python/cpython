@@ -4382,7 +4382,7 @@ dummy_func(
 
         pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             assert(oparg > 0);
-            top = PyStackRef_DUPNEW(bottom);
+            top = PyStackRef_DUP(bottom);
         }
 
         specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {

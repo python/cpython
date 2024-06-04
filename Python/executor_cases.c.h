@@ -4654,7 +4654,7 @@
             bottom = stack_pointer[-1 - (oparg-1)];
 
             assert(oparg > 0);
-            top = PyStackRef_DUPNEW(bottom);
+            top = PyStackRef_DUP(bottom);
             stack_pointer[0] = top;
             stack_pointer += 1;
             break;
