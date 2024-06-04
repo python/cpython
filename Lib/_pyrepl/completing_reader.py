@@ -210,6 +210,9 @@ class self_insert(commands.self_insert):
 
         commands.self_insert.do(self)
 
+        if r.cmpltn_menu_visible or r.cmpltn_message_visible:
+            r.calc_screen = r.calc_complete_screen
+
         if r.cmpltn_menu_visible:
             stem = r.get_stem()
             if len(stem) < 1:
