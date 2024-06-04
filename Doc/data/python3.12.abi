@@ -22611,7 +22611,7 @@
         <var-decl name='recursion_limit' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='50' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_symtable_entry' size-in-bits='960' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='53' column='1' id='type-id-1397'>
+    <class-decl name='_symtable_entry' size-in-bits='1024' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='53' column='1' id='type-id-1397'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='ob_base' type-id='type-id-345' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='54' column='1'/>
       </data-member>
@@ -22701,6 +22701,9 @@
       </data-member>
       <data-member access='public' layout-offset-in-bits='896'>
         <var-decl name='ste_table' type-id='type-id-209' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='89' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='960'>
+        <var-decl name='ste_mangled_names' type-id='type-id-2' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='90' column='1'/>
       </data-member>
     </class-decl>
     <typedef-decl name='PySTEntryObject' type-id='type-id-1397' filepath='./Include/internal/pycore_symtable.h' line='90' column='1' id='type-id-1398'/>
