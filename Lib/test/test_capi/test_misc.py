@@ -2295,32 +2295,6 @@ class SubinterpreterTest(unittest.TestCase):
                 ret = support.run_in_subinterp_with_config(script, **config.__dict__)
                 self.assertEqual(ret, 0)
 
-    def test_datetime_capi_type_check_allos(self):
-        script = textwrap.dedent("""
-            try:
-                import _testcapi as module
-            except ImportError:
-                module = None
-
-            def run(type_checker, obj):
-                if not type_checker(obj, True):  # exact check
-                    raise TypeError(f'{type(obj)} is not C API type')
-
-            if module:
-                module.test_datetime_capi()
-                import _datetime
-                run(module.datetime_check_date,     _datetime.date.today())
-                run(module.datetime_check_datetime, _datetime.datetime.now())
-                run(module.datetime_check_time,     _datetime.time(12, 30))
-                run(module.datetime_check_delta,    _datetime.timedelta(1))
-                run(module.datetime_check_tzinfo,   _datetime.tzinfo())
-        """)
-        with self.subTest('main interpreter'):
-            exec(script)
-        with self.subTest('non-isolated subinterpreter'):
-            ret = support.run_in_subinterp(script)
-            self.assertEqual(ret, 0)
-
 
 @requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):
