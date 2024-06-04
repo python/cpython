@@ -16742,7 +16742,7 @@ os__inputhook_impl(PyObject *module)
          result = PyOS_InputHook();
          Py_END_ALLOW_THREADS;
      }
-    return PyLong_FromLong(result);
+     return PyLong_FromLong(result);
 }
 
 /*[clinic input]
