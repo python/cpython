@@ -1773,8 +1773,13 @@ iterations of the loop.
    |                                   | of the type alias's name,         |
    |                                   | type parameters, and value.       |
    +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_TO_FROZENSET``    | Converts a set to a frozenset     |
+   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.14
+      Added ``INTRINSIC_SET_TO_FROZENSET``.
 
 .. opcode:: CALL_INTRINSIC_2
 
