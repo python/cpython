@@ -1620,8 +1620,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         while (PyDict_Next(dct, &pos, &key, &value)) {
             if (encoder_encode_key_value(s, writer, &first, key, value,
                                          new_newline_indent,
-                                         current_item_separator) < 0)
+                                         current_item_separator) < 0) {
+                Py_EXIT_CRITICAL_SECTION();
                 goto bail;
+            }
         }
         Py_END_CRITICAL_SECTION();
     }
