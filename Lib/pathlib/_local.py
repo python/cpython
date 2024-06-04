@@ -791,11 +791,17 @@ class Path(PathBase, PurePath):
             symlink and follow_symlinks is false, a symlink will be created at the
             target.
             """
-            if isinstance(target, PathBase) and not isinstance(target, Path):
-                return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if isinstance(target, PathBase):
+                    # Target is an instance of PathBase but not os.PathLike.
+                    # Use generic implementation from PathBase.
+                    return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
+                raise
 
             flags = 0 if follow_symlinks else _winapi.COPY_FILE_COPY_SYMLINK
-            _winapi.CopyFile2(os.fspath(self), os.fspath(target), flags)
+            _winapi.CopyFile2(os.fspath(self), target, flags)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
