@@ -116,6 +116,7 @@ dummy_func(void) {
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
+        assert(type_version);
         if (sym_matches_type_version(owner, type_version)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         } else {

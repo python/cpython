@@ -938,6 +938,7 @@
             _Py_UopsSymbol *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand;
+            assert(type_version);
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
