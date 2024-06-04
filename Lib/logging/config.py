@@ -781,8 +781,10 @@ class DictConfigurator(BaseConfigurator):
                     # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
                     from multiprocessing.queues import Queue as MPQueue
+                    from multiprocessing import Manager as MM
+                    proxy_queue = MM().Queue()
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue)):
+                    if not isinstance(qspec, (queue.Queue, MPQueue, type(proxy_queue))):
                         if isinstance(qspec, str):
                             q = self.resolve(qspec)
                             if not callable(q):
