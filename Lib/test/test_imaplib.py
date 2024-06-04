@@ -465,8 +465,7 @@ class NewIMAPTestsMixin():
         with self.imap_class(*server.server_address, timeout=support.LOOPBACK_TIMEOUT) as client:
             self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         with self.assertRaises(ValueError):
-            with self.imap_class(*server.server_address, timeout=0):
-                pass
+            self.imap_class(*server.server_address, timeout=0)
 
     def test_imaplib_timeout_functionality_test(self):
         class TimeoutHandler(SimpleIMAPHandler):
