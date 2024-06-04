@@ -1204,7 +1204,8 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
-This operation can be customized using the special :meth:`~object.__pow__` method.
+This operation can be customized using the special :meth:`~object.__pow__` and
+:meth:`~object.__rpow__` methods.
 
 .. _unary:
 
@@ -1292,6 +1293,9 @@ This operation can be customized using the special :meth:`~object.__mul__` and
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
 
+This operation can be customized using the special :meth:`~object.__matmul__` and
+:meth:`~object.__rmatmul__` methods.
+
 .. versionadded:: 3.5
 
 .. index::
@@ -1307,8 +1311,10 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`~object.__truediv__` and
-:meth:`~object.__floordiv__` methods.
+The division operation can be customized using the special :meth:`~object.__truediv__`
+and :meth:`~object.__rtruediv__` methods.
+The floor division operation can be customized using the special
+:meth:`~object.__floordiv__` and :meth:`~object.__rfloordiv__` methods.
 
 .. index::
    single: modulo
@@ -1333,7 +1339,8 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
-The *modulo* operation can be customized using the special :meth:`~object.__mod__` method.
+The *modulo* operation can be customized using the special :meth:`~object.__mod__`
+and :meth:`~object.__rmod__` methods.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
@@ -1360,7 +1367,8 @@ This operation can be customized using the special :meth:`~object.__add__` and
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
 
-This operation can be customized using the special :meth:`~object.__sub__` method.
+This operation can be customized using the special :meth:`~object.__sub__` and
+:meth:`~object.__rsub__` methods.
 
 
 .. _shifting:
@@ -1381,8 +1389,10 @@ The shifting operations have lower priority than the arithmetic operations:
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-This operation can be customized using the special :meth:`~object.__lshift__` and
-:meth:`~object.__rshift__` methods.
+The left shift operation can be customized using the special :meth:`~object.__lshift__`
+and :meth:`~object.__rlshift__` methods.
+The right shift operation can be customized using the special :meth:`~object.__rshift__`
+and :meth:`~object.__rrshift__` methods.
 
 .. index:: pair: exception; ValueError
 
