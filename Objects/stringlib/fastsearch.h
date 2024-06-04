@@ -1056,7 +1056,7 @@ STRINGLIB(horspool_rfind)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         // LOG_LINEUP_REV();
         if (bloom_gap) {
             if (s_first != p_first){
-                if (!STRINGLIB_BLOOM(mask, s[i - 1])){
+                if (i > 0 && !STRINGLIB_BLOOM(mask, s[i - 1])){
                     i -= m + 1;
                     LOG("Bloom skip\n");
                 }
@@ -1101,7 +1101,7 @@ STRINGLIB(horspool_rfind)(const STRINGLIB_CHAR* s, Py_ssize_t n,
             }
             i -= m;
         }
-        else if (bloom_gap && !STRINGLIB_BLOOM(mask, s[i - 1])) {
+        else if (bloom_gap && i > 0 && !STRINGLIB_BLOOM(mask, s[i - 1])) {
             LOG("move by (m + 1) = %ld\n", m + 1);
             i -= m + 1;
         }
