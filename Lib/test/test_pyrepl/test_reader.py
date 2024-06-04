@@ -1,5 +1,6 @@
 import itertools
 import functools
+import rlcompleter
 from unittest import TestCase
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
@@ -9,7 +10,7 @@ from _pyrepl.reader import Reader
 
 class TestReader(TestCase):
     def assert_screen_equals(self, reader, expected):
-        actual = reader.calc_screen()
+        actual = reader.screen
         expected = expected.split("\n")
         self.assertListEqual(actual, expected)
 
@@ -208,3 +209,37 @@ class TestReader(TestCase):
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
+
+    def test_completions_updated_on_key_press(self):
+        namespace = {"itertools": itertools}
+        code = "itertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),  # Two tabs for completion
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+        ], code_to_events("a"))
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+
+        actual = reader.screen
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].rstrip(), "itertools.accumulate(")
+        self.assertEqual(actual[1], f"{code}a")
+
+    def test_key_press_on_tab_press_once(self):
+        namespace = {"itertools": itertools}
+        code = "itertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+        ], code_to_events("a"))
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+
+        self.assert_screen_equals(reader, f"{code}a")
