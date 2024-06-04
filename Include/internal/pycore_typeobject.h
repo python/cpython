@@ -61,24 +61,14 @@ struct type_cache {
     struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
 };
 
-typedef struct {
-    PyTypeObject *type;
-    int readying;
-    int ready;
-    // XXX tp_dict can probably be statically allocated,
-    // instead of dynamically and stored on the interpreter.
-    PyObject *tp_dict;
-    PyObject *tp_subclasses;
-    /* We never clean up weakrefs for static builtin types since
-       they will effectively never get triggered.  However, there
-       are also some diagnostic uses for the list of weakrefs,
-       so we still keep it. */
-    PyObject *tp_weaklist;
-} managed_static_type_state;
+
+typedef struct managed_static_type_state managed_static_type_state;
 
 #define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
 
 struct types_state {
+    PyMutex mutex;
+
     /* Used to set PyTypeObject.tp_version_tag.
        It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
        where all those lower numbers are used for core static types. */
@@ -123,15 +113,24 @@ struct types_state {
        builtin type.  Once initialization is over for a subinterpreter,
        the value will be the same as for all other interpreters.  */
     struct {
-        size_t num_initialized;
-        managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES];
-    } builtins;
-    /* We apply a similar strategy for managed extension modules. */
-    struct {
-        size_t num_initialized;
-        managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
-    } for_extensions;
-    PyMutex mutex;
+        size_t num_builtins;
+        size_t num_types;
+        struct managed_static_type_state {
+            //int initialized;
+            PyTypeObject *type;
+            int readying;
+            int ready;
+            // XXX tp_dict can probably be statically allocated,
+            // instead of dynamically and stored on the interpreter.
+            PyObject *tp_dict;
+            PyObject *tp_subclasses;
+            /* We never clean up weakrefs for static builtin types since
+               they will effectively never get triggered.  However, there
+               are also some diagnostic uses for the list of weakrefs,
+               so we still keep it. */
+            PyObject *tp_weaklist;
+        } types[_Py_MAX_MANAGED_STATIC_TYPES];
+    } managed_static;
 
     // Borrowed references to type objects whose
     // tp_version_tag % TYPE_VERSION_CACHE_SIZE
