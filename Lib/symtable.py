@@ -49,9 +49,9 @@ class SymbolTableType(StrEnum):
     FUNCTION = "function"
     CLASS = "class"
     ANNOTATION = "annotation"
-    TYPE_VARIABLE = "type variable"
     TYPE_ALIAS = "type alias"
     TYPE_PARAMETERS = "type parameters"
+    TYPE_VARIABLE = "type variable"
 
 
 class SymbolTable:
@@ -88,12 +88,12 @@ class SymbolTable:
             return SymbolTableType.CLASS.value
         if self._table.type == _symtable.TYPE_ANNOTATION:
             return SymbolTableType.ANNOTATION.value
-        if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
-            return SymbolTableType.TYPE_VARIABLE.value
         if self._table.type == _symtable.TYPE_TYPE_ALIAS:
             return SymbolTableType.TYPE_ALIAS.value
         if self._table.type == _symtable.TYPE_TYPE_PARAMETERS:
             return SymbolTableType.TYPE_PARAMETERS.value
+        if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
+            return SymbolTableType.TYPE_VARIABLE.value
         assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
