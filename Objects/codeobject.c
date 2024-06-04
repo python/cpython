@@ -2020,7 +2020,7 @@ code_hash(PyCodeObject *co)
     Py_uhash_t uhash = 20221211;
     #define SCRAMBLE_IN(H) do {       \
         uhash ^= (Py_uhash_t)(H);     \
-        uhash *= _PyHASH_MULTIPLIER;  \
+        uhash *= PyHASH_MULTIPLIER;  \
     } while (0)
     #define SCRAMBLE_IN_HASH(EXPR) do {     \
         Py_hash_t h = PyObject_Hash(EXPR);  \
