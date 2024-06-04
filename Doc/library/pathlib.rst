@@ -1630,6 +1630,9 @@ example because the path doesn't exist).
    If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
    ignored (same behavior as the POSIX ``rm -f`` command).
 
+   If an intermediate part of the path points to a file,
+   :exc:`NotADirectoryError` will be raised.
+
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
 
