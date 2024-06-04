@@ -958,7 +958,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
             compiler_exit_scope((C)); \
             return ERROR; \
         } \
-    } while(0)
+    } while (0)
 
 #define ADDOP(C, LOC, OP) \
     RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
@@ -981,7 +981,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
             return ERROR; \
         } \
         Py_DECREF(__new_const); \
-    } while(0)
+    } while (0)
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) \
     do { \
@@ -991,7 +991,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
             return ERROR; \
         } \
         Py_DECREF((O)); \
-    } while(0)
+    } while (0)
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
     RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
@@ -1038,7 +1038,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
             TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
             RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), elt)); \
         } \
-    } while(0)
+    } while (0)
 
 #define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) \
     do { \
@@ -1051,7 +1051,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
                 return ERROR; \
             } \
         } \
-    } while(0)
+    } while (0)
 
 
 static int
