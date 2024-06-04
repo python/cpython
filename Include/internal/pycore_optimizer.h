@@ -33,7 +33,7 @@ struct _Py_UopsSymbol {
     int flags;  // 0 bits: Top; 2 or more bits: Bottom
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
-    int32_t typ_version; // currently stores type version
+    int32_t type_version; // currently stores type version
 };
 
 #define UOP_FORMAT_TARGET 0
