@@ -196,6 +196,13 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
 }
 
 static PyObject *
+set_to_frozenset(PyThreadState* unused, PyObject *v)
+{
+    assert(PySet_Check(v));
+    return PyFrozenSet_New(v);
+}
+
+static PyObject *
 make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
@@ -220,6 +227,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE, _Py_make_typevartuple)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TO_FROZENSET, set_to_frozenset)
 };
 
 
