@@ -59,7 +59,7 @@ objects considered false:
   ``Fraction(0, 1)``
 
 * empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
-  ``range(0)``
+  ``frozenset()``, ``range(0)``
 
 .. index::
    pair: operator; or
@@ -4247,9 +4247,10 @@ another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
 its contents cannot be altered after it is created; it can therefore be used as
 a dictionary key or as an element of another set.
 
-Non-empty sets (not frozensets) can be created by placing a comma-separated list
-of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
-:class:`set` constructor.
+Non-empty sets can be created by placing a comma-separated list of elements
+within braces or double braces for frozensets, for example: ``{'jack', 'sjoerd'}``
+and ``{{'jack', 'sjoerd'}}`` in addition to the :class:`set` and :class:`frozenset`
+constructors.
 
 The constructors for both classes work the same:
 
@@ -4262,11 +4263,13 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets can be created by several means:
+   Sets and frozensets can be created by several means:
 
-   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
-   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
-   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+   * Use a comma-separated list of elements within braces or double braces for frozensets:
+     ``{'jack', 'sjoerd'}``, ``{{'jack', 'sjoerd'}}``
+   * Use a set comprehension (not for frozensets): ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use the type constructor: ``set()``, ``frozenset()``, ``set('foobar')``,
+     ``frozenset('foobar')``, ``set(['a', 'b', 'foo'])``, ``frozenset(['a', 'b', 'foo'])``
 
    Instances of :class:`set` and :class:`frozenset` provide the following
    operations:
