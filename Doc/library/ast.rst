@@ -362,6 +362,21 @@ Literals
                     Constant(value=2),
                     Constant(value=3)]))
 
+.. class:: FrozenSet(elts)
+
+   A frozenset. ``elts`` holds a list of nodes representing the frozenset's elements.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('{{1, 2, 3}}', mode='eval'), indent=4))
+        Expression(
+            body=FrozenSet(
+                elts=[
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)]))
+
+   .. versionadded:: 3.14
 
 .. class:: Dict(keys, values)
 
