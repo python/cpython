@@ -482,7 +482,7 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 
 
 /* ---------------------------------------------------------------------------
- * Test module for subinterpreters
+ * Test module for subinterpreters.
  */
 
 static int
@@ -502,11 +502,11 @@ _testcapi_datetime_exec(PyObject *mod)
 }
 
 static PyMethodDef _testcapi_datetime_methods[] = {
-    {"check_date",     datetime_check_date,     METH_VARARGS},
-    {"check_datetime", datetime_check_datetime, METH_VARARGS},
-    {"check_delta",    datetime_check_delta,    METH_VARARGS},
-    {"check_time",     datetime_check_time,     METH_VARARGS},
-    {"check_tzinfo",   datetime_check_tzinfo,   METH_VARARGS},
+    {"datetime_check_date",         datetime_check_date,            METH_VARARGS},
+    {"datetime_check_datetime",     datetime_check_datetime,        METH_VARARGS},
+    {"datetime_check_delta",        datetime_check_delta,           METH_VARARGS},
+    {"datetime_check_time",         datetime_check_time,            METH_VARARGS},
+    {"datetime_check_tzinfo",       datetime_check_tzinfo,          METH_VARARGS},
     {0},
 };
 

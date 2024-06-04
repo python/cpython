@@ -2285,11 +2285,11 @@ class SubinterpreterTest(unittest.TestCase):
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
 
-                run(module.check_date,     _datetime.date.today())
-                run(module.check_datetime, _datetime.datetime.now())
-                run(module.check_time,     _datetime.time(12, 30))
-                run(module.check_delta,    _datetime.timedelta(1))
-                run(module.check_tzinfo,   _datetime.tzinfo())
+                run(module.datetime_check_date,     _datetime.date.today())
+                run(module.datetime_check_datetime, _datetime.datetime.now())
+                run(module.datetime_check_time,     _datetime.time(12, 30))
+                run(module.datetime_check_delta,    _datetime.timedelta(1))
+                run(module.datetime_check_tzinfo,   _datetime.tzinfo())
         """)
         with self.subTest('main'):
             exec(script)
@@ -2299,6 +2299,32 @@ class SubinterpreterTest(unittest.TestCase):
                 config.gil = {'shared': 1, 'own': 2}[config.gil]
                 ret = support.run_in_subinterp_with_config(script, **config.__dict__)
                 self.assertEqual(ret, 0)
+
+    def test_datetime_capi_type_check_allos(self):
+        script = textwrap.dedent("""
+            try:
+                import _datetime
+            except ImportError:
+                _datetime = None
+
+            def run(type_checker, obj):
+                if not type_checker(obj, True):  # exact check
+                    raise TypeError(f'{type(obj)} is not C API type')
+
+            if _datetime:
+                import _testcapi as module
+                module.test_datetime_capi()
+                run(module.datetime_check_date,     _datetime.date.today())
+                run(module.datetime_check_datetime, _datetime.datetime.now())
+                run(module.datetime_check_time,     _datetime.time(12, 30))
+                run(module.datetime_check_delta,    _datetime.timedelta(1))
+                run(module.datetime_check_tzinfo,   _datetime.tzinfo())
+        """)
+        with self.subTest('main interpreter'):
+            exec(script)
+        with self.subTest('non-isolated subinterpreter'):
+            ret = support.run_in_subinterp(script)
+            self.assertEqual(ret, 0)
 
 
 @requires_subinterpreters
