@@ -1486,8 +1486,11 @@ example because the path doesn't exist).
    will be created as a symbolic link. If *follow_symlinks* is true and this
    file is a symbolic link, *target* will be a copy of the symlink target.
 
-   This method doesn't guarantee whether permissions, ownership, and other
-   metadata is copied; it may vary by operating system and Python version.
+   .. note::
+      This method uses operating system functionality to copy file content
+      efficiently. The OS might also copy some metadata, such as file
+      permissions. After the copy is complete, users may wish to call
+      :meth:`Path.chmod` to set the permissions of the target file.
 
    .. versionadded:: 3.14
 
