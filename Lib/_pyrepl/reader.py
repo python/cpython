@@ -28,7 +28,7 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 
 from . import commands, console, input
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
 from .trace import trace
 
 
@@ -339,7 +339,8 @@ class Reader:
                 screeninfo.append((0, []))
         return screen
 
-    def process_prompt(self, prompt: str) -> tuple[str, int]:
+    @staticmethod
+    def process_prompt(prompt: str) -> tuple[str, int]:
         """Process the prompt.
 
         This means calculate the length of the prompt. The character \x01
@@ -350,6 +351,11 @@ class Reader:
         # The logic below also ignores the length of common escape
         # sequences if they were not explicitly within \x01...\x02.
         # They are CSI (or ANSI) sequences  ( ESC [ ... LETTER )
+
+        # wlen from utils already excludes ANSI_ESCAPE_SEQUENCE chars,
+        # which breaks the logic below so we redefine it here.
+        def wlen(s: str) -> int:
+            return sum(str_width(i) for i in s)
 
         out_prompt = ""
         l = wlen(prompt)
@@ -644,7 +650,15 @@ class Reader:
             self.dirty = True
 
         while True:
-            event = self.console.get_event(block)
+            input_hook = self.console.input_hook
+            if input_hook:
+                input_hook()
+                # We use the same timeout as in readline.c: 100ms
+                while not self.console.wait(100):
+                    input_hook()
+                event = self.console.get_event(block=False)
+            else:
+                event = self.console.get_event(block)
             if not event:  # can only happen if we're not blocking
                 return False
 

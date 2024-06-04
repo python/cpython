@@ -1583,9 +1583,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
     else {
 #ifdef Py_GIL_DISABLED
-        if (interp->gc.immortalize.enable_on_thread_created &&
-            !interp->gc.immortalize.enabled)
-        {
+        if (_Py_atomic_load_int(&interp->gc.immortalize) == 0) {
             // Immortalize objects marked as using deferred reference counting
             // the first time a non-main thread is created.
             _PyGC_ImmortalizeDeferredObjects(interp);
@@ -3076,6 +3074,8 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // _PyObject_GC_New() and similar functions temporarily override this to
     // use one of the GC heaps.
     mts->current_object_heap = &mts->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+
+    _Py_atomic_store_int(&mts->initialized, 1);
 #endif
 }
 
