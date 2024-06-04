@@ -364,7 +364,7 @@ Literals
 
 .. class:: FrozenSet(elts)
 
-   A frozenset. ``elts`` holds a list of nodes representing the frozenset's elements.
+   A frozen set. ``elts`` holds a list of nodes representing the frozen set's elements.
 
    .. doctest::
 
