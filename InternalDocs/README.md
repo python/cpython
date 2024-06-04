@@ -10,3 +10,7 @@ to hold for other implementations of the Python language.
 The core dev team attempts to keep this documentation up to date. If
 it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
+
+
+[Exception Handling](exception_handling.md)
+
