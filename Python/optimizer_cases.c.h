@@ -942,13 +942,13 @@
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
-                // add watcher so that whenever the type changes we invalide this
+                // add watcher so that whenever the type changes we invalidate this
                 PyTypeObject *type = _PyType_LookupByVersion(type_version);
                 // if the type is null, it was not found in the cache (there was a conflict)
                 // with the key, in which case we can't trust the version
                 if (type) {
                     sym_set_type_version(owner, type_version);
-                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    assert(PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type) == 0);
                     _Py_BloomFilter_Add(dependencies, type);
                 }
             }
