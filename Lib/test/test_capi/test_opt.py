@@ -1379,7 +1379,7 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_guard_type_version_not_removed(self):
         """
-        Verify that the guard type version is not removed if we Modify the class
+        Verify that the guard type version is not removed if we modify the class
         """
 
         def thing(a):
@@ -1389,21 +1389,22 @@ class TestUopsOptimization(unittest.TestCase):
                 # for the first 90 iterations we set the attribute on this dummy function which shouldn't
                 # trigger the type watcher
                 # then after 90  it should trigger it and stop optimizing
-                setattr((Foo, xxx)[i < 90], "attr", 0)
+                # Note that the code needs to be in this weird form so it's optimized inline without any control flow
+                setattr((Foo, Bar)[i < 90], "attr", 2)
                 x += a.attr
             return x
 
         class Foo:
             attr = 1
 
-        def xxx():
+        class Bar:
             pass
 
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
 
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 181)
+        self.assertEqual(res, 219)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 2)
 
