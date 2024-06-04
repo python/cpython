@@ -13,9 +13,9 @@ resemble pathlib's PurePath and Path respectively.
 
 import functools
 from glob import _Globber, _no_recurse_symlinks
-from errno import ENOTDIR, ELOOP, EBADF, EOPNOTSUPP, ETXTBSY, EXDEV
+from errno import ENOTDIR, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from ._os import clonefd, copyfd, copyfileobj
+from ._os import copyfileobj
 
 
 __all__ = ["UnsupportedOperation"]
@@ -809,32 +809,7 @@ class PathBase(PurePathBase):
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
-                    try:
-                        source_fd = source_f.fileno()
-                        target_fd = target_f.fileno()
-                    except Exception:
-                        return copyfileobj(source_f, target_f)
-                    try:
-                        # Use OS copy-on-write where available.
-                        if clonefd:
-                            try:
-                                return clonefd(source_fd, target_fd)
-                            except OSError as err:
-                                if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
-                                    raise err
-
-                        # Use OS copy where available.
-                        if copyfd:
-                            return copyfd(source_fd, target_fd)
-
-                        # Last resort: copy between file objects.
-                        return copyfileobj(source_f, target_f)
-                    except OSError as err:
-                        # Produce more useful error messages.
-                        err.filename = str(self)
-                        err.filename2 = str(target)
-                        raise err
-
+                    copyfileobj(source_f, target_f)
             except IsADirectoryError as e:
                 if not target.exists():
                     # Raise a less confusing exception.
