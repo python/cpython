@@ -33,6 +33,7 @@ TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import IO
+    from typing import Callable
 
 
 @dataclass
@@ -134,8 +135,15 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def wait(self) -> None:
-        """Wait for an event."""
+    def wait(self, timeout: float | None) -> bool:
+        """Wait for an event. The return value is True if an event is
+        available, False if the timeout has been reached. If timeout is
+        None, wait forever. The timeout is in milliseconds."""
+        ...
+
+    @property
+    def input_hook(self) -> Callable[[], int] | None:
+        """Returns the current input hook."""
         ...
 
     @abstractmethod
