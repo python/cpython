@@ -462,7 +462,7 @@ class NewIMAPTestsMixin():
         _, server = self._setup(SimpleIMAPHandler, connect=False)
         with self.imap_class(*server.server_address, timeout=None) as client:
             self.assertEqual(client.sock.timeout, None)
-        with self.imap_class(*server.server_address,timeout=support.LOOPBACK_TIMEOUT) as client:
+        with self.imap_class(*server.server_address, timeout=support.LOOPBACK_TIMEOUT) as client:
             self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         with self.assertRaises(ValueError):
             with self.imap_class(*server.server_address, timeout=0):
