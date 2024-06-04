@@ -338,8 +338,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.13
       The *show_caches* parameter is deprecated and has no effect. The iterator
       generates the :class:`Instruction` instances with the *cache_info*
-      field populated (regardless of the value of *show_caches*) and it does not
-      generate separate items for the cache entries as it did before.
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
