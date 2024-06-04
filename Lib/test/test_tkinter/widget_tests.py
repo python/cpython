@@ -71,29 +71,26 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkIntegerParam(self, widget, name, *values, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected integer but got ""')
         errmsg = 'expected integer but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
         self.checkInvalidParam(widget, name, '10p', errmsg=errmsg)
         self.checkInvalidParam(widget, name, 3.2, errmsg=errmsg)
 
     def checkFloatParam(self, widget, name, *values, conv=float, **kwargs):
         for value in values:
             self.checkParam(widget, name, value, conv=conv, **kwargs)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected floating-point number but got ""')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='expected floating-point number but got "spam"')
+        errmsg = 'expected floating-point number but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkBooleanParam(self, widget, name):
         for value in (False, 0, 'false', 'no', 'off'):
             self.checkParam(widget, name, value, expected=0)
         for value in (True, 1, 'true', 'yes', 'on'):
             self.checkParam(widget, name, value, expected=1)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected boolean value but got ""')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='expected boolean value but got "spam"')
+        errmsg='expected boolean value but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkColorParam(self, widget, name, *, allow_empty=None, **kwargs):
         self.checkParams(widget, name,
@@ -145,10 +142,9 @@ class AbstractWidgetTest(AbstractTkTest):
                     conv1 = round
             self.checkParam(widget, name, value, expected=expected,
                             conv=conv1, **kwargs)
-        self.checkInvalidParam(widget, name, '6x',
-                errmsg='(bad|expected) screen distance ((or "" )?but got )?"6x"')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='(bad|expected) screen distance ((or "" )?but got )?"spam"')
+        errmsg = '(bad|expected) screen distance ((or "" )?but got )?"{}"'
+        self.checkInvalidParam(widget, name, '6x', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkReliefParam(self, widget, name, *, allow_empty=False):
         options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
@@ -160,8 +156,7 @@ class AbstractWidgetTest(AbstractTkTest):
         errmsg = f'bad relief "spam": must be {opstring}, or {lastop or '""'}'
         if tk_version < (8, 6):
             errmsg = None
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')

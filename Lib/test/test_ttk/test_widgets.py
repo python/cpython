@@ -1396,9 +1396,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'displaycolumns', (2, 1, 0))
         self.checkInvalidParam(widget, 'displaycolumns', ('a', 'b', 'd'),
                                errmsg='Invalid column index "?d"?')
-        errmsg = ('Column index "{}" out of bounds'
-                  if tk_version >= (8, 7) else
-                  'Column index {} out of bounds')
+        errmsg = 'Column index "?{}"? out of bounds'
         self.checkInvalidParam(widget, 'displaycolumns', (1, 2, 3),
                                errmsg=errmsg.format(3))
         self.checkInvalidParam(widget, 'displaycolumns', (1, -2),
