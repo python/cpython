@@ -1048,9 +1048,9 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 The Tier 2 interpreter requires looking up the type object by the type version, so it can install
 watchers to understand when they change.
 
-So we add a global cache from type version to weak references of type objects.
+So we add a global cache from type version to borrowed references of type objects.
 
-This is similar to how the cache used with function objects and versions.
+This is similar to func_version_cache.
 */
 
 void
