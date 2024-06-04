@@ -340,27 +340,32 @@ class _GlobberBase:
 
     # Abstract methods
 
-    def lexists(self, path):
+    @staticmethod
+    def lexists(path):
         """Implements os.path.lexists().
         """
         raise NotImplementedError
 
-    def scandir(self, path):
+    @staticmethod
+    def scandir(path):
         """Implements os.scandir().
         """
         raise NotImplementedError
 
-    def add_slash(self, path):
+    @staticmethod
+    def add_slash(path):
         """Returns a path with a trailing slash added.
         """
         raise NotImplementedError
 
-    def concat_path(self, path, text):
+    @staticmethod
+    def concat_path(path, text):
         """Implements path concatenation.
         """
         raise NotImplementedError
 
-    def parse_entry(self, entry):
+    @staticmethod
+    def parse_entry(entry):
         """Returns the path of an entry yielded from scandir().
         """
         raise NotImplementedError
@@ -523,7 +528,7 @@ class _GlobberBase:
             yield path
 
 
-class _Globber(_GlobberBase):
+class _StringGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for string paths.
     """
     lexists = staticmethod(os.path.lexists)
@@ -532,13 +537,15 @@ class _Globber(_GlobberBase):
     concat_path = operator.add
 
     if os.name == 'nt':
-        def add_slash(self, pathname):
+        @staticmethod
+        def add_slash(pathname):
             tail = os.path.splitroot(pathname)[2]
             if not tail or tail[-1] in '\\/':
                 return pathname
             return f'{pathname}\\'
     else:
-        def add_slash(self, pathname):
+        @staticmethod
+        def add_slash(pathname):
             if not pathname or pathname[-1] == '/':
                 return pathname
             return f'{pathname}/'

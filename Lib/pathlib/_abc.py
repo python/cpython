@@ -85,7 +85,7 @@ class ParserBase:
         raise UnsupportedOperation(self._unsupported_msg('isabs()'))
 
 
-class Globber(_GlobberBase):
+class PathGlobber(_GlobberBase):
     """
     Class providing shell-style globbing for path objects.
     """
@@ -93,21 +93,22 @@ class Globber(_GlobberBase):
     lexists = operator.methodcaller('exists', follow_symlinks=False)
     add_slash = operator.methodcaller('joinpath', '')
 
-    def scandir(self, path):
+    @staticmethod
+    def scandir(path):
         """Emulates os.scandir(), which returns an object that can be used as
         a context manager. This method is called by walk() and glob().
         """
         import contextlib
         return contextlib.nullcontext(path.iterdir())
 
-    def concat_path(self, path, text):
-        """Appends text to the given path.
-        """
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
 
-    def parse_entry(self, entry):
-        """Returns the path of an entry yielded from scandir().
-        """
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir()."""
         return entry
 
 
@@ -131,7 +132,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = Globber
+    _globber = PathGlobber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
