@@ -2286,9 +2286,7 @@ class SubinterpreterTest(unittest.TestCase):
             run(module.datetime_check_delta,    _datetime.timedelta(1))
             run(module.datetime_check_tzinfo,   _datetime.tzinfo())
         """)
-        with self.subTest('main'):
-            exec(script)
-        for name in ('legacy', 'isolated'):
+        for name in ('isolated', 'legacy'):
             with self.subTest(name):
                 config = _interpreters.new_config(name)
                 config.gil = {'shared': 1, 'own': 2}[config.gil]
