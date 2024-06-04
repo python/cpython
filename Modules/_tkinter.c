@@ -523,6 +523,10 @@ class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
 
 /**** Tkapp Object ****/
 
+#if TK_MAJOR_VERSION >= 9
+int Tcl_AppInit(Tcl_Interp *);
+#endif
+
 #ifndef WITH_APPINIT
 int
 Tcl_AppInit(Tcl_Interp *interp)
