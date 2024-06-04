@@ -698,7 +698,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
 class SiginterruptTest(unittest.TestCase):
 
-    def readpipe_interrupted(self, interrupt):
+    def readpipe_interrupted(self, interrupt, timeout):
         """Perform a read during which a signal will arrive.  Return True if the
         read is interrupted by the signal and raises an exception.  Return False
         if it returns normally.
@@ -746,7 +746,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
+                stdout, stderr = process.communicate(timeout=timeout)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -762,14 +762,14 @@ class SiginterruptTest(unittest.TestCase):
         # If a signal handler is installed and siginterrupt is not called
         # at all, when that signal arrives, it interrupts a syscall that's in
         # progress.
-        interrupted = self.readpipe_interrupted(None)
+        interrupted = self.readpipe_interrupted(None, support.SHORT_TIMEOUT)
         self.assertTrue(interrupted)
 
     def test_siginterrupt_on(self):
         # If a signal handler is installed and siginterrupt is called with
         # a true value for the second argument, when that signal arrives, it
         # interrupts a syscall that's in progress.
-        interrupted = self.readpipe_interrupted(True)
+        interrupted = self.readpipe_interrupted(True, support.SHORT_TIMEOUT)
         self.assertTrue(interrupted)
 
     @support.requires_resource('walltime')
@@ -777,7 +777,7 @@ class SiginterruptTest(unittest.TestCase):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
         # does not interrupt a syscall that's in progress.
-        interrupted = self.readpipe_interrupted(False)
+        interrupted = self.readpipe_interrupted(False, 2)
         self.assertFalse(interrupted)
 
 
