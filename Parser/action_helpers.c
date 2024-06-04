@@ -555,7 +555,10 @@ _make_posargs(Parser *p,
         *posargs = _get_names(p, names_with_default);
     }
     else if (plain_names != NULL && names_with_default == NULL) {
-        *posargs = plain_names;
+	// With the current grammar, we never get here.
+	// If that has changed, remove the assert, and test thoroughly.
+	assert(0);
+	*posargs = plain_names;
     }
     else {
         *posargs = _Py_asdl_arg_seq_new(0, p->arena);
