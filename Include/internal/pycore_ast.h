@@ -358,12 +358,13 @@ struct _stmt {
 
 enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
-                  ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
-                  GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
-                  YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
-                  FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
-                  Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
+                  FrozenSet_kind=9, ListComp_kind=10, SetComp_kind=11,
+                  DictComp_kind=12, GeneratorExp_kind=13, Await_kind=14,
+                  Yield_kind=15, YieldFrom_kind=16, Compare_kind=17,
+                  Call_kind=18, FormattedValue_kind=19, JoinedStr_kind=20,
+                  Constant_kind=21, Attribute_kind=22, Subscript_kind=23,
+                  Starred_kind=24, Name_kind=25, List_kind=26, Tuple_kind=27,
+                  Slice_kind=28};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -407,6 +408,10 @@ struct _expr {
         struct {
             asdl_expr_seq *elts;
         } Set;
+
+        struct {
+            asdl_expr_seq *elts;
+        } FrozenSet;
 
         struct {
             expr_ty elt;
@@ -793,6 +798,8 @@ expr_ty _PyAST_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno,
                     *arena);
 expr_ty _PyAST_Set(asdl_expr_seq * elts, int lineno, int col_offset, int
                    end_lineno, int end_col_offset, PyArena *arena);
+expr_ty _PyAST_FrozenSet(asdl_expr_seq * elts, int lineno, int col_offset, int
+                         end_lineno, int end_col_offset, PyArena *arena);
 expr_ty _PyAST_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int
                         lineno, int col_offset, int end_lineno, int
                         end_col_offset, PyArena *arena);

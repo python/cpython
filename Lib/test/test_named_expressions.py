@@ -238,7 +238,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_rebinding_set_comprehension_iteration_variable(self):
         cases = [
             ("Local reuse", 'i', "{i := 0 for i in range(5)}"),
-            ("Nested reuse", 'j', "{{(j := 0) for i in range(5)} for j in range(5)}"),
+            ("Nested reuse", 'j', "{ {(j := 0) for i in range(5)} for j in range(5) }"),
             ("Reuse inner loop target", 'j', "{(j := 0) for i in range(5) for j in range(5)}"),
             ("Unpacking reuse", 'i', "{i := 0 for i, j in {(0, 1)}}"),
             ("Reuse in loop condition", 'i', "{i+1 for i in range(5) if (i := 0)}"),
@@ -303,7 +303,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             ("Key reuse", 'i', "{(i := 0): 1 for i in range(5)}"),
             ("Value reuse", 'i', "{1: (i := 0) for i in range(5)}"),
             ("Both reuse", 'i', "{(i := 0): (i := 0) for i in range(5)}"),
-            ("Nested reuse", 'j', "{{(j := 0): 1 for i in range(5)} for j in range(5)}"),
+            ("Nested reuse", 'j', "{ {(j := 0): 1 for i in range(5)} for j in range(5) }"),
             ("Reuse inner loop target", 'j', "{(j := 0): 1 for i in range(5) for j in range(5)}"),
             ("Unpacking key reuse", 'i', "{(i := 0): 1 for i, j in {(0, 1)}}"),
             ("Unpacking value reuse", 'i', "{1: (i := 0) for i, j in {(0, 1)}}"),

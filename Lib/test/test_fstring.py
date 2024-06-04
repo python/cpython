@@ -682,8 +682,9 @@ x = (
         # Inside of strings, don't interpret doubled brackets.
         self.assertEqual(f'{"{{}}"}', '{{}}')
 
-        self.assertAllRaise(TypeError, 'unhashable type',
-                            ["f'{ {{}} }'", # dict in a set
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
+                            ["f'{ {{}} }'", # invalid syntax
                              ])
 
     def test_compile_time_concat(self):
@@ -1425,7 +1426,7 @@ x = (
 
         self.assertAllRaise(SyntaxError,
                             "f-string: expecting a valid expression after '{'",
-                            ["f'{3:{{>10}'",
+                            ["f'{3:{ {>10}'",
                              ])
 
         # But these are just normal strings.

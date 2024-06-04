@@ -555,6 +555,16 @@ fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 }
 
 static int
+fold_frozenset(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+{
+    PyObject *newval = make_const_tuple(node->v.FrozenSet.elts);
+    if (newval) {
+        Py_SETREF(newval, PyFrozenSet_New(newval));
+    }
+    return make_const(node, newval, arena);
+}
+
+static int
 fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
@@ -742,6 +752,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
+        break;
+    case FrozenSet_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenSet.elts);
+        CALL(fold_frozenset, expr_ty, node_);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);

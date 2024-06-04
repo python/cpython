@@ -299,6 +299,9 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case Set_kind:
         ret = validate_exprs(state, exp->v.Set.elts, Load, 0);
         break;
+    case FrozenSet_kind:
+        ret = validate_exprs(state, exp->v.FrozenSet.elts, Load, 0);
+        break;
 #define COMP(NAME) \
         case NAME ## _kind: \
             ret = validate_comprehension(state, exp->v.NAME.generators) && \

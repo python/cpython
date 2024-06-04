@@ -4413,6 +4413,15 @@ compiler_set(struct compiler *c, expr_ty e)
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
 }
 
+static int
+compiler_frozenset(struct compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    // TODO: freeze set
+    return starunpack_helper(c, loc, e->v.FrozenSet.elts, 0,
+                             BUILD_SET, SET_ADD, SET_UPDATE, 0);
+}
+
 static bool
 are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
 {
@@ -4575,6 +4584,8 @@ infer_type(expr_ty e)
     case Set_kind:
     case SetComp_kind:
         return &PySet_Type;
+    case FrozenSet_kind:
+        return &PyFrozenSet_Type;
     case GeneratorExp_kind:
         return &PyGen_Type;
     case Lambda_kind:
@@ -4600,6 +4611,7 @@ check_caller(struct compiler *c, expr_ty e)
     case Dict_kind:
     case DictComp_kind:
     case Set_kind:
+    case FrozenSet_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
@@ -4630,6 +4642,7 @@ check_subscripter(struct compiler *c, expr_ty e)
         }
         /* fall through */
     case Set_kind:
+    case FrozenSet_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
     case Lambda_kind: {
@@ -6086,6 +6099,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_dict(c, e);
     case Set_kind:
         return compiler_set(c, e);
+    case FrozenSet_kind:
+        return compiler_frozenset(c, e);
     case GeneratorExp_kind:
         return compiler_genexp(c, e);
     case ListComp_kind:

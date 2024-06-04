@@ -2191,6 +2191,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Set_kind:
         VISIT_SEQ(st, expr, e->v.Set.elts);
         break;
+    case FrozenSet_kind:
+        VISIT_SEQ(st, expr, e->v.FrozenSet.elts);
+        break;
     case GeneratorExp_kind:
         if (!symtable_visit_genexp(st, e))
             VISIT_QUIT(st, 0);
