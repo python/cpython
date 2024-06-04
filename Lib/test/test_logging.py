@@ -3926,6 +3926,7 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    @unittest.skipIf(support.is_wasi, "WASI does not have multiprocessing.")
     def test_multiprocessing_queues(self):
         # See gh-119819
         cd = copy.deepcopy(self.config_queue_handler)
