@@ -31,8 +31,13 @@ struct _types_runtime_state {
     unsigned int next_version_tag;
 
     struct {
+        PyMutex mutex;
+        size_t num_builtins;
+        size_t num_types;
+        size_t next_index;
         struct {
             PyTypeObject *type;
+            int isbuiltin;
             int64_t interp_count;
         } types[_Py_MAX_MANAGED_STATIC_TYPES];
     } managed_static;
@@ -58,7 +63,6 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
-    int isbuiltin;
     int readying;
     int ready;
     // XXX tp_dict can probably be statically allocated,
@@ -125,7 +129,6 @@ struct types_state {
     /* We apply a similar strategy for managed extension modules. */
     struct {
         size_t num_initialized;
-        size_t next_index;
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
