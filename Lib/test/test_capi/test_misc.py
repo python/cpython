@@ -2286,11 +2286,12 @@ class SubinterpreterTest(unittest.TestCase):
             run(module.datetime_check_delta,    _datetime.timedelta(1))
             run(module.datetime_check_tzinfo,   _datetime.tzinfo())
         """)
+        configs = InterpreterConfigTests
         for name in ('isolated', 'legacy'):
             with self.subTest(name):
-                config = _interpreters.new_config(name)
-                config.gil = {'shared': 1, 'own': 2}[config.gil]
-                ret = support.run_in_subinterp_with_config(script, **config.__dict__)
+                config = dict(configs.supported[name].__dict__)
+                config['gil'] = configs.gil_supported.index(config['gil'])
+                ret = support.run_in_subinterp_with_config(script, **config)
                 self.assertEqual(ret, 0)
 
 
