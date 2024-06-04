@@ -291,6 +291,16 @@ dis_intrinsic_1_6 = """\
               RETURN_VALUE
 """
 
+dis_intrinsic_1_12 = """\
+  0           RESUME                   0
+
+  1           BUILD_SET                0
+              LOAD_NAME                0 (a)
+              SET_UPDATE               1
+              CALL_INTRINSIC_1        12 (INTRINSIC_SET_TO_FROZENSET)
+              RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
   1           RESUME                   0
 
@@ -981,6 +991,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
         self.do_disassembly_test("+a", dis_intrinsic_1_5)
         self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+        self.do_disassembly_test("{{*a,}}", dis_intrinsic_1_12)
 
     def test_intrinsic_2(self):
         self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
