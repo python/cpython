@@ -155,7 +155,7 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
 }
 
 void
-_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, int32_t version)
+_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version)
 {
     sym->type_version = version;
 }
@@ -264,7 +264,7 @@ _Py_uop_sym_get_type(_Py_UopsSymbol *sym)
     return sym->typ;
 }
 
-int32_t
+unsigned int
 _Py_uop_sym_get_type_version(_Py_UopsSymbol *sym)
 {
     return sym->type_version;
@@ -287,7 +287,7 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 }
 
 bool
-_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, int32_t version)
+_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version)
 {
     return _Py_uop_sym_get_type_version(sym) == version;
 }
