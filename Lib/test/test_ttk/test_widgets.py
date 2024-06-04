@@ -214,11 +214,13 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
 
-    def test_keys(self):
-        if get_tk_patchlevel(self.root) == (8, 7, 0, 'beta', 1):
-            self.skipTest('Bug in Tk8.7b1')
-        super().test_keys()
-
+    def test_configure_justify(self):
+        widget = self.create()
+        values = ('left', 'right', 'center')
+        if tk_version >= (8, 7):
+            values += ('',)
+        self.checkEnumParam(widget, 'justify', *values,
+                            fullname='justification')
 
 @add_standard_options(StandardTtkOptionsTests)
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
@@ -634,27 +636,18 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         other_child = ttk.Label(self.paned)
         self.paned.add(other_child)
         self.assertEqual(self.paned.pane(0), self.paned.pane(1))
-        if tk_version >= (8, 7):
-            self.assertEqual(self.paned.pane(2), self.paned.pane(1))
-        else:
-            self.assertRaises(tkinter.TclError, self.paned.pane, 2)
+        self.assertRaises(tkinter.TclError, self.paned.pane, 2)
         good_child.destroy()
         other_child.destroy()
-        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
-            # BUG: Crash in Tk 8.7b1
-            self.assertRaises(tkinter.TclError, self.paned.pane, 0)
+        self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
     def test_forget(self):
-        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
-            # BUG: Crash in Tk 8.7b1
-            self.assertRaises(tkinter.TclError, self.paned.forget, None)
-            self.assertRaises(tkinter.TclError, self.paned.forget, 0)
+        self.assertRaises(tkinter.TclError, self.paned.forget, None)
+        self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
         self.paned.add(ttk.Label(self.root))
         self.paned.forget(0)
-        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
-            # BUG: Crash in Tk 8.7b1
-            self.assertRaises(tkinter.TclError, self.paned.forget, 0)
+        self.assertRaises(tkinter.TclError, self.paned.forget, 0)
 
     def test_insert(self):
         self.assertRaises(tkinter.TclError, self.paned.insert, None, 0)
@@ -697,9 +690,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
             (str(child3), str(child2), str(child)))
 
     def test_pane(self):
-        if get_tk_patchlevel(self.root) != (8, 7, 0, 'beta', 1):
-            # BUG: Crash in Tk 8.7b1
-            self.assertRaises(tkinter.TclError, self.paned.pane, 0)
+        self.assertRaises(tkinter.TclError, self.paned.pane, 0)
 
         child = ttk.Label(self.root)
         self.paned.add(child)
@@ -800,10 +791,13 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Menubutton(self.root, **kwargs)
 
-    def test_direction(self):
+    def test_configure_direction(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'direction',
-                'above', 'below', 'left', 'right', 'flush')
+        if tk_version >= (8, 7):
+            values = 'above', 'below', 'flush', 'left', 'right'
+        else:
+            values = 'above', 'below', 'left', 'right', 'flush'
+        self.checkEnumParam(widget, 'direction', *values)
 
     def test_configure_menu(self):
         widget = self.create()
@@ -1093,13 +1087,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.insert('end', 0)
         self.assertEqual(self.nb.tabs(), tabs)
         # bad moves
-        if tk_version >= (8, 7):
-            self.nb.insert(2, tabs[0])
-            self.assertEqual(self.nb.tabs(), (tabs[1], tabs[0]))
-            self.nb.insert(2, tabs[1])
-            self.assertEqual(self.nb.tabs(), tabs)
-        else:
-            self.assertRaises(tkinter.TclError, self.nb.insert, 2, tabs[0])
+        self.assertRaises(tkinter.TclError, self.nb.insert, 2, tabs[0])
         self.assertRaises(tkinter.TclError, self.nb.insert, -1, tabs[0])
 
         # new tab

@@ -1,5 +1,6 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
+import re
 import tkinter
 from test.test_tkinter.support import (AbstractTkTest, tk_version,
                                   pixels_conv, tcl_obj_eq)
@@ -56,16 +57,12 @@ class AbstractWidgetTest(AbstractTkTest):
     def checkInvalidParam(self, widget, name, value, errmsg=None):
         orig = widget[name]
         if errmsg is not None:
-            errmsg = errmsg.format(value)
-        with self.assertRaises(tkinter.TclError) as cm:
+            errmsg = errmsg.format(re.escape(str(value)))
+        with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget[name] = value
-        if errmsg is not None:
-            self.assertEqual(str(cm.exception), errmsg)
         self.assertEqual(widget[name], orig)
-        with self.assertRaises(tkinter.TclError) as cm:
+        with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget.configure({name: value})
-        if errmsg is not None:
-            self.assertEqual(str(cm.exception), errmsg)
         self.assertEqual(widget[name], orig)
 
     def checkParams(self, widget, name, *values, **kwargs):
@@ -120,11 +117,12 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkParams(widget, name, '')
 
     def checkEnumParam(self, widget, name, *values,
-                       errmsg=None, allow_empty=False, **kwargs):
+                       errmsg=None, allow_empty=False, fullname=None,
+                       **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
         if errmsg is None:
             errmsg2 = ' %s "{}": must be %s%s or %s' % (
-                    name,
+                    fullname or name,
                     ', '.join(values[:-1]),
                     ',' if len(values) > 2 else '',
                     values[-1] or '""')
@@ -148,9 +146,9 @@ class AbstractWidgetTest(AbstractTkTest):
             self.checkParam(widget, name, value, expected=expected,
                             conv=conv1, **kwargs)
         self.checkInvalidParam(widget, name, '6x',
-                errmsg='bad screen distance "6x"')
+                errmsg='(bad|expected) screen distance ((or "" )?but got )?"6x"')
         self.checkInvalidParam(widget, name, 'spam',
-                errmsg='bad screen distance "spam"')
+                errmsg='(bad|expected) screen distance ((or "" )?but got )?"spam"')
 
     def checkReliefParam(self, widget, name, *, allow_empty=False):
         options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
@@ -347,11 +345,7 @@ class StandardOptionsTests:
     def test_configure_justify(self):
         widget = self.create()
         self.checkEnumParam(widget, 'justify', 'left', 'right', 'center',
-                errmsg='bad justification "{}": must be '
-                       'left, right, or center')
-        self.checkInvalidParam(widget, 'justify', '',
-                errmsg='ambiguous justification "": must be '
-                       'left, right, or center')
+                            fullname='justification')
 
     def test_configure_orient(self):
         widget = self.create()
@@ -422,8 +416,8 @@ class StandardOptionsTests:
         if tk_version >= (8, 7):
             self.checkParams(widget, 'underline', 0, 1, 10)
             self.checkParam(widget, 'underline', '', expected=empty_value)
-            errmsg = ('bad index "{}": must be integer?[+-]integer?, '
-                      'end?[+-]integer?, or ""')
+            errmsg = (r'bad index "{}": must be integer\?\[\+-\]integer\?, '
+                      r'end\?\[\+-\]integer\?, or ""')
             self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
             self.checkInvalidParam(widget, 'underline', 3.2, errmsg=errmsg)
         else:

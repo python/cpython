@@ -14,6 +14,9 @@ from test.test_tkinter.widget_tests import (
 requires('gui')
 
 
+EXPECTED_SCREEN_DISTANCE_ERRMSG = '(bad|expected) screen distance (but got )?"{}"'
+EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "" but got )?"{}"'
+
 def float_round(x):
     return float(round(x))
 
@@ -674,7 +677,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
-                               errmsg='bad screen distance "spam"')
+                               errmsg=EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam'))
 
     def test_configure_tabstyle(self):
         widget = self.create()
@@ -1343,7 +1346,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'height', 10, 10)
         self.check_paneconfigure_bad(p, b, 'height',
-                                     'bad screen distance "badValue"')
+                                     EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
     def test_paneconfigure_hide(self):
         p, b, c = self.create2()
@@ -1355,19 +1358,19 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'minsize', 10, 10)
         self.check_paneconfigure_bad(p, b, 'minsize',
-                                     'bad screen distance "badValue"')
+                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_padx(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'padx', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'padx',
-                                     'bad screen distance "badValue"')
+                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_pady(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'pady', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'pady',
-                                     'bad screen distance "badValue"')
+                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_sticky(self):
         p, b, c = self.create2()
@@ -1388,7 +1391,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'width', 10, 10)
         self.check_paneconfigure_bad(p, b, 'width',
-                                     'bad screen distance "badValue"')
+                                     EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
 
 @add_standard_options(StandardOptionsTests)
@@ -1479,6 +1482,8 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable', 'width',
     )
     _conv_pad_pixels = False
+    if tk_version >= (8, 7):
+        _conv_pixels = False
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1486,6 +1491,22 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
+
+    def test_configure_highlightthickness(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'highlightthickness',
+                              0, 1.3, 2.6, 6, '10p')
+        expected = -2 if tk_version >= (8, 7) else 0
+        self.checkParam(widget, 'highlightthickness', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
+
+    def test_configure_padx(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
+                              conv=self._conv_pad_pixels)
+        expected = '' if tk_version >= (8, 7) else -2
+        self.checkParam(widget, 'padx', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
