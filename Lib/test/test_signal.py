@@ -698,7 +698,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
 class SiginterruptTest(unittest.TestCase):
 
-    def readpipe_interrupted(self, interrupt, timeout):
+    def readpipe_interrupted(self, interrupt, timeout=support.SHORT_TIMEOUT):
         """Perform a read during which a signal will arrive.  Return True if the
         read is interrupted by the signal and raises an exception.  Return False
         if it returns normally.
@@ -762,14 +762,14 @@ class SiginterruptTest(unittest.TestCase):
         # If a signal handler is installed and siginterrupt is not called
         # at all, when that signal arrives, it interrupts a syscall that's in
         # progress.
-        interrupted = self.readpipe_interrupted(None, support.SHORT_TIMEOUT)
+        interrupted = self.readpipe_interrupted(None)
         self.assertTrue(interrupted)
 
     def test_siginterrupt_on(self):
         # If a signal handler is installed and siginterrupt is called with
         # a true value for the second argument, when that signal arrives, it
         # interrupts a syscall that's in progress.
-        interrupted = self.readpipe_interrupted(True, support.SHORT_TIMEOUT)
+        interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
     @support.requires_resource('walltime')
@@ -777,7 +777,7 @@ class SiginterruptTest(unittest.TestCase):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
         # does not interrupt a syscall that's in progress.
-        interrupted = self.readpipe_interrupted(False, 2)
+        interrupted = self.readpipe_interrupted(False, timeout=2)
         self.assertFalse(interrupted)
 
 
