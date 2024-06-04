@@ -193,6 +193,9 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
+   The :meth:`os.environ.refresh() <os.environ>` method updates
+   :data:`os.environ` with changes to the environment made outside Python.
+
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -221,6 +224,9 @@ process and user.
    :func:`unsetenv` will be called automatically when an item is deleted from
    :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
+
+   .. versionchanged:: 3.14
+      Added the :meth:`!os.environ.refresh()` method.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.

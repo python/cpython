@@ -1298,6 +1298,22 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self._test_underlying_process_env('_A_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
+    @unittest.skipUnless(hasattr(os.environ, 'refresh'),
+                         'need os.environ.refresh()')
+    def test_refresh(self):
+        # Use putenv() which doesn't update os.environ
+        try:
+            from posix import putenv
+        except ImportError:
+            from nt import putenv
+
+        os.environ['test_env'] = 'python_value'
+        putenv("test_env", "new_value")
+        self.assertEqual(os.environ['test_env'], 'python_value')
+
+        os.environ.refresh()
+        self.assertEqual(os.environ['test_env'], 'new_value')
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""

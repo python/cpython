@@ -1,0 +1,3 @@
+Added the :meth:`os.environ.refresh() <os.environ>` method to update
+:data:`os.environ` with environment changes made outside Python. Patch by
+Victor Stinner.

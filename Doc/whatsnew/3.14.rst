@@ -92,6 +92,12 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+os
+--
+
+* Added the :meth:`os.environ.refresh() <os.environ>` method to update
+  :data:`os.environ` with environment changes made outside Python.
+  (Contributed by Victor Stinner in :gh:`120057`.)
 
 
 Optimizations
