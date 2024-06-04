@@ -58,13 +58,13 @@
 #define ANNOTATION_NOT_ALLOWED \
 "%s cannot be used within an annotation"
 
-#define EXPR_NOT_ALLOWED_IN_TYPE_PARAM_BLOCK \
+#define EXPR_NOT_ALLOWED_IN_TYPE_VARIABLE \
 "%s cannot be used within %s"
 
-#define TYPEALIAS_NOT_ALLOWED \
+#define EXPR_NOT_ALLOWED_IN_TYPE_ALIAS \
 "%s cannot be used within a type alias"
 
-#define TYPEPARAM_NOT_ALLOWED \
+#define EXPR_NOT_ALLOWED_IN_TYPE_PARAMETERS \
 "%s cannot be used within the definition of a generic"
 
 #define DUPLICATE_TYPE_PARAM \
@@ -106,7 +106,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_mangled_names = NULL;
 
     ste->ste_type = block;
-    ste->ste_description = NULL;
+    ste->ste_scope_info = NULL;
+
     ste->ste_nested = 0;
     ste->ste_free = 0;
     ste->ste_varargs = 0;
@@ -266,9 +267,9 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         case ClassBlock: blocktype = "ClassBlock"; break;
         case ModuleBlock: blocktype = "ModuleBlock"; break;
         case AnnotationBlock: blocktype = "AnnotationBlock"; break;
-        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeVariableBlock: blocktype = "TypeVariableBlock"; break;
         case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
-        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+        case TypeParametersBlock: blocktype = "TypeParametersBlock"; break;
     }
     const char *comptype = "";
     switch (ste->ste_comprehension) {
@@ -526,9 +527,9 @@ int
 _PyST_IsFunctionLike(PySTEntryObject *ste)
 {
     return ste->ste_type == FunctionBlock
-        || ste->ste_type == TypeVarBoundBlock
+        || ste->ste_type == TypeVariableBlock
         || ste->ste_type == TypeAliasBlock
-        || ste->ste_type == TypeParamBlock;
+        || ste->ste_type == TypeParametersBlock;
 }
 
 static int
@@ -1499,7 +1500,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
                                int end_lineno, int end_col_offset)
 {
     _Py_block_ty current_type = st->st_cur->ste_type;
-    if(!symtable_enter_block(st, name, TypeParamBlock, ast, lineno,
+    if(!symtable_enter_block(st, name, TypeParametersBlock, ast, lineno,
                              col_offset, end_lineno, end_col_offset)) {
         return 0;
     }
@@ -2080,20 +2081,20 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
         /* Disallow usage in ClassBlock and type scopes */
         if (ste->ste_type == ClassBlock ||
-            ste->ste_type == TypeParamBlock ||
+            ste->ste_type == TypeParametersBlock ||
             ste->ste_type == TypeAliasBlock ||
-            ste->ste_type == TypeVarBoundBlock) {
+            ste->ste_type == TypeVariableBlock) {
             switch (ste->ste_type) {
                 case ClassBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
                     break;
-                case TypeParamBlock:
+                case TypeParametersBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEPARAM);
                     break;
                 case TypeAliasBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEALIAS);
                     break;
-                case TypeVarBoundBlock:
+                case TypeVariableBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEVAR_BOUND);
                     break;
                 default:
@@ -2301,25 +2302,33 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name, void *key,
-    const char *kind_name, int is_default)
+    const char *tp_kind_name, int is_default)
 {
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
+        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e)))
             return 0;
 
-        PyObject *desc;
-        desc = PyUnicode_FromFormat("%s %s", kind_name, (is_default == 1 ? "default" : (
-            e->kind == Tuple_kind ? "constraint" : "bound"
-        )));
-        if (desc == NULL) {
-            return 0;
-        }
-        st->st_cur->ste_description = PyUnicode_AsUTF8(desc);
         st->st_cur->ste_can_see_class_scope = is_in_class;
         if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
             VISIT_QUIT(st, 0);
         }
+
+        PyObject *scope_info;
+        scope_info = PyUnicode_FromFormat("%s %s", tp_kind_name,
+            (is_default == 1) ? "default" :
+            (e->kind == Tuple_kind) ? "constraint" :
+            "bound"
+        );
+        if (scope_info == NULL)
+            return 0;
+
+        const char *ste_scope_info;
+        ste_scope_info = PyUnicode_AsUTF8(scope_info);
+        if (ste_scope_info == NULL)
+            return 0;
+        st->st_cur->ste_scope_info = ste_scope_info;
+
         VISIT(st, expr, e);
         if (!symtable_exit_block(st))
             return 0;
@@ -2753,15 +2762,21 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
     enum _block_type type = st->st_cur->ste_type;
     if (type == AnnotationBlock)
         PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
-    else if (type == TypeVarBoundBlock) {
-        const char *description = st->st_cur->ste_description;
-        assert(description != NULL);
-        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_PARAM_BLOCK, name, description);
+    else if (type == TypeVariableBlock) {
+        const char *info = st->st_cur->ste_scope_info;
+        assert(info != NULL); // e.g., info == "a ParamSpec default"
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_VARIABLE, name, info);
     }
-    else if (type == TypeAliasBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
-    else if (type == TypeParamBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEPARAM_NOT_ALLOWED, name);
+    else if (type == TypeAliasBlock) {
+        // for now, we do not have any extra information
+        assert(st->st_cur->ste_scope_info == NULL);
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_ALIAS, name);
+    }
+    else if (type == TypeParametersBlock) {
+        // for now, we do not have any extra information
+        assert(st->st_cur->ste_scope_info == NULL);
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_PARAMETERS, name);
+    }
     else
         return 1;
 

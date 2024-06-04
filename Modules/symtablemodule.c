@@ -90,11 +90,11 @@ symtable_init_constants(PyObject *m)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
         return -1;
-    if (PyModule_AddIntConstant(m, "TYPE_TYPE_VAR_BOUND", TypeVarBoundBlock) < 0)
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_VAR_BOUND", TypeVariableBlock) < 0)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_TYPE_ALIAS", TypeAliasBlock) < 0)
         return -1;
-    if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAM", TypeParamBlock) < 0)
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAM", TypeParametersBlock) < 0)
         return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
