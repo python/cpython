@@ -270,6 +270,10 @@ Deprecated
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
+* Macro :c:macro:`!Py_HUGE_VAL` is :term:`soft deprecated`, use instead
+  :c:macro:`!Py_INFINITY`.  (Contributed by Sergey B Kirpichev in
+  :gh:`120026`.)
+
 Removed
 -------
 
