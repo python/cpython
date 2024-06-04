@@ -27,6 +27,8 @@ support.requires_working_socket(module=True)
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
+# Timeout used for test cases that we expect to timeout.
+FAST_TIMEOUT = 0.5
 
 class TestImaplib(unittest.TestCase):
 
@@ -206,6 +208,13 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
             self._send_tagged(tag, 'OK', 'Returned to authenticated state. (Success)')
         else:
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
+
+@contextmanager
+def expect_timeout():
+    # gh-120048: We want a short timeout that does not scale with the global
+    # timeout for tests cases that we expect to timeout.
+    with support.swap_attr(SimpleIMAPHandler, 'timeout', FAST_TIMEOUT):
+        yield
 
 
 class NewIMAPTestsMixin():
@@ -458,15 +467,15 @@ class NewIMAPTestsMixin():
         with self.imap_class(*server.server_address):
             pass
 
-    @requires_resource('walltime')
+    @expect_timeout()
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
         addr = server.server_address[1]
         client = self.imap_class("localhost", addr, timeout=None)
         self.assertEqual(client.sock.timeout, None)
         client.shutdown()
-        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
-        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
+        client = self.imap_class("localhost", addr, timeout=FAST_TIMEOUT)
+        self.assertEqual(client.sock.timeout, FAST_TIMEOUT)
         client.shutdown()
         with self.assertRaises(ValueError):
             client = self.imap_class("localhost", addr, timeout=0)
@@ -552,7 +561,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = IMAP4_SSL
     server_class = SecureTCPServer
 
-    @requires_resource('walltime')
+    @expect_timeout()
     def test_ssl_raises(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ssl_context.verify_mode, ssl.CERT_REQUIRED)
@@ -571,7 +580,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
                                      ssl_context=ssl_context)
             client.shutdown()
 
-    @requires_resource('walltime')
+    @expect_timeout()
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
