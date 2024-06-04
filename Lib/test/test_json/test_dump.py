@@ -61,7 +61,7 @@ class TestDump:
         def default(obj):
             if isinstance(obj, bytes):
                 return obj.decode()
-        self.assertEqual(self.dumps({b'a': 1}, default=default), '{"a": 1}')
+        self.assertEqual(self.dumps({b'a': b'b'}, default=default), '{"a": "b"}')
 
 class TestPyDump(TestDump, PyTest): pass
 

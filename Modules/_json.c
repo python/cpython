@@ -1483,36 +1483,45 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 {
     PyObject *keystr = NULL;
     PyObject *encoded;
-    PyObject *newobj;
+    PyObject *newobj = NULL;
+    int retry;
 
-    if (PyUnicode_Check(key)) {
-        keystr = Py_NewRef(key);
-    }
-    else if (PyFloat_Check(key)) {
-        keystr = encoder_encode_float(s, key);
-    }
-    else if (key == Py_True || key == Py_False || key == Py_None) {
-                    /* This must come before the PyLong_Check because
-                       True and False are also 1 and 0.*/
-        keystr = _encoded_const(key);
-    }
-    else if (PyLong_Check(key)) {
-        keystr = PyLong_Type.tp_repr(key);
-    }
-    else if (s->skipkeys) {
-        return 0;
-    }
-    else {
-        newobj = PyObject_CallOneArg(s->defaultfn, key);
-        if (newobj == NULL) {
+    for (retry = 1; retry >= 0; --retry) {
+        if (PyUnicode_Check(key)) {
+            keystr = Py_NewRef(key);
+        }
+        else if (PyFloat_Check(key)) {
+            keystr = encoder_encode_float(s, key);
+        }
+        else if (key == Py_True || key == Py_False || key == Py_None) {
+                        /* This must come before the PyLong_Check because
+                           True and False are also 1 and 0.*/
+            keystr = _encoded_const(key);
+        }
+        else if (PyLong_Check(key)) {
+            keystr = PyLong_Type.tp_repr(key);
+        }
+        else if (s->skipkeys) {
+            return 0;
+        }
+        else {
+            if (retry) {
+                newobj = PyObject_CallOneArg(s->defaultfn, key);
+                if (newobj != NULL) {
+                    key = newobj;
+                    continue;
+                }
+                if (!PyErr_ExceptionMatches(PyExc_TypeError))
+                    return -1;
+            }
             PyErr_Format(PyExc_TypeError,
                          "keys must be str, int, float, bool or None, "
                          "not %.100s", Py_TYPE(key)->tp_name);
             return -1;
         }
-        return encoder_encode_key_value(s, writer, first, newobj, value,
-                                        newline_indent, item_separator);
     }
+    if (newobj != NULL)
+        Py_DECREF(newobj);
 
     if (keystr == NULL) {
         return -1;

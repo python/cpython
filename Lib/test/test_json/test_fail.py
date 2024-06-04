@@ -97,6 +97,19 @@ class TestFail:
                 'keys must be str, int, float, bool or None, not tuple'):
             self.dumps(data)
 
+    def test_non_string_keys_dict_with_default(self):
+        import sys
+        data = {'a' : 1, (1, 2) : 2}
+        def default(obj):
+            if isinstance(obj, tuple):
+                raise TypeError
+            raise ValueError
+        with self.assertRaises(ValueError):
+            self.dumps(sys, default=default)
+        with self.assertRaisesRegex(TypeError,
+            'keys must be str, int, float, bool or None, not tuple'):
+            self.dumps(data, default=default)
+
     def test_not_serializable(self):
         import sys
         with self.assertRaisesRegex(TypeError,

@@ -378,8 +378,10 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     if retry:
                         try:
                             key = _default(key)
-                        except Exception:
+                        except TypeError:
                             pass
+                        except Exception:
+                            raise
                         else:
                             continue
                     raise TypeError(f'keys must be str, int, float, bool or None, '
