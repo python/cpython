@@ -1167,6 +1167,22 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
             p_start = tok->start;
             p_end = tok->cur;
+            if (c == '{' && c2 == '{') {
+                if (tok->level >= MAXLEVEL) {
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested parentheses"));
+                }
+                tok->parenstack[tok->level] = c;
+                tok->parenlinenostack[tok->level] = tok->lineno;
+                tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
+                tok->level++;
+                if (tok->level >= MAXLEVEL) {
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested parentheses"));
+                }
+                tok->parenstack[tok->level] = c2;
+                tok->parenlinenostack[tok->level] = tok->lineno;
+                tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
+                tok->level++;
+            }
             return MAKE_TOKEN(current_token);
         }
         tok_backup(tok, c2);
