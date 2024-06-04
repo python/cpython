@@ -12116,6 +12116,42 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os__inputhook__doc__,
+"_inputhook($module, /)\n"
+"--\n"
+"\n"
+"Calls PyOS_CallInputHook droppong the GIL first");
+
+#define OS__INPUTHOOK_METHODDEF    \
+    {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
+
+static PyObject *
+os__inputhook_impl(PyObject *module);
+
+static PyObject *
+os__inputhook(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__inputhook_impl(module);
+}
+
+PyDoc_STRVAR(os__is_inputhook_installed__doc__,
+"_is_inputhook_installed($module, /)\n"
+"--\n"
+"\n"
+"Checks if PyOS_CallInputHook is set");
+
+#define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
+    {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
+
+static PyObject *
+os__is_inputhook_installed_impl(PyObject *module);
+
+static PyObject *
+os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__is_inputhook_installed_impl(module);
+}
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12783,4 +12819,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=49c2d7a65f7a9f3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=faaa5e5ffb7b165d input=a9049054013a1b77]*/

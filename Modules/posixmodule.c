@@ -16784,6 +16784,37 @@ os__supports_virtual_terminal_impl(PyObject *module)
 }
 #endif
 
+/*[clinic input]
+os._inputhook
+
+Calls PyOS_CallInputHook droppong the GIL first
+[clinic start generated code]*/
+
+static PyObject *
+os__inputhook_impl(PyObject *module)
+/*[clinic end generated code: output=525aca4ef3c6149f input=fc531701930d064f]*/
+{
+     int result = 0;
+     if (PyOS_InputHook) {
+         Py_BEGIN_ALLOW_THREADS;
+         result = PyOS_InputHook();
+         Py_END_ALLOW_THREADS;
+     }
+     return PyLong_FromLong(result);
+}
+
+/*[clinic input]
+os._is_inputhook_installed
+
+Checks if PyOS_CallInputHook is set
+[clinic start generated code]*/
+
+static PyObject *
+os__is_inputhook_installed_impl(PyObject *module)
+/*[clinic end generated code: output=3b3eab4f672c689a input=ff177c9938dd76d8]*/
+{
+    return PyBool_FromLong(PyOS_InputHook != NULL);
+}
 
 static PyMethodDef posix_methods[] = {
 
@@ -16997,6 +17028,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_LEXISTS_METHODDEF
 
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+    OS__INPUTHOOK_METHODDEF
+    OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

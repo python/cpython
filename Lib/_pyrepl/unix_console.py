@@ -118,9 +118,12 @@ except AttributeError:
 
         def register(self, fd, flag):
             self.fd = fd
-
-        def poll(self):  # note: a 'timeout' argument would be *milliseconds*
-            r, w, e = select.select([self.fd], [], [])
+        # note: The 'timeout' argument is received as *milliseconds*
+        def poll(self, timeout: float | None = None) -> list[int]:
+            if timeout is None:
+                r, w, e = select.select([self.fd], [], [])
+            else:
+                r, w, e = select.select([self.fd], [], [], timeout/1000)
             return r
 
     poll = MinimalPoll  # type: ignore[assignment]
@@ -385,11 +388,11 @@ class UnixConsole(Console):
                 break
         return self.event_queue.get()
 
-    def wait(self):
+    def wait(self, timeout: float | None = None) -> bool:
         """
         Wait for events on the console.
         """
-        self.pollob.poll()
+        return bool(self.pollob.poll(timeout))
 
     def set_cursor_vis(self, visible):
         """
@@ -526,6 +529,15 @@ class UnixConsole(Console):
         self.__move = self.__move_tall
         self.__posxy = 0, 0
         self.screen = []
+
+    @property
+    def input_hook(self):
+        try:
+            import posix
+        except ImportError:
+            return None
+        if posix._is_inputhook_installed():
+            return posix._inputhook
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
