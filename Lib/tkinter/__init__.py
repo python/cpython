@@ -934,7 +934,7 @@ class Misc:
         tk_busy_hold().  Options may have any of the values accepted by
         tk_busy_hold().
 
-        Please note that the option database is referenced by the widget
+        Please note that the option database is11 referenced by the widget
         name or class.  For example, if a Frame widget with name "frame"
         is to be made busy, the busy cursor can be specified for it by
         either call:
@@ -2478,7 +2478,7 @@ class Tk(Misc, Wm):
                 try:
                     # win 8.0 or less
                     ctypes.windll.user32.SetProcessDPIAware()
-                except Exception:
+                except (ImportError, AttributeError, OSError):
                     pass
 
     def loadtk(self):
