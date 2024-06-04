@@ -501,15 +501,6 @@ _testcapi_datetime_exec(PyObject *mod)
     return 0;
 }
 
-static PyMethodDef _testcapi_datetime_methods[] = {
-    {"datetime_check_date",         datetime_check_date,            METH_VARARGS},
-    {"datetime_check_datetime",     datetime_check_datetime,        METH_VARARGS},
-    {"datetime_check_delta",        datetime_check_delta,           METH_VARARGS},
-    {"datetime_check_time",         datetime_check_time,            METH_VARARGS},
-    {"datetime_check_tzinfo",       datetime_check_tzinfo,          METH_VARARGS},
-    {0},
-};
-
 static PyModuleDef_Slot _testcapi_datetime_slots[] = {
     {Py_mod_exec, _testcapi_datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -521,7 +512,7 @@ static struct PyModuleDef _testcapi_datetime_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testcapi_datetime",
     .m_size = 0,
-    .m_methods = _testcapi_datetime_methods,
+    .m_methods = test_methods,
     .m_slots = _testcapi_datetime_slots,
 };
 
