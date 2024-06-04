@@ -1,1 +1,0 @@
-Fix Tkinter tests for Tcl/Tk 8.7 and 9.0.
