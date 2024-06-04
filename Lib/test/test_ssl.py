@@ -1379,7 +1379,20 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.set_ecdh_curve, None)
         self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo")
         self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo")
-
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "prime256v1:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"prime256v1:bar")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "foo:prime256v1")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"foo:prime256v1")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, ":")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b":")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "::")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"::")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, "prime256v1:")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b"prime256v1:")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, ":prime256v1")
+        self.assertRaises(ValueError, ctx.set_ecdh_curve, b":prime256v1")
     def test_sni_callback(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
