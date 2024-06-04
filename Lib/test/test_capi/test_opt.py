@@ -1351,9 +1351,9 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    def test_guard_type_version_removed_exiting(self):
+    def test_guard_type_version_removed_inlined(self):
         """
-        Verify that the guard type version if we have an exiting function
+        Verify that the guard type version if we have an inlined function
         """
 
         def fn():
@@ -1377,7 +1377,7 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    def test_guard_type_version_not_remove(self):
+    def test_guard_type_version_not_removed(self):
         """
         Verify that the guard type version is not removed if we Modify the class
         """
