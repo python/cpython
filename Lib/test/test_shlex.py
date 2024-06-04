@@ -341,13 +341,16 @@ class ShlexTest(unittest.TestCase):
         strs = ['hello', 'to the', 'world', 'escape me', 'no-escape-needed']
 
         # guarantee escaping all strings
-        strs_always_escaped = [shlex.quote(s, always=True) for s in strs]
-        self.assertTrue(all(s.startswith("'") for s in strs_always_escaped))
+        expected = ["'hello'", "'to the'", "'world'", "'escape me'",
+                    "'no-escape-needed'"]
+        result = [shlex.quote(s, always=True) for s in strs]
+        self.assertEqual(expected, result)
 
-        # just escape when necessary ('to the', 'escape me')
-        strs_necessary_escaped = [shlex.quote(s, always=False) for s in strs]
-        self.assertFalse(all(s.startswith("'")
-                             for s in strs_necessary_escaped))
+        # just escape when necessary
+        expected = ["hello", "'to the'", "world", "'escape me'",
+                    "no-escape-needed"]
+        result = [shlex.quote(s, always=False) for s in strs]
+        self.assertEqual(expected, result)
 
     def testJoin(self):
         for split_command, command in [
