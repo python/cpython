@@ -2302,7 +2302,7 @@ expression support in the :mod:`re` module).
       ("Monty Python's Flying", ' ', 'Circus')
 
     If the separator is not found, return a 3-tuple containing
-   two empty strings, followed by the string itself.
+    two empty strings, followed by the string itself.
 
    See also :meth:`partition`.
 
