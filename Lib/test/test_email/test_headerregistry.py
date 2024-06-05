@@ -8,7 +8,7 @@ from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
 from email.header import decode_header
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, is_wasi, Py_DEBUG
 
 
 DITTO = object()
@@ -1281,6 +1281,7 @@ class TestAddressHeader(TestHeaderBase):
         # XXX: we have no comment support yet.
         #self.assertEqual(a.comment, comment)
 
+    @unittest.skipIf(is_wasi and Py_DEBUG, "stack depth too shallow in pydebug WASI")
     def example_as_group(self, source, defects, decoded, display_name,
                          addr_spec, username, domain, comment):
         source = 'foo: {};'.format(source)
