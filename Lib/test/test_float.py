@@ -950,7 +950,11 @@ class RoundTestCase(unittest.TestCase):
             self.assertIsInstance(x, int)
 
     def test_round_with_none_arg_direct_call(self):
-        self.assertEqual((1.0).__round__(None), 1.0)
+        for val in [(1.0).__round__(None),
+                    round(1.0),
+                    round(1.0, None)]:
+        self.assertEqual(val, 1)
+        self.assertIs(type(val), int)
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan
