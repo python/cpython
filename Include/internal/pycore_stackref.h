@@ -166,21 +166,22 @@ PyStackRef_CLOSE(_PyStackRef tagged)
     Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged));
 }
 #else
-#define PyStackRef_CLOSE(tagged) Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged))
+#   define PyStackRef_CLOSE(tagged) Py_DECREF(PyStackRef_AsPyObjectBorrow(tagged))
 #endif
 
-static inline void
-PyStackRef_XCLOSE(_PyStackRef tagged)
-{
-    if (!PyStackRef_IsNull(tagged)) {
-        PyStackRef_CLOSE(tagged);
-    }
-}
+#define PyStackRef_XCLOSE(stackref) \
+    do {                            \
+        _PyStackRef _tmp = (stackref); \
+        if (!PyStackRef_IsNull(_tmp)) { \
+            PyStackRef_CLOSE(_tmp); \
+        } \
+    } while (0);
 
+
+#ifdef Py_GIL_DISABLED
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef tagged)
 {
-#ifdef Py_GIL_DISABLED
     if (PyStackRef_IsDeferred(tagged)) {
         assert(PyStackRef_IsNull(tagged) ||
             _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
@@ -188,10 +189,10 @@ PyStackRef_DUP(_PyStackRef tagged)
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
     return tagged;
-#endif
-    Py_INCREF(PyStackRef_AsPyObjectBorrow(tagged));
-    return tagged;
 }
+#else
+#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
+#endif
 
 static inline _PyStackRef
 PyStackRef_XDUP(_PyStackRef tagged)
