@@ -1842,8 +1842,8 @@ class ASTValidatorTests(unittest.TestCase):
 
     def test_frozenset(self):
         self.expr(ast.FrozenSet([None]), "None disallowed")
-        s = ast.FrozenSet([ast.Name("x", ast.Store())])
-        self.expr(s, "must have Load context")
+        fs = ast.FrozenSet([ast.Name("x", ast.Store())])
+        self.expr(fs, "must have Load context")
 
     def _check_comprehension(self, fac):
         self.expr(fac([]), "comprehension with no generators")
