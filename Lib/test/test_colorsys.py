@@ -8,6 +8,8 @@ def frange(start, stop, step):
 
 class ColorsysTest(unittest.TestCase):
 
+
+
     def assertTripleEqual(self, tr1, tr2):
         self.assertEqual(len(tr1), 3)
         self.assertEqual(len(tr2), 3)
@@ -105,6 +107,23 @@ class ColorsysTest(unittest.TestCase):
         for (rgb, yiq) in values:
             self.assertTripleEqual(yiq, colorsys.rgb_to_yiq(*rgb))
             self.assertTripleEqual(rgb, colorsys.yiq_to_rgb(*yiq))
+
+    def test_cmyk_values(self):
+        values = [
+            # rgb, cmyk
+            ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)), # black
+            ((0.0, 0.0, 1.0), (1.0, 1.0, 0.0, 0.0)), # blue
+            ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0, 0.0)), # green
+            ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0, 0.0)), # cyan
+            ((1.0, 0.0, 0.0), (0.0, 1.0, 1.0, 0.0)), # red
+            ((1.0, 0.0, 1.0), (0.0, 1.0, 0.0, 0.0)), # magenta
+            ((1.0, 1.0, 0.0), (0.0, 0.0, 1.0, 0.0)), # yellow
+            ((1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0)), # white
+            ((0.5, 0.5, 0.5), (0.0, 0.0, 0.0, 0.5)), # grey
+        ]
+        for (rgb, cmyk) in values:
+            self.assertTupleEqual(cmyk, tuple(colorsys.rgb_to_cmyk(*rgb)))
+            self.assertTripleEqual(rgb, colorsys.cmyk_to_rgb(*cmyk))
 
 if __name__ == "__main__":
     unittest.main()

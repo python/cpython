@@ -1,11 +1,16 @@
 """Conversion functions between RGB and other color systems.
 
-This modules provides two functions for each color system ABC:
+This modules provides two functions for each color system ABC (or ABCD):
 
   rgb_to_abc(r, g, b) --> a, b, c
   abc_to_rgb(a, b, c) --> r, g, b
+  
+In case of ABCD:
+  
+  rgb_to_abcd(r, g, b) --> a, b, c, d
+  abcd_to_rgb(a, b, c, d) --> r, g, b
 
-All inputs and outputs are triples of floats in the range [0.0...1.0]
+All inputs and outputs are triples or tetras of floats in the range [0.0...1.0]
 (with the exception of I and Q, which covers a slightly larger range).
 Inputs outside the valid range may cause exceptions or invalid outputs.
 
@@ -14,15 +19,16 @@ RGB: Red, Green, Blue components
 YIQ: Luminance, Chrominance (used by composite video signals)
 HLS: Hue, Luminance, Saturation
 HSV: Hue, Saturation, Value
+CMYK: Cyan, Magenta, Yellow, Key (Black)
 """
 
 # References:
-# http://en.wikipedia.org/wiki/YIQ
-# http://en.wikipedia.org/wiki/HLS_color_space
-# http://en.wikipedia.org/wiki/HSV_color_space
+# https://en.wikipedia.org/wiki/YIQ
+# https://en.wikipedia.org/wiki/HLS_and_HSV
+# https://en.wikipedia.org/wiki/CMYK_color_model
 
 __all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
-           "rgb_to_hsv","hsv_to_rgb"]
+           "rgb_to_hsv","hsv_to_rgb","rgb_to_cmyk","cmyk_to_rgb"]
 
 # Some floating point constants
 
@@ -52,18 +58,9 @@ def yiq_to_rgb(y, i, q):
     g = y - 0.27478764629897834*i - 0.6356910791873801*q
     b = y - 1.1085450346420322*i + 1.7090069284064666*q
 
-    if r < 0.0:
-        r = 0.0
-    if g < 0.0:
-        g = 0.0
-    if b < 0.0:
-        b = 0.0
-    if r > 1.0:
-        r = 1.0
-    if g > 1.0:
-        g = 1.0
-    if b > 1.0:
-        b = 1.0
+    r = max(min(r, 1.0), 0.0)
+    g = max(min(g, 1.0), 0.0)
+    b = max(min(b, 1.0), 0.0)
     return (r, g, b)
 
 
@@ -150,17 +147,37 @@ def hsv_to_rgb(h, s, v):
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
     t = v*(1.0 - s*(1.0-f))
-    i = i%6
-    if i == 0:
-        return v, t, p
-    if i == 1:
-        return q, v, p
-    if i == 2:
-        return p, v, t
-    if i == 3:
-        return p, q, v
-    if i == 4:
-        return t, p, v
-    if i == 5:
-        return v, p, q
-    # Cannot get here
+    match i % 6:
+        case 0:
+            return v, t, p
+        case 1:
+            return q, v, p
+        case 2:
+            return p, v, t
+        case 3:
+            return p, q, v
+        case 4:
+            return t, p, v
+        case _:
+            return v, p, q
+
+# CMYK
+# C - Cyan
+# M - Magenta
+# Y - Yellow
+# K - Key (equals 1 only if color is black)
+
+def rgb_to_cmyk(r, g, b):
+    k = 1 - max(r, g, b)
+    if k == 1:
+    	return 0, 0, 0, 1
+    c = 1 - r/(1 - k)
+    m = 1 - g/(1 - k)
+    y = 1 - b/(1 - k)
+    return c, m, y, k
+
+def cmyk_to_rgb(c, m, y, k):
+    r = (1 - c) * (1 - k)
+    g = (1 - m) * (1 - k)
+    b = (1 - y) * (1 - k)
+    return r, g, b
