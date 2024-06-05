@@ -193,7 +193,7 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`os.environ.refresh() <os.environ>` method updates
+   The :meth:`!os.environ.refresh()` method updates
    :data:`os.environ` with changes to the environment made outside Python.
 
    This mapping may be used to modify the environment as well as query the
