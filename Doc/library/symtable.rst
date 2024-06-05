@@ -155,6 +155,8 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a type parameter.
 
+      .. versionadded:: 3.14
+
    .. method:: is_global()
 
       Return ``True`` if the symbol is global.
@@ -185,6 +187,18 @@ Examining Symbol Tables
    .. method:: is_assigned()
 
       Return ``True`` if the symbol is assigned to in its block.
+
+   .. method:: is_comp_iter()
+
+      Return ``True`` if the symbol is a comprehension iteration variable.
+
+      .. versionadded:: 3.14
+
+   .. method:: is_comp_cell()
+
+      Return ``True`` if the symbol is a cell in an inlined comprehension.
+
+      .. versionadded:: 3.14
 
    .. method:: is_namespace()
 
