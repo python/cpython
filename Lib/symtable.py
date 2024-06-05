@@ -12,7 +12,7 @@ from _symtable import (
 import weakref
 from enum import StrEnum
 
-__all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
+__all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
 def symtable(code, filename, compile_type):
     """ Return the toplevel *SymbolTable* for the source code.
