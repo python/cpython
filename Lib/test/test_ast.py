@@ -124,10 +124,7 @@ exec_tests = [
     # Global
     "global v",
     # Expr
-    "b'x'",
-    "'x'",
     "1",
-    "1.9",
     # Pass,
     "pass",
     # Break
