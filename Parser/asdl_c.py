@@ -1065,16 +1065,22 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 
     PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *remaining_dict = NULL, *positional_args = NULL;
+             *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     PyObject *result = NULL;
     if (dict) {
-        // Serialize the fields as positional args if possible, because if we
-        // serialize them as a dict, during unpickling they are set only *after*
-        // the object is constructed, which will now trigger a DeprecationWarning
-        // if the AST type has required fields.
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -1082,11 +1088,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             Py_ssize_t numfields = PySequence_Size(fields);
             if (numfields == -1) {
                 Py_DECREF(dict);
-                goto cleanup;
-            }
-            remaining_dict = PyDict_Copy(dict);
-            Py_DECREF(dict);
-            if (!remaining_dict) {
                 goto cleanup;
             }
             positional_args = PyList_New(0);
@@ -1099,7 +1100,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                     goto cleanup;
                 }
                 PyObject *value;
-                int rc = PyDict_Pop(remaining_dict, name, &value);
+                int rc = PyDict_GetItemRef(dict, name, &value);
                 Py_DECREF(name);
                 if (rc < 0) {
                     goto cleanup;
@@ -1107,7 +1108,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!value) {
                     break;
                 }
-                rc = PyList_Append(positional_args, value);
+                rc = PyList_Append(positional_args, Py_None);
                 Py_DECREF(value);
                 if (rc < 0) {
                     goto cleanup;
@@ -1118,7 +1119,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 goto cleanup;
             }
             result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
-                                   remaining_dict);
+                                   dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -1130,7 +1131,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 cleanup:
     Py_XDECREF(fields);
     Py_XDECREF(remaining_fields);
-    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
     return result;
 }
