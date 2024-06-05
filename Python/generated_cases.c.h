@@ -625,23 +625,23 @@
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_FROZENSET);
             PyObject **values;
-            PyObject *set;
+            PyObject *frozenset;
             values = &stack_pointer[-oparg];
-            set = PyFrozenSet_New(NULL);
-            if (set == NULL)
+            frozenset = PyFrozenSet_New(NULL);
+            if (frozenset == NULL)
             goto error;
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
                 if (err == 0)
-                err = PySet_Add(set, item);
+                err = PySet_Add(frozenset, item);
                 Py_DECREF(item);
             }
             if (err != 0) {
-                Py_DECREF(set);
+                Py_DECREF(frozenset);
                 if (true) { stack_pointer += -oparg; goto error; }
             }
-            stack_pointer[-oparg] = set;
+            stack_pointer[-oparg] = frozenset;
             stack_pointer += 1 - oparg;
             DISPATCH();
         }

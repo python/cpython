@@ -1694,19 +1694,19 @@ dummy_func(
             }
         }
 
-        inst(BUILD_FROZENSET, (values[oparg] -- set)) {
-            set = PyFrozenSet_New(NULL);
-            if (set == NULL)
+        inst(BUILD_FROZENSET, (values[oparg] -- frozenset)) {
+            frozenset = PyFrozenSet_New(NULL);
+            if (frozenset == NULL)
                 ERROR_NO_POP();
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
                 if (err == 0)
-                    err = PySet_Add(set, item);
+                    err = PySet_Add(frozenset, item);
                 Py_DECREF(item);
             }
             if (err != 0) {
-                Py_DECREF(set);
+                Py_DECREF(frozenset);
                 ERROR_IF(true, error);
             }
         }
