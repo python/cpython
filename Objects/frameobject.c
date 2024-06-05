@@ -1828,32 +1828,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-static int
-_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
-{
-    // This only works when opcode is a non-quickened form:
-    assert(_PyOpcode_Deopt[opcode] == opcode);
-    int check_oparg = 0;
-    for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
-         instruction < frame->instr_ptr; instruction++)
-    {
-        int check_opcode = _PyOpcode_Deopt[instruction->op.code];
-        check_oparg |= instruction->op.arg;
-        if (check_opcode == opcode && check_oparg == oparg) {
-            return 1;
-        }
-        if (check_opcode == EXTENDED_ARG) {
-            check_oparg <<= 8;
-        }
-        else {
-            check_oparg = 0;
-        }
-        instruction += _PyOpcode_Caches[check_opcode];
-    }
-    return 0;
-}
-
-
 // Initialize frame free variables if needed
 static void
 frame_init_get_vars(_PyInterpreterFrame *frame)
@@ -1907,20 +1881,14 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
             value = PyCell_GET(value);
         }
         else if (kind & CO_FAST_CELL) {
-            // Note that no *_DEREF ops can happen before MAKE_CELL
-            // executes.  So there's no need to duplicate the work
-            // that MAKE_CELL would otherwise do later, if it hasn't
-            // run yet.
             if (value != NULL) {
-                if (PyCell_Check(value) &&
-                        _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                    // (likely) MAKE_CELL must have executed already.
+                if (PyCell_Check(value)) {
+                    assert(!_PyFrame_IsIncomplete(frame));
                     value = PyCell_GET(value);
                 }
                 // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
                 // with the initial value set when the frame was created...
-                // (unlikely) ...or it was set to some initial value by
-                // an earlier call to PyFrame_LocalsToFast().
+                // (unlikely) ...or it was set via the f_locals proxy.
             }
         }
     }
@@ -2033,18 +2001,24 @@ PyFrame_GetVarString(PyFrameObject *frame, const char *name)
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
+    // Nothing to do here, as f_locals is now a write-through proxy in
+    // optimized frames. Soft-deprecated, since there's no maintenance hassle.
     return 0;
 }
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
 {
+    // Nothing to do here, as f_locals is now a write-through proxy in
+    // optimized frames. Soft-deprecated, since there's no maintenance hassle.
     return;
 }
 
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
+    // Nothing to do here, as f_locals is now a write-through proxy in
+    // optimized frames. Soft-deprecated, since there's no maintenance hassle.
     return;
 }
 

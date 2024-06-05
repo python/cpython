@@ -243,7 +243,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     Py_ssize_t field_size = 0;
-    int bitofs;
+    Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int pack;
     int forced_alignment = 1;
@@ -287,6 +287,38 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         pack = 0;
     }
 
+    #ifdef MS_WIN32
+    LayoutMode layout_mode = LAYOUT_MODE_MS;
+    #else
+    LayoutMode layout_mode = (pack > 0) ? LAYOUT_MODE_MS : LAYOUT_MODE_GCC_SYSV;
+    #endif
+
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_layout_), &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        if (!PyUnicode_Check(tmp)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "_layout_ must be a string");
+            return -1;
+        }
+        if (PyUnicode_CompareWithASCIIString(tmp, "ms") == 0) {
+            layout_mode = LAYOUT_MODE_MS;
+        }
+        else if (PyUnicode_CompareWithASCIIString(tmp, "gcc-sysv") == 0) {
+            layout_mode = LAYOUT_MODE_GCC_SYSV;
+            if (pack > 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ is not compatible with _layout_=\"gcc-sysv\"");
+                return -1;
+            }
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                            "unknown _layout_ %R", tmp);
+            return -1;
+        }
+    }
     if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
         return -1;
     }
@@ -409,9 +441,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
         PyObject *prop;
-        int bitsize = 0;
+        Py_ssize_t bitsize = 0;
 
-        if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
+        if (!pair || !PyArg_ParseTuple(pair, "UO|n", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
                             "'_fields_' must be a sequence of (name, C type) pairs");
             Py_XDECREF(pair);
@@ -465,8 +497,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
             if (bitsize <= 0 || bitsize > info->size * 8) {
-                PyErr_SetString(PyExc_ValueError,
-                                "number of bits invalid for bit field");
+                PyErr_Format(PyExc_ValueError,
+                                "number of bits invalid for bit field %R",
+                                name);
                 Py_DECREF(pair);
                 return -1;
             }
@@ -493,7 +526,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, layout_mode);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;
@@ -541,13 +574,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
         } else /* union */ {
+            field_size = 0;
             size = 0;
+            bitofs = 0;
             offset = 0;
             align = 0;
             prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, layout_mode);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;

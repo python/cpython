@@ -401,12 +401,12 @@ PyLong_FromDouble(double dval)
     double frac;
     int i, ndig, expo, neg;
     neg = 0;
-    if (Py_IS_INFINITY(dval)) {
+    if (isinf(dval)) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot convert float infinity to integer");
         return NULL;
     }
-    if (Py_IS_NAN(dval)) {
+    if (isnan(dval)) {
         PyErr_SetString(PyExc_ValueError,
                         "cannot convert float NaN to integer");
         return NULL;
@@ -768,6 +768,18 @@ _PyLong_Sign(PyObject *vv)
         return _PyLong_CompactSign(v);
     }
     return _PyLong_NonCompactSign(v);
+}
+
+int
+PyLong_GetSign(PyObject *vv, int *sign)
+{
+    if (!PyLong_Check(vv)) {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
+    }
+
+    *sign = _PyLong_Sign(vv);
+    return 0;
 }
 
 static int
@@ -3109,8 +3121,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
     PyLongObject *z;
 
     if (size_b == 0) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer division or modulo by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3173,7 +3184,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
 
     if (size_b == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer modulo by zero");
+                        "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3795,7 +3806,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
     memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
         /* Efficient squaring per HAC, Algorithm 14.16:
-         * http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
+         * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
          * via exploiting that each entry in the multiplication
          * pyramid appears twice (except for the size_a squares).
@@ -5003,7 +5014,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     }
     else if (i <= HUGE_EXP_CUTOFF / PyLong_SHIFT ) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
-        /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
+        /* https://cacr.uwaterloo.ca/hac/about/chap14.pdf            */
 
         /* Find the first significant exponent bit. Search right to left
          * because we're primarily trying to cut overhead for small powers.
