@@ -448,13 +448,9 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
 
 typedef struct PyUnicodeWriter PyUnicodeWriter;
 
-PyAPI_FUNC(PyUnicodeWriter*) PyUnicodeWriter_Create(void);
+PyAPI_FUNC(PyUnicodeWriter*) PyUnicodeWriter_Create(Py_ssize_t length);
 PyAPI_FUNC(void) PyUnicodeWriter_Discard(PyUnicodeWriter *writer);
 PyAPI_FUNC(PyObject*) PyUnicodeWriter_Finish(PyUnicodeWriter *writer);
-
-PyAPI_FUNC(void) PyUnicodeWriter_SetOverallocate(
-    PyUnicodeWriter *writer,
-    int overallocate);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteChar(
     PyUnicodeWriter *writer,

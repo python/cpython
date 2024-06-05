@@ -224,13 +224,10 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 static PyObject *
 test_unicodewriter(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create();
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(100);
     if (writer == NULL) {
         return NULL;
     }
-
-    // test PyUnicodeWriter_SetOverallocate()
-    PyUnicodeWriter_SetOverallocate(writer, 1);
 
     // test PyUnicodeWriter_WriteUTF8()
     if (PyUnicodeWriter_WriteUTF8(writer, "var", -1) < 0) {
@@ -293,7 +290,7 @@ error:
 static PyObject *
 test_unicodewriter_utf8(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create();
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
     }
@@ -335,7 +332,7 @@ error:
 static PyObject *
 test_unicodewriter_invalid_utf8(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create();
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
     }
@@ -352,7 +349,7 @@ test_unicodewriter_invalid_utf8(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_unicodewriter_format(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create();
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
     }

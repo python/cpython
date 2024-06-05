@@ -13139,22 +13139,29 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
     /* use a kind value smaller than PyUnicode_1BYTE_KIND so
        _PyUnicodeWriter_PrepareKind() will copy the buffer. */
     assert(writer->kind == 0);
-    assert(writer->kind <= PyUnicode_1BYTE_KIND);
+    assert(writer->kind < PyUnicode_1BYTE_KIND);
 }
 
 
 PyUnicodeWriter*
-PyUnicodeWriter_Create(void)
+PyUnicodeWriter_Create(Py_ssize_t length)
 {
     const size_t size = sizeof(_PyUnicodeWriter);
-    PyUnicodeWriter *writer = (PyUnicodeWriter *)PyMem_Malloc(size);
-    if (writer == NULL) {
+    PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+    if (pub_writer == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _PyUnicodeWriter_Init((_PyUnicodeWriter*)writer);
-    PyUnicodeWriter_SetOverallocate(writer, 1);
-    return writer;
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
+
+    _PyUnicodeWriter_Init(writer);
+    if (_PyUnicodeWriter_Prepare(writer, length, 127) < 0) {
+        PyUnicodeWriter_Discard(pub_writer);
+        return NULL;
+    }
+    writer->overallocate = 1;
+
+    return pub_writer;
 }
 
 
@@ -13173,13 +13180,6 @@ _PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer)
     writer->buffer = buffer;
     _PyUnicodeWriter_Update(writer);
     writer->min_length = writer->size;
-}
-
-
-void
-PyUnicodeWriter_SetOverallocate(PyUnicodeWriter *writer, int overallocate)
-{
-    ((_PyUnicodeWriter*)writer)->overallocate = (unsigned char)overallocate;
 }
 
 
