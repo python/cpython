@@ -2222,10 +2222,11 @@ class MagicProxy(Base):
     def create_mock(self):
         entry = self.name
         parent = self.parent
-        m = parent._get_child_mock(name=entry, _new_name=entry,
-                                   _new_parent=parent)
-        setattr(parent, entry, m)
-        _set_return_value(parent, m, entry)
+        with NonCallableMock._lock:
+            m = parent._get_child_mock(name=entry, _new_name=entry,
+                                       _new_parent=parent)
+            setattr(parent, entry, m)
+            _set_return_value(parent, m, entry)
         return m
 
     def __get__(self, obj, _type=None):

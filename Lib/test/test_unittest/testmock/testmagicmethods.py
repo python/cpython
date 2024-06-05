@@ -1,6 +1,7 @@
 import math
 import unittest
 import os
+from threading import Thread
 from asyncio import iscoroutinefunction
 from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
@@ -67,6 +68,24 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(str(mock), object.__str__(mock))
         mock.__str__ = lambda s: 'foo'
         self.assertEqual(str(mock), 'foo')
+
+
+    def test_str_race_condition(self):
+        def in_thread():
+            for m in mocks:
+                try:
+                    str(m)
+                except TypeError:
+                    nonlocal fail
+                    fail = True
+        fail = False
+        mocks = [MagicMock() for _ in range(1000)]
+        threads = [Thread(target=in_thread) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self.assertFalse(fail)
 
 
     def test_dict_methods(self):
