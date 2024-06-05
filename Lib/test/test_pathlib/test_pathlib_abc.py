@@ -1769,6 +1769,15 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(real_target.is_symlink())
         self.assertEqual(source.read_text(), real_target.read_text())
 
+    def test_copy_empty(self):
+        base = self.cls(self.base)
+        source = base / 'empty'
+        target = base / 'copyA'
+        source.write_bytes(b'')
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(target.read_bytes(), b'')
+
     def test_iterdir(self):
         P = self.cls
         p = P(self.base)
