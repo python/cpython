@@ -620,6 +620,32 @@
             DISPATCH();
         }
 
+        TARGET(BUILD_FROZENSET) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(BUILD_FROZENSET);
+            PyObject **values;
+            PyObject *set;
+            values = &stack_pointer[-oparg];
+            set = PyFrozenSet_New(NULL);
+            if (set == NULL)
+            goto error;
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
+                if (err == 0)
+                err = PySet_Add(set, item);
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set);
+                if (true) { stack_pointer += -oparg; goto error; }
+            }
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            DISPATCH();
+        }
+
         TARGET(BUILD_LIST) {
             frame->instr_ptr = next_instr;
             next_instr += 1;

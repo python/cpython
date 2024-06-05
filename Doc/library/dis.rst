@@ -1119,6 +1119,13 @@ iterations of the loop.
    Works as :opcode:`BUILD_TUPLE`, but creates a set.
 
 
+.. opcode:: BUILD_FROZENSET (count)
+
+   Works as :opcode:`BUILD_TUPLE`, but creates a frozen set.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: BUILD_MAP (count)
 
    Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
@@ -1773,13 +1780,8 @@ iterations of the loop.
    |                                   | of the type alias's name,         |
    |                                   | type parameters, and value.       |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_SET_TO_FROZENSET``    | Converts a set to a frozenset     |
-   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
-
-   .. versionchanged:: 3.14
-      Added ``INTRINSIC_SET_TO_FROZENSET``.
 
 .. opcode:: CALL_INTRINSIC_2
 

@@ -857,6 +857,8 @@
 
         /* _BUILD_SET is not a viable micro-op for tier 2 */
 
+        /* _BUILD_FROZENSET is not a viable micro-op for tier 2 */
+
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
             map = sym_new_not_null(ctx);

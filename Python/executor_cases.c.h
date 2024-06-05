@@ -1708,6 +1708,8 @@
 
         /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
+        /* _BUILD_FROZENSET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+
         case _BUILD_MAP: {
             PyObject **values;
             PyObject *map;

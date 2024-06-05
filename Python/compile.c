@@ -4247,7 +4247,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 static int
 starunpack_helper(struct compiler *c, location loc,
                   asdl_expr_seq *elts, int pushed,
-                  int build, int add, int extend, int freeze)
+                  int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     if (n > 2 && are_all_items_const(elts, 0, n)) {
@@ -4260,7 +4260,7 @@ starunpack_helper(struct compiler *c, location loc,
             val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
             PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
-        if (freeze && !pushed) {
+        if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
         } else {
             if (add == SET_ADD) {
@@ -4272,14 +4272,8 @@ starunpack_helper(struct compiler *c, location loc,
             ADDOP_I(c, loc, build, pushed);
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
             ADDOP_I(c, loc, extend, 1);
-            if (freeze) {
-                if (build == BUILD_SET) {
-                    ADDOP_I(c, loc, CALL_INTRINSIC_1,
-                            INTRINSIC_SET_TO_FROZENSET);
-                }
-                else {
-                    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-                }
+            if (tuple) {
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
             }
         }
         return SUCCESS;
@@ -4299,14 +4293,8 @@ starunpack_helper(struct compiler *c, location loc,
             expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
         }
-        if (freeze) {
-            if (build == BUILD_SET) {
-                ADDOP_I(c, loc, BUILD_SET, n+pushed);
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_SET_TO_FROZENSET);
-            }
-            else {
-                ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
-            }
+        if (tuple) {
+            ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
         } else {
             ADDOP_I(c, loc, build, n+pushed);
         }
@@ -4335,13 +4323,8 @@ starunpack_helper(struct compiler *c, location loc,
         }
     }
     assert(sequence_built);
-    if (freeze) {
-        if (build == BUILD_SET) {
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_SET_TO_FROZENSET);
-        }
-        else {
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-        }
+    if (tuple) {
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
 }
@@ -4435,7 +4418,7 @@ compiler_frozenset(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.FrozenSet.elts, 0,
-                             BUILD_SET, SET_ADD, SET_UPDATE, 1);
+                             BUILD_FROZENSET, SET_ADD, SET_UPDATE, 0);
 }
 
 static bool

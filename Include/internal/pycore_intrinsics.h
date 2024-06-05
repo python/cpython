@@ -18,9 +18,8 @@
 #define INTRINSIC_TYPEVARTUPLE                   9
 #define INTRINSIC_SUBSCRIPT_GENERIC             10
 #define INTRINSIC_TYPEALIAS                     11
-#define INTRINSIC_SET_TO_FROZENSET              12
 
-#define MAX_INTRINSIC_1                         12
+#define MAX_INTRINSIC_1                         11
 
 
 /* Binary Functions: */

@@ -71,6 +71,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BUILD_CONST_KEY_MAP:
             return 1 + oparg;
+        case BUILD_FROZENSET:
+            return oparg;
         case BUILD_LIST:
             return oparg;
         case BUILD_MAP:
@@ -519,6 +521,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
         case BUILD_CONST_KEY_MAP:
+            return 1;
+        case BUILD_FROZENSET:
             return 1;
         case BUILD_LIST:
             return 1;
@@ -1011,6 +1015,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BUILD_CONST_KEY_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BUILD_FROZENSET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_SET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1410,6 +1415,7 @@ const char *_PyOpcode_OpName[264] = {
     [BINARY_SUBSCR_STR_INT] = "BINARY_SUBSCR_STR_INT",
     [BINARY_SUBSCR_TUPLE_INT] = "BINARY_SUBSCR_TUPLE_INT",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
+    [BUILD_FROZENSET] = "BUILD_FROZENSET",
     [BUILD_LIST] = "BUILD_LIST",
     [BUILD_MAP] = "BUILD_MAP",
     [BUILD_SET] = "BUILD_SET",
@@ -1661,6 +1667,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_SUBSCR_STR_INT] = BINARY_SUBSCR,
     [BINARY_SUBSCR_TUPLE_INT] = BINARY_SUBSCR,
     [BUILD_CONST_KEY_MAP] = BUILD_CONST_KEY_MAP,
+    [BUILD_FROZENSET] = BUILD_FROZENSET,
     [BUILD_LIST] = BUILD_LIST,
     [BUILD_MAP] = BUILD_MAP,
     [BUILD_SET] = BUILD_SET,
@@ -1859,7 +1866,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 119: \
     case 120: \
     case 121: \
     case 122: \

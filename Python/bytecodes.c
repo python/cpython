@@ -1694,6 +1694,23 @@ dummy_func(
             }
         }
 
+        inst(BUILD_FROZENSET, (values[oparg] -- set)) {
+            set = PyFrozenSet_New(NULL);
+            if (set == NULL)
+                ERROR_NO_POP();
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
+                if (err == 0)
+                    err = PySet_Add(set, item);
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set);
+                ERROR_IF(true, error);
+            }
+        }
+
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
             map = _PyDict_FromItems(
                     values, 2,
