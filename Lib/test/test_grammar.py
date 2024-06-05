@@ -1699,6 +1699,9 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual({{{{1, 2, 3}}}},     frozenset({frozenset({1, 2, 3})}))
         self.assertEqual({ {{{{1, 2, 3}}}} }, {frozenset({frozenset({1, 2, 3})})})
 
+        self.assertEqual({ {{1, 2, 3}}: 1 }, {frozenset({1, 2, 3}): 1})
+        self.assertEqual({ 1: {{1, 2, 3}} }, {1: frozenset({1, 2, 3})})
+
     def test_classdef(self):
         # 'class' NAME ['(' [testlist] ')'] ':' suite
         class B: pass
