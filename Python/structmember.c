@@ -91,11 +91,10 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         Py_INCREF(v);
         break;
     case Py_T_OBJECT_EX:
-#ifndef Py_GIL_DISABLED
         v = member_get_object(addr, obj_addr, l);
+#ifndef Py_GIL_DISABLED
         Py_XINCREF(v);
 #else
-        v = member_get_object(addr, obj_addr, l);
         if (v != NULL) {
             if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
                 Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
