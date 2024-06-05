@@ -197,5 +197,24 @@ class TestThreadingMock(unittest.TestCase):
         m.assert_called_once()
 
 
+class TestRaceConditions(unittest.TestCase):
+    def test_str(self):
+        def f():
+            for m in mocks:
+                try:
+                    str(m)
+                except TypeError:
+                    nonlocal fail
+                    fail = True
+        fail = False
+        mocks = [MagicMock() for _ in range(1000)]
+        threads = [Thread(target=f) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self.assertFalse(fail)
+
+
 if __name__ == "__main__":
     unittest.main()
