@@ -3,7 +3,7 @@ import unittest
 import concurrent.futures
 
 from test.support import threading_helper
-from unittest.mock import patch, ThreadingMock
+from unittest.mock import patch, ThreadingMock, MagicMock
 
 
 threading_helper.requires_working_threading(module=True)
