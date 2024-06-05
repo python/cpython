@@ -4,7 +4,10 @@ import _symtable
 from _symtable import (
     USE,
     DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL,
-    DEF_PARAM, DEF_TYPE_PARAM, DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
+    DEF_PARAM, DEF_TYPE_PARAM,
+    DEF_FREE, DEF_FREE_CLASS,
+    DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
+    DEF_COMP_ITER, DEF_COMP_CELL,
     SCOPE_OFFSET, SCOPE_MASK,
     FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
 )
@@ -314,6 +317,16 @@ class Symbol:
     def is_assigned(self):
         """Return *True* if a symbol is assigned to."""
         return bool(self.__flags & DEF_LOCAL)
+
+    def is_comp_iter(self):
+        """Return *True* if the symbol is a comprehension iteration variable.
+        """
+        return bool(self.__flags & DEF_COMP_ITER)
+
+    def is_comp_cell(self):
+        """Return *True* if the symbol is a cell in an inlined comprehension.
+        """
+        return bool(self.__flags & DEF_COMP_ITER)
 
     def is_namespace(self):
         """Returns *True* if name binding introduces new namespace.
