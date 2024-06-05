@@ -27,8 +27,10 @@ typedef enum _block_type {
     // The block to enter when processing a "generic" (PEP 695) object,
     // e.g., "def foo[T](): pass" or "class A[T]: pass".
     TypeParametersBlock,
-    // The block to enter when processing a single "type variable" in the
-    // formal sense, i.e., a TypeVar, a TypeVarTuple or a ParamSpec object.
+    // The block to enter when processing a formal "type variable" bound,
+    // constraint tuple or default type of a TypeVar, a TypeVarTuple or
+    // a ParamSpec object (the latter two do not support a bound or a
+    // constraint tuple).
     TypeVariableBlock,
 } _Py_block_ty;
 
