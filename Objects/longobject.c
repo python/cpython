@@ -6073,7 +6073,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == NULL)
+    if (o_ndigits == NULL || o_ndigits == Py_None)
         return long_long(self);
 
     ndigits = _PyNumber_Index(o_ndigits);
