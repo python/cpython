@@ -1156,6 +1156,12 @@ _PyMem_FreeDelayed(void *ptr)
 }
 
 void
+PyMem_FreeDelayed(void *ptr)
+{
+    _PyMem_FreeDelayed(ptr);
+}
+
+void
 _PyObject_FreeDelayed(void *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
