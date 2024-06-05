@@ -275,7 +275,7 @@ def _stat(fn):
 def _islink(fn):
     return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
 
-def copyfile(src, dst, *, follow_symlinks=True, allow_reflink=True):
+def copyfile(src, dst, *, follow_symlinks=True):
     """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
@@ -318,7 +318,7 @@ def copyfile(src, dst, *, follow_symlinks=True, allow_reflink=True):
                     # Linux
                     elif _USE_CP_SENDFILE or _USE_CP_COPY_FILE_RANGE:
                         # reflink may be implicit in copy_file_range.
-                        if _USE_CP_COPY_FILE_RANGE and allow_reflink:
+                        if _USE_CP_COPY_FILE_RANGE:
                             try:
                                 _fastcopy_copy_file_range(fsrc, fdst)
                                 return dst
@@ -467,7 +467,7 @@ def copystat(src, dst, *, follow_symlinks=True):
             else:
                 raise
 
-def copy(src, dst, *, follow_symlinks=True, allow_reflink=True):
+def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
 
     The destination may be a directory.
@@ -481,11 +481,11 @@ def copy(src, dst, *, follow_symlinks=True, allow_reflink=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks, allow_reflink=allow_reflink)
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
     copymode(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
-def copy2(src, dst, *, follow_symlinks=True, allow_reflink=True):
+def copy2(src, dst, *, follow_symlinks=True):
     """Copy data and metadata. Return the file's destination.
 
     Metadata is copied with copystat(). Please see the copystat function
@@ -521,7 +521,7 @@ def copy2(src, dst, *, follow_symlinks=True, allow_reflink=True):
             else:
                 raise
 
-    copyfile(src, dst, follow_symlinks=follow_symlinks, allow_reflink=allow_reflink)
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
