@@ -1310,9 +1310,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ['test_env'] = 'python_value'
         putenv("test_env", "new_value")
         self.assertEqual(os.environ['test_env'], 'python_value')
+        if hasattr(os, 'environb'):
+            self.assertEqual(os.environb[b'test_env'], b'python_value')
 
         os.environ.refresh()
         self.assertEqual(os.environ['test_env'], 'new_value')
+        if hasattr(os, 'environb'):
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
 
 
 class WalkTests(unittest.TestCase):

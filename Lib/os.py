@@ -790,7 +790,10 @@ class _Environ(MutableMapping):
                     data[encodekey(key)] = value
             else:
                 data = environ
-            self._data = data
+
+            # modify in-place to keep os.environb in sync
+            self._data.clear()
+            self._data.update(data)
 
 def _create_environ_mapping():
     if name == 'nt':
