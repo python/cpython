@@ -1334,15 +1334,16 @@ class _TestQueue(BaseTestCase):
 
     def test_closed_queue_empty_exceptions(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
-            q.close()  # this is a no-op because the feeder thread is not created
+            q.close()  # this is a no-op since the feeder thread is None
+            q.join_thread()  # this is also a no-op
             self.assertTrue(q.empty())
 
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.put('foo')
-            q.close()  # close the internal pipe
+            q.close()  # close the feeder thread
+            q.join_thread()  # make sure to join the feeder thread
             with self.assertRaisesRegex(OSError, 'is closed'):
                 q.empty()
-
 
     def test_closed_queue_put_get_exceptions(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
