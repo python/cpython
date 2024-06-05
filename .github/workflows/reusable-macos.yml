@@ -15,9 +15,6 @@ on:
 jobs:
   build_macos:
     name: 'build and test'
-    if: |
-      github.repository_owner != 'python'
-      && matrix.os == 'ghcr.io/cirruslabs/macos-runner:sonoma'
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
@@ -30,6 +27,11 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{fromJson(inputs.os-matrix)}}
+        isFork: ${{ github.repository_owner != 'python' }}
+        exclude:
+          - isFork: true
+            os: 'ghcr.io/cirruslabs/macos-runner:sonoma'
+        
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
