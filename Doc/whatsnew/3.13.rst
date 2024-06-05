@@ -706,6 +706,13 @@ dis
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
 
+* :meth:`~dis.get_instructions` no longer represents cache entries as
+  separate instructions. Instead, it returns them as part of the
+  :class:`~dis.Instruction`, in the new *cache_info* field. The
+  *show_caches* argument to :meth:`~dis.get_instructions` is
+  deprecated and no longer has any effect.
+  (Contributed by Irit Katriel in :gh:`112962`.)
+
 .. _whatsnew313-doctest:
 
 doctest
@@ -1006,7 +1013,7 @@ random
 ------
 
 * Add a :ref:`command-line interface <random-cli>`.
-  (Contributed by Hugo van Kemenade in :gh:`54321`.)
+  (Contributed by Hugo van Kemenade in :gh:`118131`.)
 
 re
 --
