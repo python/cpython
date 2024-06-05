@@ -105,7 +105,7 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntMacro(m, FREE) < 0) return -1;
     if (PyModule_AddIntMacro(m, CELL) < 0) return -1;
 
-    if (PyModule_AddIntConstant(m, "SCOPE_OFF", SCOPE_OFFSET) < 0) return -1;
+    if (PyModule_AddIntMacro(m, SCOPE_OFFSET) < 0) return -1;
     if (PyModule_AddIntMacro(m, SCOPE_MASK) < 0) return -1;
 
     return 0;
