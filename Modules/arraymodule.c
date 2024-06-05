@@ -808,7 +808,7 @@ w_getitem(arrayobject *ap, Py_ssize_t i)
     if (array_get_item(ap, i, array_load_Py_UCS4, &x, sizeof(Py_UCS4))) {
         return NULL;
     }
-    return PyUnicode_FromOrdinal(((Py_UCS4 *) ap->ob_item)[i]);
+    return PyUnicode_FromOrdinal(x);
 }
 
 static int
@@ -3541,11 +3541,11 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
                     arrayobject *self = (arrayobject *)a;
 #ifdef Py_GIL_DISABLED
-                    if (array_resize(self, sizeof(wchar_t) * n, false)) {
+                    if (array_resize(self, sizeof(Py_UCS4) * n, false)) {
                         Py_DECREF(a);
                         return NULL;
                     }
-                    memcpy(self->ob_item, ustr, sizeof(wchar_t) * n);
+                    memcpy(self->ob_item, ustr, sizeof(Py_UCS4) * n);
 #else
                     // self->ob_item may be NULL but it is safe.
                     self->ob_item = (char *)ustr;
