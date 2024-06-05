@@ -28,7 +28,7 @@ jobs:
       matrix:
         os: ${{fromJson(inputs.os-matrix)}}
         isFork:
-          - ${{ github.repository_owner != "python" }}
+          - ${{ github.repository_owner != 'python' }}
         exclude:
           - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
             isFork: true
