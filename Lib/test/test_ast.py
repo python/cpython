@@ -1028,7 +1028,6 @@ class CopyTests(unittest.TestCase):
             for code in exec_tests:
                 with self.subTest(code=code, protocol=protocol):
                     tree = compile(code, "?", "exec", 0x400)
-                    print(ast.dump(tree), tree.__dict__)
                     ast2 = pickle.loads(pickle.dumps(tree, protocol))
                     self.assertEqual(to_tuple(ast2), to_tuple(tree))
 

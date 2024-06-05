@@ -1118,7 +1118,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple,
                                    dict);
         }
         else {
