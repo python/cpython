@@ -4248,7 +4248,7 @@ its contents cannot be altered after it is created; it can therefore be used as
 a dictionary key or as an element of another set.
 
 Non-empty sets can be created by placing a comma-separated list of elements
-within braces or double braces for frozensets, for example: ``{'jack', 'sjoerd'}``
+within braces (or double braces for frozen sets), for example: ``{'jack', 'sjoerd'}``
 and ``{{'jack', 'sjoerd'}}`` in addition to the :class:`set` and :class:`frozenset`
 constructors.
 
@@ -4257,17 +4257,17 @@ The constructors for both classes work the same:
 .. class:: set([iterable])
            frozenset([iterable])
 
-   Return a new set or frozenset object whose elements are taken from
+   Return a new set or frozen set object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
    represent sets of sets, the inner sets must be :class:`frozenset`
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets and frozensets can be created by several means:
+   Sets and frozen sets can be created by several means:
 
-   * Use a comma-separated list of elements within braces or double braces for frozensets:
+   * Use a comma-separated list of elements within braces (or double braces for frozen sets):
      ``{'jack', 'sjoerd'}``, ``{{'jack', 'sjoerd'}}``
-   * Use a set comprehension (not for frozensets): ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use a set comprehension (not for frozen sets): ``{c for c in 'abracadabra' if c not in 'abc'}``
    * Use the type constructor: ``set()``, ``frozenset()``, ``set('foobar')``,
      ``frozenset('foobar')``, ``set(['a', 'b', 'foo'])``, ``frozenset(['a', 'b', 'foo'])``
 
