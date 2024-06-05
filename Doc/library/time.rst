@@ -594,7 +594,7 @@ Functions
         - range [1, 12]
 
       * - 2
-        - .. attribute:: tm_day
+        - .. attribute:: tm_mday
         - range [1, 31]
 
       * - 3
