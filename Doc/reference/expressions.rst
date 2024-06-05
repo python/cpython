@@ -310,8 +310,8 @@ A frozen set display yields a new immutable set object, the contents being
 specified by a sequence of expressions.  Its elements are evaluated from left
 to right and added to the frozen set object.
 
-An empty set cannot be constructed with ``{{}}``; this literal is reserved for
-an empty frozen dictionary.
+An empty frozen set cannot be constructed with ``{{}}``; this literal is
+reserved for an empty frozen dictionary.
 
 
 .. _dict:
