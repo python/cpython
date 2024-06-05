@@ -4,13 +4,12 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_IsNegative()
-#include "pycore_pyatomic_ft_wrappers.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
 
 
 static inline PyObject *
-_PyMember_GetOneObject(const char *addr, const char *obj_addr, PyMemberDef *l)
+member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
 {
     PyObject *v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
     if (v == NULL) {
@@ -22,9 +21,6 @@ _PyMember_GetOneObject(const char *addr, const char *obj_addr, PyMemberDef *l)
     }
     return v;
 }
-
-
-
 
 PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
@@ -96,16 +92,18 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case Py_T_OBJECT_EX:
 #ifndef Py_GIL_DISABLED
-        v = _PyMember_GetOneObject(addr, obj_addr, l);
+        v = member_get_object(addr, obj_addr, l);
         Py_XINCREF(v);
 #else
-            v = _PyMember_GetOneObject(addr, obj_addr, l);
-            if (v != NULL && !_Py_TryIncrefCompare((PyObject **) addr, v)) {
-                Py_BEGIN_CRITICAL_SECTION((PyObject *)obj_addr);
-                        v = _PyMember_GetOneObject(addr, obj_addr, l);
-                        Py_XINCREF(v);
+        v = member_get_object(addr, obj_addr, l);
+        if (v != NULL) {
+            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
+                v = member_get_object(addr, obj_addr, l);
+                Py_XINCREF(v);
                 Py_END_CRITICAL_SECTION();
             }
+        }
 #endif
         break;
     case Py_T_LONGLONG:
@@ -142,7 +140,9 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
     PyObject *obj = (PyObject *) addr;
+#endif
     addr += l->offset;
 
     if ((l->flags & Py_READONLY))
@@ -306,14 +306,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
-#ifdef Py_GIL_DISABLED
         Py_BEGIN_CRITICAL_SECTION(obj);
-#endif
-        oldv = FT_ATOMIC_LOAD_PTR(*(PyObject **)addr);
-        FT_ATOMIC_STORE_PTR(*(PyObject **)addr, Py_XNewRef(v));
-#ifdef Py_GIL_DISABLED
+        oldv = *(PyObject **)addr;
+        FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
         Py_END_CRITICAL_SECTION();
-#endif
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
