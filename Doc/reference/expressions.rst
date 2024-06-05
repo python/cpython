@@ -57,7 +57,7 @@ also categorized syntactically as atoms.  The syntax for atoms is:
 .. productionlist:: python-grammar
    atom: `identifier` | `literal` | `enclosure`
    enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
-            : | `generator_expression` | `yield_atom`
+            : | `frozenset_display` | `generator_expression` | `yield_atom`
 
 
 .. _atom-identifiers:
