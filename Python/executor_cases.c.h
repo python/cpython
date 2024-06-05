@@ -3094,9 +3094,15 @@
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
             _PyStackRef stack[4] = {Py_STACKREF_NULL, PyStackRef_FromPyObjectSteal(exc), val, PyStackRef_FromPyObjectSteal(tb)};
+            #ifdef Py_GIL_DISABLED
             res = PyStackRef_FromPyObjectSteal(
                 PyObject_Vectorcall_StackRef(exit_func_o, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
+            #else
+            res = PyStackRef_FromPyObjectSteal(
+                PyObject_Vectorcall(exit_func_o, (PyObject **)stack + 1,
+                                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
+            #endif
             if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3401,10 +3407,17 @@
                 total_args++;
             }
             /* Callable is not a normal Python function */
+            #ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_Vectorcall_StackRef(
                 callable_o, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
+            #else
+            PyObject *res_o = PyObject_Vectorcall(
+                callable_o, (PyObject **)args,
+                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                NULL);
+            #endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(callable);
             for (int i = 0; i < total_args; i++) {
@@ -3886,11 +3899,18 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
+            #ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
                 ((PyCFunctionFast)(void(*)(void))cfunc),
                 PyCFunction_GET_SELF(callable_o),
                 args,
                 total_args);
+            #else
+            PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable_o),
+                (PyObject **)args,
+                total_args);
+            #endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3933,9 +3953,13 @@
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable_o);
+            #ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, PyCFunction_GET_SELF(callable_o), args, total_args, NULL
             );
+            #else
+            PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), (PyObject **)args, total_args, NULL);
+            #endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4133,9 +4157,13 @@
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            #ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, self, (args + 1), nargs, NULL
             );
+            #else
+            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
+            #endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4240,9 +4268,13 @@
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
+            #ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
                 cfunc, self, (args + 1), nargs
             );
+            #else
+            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs);
+            #endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {

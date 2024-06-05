@@ -3183,9 +3183,15 @@ dummy_func(
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
             _PyStackRef stack[4] = {Py_STACKREF_NULL, PyStackRef_FromPyObjectSteal(exc), val, PyStackRef_FromPyObjectSteal(tb)};
+#ifdef Py_GIL_DISABLED
             res = PyStackRef_FromPyObjectSteal(
                 PyObject_Vectorcall_StackRef(exit_func_o, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
+#else
+            res = PyStackRef_FromPyObjectSteal(
+                PyObject_Vectorcall(exit_func_o, (PyObject **)stack + 1,
+                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
+#endif
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
@@ -3420,10 +3426,17 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_Vectorcall_StackRef(
                 callable_o, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
+#else
+            PyObject *res_o = PyObject_Vectorcall(
+                callable_o, (PyObject **)args,
+                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                NULL);
+#endif
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(args[0]);
@@ -3548,10 +3561,17 @@ dummy_func(
                 total_args++;
             }
             /* Callable is not a normal Python function */
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_Vectorcall_StackRef(
                 callable_o, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
+#else
+        PyObject *res_o = PyObject_Vectorcall(
+            callable_o, (PyObject **)args,
+            total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            NULL);
+#endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(callable);
             for (int i = 0; i < total_args; i++) {
@@ -3844,11 +3864,18 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
                 ((PyCFunctionFast)(void(*)(void))cfunc),
                 PyCFunction_GET_SELF(callable_o),
                 args,
                 total_args);
+#else
+            PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable_o),
+                (PyObject **)args,
+                total_args);
+#endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -3882,9 +3909,13 @@ dummy_func(
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable_o);
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, PyCFunction_GET_SELF(callable_o), args, total_args, NULL
             );
+#else
+            PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), (PyObject **)args, total_args, NULL);
+#endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -4043,9 +4074,13 @@ dummy_func(
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
                 cfunc, self, (args + 1), nargs, NULL
             );
+#else
+            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
+#endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -4120,9 +4155,13 @@ dummy_func(
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
 
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
                 cfunc, self, (args + 1), nargs
             );
+#else
+            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs);
+#endif
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4199,10 +4238,17 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
+#ifdef Py_GIL_DISABLED
             PyObject *res_o = PyObject_Vectorcall_StackRef(
                 callable_o, args,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames_o);
+#else
+            PyObject *res_o = PyObject_Vectorcall(
+                callable_o, (PyObject **)args,
+                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                kwnames_o);
+#endif
             if (opcode == INSTRUMENTED_CALL_KW) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(args[0]);
