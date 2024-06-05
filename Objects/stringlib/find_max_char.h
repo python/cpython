@@ -20,23 +20,46 @@ Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
+    const unsigned char *_begin = (const unsigned char *)begin;
+    const unsigned char *aligned_start = (const unsigned char *)(
+        ((intptr_t)_begin + (SIZEOF_SIZE_T - 1)) & ~(SIZEOF_SIZE_T - 1));
+    const unsigned char *_end = (const unsigned char *)end;
+    const size_t *aligned_end = (const size_t *)((intptr_t)_end & ~(SIZEOF_SIZE_T - 1));
+    const size_t *unrolled_end = aligned_end - 3;
+    unsigned char accumulator = 0;
+    /* Do not test each character individually, bit use bitwise OR and test
+       all characters at once. */
+    while (p < _end && p < aligned_start) {
+        accumulator |= *p;
+        p += 1;
+    }
+    if (accumulator & 0x80) {
+        return 255;
+    } else if (p == end) {
+        return 127;
+    }
 
-    while (p < end) {
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help register allocation */
-            const unsigned char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
-                size_t value = *(const size_t *) _p;
-                if (value & UCS1_ASCII_CHAR_MASK)
-                    return 255;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (p == end)
-                break;
-        }
-        if (*p++ & 0x80)
+    /* On 64-bit platforms with 128-bit vectors (x86-64, arm64) the
+       compiler can load 4 size_t values into two 16-byte vectors and do a 
+       vector bitwise OR. */
+    const size_t *_p = (const size_t *)p;
+    while (_p < unrolled_end) {
+        size_t value = _p[0] | _p[1] | _p[2] | _p[3];
+        if (value & UCS1_ASCII_CHAR_MASK) {
             return 255;
+        }
+        _p += 4;
+    }
+    size_t value = 0;
+    while (_p < aligned_end) {
+        value |= *_p;
+    }
+    p = (const unsigned char *)_p;
+    while (p < _end) {
+        value |= *p;
+    }
+    if (value & UCS1_ASCII_CHAR_MASK) {
+        return 255;
     }
     return 127;
 }
