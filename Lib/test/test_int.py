@@ -522,6 +522,7 @@ class IntTestCases(unittest.TestCase):
                     round(1),
                     round(1, None)]:
             self.assertEqual(val, 1)
+            self.assertIs(type(val), int)
 
 class IntStrDigitLimitsTests(unittest.TestCase):
 
