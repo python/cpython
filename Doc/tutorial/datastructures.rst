@@ -497,6 +497,9 @@ curly braces or the :func:`frozenset` function can be used to create them::
    >>> frozenset('foobar')
    frozenset({'f', 'r', 'a', 'b', 'o'})
 
+For backward compatibility, frozen sets on output always use the :func:`frozenset`
+function.
+
 .. note::
    To create an empty frozen set you have to use ``frozenset()``, not
    ``{{}}``; the latter is reserved for frozen dictionaries.
