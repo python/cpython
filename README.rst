@@ -1,4 +1,4 @@
-This is Python version 3.13.0 beta 1
+This is Python version 3.13.0 beta 2
 ====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg

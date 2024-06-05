@@ -1,2 +1,0 @@
-Fixed issue where kwargs were no longer passed to the logging handler
-QueueHandler
