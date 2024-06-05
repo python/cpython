@@ -116,7 +116,7 @@ exit:
 }
 
 PyDoc_STRVAR(int___round____doc__,
-"__round__($self, ndigits=<unrepresentable>, /)\n"
+"__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
 "Rounding an Integral returns itself.\n"
@@ -133,7 +133,7 @@ static PyObject *
 int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -476,4 +476,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=2ba2d8dcda9b99da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a53f5ba9a6c16737 input=a9049054013a1b77]*/
