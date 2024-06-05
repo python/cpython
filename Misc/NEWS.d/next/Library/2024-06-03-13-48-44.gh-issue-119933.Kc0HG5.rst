@@ -1,7 +1,4 @@
-- Improve :exc:`SyntaxError` messages for invalid expressions in a type
-  parameters bound, a type parameter constraint tuple or a default type
-  parameter.
-  Patch by Bénédikt Tran.
-- Add the :class:`symtable.SymbolTableType` enumeration to represent the
-  possible outputs of the :class:`symtable.SymbolTable.get_type` method.
-  Patch by Bénédikt Tran.
+Improve :exc:`SyntaxError` messages for invalid expressions in a type
+parameters bound, a type parameter constraint tuple or a default type
+parameter.
+Patch by Bénédikt Tran.
