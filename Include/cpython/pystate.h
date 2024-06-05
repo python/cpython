@@ -211,7 +211,7 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 4000
 #elif defined(__wasi__)
    // Based on wasmtime 16.
-#  define Py_C_RECURSION_LIMIT 5000
+#  define Py_C_RECURSION_LIMIT 4500
 #else
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 10000
