@@ -1202,6 +1202,17 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(q.qsize(), 0)
         close_queue(q)
 
+    def test_empty_exceptions(self):
+        q = self.Queue()
+        q.close()  # this is a no-op because the feeder thread is not created
+        self.assertTrue(q.empty())
+        close_queue(q)
+
+        q = self.JoinableQueue()
+        q.close()  # this is a no-op because the feeder thread is not created
+        self.assertTrue(q.empty())
+        close_queue(q)
+
     @classmethod
     def _test_task_done(cls, q):
         for obj in iter(q.get, None):
@@ -5814,6 +5825,12 @@ class TestSimpleQueue(unittest.TestCase):
             queue.put(queue.empty())
         finally:
             parent_can_continue.set()
+
+    def test_empty_exceptions(self):
+        q = multiprocessing.SimpleQueue()
+        q.close()  # close the pipe
+        with self.assertRaisesRegex(OSError, 'is closed'):
+            q.empty()
 
     def test_empty(self):
         queue = multiprocessing.SimpleQueue()
