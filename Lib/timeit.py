@@ -243,7 +243,7 @@ def repeat(stmt="pass", setup="pass", timer=default_timer,
 
 
 def _run(t, repeat=default_repeat, number=None, time_unit=None, verbose=False, precision=3):
-    if number == None:
+    if number is None:
         # determine number so that 0.2 <= total time < 2.0
         callback = None
         if verbose:
