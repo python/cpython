@@ -1795,7 +1795,7 @@ expected_opinfo_jumpy = [
 def simple(): pass
 expected_opinfo_simple = [
   Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=simple.__code__.co_firstlineno, label=None, positions=None),
-  Instruction(opname='RETURN_CONST', opcode=103, arg=0, argval=None, argrepr='None', offset=2, start_offset=2, starts_line=False, line_number=simple.__code__.co_firstlineno, label=None),
+  Instruction(opname='RETURN_CONST', opcode=104, arg=0, argval=None, argrepr='None', offset=2, start_offset=2, starts_line=False, line_number=simple.__code__.co_firstlineno, label=None),
 ]
 
 
