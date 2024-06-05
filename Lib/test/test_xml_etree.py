@@ -1192,7 +1192,7 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(serialize(e, method="xml"),
                 '<html><link /><script>1 &lt; 2</script></html>\n')
         self.assertEqual(serialize(e, method="html"),
-                '<html><link><script>1 < 2</script></html>\n')
+                '<html><link/><script>1 < 2</script></html>\n')
         self.assertEqual(serialize(e, method="text"), '1 < 2\n')
 
     def test_issue18347(self):
@@ -1426,7 +1426,7 @@ class ElementTreeTest(unittest.TestCase):
                         'HR', 'IMG', 'INPUT', 'ISINDEX', 'LINK', 'META', 'PARAM',
                         'SOURCE', 'TRACK', 'WBR']:
             for elem in [element, element.lower()]:
-                expected = '<%s>' % elem
+                expected = '<%s/>' % elem
                 serialized = serialize(ET.XML('<%s />' % elem), method='html')
                 self.assertEqual(serialized, expected)
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
