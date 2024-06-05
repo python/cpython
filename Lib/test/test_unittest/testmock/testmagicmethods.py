@@ -1,7 +1,6 @@
 import math
 import unittest
 import os
-from threading import Thread
 from asyncio import iscoroutinefunction
 from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
