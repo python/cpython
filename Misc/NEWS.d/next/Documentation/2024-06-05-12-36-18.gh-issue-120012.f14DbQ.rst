@@ -1,0 +1,2 @@
+Clarify the behaviour of :meth:`multiprocessing.Queue.empty` on closed
+queues. Patch by Bénédikt Tran.
