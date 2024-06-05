@@ -2301,8 +2301,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 
 static int
 symtable_visit_type_param_bound_or_default(
-    struct symtable *st, expr_ty e, identifier name, void *key,
-    const char *tp_kind_name, int is_default)
+    struct symtable *st, expr_ty e, identifier name,
+    void *key, const char *ste_scope_info)
 {
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
@@ -2314,24 +2314,13 @@ symtable_visit_type_param_bound_or_default(
             VISIT_QUIT(st, 0);
         }
 
-        PyObject *scope_info;
-        scope_info = PyUnicode_FromFormat("%s %s", tp_kind_name,
-            (is_default == 1) ? "default" :
-            (e->kind == Tuple_kind) ? "constraint" :
-            "bound"
-        );
-        if (scope_info == NULL)
-            return 0;
-
-        const char *ste_scope_info;
-        ste_scope_info = PyUnicode_AsUTF8(scope_info);
-        if (ste_scope_info == NULL)
-            return 0;
+        assert(ste_scope_info != NULL);
         st->st_cur->ste_scope_info = ste_scope_info;
-
         VISIT(st, expr, e);
-        if (!symtable_exit_block(st))
+
+        if (!symtable_exit_block(st)) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2349,6 +2338,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
 
+        const char *ste_scope_info = NULL;
+        const expr_ty bound = tp->v.TypeVar.bound;
+        if (bound != NULL) {
+            ste_scope_info = bound->kind == Tuple_kind ? "a TypeVar constraint" : "a TypeVar bound";
+        }
+
         // We must use a different key for the bound and default. The obvious choice would be to
         // use the .bound and .default_value pointers, but that fails when the expression immediately
         // inside the bound or default is a comprehension: we would reuse the same key for
@@ -2356,11 +2351,13 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp, "a TypeVar", 0)) {
+                                                        (void *)tp, ste_scope_info)) {
             VISIT_QUIT(st, 0);
         }
+
+        ste_scope_info = "a TypeVar default";
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1), "a TypeVar", 1)) {
+                                                        (void *)((uintptr_t)tp + 1), ste_scope_info)) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2370,7 +2367,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp, "a TypeVarTuple", 1)) {
+                                                        (void *)tp, "a TypeVarTuple default")) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2380,7 +2377,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp, "a ParamSpec", 1)) {
+                                                        (void *)tp, "a ParamSpec default")) {
             VISIT_QUIT(st, 0);
         }
         break;
