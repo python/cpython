@@ -74,4 +74,4 @@ Example::
    >>> colorsys.rgb_to_cmyk(0.5, 0.5, 0.5)
    (0, 0, 0, 0.5)
    >>> colorsys.cmyk_to_rgb(0, 0, 0, 0.5)
-   (0, 0, 0.5)
+   (0.5, 0.5, 0.5)
