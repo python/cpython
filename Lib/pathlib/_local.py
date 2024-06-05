@@ -16,12 +16,9 @@ try:
     import grp
 except ImportError:
     grp = None
-try:
-    import _winapi
-except ImportError:
-    _winapi = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from ._os import copyfile
 
 
 __all__ = [
@@ -784,7 +781,7 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
-    if hasattr(_winapi, 'CopyFile2'):
+    if copyfile:
         def copy(self, target, follow_symlinks=True):
             """
             Copy the contents of this file to the given target. If this file is a
@@ -799,9 +796,7 @@ class Path(PathBase, PurePath):
                     # Use generic implementation from PathBase.
                     return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
                 raise
-
-            flags = 0 if follow_symlinks else _winapi.COPY_FILE_COPY_SYMLINK
-            _winapi.CopyFile2(os.fspath(self), target, flags)
+            copyfile(os.fspath(self), target, follow_symlinks)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

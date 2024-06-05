@@ -4,6 +4,7 @@ Low-level OS functionality wrappers used by pathlib.
 
 from errno import EBADF, EOPNOTSUPP, ETXTBSY, EXDEV
 import os
+import stat
 import sys
 try:
     import fcntl
@@ -13,6 +14,10 @@ try:
     import posix
 except ImportError:
     posix = None
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
 
 
 def get_copy_blocksize(infd):
@@ -85,6 +90,35 @@ elif hasattr(os, 'sendfile'):
             offset += sent
 else:
     copyfd = None
+
+
+if _winapi and hasattr(_winapi, 'CopyFile2'):
+    def is_dirlink(path):
+        try:
+            st = os.lstat(path)
+        except OSError:
+            return False
+        return (st.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY and
+                st.st_reparse_tag == stat.IO_REPARSE_TAG_SYMLINK)
+
+    def copyfile(source, target, follow_symlinks):
+        """
+        Copy from one file to another using CopyFile2 (Windows only).
+        """
+        if follow_symlinks:
+            flags = 0
+        else:
+            flags = _winapi.COPY_FILE_COPY_SYMLINK
+            try:
+                _winapi.CopyFile2(source, target, flags)
+            except OSError as err:
+                # Check for ERROR_ACCESS_DENIED
+                if err.winerror != 5 or not is_dirlink(source):
+                    raise err
+            flags |= _winapi.COPY_FILE_DIRECTORY
+        _winapi.CopyFile2(source, target, flags)
+else:
+    copyfile = None
 
 
 def copyfileobj(source_f, target_f):
