@@ -22,10 +22,17 @@ test_datetime_capi(PyObject *self, PyObject *args)
     test_run_counter++;
     PyDateTime_IMPORT;
 
-    if (PyDateTimeAPI) {
-        Py_RETURN_NONE;
+    if (PyDateTimeAPI == NULL) {
+        return NULL;
     }
-    return NULL;
+    // The following C API types need to outlive interpreters, since the
+    // borrowed references to them can be held by users without being updated.
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
+    Py_RETURN_NONE;
 }
 
 /* Functions exposing the C API type checking for testing */
@@ -488,16 +495,9 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    if (test_datetime_capi(NULL, NULL) == NULL)  {  // PyDateTime_IMPORT
+    if (test_datetime_capi(NULL, NULL) == NULL)  {
         return -1;
     }
-    // The following C API types need to outlive interpreters, since the
-    // borrowed references to them can be held by users without being updated.
-    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
     return 0;
 }
 
