@@ -502,7 +502,7 @@ function.
 
 .. note::
    To create an empty frozen set you have to use ``frozenset()``, not
-   ``{{}}``; the latter is reserved for frozen dictionaries.
+   ``{{}}``; the latter is reserved for an empty frozen dictionary.
 
 .. _tut-dictionaries:
 
