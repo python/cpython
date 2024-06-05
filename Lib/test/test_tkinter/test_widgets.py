@@ -150,10 +150,6 @@ class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
         self.checkPixelsParam(widget, 'highlightthickness',
                               0, 1.3, 2.6, 6, -2, '10p')
 
-    if tk_version == (8, 7):
-        def test_configure_underline(self):
-            StandardOptionsTests.test_configure_underline(self, empty_value=-1)
-
 
 @add_standard_options(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
@@ -681,7 +677,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
-                               errmsg=EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam'))
+                errmsg=EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam'))
 
     def test_configure_tabstyle(self):
         widget = self.create()
@@ -1348,7 +1344,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'height', 10, 10)
         self.check_paneconfigure_bad(p, b, 'height',
-                                     EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
     def test_paneconfigure_hide(self):
         p, b, c = self.create2()
@@ -1360,19 +1356,19 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'minsize', 10, 10)
         self.check_paneconfigure_bad(p, b, 'minsize',
-                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_padx(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'padx', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'padx',
-                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_pady(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'pady', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'pady',
-                                     EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_sticky(self):
         p, b, c = self.create2()
@@ -1393,7 +1389,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'width', 10, 10)
         self.check_paneconfigure_bad(p, b, 'width',
-                                     EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
 
 @add_standard_options(StandardOptionsTests)

@@ -406,17 +406,27 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'troughcolor')
 
-    def test_configure_underline(self, *, empty_value=''):
+    def test_configure_underline(self):
         widget = self.create()
+        self.checkParams(widget, 'underline', 0, 1, 10)
         if tk_version >= (8, 7):
-            self.checkParams(widget, 'underline', 0, 1, 10)
-            self.checkParam(widget, 'underline', '', expected=empty_value)
+            is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
+            default = -1 if tk_version == (8, 7) else ''
+            self.checkParam(widget, 'underline', '',
+                            expected='' if is_ttk else default)
+            self.checkParam(widget, 'underline', '5+2',
+                            expected='5+2' if is_ttk else 7)
+            self.checkParam(widget, 'underline', '5-2',
+                            expected='5-2' if is_ttk else 3)
+            self.checkParam(widget, 'underline', 'end', expected='end')
+            self.checkParam(widget, 'underline', 'end-2', expected='end-2')
             errmsg = (r'bad index "{}": must be integer\?\[\+-\]integer\?, '
                       r'end\?\[\+-\]integer\?, or ""')
-            self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
-            self.checkInvalidParam(widget, 'underline', 3.2, errmsg=errmsg)
         else:
-            self.checkIntegerParam(widget, 'underline', 0, 1, 10)
+            errmsg = 'expected integer but got "{}"'
+            self.checkInvalidParam(widget, 'underline', '', errmsg=errmsg)
+        self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
+        self.checkInvalidParam(widget, 'underline', 3.2, errmsg=errmsg)
 
     def test_configure_wraplength(self):
         widget = self.create()
