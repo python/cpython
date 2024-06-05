@@ -3074,6 +3074,8 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // _PyObject_GC_New() and similar functions temporarily override this to
     // use one of the GC heaps.
     mts->current_object_heap = &mts->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+
+    _Py_atomic_store_int(&mts->initialized, 1);
 #endif
 }
 
