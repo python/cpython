@@ -14,7 +14,7 @@ on:
 
 jobs:
   build_macos:
-    name: 'build and test'
+    name: build and test (${{ matrix.os }})
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
