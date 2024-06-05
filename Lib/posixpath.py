@@ -455,7 +455,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 if link_count > maxlinks:
                     if strict:
                         raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                      newpath)
+                                      filename)
                     path = newpath
                     continue
             elif newpath in seen:
@@ -467,7 +467,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
                     raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                  newpath)
+                                  filename)
                 path = newpath
                 continue
             target = readlink(newpath)
