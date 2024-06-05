@@ -2,6 +2,7 @@ import time
 import unittest
 import concurrent.futures
 
+from threading import Thread
 from test.support import threading_helper
 from unittest.mock import patch, ThreadingMock, MagicMock
 
