@@ -60,9 +60,13 @@ The :mod:`colorsys` module defines the following functions:
 
    Convert the color from RGB coordinates to CMYK coordinates.
 
+.. versionadded:: 3.14
+
 .. function:: cmyk_to_rgb(c, m, y, k)
 
    Convert the color from CMYK coordinates to RGB coordinates.
+
+.. versionadded:: 3.14
 
 Example::
 
