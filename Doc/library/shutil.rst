@@ -83,10 +83,6 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionchanged:: 3.14
-      Copy-on-write or server-side copy may be used internally on supported
-      filesystems via :func:`os.copy_file_range`.
-
 .. exception:: SameFileError
 
    This exception is raised if source and destination in :func:`copyfile`
@@ -191,10 +187,6 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionchanged:: 3.14
-      Copy-on-write or server-side copy may be used internally on supported
-      filesystems via :func:`os.copy_file_range`.
-
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
@@ -226,10 +218,6 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-
-   .. versionchanged:: 3.14
-      Copy-on-write or server-side copy may be used internally on supported
-      filesystems via :func:`os.copy_file_range`.
 
 .. function:: ignore_patterns(*patterns)
 
@@ -529,7 +517,7 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux :func:`os.sendfile` is used.
+On Linux :func:`os.copy_file_range` or :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
@@ -540,6 +528,10 @@ file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
+
+.. versionchanged:: 3.14
+   Copy-on-write or server-side copy may be used internally via
+   :func:`os.copy_file_range` on supported Linux filesystems.
 
 .. _shutil-copytree-example:
 
