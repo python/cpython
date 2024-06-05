@@ -35,11 +35,7 @@ static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
 static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 #endif
 
-static inline int
-PyStackRef_IsNull(_PyStackRef stackref)
-{
-    return stackref.bits == Py_STACKREF_NULL.bits;
-}
+#define PyStackRef_IsNull(stackref) ((stackref).bits == Py_STACKREF_NULL.bits)
 
 static inline int
 PyStackRef_IsDeferred(_PyStackRef ref)
