@@ -29,19 +29,19 @@ Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval*.c               @markshannon @gvanrossum
-Python/ceval*.h               @markshannon @gvanrossum
+Python/ceval*.c               @markshannon
+Python/ceval*.h               @markshannon
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
-Python/bytecodes.c            @markshannon @gvanrossum
-Python/optimizer*.c           @markshannon @gvanrossum
+Python/bytecodes.c            @markshannon
+Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
-Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Lib/test/test_capi/test_misc.py  @markshannon
 Tools/c-analyzer/             @ericsnowcurrently
 
 # dbm
@@ -150,7 +150,7 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
 
 # Code generator
-/Tools/cases_generator/        @gvanrossum
+/Tools/cases_generator/        @markshannon
 
 # AST
 Python/ast.c                  @isidentical
