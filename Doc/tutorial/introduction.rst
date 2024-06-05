@@ -315,9 +315,9 @@ the second row gives the corresponding negative indices. The slice from *i* to
 *j* consists of all characters between the edges labeled *i* and *j*,
 respectively.
 
-For non-negative indices, the length of a slice is the difference of the
-indices, if both are within bounds.  For example, the length of ``word[1:3]`` is
-2.
+The length of a slice is the difference of the
+indices, if both are within bounds and their signs coincide.  For example, the length of ``word[1:3]`` is
+2 and the length of ``word[-4:-1]`` is -1-(-4) = 3.
 
 Attempting to use an index that is too large will result in an error::
 
