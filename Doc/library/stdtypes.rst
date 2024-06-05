@@ -2288,7 +2288,7 @@ expression support in the :mod:`re` module).
       >>> 'Python'.rjust(10, '.')
       '....Python'
 
-The original string is returned if *width* is less than or equal to ``len(s)``.
+    The original string is returned if *width* is less than or equal to ``len(s)``.
 
    See also :meth:`ljust`.
 
