@@ -402,7 +402,10 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
+    return _realpath(filename, strict, sep, curdir, pardir, getcwd)
 
+def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
+              getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=None):
     # The stack of unresolved path parts. When popped, a special value of None
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
@@ -419,6 +422,10 @@ symbolic links encountered in the path."""
     # used both to detect symlink loops and to speed up repeated traversals of
     # the same links.
     seen = {}
+
+    # Number of symlinks traversed. When the number of traversals is limited
+    # by *maxlinks*, this is used instead of *seen* to detect symlink loops.
+    link_count = 0
 
     while part_count:
         name = rest.pop()
@@ -439,14 +446,22 @@ symbolic links encountered in the path."""
         else:
             newpath = path + sep + name
         try:
-            st_mode = os.lstat(newpath).st_mode
+            st_mode = lstat(newpath).st_mode
             if not stat.S_ISLNK(st_mode):
                 if strict and part_count and not stat.S_ISDIR(st_mode):
                     raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
                                   newpath)
                 path = newpath
                 continue
-            if newpath in seen:
+            elif maxlinks is not None:
+                link_count += 1
+                if link_count > maxlinks:
+                    if strict:
+                        raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
+                                      newpath)
+                    path = newpath
+                    continue
+            elif newpath in seen:
                 # Already seen this path
                 path = seen[newpath]
                 if path is not None:
@@ -458,24 +473,26 @@ symbolic links encountered in the path."""
                                   newpath)
                 path = newpath
                 continue
-            target = os.readlink(newpath)
+            target = readlink(newpath)
         except OSError:
             if strict:
                 raise
             path = newpath
             continue
         # Resolve the symbolic link
-        seen[newpath] = None # not resolved symlink
-        target_parts = target.split(sep)
         if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep
-        # Push the symlink path onto the stack, and signal its specialness by
-        # also pushing None. When these entries are popped, we'll record the
-        # fully-resolved symlink target in the 'seen' mapping.
-        rest.append(newpath)
-        rest.append(None)
+        if maxlinks is None:
+            # Mark this symlink as seen but not fully resolved.
+            seen[newpath] = None
+            # Push the symlink path onto the stack, and signal its specialness
+            # by also pushing None. When these entries are popped, we'll
+            # record the fully-resolved symlink target in the 'seen' mapping.
+            rest.append(newpath)
+            rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
+        target_parts = target.split(sep)
         rest.extend(target_parts[::-1])
         part_count += len(target_parts)
 
