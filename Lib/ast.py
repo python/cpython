@@ -1347,7 +1347,7 @@ class _Unparser(NodeVisitor):
             with self.delimit("({{", "}})"):
                 self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         else:
-            # `({{}})` is invalid syntax, and
+            # `({{}})` is reserved for frozen dictionary literals, and
             # `frozenset` might be shadowed. Thus:
             self.write('({{*()}})')
 

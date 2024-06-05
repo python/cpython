@@ -486,6 +486,20 @@ are also supported::
    >>> a
    {'r', 'd'}
 
+Frozen sets
+-----------
+
+Frozen sets are :term:`immutable` sets and can be used for constants. Double
+curly braces or the :func:`frozenset` function can be used to create them::
+
+   >>> {{1, 2, 3}}
+   frozenset({1, 2, 3})
+   >>> frozenset('foobar')
+   frozenset({'f', 'r', 'a', 'b', 'o'})
+
+.. note::
+   To create an empty frozen set you have to use ``frozenset()``, not
+   ``{{}}``; the latter is reserved for frozen dictionaries.
 
 .. _tut-dictionaries:
 
