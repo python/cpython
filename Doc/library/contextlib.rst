@@ -315,7 +315,8 @@ Functions and classes provided:
    If the code within the :keyword:`!with` block raises a
    :exc:`BaseExceptionGroup`, suppressed exceptions are removed from the
    group.  If any exceptions in the group are not suppressed, a group containing
-   them is re-raised (see also :meth:`~BaseExceptionGroup.derive`).
+   them is created using the old group's :meth:`~BaseExceptionGroup.derive`
+   method, and the new group is then re-raised.
 
    .. versionadded:: 3.4
 
