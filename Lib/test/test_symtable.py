@@ -302,6 +302,14 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(repr(self.GenericMine.lookup("T")),
                          "<symbol 'T': LOCAL, DEF_LOCAL|DEF_TYPE_PARAM>")
 
+        st1 = symtable.symtable("[x for x in [1]]", "?", "exec")
+        self.assertEqual(repr(st1.lookup("x")),
+                         "<symbol 'x': LOCAL, USE|DEF_LOCAL|DEF_COMP_ITER>")
+
+        st2 = symtable.symtable("[(lambda: x) for x in [1]]", "?", "exec")
+        self.assertEqual(repr(st2.lookup("x")),
+                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER|DEF_COMP_CELL>")
+
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
