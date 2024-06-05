@@ -1731,6 +1731,16 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.is_symlink())
         self.assertEqual(source.readlink(), target.readlink())
 
+    @needs_symlinks
+    def test_copy_directory_symlink_follow_symlinks_false(self):
+        base = self.cls(self.base)
+        source = base / 'linkB'
+        target = base / 'copyA'
+        source.copy(target, follow_symlinks=False)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(source.readlink(), target.readlink())
+
     def test_copy_to_existing_file(self):
         base = self.cls(self.base)
         source = base / 'fileA'
