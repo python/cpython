@@ -290,6 +290,30 @@ An empty set cannot be constructed with ``{}``; this literal constructs an empty
 dictionary.
 
 
+.. _frozenset:
+
+Frozen set displays
+-------------------
+
+.. index::
+   pair: frozenset; display
+   pair: object; frozenset
+   single: {{}} (double curly brackets); frozenset expression
+   single: , (comma); expression list
+
+A frozen set display is denoted by double curly braces:
+
+.. productionlist:: python-grammar
+   frozenset_display: "{{" starred_list "}}"
+
+A frozen set display yields a new immutable set object, the contents being
+specified by a sequence of expressions.  Its elements are evaluated from left
+to right and added to the frozen set object.
+
+An empty set cannot be constructed with ``{{}}``; this literal is reserved for
+an empty frozen dictionary.
+
+
 .. _dict:
 
 Dictionary displays
