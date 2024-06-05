@@ -299,6 +299,8 @@ class SymtableTest(unittest.TestCase):
                          "<symbol 'x': FREE, USE>")
         self.assertEqual(repr(self.other_internal.lookup("some_var")),
                          "<symbol 'some_var': FREE, USE|DEF_NONLOCAL|DEF_LOCAL>")
+        self.assertEqual(repr(self.GenericMine.lookup("T")),
+                         "<symbol 'T': LOCAL, DEF_LOCAL|DEF_TYPE_PARAM>")
 
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
