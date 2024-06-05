@@ -1,10 +1,11 @@
+# Generated automatically from Makefile.pre by makesetup.
 # Top-level Makefile for Python
 #
 # As distributed, this file is called Makefile.pre.in; it is processed
 # into the real Makefile by running the script ./configure, which
 # replaces things like @spam@ with values appropriate for your system.
 # This means that if you edit Makefile, your changes get lost the next
-# time you run the configure script.  Ideally, you can do:
+# time you run the configure script.  Ideally, you can do: 
 #
 #	./configure
 #	make
@@ -20,83 +21,82 @@
 
 # === Variables set by makesetup ===
 
-MODBUILT_NAMES=    _MODBUILT_NAMES_
-MODSHARED_NAMES=   _MODSHARED_NAMES_
-MODDISABLED_NAMES= _MODDISABLED_NAMES_
-MODOBJS=           _MODOBJS_
-MODLIBS=           _MODLIBS_
+MODBUILT_NAMES=      array  _asyncio  _bisect  _contextvars  _csv  _heapq  _json  _lsprof  _opcode  _pickle  _queue  _random  _struct  _xxsubinterpreters  _xxinterpchannels  _xxinterpqueues  _zoneinfo  math  cmath  _statistics  _datetime  _decimal  binascii  zlib  _md5  _sha1  _sha2  _sha3  _blake2  pyexpat  _elementtree  _codecs_cn  _codecs_hk  _codecs_iso2022  _codecs_jp  _codecs_kr  _codecs_tw  _multibytecodec  unicodedata  fcntl  grp  mmap  _posixsubprocess  resource  select  _socket  syslog  termios  _posixshmem  _multiprocessing  _ctypes  _curses  _curses_panel  _ssl  _hashlib  xxsubtype  _xxtestfuzz  _testbuffer  _testinternalcapi  _testcapi  _testclinic  _testclinic_limited  _testimportmultiple  _testmultiphase  _testsinglephase  _testexternalinspection  _ctypes_test  xxlimited  xxlimited_35  atexit  faulthandler  posix  _signal  _tracemalloc  _suggestions  _codecs  _collections  errno  _io  itertools  _sre  _sysconfig  _thread  time  _typing  _weakref  _abc  _functools  _locale  _operator  _stat  _symtable  pwd
+MODSHARED_NAMES=    array _asyncio _bisect _contextvars _csv _heapq _json _lsprof _opcode _pickle _queue _random _struct _xxsubinterpreters _xxinterpchannels _xxinterpqueues _zoneinfo math cmath _statistics _datetime _decimal binascii zlib _md5 _sha1 _sha2 _sha3 _blake2 pyexpat _elementtree _codecs_cn _codecs_hk _codecs_iso2022 _codecs_jp _codecs_kr _codecs_tw _multibytecodec unicodedata fcntl grp mmap _posixsubprocess resource select _socket syslog termios _posixshmem _multiprocessing _ctypes _curses _curses_panel _ssl _hashlib xxsubtype _xxtestfuzz _testbuffer _testinternalcapi _testcapi _testclinic _testclinic_limited _testimportmultiple _testmultiphase _testsinglephase _testexternalinspection _ctypes_test xxlimited xxlimited_35
+MODDISABLED_NAMES= 
+MODOBJS=             Modules/atexitmodule.o  Modules/faulthandler.o  Modules/posixmodule.o  Modules/signalmodule.o  Modules/_tracemalloc.o  Modules/_suggestions.o  Modules/_codecsmodule.o  Modules/_collectionsmodule.o  Modules/errnomodule.o  Modules/_io/_iomodule.o Modules/_io/iobase.o Modules/_io/fileio.o Modules/_io/bytesio.o Modules/_io/bufferedio.o Modules/_io/textio.o Modules/_io/stringio.o  Modules/itertoolsmodule.o  Modules/_sre/sre.o  Modules/_sysconfig.o  Modules/_threadmodule.o  Modules/timemodule.o  Modules/_typingmodule.o  Modules/_weakref.o  Modules/_abc.o  Modules/_functoolsmodule.o  Modules/_localemodule.o  Modules/_operator.o  Modules/_stat.o  Modules/symtablemodule.o  Modules/pwdmodule.o
+MODLIBS=           $(LOCALMODLIBS) $(BASEMODLIBS)
 
 # === Variables set by configure
-VERSION=	@VERSION@
-srcdir=		@srcdir@
-VPATH=		@srcdir@
-abs_srcdir=	@abs_srcdir@
-abs_builddir=	@abs_builddir@
+VERSION=	3.13
+srcdir=		.
+
+abs_srcdir=	/home/uu/Workspace/Fixworkspace/cpython
+abs_builddir=	/home/uu/Workspace/Fixworkspace/cpython
 
 
-CC=		@CC@
-CXX=		@CXX@
-LINKCC=		@LINKCC@
-AR=		@AR@
+CC=		gcc
+CXX=		g++
+LINKCC=		$(PURIFY) $(CC)
+AR=		ar
 READELF=	@READELF@
-SOABI=		@SOABI@
-ABIFLAGS=	@ABIFLAGS@
-LDVERSION=	@LDVERSION@
-MODULE_LDFLAGS=@MODULE_LDFLAGS@
-GITVERSION=	@GITVERSION@
-GITTAG=		@GITTAG@
-GITBRANCH=	@GITBRANCH@
-PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
-PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
-LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
-LLVM_PROF_FILE=@LLVM_PROF_FILE@
-LLVM_PROF_ERR=@LLVM_PROF_ERR@
-DTRACE=         @DTRACE@
-DFLAGS=         @DFLAGS@
-DTRACE_HEADERS= @DTRACE_HEADERS@
-DTRACE_OBJS=    @DTRACE_OBJS@
-DSYMUTIL=       @DSYMUTIL@
-DSYMUTIL_PATH=  @DSYMUTIL_PATH@
+SOABI=		cpython-313-x86_64-linux-gnu
+LDVERSION=	$(VERSION)$(ABIFLAGS)
+MODULE_LDFLAGS=
+GITVERSION=	
+GITTAG=		
+GITBRANCH=	
+PGO_PROF_GEN_FLAG=-fprofile-generate
+PGO_PROF_USE_FLAG=-fprofile-use -fprofile-correction
+LLVM_PROF_MERGER=true
+LLVM_PROF_FILE=
+LLVM_PROF_ERR=no
+DTRACE=         
+DFLAGS=         
+DTRACE_HEADERS= 
+DTRACE_OBJS=    
+DSYMUTIL=       
+DSYMUTIL_PATH=  
 
-GNULD=		@GNULD@
+GNULD=		yes
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh -e
 
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
-LN=		@LN@
+LN=		ln
 
 # Portable install script (configure doesn't always guess right)
-INSTALL=	@INSTALL@
-INSTALL_PROGRAM=@INSTALL_PROGRAM@
-INSTALL_SCRIPT= @INSTALL_SCRIPT@
-INSTALL_DATA=	@INSTALL_DATA@
+INSTALL=	/usr/bin/install -c
+INSTALL_PROGRAM=${INSTALL}
+INSTALL_SCRIPT= ${INSTALL}
+INSTALL_DATA=	${INSTALL} -m 644
 # Shared libraries must be installed with executable mode on some systems;
 # rather than figuring out exactly which, we always give them executable mode.
 INSTALL_SHARED= ${INSTALL} -m 755
 
-MKDIR_P=	@MKDIR_P@
+MKDIR_P=	/usr/bin/mkdir -p
 
 MAKESETUP=      $(srcdir)/Modules/makesetup
 
 # Compiler options
-OPT=		@OPT@
-BASECFLAGS=	@BASECFLAGS@
-BASECPPFLAGS=	@BASECPPFLAGS@
-CONFIGURE_CFLAGS=	@CFLAGS@
+OPT=		-DNDEBUG -g -O3 -Wall
+BASECFLAGS=	 -fno-strict-overflow -Wsign-compare
+BASECPPFLAGS=	
+CONFIGURE_CFLAGS=	
 # CFLAGS_NODIST is used for building the interpreter and stdlib C extensions.
 # Use it when a compiler flag should _not_ be part of the distutils CFLAGS
 # once Python is installed (Issue #21121).
-CONFIGURE_CFLAGS_NODIST=@CFLAGS_NODIST@
+CONFIGURE_CFLAGS_NODIST= -std=c11 -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wstrict-prototypes -Werror=implicit-function-declaration -fvisibility=hidden
 # LDFLAGS_NODIST is used in the same manner as CFLAGS_NODIST.
 # Use it when a linker flag should _not_ be part of the distutils LDFLAGS
 # once Python is installed (bpo-35257)
-CONFIGURE_LDFLAGS_NODIST=@LDFLAGS_NODIST@
+CONFIGURE_LDFLAGS_NODIST=
 # LDFLAGS_NOLTO is an extra flag to disable lto. It is used to speed up building
 # of _bootstrap_python and _freeze_module tools, which don't need LTO.
-CONFIGURE_LDFLAGS_NOLTO=@LDFLAGS_NOLTO@
-CONFIGURE_CPPFLAGS=	@CPPFLAGS@
-CONFIGURE_LDFLAGS=	@LDFLAGS@
+CONFIGURE_LDFLAGS_NOLTO=
+CONFIGURE_CPPFLAGS=	
+CONFIGURE_LDFLAGS=	
 # Avoid assigning CFLAGS, LDFLAGS, etc. so users can use them on the
 # command line to append to these values without stomping the pre-set
 # values.
@@ -109,14 +109,14 @@ PY_CPPFLAGS=	$(BASECPPFLAGS) -I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPP
 PY_LDFLAGS=	$(CONFIGURE_LDFLAGS) $(LDFLAGS)
 PY_LDFLAGS_NODIST=$(CONFIGURE_LDFLAGS_NODIST) $(LDFLAGS_NODIST)
 PY_LDFLAGS_NOLTO=$(PY_LDFLAGS) $(CONFIGURE_LDFLAGS_NOLTO) $(LDFLAGS_NODIST)
-NO_AS_NEEDED=	@NO_AS_NEEDED@
-CCSHARED=	@CCSHARED@
+NO_AS_NEEDED=	-Wl,--no-as-needed
+CCSHARED=	-fPIC
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # the python executable -- this is only needed for a few systems
-LINKFORSHARED=	@LINKFORSHARED@
-ARFLAGS=	@ARFLAGS@
+LINKFORSHARED=	-Xlinker -export-dynamic
+ARFLAGS=	rcs
 # Extra C flags added for building the interpreter object files.
-CFLAGSFORSHARED=@CFLAGSFORSHARED@
+CFLAGSFORSHARED=
 # C flags used for building the interpreter object files
 PY_STDMODULE_CFLAGS= $(PY_CFLAGS) $(PY_CFLAGS_NODIST) $(PY_CPPFLAGS) $(CFLAGSFORSHARED)
 PY_BUILTIN_MODULE_CFLAGS= $(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE_BUILTIN
@@ -124,94 +124,89 @@ PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # Linker flags used for building the interpreter object files
 PY_CORE_LDFLAGS=$(PY_LDFLAGS) $(PY_LDFLAGS_NODIST)
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
-CFLAGS_ALIASING=@CFLAGS_ALIASING@
+CFLAGS_ALIASING=
 
 
 # Machine-dependent subdirectories
-MACHDEP=	@MACHDEP@
+MACHDEP=	linux
 
 # Multiarch directory (may be empty)
-MULTIARCH=	@MULTIARCH@
-MULTIARCH_CPPFLAGS = @MULTIARCH_CPPFLAGS@
+MULTIARCH=	x86_64-linux-gnu
+MULTIARCH_CPPFLAGS = -DMULTIARCH=\"x86_64-linux-gnu\"
 
 # Install prefix for architecture-independent files
-prefix=		@prefix@
+prefix=		/usr/local
 
 # Install prefix for architecture-dependent files
-exec_prefix=	@exec_prefix@
+exec_prefix=	${prefix}
 
 # Install prefix for data files
-datarootdir=    @datarootdir@
+datarootdir=    ${prefix}/share
 
 # Expanded directories
-BINDIR=		@bindir@
-LIBDIR=		@libdir@
-MANDIR=		@mandir@
-INCLUDEDIR=	@includedir@
+BINDIR=		${exec_prefix}/bin
+LIBDIR=		${exec_prefix}/lib
+MANDIR=		${datarootdir}/man
+INCLUDEDIR=	${prefix}/include
 CONFINCLUDEDIR=	$(exec_prefix)/include
-PLATLIBDIR=	@PLATLIBDIR@
+PLATLIBDIR=	lib
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
+ABIFLAGS=	
 # executable name for shebangs
 EXENAME=	$(BINDIR)/python$(LDVERSION)$(EXE)
 # Variable used by ensurepip
-WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
+WHEEL_PKG_DIR=	
 
 # Detailed destination directories
-BINLIBDEST=	@BINLIBDEST@
+BINLIBDEST=	$(LIBDIR)/python$(VERSION)
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 INCLUDEPY=	$(INCLUDEDIR)/python$(LDVERSION)
 CONFINCLUDEPY=	$(CONFINCLUDEDIR)/python$(LDVERSION)
 
 # Symbols used for using shared libraries
-SHLIB_SUFFIX=	@SHLIB_SUFFIX@
-EXT_SUFFIX=	@EXT_SUFFIX@
-LDSHARED=	@LDSHARED@ $(PY_LDFLAGS)
-BLDSHARED=	@BLDSHARED@ $(PY_CORE_LDFLAGS)
-LDCXXSHARED=	@LDCXXSHARED@
+SHLIB_SUFFIX=	.so
+EXT_SUFFIX=	.cpython-313-x86_64-linux-gnu.so
+LDSHARED=	$(CC) -shared $(PY_LDFLAGS)
+BLDSHARED=	$(CC) -shared $(PY_CORE_LDFLAGS)
+LDCXXSHARED=	$(CXX) -shared
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # List of exported symbols for AIX
-EXPORTSYMS=	@EXPORTSYMS@
-EXPORTSFROM=	@EXPORTSFROM@
+EXPORTSYMS=	
+EXPORTSFROM=	
 
 # Executable suffix (.exe on Windows and Mac OS X)
-EXE=		@EXEEXT@
-BUILDEXE=	@BUILDEXEEXT@
+EXE=		
+BUILDEXE=	
 
 # Short name and location for Mac OS X Python framework
-UNIVERSALSDK=@UNIVERSALSDK@
-PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
-PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
-PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
-PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
-PYTHONFRAMEWORKINSTALLNAMEPREFIX= @PYTHONFRAMEWORKINSTALLNAMEPREFIX@
-RESSRCDIR= @RESSRCDIR@
-# macOS deployment target selected during configure, to be checked
+UNIVERSALSDK=
+PYTHONFRAMEWORK=	
+PYTHONFRAMEWORKDIR=	no-framework
+PYTHONFRAMEWORKPREFIX=	
+PYTHONFRAMEWORKINSTALLDIR= 
+PYTHONFRAMEWORKINSTALLNAMEPREFIX= 
+RESSRCDIR= 
+# Deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
-MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
-@EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
-
-# iOS Deployment target selected during configure. Unlike macOS, the iOS
-# deployment target is controlled using `-mios-version-min` arguments added to
-# CFLAGS and LDFLAGS by the configure script. This variable is not used during
-# the build, and is only listed here so it will be included in sysconfigdata.
-IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
+MACOSX_DEPLOYMENT_TARGET=
+#export MACOSX_DEPLOYMENT_TARGET
 
 # Option to install to strip binaries
 STRIPFLAG=-s
 
 # Flags to lipo to produce a 32-bit-only universal executable
-LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
+LIPO_32BIT_FLAGS=
 
 # Flags to lipo to produce an intel-64-only universal executable
-LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
+LIPO_INTEL64_FLAGS=
 
 # Environment to run shared python without installed libraries
-RUNSHARED=       @RUNSHARED@
+RUNSHARED=       
 
 # ensurepip options
-ENSUREPIP=      @ENSUREPIP@
+ENSUREPIP=      upgrade
 
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
@@ -220,7 +215,7 @@ LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
-# states:
+# states: 
 #   * yes: module is available
 #   * missing: build dependency is missing
 #   * disabled: module is disabled
@@ -228,13 +223,129 @@ LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 # MODULE_EGG_STATE=yes  # yes, missing, disabled, n/a
 # MODULE_EGG_CFLAGS=
 # MODULE_EGG_LDFLAGS=
-@MODULE_BLOCK@
+MODULE__IO_STATE=yes
+MODULE__IO_CFLAGS=-I$(srcdir)/Modules/_io
+MODULE_TIME_STATE=yes
+MODULE_TIME_LDFLAGS=
+MODULE_ARRAY_STATE=yes
+MODULE__ASYNCIO_STATE=yes
+MODULE__BISECT_STATE=yes
+MODULE__CONTEXTVARS_STATE=yes
+MODULE__CSV_STATE=yes
+MODULE__HEAPQ_STATE=yes
+MODULE__JSON_STATE=yes
+MODULE__LSPROF_STATE=yes
+MODULE__OPCODE_STATE=yes
+MODULE__PICKLE_STATE=yes
+MODULE__POSIXSUBPROCESS_STATE=yes
+MODULE__QUEUE_STATE=yes
+MODULE__RANDOM_STATE=yes
+MODULE_SELECT_STATE=yes
+MODULE__STRUCT_STATE=yes
+MODULE__TYPING_STATE=yes
+MODULE__XXSUBINTERPRETERS_STATE=yes
+MODULE__XXINTERPCHANNELS_STATE=yes
+MODULE__XXINTERPQUEUES_STATE=yes
+MODULE__ZONEINFO_STATE=yes
+MODULE__MULTIPROCESSING_STATE=yes
+MODULE__MULTIPROCESSING_CFLAGS=-I$(srcdir)/Modules/_multiprocessing
+MODULE__POSIXSHMEM_STATE=yes
+MODULE__POSIXSHMEM_CFLAGS=-I$(srcdir)/Modules/_multiprocessing
+MODULE__POSIXSHMEM_LDFLAGS=
+MODULE__STATISTICS_STATE=yes
+MODULE__STATISTICS_LDFLAGS=-lm
+MODULE_CMATH_STATE=yes
+MODULE_CMATH_LDFLAGS=-lm
+MODULE_MATH_STATE=yes
+MODULE_MATH_LDFLAGS=-lm
+MODULE__DATETIME_STATE=yes
+MODULE__DATETIME_LDFLAGS= -lm
+MODULE_FCNTL_STATE=yes
+MODULE_FCNTL_LDFLAGS=
+MODULE_MMAP_STATE=yes
+MODULE__SOCKET_STATE=yes
+MODULE_GRP_STATE=yes
+MODULE_PWD_STATE=yes
+MODULE_RESOURCE_STATE=yes
+MODULE__SCPROXY_STATE=n/a
+MODULE_SYSLOG_STATE=yes
+MODULE_TERMIOS_STATE=yes
+MODULE_PYEXPAT_STATE=yes
+MODULE_PYEXPAT_CFLAGS=-I$(srcdir)/Modules/expat
+MODULE_PYEXPAT_LDFLAGS=-lm $(LIBEXPAT_A)
+MODULE__ELEMENTTREE_STATE=yes
+MODULE__ELEMENTTREE_CFLAGS=-I$(srcdir)/Modules/expat
+MODULE__CODECS_CN_STATE=yes
+MODULE__CODECS_HK_STATE=yes
+MODULE__CODECS_ISO2022_STATE=yes
+MODULE__CODECS_JP_STATE=yes
+MODULE__CODECS_KR_STATE=yes
+MODULE__CODECS_TW_STATE=yes
+MODULE__MULTIBYTECODEC_STATE=yes
+MODULE_UNICODEDATA_STATE=yes
+MODULE__MD5_STATE=yes
+MODULE__MD5_CFLAGS=-I$(srcdir)/Modules/_hacl/include -I$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE
+MODULE__SHA1_STATE=yes
+MODULE__SHA1_CFLAGS=-I$(srcdir)/Modules/_hacl/include -I$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE
+MODULE__SHA2_STATE=yes
+MODULE__SHA2_CFLAGS=-I$(srcdir)/Modules/_hacl/include -I$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE
+MODULE__SHA3_STATE=yes
+MODULE__BLAKE2_STATE=yes
+MODULE__BLAKE2_CFLAGS=
+MODULE__BLAKE2_LDFLAGS=
+MODULE__CTYPES_STATE=yes
+MODULE__CTYPES_CFLAGS=-fno-strict-overflow 
+MODULE__CTYPES_LDFLAGS=-lffi -ldl
+MODULE__CURSES_STATE=yes
+MODULE__CURSES_CFLAGS=
+MODULE__CURSES_LDFLAGS=-lncursesw
+
+MODULE__CURSES_PANEL_STATE=yes
+MODULE__CURSES_PANEL_CFLAGS= 
+MODULE__CURSES_PANEL_LDFLAGS=-lpanelw -lncursesw
+
+MODULE__DECIMAL_STATE=yes
+MODULE__DECIMAL_CFLAGS=-I$(srcdir)/Modules/_decimal/libmpdec -fstrict-overflow -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1
+MODULE__DECIMAL_LDFLAGS=-lm $(LIBMPDEC_A)
+MODULE__DBM_STATE=missing
+MODULE__GDBM_STATE=missing
+MODULE_READLINE_STATE=missing
+MODULE__SQLITE3_STATE=disabled
+MODULE__TKINTER_STATE=missing
+MODULE__UUID_STATE=missing
+MODULE_ZLIB_STATE=yes
+MODULE_ZLIB_CFLAGS=
+MODULE_ZLIB_LDFLAGS=-lz
+MODULE_BINASCII_STATE=yes
+MODULE_BINASCII_CFLAGS=-DUSE_ZLIB_CRC32 
+MODULE_BINASCII_LDFLAGS=-lz
+MODULE__BZ2_STATE=missing
+MODULE__LZMA_STATE=missing
+MODULE__SSL_STATE=yes
+MODULE__SSL_CFLAGS=-I/usr/include
+MODULE__SSL_LDFLAGS=-L/usr/lib  -lssl -lcrypto
+MODULE__HASHLIB_STATE=yes
+MODULE__HASHLIB_CFLAGS=-I/usr/include
+MODULE__HASHLIB_LDFLAGS=-L/usr/lib   -lcrypto
+MODULE__TESTCAPI_STATE=yes
+MODULE__TESTCAPI_LDFLAGS=
+MODULE__TESTCLINIC_STATE=yes
+MODULE__TESTCLINIC_LIMITED_STATE=yes
+MODULE__TESTINTERNALCAPI_STATE=yes
+MODULE__TESTBUFFER_STATE=yes
+MODULE__TESTIMPORTMULTIPLE_STATE=yes
+MODULE__TESTMULTIPHASE_STATE=yes
+MODULE__TESTEXTERNALINSPECTION_STATE=yes
+MODULE_XXSUBTYPE_STATE=yes
+MODULE__XXTESTFUZZ_STATE=yes
+MODULE__CTYPES_TEST_STATE=yes
+MODULE__CTYPES_TEST_LDFLAGS=-lm
+MODULE_XXLIMITED_STATE=yes
+MODULE_XXLIMITED_35_STATE=yes
+
 
 # Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
-TZPATH=@TZPATH@
-
-# If to install mimalloc headers
-INSTALL_MIMALLOC=@INSTALL_MIMALLOC@
+TZPATH=/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo: /etc/zoneinfo
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
@@ -243,11 +354,11 @@ EXEMODE=	755
 FILEMODE=	644
 
 # configure script arguments
-CONFIG_ARGS=	@CONFIG_ARGS@
+CONFIG_ARGS=	
 
 
 # Subdirectories with code
-SRCDIRS= 	@SRCDIRS@
+SRCDIRS= 	  Modules   Modules/_blake2   Modules/_ctypes   Modules/_decimal   Modules/_decimal/libmpdec   Modules/_hacl   Modules/_io   Modules/_multiprocessing   Modules/_sqlite   Modules/_sre   Modules/_testcapi   Modules/_testinternalcapi   Modules/_xxtestfuzz   Modules/cjkcodecs   Modules/expat   Objects   Objects/mimalloc   Objects/mimalloc/prim   Parser   Parser/tokenizer   Parser/lexer   Programs   Python   Python/frozen_modules   Python/deepfreeze
 
 # Other subdirectories
 SUBDIRSTOO=	Include Lib Misc
@@ -263,61 +374,61 @@ DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
 
-LIBRARY=	@LIBRARY@
-LDLIBRARY=      @LDLIBRARY@
-BLDLIBRARY=     @BLDLIBRARY@
-PY3LIBRARY=     @PY3LIBRARY@
-DLLLIBRARY=	@DLLLIBRARY@
-LDLIBRARYDIR=   @LDLIBRARYDIR@
-INSTSONAME=	@INSTSONAME@
-LIBRARY_DEPS=	@LIBRARY_DEPS@
-LINK_PYTHON_DEPS=@LINK_PYTHON_DEPS@
-PY_ENABLE_SHARED=	@PY_ENABLE_SHARED@
-STATIC_LIBPYTHON=	@STATIC_LIBPYTHON@
+LIBRARY=	libpython$(VERSION)$(ABIFLAGS).a
+LDLIBRARY=      libpython$(VERSION)$(ABIFLAGS).a
+BLDLIBRARY=     $(LDLIBRARY)
+PY3LIBRARY=     
+DLLLIBRARY=	
+LDLIBRARYDIR=   
+INSTSONAME=	$(LDLIBRARY)
+LIBRARY_DEPS=	$(LIBRARY) $(PY3LIBRARY) $(EXPORTSYMS)
+LINK_PYTHON_DEPS=$(LIBRARY_DEPS)
+PY_ENABLE_SHARED=	0
+STATIC_LIBPYTHON=	1
 
 
-LIBS=		@LIBS@
-LIBM=		@LIBM@
-LIBC=		@LIBC@
+LIBS=		-ldl 
+LIBM=		-lm
+LIBC=		
 SYSLIBS=	$(LIBM) $(LIBC)
-SHLIBS=		@SHLIBS@
+SHLIBS=		$(LIBS)
 
-DLINCLDIR=	@DLINCLDIR@
-DYNLOADFILE=	@DYNLOADFILE@
-MACHDEP_OBJS=	@MACHDEP_OBJS@
+DLINCLDIR=	.
+DYNLOADFILE=	dynload_shlib.o
+MACHDEP_OBJS=	
 LIBOBJDIR=	Python/
-LIBOBJS=	@LIBOBJS@
+LIBOBJS=	
 
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
-HOSTRUNNER= @HOSTRUNNER@
+HOSTRUNNER= 
 
-PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
+PYTHON_FOR_REGEN?=python3.10
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/update_file.py
-PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+PYTHON_FOR_BUILD=./$(BUILDPYTHON) -E
 # Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
 # external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
-PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
+PYTHON_FOR_BUILD_DEPS=$(BUILDPYTHON)
 
 # Single-platform builds use Programs/_freeze_module.c for bootstrapping and
 # ./_bootstrap_python Programs/_freeze_module.py for remaining modules
 # Cross builds use an external "build Python" for all modules.
-PYTHON_FOR_FREEZE=@PYTHON_FOR_FREEZE@
-FREEZE_MODULE_BOOTSTRAP=@FREEZE_MODULE_BOOTSTRAP@
-FREEZE_MODULE_BOOTSTRAP_DEPS=@FREEZE_MODULE_BOOTSTRAP_DEPS@
-FREEZE_MODULE=@FREEZE_MODULE@
-FREEZE_MODULE_DEPS=@FREEZE_MODULE_DEPS@
+PYTHON_FOR_FREEZE=./_bootstrap_python
+FREEZE_MODULE_BOOTSTRAP=./Programs/_freeze_module
+FREEZE_MODULE_BOOTSTRAP_DEPS=Programs/_freeze_module
+FREEZE_MODULE=$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py
+FREEZE_MODULE_DEPS=_bootstrap_python $(srcdir)/Programs/_freeze_module.py
 
-_PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
-BUILD_GNU_TYPE=	@build@
-HOST_GNU_TYPE=	@host@
+_PYTHON_HOST_PLATFORM=
+BUILD_GNU_TYPE=	x86_64-pc-linux-gnu
+HOST_GNU_TYPE=	x86_64-pc-linux-gnu
 
 # The task to run while instrumented when building the profile-opt target.
 # To speed up profile generation, we don't run the full unit test suite
 # by default. The default is "-m test --pgo". To run more tests, use
 # PROFILE_TASK="-m test --pgo-extended"
-PROFILE_TASK=	@PROFILE_TASK@
+PROFILE_TASK=	-m test --pgo --timeout=$(TESTTIMEOUT)
 
 # report files for gcov / lcov coverage report
 COVERAGE_INFO=	$(abs_builddir)/coverage.info
@@ -328,6 +439,122 @@ COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "C
 
 # === Definitions added by makesetup ===
 
+
+LOCALMODLIBS= $(MODULE_ATEXIT_LDFLAGS) $(MODULE_FAULTHANDLER_LDFLAGS) $(MODULE_POSIX_LDFLAGS) $(MODULE__SIGNAL_LDFLAGS) $(MODULE__TRACEMALLOC_LDFLAGS) $(MODULE__SUGGESTIONS_LDFLAGS) $(MODULE__CODECS_LDFLAGS) $(MODULE__COLLECTIONS_LDFLAGS) $(MODULE_ERRNO_LDFLAGS) $(MODULE__IO_LDFLAGS) $(MODULE_ITERTOOLS_LDFLAGS) $(MODULE__SRE_LDFLAGS) $(MODULE__SYSCONFIG_LDFLAGS) $(MODULE__THREAD_LDFLAGS) $(MODULE_TIME_LDFLAGS) $(MODULE__TYPING_LDFLAGS) $(MODULE__WEAKREF_LDFLAGS) $(MODULE__ABC_LDFLAGS) $(MODULE__FUNCTOOLS_LDFLAGS) $(MODULE__LOCALE_LDFLAGS) $(MODULE__OPERATOR_LDFLAGS) $(MODULE__STAT_LDFLAGS) $(MODULE__SYMTABLE_LDFLAGS) $(MODULE_PWD_LDFLAGS)
+BASEMODLIBS=
+SHAREDMODS= Modules/array$(EXT_SUFFIX) Modules/_asyncio$(EXT_SUFFIX) Modules/_bisect$(EXT_SUFFIX) Modules/_contextvars$(EXT_SUFFIX) Modules/_csv$(EXT_SUFFIX) Modules/_heapq$(EXT_SUFFIX) Modules/_json$(EXT_SUFFIX) Modules/_lsprof$(EXT_SUFFIX) Modules/_opcode$(EXT_SUFFIX) Modules/_pickle$(EXT_SUFFIX) Modules/_queue$(EXT_SUFFIX) Modules/_random$(EXT_SUFFIX) Modules/_struct$(EXT_SUFFIX) Modules/_xxsubinterpreters$(EXT_SUFFIX) Modules/_xxinterpchannels$(EXT_SUFFIX) Modules/_xxinterpqueues$(EXT_SUFFIX) Modules/_zoneinfo$(EXT_SUFFIX) Modules/math$(EXT_SUFFIX) Modules/cmath$(EXT_SUFFIX) Modules/_statistics$(EXT_SUFFIX) Modules/_datetime$(EXT_SUFFIX) Modules/_decimal$(EXT_SUFFIX) Modules/binascii$(EXT_SUFFIX) Modules/zlib$(EXT_SUFFIX) Modules/_md5$(EXT_SUFFIX) Modules/_sha1$(EXT_SUFFIX) Modules/_sha2$(EXT_SUFFIX) Modules/_sha3$(EXT_SUFFIX) Modules/_blake2$(EXT_SUFFIX) Modules/pyexpat$(EXT_SUFFIX) Modules/_elementtree$(EXT_SUFFIX) Modules/_codecs_cn$(EXT_SUFFIX) Modules/_codecs_hk$(EXT_SUFFIX) Modules/_codecs_iso2022$(EXT_SUFFIX) Modules/_codecs_jp$(EXT_SUFFIX) Modules/_codecs_kr$(EXT_SUFFIX) Modules/_codecs_tw$(EXT_SUFFIX) Modules/_multibytecodec$(EXT_SUFFIX) Modules/unicodedata$(EXT_SUFFIX) Modules/fcntl$(EXT_SUFFIX) Modules/grp$(EXT_SUFFIX) Modules/mmap$(EXT_SUFFIX) Modules/_posixsubprocess$(EXT_SUFFIX) Modules/resource$(EXT_SUFFIX) Modules/select$(EXT_SUFFIX) Modules/_socket$(EXT_SUFFIX) Modules/syslog$(EXT_SUFFIX) Modules/termios$(EXT_SUFFIX) Modules/_posixshmem$(EXT_SUFFIX) Modules/_multiprocessing$(EXT_SUFFIX) Modules/_ctypes$(EXT_SUFFIX) Modules/_curses$(EXT_SUFFIX) Modules/_curses_panel$(EXT_SUFFIX) Modules/_ssl$(EXT_SUFFIX) Modules/_hashlib$(EXT_SUFFIX) Modules/xxsubtype$(EXT_SUFFIX) Modules/_xxtestfuzz$(EXT_SUFFIX) Modules/_testbuffer$(EXT_SUFFIX) Modules/_testinternalcapi$(EXT_SUFFIX) Modules/_testcapi$(EXT_SUFFIX) Modules/_testclinic$(EXT_SUFFIX) Modules/_testclinic_limited$(EXT_SUFFIX) Modules/_testimportmultiple$(EXT_SUFFIX) Modules/_testmultiphase$(EXT_SUFFIX) Modules/_testsinglephase$(EXT_SUFFIX) Modules/_testexternalinspection$(EXT_SUFFIX) Modules/_ctypes_test$(EXT_SUFFIX) Modules/xxlimited$(EXT_SUFFIX) Modules/xxlimited_35$(EXT_SUFFIX)
+PYTHONPATH=$(COREPYTHONPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)
+TESTPATH=
+SITEPATH=
+DESTPATH=
+MACHDESTLIB=$(BINLIBDEST)
+DESTLIB=$(LIBDEST)
+
+##########################################################################
+Deps_Modules__tracemalloc = Modules/clinic/_tracemalloc.c.h
+Deps_Modules__io_textio = Modules/_io/clinic/textio.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__testcapi_exceptions = Modules/_testcapi/clinic/exceptions.c.h
+Deps_Modules__randommodule = Modules/clinic/_randommodule.c.h
+Deps_Modules__io_bufferedio = Modules/_io/clinic/bufferedio.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules_arraymodule = Modules/clinic/arraymodule.c.h
+Deps_Modules__sre_sre = Include/internal/pycore_emscripten_trampoline.h Modules/_sre/clinic/sre.c.h Modules/_sre/sre_targets.h
+Deps_Modules__abc = Modules/clinic/_abc.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Python_ceval = Include/internal/*.h
+Deps_Objects_typeobject = Include/internal/pycore_emscripten_trampoline.h Objects/clinic/typeobject.c.h
+Deps_Modules__zoneinfo = Include/datetime.h Modules/clinic/_zoneinfo.c.h
+Deps_Modules__testclinic_limited = Modules/clinic/_testclinic_limited.c.h
+Deps_Modules_rotatingtree = Modules/rotatingtree.h
+Deps_Modules__typingmodule = Modules/clinic/_typingmodule.c.h
+Deps_Modules__hashopenssl = Modules/clinic/_hashopenssl.c.h
+Deps_Modules__testcapi_vectorcall_limited = Modules/_testcapi/clinic/vectorcall_limited.c.h
+Deps_Modules__ctypes_stgdict = Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__opcode = Modules/clinic/_opcode.c.h
+Deps_Modules__elementtree = Modules/clinic/_elementtree.c.h
+Deps_Modules__testcapi_vectorcall = Modules/_testcapi/clinic/vectorcall.c.h
+Deps_Modules_selectmodule = Modules/clinic/selectmodule.c.h
+Deps_Python_gc = Include/internal/pycore_emscripten_trampoline.h
+Deps_Python_import = Include/internal/pycore_emscripten_trampoline.h Python/clinic/import.c.h
+Deps_Python_sysmodule = Include/internal/pycore_emscripten_trampoline.h Python/clinic/sysmodule.c.h
+Deps_Modules_pyexpat = Modules/clinic/pyexpat.c.h
+Deps_Modules_fcntlmodule = Modules/clinic/fcntlmodule.c.h
+Deps_Modules_syslogmodule = Modules/clinic/syslogmodule.c.h
+Deps_Modules__operator = Modules/clinic/_operator.c.h
+Deps_Modules_zlibmodule = Modules/clinic/zlibmodule.c.h
+Deps_Modules_resource = Modules/clinic/resource.c.h
+Deps_Modules_termios = Modules/clinic/termios.c.h
+Deps_Modules__threadmodule = Include/internal/pycore_emscripten_trampoline.h
+Deps_Objects_unicodeobject = Objects/clinic/unicodeobject.c.h Objects/stringlib/eq.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Python_crossinterp = Include/internal/pycore_emscripten_trampoline.h
+Deps_Objects_bytearrayobject = Include/internal/pycore_emscripten_trampoline.h Objects/stringlib/clinic/transmogrify.h.h Objects/clinic/bytearrayobject.c.h
+Deps_Objects_bytesobject = Include/internal/pycore_emscripten_trampoline.h Objects/stringlib/clinic/transmogrify.h.h Objects/clinic/bytesobject.c.h
+Deps_Modules__bisectmodule = Modules/clinic/_bisectmodule.c.h
+Deps_Modules_binascii = Modules/clinic/binascii.c.h
+Deps_Python_optimizer_analysis = Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__io_bytesio = Include/internal/pycore_emscripten_trampoline.h Modules/_io/clinic/bytesio.c.h
+Deps_Modules__testcapi_watchers = Modules/_testcapi/clinic/watchers.c.h
+Deps_Modules__testinternalcapi_test_lock = Modules/_testinternalcapi/clinic/test_lock.c.h
+Deps_Modules__curses_panel = Modules/clinic/_curses_panel.c.h
+Deps_Modules__queuemodule = Modules/clinic/_queuemodule.c.h
+Deps_Modules__blake2_blake2b_impl = Modules/_blake2/clinic/blake2b_impl.c.h
+Deps_Modules_getpath_noop = Include/*.h Include/cpython/*.h pyconfig.h Include/internal/pycore_pathconfig.h
+Deps_Modules__statisticsmodule = Modules/clinic/_statisticsmodule.c.h
+Deps_Modules__testcapi_datetime = Include/datetime.h
+Deps_Modules__testinternalcapi_set = Modules/_testcapi/util.h
+Deps_Modules_cjkcodecs_multibytecodec = Modules/cjkcodecs/clinic/multibytecodec.c.h
+Deps_Objects_dictobject = Objects/clinic/dictobject.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__datetimemodule = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/_datetimemodule.c.h
+Deps_Modules__sysconfig = Modules/clinic/_sysconfig.c.h
+Deps_Modules__lsprof = Modules/rotatingtree.h Modules/clinic/_lsprof.c.h
+Deps_Modules__ctypes_callproc = Modules/_ctypes/clinic/callproc.c.h
+Deps_Modules__suggestions = Modules/clinic/_suggestions.c.h
+Deps_Modules__localemodule = Modules/clinic/_localemodule.c.h
+Deps_Modules__cursesmodule = Modules/clinic/_cursesmodule.c.h
+Deps_Modules__collectionsmodule = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/_collectionsmodule.c.h
+Deps_Modules__io__iomodule = Modules/_io/clinic/_iomodule.c.h
+Deps_Modules_symtablemodule = Modules/clinic/symtablemodule.c.h
+Deps_Python_optimizer = Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__testinternalcapi = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/_testinternalcapi.c.h
+Deps_Modules__heapqmodule = Modules/clinic/_heapqmodule.c.h
+Deps_Modules__testcapi_long = Modules/_testcapi/clinic/long.c.h
+Deps_Modules_timemodule = Modules/clinic/timemodule.c.h
+Deps_Modules__csv = Modules/clinic/_csv.c.h
+Deps_Modules_cmathmodule = Modules/clinic/cmathmodule.c.h
+Deps_Modules_grpmodule = Modules/clinic/grpmodule.c.h
+Deps_Modules__asynciomodule = Modules/clinic/_asynciomodule.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Objects_obmalloc = Include/internal/pycore_emscripten_trampoline.h Objects/mimalloc/bitmap.h Objects/mimalloc/*.c
+Deps_Modules__posixsubprocess = Modules/posixmodule.h Modules/clinic/_posixsubprocess.c.h
+Deps_Modules_sha1module = Modules/clinic/sha1module.c.h
+Deps_Modules_sha3module = Modules/clinic/sha3module.c.h
+Deps_Modules__pickle = Modules/clinic/_pickle.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__weakref = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/_weakref.c.h
+Deps_Modules_md5module = Modules/clinic/md5module.c.h
+Deps_Objects_setobject = Objects/clinic/setobject.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__io_iobase = Include/internal/pycore_emscripten_trampoline.h Modules/_io/clinic/iobase.c.h
+Deps_Modules__ssl = Modules/_ssl/clinic/cert.c.h Modules/clinic/_ssl.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules_itertoolsmodule = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/itertoolsmodule.c.h
+Deps_Modules_pwdmodule = Modules/clinic/pwdmodule.c.h
+Deps_Modules__multiprocessing_multiprocessing = Modules/_multiprocessing/multiprocessing.h Modules/_multiprocessing/clinic/multiprocessing.c.h
+Deps_Modules_posixmodule = Modules/clinic/posixmodule.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__io_fileio = Modules/_io/clinic/fileio.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__functoolsmodule = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/_functoolsmodule.c.h
+Deps_Programs__freeze_module = Include/*.h Include/cpython/*.h pyconfig.h Include/internal/*.h
+Deps_Modules_sha2module = Modules/clinic/sha2module.c.h
+Deps_Modules__struct = Modules/clinic/_struct.c.h
+Deps_Modules__testmultiphase = Modules/clinic/_testmultiphase.c.h
+Deps_Modules__contextvarsmodule = Modules/clinic/_contextvarsmodule.c.h
+Deps_Modules__codecsmodule = Modules/clinic/_codecsmodule.c.h
+Deps_Modules_socketmodule = Modules/clinic/socketmodule.c.h
+Deps_Modules__multiprocessing_posixshmem = Modules/_multiprocessing/clinic/posixshmem.c.h
+Deps_LIBRARY_OBJS = Python/clinic/*.h Modules/clinic/gcmodule.c.h Objects/clinic/*.h Include/internal/pycore_emscripten_trampoline.h Python/condvar.h
+Deps_Modules_mathmodule = Modules/clinic/mathmodule.c.h Include/internal/pycore_emscripten_trampoline.h
+Deps_Modules__io_stringio = Include/internal/pycore_emscripten_trampoline.h Modules/_io/clinic/stringio.c.h
+Deps_Modules_signalmodule = Include/internal/pycore_emscripten_signal.h Modules/clinic/signalmodule.c.h
+Deps_Modules__testcapi_float = Modules/_testcapi/clinic/float.c.h
+Deps_Modules__testclinic = Include/internal/pycore_emscripten_trampoline.h Modules/clinic/*.h
+Deps_Modules_unicodedata = Modules/clinic/unicodedata.c.h
+Deps_Modules__blake2_blake2s_impl = Modules/_blake2/clinic/blake2s_impl.c.h
+Deps_Modules__multiprocessing_semaphore = Modules/_multiprocessing/multiprocessing.h Modules/_multiprocessing/clinic/semaphore.c.h
 
 ##########################################################################
 # Modules
@@ -443,9 +670,7 @@ PYTHON_OBJS=	\
 		Python/import.o \
 		Python/importdl.o \
 		Python/initconfig.o \
-		Python/interpconfig.o \
 		Python/instrumentation.o \
-		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
 		Python/legacy_tracing.o \
@@ -488,12 +713,11 @@ PYTHON_OBJS=	\
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
-		Python/perf_jit_trampoline.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
 		$(DTRACE_OBJS) \
-		@PLATFORM_OBJS@
+		
 
 
 ##########################################################################
@@ -519,6 +743,7 @@ OBJECT_OBJS=	\
 		Objects/floatobject.o \
 		Objects/frameobject.o \
 		Objects/funcobject.o \
+		Objects/interpreteridobject.o \
 		Objects/iterobject.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
@@ -542,7 +767,7 @@ OBJECT_OBJS=	\
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
-		@PERF_TRAMPOLINE_OBJ@
+		Python/asm_trampoline.o
 
 ##########################################################################
 # objects that get linked into the Python library
@@ -559,7 +784,7 @@ LIBRARY_OBJS=	\
 		Modules/getpath.o \
 		Python/frozen.o
 
-LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
+LINK_PYTHON_OBJS=$(LIBRARY_OBJS)
 
 ##########################################################################
 # DTrace
@@ -633,7 +858,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
 		Modules/expat/xmltok_impl.c \
-		Modules/expat/xmltok_ns.c
+		Modules/expat/xmltok_ns.c \
 
 ##########################################################################
 # hashlib's HACL* library
@@ -660,38 +885,14 @@ LIBHACL_SHA2_HEADERS= \
 # Rules
 
 # Default target
-all:		@DEF_MAKE_ALL_RULE@
+all: build_all
 
 # First target in Makefile is implicit default. So .PHONY needs to come after
 # all.
 .PHONY: all
 
-# Provide quick help for common Makefile targets.
-.PHONY: help
-help:
-	@echo "Run 'make' to build the Python executable and extension modules"
-	@echo ""
-	@echo "or 'make <target>' where <target> is one of:"
-	@echo "  test         run the test suite"
-	@echo "  install      install built files"
-	@echo "  regen-all    regenerate a number of generated source files"
-	@echo "  clinic       run Argument Clinic over source files"
-	@echo ""
-	@echo "  clean        to remove build files"
-	@echo "  distclean    'clean' + remove other generated files (patch, exe, etc)"
-	@echo ""
-	@echo "  recheck      rerun configure with last cmdline options"
-	@echo "  reindent     reindent .py files in Lib directory"
-	@echo "  tags         build a tags file (useful for Emacs and other editors)"
-	@echo "  list-targets list all targets in the Makefile"
-
-# Display a full list of Makefile targets
-.PHONY: list-targets
-list-targets:
-	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
-
 .PHONY: build_all
-build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
+build_all: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: build_wasm
@@ -700,7 +901,7 @@ build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
-check-clean-src:
+check-clean-src: 
 	@if test -n "$(VPATH)" -a \( \
 	    -f "$(srcdir)/$(BUILDPYTHON)" \
 	    -o -f "$(srcdir)/Programs/python.o" \
@@ -715,7 +916,7 @@ check-clean-src:
 	fi
 
 # Profile generation build must start from a clean tree.
-profile-clean-stamp:
+profile-clean-stamp: 
 	$(MAKE) clean
 	touch $@
 
@@ -727,11 +928,11 @@ profile-gen-stamp: profile-clean-stamp
 		exit 1;\
 	fi
 	@echo "Building with support for profile generation:"
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
+	$(MAKE) all CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 	touch $@
 
 # Run task with profile generation build to create profile information.
-profile-run-stamp:
+profile-run-stamp: 
 	@echo "Running code to generate profile data (this can take a while):"
 	# First, we need to create a clean build with profile generation
 	# enabled.
@@ -753,16 +954,16 @@ profile-run-stamp:
 profile-opt: profile-run-stamp
 	@echo "Rebuilding with profile guided optimizations:"
 	-rm -f profile-clean-stamp
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
+	$(MAKE) all CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
 
 # List of binaries that BOLT runs on.
-BOLT_BINARIES := @BOLT_BINARIES@
+BOLT_BINARIES := $(BUILDPYTHON)
 
-BOLT_INSTRUMENT_FLAGS := @BOLT_INSTRUMENT_FLAGS@
-BOLT_APPLY_FLAGS := @BOLT_APPLY_FLAGS@
+BOLT_INSTRUMENT_FLAGS := 
+BOLT_APPLY_FLAGS :=  -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot 
 
 .PHONY: clean-bolt
-clean-bolt:
+clean-bolt: 
 	# Profile data.
 	rm -f *.fdata
 	# Pristine binaries before BOLT optimization.
@@ -783,37 +984,37 @@ profile-bolt-stamp: $(BUILDPYTHON)
 	done
 	# Instrument each binary.
 	for bin in $(BOLT_BINARIES); do \
-	  @LLVM_BOLT@ "$${bin}" -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $${bin}.bolt) -o $${bin}.bolt_inst $(BOLT_INSTRUMENT_FLAGS); \
+	   "$${bin}" -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $${bin}.bolt) -o $${bin}.bolt_inst $(BOLT_INSTRUMENT_FLAGS); \
 	  mv "$${bin}.bolt_inst" "$${bin}"; \
 	done
 	# Run instrumented binaries to collect data.
 	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	# Merge all the data files together.
 	for bin in $(BOLT_BINARIES); do \
-	  @MERGE_FDATA@ $${bin}.*.fdata > "$${bin}.fdata"; \
+	   $${bin}.*.fdata > "$${bin}.fdata"; \
 	  rm -f $${bin}.*.fdata; \
 	done
 	# Run bolt against the merged data to produce an optimized binary.
 	for bin in $(BOLT_BINARIES); do \
-	  @LLVM_BOLT@ "$${bin}.prebolt" -o "$${bin}.bolt" -data="$${bin}.fdata" $(BOLT_APPLY_FLAGS); \
+	   "$${bin}.prebolt" -o "$${bin}.bolt" -data="$${bin}.fdata" $(BOLT_APPLY_FLAGS); \
 	  mv "$${bin}.bolt" "$${bin}"; \
 	done
 	touch $@
 
 .PHONY: bolt-opt
-bolt-opt:
-	$(MAKE) @PREBOLT_RULE@
+bolt-opt: 
+	$(MAKE) 
 	$(MAKE) profile-bolt-stamp
 
 # Compile and run with gcov
 .PHONY: coverage
-coverage:
+coverage: 
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
+	$(MAKE) all CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
 
 .PHONY: coverage-lcov
-coverage-lcov:
+coverage-lcov: 
 	@echo "Creating Coverage HTML report with LCOV:"
 	@rm -f $(COVERAGE_INFO)
 	@rm -rf $(COVERAGE_REPORT)
@@ -863,7 +1064,7 @@ clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
+$(BUILDPYTHON): Programs/python.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
@@ -901,7 +1102,7 @@ libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
 		$(LN) -f $(INSTSONAME) $@; \
 	fi
 
-libpython3.so:	libpython$(LDVERSION).so
+libpython3.so: libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
@@ -1016,6 +1217,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/frameobject.h \
 		$(srcdir)/Include/genericaliasobject.h \
 		$(srcdir)/Include/import.h \
+		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
@@ -1025,7 +1227,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
-		$(srcdir)/Include/monitoring.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1055,7 +1256,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
-		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
@@ -1091,12 +1291,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/genobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
+		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/listobject.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
-		$(srcdir)/Include/cpython/monitoring.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1134,7 +1334,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
-		$(srcdir)/Include/internal/pycore_backoff.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_blocks_output_buffer.h \
 		$(srcdir)/Include/internal/pycore_brc.h \
@@ -1142,7 +1341,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_capsule.h \
-		$(srcdir)/Include/internal/pycore_cell.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_ceval_state.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1180,7 +1378,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_importdl.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_instruments.h \
-		$(srcdir)/Include/internal/pycore_instruction_sequence.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_jit.h \
@@ -1231,7 +1428,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
-		$(srcdir)/Include/internal/pycore_stackref.h \
 		$(srcdir)/Include/internal/pycore_time.h \
 		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
@@ -1249,13 +1445,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
 		$(DTRACE_HEADERS) \
-		@PLATFORM_HEADERS@ \
+		 \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) -I$(srcdir)/Modules/_decimal/libmpdec -fstrict-overflow -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1 $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
@@ -1309,7 +1505,7 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
-LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBEXPAT_CFLAGS=-I$(srcdir)/Modules/expat $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
@@ -1370,7 +1566,7 @@ rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 		done \
 	fi
 
-Modules/Setup.local:
+Modules/Setup.local: 
 	@# Create empty Setup.local when file was deleted by user
 	echo "# Edit this file for local setup changes" > $@
 
@@ -1404,7 +1600,7 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
 .PHONY: regen-test-levenshtein
-regen-test-levenshtein:
+regen-test-levenshtein: 
 	# Regenerate Lib/test/levenshtein_examples.json
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_levenshtein_examples.py $(srcdir)/Lib/test/levenshtein_examples.json
 
@@ -1418,7 +1614,7 @@ Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# "Bootstrap Python" used to run Programs/_freeze_module.py
+# "Bootstrap Python" used to run deepfreeze.py
 
 BOOTSTRAP_HEADERS = \
 	Python/frozen_modules/importlib._bootstrap.h \
@@ -1437,13 +1633,13 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 #
 # Freezing is a multi step process. It works differently for standard builds
 # and cross builds. Standard builds use Programs/_freeze_module and
-# _bootstrap_python for freezing, so users can build Python
+# _bootstrap_python for freezing and deepfreezing, so users can build Python
 # without an existing Python installation. Cross builds cannot execute
 # compiled binaries and therefore rely on an external build Python
 # interpreter. The build interpreter must have same version and same bytecode
 # as the host (target) binary.
 #
-# Standard build process:
+# Standard build process: 
 # 1) compile minimal core objects for Py_Compile*() and PyMarshal_Write*().
 # 2) build Programs/_freeze_module binary.
 # 3) create frozen module headers for importlib and getpath.
@@ -1451,10 +1647,12 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 # 5) create remaining frozen module headers with
 #    ``./_bootstrap_python Programs/_freeze_module.py``. The pure Python
 #    script is used to test the cross compile code path.
+# 6) deepfreeze modules with _bootstrap_python
 #
-# Cross compile process:
+# Cross compile process: 
 # 1) create all frozen module headers with external build Python and
 #    Programs/_freeze_module.py script.
+# 2) deepfreeze modules with external build Python.
 #
 
 # FROZEN_FILES_* are auto-generated by Tools/build/freeze_modules.py.
@@ -1509,9 +1707,9 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/frozen_only.h
 # End FROZEN_FILES_OUT
 
-Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
+Programs/_freeze_module.o: $(Deps_Programs__freeze_module) Programs/_freeze_module.c Makefile
 
-Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
+Modules/getpath_noop.o: $(Deps_Modules_getpath_noop) $(srcdir)/Modules/getpath_noop.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
@@ -1600,6 +1798,41 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py --frozen-modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
+############################################################################
+# Deepfreeze targets
+
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
+DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+
+# BEGIN: deepfreeze modules
+$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
+	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
+	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
+	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
+	Python/frozen_modules/zipimport.h:zipimport \
+	Python/frozen_modules/abc.h:abc \
+	Python/frozen_modules/codecs.h:codecs \
+	Python/frozen_modules/io.h:io \
+	Python/frozen_modules/_collections_abc.h:_collections_abc \
+	Python/frozen_modules/_sitebuiltins.h:_sitebuiltins \
+	Python/frozen_modules/genericpath.h:genericpath \
+	Python/frozen_modules/ntpath.h:ntpath \
+	Python/frozen_modules/posixpath.h:posixpath \
+	Python/frozen_modules/os.h:os \
+	Python/frozen_modules/site.h:site \
+	Python/frozen_modules/stat.h:stat \
+	Python/frozen_modules/importlib.util.h:importlib.util \
+	Python/frozen_modules/importlib.machinery.h:importlib.machinery \
+	Python/frozen_modules/runpy.h:runpy \
+	Python/frozen_modules/__hello__.h:__hello__ \
+	Python/frozen_modules/__phello__.h:__phello__ \
+	Python/frozen_modules/__phello__.ham.h:__phello__.ham \
+	Python/frozen_modules/__phello__.ham.eggs.h:__phello__.ham.eggs \
+	Python/frozen_modules/__phello__.spam.h:__phello__.spam \
+	Python/frozen_modules/frozen_only.h:frozen_only \
+	-o Python/deepfreeze/deepfreeze.c
+# END: deepfreeze modules
+
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
 regen-importlib: regen-frozen
@@ -1607,7 +1840,7 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
-# Dependencies which can add and/or remove _Py_ID() identifiers:
+# Dependencies which can add and/or remove _Py_ID() identifiers: 
 # - "make clinic"
 .PHONY: regen-global-objects
 regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py clinic
@@ -1634,7 +1867,7 @@ regen-limited-abi: all
 # Regenerate Unicode Data
 
 .PHONY: regen-unicodedata
-regen-unicodedata:
+regen-unicodedata: 
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
 
 
@@ -1683,27 +1916,23 @@ Programs/python.o: $(srcdir)/Programs/python.c
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
-Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
+Modules/_sre/sre.o: $(Deps_Modules__sre_sre) $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
 
-Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/posixmodule.o: $(Deps_Modules_posixmodule) $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/grpmodule.o: $(Deps_Modules_grpmodule) $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/pwdmodule.o: $(Deps_Modules_pwdmodule) $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
+Modules/signalmodule.o: $(Deps_Modules_signalmodule) $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/_interpretersmodule.o: $(srcdir)/Modules/_interpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
 
-Modules/_interpqueuesmodule.o: $(srcdir)/Modules/_interpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
 
-Modules/_interpchannelsmodule.o: $(srcdir)/Modules/_interpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
 
-Python/crossinterp.o: $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
-
-Python/initconfig.o: $(srcdir)/Python/initconfig.c $(srcdir)/Python/config_common.h
-
-Python/interpconfig.o: $(srcdir)/Python/interpconfig.c $(srcdir)/Python/config_common.h
+Python/crossinterp.o: $(Deps_Python_crossinterp) $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
 
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
@@ -1715,7 +1944,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
 		-o $@ $(srcdir)/Python/dynload_hpux.c
 
-Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
+Python/sysmodule.o: $(Deps_Python_sysmodule) $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
@@ -1724,7 +1953,7 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 $(IO_OBJS): $(IO_H)
 
 .PHONY: regen-pegen-metaparser
-regen-pegen-metaparser:
+regen-pegen-metaparser: 
 	@$(MKDIR_P) $(srcdir)/Tools/peg_generator/pegen
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q python \
 	$(srcdir)/Tools/peg_generator/pegen/metagrammar.gram \
@@ -1733,7 +1962,7 @@ regen-pegen-metaparser:
 	$(srcdir)/Tools/peg_generator/pegen/grammar_parser.py.new
 
 .PHONY: regen-pegen
-regen-pegen:
+regen-pegen: 
 	@$(MKDIR_P) $(srcdir)/Parser
 	@$(MKDIR_P) $(srcdir)/Parser/tokenizer
 	@$(MKDIR_P) $(srcdir)/Parser/lexer
@@ -1744,7 +1973,7 @@ regen-pegen:
 	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 
 .PHONY: regen-ast
-regen-ast:
+regen-ast: 
 	# Regenerate 3 files using using Parser/asdl_c.py:
 	# - Include/internal/pycore_ast.h
 	# - Include/internal/pycore_ast_state.h
@@ -1762,7 +1991,7 @@ regen-ast:
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-token
-regen-token:
+regen-token: 
 	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
 	# using Tools/build/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_token.py rst \
@@ -1785,7 +2014,7 @@ regen-token:
 		$(srcdir)/Lib/token.py
 
 .PHONY: regen-keyword
-regen-keyword:
+regen-keyword: 
 	# Regenerate Lib/keyword.py from Grammar/python.gram and Grammar/Tokens
 	# using Tools/peg_generator/pegen
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen.keywordgen \
@@ -1804,7 +2033,7 @@ regen-stdlib-module-names: all Programs/_testembed
 	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
 
 .PHONY: regen-sre
-regen-sre:
+regen-sre: 
 	# Regenerate Modules/_sre/sre_constants.h and Modules/_sre/sre_targets.h
 	# from Lib/re/_constants.py using Tools/build/generate_sre_constants.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sre_constants.py \
@@ -1812,7 +2041,7 @@ regen-sre:
 		$(srcdir)/Modules/_sre/sre_constants.h \
 		$(srcdir)/Modules/_sre/sre_targets.h
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -1820,7 +2049,7 @@ Python/getplatform.o: $(srcdir)/Python/getplatform.c
 Python/importdl.o: $(srcdir)/Python/importdl.c
 		$(CC) -c $(PY_CORE_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
 
-Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
+Objects/unicodectype.o: $(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
 BYTESTR_DEPS = \
@@ -1844,7 +2073,6 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
-		$(srcdir)/Objects/stringlib/repr.h \
 		$(srcdir)/Objects/stringlib/split.h \
 		$(srcdir)/Objects/stringlib/ucs1lib.h \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
@@ -1853,15 +2081,15 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/unicode_format.h
 
 Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
-Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
-Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
+Objects/bytesobject.o: $(Deps_Objects_bytesobject) $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
+Objects/bytearrayobject.o: $(Deps_Objects_bytearrayobject) $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
-Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
+Objects/unicodeobject.o: $(Deps_Objects_unicodeobject) $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
-Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
+Objects/dictobject.o: $(Deps_Objects_dictobject) $(srcdir)/Objects/stringlib/eq.h
+Objects/setobject.o: $(Deps_Objects_setobject) $(srcdir)/Objects/stringlib/eq.h
 
-Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
+Objects/obmalloc.o: $(Deps_Objects_obmalloc) $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
 		$(srcdir)/Objects/mimalloc/alloc-posix.c \
 		$(srcdir)/Objects/mimalloc/arena.c \
@@ -1882,80 +2110,43 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
-
-# Regenerate various files from Python/bytecodes.c
-# Pass CASESFLAG=-l to insert #line directives in the output
-
 .PHONY: regen-cases
-regen-cases: \
-        regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
-		regen-generated-cases regen-executor-cases regen-optimizer-cases \
-		regen-opcode-metadata regen-uop-metadata
-
-.PHONY: regen-opcode-ids
-regen-opcode-ids:
+regen-cases: 
+	# Regenerate various files from Python/bytecodes.c
+	# Pass CASESFLAG=-l to insert #line directives in the output
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_id_generator.py \
 	    -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
-
-.PHONY: regen-opcode-targets
-regen-opcode-targets:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
 	    -o $(srcdir)/Python/opcode_targets.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
-
-.PHONY: regen-uop-ids
-regen-uop-ids:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_id_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_uop_ids.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
-
-.PHONY: regen-opcode-metadata-py
-regen-opcode-metadata-py:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/py_metadata_generator.py \
 	    -o $(srcdir)/Lib/_opcode_metadata.py.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
-
-.PHONY: regen-generated-cases
-regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-
-.PHONY: regen-executor-cases
-regen-executor-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
 	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
-
-.PHONY: regen-optimizer-cases
-regen-optimizer-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/optimizer_generator.py \
 	    -o $(srcdir)/Python/optimizer_cases.c.h.new \
 	    $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
-
-.PHONY: regen-opcode-metadata
-regen-opcode-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_metadata_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_opcode_metadata.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
-
-.PHONY: regen-uop-metadata
-regen-uop-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_metadata_generator.py -o \
 	    $(srcdir)/Include/internal/pycore_uop_metadata.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
-Python/compile.o Python/assemble.o Python/flowgraph.o Python/instruction_sequence.o: \
-                $(srcdir)/Include/internal/pycore_compile.h \
-                $(srcdir)/Include/internal/pycore_flowgraph.h \
-                $(srcdir)/Include/internal/pycore_instruction_sequence.h \
-                $(srcdir)/Include/internal/pycore_opcode_metadata.h \
-                $(srcdir)/Include/internal/pycore_opcode_utils.h
+Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
 
-Python/ceval.o: \
+Python/ceval.o: $(Deps_Python_ceval) \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
@@ -1965,12 +2156,12 @@ Python/ceval.o: \
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
 
-Python/optimizer.o: \
+Python/optimizer.o: $(Deps_Python_optimizer) \
 		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h
 
-Python/optimizer_analysis.o: \
+Python/optimizer_analysis.o: $(Deps_Python_optimizer_analysis) \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Python/optimizer_cases.c.h
@@ -1987,17 +2178,17 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
 
-Python/ceval.o: $(srcdir)/Include/pydtrace.h
-Python/gc.o: $(srcdir)/Include/pydtrace.h
-Python/import.o: $(srcdir)/Include/pydtrace.h
+Python/ceval.o: $(Deps_Python_ceval) $(srcdir)/Include/pydtrace.h
+Python/gc.o: $(Deps_Python_gc) $(srcdir)/Include/pydtrace.h
+Python/import.o: $(Deps_Python_import) $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
 
-Objects/typeobject.o: Objects/typeslots.inc
+Objects/typeobject.o: $(Deps_Objects_typeobject) Objects/typeslots.inc
 
 .PHONY: regen-typeslots
-regen-typeslots:
+regen-typeslots: 
 	# Regenerate Objects/typeslots.inc from Include/typeslotsh
 	# using Objects/typeslots.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Objects/typeslots.py \
@@ -2005,7 +2196,7 @@ regen-typeslots:
 		$(srcdir)/Objects/typeslots.inc.new
 	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
 
-$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(Deps_LIBRARY_OBJS) $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -2039,54 +2230,6 @@ testuniversal: all
 	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
-
-# Run the test suite on the iOS simulator. Must be run on a macOS machine with
-# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
-# This must be run *after* a `make install` has completed the build. The
-# `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
-XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
-.PHONY: testios
-testios:
-	@if test "$(MACHDEP)" != "ios"; then \
-		echo "Cannot run the iOS testbed for a non-iOS build."; \
-		exit 1;\
-	fi
-	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
-		echo "Cannot run the iOS testbed for non-simulator builds."; \
-		exit 1;\
-	fi
-	@if test $(PYTHONFRAMEWORK) != "Python"; then \
-		echo "Cannot run the iOS testbed with a non-default framework name."; \
-		exit 1;\
-	fi
-	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
-		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
-		exit 1;\
-	fi
-	# Copy the testbed project into the build folder
-	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
-	# Copy the framework from the install location to the testbed project.
-	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
-
-	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, touch a file in the test folder as a marker
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
-	 	touch $(XCFOLDER)/failed; \
-	fi
-
-	# Regardless of success or failure, extract and print the test output
-	xcrun xcresulttool get --path $(XCRESULT) \
-		--id $$( \
-			xcrun xcresulttool get --path $(XCRESULT) --format json | \
-			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
-		) \
-		--format json | \
-		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
-
-	@if test -e $(XCFOLDER)/failed ; then \
-		exit 1; \
-	fi
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -2127,7 +2270,7 @@ multissltest: all
 # which can lead to two parallel `./python setup.py build` processes that
 # step on each others toes.
 .PHONY: install
-install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
+install: commoninstall bininstall maninstall
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -2149,9 +2292,9 @@ altinstall: commoninstall
 	fi
 
 .PHONY: commoninstall
-commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
+commoninstall: check-clean-src  \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
+		sharedinstall altmaninstall 
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -2180,7 +2323,7 @@ sharedinstall: all
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 .PHONY: altbininstall
-altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
+altbininstall: $(BUILDPYTHON)
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2263,10 +2406,10 @@ bininstall: commoninstall altbininstall
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-config; \
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python$(VERSION)-config); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION).pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION).pc python-$(VERSION).pc); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION)-embed.pc python-$(VERSION)-embed.pc); \
+		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc; \
+		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python-$(LDVERSION).pc); \
+		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc; \
+		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python-$(LDVERSION)-embed.pc); \
 	fi
 	-rm -f $(DESTDIR)$(BINDIR)/python3-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
@@ -2289,7 +2432,7 @@ bininstall: commoninstall altbininstall
 
 # Install the versioned manual page
 .PHONY: altmaninstall
-altmaninstall:
+altmaninstall: 
 	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2303,7 +2446,7 @@ altmaninstall:
 
 # Install the unversioned manual page
 .PHONY: maninstall
-maninstall:	altmaninstall
+maninstall: altmaninstall
 	-rm -f $(DESTDIR)$(MANDIR)/man1/python3.1
 	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
 
@@ -2343,7 +2486,6 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zipfile zipfile/_path \
 		zoneinfo \
-		_pyrepl \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
@@ -2370,7 +2512,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/interpreters \
 		test/test_asyncio \
 		test/test_capi \
-		test/test_cext \
 		test/test_concurrent_futures \
 		test/test_cppext \
 		test/test_ctypes \
@@ -2378,7 +2519,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
-		test/test_free_threading \
 		test/test_future_stmt \
 		test/test_gdb \
 		test/test_import \
@@ -2389,21 +2529,13 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
-		test/test_import/data/package3 \
-		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
+		test/test_importlib/data \
 		test/test_importlib/extension \
 		test/test_importlib/frozen \
 		test/test_importlib/import_ \
-		test/test_importlib/metadata \
-		test/test_importlib/metadata/data \
-		test/test_importlib/metadata/data/sources \
-		test/test_importlib/metadata/data/sources/example \
-		test/test_importlib/metadata/data/sources/example/example \
-		test/test_importlib/metadata/data/sources/example2 \
-		test/test_importlib/metadata/data/sources/example2/example2 \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
@@ -2438,7 +2570,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/data03/namespace/portion1 \
 		test/test_importlib/resources/data03/namespace/portion2 \
 		test/test_importlib/resources/namespacedata01 \
-		test/test_importlib/resources/namespacedata01/subdirectory \
 		test/test_importlib/resources/zipdata01 \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
@@ -2452,7 +2583,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_pydoc \
-		test/test_pyrepl \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
@@ -2489,15 +2619,14 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20 \
-		test/zipimport_data
+		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 
-TEST_MODULES=@TEST_MODULES@
+TEST_MODULES=yes
 
 .PHONY: libinstall
-libinstall:	all $(srcdir)/Modules/xxmodule.c
+libinstall: all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2614,7 +2743,7 @@ scripts: $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
 
 .PHONY: inclinstall
-inclinstall:
+inclinstall: 
 	@for i in $(INCLDIRSTOMAKE); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -2633,12 +2762,6 @@ inclinstall:
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
 	else	true; \
 	fi
-	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
-		if test ! -d $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; then \
-			echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc"; \
-			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
-		fi; \
-	fi
 	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
@@ -2654,21 +2777,11 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
-	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
-		echo $(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
-		$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
-		for i in $(srcdir)/Include/internal/mimalloc/mimalloc/*.h; \
-		do \
-			echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc/mimalloc; \
-			$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
-		done; \
-	fi
-	echo $(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
-LIBPL=		@LIBPL@
+LIBPL=		$(prefix)/lib/python3.13/config-$(VERSION)$(ABIFLAGS)-x86_64-linux-gnu
 
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
@@ -2704,8 +2817,8 @@ libainstall: all scripts
 	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
 	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
-	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc
-	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc
+	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
+	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
@@ -2746,11 +2859,11 @@ frameworkinstall: install
 # only have to cater for the structural bits of the framework.
 
 .PHONY: frameworkinstallframework
-frameworkinstallframework: @FRAMEWORKINSTALLFIRST@ install frameworkinstallmaclib
+frameworkinstallframework: install frameworkinstallmaclib
 
 # macOS uses a versioned frameworks structure that includes a full install
 .PHONY: frameworkinstallversionedstructure
-frameworkinstallversionedstructure:	$(LDLIBRARY)
+frameworkinstallversionedstructure: $(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
 		exit 1; \
@@ -2774,7 +2887,7 @@ frameworkinstallversionedstructure:	$(LDLIBRARY)
 # iOS/tvOS/watchOS uses a non-versioned framework with Info.plist in the
 # framework root, no .lproj data, and only stub compilation assistance binaries
 .PHONY: frameworkinstallunversionedstructure
-frameworkinstallunversionedstructure:	$(LDLIBRARY)
+frameworkinstallunversionedstructure: $(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
 		exit 1; \
@@ -2796,7 +2909,7 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 # Install a number of symlinks to keep software that expects a normal unix
 # install (which includes python-config) happy.
 .PHONY: frameworkinstallmaclib
-frameworkinstallmaclib:
+frameworkinstallmaclib: 
 	$(LN) -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(LIBPL)/libpython$(LDVERSION).a"
 	$(LN) -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(LIBPL)/libpython$(LDVERSION).dylib"
 	$(LN) -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(LIBPL)/libpython$(VERSION).a"
@@ -2806,30 +2919,30 @@ frameworkinstallmaclib:
 
 # This installs the IDE, the Launcher and other apps into /Applications
 .PHONY: frameworkinstallapps
-frameworkinstallapps:
+frameworkinstallapps: 
 	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
 # Build the bootstrap executable that will spawn the interpreter inside
 # an app bundle within the framework.  This allows the interpreter to
 # run OS X GUI APIs.
 .PHONY: frameworkpythonw
-frameworkpythonw:
+frameworkpythonw: 
 	cd Mac && $(MAKE) pythonw
 
 # This installs the python* and other bin symlinks in $prefix/bin or in
 # a bin directory relative to the framework root
 .PHONY: frameworkinstallunixtools
-frameworkinstallunixtools:
+frameworkinstallunixtools: 
 	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
 .PHONY: frameworkaltinstallunixtools
-frameworkaltinstallunixtools:
+frameworkaltinstallunixtools: 
 	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
 
 # This installs the Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 .PHONY: frameworkinstallextras
-frameworkinstallextras:
+frameworkinstallextras: 
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
 
 # On iOS, bin/lib can't live inside the framework; include needs to be called
@@ -2837,13 +2950,13 @@ frameworkinstallextras:
 # subdirectory. The install has put these folders in the same folder as
 # Python.framework; Move the headers to their final framework-compatible home.
 .PHONY: frameworkinstallmobileheaders
-frameworkinstallmobileheaders: frameworkinstallunversionedstructure inclinstall
+frameworkinstallmobileheaders: 
 	if test -d $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
 		echo "Removing old framework headers"; \
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
 	fi
-	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
-	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)"
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
@@ -2851,7 +2964,7 @@ Makefile.pre: $(srcdir)/Makefile.pre.in config.status
 	$(MAKE) -f Makefile.pre Makefile
 
 # Run the configure script.
-config.status:	$(srcdir)/configure
+config.status: $(srcdir)/configure
 	$(srcdir)/configure $(CONFIG_ARGS)
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
@@ -2867,17 +2980,17 @@ JIT_DEPS = \
 		pyconfig.h
 
 jit_stencils.h: $(JIT_DEPS)
-	@REGEN_JIT_COMMAND@
+	
 
-Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+Python/jit.o: $(srcdir)/Python/jit.c
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
-regen-jit:
-	@REGEN_JIT_COMMAND@
+regen-jit: 
+	
 
 # Some make's put the object file in the current directory
-.c.o:
+.c.o: 
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 # bpo-30104: dtoa.c uses union to cast double to unsigned long[2]. clang 4.0
@@ -2889,31 +3002,31 @@ Python/dtoa.o: Python/dtoa.c
 
 # Run reindent on the library
 .PHONY: reindent
-reindent:
+reindent: 
 	./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/reindent.py -r $(srcdir)/Lib
 
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
 .PHONY: recheck
-recheck:
+recheck: 
 	./config.status --recheck
 	./config.status
 
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
-autoconf:
+autoconf: 
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
 .PHONY: regen-configure
-regen-configure:
+regen-configure: 
 	$(srcdir)/Tools/build/regen-configure.sh
 
 .PHONY: regen-sbom
-regen-sbom:
+regen-sbom: 
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
-tags::
+tags:: 
 	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/cpython/*.h $(srcdir)/Include/internal/*.h
 	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
 	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
@@ -2921,7 +3034,7 @@ tags::
 	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
-TAGS::
+TAGS:: 
 	cd $(srcdir); \
 	etags Include/*.h Include/cpython/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
@@ -2931,12 +3044,12 @@ TAGS::
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes as well
 .PHONY: pycremoval
-pycremoval:
+pycremoval: 
 	-find $(srcdir) -depth -name '__pycache__' -exec rm -rf {} ';'
 	-find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
 .PHONY: rmtestturds
-rmtestturds:
+rmtestturds: 
 	-rm -f *BAD *GOOD *SKIPPED
 	-rm -rf OUT
 	-rm -f *.TXT
@@ -2944,7 +3057,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 .PHONY: docclean
-docclean:
+docclean: 
 	$(MAKE) -C $(srcdir)/Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
@@ -2965,20 +3078,16 @@ clean-retain-profile: pycremoval
 	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -f $(WASM_STDLIB)
 	-rm -f Programs/_testembed Programs/_freeze_module
-	-rm -rf Python/deepfreeze
+	-rm -f Python/deepfreeze/*.[co]
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
 	-rm -f jit_stencils.h
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
-	-rm -rf iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
-profile-removal:
+profile-removal: 
 	find . -name '*.gc??' -exec rm -f {} ';'
 	find . -name '*.profclang?' -exec rm -f {} ';'
 	find . -name '*.dyn' -exec rm -f {} ';'
@@ -2989,7 +3098,7 @@ profile-removal:
 
 .PHONY: clean
 clean: clean-retain-profile clean-bolt
-	@if test @DEF_MAKE_ALL_RULE@ = profile-opt -o @DEF_MAKE_ALL_RULE@ = bolt-opt; then \
+	@if test build_all = profile-opt -o build_all = bolt-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
 	fi
@@ -3001,12 +3110,10 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
-	-rm -rf iOS/Frameworks
-	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
 
-# Make things extra clean, before making a distribution:
+# Make things extra clean, before making a distribution: 
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
 .PHONY: distclean
@@ -3036,14 +3143,14 @@ smelly: all
 
 # Check if any unsupported C global variables have been added.
 .PHONY: check-c-globals
-check-c-globals:
+check-c-globals: 
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
 		--format summary \
 		--traceback
 
 # Find files with funny names
 .PHONY: funny
-funny:
+funny: 
 	find $(SUBDIRS) $(SUBDIRSTOO) \
 		-type d \
 		-o -name '*.[chs]' \
@@ -3083,35 +3190,34 @@ check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
 
 .PHONY: update-config
-update-config:
+update-config: 
 	curl -sL -o config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
 	curl -sL -o config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
 	chmod +x config.guess config.sub
 
 # Dependencies
 
-Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
+Python/thread.o: $(srcdir)/Python/thread_nt.h $(srcdir)/Python/thread_pthread.h $(srcdir)/Python/thread_pthread_stubs.h $(srcdir)/Python/condvar.h
 
 ##########################################################################
 # Module dependencies and platform-specific files
 
 # force rebuild when header file or module build flavor (static/shared) is changed
 MODULE_DEPS_STATIC=Modules/config.c
-MODULE_DEPS_SHARED=@MODULE_DEPS_SHARED@
+MODULE_DEPS_SHARED=$(MODULE_DEPS_STATIC) $(EXPORTSYMS)
 
 MODULE__CURSES_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__CURSES_PANEL_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__DATETIME_DEPS=$(srcdir)/Include/datetime.h
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
-MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
+MODULE_PYEXPAT_DEPS=$(LIBEXPAT_HEADERS) $(LIBEXPAT_A)
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
-MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
-MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
-MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
+MODULE__CTYPES_MALLOC_CLOSURE=
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(LIBMPDEC_HEADERS) $(LIBMPDEC_A)
+MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c $(LIBEXPAT_HEADERS) $(LIBEXPAT_A)
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
@@ -3120,8 +3226,7 @@ MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_
 MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
-MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
-MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 
@@ -3135,6 +3240,252 @@ MODULE__CODECS_TW_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_tw.h $(CODECS_COMMON
 MODULE__MULTIBYTECODEC_DEPS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
-# Local Variables:
+# Local Variables: 
 # mode: makefile
-# End:
+# End: 
+
+# Rules appended by makesetup
+
+Modules/arraymodule.o: $(Deps_Modules_arraymodule) $(srcdir)/Modules/arraymodule.c $(MODULE_ARRAY_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_ARRAY_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/arraymodule.c -o Modules/arraymodule.o
+Modules/array$(EXT_SUFFIX): Modules/arraymodule.o; $(BLDSHARED)  Modules/arraymodule.o $(MODULE_ARRAY_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/array$(EXT_SUFFIX)
+Modules/_asynciomodule.o: $(Deps_Modules__asynciomodule) $(srcdir)/Modules/_asynciomodule.c $(MODULE__ASYNCIO_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__ASYNCIO_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_asynciomodule.c -o Modules/_asynciomodule.o
+Modules/_asyncio$(EXT_SUFFIX): Modules/_asynciomodule.o; $(BLDSHARED)  Modules/_asynciomodule.o $(MODULE__ASYNCIO_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_asyncio$(EXT_SUFFIX)
+Modules/_bisectmodule.o: $(Deps_Modules__bisectmodule) $(srcdir)/Modules/_bisectmodule.c $(MODULE__BISECT_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__BISECT_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_bisectmodule.c -o Modules/_bisectmodule.o
+Modules/_bisect$(EXT_SUFFIX): Modules/_bisectmodule.o; $(BLDSHARED)  Modules/_bisectmodule.o $(MODULE__BISECT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_bisect$(EXT_SUFFIX)
+Modules/_contextvarsmodule.o: $(Deps_Modules__contextvarsmodule) $(srcdir)/Modules/_contextvarsmodule.c $(MODULE__CONTEXTVARS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CONTEXTVARS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_contextvarsmodule.c -o Modules/_contextvarsmodule.o
+Modules/_contextvars$(EXT_SUFFIX): Modules/_contextvarsmodule.o; $(BLDSHARED)  Modules/_contextvarsmodule.o $(MODULE__CONTEXTVARS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_contextvars$(EXT_SUFFIX)
+Modules/_csv.o: $(Deps_Modules__csv) $(srcdir)/Modules/_csv.c $(MODULE__CSV_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CSV_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_csv.c -o Modules/_csv.o
+Modules/_csv$(EXT_SUFFIX): Modules/_csv.o; $(BLDSHARED)  Modules/_csv.o $(MODULE__CSV_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_csv$(EXT_SUFFIX)
+Modules/_heapqmodule.o: $(Deps_Modules__heapqmodule) $(srcdir)/Modules/_heapqmodule.c $(MODULE__HEAPQ_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__HEAPQ_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_heapqmodule.c -o Modules/_heapqmodule.o
+Modules/_heapq$(EXT_SUFFIX): Modules/_heapqmodule.o; $(BLDSHARED)  Modules/_heapqmodule.o $(MODULE__HEAPQ_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_heapq$(EXT_SUFFIX)
+Modules/_json.o: $(srcdir)/Modules/_json.c $(MODULE__JSON_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__JSON_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_json.c -o Modules/_json.o
+Modules/_json$(EXT_SUFFIX): Modules/_json.o; $(BLDSHARED)  Modules/_json.o $(MODULE__JSON_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_json$(EXT_SUFFIX)
+Modules/_lsprof.o: $(Deps_Modules__lsprof) $(srcdir)/Modules/_lsprof.c $(MODULE__LSPROF_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__LSPROF_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_lsprof.c -o Modules/_lsprof.o
+Modules/rotatingtree.o: $(Deps_Modules_rotatingtree) $(srcdir)/Modules/rotatingtree.c $(MODULE__LSPROF_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__LSPROF_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/rotatingtree.c -o Modules/rotatingtree.o
+Modules/_lsprof$(EXT_SUFFIX): Modules/_lsprof.o Modules/rotatingtree.o; $(BLDSHARED)  Modules/_lsprof.o Modules/rotatingtree.o $(MODULE__LSPROF_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_lsprof$(EXT_SUFFIX)
+Modules/_opcode.o: $(Deps_Modules__opcode) $(srcdir)/Modules/_opcode.c $(MODULE__OPCODE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__OPCODE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_opcode.c -o Modules/_opcode.o
+Modules/_opcode$(EXT_SUFFIX): Modules/_opcode.o; $(BLDSHARED)  Modules/_opcode.o $(MODULE__OPCODE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_opcode$(EXT_SUFFIX)
+Modules/_pickle.o: $(Deps_Modules__pickle) $(srcdir)/Modules/_pickle.c $(MODULE__PICKLE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__PICKLE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_pickle.c -o Modules/_pickle.o
+Modules/_pickle$(EXT_SUFFIX): Modules/_pickle.o; $(BLDSHARED)  Modules/_pickle.o $(MODULE__PICKLE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_pickle$(EXT_SUFFIX)
+Modules/_queuemodule.o: $(Deps_Modules__queuemodule) $(srcdir)/Modules/_queuemodule.c $(MODULE__QUEUE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__QUEUE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_queuemodule.c -o Modules/_queuemodule.o
+Modules/_queue$(EXT_SUFFIX): Modules/_queuemodule.o; $(BLDSHARED)  Modules/_queuemodule.o $(MODULE__QUEUE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_queue$(EXT_SUFFIX)
+Modules/_randommodule.o: $(Deps_Modules__randommodule) $(srcdir)/Modules/_randommodule.c $(MODULE__RANDOM_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__RANDOM_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_randommodule.c -o Modules/_randommodule.o
+Modules/_random$(EXT_SUFFIX): Modules/_randommodule.o; $(BLDSHARED)  Modules/_randommodule.o $(MODULE__RANDOM_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_random$(EXT_SUFFIX)
+Modules/_struct.o: $(Deps_Modules__struct) $(srcdir)/Modules/_struct.c $(MODULE__STRUCT_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__STRUCT_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_struct.c -o Modules/_struct.o
+Modules/_struct$(EXT_SUFFIX): Modules/_struct.o; $(BLDSHARED)  Modules/_struct.o $(MODULE__STRUCT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_struct$(EXT_SUFFIX)
+Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(MODULE__XXSUBINTERPRETERS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__XXSUBINTERPRETERS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_xxsubinterpretersmodule.c -o Modules/_xxsubinterpretersmodule.o
+Modules/_xxsubinterpreters$(EXT_SUFFIX): Modules/_xxsubinterpretersmodule.o; $(BLDSHARED)  Modules/_xxsubinterpretersmodule.o $(MODULE__XXSUBINTERPRETERS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_xxsubinterpreters$(EXT_SUFFIX)
+Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(MODULE__XXINTERPCHANNELS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__XXINTERPCHANNELS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_xxinterpchannelsmodule.c -o Modules/_xxinterpchannelsmodule.o
+Modules/_xxinterpchannels$(EXT_SUFFIX): Modules/_xxinterpchannelsmodule.o; $(BLDSHARED)  Modules/_xxinterpchannelsmodule.o $(MODULE__XXINTERPCHANNELS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_xxinterpchannels$(EXT_SUFFIX)
+Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(MODULE__XXINTERPQUEUES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__XXINTERPQUEUES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_xxinterpqueuesmodule.c -o Modules/_xxinterpqueuesmodule.o
+Modules/_xxinterpqueues$(EXT_SUFFIX): Modules/_xxinterpqueuesmodule.o; $(BLDSHARED)  Modules/_xxinterpqueuesmodule.o $(MODULE__XXINTERPQUEUES_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_xxinterpqueues$(EXT_SUFFIX)
+Modules/_zoneinfo.o: $(Deps_Modules__zoneinfo) $(srcdir)/Modules/_zoneinfo.c $(MODULE__ZONEINFO_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__ZONEINFO_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_zoneinfo.c -o Modules/_zoneinfo.o
+Modules/_zoneinfo$(EXT_SUFFIX): Modules/_zoneinfo.o; $(BLDSHARED)  Modules/_zoneinfo.o $(MODULE__ZONEINFO_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_zoneinfo$(EXT_SUFFIX)
+Modules/mathmodule.o: $(Deps_Modules_mathmodule) $(srcdir)/Modules/mathmodule.c $(MODULE_MATH_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_MATH_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/mathmodule.c -o Modules/mathmodule.o
+Modules/math$(EXT_SUFFIX): Modules/mathmodule.o; $(BLDSHARED)  Modules/mathmodule.o $(MODULE_MATH_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/math$(EXT_SUFFIX)
+Modules/cmathmodule.o: $(Deps_Modules_cmathmodule) $(srcdir)/Modules/cmathmodule.c $(MODULE_CMATH_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_CMATH_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cmathmodule.c -o Modules/cmathmodule.o
+Modules/cmath$(EXT_SUFFIX): Modules/cmathmodule.o; $(BLDSHARED)  Modules/cmathmodule.o $(MODULE_CMATH_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/cmath$(EXT_SUFFIX)
+Modules/_statisticsmodule.o: $(Deps_Modules__statisticsmodule) $(srcdir)/Modules/_statisticsmodule.c $(MODULE__STATISTICS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__STATISTICS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_statisticsmodule.c -o Modules/_statisticsmodule.o
+Modules/_statistics$(EXT_SUFFIX): Modules/_statisticsmodule.o; $(BLDSHARED)  Modules/_statisticsmodule.o $(MODULE__STATISTICS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_statistics$(EXT_SUFFIX)
+Modules/_datetimemodule.o: $(Deps_Modules__datetimemodule) $(srcdir)/Modules/_datetimemodule.c $(MODULE__DATETIME_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__DATETIME_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_datetimemodule.c -o Modules/_datetimemodule.o
+Modules/_datetime$(EXT_SUFFIX): Modules/_datetimemodule.o; $(BLDSHARED)  Modules/_datetimemodule.o $(MODULE__DATETIME_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_datetime$(EXT_SUFFIX)
+Modules/_decimal/_decimal.o: $(srcdir)/Modules/_decimal/_decimal.c $(MODULE__DECIMAL_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__DECIMAL_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_decimal/_decimal.c -o Modules/_decimal/_decimal.o
+Modules/_decimal$(EXT_SUFFIX): Modules/_decimal/_decimal.o; $(BLDSHARED)  Modules/_decimal/_decimal.o $(MODULE__DECIMAL_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_decimal$(EXT_SUFFIX)
+Modules/binascii.o: $(Deps_Modules_binascii) $(srcdir)/Modules/binascii.c $(MODULE_BINASCII_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_BINASCII_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/binascii.c -o Modules/binascii.o
+Modules/binascii$(EXT_SUFFIX): Modules/binascii.o; $(BLDSHARED)  Modules/binascii.o $(MODULE_BINASCII_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/binascii$(EXT_SUFFIX)
+Modules/zlibmodule.o: $(Deps_Modules_zlibmodule) $(srcdir)/Modules/zlibmodule.c $(MODULE_ZLIB_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_ZLIB_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/zlibmodule.c -o Modules/zlibmodule.o
+Modules/zlib$(EXT_SUFFIX): Modules/zlibmodule.o; $(BLDSHARED)  Modules/zlibmodule.o $(MODULE_ZLIB_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/zlib$(EXT_SUFFIX)
+Modules/md5module.o: $(Deps_Modules_md5module) $(srcdir)/Modules/md5module.c $(MODULE__MD5_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/md5module.c -o Modules/md5module.o
+Modules/_hacl/Hacl_Hash_MD5.o: $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c $(MODULE__MD5_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c -o Modules/_hacl/Hacl_Hash_MD5.o
+Modules/_md5$(EXT_SUFFIX): Modules/md5module.o Modules/_hacl/Hacl_Hash_MD5.o; $(BLDSHARED)  Modules/md5module.o Modules/_hacl/Hacl_Hash_MD5.o  $(MODULE_LDFLAGS) -o Modules/_md5$(EXT_SUFFIX)
+Modules/sha1module.o: $(Deps_Modules_sha1module) $(srcdir)/Modules/sha1module.c $(MODULE__SHA1_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/sha1module.c -o Modules/sha1module.o
+Modules/_hacl/Hacl_Hash_SHA1.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c $(MODULE__SHA1_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c -o Modules/_hacl/Hacl_Hash_SHA1.o
+Modules/_sha1$(EXT_SUFFIX): Modules/sha1module.o Modules/_hacl/Hacl_Hash_SHA1.o; $(BLDSHARED)  Modules/sha1module.o Modules/_hacl/Hacl_Hash_SHA1.o  $(MODULE_LDFLAGS) -o Modules/_sha1$(EXT_SUFFIX)
+Modules/sha2module.o: $(Deps_Modules_sha2module) $(srcdir)/Modules/sha2module.c $(MODULE__SHA2_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/sha2module.c -o Modules/sha2module.o
+Modules/_sha2$(EXT_SUFFIX): Modules/sha2module.o; $(BLDSHARED)  Modules/sha2module.o  Modules/_hacl/libHacl_Hash_SHA2.a $(MODULE_LDFLAGS) -o Modules/_sha2$(EXT_SUFFIX)
+Modules/sha3module.o: $(Deps_Modules_sha3module) $(srcdir)/Modules/sha3module.c $(MODULE__SHA3_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/sha3module.c -o Modules/sha3module.o
+Modules/_hacl/Hacl_Hash_SHA3.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c $(MODULE__SHA3_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC)  -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c -o Modules/_hacl/Hacl_Hash_SHA3.o
+Modules/_sha3$(EXT_SUFFIX): Modules/sha3module.o Modules/_hacl/Hacl_Hash_SHA3.o; $(BLDSHARED)  Modules/sha3module.o Modules/_hacl/Hacl_Hash_SHA3.o  $(MODULE_LDFLAGS) -o Modules/_sha3$(EXT_SUFFIX)
+Modules/_blake2/blake2module.o: $(srcdir)/Modules/_blake2/blake2module.c $(MODULE__BLAKE2_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__BLAKE2_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_blake2/blake2module.c -o Modules/_blake2/blake2module.o
+Modules/_blake2/blake2b_impl.o: $(Deps_Modules__blake2_blake2b_impl) $(srcdir)/Modules/_blake2/blake2b_impl.c $(MODULE__BLAKE2_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__BLAKE2_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_blake2/blake2b_impl.c -o Modules/_blake2/blake2b_impl.o
+Modules/_blake2/blake2s_impl.o: $(Deps_Modules__blake2_blake2s_impl) $(srcdir)/Modules/_blake2/blake2s_impl.c $(MODULE__BLAKE2_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__BLAKE2_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_blake2/blake2s_impl.c -o Modules/_blake2/blake2s_impl.o
+Modules/_blake2$(EXT_SUFFIX): Modules/_blake2/blake2module.o Modules/_blake2/blake2b_impl.o Modules/_blake2/blake2s_impl.o; $(BLDSHARED)  Modules/_blake2/blake2module.o Modules/_blake2/blake2b_impl.o Modules/_blake2/blake2s_impl.o $(MODULE__BLAKE2_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_blake2$(EXT_SUFFIX)
+Modules/pyexpat.o: $(Deps_Modules_pyexpat) $(srcdir)/Modules/pyexpat.c $(MODULE_PYEXPAT_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_PYEXPAT_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/pyexpat.c -o Modules/pyexpat.o
+Modules/pyexpat$(EXT_SUFFIX): Modules/pyexpat.o; $(BLDSHARED)  Modules/pyexpat.o $(MODULE_PYEXPAT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/pyexpat$(EXT_SUFFIX)
+Modules/_elementtree.o: $(Deps_Modules__elementtree) $(srcdir)/Modules/_elementtree.c $(MODULE__ELEMENTTREE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__ELEMENTTREE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_elementtree.c -o Modules/_elementtree.o
+Modules/_elementtree$(EXT_SUFFIX): Modules/_elementtree.o; $(BLDSHARED)  Modules/_elementtree.o $(MODULE__ELEMENTTREE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_elementtree$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_cn.o: $(srcdir)/Modules/cjkcodecs/_codecs_cn.c $(MODULE__CODECS_CN_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_CN_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_cn.c -o Modules/cjkcodecs/_codecs_cn.o
+Modules/_codecs_cn$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_cn.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_cn.o $(MODULE__CODECS_CN_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_cn$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_hk.o: $(srcdir)/Modules/cjkcodecs/_codecs_hk.c $(MODULE__CODECS_HK_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_HK_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_hk.c -o Modules/cjkcodecs/_codecs_hk.o
+Modules/_codecs_hk$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_hk.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_hk.o $(MODULE__CODECS_HK_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_hk$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_iso2022.o: $(srcdir)/Modules/cjkcodecs/_codecs_iso2022.c $(MODULE__CODECS_ISO2022_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_ISO2022_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_iso2022.c -o Modules/cjkcodecs/_codecs_iso2022.o
+Modules/_codecs_iso2022$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_iso2022.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_iso2022.o $(MODULE__CODECS_ISO2022_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_iso2022$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_jp.o: $(srcdir)/Modules/cjkcodecs/_codecs_jp.c $(MODULE__CODECS_JP_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_JP_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_jp.c -o Modules/cjkcodecs/_codecs_jp.o
+Modules/_codecs_jp$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_jp.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_jp.o $(MODULE__CODECS_JP_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_jp$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_kr.o: $(srcdir)/Modules/cjkcodecs/_codecs_kr.c $(MODULE__CODECS_KR_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_KR_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_kr.c -o Modules/cjkcodecs/_codecs_kr.o
+Modules/_codecs_kr$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_kr.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_kr.o $(MODULE__CODECS_KR_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_kr$(EXT_SUFFIX)
+Modules/cjkcodecs/_codecs_tw.o: $(srcdir)/Modules/cjkcodecs/_codecs_tw.c $(MODULE__CODECS_TW_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_TW_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/_codecs_tw.c -o Modules/cjkcodecs/_codecs_tw.o
+Modules/_codecs_tw$(EXT_SUFFIX): Modules/cjkcodecs/_codecs_tw.o; $(BLDSHARED)  Modules/cjkcodecs/_codecs_tw.o $(MODULE__CODECS_TW_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs_tw$(EXT_SUFFIX)
+Modules/cjkcodecs/multibytecodec.o: $(Deps_Modules_cjkcodecs_multibytecodec) $(srcdir)/Modules/cjkcodecs/multibytecodec.c $(MODULE__MULTIBYTECODEC_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__MULTIBYTECODEC_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/cjkcodecs/multibytecodec.c -o Modules/cjkcodecs/multibytecodec.o
+Modules/_multibytecodec$(EXT_SUFFIX): Modules/cjkcodecs/multibytecodec.o; $(BLDSHARED)  Modules/cjkcodecs/multibytecodec.o $(MODULE__MULTIBYTECODEC_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_multibytecodec$(EXT_SUFFIX)
+Modules/unicodedata.o: $(Deps_Modules_unicodedata) $(srcdir)/Modules/unicodedata.c $(MODULE_UNICODEDATA_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_UNICODEDATA_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/unicodedata.c -o Modules/unicodedata.o
+Modules/unicodedata$(EXT_SUFFIX): Modules/unicodedata.o; $(BLDSHARED)  Modules/unicodedata.o $(MODULE_UNICODEDATA_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/unicodedata$(EXT_SUFFIX)
+Modules/fcntlmodule.o: $(Deps_Modules_fcntlmodule) $(srcdir)/Modules/fcntlmodule.c $(MODULE_FCNTL_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_FCNTL_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/fcntlmodule.c -o Modules/fcntlmodule.o
+Modules/fcntl$(EXT_SUFFIX): Modules/fcntlmodule.o; $(BLDSHARED)  Modules/fcntlmodule.o $(MODULE_FCNTL_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/fcntl$(EXT_SUFFIX)
+Modules/grpmodule.o: $(Deps_Modules_grpmodule) $(srcdir)/Modules/grpmodule.c $(MODULE_GRP_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_GRP_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/grpmodule.c -o Modules/grpmodule.o
+Modules/grp$(EXT_SUFFIX): Modules/grpmodule.o; $(BLDSHARED)  Modules/grpmodule.o $(MODULE_GRP_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/grp$(EXT_SUFFIX)
+Modules/mmapmodule.o: $(srcdir)/Modules/mmapmodule.c $(MODULE_MMAP_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_MMAP_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/mmapmodule.c -o Modules/mmapmodule.o
+Modules/mmap$(EXT_SUFFIX): Modules/mmapmodule.o; $(BLDSHARED)  Modules/mmapmodule.o $(MODULE_MMAP_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/mmap$(EXT_SUFFIX)
+Modules/_posixsubprocess.o: $(Deps_Modules__posixsubprocess) $(srcdir)/Modules/_posixsubprocess.c $(MODULE__POSIXSUBPROCESS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__POSIXSUBPROCESS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_posixsubprocess.c -o Modules/_posixsubprocess.o
+Modules/_posixsubprocess$(EXT_SUFFIX): Modules/_posixsubprocess.o; $(BLDSHARED)  Modules/_posixsubprocess.o $(MODULE__POSIXSUBPROCESS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_posixsubprocess$(EXT_SUFFIX)
+Modules/resource.o: $(Deps_Modules_resource) $(srcdir)/Modules/resource.c $(MODULE_RESOURCE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_RESOURCE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/resource.c -o Modules/resource.o
+Modules/resource$(EXT_SUFFIX): Modules/resource.o; $(BLDSHARED)  Modules/resource.o $(MODULE_RESOURCE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/resource$(EXT_SUFFIX)
+Modules/selectmodule.o: $(Deps_Modules_selectmodule) $(srcdir)/Modules/selectmodule.c $(MODULE_SELECT_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_SELECT_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/selectmodule.c -o Modules/selectmodule.o
+Modules/select$(EXT_SUFFIX): Modules/selectmodule.o; $(BLDSHARED)  Modules/selectmodule.o $(MODULE_SELECT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/select$(EXT_SUFFIX)
+Modules/socketmodule.o: $(Deps_Modules_socketmodule) $(srcdir)/Modules/socketmodule.c $(MODULE__SOCKET_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__SOCKET_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/socketmodule.c -o Modules/socketmodule.o
+Modules/_socket$(EXT_SUFFIX): Modules/socketmodule.o; $(BLDSHARED)  Modules/socketmodule.o $(MODULE__SOCKET_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_socket$(EXT_SUFFIX)
+Modules/syslogmodule.o: $(Deps_Modules_syslogmodule) $(srcdir)/Modules/syslogmodule.c $(MODULE_SYSLOG_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_SYSLOG_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/syslogmodule.c -o Modules/syslogmodule.o
+Modules/syslog$(EXT_SUFFIX): Modules/syslogmodule.o; $(BLDSHARED)  Modules/syslogmodule.o $(MODULE_SYSLOG_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/syslog$(EXT_SUFFIX)
+Modules/termios.o: $(Deps_Modules_termios) $(srcdir)/Modules/termios.c $(MODULE_TERMIOS_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_TERMIOS_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/termios.c -o Modules/termios.o
+Modules/termios$(EXT_SUFFIX): Modules/termios.o; $(BLDSHARED)  Modules/termios.o $(MODULE_TERMIOS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/termios$(EXT_SUFFIX)
+Modules/_multiprocessing/posixshmem.o: $(Deps_Modules__multiprocessing_posixshmem) $(srcdir)/Modules/_multiprocessing/posixshmem.c $(MODULE__POSIXSHMEM_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__POSIXSHMEM_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_multiprocessing/posixshmem.c -o Modules/_multiprocessing/posixshmem.o
+Modules/_posixshmem$(EXT_SUFFIX): Modules/_multiprocessing/posixshmem.o; $(BLDSHARED)  Modules/_multiprocessing/posixshmem.o $(MODULE__POSIXSHMEM_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_posixshmem$(EXT_SUFFIX)
+Modules/_multiprocessing/multiprocessing.o: $(Deps_Modules__multiprocessing_multiprocessing) $(srcdir)/Modules/_multiprocessing/multiprocessing.c $(MODULE__MULTIPROCESSING_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__MULTIPROCESSING_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_multiprocessing/multiprocessing.c -o Modules/_multiprocessing/multiprocessing.o
+Modules/_multiprocessing/semaphore.o: $(Deps_Modules__multiprocessing_semaphore) $(srcdir)/Modules/_multiprocessing/semaphore.c $(MODULE__MULTIPROCESSING_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__MULTIPROCESSING_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_multiprocessing/semaphore.c -o Modules/_multiprocessing/semaphore.o
+Modules/_multiprocessing$(EXT_SUFFIX): Modules/_multiprocessing/multiprocessing.o Modules/_multiprocessing/semaphore.o; $(BLDSHARED)  Modules/_multiprocessing/multiprocessing.o Modules/_multiprocessing/semaphore.o $(MODULE__MULTIPROCESSING_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_multiprocessing$(EXT_SUFFIX)
+Modules/_ctypes/_ctypes.o: $(srcdir)/Modules/_ctypes/_ctypes.c $(MODULE__CTYPES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/_ctypes.c -o Modules/_ctypes/_ctypes.o
+Modules/_ctypes/callbacks.o: $(srcdir)/Modules/_ctypes/callbacks.c $(MODULE__CTYPES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/callbacks.c -o Modules/_ctypes/callbacks.o
+Modules/_ctypes/callproc.o: $(Deps_Modules__ctypes_callproc) $(srcdir)/Modules/_ctypes/callproc.c $(MODULE__CTYPES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/callproc.c -o Modules/_ctypes/callproc.o
+Modules/_ctypes/stgdict.o: $(Deps_Modules__ctypes_stgdict) $(srcdir)/Modules/_ctypes/stgdict.c $(MODULE__CTYPES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/stgdict.c -o Modules/_ctypes/stgdict.o
+Modules/_ctypes/cfield.o: $(srcdir)/Modules/_ctypes/cfield.c $(MODULE__CTYPES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/cfield.c -o Modules/_ctypes/cfield.o
+Modules/_ctypes$(EXT_SUFFIX): Modules/_ctypes/_ctypes.o Modules/_ctypes/callbacks.o Modules/_ctypes/callproc.o Modules/_ctypes/stgdict.o Modules/_ctypes/cfield.o; $(BLDSHARED)  Modules/_ctypes/_ctypes.o Modules/_ctypes/callbacks.o Modules/_ctypes/callproc.o Modules/_ctypes/stgdict.o Modules/_ctypes/cfield.o $(MODULE__CTYPES_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_ctypes$(EXT_SUFFIX)
+Modules/_cursesmodule.o: $(Deps_Modules__cursesmodule) $(srcdir)/Modules/_cursesmodule.c $(MODULE__CURSES_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CURSES_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_cursesmodule.c -o Modules/_cursesmodule.o
+Modules/_curses$(EXT_SUFFIX): Modules/_cursesmodule.o; $(BLDSHARED)  Modules/_cursesmodule.o $(MODULE__CURSES_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_curses$(EXT_SUFFIX)
+Modules/_curses_panel.o: $(Deps_Modules__curses_panel) $(srcdir)/Modules/_curses_panel.c $(MODULE__CURSES_PANEL_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CURSES_PANEL_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_curses_panel.c -o Modules/_curses_panel.o
+Modules/_curses_panel$(EXT_SUFFIX): Modules/_curses_panel.o; $(BLDSHARED)  Modules/_curses_panel.o $(MODULE__CURSES_PANEL_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_curses_panel$(EXT_SUFFIX)
+Modules/_ssl.o: $(Deps_Modules__ssl) $(srcdir)/Modules/_ssl.c $(MODULE__SSL_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__SSL_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ssl.c -o Modules/_ssl.o
+Modules/_ssl$(EXT_SUFFIX): Modules/_ssl.o; $(BLDSHARED)  Modules/_ssl.o $(MODULE__SSL_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_ssl$(EXT_SUFFIX)
+Modules/_hashopenssl.o: $(Deps_Modules__hashopenssl) $(srcdir)/Modules/_hashopenssl.c $(MODULE__HASHLIB_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__HASHLIB_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_hashopenssl.c -o Modules/_hashopenssl.o
+Modules/_hashlib$(EXT_SUFFIX): Modules/_hashopenssl.o; $(BLDSHARED)  Modules/_hashopenssl.o $(MODULE__HASHLIB_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_hashlib$(EXT_SUFFIX)
+Modules/xxsubtype.o: $(srcdir)/Modules/xxsubtype.c $(MODULE_XXSUBTYPE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_XXSUBTYPE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/xxsubtype.c -o Modules/xxsubtype.o
+Modules/xxsubtype$(EXT_SUFFIX): Modules/xxsubtype.o; $(BLDSHARED)  Modules/xxsubtype.o $(MODULE_XXSUBTYPE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/xxsubtype$(EXT_SUFFIX)
+Modules/_xxtestfuzz/_xxtestfuzz.o: $(srcdir)/Modules/_xxtestfuzz/_xxtestfuzz.c $(MODULE__XXTESTFUZZ_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__XXTESTFUZZ_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_xxtestfuzz/_xxtestfuzz.c -o Modules/_xxtestfuzz/_xxtestfuzz.o
+Modules/_xxtestfuzz/fuzzer.o: $(srcdir)/Modules/_xxtestfuzz/fuzzer.c $(MODULE__XXTESTFUZZ_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__XXTESTFUZZ_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_xxtestfuzz/fuzzer.c -o Modules/_xxtestfuzz/fuzzer.o
+Modules/_xxtestfuzz$(EXT_SUFFIX): Modules/_xxtestfuzz/_xxtestfuzz.o Modules/_xxtestfuzz/fuzzer.o; $(BLDSHARED)  Modules/_xxtestfuzz/_xxtestfuzz.o Modules/_xxtestfuzz/fuzzer.o $(MODULE__XXTESTFUZZ_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_xxtestfuzz$(EXT_SUFFIX)
+Modules/_testbuffer.o: $(srcdir)/Modules/_testbuffer.c $(MODULE__TESTBUFFER_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTBUFFER_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testbuffer.c -o Modules/_testbuffer.o
+Modules/_testbuffer$(EXT_SUFFIX): Modules/_testbuffer.o; $(BLDSHARED)  Modules/_testbuffer.o $(MODULE__TESTBUFFER_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testbuffer$(EXT_SUFFIX)
+Modules/_testinternalcapi.o: $(Deps_Modules__testinternalcapi) $(srcdir)/Modules/_testinternalcapi.c $(MODULE__TESTINTERNALCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTINTERNALCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o
+Modules/_testinternalcapi/test_lock.o: $(Deps_Modules__testinternalcapi_test_lock) $(srcdir)/Modules/_testinternalcapi/test_lock.c $(MODULE__TESTINTERNALCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTINTERNALCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testinternalcapi/test_lock.c -o Modules/_testinternalcapi/test_lock.o
+Modules/_testinternalcapi/pytime.o: $(srcdir)/Modules/_testinternalcapi/pytime.c $(MODULE__TESTINTERNALCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTINTERNALCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testinternalcapi/pytime.c -o Modules/_testinternalcapi/pytime.o
+Modules/_testinternalcapi/set.o: $(Deps_Modules__testinternalcapi_set) $(srcdir)/Modules/_testinternalcapi/set.c $(MODULE__TESTINTERNALCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTINTERNALCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testinternalcapi/set.c -o Modules/_testinternalcapi/set.o
+Modules/_testinternalcapi/test_critical_sections.o: $(srcdir)/Modules/_testinternalcapi/test_critical_sections.c $(MODULE__TESTINTERNALCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTINTERNALCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testinternalcapi/test_critical_sections.c -o Modules/_testinternalcapi/test_critical_sections.o
+Modules/_testinternalcapi$(EXT_SUFFIX): Modules/_testinternalcapi.o Modules/_testinternalcapi/test_lock.o Modules/_testinternalcapi/pytime.o Modules/_testinternalcapi/set.o Modules/_testinternalcapi/test_critical_sections.o; $(BLDSHARED)  Modules/_testinternalcapi.o Modules/_testinternalcapi/test_lock.o Modules/_testinternalcapi/pytime.o Modules/_testinternalcapi/set.o Modules/_testinternalcapi/test_critical_sections.o $(MODULE__TESTINTERNALCAPI_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testinternalcapi$(EXT_SUFFIX)
+Modules/_testcapimodule.o: $(srcdir)/Modules/_testcapimodule.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapimodule.c -o Modules/_testcapimodule.o
+Modules/_testcapi/vectorcall.o: $(Deps_Modules__testcapi_vectorcall) $(srcdir)/Modules/_testcapi/vectorcall.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/vectorcall.c -o Modules/_testcapi/vectorcall.o
+Modules/_testcapi/vectorcall_limited.o: $(Deps_Modules__testcapi_vectorcall_limited) $(srcdir)/Modules/_testcapi/vectorcall_limited.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/vectorcall_limited.c -o Modules/_testcapi/vectorcall_limited.o
+Modules/_testcapi/heaptype.o: $(srcdir)/Modules/_testcapi/heaptype.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/heaptype.c -o Modules/_testcapi/heaptype.o
+Modules/_testcapi/abstract.o: $(srcdir)/Modules/_testcapi/abstract.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/abstract.c -o Modules/_testcapi/abstract.o
+Modules/_testcapi/bytearray.o: $(srcdir)/Modules/_testcapi/bytearray.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/bytearray.c -o Modules/_testcapi/bytearray.o
+Modules/_testcapi/bytes.o: $(srcdir)/Modules/_testcapi/bytes.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/bytes.c -o Modules/_testcapi/bytes.o
+Modules/_testcapi/unicode.o: $(srcdir)/Modules/_testcapi/unicode.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/unicode.c -o Modules/_testcapi/unicode.o
+Modules/_testcapi/dict.o: $(srcdir)/Modules/_testcapi/dict.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/dict.c -o Modules/_testcapi/dict.o
+Modules/_testcapi/set.o: $(srcdir)/Modules/_testcapi/set.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/set.c -o Modules/_testcapi/set.o
+Modules/_testcapi/list.o: $(srcdir)/Modules/_testcapi/list.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/list.c -o Modules/_testcapi/list.o
+Modules/_testcapi/tuple.o: $(srcdir)/Modules/_testcapi/tuple.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/tuple.c -o Modules/_testcapi/tuple.o
+Modules/_testcapi/getargs.o: $(srcdir)/Modules/_testcapi/getargs.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/getargs.c -o Modules/_testcapi/getargs.o
+Modules/_testcapi/datetime.o: $(Deps_Modules__testcapi_datetime) $(srcdir)/Modules/_testcapi/datetime.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/datetime.c -o Modules/_testcapi/datetime.o
+Modules/_testcapi/docstring.o: $(srcdir)/Modules/_testcapi/docstring.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/docstring.c -o Modules/_testcapi/docstring.o
+Modules/_testcapi/mem.o: $(srcdir)/Modules/_testcapi/mem.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/mem.c -o Modules/_testcapi/mem.o
+Modules/_testcapi/watchers.o: $(Deps_Modules__testcapi_watchers) $(srcdir)/Modules/_testcapi/watchers.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/watchers.c -o Modules/_testcapi/watchers.o
+Modules/_testcapi/long.o: $(Deps_Modules__testcapi_long) $(srcdir)/Modules/_testcapi/long.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/long.c -o Modules/_testcapi/long.o
+Modules/_testcapi/float.o: $(Deps_Modules__testcapi_float) $(srcdir)/Modules/_testcapi/float.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/float.c -o Modules/_testcapi/float.o
+Modules/_testcapi/complex.o: $(srcdir)/Modules/_testcapi/complex.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/complex.c -o Modules/_testcapi/complex.o
+Modules/_testcapi/numbers.o: $(srcdir)/Modules/_testcapi/numbers.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/numbers.c -o Modules/_testcapi/numbers.o
+Modules/_testcapi/structmember.o: $(srcdir)/Modules/_testcapi/structmember.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/structmember.c -o Modules/_testcapi/structmember.o
+Modules/_testcapi/exceptions.o: $(Deps_Modules__testcapi_exceptions) $(srcdir)/Modules/_testcapi/exceptions.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/exceptions.c -o Modules/_testcapi/exceptions.o
+Modules/_testcapi/code.o: $(srcdir)/Modules/_testcapi/code.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/code.c -o Modules/_testcapi/code.o
+Modules/_testcapi/buffer.o: $(srcdir)/Modules/_testcapi/buffer.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/buffer.c -o Modules/_testcapi/buffer.o
+Modules/_testcapi/pyatomic.o: $(srcdir)/Modules/_testcapi/pyatomic.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/pyatomic.c -o Modules/_testcapi/pyatomic.o
+Modules/_testcapi/pyos.o: $(srcdir)/Modules/_testcapi/pyos.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/pyos.c -o Modules/_testcapi/pyos.o
+Modules/_testcapi/file.o: $(srcdir)/Modules/_testcapi/file.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/file.c -o Modules/_testcapi/file.o
+Modules/_testcapi/codec.o: $(srcdir)/Modules/_testcapi/codec.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/codec.c -o Modules/_testcapi/codec.o
+Modules/_testcapi/immortal.o: $(srcdir)/Modules/_testcapi/immortal.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/immortal.c -o Modules/_testcapi/immortal.o
+Modules/_testcapi/heaptype_relative.o: $(srcdir)/Modules/_testcapi/heaptype_relative.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/heaptype_relative.c -o Modules/_testcapi/heaptype_relative.o
+Modules/_testcapi/gc.o: $(srcdir)/Modules/_testcapi/gc.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/gc.c -o Modules/_testcapi/gc.o
+Modules/_testcapi/sys.o: $(srcdir)/Modules/_testcapi/sys.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/sys.c -o Modules/_testcapi/sys.o
+Modules/_testcapi/hash.o: $(srcdir)/Modules/_testcapi/hash.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/hash.c -o Modules/_testcapi/hash.o
+Modules/_testcapi/time.o: $(srcdir)/Modules/_testcapi/time.c $(MODULE__TESTCAPI_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCAPI_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testcapi/time.c -o Modules/_testcapi/time.o
+Modules/_testcapi$(EXT_SUFFIX): Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyatomic.o Modules/_testcapi/pyos.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o Modules/_testcapi/hash.o Modules/_testcapi/time.o; $(BLDSHARED)  Modules/_testcapimodule.o Modules/_testcapi/vectorcall.o Modules/_testcapi/vectorcall_limited.o Modules/_testcapi/heaptype.o Modules/_testcapi/abstract.o Modules/_testcapi/bytearray.o Modules/_testcapi/bytes.o Modules/_testcapi/unicode.o Modules/_testcapi/dict.o Modules/_testcapi/set.o Modules/_testcapi/list.o Modules/_testcapi/tuple.o Modules/_testcapi/getargs.o Modules/_testcapi/datetime.o Modules/_testcapi/docstring.o Modules/_testcapi/mem.o Modules/_testcapi/watchers.o Modules/_testcapi/long.o Modules/_testcapi/float.o Modules/_testcapi/complex.o Modules/_testcapi/numbers.o Modules/_testcapi/structmember.o Modules/_testcapi/exceptions.o Modules/_testcapi/code.o Modules/_testcapi/buffer.o Modules/_testcapi/pyatomic.o Modules/_testcapi/pyos.o Modules/_testcapi/file.o Modules/_testcapi/codec.o Modules/_testcapi/immortal.o Modules/_testcapi/heaptype_relative.o Modules/_testcapi/gc.o Modules/_testcapi/sys.o Modules/_testcapi/hash.o Modules/_testcapi/time.o $(MODULE__TESTCAPI_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testcapi$(EXT_SUFFIX)
+Modules/_testclinic.o: $(Deps_Modules__testclinic) $(srcdir)/Modules/_testclinic.c $(MODULE__TESTCLINIC_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCLINIC_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testclinic.c -o Modules/_testclinic.o
+Modules/_testclinic$(EXT_SUFFIX): Modules/_testclinic.o; $(BLDSHARED)  Modules/_testclinic.o $(MODULE__TESTCLINIC_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testclinic$(EXT_SUFFIX)
+Modules/_testclinic_limited.o: $(Deps_Modules__testclinic_limited) $(srcdir)/Modules/_testclinic_limited.c $(MODULE__TESTCLINIC_LIMITED_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTCLINIC_LIMITED_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testclinic_limited.c -o Modules/_testclinic_limited.o
+Modules/_testclinic_limited$(EXT_SUFFIX): Modules/_testclinic_limited.o; $(BLDSHARED)  Modules/_testclinic_limited.o $(MODULE__TESTCLINIC_LIMITED_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testclinic_limited$(EXT_SUFFIX)
+Modules/_testimportmultiple.o: $(srcdir)/Modules/_testimportmultiple.c $(MODULE__TESTIMPORTMULTIPLE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTIMPORTMULTIPLE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
+Modules/_testimportmultiple$(EXT_SUFFIX): Modules/_testimportmultiple.o; $(BLDSHARED)  Modules/_testimportmultiple.o $(MODULE__TESTIMPORTMULTIPLE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testimportmultiple$(EXT_SUFFIX)
+Modules/_testmultiphase.o: $(Deps_Modules__testmultiphase) $(srcdir)/Modules/_testmultiphase.c $(MODULE__TESTMULTIPHASE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTMULTIPHASE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testmultiphase.c -o Modules/_testmultiphase.o
+Modules/_testmultiphase$(EXT_SUFFIX): Modules/_testmultiphase.o; $(BLDSHARED)  Modules/_testmultiphase.o $(MODULE__TESTMULTIPHASE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testmultiphase$(EXT_SUFFIX)
+Modules/_testsinglephase.o: $(srcdir)/Modules/_testsinglephase.c $(MODULE__TESTSINGLEPHASE_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTSINGLEPHASE_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testsinglephase.c -o Modules/_testsinglephase.o
+Modules/_testsinglephase$(EXT_SUFFIX): Modules/_testsinglephase.o; $(BLDSHARED)  Modules/_testsinglephase.o $(MODULE__TESTSINGLEPHASE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testsinglephase$(EXT_SUFFIX)
+Modules/_testexternalinspection.o: $(srcdir)/Modules/_testexternalinspection.c $(MODULE__TESTEXTERNALINSPECTION_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__TESTEXTERNALINSPECTION_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_testexternalinspection.c -o Modules/_testexternalinspection.o
+Modules/_testexternalinspection$(EXT_SUFFIX): Modules/_testexternalinspection.o; $(BLDSHARED)  Modules/_testexternalinspection.o $(MODULE__TESTEXTERNALINSPECTION_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_testexternalinspection$(EXT_SUFFIX)
+Modules/_ctypes/_ctypes_test.o: $(srcdir)/Modules/_ctypes/_ctypes_test.c $(MODULE__CTYPES_TEST_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE__CTYPES_TEST_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes/_ctypes_test.o
+Modules/_ctypes_test$(EXT_SUFFIX): Modules/_ctypes/_ctypes_test.o; $(BLDSHARED)  Modules/_ctypes/_ctypes_test.o $(MODULE__CTYPES_TEST_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_ctypes_test$(EXT_SUFFIX)
+Modules/xxlimited.o: $(srcdir)/Modules/xxlimited.c $(MODULE_XXLIMITED_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_XXLIMITED_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/xxlimited.c -o Modules/xxlimited.o
+Modules/xxlimited$(EXT_SUFFIX): Modules/xxlimited.o; $(BLDSHARED)  Modules/xxlimited.o $(MODULE_XXLIMITED_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/xxlimited$(EXT_SUFFIX)
+Modules/xxlimited_35.o: $(srcdir)/Modules/xxlimited_35.c $(MODULE_XXLIMITED_35_DEPS) $(MODULE_DEPS_SHARED) $(PYTHON_HEADERS); $(CC) $(MODULE_XXLIMITED_35_CFLAGS) $(PY_STDMODULE_CFLAGS) $(CCSHARED) -c $(srcdir)/Modules/xxlimited_35.c -o Modules/xxlimited_35.o
+Modules/xxlimited_35$(EXT_SUFFIX): Modules/xxlimited_35.o; $(BLDSHARED)  Modules/xxlimited_35.o $(MODULE_XXLIMITED_35_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/xxlimited_35$(EXT_SUFFIX)
+Modules/atexitmodule.o: $(srcdir)/Modules/atexitmodule.c $(MODULE_ATEXIT_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_ATEXIT_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/atexitmodule.c -o Modules/atexitmodule.o
+Modules/atexit$(EXT_SUFFIX): Modules/atexitmodule.o; $(BLDSHARED)  Modules/atexitmodule.o $(MODULE_ATEXIT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/atexit$(EXT_SUFFIX)
+Modules/faulthandler.o: $(srcdir)/Modules/faulthandler.c $(MODULE_FAULTHANDLER_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_FAULTHANDLER_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/faulthandler.c -o Modules/faulthandler.o
+Modules/faulthandler$(EXT_SUFFIX): Modules/faulthandler.o; $(BLDSHARED)  Modules/faulthandler.o $(MODULE_FAULTHANDLER_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/faulthandler$(EXT_SUFFIX)
+Modules/posixmodule.o: $(Deps_Modules_posixmodule) $(srcdir)/Modules/posixmodule.c $(MODULE_POSIX_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_POSIX_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/posixmodule.c -o Modules/posixmodule.o
+Modules/posix$(EXT_SUFFIX): Modules/posixmodule.o; $(BLDSHARED)  Modules/posixmodule.o $(MODULE_POSIX_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/posix$(EXT_SUFFIX)
+Modules/signalmodule.o: $(Deps_Modules_signalmodule) $(srcdir)/Modules/signalmodule.c $(MODULE__SIGNAL_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__SIGNAL_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/signalmodule.c -o Modules/signalmodule.o
+Modules/_signal$(EXT_SUFFIX): Modules/signalmodule.o; $(BLDSHARED)  Modules/signalmodule.o $(MODULE__SIGNAL_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_signal$(EXT_SUFFIX)
+Modules/_tracemalloc.o: $(Deps_Modules__tracemalloc) $(srcdir)/Modules/_tracemalloc.c $(MODULE__TRACEMALLOC_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__TRACEMALLOC_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_tracemalloc.c -o Modules/_tracemalloc.o
+Modules/_tracemalloc$(EXT_SUFFIX): Modules/_tracemalloc.o; $(BLDSHARED)  Modules/_tracemalloc.o $(MODULE__TRACEMALLOC_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_tracemalloc$(EXT_SUFFIX)
+Modules/_suggestions.o: $(Deps_Modules__suggestions) $(srcdir)/Modules/_suggestions.c $(MODULE__SUGGESTIONS_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__SUGGESTIONS_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_suggestions.c -o Modules/_suggestions.o
+Modules/_suggestions$(EXT_SUFFIX): Modules/_suggestions.o; $(BLDSHARED)  Modules/_suggestions.o $(MODULE__SUGGESTIONS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_suggestions$(EXT_SUFFIX)
+Modules/_codecsmodule.o: $(Deps_Modules__codecsmodule) $(srcdir)/Modules/_codecsmodule.c $(MODULE__CODECS_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__CODECS_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_codecsmodule.c -o Modules/_codecsmodule.o
+Modules/_codecs$(EXT_SUFFIX): Modules/_codecsmodule.o; $(BLDSHARED)  Modules/_codecsmodule.o $(MODULE__CODECS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_codecs$(EXT_SUFFIX)
+Modules/_collectionsmodule.o: $(Deps_Modules__collectionsmodule) $(srcdir)/Modules/_collectionsmodule.c $(MODULE__COLLECTIONS_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__COLLECTIONS_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_collectionsmodule.c -o Modules/_collectionsmodule.o
+Modules/_collections$(EXT_SUFFIX): Modules/_collectionsmodule.o; $(BLDSHARED)  Modules/_collectionsmodule.o $(MODULE__COLLECTIONS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_collections$(EXT_SUFFIX)
+Modules/errnomodule.o: $(srcdir)/Modules/errnomodule.c $(MODULE_ERRNO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_ERRNO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/errnomodule.c -o Modules/errnomodule.o
+Modules/errno$(EXT_SUFFIX): Modules/errnomodule.o; $(BLDSHARED)  Modules/errnomodule.o $(MODULE_ERRNO_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/errno$(EXT_SUFFIX)
+Modules/_io/_iomodule.o: $(Deps_Modules__io__iomodule) $(srcdir)/Modules/_io/_iomodule.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/_iomodule.c -o Modules/_io/_iomodule.o
+Modules/_io/iobase.o: $(Deps_Modules__io_iobase) $(srcdir)/Modules/_io/iobase.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/iobase.c -o Modules/_io/iobase.o
+Modules/_io/fileio.o: $(Deps_Modules__io_fileio) $(srcdir)/Modules/_io/fileio.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/fileio.c -o Modules/_io/fileio.o
+Modules/_io/bytesio.o: $(Deps_Modules__io_bytesio) $(srcdir)/Modules/_io/bytesio.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/bytesio.c -o Modules/_io/bytesio.o
+Modules/_io/bufferedio.o: $(Deps_Modules__io_bufferedio) $(srcdir)/Modules/_io/bufferedio.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/bufferedio.c -o Modules/_io/bufferedio.o
+Modules/_io/textio.o: $(Deps_Modules__io_textio) $(srcdir)/Modules/_io/textio.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/textio.c -o Modules/_io/textio.o
+Modules/_io/stringio.o: $(Deps_Modules__io_stringio) $(srcdir)/Modules/_io/stringio.c $(MODULE__IO_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__IO_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_io/stringio.c -o Modules/_io/stringio.o
+Modules/_io$(EXT_SUFFIX): Modules/_io/_iomodule.o Modules/_io/iobase.o Modules/_io/fileio.o Modules/_io/bytesio.o Modules/_io/bufferedio.o Modules/_io/textio.o Modules/_io/stringio.o; $(BLDSHARED)  Modules/_io/_iomodule.o Modules/_io/iobase.o Modules/_io/fileio.o Modules/_io/bytesio.o Modules/_io/bufferedio.o Modules/_io/textio.o Modules/_io/stringio.o $(MODULE__IO_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_io$(EXT_SUFFIX)
+Modules/itertoolsmodule.o: $(Deps_Modules_itertoolsmodule) $(srcdir)/Modules/itertoolsmodule.c $(MODULE_ITERTOOLS_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_ITERTOOLS_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/itertoolsmodule.c -o Modules/itertoolsmodule.o
+Modules/itertools$(EXT_SUFFIX): Modules/itertoolsmodule.o; $(BLDSHARED)  Modules/itertoolsmodule.o $(MODULE_ITERTOOLS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/itertools$(EXT_SUFFIX)
+Modules/_sre/sre.o: $(Deps_Modules__sre_sre) $(srcdir)/Modules/_sre/sre.c $(MODULE__SRE_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__SRE_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_sre/sre.c -o Modules/_sre/sre.o
+Modules/_sre$(EXT_SUFFIX): Modules/_sre/sre.o; $(BLDSHARED)  Modules/_sre/sre.o $(MODULE__SRE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_sre$(EXT_SUFFIX)
+Modules/_sysconfig.o: $(Deps_Modules__sysconfig) $(srcdir)/Modules/_sysconfig.c $(MODULE__SYSCONFIG_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__SYSCONFIG_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_sysconfig.c -o Modules/_sysconfig.o
+Modules/_sysconfig$(EXT_SUFFIX): Modules/_sysconfig.o; $(BLDSHARED)  Modules/_sysconfig.o $(MODULE__SYSCONFIG_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_sysconfig$(EXT_SUFFIX)
+Modules/_threadmodule.o: $(Deps_Modules__threadmodule) $(srcdir)/Modules/_threadmodule.c $(MODULE__THREAD_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__THREAD_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_threadmodule.c -o Modules/_threadmodule.o
+Modules/_thread$(EXT_SUFFIX): Modules/_threadmodule.o; $(BLDSHARED)  Modules/_threadmodule.o $(MODULE__THREAD_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_thread$(EXT_SUFFIX)
+Modules/timemodule.o: $(Deps_Modules_timemodule) $(srcdir)/Modules/timemodule.c $(MODULE_TIME_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_TIME_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/timemodule.c -o Modules/timemodule.o
+Modules/time$(EXT_SUFFIX): Modules/timemodule.o; $(BLDSHARED)  Modules/timemodule.o $(MODULE_TIME_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/time$(EXT_SUFFIX)
+Modules/_typingmodule.o: $(Deps_Modules__typingmodule) $(srcdir)/Modules/_typingmodule.c $(MODULE__TYPING_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__TYPING_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_typingmodule.c -o Modules/_typingmodule.o
+Modules/_typing$(EXT_SUFFIX): Modules/_typingmodule.o; $(BLDSHARED)  Modules/_typingmodule.o $(MODULE__TYPING_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_typing$(EXT_SUFFIX)
+Modules/_weakref.o: $(Deps_Modules__weakref) $(srcdir)/Modules/_weakref.c $(MODULE__WEAKREF_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__WEAKREF_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_weakref.c -o Modules/_weakref.o
+Modules/_weakref$(EXT_SUFFIX): Modules/_weakref.o; $(BLDSHARED)  Modules/_weakref.o $(MODULE__WEAKREF_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_weakref$(EXT_SUFFIX)
+Modules/_abc.o: $(Deps_Modules__abc) $(srcdir)/Modules/_abc.c $(MODULE__ABC_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__ABC_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_abc.c -o Modules/_abc.o
+Modules/_abc$(EXT_SUFFIX): Modules/_abc.o; $(BLDSHARED)  Modules/_abc.o $(MODULE__ABC_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_abc$(EXT_SUFFIX)
+Modules/_functoolsmodule.o: $(Deps_Modules__functoolsmodule) $(srcdir)/Modules/_functoolsmodule.c $(MODULE__FUNCTOOLS_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__FUNCTOOLS_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_functoolsmodule.c -o Modules/_functoolsmodule.o
+Modules/_functools$(EXT_SUFFIX): Modules/_functoolsmodule.o; $(BLDSHARED)  Modules/_functoolsmodule.o $(MODULE__FUNCTOOLS_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_functools$(EXT_SUFFIX)
+Modules/_localemodule.o: $(Deps_Modules__localemodule) $(srcdir)/Modules/_localemodule.c $(MODULE__LOCALE_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__LOCALE_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_localemodule.c -o Modules/_localemodule.o
+Modules/_locale$(EXT_SUFFIX): Modules/_localemodule.o; $(BLDSHARED)  Modules/_localemodule.o $(MODULE__LOCALE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_locale$(EXT_SUFFIX)
+Modules/_operator.o: $(Deps_Modules__operator) $(srcdir)/Modules/_operator.c $(MODULE__OPERATOR_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__OPERATOR_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_operator.c -o Modules/_operator.o
+Modules/_operator$(EXT_SUFFIX): Modules/_operator.o; $(BLDSHARED)  Modules/_operator.o $(MODULE__OPERATOR_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_operator$(EXT_SUFFIX)
+Modules/_stat.o: $(srcdir)/Modules/_stat.c $(MODULE__STAT_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__STAT_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/_stat.c -o Modules/_stat.o
+Modules/_stat$(EXT_SUFFIX): Modules/_stat.o; $(BLDSHARED)  Modules/_stat.o $(MODULE__STAT_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_stat$(EXT_SUFFIX)
+Modules/symtablemodule.o: $(Deps_Modules_symtablemodule) $(srcdir)/Modules/symtablemodule.c $(MODULE__SYMTABLE_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE__SYMTABLE_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/symtablemodule.c -o Modules/symtablemodule.o
+Modules/_symtable$(EXT_SUFFIX): Modules/symtablemodule.o; $(BLDSHARED)  Modules/symtablemodule.o $(MODULE__SYMTABLE_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/_symtable$(EXT_SUFFIX)
+Modules/pwdmodule.o: $(Deps_Modules_pwdmodule) $(srcdir)/Modules/pwdmodule.c $(MODULE_PWD_DEPS) $(MODULE_DEPS_STATIC) $(PYTHON_HEADERS); $(CC) $(MODULE_PWD_CFLAGS) $(PY_BUILTIN_MODULE_CFLAGS) -c $(srcdir)/Modules/pwdmodule.c -o Modules/pwdmodule.o
+Modules/pwd$(EXT_SUFFIX): Modules/pwdmodule.o; $(BLDSHARED)  Modules/pwdmodule.o $(MODULE_PWD_LDFLAGS) $(MODULE_LDFLAGS) -o Modules/pwd$(EXT_SUFFIX)
+
