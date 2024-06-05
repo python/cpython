@@ -787,7 +787,7 @@ class _Environ(MutableMapping):
             if name == 'nt':
                 data = {}
                 for key, value in environ.items():
-                    data[encodekey(key)] = value
+                    data[self.encodekey(key)] = value
             else:
                 data = environ
 
