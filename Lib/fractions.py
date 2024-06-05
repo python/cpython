@@ -668,7 +668,7 @@ class Fraction(numbers.Rational):
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif handle_complex and isinstance(b, complex):
-                return fallback_operator(complex(a), b)
+                return fallback_operator(float(a), b)
             else:
                 return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
@@ -681,7 +681,7 @@ class Fraction(numbers.Rational):
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif handle_complex and isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
+                return fallback_operator(complex(a), float(b))
             else:
                 return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
