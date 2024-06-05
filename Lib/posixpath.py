@@ -402,7 +402,7 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
-    maxlinks = 40 if strict else None
+    maxlinks = 40 if strict else None  # TODO: use limit set by OS
     return _realpath(filename, strict, sep, curdir, pardir, getcwd,
                      maxlinks=maxlinks)
 

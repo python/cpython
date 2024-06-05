@@ -692,24 +692,27 @@ class PosixPathTest(unittest.TestCase):
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_too_many_symlinks(self):
-        depth = 40 + 1  # TODO: use limit set by OS + 1
+        maxlinks = 40  # TODO: use limit set by OS
         try:
             os.mkdir(ABSTFN)
-            os.symlink('.', f'{ABSTFN}/1')
-            for i in range(1, depth):
-                os.symlink(f'{i}', f'{ABSTFN}/{i + 1}')
-            self.assertEqual(realpath(f'{ABSTFN}/{depth}'), ABSTFN)
+            os.symlink('.', f'{ABSTFN}/link')
+            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks,
+                                      strict=True), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * (maxlinks+1)), ABSTFN)
             with self.assertRaises(OSError):
-                realpath(f'{ABSTFN}/{depth}', strict=True)
+                realpath(ABSTFN + '/link' * (maxlinks+1), strict=True)
 
             # Test using relative path as well.
             with os_helper.change_cwd(ABSTFN):
-                self.assertEqual(realpath(f'{depth}'), ABSTFN)
+                self.assertEqual(realpath('link/' * maxlinks), ABSTFN)
+                self.assertEqual(realpath('link/' * maxlinks, strict=True),
+                                 ABSTFN)
+                self.assertEqual(realpath('link/' * (maxlinks+1)), ABSTFN)
                 with self.assertRaises(OSError):
-                    realpath(f'{depth}', strict=True)
+                    realpath('link/' * (maxlinks+1), strict=True)
         finally:
-            for i in range(1, depth + 1):
-                os_helper.unlink(f'{ABSTFN}/{i}')
+            os_helper.unlink(f'{ABSTFN}/link')
             safe_rmdir(ABSTFN)
 
     def test_relpath(self):
