@@ -92,6 +92,12 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+colorsys
+--------
+
+Added :func:`colorsys.rgb_to_cmyk` and :func:`colorsys.cmyk_to_rgb` to convert from and into CMYK color system.
+(Contributed by Albert Gorokhovskiy in :issue:`120120`.)
+
 
 
 Optimizations
