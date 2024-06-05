@@ -937,8 +937,8 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                         v = _escape_attrib_html(v)
                     # FIXME: handle boolean attributes
                     write(" %s=\"%s\"" % (qnames[k], v))
-            write(">")
             ltag = tag.lower()
+            write(">") if ltag not in HTML_EMPTY else write("/>")
             if text:
                 if ltag == "script" or ltag == "style":
                     write(text)
