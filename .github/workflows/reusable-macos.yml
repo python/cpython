@@ -32,6 +32,8 @@ jobs:
         exclude:
           - os: "ghcr.io/cirruslabs/macos-runner:sonoma"
             isFork: true
+          - os: "macos-14"
+            isFork: false
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
