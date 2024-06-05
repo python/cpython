@@ -1,0 +1,4 @@
+Expose :meth:`symtable.Symbol.is_comp_iter` and :meth:`symtable.Symbol.is_comp_cell`
+in the :mod:`symtable` module.
+Patch by Bénédikt Tran.
+
