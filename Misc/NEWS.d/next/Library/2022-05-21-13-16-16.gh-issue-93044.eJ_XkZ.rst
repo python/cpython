@@ -1,2 +1,0 @@
-No longer convert the database argument of :func:`sqlite3.connect` to bytes
-before passing it to the factory.

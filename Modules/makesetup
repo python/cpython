@@ -1,4 +1,5 @@
 #! /bin/sh
+set -e
 
 # Convert templates into Makefile and config.c, based on the module
 # definitions found in the file Setup.
@@ -85,18 +86,6 @@ esac
 # Newline for sed i and a commands
 NL='\
 '
-
-# Setup to link with extra libraries when making shared extensions.
-# Currently, only Cygwin needs this baggage.
-case `uname -s` in
-CYGWIN*) if test $libdir = .
-	 then
-	 	ExtraLibDir=.
-	 else
-	 	ExtraLibDir='$(LIBPL)'
-	 fi
-	 ExtraLibs="-L$ExtraLibDir -lpython\$(LDVERSION)";;
-esac
 
 # Main loop
 for i in ${*-Setup}
@@ -259,13 +248,17 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*) ;;
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
+			# custom flags first, PY_STDMODULE_CFLAGS may contain -I with system libmpdec
 			case $doconfig in
-			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS_NODIST) \$(PY_CPPFLAGS)";;
+			no)
+				cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_SHARED) \$(PYTHON_HEADERS); $cc -c $src -o $obj"
+				;;
 			*)
-				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
+				cc="$cc $cpps \$(PY_BUILTIN_MODULE_CFLAGS)"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_STATIC) \$(PYTHON_HEADERS); $cc -c $src -o $obj"
+				;;
 			esac
-			# force rebuild when header file or module build flavor (static/shared) is changed
-			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS) Modules/config.c; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
@@ -281,7 +274,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				;;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
+			rule="$rule; \$(BLDSHARED) $objs $libs \$(MODULE_LDFLAGS) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
@@ -322,8 +315,13 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 	case $makepre in
 	-)	;;
-	*)	sedf="@sed.in.$$"
-		trap 'rm -f $sedf' 0 1 2 3
+	*)
+		# macOS' sed has issues with 'a' command. Use 'r' command with an
+		# external replacement file instead.
+		sedf="@sed.in.$$"
+		sedr="@sed.replace.$$"
+		trap 'rm -f $sedf $sedr' 0 1 2 3
+		echo "$NL$NL$DEFS" | sed 's/\\$//' > $sedr
 		echo "1i\\" >$sedf
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
@@ -332,10 +330,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
-		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf
+		echo "/Definitions added by makesetup/r $sedr" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile
-		rm -f $sedf
+		rm -f $sedf $sedr
 	    ;;
 	esac
 

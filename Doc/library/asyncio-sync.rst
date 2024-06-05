@@ -216,8 +216,8 @@ Condition
 
    .. method:: notify(n=1)
 
-      Wake up at most *n* tasks (1 by default) waiting on this
-      condition.  The method is no-op if no tasks are waiting.
+      Wake up *n* tasks (1 by default) waiting on this
+      condition.  If fewer than *n* tasks are waiting they are all awakened.
 
       The lock must be acquired before this method is called and
       released shortly after.  If called with an *unlocked* lock
@@ -257,12 +257,18 @@ Condition
       Once awakened, the Condition re-acquires its lock and this method
       returns ``True``.
 
+      Note that a task *may* return from this call spuriously,
+      which is why the caller should always re-check the state
+      and be prepared to :meth:`wait` again. For this reason, you may
+      prefer to use :meth:`wait_for` instead.
+
    .. coroutinemethod:: wait_for(predicate)
 
       Wait until a predicate becomes *true*.
 
       The predicate must be a callable which result will be
-      interpreted as a boolean value.  The final value is the
+      interpreted as a boolean value.  The method will repeatedly
+      :meth:`wait` until the predicate evaluates to *true*. The final value is the
       return value.
 
 
@@ -345,7 +351,7 @@ BoundedSemaphore
 Barrier
 =======
 
-.. class:: Barrier(parties, action=None)
+.. class:: Barrier(parties)
 
    A barrier object.  Not thread-safe.
 
@@ -411,8 +417,8 @@ Barrier
          ...
          async with barrier as position:
             if position == 0:
-               # Only one task print this
-               print('End of *draining phasis*')
+               # Only one task prints this
+               print('End of *draining phase*')
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.
@@ -429,7 +435,7 @@ Barrier
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
-      Use this for example if one of the taks needs to abort, to avoid infinite
+      Use this for example if one of the tasks needs to abort, to avoid infinite
       waiting tasks.
 
    .. attribute:: parties

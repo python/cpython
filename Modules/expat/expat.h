@@ -11,11 +11,14 @@
    Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2022      Thijs Schreijer <thijs@thijsschreijer.nl>
+   Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
+   Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -269,7 +272,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
                     const XML_Memory_Handling_Suite *memsuite,
                     const XML_Char *namespaceSeparator);
 
-/* Prepare a parser object to be re-used.  This is particularly
+/* Prepare a parser object to be reused.  This is particularly
    valuable when memory allocation overhead is disproportionately high,
    such as when a large number of small documnents need to be parsed.
    All handlers are cleared from the parser, except for the
@@ -951,7 +954,7 @@ XMLPARSEAPI(XML_Index) XML_GetCurrentByteIndex(XML_Parser parser);
 XMLPARSEAPI(int)
 XML_GetCurrentByteCount(XML_Parser parser);
 
-/* If XML_CONTEXT_BYTES is defined, returns the input buffer, sets
+/* If XML_CONTEXT_BYTES is >=1, returns the input buffer, sets
    the integer pointed to by offset to the offset within this buffer
    of the current parse position, and sets the integer pointed to by size
    to the size of this buffer (the number of input bytes). Otherwise
@@ -1025,7 +1028,9 @@ enum XML_FeatureEnum {
   XML_FEATURE_ATTR_INFO,
   /* Added in Expat 2.4.0. */
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
-  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT
+  XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT,
+  /* Added in Expat 2.6.0. */
+  XML_FEATURE_GE
   /* Additional features must be added to the end of this enum. */
 };
 
@@ -1038,24 +1043,30 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
-#ifdef XML_DTD
-/* Added in Expat 2.4.0. */
+#if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
+/* Added in Expat 2.4.0 for XML_DTD defined and
+ * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionMaximumAmplification(
     XML_Parser parser, float maximumAmplificationFactor);
 
-/* Added in Expat 2.4.0. */
+/* Added in Expat 2.4.0 for XML_DTD defined and
+ * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionActivationThreshold(
     XML_Parser parser, unsigned long long activationThresholdBytes);
 #endif
 
+/* Added in Expat 2.6.0. */
+XMLPARSEAPI(XML_Bool)
+XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
+
 /* Expat follows the semantic versioning convention.
-   See http://semver.org.
+   See https://semver.org
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 4
-#define XML_MICRO_VERSION 7
+#define XML_MINOR_VERSION 6
+#define XML_MICRO_VERSION 2
 
 #ifdef __cplusplus
 }

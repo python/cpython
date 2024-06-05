@@ -113,16 +113,6 @@ class CallSignoreSuppressImportWarning(CallSignature):
             super().test_no_path()
 
 
-class CallSignaturePEP302(CallSignoreSuppressImportWarning):
-    mock_modules = util.mock_modules
-    finder_name = 'find_module'
-
-
-(Frozen_CallSignaturePEP302,
- Source_CallSignaturePEP302
- ) = util.test_both(CallSignaturePEP302, __import__=util.__import__)
-
-
 class CallSignaturePEP451(CallSignature):
     mock_modules = util.mock_spec
     finder_name = 'find_spec'

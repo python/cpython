@@ -14,14 +14,14 @@ from io import BytesIO, StringIO
 # Intrapackage imports
 from email import utils
 from email import errors
-from email._policybase import Policy, compat32
+from email._policybase import compat32
 from email import charset as _charset
 from email._encoded_words import decode_b
 Charset = _charset.Charset
 
 SEMISPACE = '; '
 
-# Regular expression that matches `special' characters in parameters, the
+# Regular expression that matches 'special' characters in parameters, the
 # existence of which force quoting of the parameter value.
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
@@ -141,7 +141,7 @@ class Message:
     multipart or a message/rfc822), then the payload is a list of Message
     objects, otherwise it is a string.
 
-    Message objects implement part of the `mapping' interface, which assumes
+    Message objects implement part of the 'mapping' interface, which assumes
     there is exactly one occurrence of the header per message.  Some headers
     do in fact appear multiple times (e.g. Received) and for those headers,
     you must use the explicit API to set or get all the headers.  Not all of
@@ -289,25 +289,26 @@ class Message:
         # cte might be a Header, so for now stringify it.
         cte = str(self.get('content-transfer-encoding', '')).lower()
         # payload may be bytes here.
-        if isinstance(payload, str):
-            if utils._has_surrogates(payload):
-                bpayload = payload.encode('ascii', 'surrogateescape')
-                if not decode:
+        if not decode:
+            if isinstance(payload, str) and utils._has_surrogates(payload):
+                try:
+                    bpayload = payload.encode('ascii', 'surrogateescape')
                     try:
-                        payload = bpayload.decode(self.get_param('charset', 'ascii'), 'replace')
+                        payload = bpayload.decode(self.get_content_charset('ascii'), 'replace')
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
-            elif decode:
-                try:
-                    bpayload = payload.encode('ascii')
-                except UnicodeError:
-                    # This won't happen for RFC compliant messages (messages
-                    # containing only ASCII code points in the unicode input).
-                    # If it does happen, turn the string into bytes in a way
-                    # guaranteed not to fail.
-                    bpayload = payload.encode('raw-unicode-escape')
-        if not decode:
+                except UnicodeEncodeError:
+                    pass
             return payload
+        if isinstance(payload, str):
+            try:
+                bpayload = payload.encode('ascii', 'surrogateescape')
+            except UnicodeEncodeError:
+                # This won't happen for RFC compliant messages (messages
+                # containing only ASCII code points in the unicode input).
+                # If it does happen, turn the string into bytes in a way
+                # guaranteed not to fail.
+                bpayload = payload.encode('raw-unicode-escape')
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':
@@ -339,7 +340,7 @@ class Message:
                 return
             if not isinstance(charset, Charset):
                 charset = Charset(charset)
-            payload = payload.encode(charset.output_charset)
+            payload = payload.encode(charset.output_charset, 'surrogateescape')
         if hasattr(payload, 'decode'):
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:
@@ -448,7 +449,11 @@ class Message:
         self._headers = newheaders
 
     def __contains__(self, name):
-        return name.lower() in [k.lower() for k, v in self._headers]
+        name_lower = name.lower()
+        for k, v in self._headers:
+            if name_lower == k.lower():
+                return True
+        return False
 
     def __iter__(self):
         for field, value in self._headers:
@@ -592,7 +597,7 @@ class Message:
         """Return the message's content type.
 
         The returned string is coerced to lower case of the form
-        `maintype/subtype'.  If there was no Content-Type header in the
+        'maintype/subtype'.  If there was no Content-Type header in the
         message, the default type as given by get_default_type() will be
         returned.  Since according to RFC 2045, messages always have a default
         type this will always return a value.
@@ -615,7 +620,7 @@ class Message:
     def get_content_maintype(self):
         """Return the message's main content type.
 
-        This is the `maintype' part of the string returned by
+        This is the 'maintype' part of the string returned by
         get_content_type().
         """
         ctype = self.get_content_type()
@@ -624,14 +629,14 @@ class Message:
     def get_content_subtype(self):
         """Returns the message's sub-content type.
 
-        This is the `subtype' part of the string returned by
+        This is the 'subtype' part of the string returned by
         get_content_type().
         """
         ctype = self.get_content_type()
         return ctype.split('/')[1]
 
     def get_default_type(self):
-        """Return the `default' content type.
+        """Return the 'default' content type.
 
         Most messages have a default content type of text/plain, except for
         messages that are subparts of multipart/digest containers.  Such
@@ -640,7 +645,7 @@ class Message:
         return self._default_type
 
     def set_default_type(self, ctype):
-        """Set the `default' content type.
+        """Set the 'default' content type.
 
         ctype should be either "text/plain" or "message/rfc822", although this
         is not enforced.  The default content type is not stored in the
@@ -673,8 +678,8 @@ class Message:
         """Return the message's Content-Type parameters, as a list.
 
         The elements of the returned list are 2-tuples of key/value pairs, as
-        split on the `=' sign.  The left hand side of the `=' is the key,
-        while the right hand side is the value.  If there is no `=' sign in
+        split on the '=' sign.  The left hand side of the '=' is the key,
+        while the right hand side is the value.  If there is no '=' sign in
         the parameter the value is the empty string.  The value is as
         described in the get_param() method.
 
@@ -834,9 +839,9 @@ class Message:
         """Return the filename associated with the payload if present.
 
         The filename is extracted from the Content-Disposition header's
-        `filename' parameter, and it is unquoted.  If that header is missing
-        the `filename' parameter, this method falls back to looking for the
-        `name' parameter.
+        'filename' parameter, and it is unquoted.  If that header is missing
+        the 'filename' parameter, this method falls back to looking for the
+        'name' parameter.
         """
         missing = object()
         filename = self.get_param('filename', missing, 'content-disposition')
@@ -849,7 +854,7 @@ class Message:
     def get_boundary(self, failobj=None):
         """Return the boundary associated with the payload if present.
 
-        The boundary is extracted from the Content-Type header's `boundary'
+        The boundary is extracted from the Content-Type header's 'boundary'
         parameter, and it is unquoted.
         """
         missing = object()

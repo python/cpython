@@ -1,11 +1,15 @@
 import collections
-import operator
+import contextlib
+import itertools
 import pathlib
+import operator
+import re
+import warnings
 import zipfile
 
 from . import abc
 
-from ._itertools import unique_everseen
+from ._itertools import only
 
 
 def remove_duplicates(items):
@@ -41,8 +45,10 @@ class ZipReader(abc.TraversableResources):
             raise FileNotFoundError(exc.args[0])
 
     def is_resource(self, path):
-        # workaround for `zipfile.Path.is_file` returning true
-        # for non-existent paths.
+        """
+        Workaround for `zipfile.Path.is_file` returning true
+        for non-existent paths.
+        """
         target = self.files().joinpath(path)
         return target.is_file() and target.exists()
 
@@ -59,7 +65,7 @@ class MultiplexedPath(abc.Traversable):
     """
 
     def __init__(self, *paths):
-        self._paths = list(map(pathlib.Path, remove_duplicates(paths)))
+        self._paths = list(map(_ensure_traversable, remove_duplicates(paths)))
         if not self._paths:
             message = 'MultiplexedPath must contain at least one path'
             raise FileNotFoundError(message)
@@ -67,8 +73,10 @@ class MultiplexedPath(abc.Traversable):
             raise NotADirectoryError('MultiplexedPath only supports directories')
 
     def iterdir(self):
-        files = (file for path in self._paths for file in path.iterdir())
-        return unique_everseen(files, key=operator.attrgetter('name'))
+        children = (child for path in self._paths for child in path.iterdir())
+        by_name = operator.attrgetter('name')
+        groups = itertools.groupby(sorted(children, key=by_name), key=by_name)
+        return map(self._follow, (locs for name, locs in groups))
 
     def read_bytes(self):
         raise FileNotFoundError(f'{self} is not a file')
@@ -82,15 +90,32 @@ class MultiplexedPath(abc.Traversable):
     def is_file(self):
         return False
 
-    def joinpath(self, child):
-        # first try to find child in current paths
-        for file in self.iterdir():
-            if file.name == child:
-                return file
-        # if it does not exist, construct it with the first path
-        return self._paths[0] / child
+    def joinpath(self, *descendants):
+        try:
+            return super().joinpath(*descendants)
+        except abc.TraversalError:
+            # One of the paths did not resolve (a directory does not exist).
+            # Just return something that will not exist.
+            return self._paths[0].joinpath(*descendants)
 
-    __truediv__ = joinpath
+    @classmethod
+    def _follow(cls, children):
+        """
+        Construct a MultiplexedPath if needed.
+
+        If children contains a sole element, return it.
+        Otherwise, return a MultiplexedPath of the items.
+        Unless one of the items is not a Directory, then return the first.
+        """
+        subdirs, one_dir, one_file = itertools.tee(children, 3)
+
+        try:
+            return only(one_dir)
+        except ValueError:
+            try:
+                return cls(*subdirs)
+            except NotADirectoryError:
+                return next(one_file)
 
     def open(self, *args, **kwargs):
         raise FileNotFoundError(f'{self} is not a file')
@@ -108,7 +133,36 @@ class NamespaceReader(abc.TraversableResources):
     def __init__(self, namespace_path):
         if 'NamespacePath' not in str(namespace_path):
             raise ValueError('Invalid path')
-        self.path = MultiplexedPath(*list(namespace_path))
+        self.path = MultiplexedPath(*map(self._resolve, namespace_path))
+
+    @classmethod
+    def _resolve(cls, path_str) -> abc.Traversable:
+        r"""
+        Given an item from a namespace path, resolve it to a Traversable.
+
+        path_str might be a directory on the filesystem or a path to a
+        zipfile plus the path within the zipfile, e.g. ``/foo/bar`` or
+        ``/foo/baz.zip/inner_dir`` or ``foo\baz.zip\inner_dir\sub``.
+        """
+        (dir,) = (cand for cand in cls._candidate_paths(path_str) if cand.is_dir())
+        return dir
+
+    @classmethod
+    def _candidate_paths(cls, path_str):
+        yield pathlib.Path(path_str)
+        yield from cls._resolve_zip_path(path_str)
+
+    @staticmethod
+    def _resolve_zip_path(path_str):
+        for match in reversed(list(re.finditer(r'[\\/]', path_str))):
+            with contextlib.suppress(
+                FileNotFoundError,
+                IsADirectoryError,
+                NotADirectoryError,
+                PermissionError,
+            ):
+                inner = path_str[match.end() :].replace('\\', '/') + '/'
+                yield zipfile.Path(path_str[: match.start()], inner.lstrip('/'))
 
     def resource_path(self, resource):
         """
@@ -120,3 +174,21 @@ class NamespaceReader(abc.TraversableResources):
 
     def files(self):
         return self.path
+
+
+def _ensure_traversable(path):
+    """
+    Convert deprecated string arguments to traversables (pathlib.Path).
+
+    Remove with Python 3.15.
+    """
+    if not isinstance(path, str):
+        return path
+
+    warnings.warn(
+        "String arguments are deprecated. Pass a Traversable instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+    return pathlib.Path(path)

@@ -1,2 +1,0 @@
-The operand of the ``YIELD_VALUE`` instruction is set to the stack depth.
-This is done to help frame handling on ``yield`` and may assist debuggers.
