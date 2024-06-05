@@ -1692,6 +1692,13 @@ class GrammarTests(unittest.TestCase):
     ### testlist: test (',' test)* [',']
     # These have been exercised enough above
 
+    def test_frozenset(self):
+        # frozenset tests
+        self.assertEqual({{1, 2, 3}},         frozenset({1, 2, 3}))
+        self.assertEqual({ {{1, 2, 3}} },     {frozenset({1, 2, 3})})
+        self.assertEqual({{{{1, 2, 3}}}},     frozenset({frozenset({1, 2, 3})}))
+        self.assertEqual({ {{{{1, 2, 3}}}} }, {frozenset({frozenset({1, 2, 3})})})
+
     def test_classdef(self):
         # 'class' NAME ['(' [testlist] ')'] ':' suite
         class B: pass
