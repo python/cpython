@@ -4,9 +4,9 @@ This modules provides two functions for each color system ABC (or ABCD):
 
   rgb_to_abc(r, g, b) --> a, b, c
   abc_to_rgb(a, b, c) --> r, g, b
-  
+
 In case of ABCD:
-  
+
   rgb_to_abcd(r, g, b) --> a, b, c, d
   abcd_to_rgb(a, b, c, d) --> r, g, b
 
