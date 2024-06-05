@@ -1202,17 +1202,6 @@ class _TestQueue(BaseTestCase):
         self.assertEqual(q.qsize(), 0)
         close_queue(q)
 
-    def test_empty_exceptions(self):
-        q = self.Queue()
-        q.close()  # this is a no-op because the feeder thread is not created
-        self.assertTrue(q.empty())
-        close_queue(q)
-
-        q = self.JoinableQueue()
-        q.close()  # this is a no-op because the feeder thread is not created
-        self.assertTrue(q.empty())
-        close_queue(q)
-
     @classmethod
     def _test_task_done(cls, q):
         for obj in iter(q.get, None):
@@ -1342,6 +1331,18 @@ class _TestQueue(BaseTestCase):
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
         self.assertTrue(not_serializable_obj.on_queue_feeder_error_was_called)
+
+    def test_closed_queue_empty_exceptions(self):
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.close()  # this is a no-op because the feeder thread is not created
+            self.assertTrue(q.empty())
+
+        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
+            q.put('foo')
+            q.close()  # close the internal pipe
+            with self.assertRaisesRegex(OSError, 'is closed'):
+                q.empty()
+
 
     def test_closed_queue_put_get_exceptions(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
