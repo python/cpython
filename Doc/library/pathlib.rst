@@ -807,8 +807,8 @@ bugs or failures in your application)::
        % (cls.__name__,))
    UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
-Some of these methods can raise an :exc:`OSError` if a system call fails (for
-example because the path doesn't exist).
+Some concrete path methods can raise an :exc:`OSError` if a system call fails
+(for example because the path doesn't exist).
 
 
 Parsing and generating URIs
