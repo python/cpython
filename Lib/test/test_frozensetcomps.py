@@ -104,14 +104,14 @@ Same again, only this time as a closure variable
     >>> {{x() for x in items}}
     frozenset({4})
 
-Another way to test that the iteration variable is local to the list comp
+Another way to test that the iteration variable is local to the frozenset comp
 
     >>> items = {{(lambda: i) for i in range(5)}}
     >>> i = 20
     >>> {{x() for x in items}}
     frozenset({4})
 
-And confirm that a closure can jump over the list comp scope
+And confirm that a closure can jump over the frozenset comp scope
 
     >>> items = {{(lambda: y) for i in range(5)}}
     >>> y = 2
