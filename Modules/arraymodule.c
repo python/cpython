@@ -204,7 +204,7 @@ array_free_items2(char* items, bool use_qsbr)
     }
     _PyArrayArray *array = _Py_CONTAINER_OF(items, _PyArrayArray, ob_item);
     if (use_qsbr) {
-        PyMem_FreeDelayed(array);
+        _PyMem_FreeDelayed(array);
     }
     else {
         PyMem_Free(array);
