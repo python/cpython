@@ -1016,7 +1016,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
-        _PyWeakref_ClearWeakRefsExceptCallbacks(object);
+        _PyWeakref_ClearWeakRefsNoCallbacks(object);
         PyErr_WriteUnraisable(NULL);
         PyErr_SetRaisedException(exc);
         return;
@@ -1058,10 +1058,10 @@ PyObject_ClearWeakRefs(PyObject *object)
 }
 
 void
-PyUnstable_Object_ClearWeakRefsExceptCallbacks(PyObject *obj)
+PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *obj)
 {
     if (_PyType_SUPPORTS_WEAKREFS(Py_TYPE(obj))) {
-        _PyWeakref_ClearWeakRefsExceptCallbacks(obj);
+        _PyWeakref_ClearWeakRefsNoCallbacks(obj);
     }
 }
 
@@ -1084,7 +1084,7 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 }
 
 void
-_PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
+_PyWeakref_ClearWeakRefsNoCallbacks(PyObject *obj)
 {
     /* Modeled after GET_WEAKREFS_LISTPTR().
 
