@@ -1197,6 +1197,7 @@ def no_rerun(reason):
     test using the 'reason' parameter.
     """
     def deco(func):
+        assert not isinstance(func, type), func
         _has_run = False
         def wrapper(self):
             nonlocal _has_run
