@@ -970,7 +970,7 @@ class DSLParser:
                         visit_DictComp = visit_GeneratorExp = bad_node
 
                         # literals for advanced types
-                        visit_Dict = visit_Set = bad_node
+                        visit_Dict = visit_Set = visit_FrozenSet = bad_node
                         visit_List = visit_Tuple = bad_node
 
                         # "starred": "a = [1, 2, 3]; *a"
