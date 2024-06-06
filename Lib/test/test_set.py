@@ -689,6 +689,27 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
         t = self.thetype(s)
         self.assertEqual(id(s), id(t))
 
+    def test_frozenset_literal(self):
+        s = frozenset([1,2,3])
+        t = {{1,2,3}}
+        self.assertEqual(s, t)
+
+    def test_frozenset_literal_insertion_order(self):
+        # SF Issue #26020 -- Expect left to right insertion
+        s = {{1, 1.0, True}}
+        self.assertEqual(len(s), 1)
+        stored_value = list(s)[0]
+        self.assertEqual(type(stored_value), int)
+
+    def test_frozenset_literal_evaluation_order(self):
+        # Expect left to right expression evaluation
+        events = []
+        def record(obj):
+            events.append(obj)
+        s = {{record(1), record(2), record(3)}}
+        self.assertEqual(events, [1, 2, 3])
+
+
     def test_hash(self):
         self.assertEqual(hash(self.thetype('abcdeb')),
                          hash(self.thetype('ebecda')))
