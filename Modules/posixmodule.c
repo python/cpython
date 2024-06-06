@@ -16,7 +16,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
-#include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -627,10 +626,7 @@ PyOS_AfterFork_Parent(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyImport_ReleaseLock(interp) <= 0) {
-        Py_FatalError("failed releasing import lock after fork");
-    }
-
+    _PyImport_ReleaseLock(interp);
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
@@ -675,10 +671,7 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    status = _PyImport_ReInitLock(tstate->interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
+    _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
 
