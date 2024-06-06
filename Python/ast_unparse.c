@@ -316,12 +316,38 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
     Py_ssize_t i, value_count;
     expr_ty key_node;
 
-    // TODO only insert whitespace when necessary
-    APPEND_STR("{ ");
+    APPEND_STR("{");
     value_count = asdl_seq_LEN(e->v.Dict.values);
+    if (value_count == 0) {
+        APPEND_STR_FINISH("}");
+    }
 
-    for (i = 0; i < value_count; i++) {
-        APPEND_STR_IF(i > 0, ", ");
+    key_node = (expr_ty)asdl_seq_GET(e->v.Dict.keys, 0);
+    if (key_node == NULL) {
+        APPEND_STR("**");
+        APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Dict.values, 0), PR_EXPR);
+    }
+    else {
+        PyObject *temp_fv_str = expr_as_unicode(key_node, PR_TEST);
+        if (!temp_fv_str) {
+            return -1;
+        }
+        if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
+            /* Expression starts with a brace, split it with a space from the
+            outer one. */
+            APPEND_STR(" ");
+        }
+        if (-1 == _PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
+            Py_DECREF(temp_fv_str);
+            return -1;
+        }
+        Py_DECREF(temp_fv_str);
+        APPEND_STR(": ");
+        APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Dict.values, 0), PR_TEST);
+    }
+
+    for (i = 1; i < value_count; i++) {
+        APPEND_STR(", ");
         key_node = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i);
         if (key_node != NULL) {
             APPEND_EXPR(key_node, PR_TEST);
@@ -342,11 +368,28 @@ append_ast_set(_PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
-    // TODO only insert whitespace when necessary
-    APPEND_STR("{ ");
+    APPEND_STR("{");
     elem_count = asdl_seq_LEN(e->v.Set.elts);
-    for (i = 0; i < elem_count; i++) {
-        APPEND_STR_IF(i > 0, ", ");
+    assert(elem_count > 0);
+
+    PyObject *temp_fv_str = expr_as_unicode(
+        (expr_ty)asdl_seq_GET(e->v.Set.elts, 0), PR_TEST);
+    if (!temp_fv_str) {
+        return -1;
+    }
+    if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
+        /* Expression starts with a brace, split it with a space from the outer
+           one. */
+        APPEND_STR(" ");
+    }
+    if (-1 == _PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
+        Py_DECREF(temp_fv_str);
+        return -1;
+    }
+    Py_DECREF(temp_fv_str);
+
+    for (i = 1; i < elem_count; i++) {
+        APPEND_STR(", ");
         APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Set.elts, i), PR_TEST);
     }
 
@@ -458,7 +501,7 @@ append_ast_listcomp(_PyUnicodeWriter *writer, expr_ty e)
 static int
 append_ast_setcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
-    const char *outer_brace = "{";
+    APPEND_STR("{");
     PyObject *temp_fv_str = expr_as_unicode(e->v.SetComp.elt, PR_TEST);
     if (!temp_fv_str) {
         return -1;
@@ -466,11 +509,7 @@ append_ast_setcomp(_PyUnicodeWriter *writer, expr_ty e)
     if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
-        outer_brace = "{ ";
-    }
-    if (-1 == append_charp(writer, outer_brace)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
+        APPEND_STR(" ");
     }
     if (-1 == _PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
         Py_DECREF(temp_fv_str);
@@ -493,7 +532,7 @@ append_ast_frozensetcomp(_PyUnicodeWriter *writer, expr_ty e)
 static int
 append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
-    const char *outer_brace = "{";
+    APPEND_STR("{");
     PyObject *temp_fv_str = expr_as_unicode(e->v.DictComp.key, PR_TEST);
     if (!temp_fv_str) {
         return -1;
@@ -501,11 +540,7 @@ append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
     if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
-        outer_brace = "{ ";
-    }
-    if (-1 == append_charp(writer, outer_brace)) {
-        Py_DECREF(temp_fv_str);
-        return -1;
+        APPEND_STR(" ");
     }
     if (-1 == _PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
         Py_DECREF(temp_fv_str);
