@@ -2,8 +2,9 @@
 
 ## Families of instructions
 
-The core part of PEP 659 (specializing adaptive interpreter) is the families
-of instructions that perform the adaptive specialization.
+The core part of [PEP 659](https://peps.python.org/pep-0659/)
+(specializing adaptive interpreter) is the families of
+instructions that perform the adaptive specialization.
 
 A family of instructions has the following fundamental properties:
 
@@ -30,8 +31,9 @@ although these are not fundamental and may change:
 
 ## Example family
 
-The `LOAD_GLOBAL` instruction (in Python/bytecodes.c) already has an adaptive
-family that serves as a relatively simple example.
+The `LOAD_GLOBAL` instruction (in
+[Python/bytecodes.c](https://github.com/python/cpython/blob/main/Python/bytecodes.c))
+already has an adaptive family that serves as a relatively simple example.
 
 The `LOAD_GLOBAL` instruction performs adaptive specialization,
 calling `_Py_Specialize_LoadGlobal()` when the counter reaches zero.
