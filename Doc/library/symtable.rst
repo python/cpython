@@ -129,6 +129,11 @@ Examining Symbol Tables
 
       Return a tuple containing the names of methods declared in the class.
 
+      .. deprecated:: 3.14
+
+         This method is deprecated since it may return non-methods (e.g.,
+         inner classes). In particular, this method should not be relied
+         on. Currently, there is no plan for a replacement.
 
 .. class:: Symbol
 
