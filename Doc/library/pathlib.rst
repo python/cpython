@@ -1477,14 +1477,10 @@ example because the path doesn't exist).
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-.. method:: Path.copy(target, *, follow_symlinks=True)
+.. method:: Path.copy(target)
 
    Copy the contents of this file to the *target* file. If *target* specifies
    a file that already exists, it will be replaced.
-
-   If *follow_symlinks* is false, and this file is a symbolic link, *target*
-   will be created as a symbolic link. If *follow_symlinks* is true and this
-   file is a symbolic link, *target* will be a copy of the symlink target.
 
    .. note::
       This method uses operating system functionality to copy file content
