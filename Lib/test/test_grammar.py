@@ -1208,6 +1208,8 @@ class GrammarTests(unittest.TestCase):
               "'yield' inside list comprehension")
         check("def g(): {(yield x) for x in ()}",
               "'yield' inside set comprehension")
+        check("def g(): {{(yield x) for x in ()}}",
+              "'yield' inside frozenset comprehension")
         check("def g(): {(yield x): x for x in ()}",
               "'yield' inside dict comprehension")
         check("def g(): {x: (yield x) for x in ()}",
@@ -1520,6 +1522,7 @@ class GrammarTests(unittest.TestCase):
         check('[{{1, 2}} (3, 4)]')
         check('[[i for i in range(5)] (3, 4)]')
         check('[{i for i in range(5)} (3, 4)]')
+        check('[{{i for i in range(5)}} (3, 4)]')
         check('[(i for i in range(5)) (3, 4)]')
         check('[{i: i for i in range(5)} (3, 4)]')
         check('[f"{x}" (3, 4)]')
@@ -1537,6 +1540,7 @@ class GrammarTests(unittest.TestCase):
         check('[{1, 2} [i, j]]')
         check('[{{1, 2}} [i, j]]')
         check('[{i for i in range(5)} [i, j]]')
+        check('[{{i for i in range(5)}} [i, j]]')
         check('[(i for i in range(5)) [i, j]]')
         check('[(lambda x, y: x) [i, j]]')
         check('[123 [i, j]]')
@@ -1564,11 +1568,12 @@ class GrammarTests(unittest.TestCase):
         msg=r'indices must be integers or slices, not set;'
         check('[[1, 2] [{3, 4}]]')
         check('[[1, 2] [{i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not frozenset;'
+        check('[[1, 2] [{{3, 4}}]]')
+        check('[[1, 2] [{{i for i in range(5)}}]]')
         msg=r'indices must be integers or slices, not dict;'
         check('[[1, 2] [{3: 4}]]')
         check('[[1, 2] [{i: i for i in range(5)}]]')
-        msg=r'indices must be integers or slices, not frozenset;'
-        check('[[1, 2] [{{3, 4}}]]')
         msg=r'indices must be integers or slices, not generator;'
         check('[[1, 2] [(i for i in range(5))]]')
         msg=r'indices must be integers or slices, not function;'
