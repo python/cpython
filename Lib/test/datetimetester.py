@@ -13,6 +13,7 @@ import random
 import re
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -22,7 +23,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper, no_rerun
+from test.support import script_helper, warnings_helper, no_rerun
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -6775,6 +6776,34 @@ class CapiTest(unittest.TestCase):
                     dt_rt = from_timestamp(ts, tzinfo, usetz, macro)
 
                     self.assertEqual(dt_orig, dt_rt)
+
+
+class ExtensionModuleTests(unittest.TestCase):
+
+    def setUp(self):
+        if self.__class__.__name__.endswith('Pure'):
+            self.skipTest('Not relevant in pure Python')
+
+    def test_gh_120161(self):
+        script = textwrap.dedent("""
+            import asyncio
+            import datetime
+            from typing import Type
+
+            class tzutc(datetime.tzinfo):
+                pass
+            _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+
+            class FakeDateMeta(type):
+                def __instancecheck__(self, obj):
+                    return True
+            class FakeDate(datetime.date, metaclass=FakeDateMeta):
+                pass
+            def pickle_fake_date(datetime_) -> Type[FakeDate]:
+                # A pickle function for FakeDate
+                return FakeDate
+            """)
+        script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):
