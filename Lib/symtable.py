@@ -16,7 +16,6 @@ import weakref
 
 __all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
 
-
 def symtable(code, filename, compile_type):
     """ Return the toplevel *SymbolTable* for the source code.
 
