@@ -1,15 +1,18 @@
 import itertools
 import functools
+import rlcompleter
 from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
+from test.support import import_helper
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 
 
 class TestReader(TestCase):
     def assert_screen_equals(self, reader, expected):
-        actual = reader.calc_screen()
+        actual = reader.screen
         expected = expected.split("\n")
         self.assertListEqual(actual, expected)
 
@@ -178,6 +181,37 @@ class TestReader(TestCase):
         self.assert_screen_equals(reader, expected)
         self.assertTrue(reader.finished)
 
+    def test_input_hook_is_called_if_set(self):
+        input_hook = MagicMock()
+        def _prepare_console(events):
+            console = MagicMock()
+            console.get_event.side_effect = events
+            console.height = 100
+            console.width = 80
+            console.input_hook = input_hook
+            return console
+
+        events = code_to_events("a")
+        reader, _ = handle_all_events(events, prepare_console=_prepare_console)
+
+        self.assertEqual(len(input_hook.mock_calls), 4)
+
+    def test_keyboard_interrupt_clears_screen(self):
+        namespace = {"itertools": itertools}
+        code = "import itertools\nitertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),  # Two tabs for completion
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+            Event(evt='key', data='\x03', raw=bytearray(b'\x03')),  # Ctrl-C
+        ])
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+        self.assertEqual(reader.calc_screen(), code.split("\n"))
+
     def test_prompt_length(self):
         # Handles simple ASCII prompt
         ps1 = ">>> "
@@ -208,3 +242,37 @@ class TestReader(TestCase):
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
+
+    def test_completions_updated_on_key_press(self):
+        namespace = {"itertools": itertools}
+        code = "itertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),  # Two tabs for completion
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+        ], code_to_events("a"))
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+
+        actual = reader.screen
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].rstrip(), "itertools.accumulate(")
+        self.assertEqual(actual[1], f"{code}a")
+
+    def test_key_press_on_tab_press_once(self):
+        namespace = {"itertools": itertools}
+        code = "itertools."
+        events = itertools.chain(code_to_events(code), [
+            Event(evt='key', data='\t', raw=bytearray(b'\t')),
+        ], code_to_events("a"))
+
+        completing_reader = functools.partial(
+            prepare_reader,
+            readline_completer=rlcompleter.Completer(namespace).complete
+        )
+        reader, _ = handle_all_events(events, prepare_reader=completing_reader)
+
+        self.assert_screen_equals(reader, f"{code}a")
