@@ -1299,9 +1299,16 @@ class _Unparser(NodeVisitor):
                 self.traverse(gen)
 
     def visit_SetComp(self, node):
-        # TODO only insert whitespace when necessary
-        with self.delimit("{ ", " }"):
-            self.traverse(node.elt)
+        def unparse_inner(inner):
+            unparser = type(self)()
+            return unparser.visit(inner)
+
+        with self.delimit("{", "}"):
+            expr = unparse_inner(node.elt)
+            if expr.startswith("{"):
+                # Separate pair of opening brackets as "{ {"
+                self.write(" ")
+            self.write(expr)
             for gen in node.generators:
                 self.traverse(gen)
 
@@ -1312,9 +1319,16 @@ class _Unparser(NodeVisitor):
                 self.traverse(gen)
 
     def visit_DictComp(self, node):
-        # TODO only insert whitespace when necessary
-        with self.delimit("{ ", " }"):
-            self.traverse(node.key)
+        def unparse_inner(inner):
+            unparser = type(self)()
+            return unparser.visit(inner)
+
+        with self.delimit("{", "}"):
+            expr = unparse_inner(node.key)
+            if expr.startswith("{"):
+                # Separate pair of opening brackets as "{ {"
+                self.write(" ")
+            self.write(expr)
             self.write(": ")
             self.traverse(node.value)
             for gen in node.generators:
@@ -1347,7 +1361,7 @@ class _Unparser(NodeVisitor):
     def visit_Set(self, node):
         if node.elts:
             # TODO only insert whitespace when necessary
-            with self.delimit("{ ", " }"):
+            with self.delimit("{ ", "}"):
                 self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         else:
             # `{}` would be interpreted as a dictionary literal, and
@@ -1381,7 +1395,7 @@ class _Unparser(NodeVisitor):
                 write_key_value_pair(k, v)
 
         # TODO only insert whitespace when necessary
-        with self.delimit("{ ", " }"):
+        with self.delimit("{ ", "}"):
             self.interleave(
                 lambda: self.write(", "), write_item, zip(node.keys, node.values)
             )
@@ -1694,7 +1708,7 @@ class _Unparser(NodeVisitor):
             self.traverse(p)
 
         # TODO only insert whitespace when necessary
-        with self.delimit("{ ", " }"):
+        with self.delimit("{ ", "}"):
             keys = node.keys
             self.interleave(
                 lambda: self.write(", "),
