@@ -4266,7 +4266,7 @@ The constructors for both classes work the same:
    Sets can be created by several means:
 
    * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
-   * Use a set set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
    * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
    You can do the same for frozen sets:
