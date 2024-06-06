@@ -35,15 +35,15 @@
         case _LOAD_FAST_CHECK: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
-            value = GETLOCAL(oparg);
-            if (PyStackRef_IsNull(value)) {
+            _PyStackRef value_s = GETLOCAL(oparg);
+            if (PyStackRef_IsNull(value_s)) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 if (1) JUMP_TO_ERROR();
             }
-            PyStackRef_DUP(value);
+            value = PyStackRef_DUP(value_s);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -53,9 +53,8 @@
             _PyStackRef value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -65,9 +64,8 @@
             _PyStackRef value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -77,9 +75,8 @@
             _PyStackRef value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -89,9 +86,8 @@
             _PyStackRef value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -101,9 +97,8 @@
             _PyStackRef value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -113,9 +108,8 @@
             _PyStackRef value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -125,9 +119,8 @@
             _PyStackRef value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -137,9 +130,8 @@
             _PyStackRef value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -148,9 +140,8 @@
         case _LOAD_FAST: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1478,13 +1469,13 @@
 
         case _LOAD_LOCALS: {
             _PyStackRef locals;
-            locals = PyStackRef_FromPyObjectSteal(LOCALS());
-            if (PyStackRef_IsNull(locals)) {
+            _PyStackRef locals_s = PyStackRef_FromPyObjectSteal(LOCALS());
+            if (PyStackRef_IsNull(locals_s)) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 if (true) JUMP_TO_ERROR();
             }
-            PyStackRef_DUP(locals);
+            locals = PyStackRef_DUP(locals_s);
             stack_pointer[0] = locals;
             stack_pointer += 1;
             break;
@@ -3362,9 +3353,8 @@
             assert(Py_TYPE(callable_o) == &PyMethod_Type);
             self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
             stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
-            method = PyStackRef_FromPyObjectSteal(((PyMethodObject *)callable_o)->im_func);
+            method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
             assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
-            PyStackRef_DUP(method);
             PyStackRef_CLOSE(callable);
             stack_pointer[-2 - oparg] = method;
             stack_pointer[-1 - oparg] = self;

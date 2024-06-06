@@ -1151,9 +1151,8 @@
                 assert(Py_TYPE(callable_o) == &PyMethod_Type);
                 self = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
                 stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _PY_FRAME_GENERAL
-                method = PyStackRef_FromPyObjectSteal(((PyMethodObject *)callable_o)->im_func);
+                method = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
                 assert(PyFunction_Check(PyStackRef_AsPyObjectBorrow(method)));
-                PyStackRef_DUP(method);
                 PyStackRef_CLOSE(callable);
             }
             // _PY_FRAME_GENERAL
@@ -4613,9 +4612,8 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST);
             _PyStackRef value;
-            value = GETLOCAL(oparg);
-            assert(PyStackRef_AsPyObjectBorrow(value) != NULL);
-            PyStackRef_DUP(value);
+            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
@@ -4639,15 +4637,15 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
             _PyStackRef value;
-            value = GETLOCAL(oparg);
-            if (PyStackRef_IsNull(value)) {
+            _PyStackRef value_s = GETLOCAL(oparg);
+            if (PyStackRef_IsNull(value_s)) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 if (1) goto error;
             }
-            PyStackRef_DUP(value);
+            value = PyStackRef_DUP(value_s);
             stack_pointer[0] = value;
             stack_pointer += 1;
             DISPATCH();
@@ -4661,10 +4659,8 @@
             _PyStackRef value2;
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            value1 = GETLOCAL(oparg1);
-            value2 = GETLOCAL(oparg2);
-            PyStackRef_DUP(value1);
-            PyStackRef_DUP(value2);
+            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
+            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             stack_pointer[0] = value1;
             stack_pointer[1] = value2;
             stack_pointer += 2;
@@ -4905,13 +4901,13 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_LOCALS);
             _PyStackRef locals;
-            locals = PyStackRef_FromPyObjectSteal(LOCALS());
-            if (PyStackRef_IsNull(locals)) {
+            _PyStackRef locals_s = PyStackRef_FromPyObjectSteal(LOCALS());
+            if (PyStackRef_IsNull(locals_s)) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 if (true) goto error;
             }
-            PyStackRef_DUP(locals);
+            locals = PyStackRef_DUP(locals_s);
             stack_pointer[0] = locals;
             stack_pointer += 1;
             DISPATCH();
@@ -6034,8 +6030,7 @@
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
-            value2 = GETLOCAL(oparg2);
-            PyStackRef_DUP(value2);
+            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             stack_pointer[-1] = value2;
             DISPATCH();
         }
