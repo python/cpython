@@ -765,6 +765,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.SetComp.elt);
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.SetComp.generators);
         break;
+    case FrozenSetComp_kind:
+        CALL(astfold_expr, expr_ty, node_->v.FrozenSetComp.elt);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.FrozenSetComp.generators);
+        break;
     case DictComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.DictComp.key);
         CALL(astfold_expr, expr_ty, node_->v.DictComp.value);

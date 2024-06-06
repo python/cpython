@@ -43,10 +43,11 @@
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
 
-#define COMP_GENEXP   0
-#define COMP_LISTCOMP 1
-#define COMP_SETCOMP  2
-#define COMP_DICTCOMP 3
+#define COMP_GENEXP         0
+#define COMP_LISTCOMP       1
+#define COMP_SETCOMP        2
+#define COMP_FROZENSETCOMP  3
+#define COMP_DICTCOMP       4
 
 /* A soft limit for stack use, to avoid excessive
  * memory use for large constants, etc.
@@ -4584,6 +4585,7 @@ infer_type(expr_ty e)
     case SetComp_kind:
         return &PySet_Type;
     case FrozenSet_kind:
+    case FrozenSetComp_kind:
         return &PyFrozenSet_Type;
     case GeneratorExp_kind:
         return &PyGen_Type;
@@ -4612,6 +4614,7 @@ check_caller(struct compiler *c, expr_ty e)
     case Set_kind:
     case FrozenSet_kind:
     case SetComp_kind:
+    case FrozenSetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
     case FormattedValue_kind: {
@@ -4643,6 +4646,7 @@ check_subscripter(struct compiler *c, expr_ty e)
     case Set_kind:
     case FrozenSet_kind:
     case SetComp_kind:
+    case FrozenSetComp_kind:
     case GeneratorExp_kind:
     case Lambda_kind: {
         location loc = LOC(e);
@@ -5301,6 +5305,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
+        case COMP_FROZENSETCOMP:
             VISIT(c, expr, elt);
             ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
@@ -5405,6 +5410,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
             ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
+        case COMP_FROZENSETCOMP:
             VISIT(c, expr, elt);
             ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
@@ -5718,6 +5724,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         case COMP_SETCOMP:
             op = BUILD_SET;
             break;
+        case COMP_FROZENSETCOMP:
+            op = BUILD_FROZENSET;
+            break;
         case COMP_DICTCOMP:
             op = BUILD_MAP;
             break;
@@ -5823,6 +5832,17 @@ compiler_setcomp(struct compiler *c, expr_ty e)
     return compiler_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
+}
+
+static int
+compiler_frozensetcomp(struct compiler *c, expr_ty e)
+{
+    assert(e->kind == FrozenSetComp_kind);
+    _Py_DECLARE_STR(anon_frozensetcomp, "<frozensetcomp>");
+    return compiler_comprehension(c, e, COMP_FROZENSETCOMP,
+                                  &_Py_STR(anon_frozensetcomp),
+                                  e->v.FrozenSetComp.generators,
+                                  e->v.FrozenSetComp.elt, NULL);
 }
 
 
@@ -6106,6 +6126,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_listcomp(c, e);
     case SetComp_kind:
         return compiler_setcomp(c, e);
+    case FrozenSetComp_kind:
+        return compiler_frozensetcomp(c, e);
     case DictComp_kind:
         return compiler_dictcomp(c, e);
     case Yield_kind:

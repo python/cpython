@@ -1049,6 +1049,8 @@ _PyPegen_get_expr_name(expr_ty e)
             return "list comprehension";
         case SetComp_kind:
             return "set comprehension";
+        case FrozenSetComp_kind:
+            return "frozenset comprehension";
         case DictComp_kind:
             return "dict comprehension";
         case Dict_kind:

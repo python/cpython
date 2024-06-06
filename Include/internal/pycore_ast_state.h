@@ -60,6 +60,7 @@ struct ast_state {
     PyObject *FloorDiv_type;
     PyObject *For_type;
     PyObject *FormattedValue_type;
+    PyObject *FrozenSetComp_type;
     PyObject *FrozenSet_type;
     PyObject *FunctionDef_type;
     PyObject *FunctionType_type;

@@ -309,6 +309,7 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
             break;
     COMP(ListComp)
     COMP(SetComp)
+    COMP(FrozenSetComp)
     COMP(GeneratorExp)
 #undef COMP
     case DictComp_kind:

@@ -359,12 +359,12 @@ struct _stmt {
 enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
                   FrozenSet_kind=9, ListComp_kind=10, SetComp_kind=11,
-                  DictComp_kind=12, GeneratorExp_kind=13, Await_kind=14,
-                  Yield_kind=15, YieldFrom_kind=16, Compare_kind=17,
-                  Call_kind=18, FormattedValue_kind=19, JoinedStr_kind=20,
-                  Constant_kind=21, Attribute_kind=22, Subscript_kind=23,
-                  Starred_kind=24, Name_kind=25, List_kind=26, Tuple_kind=27,
-                  Slice_kind=28};
+                  FrozenSetComp_kind=12, DictComp_kind=13,
+                  GeneratorExp_kind=14, Await_kind=15, Yield_kind=16,
+                  YieldFrom_kind=17, Compare_kind=18, Call_kind=19,
+                  FormattedValue_kind=20, JoinedStr_kind=21, Constant_kind=22,
+                  Attribute_kind=23, Subscript_kind=24, Starred_kind=25,
+                  Name_kind=26, List_kind=27, Tuple_kind=28, Slice_kind=29};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -422,6 +422,11 @@ struct _expr {
             expr_ty elt;
             asdl_comprehension_seq *generators;
         } SetComp;
+
+        struct {
+            expr_ty elt;
+            asdl_comprehension_seq *generators;
+        } FrozenSetComp;
 
         struct {
             expr_ty key;
@@ -806,6 +811,9 @@ expr_ty _PyAST_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int
 expr_ty _PyAST_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int
                        lineno, int col_offset, int end_lineno, int
                        end_col_offset, PyArena *arena);
+expr_ty _PyAST_FrozenSetComp(expr_ty elt, asdl_comprehension_seq * generators,
+                             int lineno, int col_offset, int end_lineno, int
+                             end_col_offset, PyArena *arena);
 expr_ty _PyAST_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq *
                         generators, int lineno, int col_offset, int end_lineno,
                         int end_col_offset, PyArena *arena);

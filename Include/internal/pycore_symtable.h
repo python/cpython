@@ -27,7 +27,8 @@ typedef enum _comprehension_type {
     ListComprehension = 1,
     DictComprehension = 2,
     SetComprehension = 3,
-    GeneratorExpression = 4 } _Py_comprehension_ty;
+    FrozenSetComprehension = 4,
+    GeneratorExpression = 5 } _Py_comprehension_ty;
 
 /* source location information */
 typedef struct {

@@ -538,6 +538,7 @@ extern "C" {
 
 #define _Py_str_literals_INIT { \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
+    INIT_STR(anon_frozensetcomp, "<frozensetcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \
     INIT_STR(anon_listcomp, "<listcomp>"), \
@@ -962,6 +963,7 @@ extern "C" {
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
     INIT_ID(fromutc), \
+    INIT_ID(frozensetcomp), \
     INIT_ID(fset), \
     INIT_ID(func), \
     INIT_ID(future), \

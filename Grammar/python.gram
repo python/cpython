@@ -845,7 +845,7 @@ atom[expr_ty]:
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
     | &'{' (dict | set | dictcomp | setcomp)
-    | &'{{' frozenset | frozensetcomp
+    | &'{{' (frozenset | frozensetcomp)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 group[expr_ty]:
@@ -983,7 +983,7 @@ setcomp[expr_ty]:
     | invalid_comprehension
 
 frozensetcomp[expr_ty]:
-    | '{{' a=named_expression b=for_if_clauses '}' '}' { _PyAST_SetComp(a, b, EXTRA) } # '}}' would break fstrings, don't document
+    | '{{' a=named_expression b=for_if_clauses '}' '}' { _PyAST_FrozenSetComp(a, b, EXTRA) } # '}}' would break fstrings, don't document
     | invalid_comprehension
 
 genexp[expr_ty]:

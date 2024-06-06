@@ -79,6 +79,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->FloorDiv_type);
     Py_CLEAR(state->For_type);
     Py_CLEAR(state->FormattedValue_type);
+    Py_CLEAR(state->FrozenSetComp_type);
     Py_CLEAR(state->FrozenSet_type);
     Py_CLEAR(state->FunctionDef_type);
     Py_CLEAR(state->FunctionType_type);
@@ -594,6 +595,10 @@ static const char * const ListComp_fields[]={
     "generators",
 };
 static const char * const SetComp_fields[]={
+    "elt",
+    "generators",
+};
+static const char * const FrozenSetComp_fields[]={
     "elt",
     "generators",
 };
@@ -2894,6 +2899,48 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(SetComp_annotations);
+    PyObject *FrozenSetComp_annotations = PyDict_New();
+    if (!FrozenSetComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FrozenSetComp_annotations, "elt", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FrozenSetComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FrozenSetComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FrozenSetComp_annotations, "generators",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FrozenSetComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FrozenSetComp_type, "_field_types",
+                                  FrozenSetComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenSetComp_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FrozenSetComp_type, "__annotations__",
+                                  FrozenSetComp_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenSetComp_annotations);
+        return 0;
+    }
+    Py_DECREF(FrozenSetComp_annotations);
     PyObject *DictComp_annotations = PyDict_New();
     if (!DictComp_annotations) return 0;
     {
@@ -5804,6 +5851,7 @@ init_types(struct ast_state *state)
         "     | FrozenSet(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
+        "     | FrozenSetComp(expr elt, comprehension* generators)\n"
         "     | DictComp(expr key, expr value, comprehension* generators)\n"
         "     | GeneratorExp(expr elt, comprehension* generators)\n"
         "     | Await(expr value)\n"
@@ -5872,6 +5920,11 @@ init_types(struct ast_state *state)
                                     SetComp_fields, 2,
         "SetComp(expr elt, comprehension* generators)");
     if (!state->SetComp_type) return -1;
+    state->FrozenSetComp_type = make_type(state, "FrozenSetComp",
+                                          state->expr_type,
+                                          FrozenSetComp_fields, 2,
+        "FrozenSetComp(expr elt, comprehension* generators)");
+    if (!state->FrozenSetComp_type) return -1;
     state->DictComp_type = make_type(state, "DictComp", state->expr_type,
                                      DictComp_fields, 3,
         "DictComp(expr key, expr value, comprehension* generators)");
@@ -7408,6 +7461,30 @@ _PyAST_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno,
     p->kind = SetComp_kind;
     p->v.SetComp.elt = elt;
     p->v.SetComp.generators = generators;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+_PyAST_FrozenSetComp(expr_ty elt, asdl_comprehension_seq * generators, int
+                     lineno, int col_offset, int end_lineno, int
+                     end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!elt) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'elt' is required for FrozenSetComp");
+        return NULL;
+    }
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = FrozenSetComp_kind;
+    p->v.FrozenSetComp.elt = elt;
+    p->v.FrozenSetComp.generators = generators;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -9140,6 +9217,23 @@ ast2obj_expr(struct ast_state *state, struct validator *vstate, void* _o)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_list(state, vstate, (asdl_seq*)o->v.SetComp.generators,
+                             ast2obj_comprehension);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->generators, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case FrozenSetComp_kind:
+        tp = (PyTypeObject *)state->FrozenSetComp_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, vstate, o->v.FrozenSetComp.elt);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->elt, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(state, vstate,
+                             (asdl_seq*)o->v.FrozenSetComp.generators,
                              ast2obj_comprehension);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->generators, value) == -1)
@@ -13962,6 +14056,75 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->FrozenSetComp_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        expr_ty elt;
+        asdl_comprehension_seq* generators;
+
+        if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from FrozenSetComp");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'FrozenSetComp' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &elt, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
+        }
+        {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "FrozenSetComp field \"generators\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            generators = _Py_asdl_comprehension_seq_new(len, arena);
+            if (generators == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                comprehension_ty val;
+                PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
+                if (_Py_EnterRecursiveCall(" while traversing 'FrozenSetComp' node")) {
+                    goto failed;
+                }
+                res = obj2ast_comprehension(state, tmp2, &val, arena);
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "FrozenSetComp field \"generators\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(generators, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_FrozenSetComp(elt, generators, lineno, col_offset,
+                                    end_lineno, end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->DictComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -17467,6 +17630,10 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "SetComp", state->SetComp_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "FrozenSetComp", state->FrozenSetComp_type) <
+        0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "DictComp", state->DictComp_type) < 0) {

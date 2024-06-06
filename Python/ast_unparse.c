@@ -463,6 +463,15 @@ append_ast_setcomp(_PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_frozensetcomp(_PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_STR("({{");
+    APPEND_EXPR(e->v.FrozenSetComp.elt, PR_TEST);
+    APPEND(comprehensions, e->v.FrozenSetComp.generators);
+    APPEND_STR_FINISH("}})");
+}
+
+static int
 append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_STR("{");
@@ -886,6 +895,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_listcomp(writer, e);
     case SetComp_kind:
         return append_ast_setcomp(writer, e);
+    case FrozenSetComp_kind:
+        return append_ast_frozensetcomp(writer, e);
     case DictComp_kind:
         return append_ast_dictcomp(writer, e);
     case Yield_kind:
