@@ -161,13 +161,13 @@ ambiguities and allow common typos to pass uncaught.
 
 .. _comprehensions:
 
-Displays for lists, sets and dictionaries
------------------------------------------
+Displays for lists, (frozen) sets and dictionaries
+--------------------------------------------------
 
 .. index:: single: comprehensions
 
-For constructing a list, a set or a dictionary Python provides special syntax
-called "displays", each of them in two flavors:
+For constructing a list, a (frozen) set or a dictionary Python provides special
+syntax called "displays", each of them in two flavors:
 
 * either the container contents are listed explicitly, or
 
