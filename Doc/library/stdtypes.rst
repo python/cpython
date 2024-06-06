@@ -4271,7 +4271,7 @@ The constructors for both classes work the same:
 
    You can do the same for frozen sets:
 
-   * Use a comma-separated list of elements double braces: ``{{'jack', 'sjoerd'}}``
+   * Use a comma-separated list of elements within double braces: ``{{'jack', 'sjoerd'}}``
    * Use a frozen set comprehension: ``{{c for c in 'abracadabra' if c not in 'abc'}}``
    * Use the type constructor: ``frozenset()``, ``frozenset('foobar')``,
      ``frozenset(['a', 'b', 'foo'])``
