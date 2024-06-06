@@ -58,28 +58,28 @@ some_assigned_global_ident = None
 
 class ComplexClass:
     some_non_method_const = 1234
-    
+
     class some_non_method_nested: pass
     type some_non_method_alias = int
-    
+
     some_non_method_genexpr = (x for x in [])
     some_non_method_lambda = lambda x: x 
-    
+
     def a_method(self): pass
     @classmethod
     def a_classmethod(cls): pass
     @staticmethod
     def a_staticmethod(): pass
-    
+
     # this one will be considered as a method because of the 'def' although
     # it will *not* be a valid one at runtime since it is not a staticmethod.
     def a_fakemethod(): pass
-    
+
     # check that those are still considered as methods 
     # since they are not using the 'global' keyword
     def some_assigned_global_ident(): pass
     def some_non_assigned_global_ident(): pass
-    
+
     # this one is not picked as a method because it will not even be 
     # visible by the class at runtime (this is equivalent to having
     # that definition outside of the class).
