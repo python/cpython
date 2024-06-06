@@ -312,6 +312,9 @@ class UnparseTestCase(ASTTestCase):
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
 
+    def test_frozenset_comprehension(self):
+        self.check_ast_roundtrip("{{x for x in range(5)}}")
+
     def test_dict_comprehension(self):
         self.check_ast_roundtrip("{x: x*x for x in range(10)}")
 

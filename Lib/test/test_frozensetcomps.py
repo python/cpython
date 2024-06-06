@@ -3,7 +3,7 @@ import unittest
 
 
 doctests = """
-########### Tests mostly copied from test_setcomps.py ############
+########### Tests copied from test_setcomps.py ############
 
 Test simple loop with conditional
 
