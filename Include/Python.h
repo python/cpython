@@ -45,6 +45,11 @@
 #  endif
 #endif
 
+// gh-111506: The free-threaded build is not compatible with the limited API
+// or the stable ABI.
+#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#  error "The limited API is not currently supported in the free-threaded build"
+#endif
 
 // Include Python header files
 #include "pyport.h"
@@ -56,6 +61,7 @@
 #include "pystats.h"
 #include "pyatomic.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
@@ -79,6 +85,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
+#include "monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"

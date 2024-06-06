@@ -537,6 +537,8 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
 }
 
 PyDoc_STRVAR(genericalias__doc__,
+"GenericAlias(origin, args, /)\n"
+"--\n\n"
 "Represent a PEP 585 generic type\n"
 "\n"
 "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");

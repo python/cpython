@@ -10,6 +10,7 @@ import textwrap
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import force_not_colorized
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -980,7 +981,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
         res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
-        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
     def res2int(self, res):
@@ -1027,6 +1028,7 @@ class IgnoreEnvironmentTest(unittest.TestCase):
 
 
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def check_string(self, code):
         proc = subprocess.run([sys.executable, "-"], input=code,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)

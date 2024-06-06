@@ -453,7 +453,9 @@ error:
 
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
-    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the structure with new values for the specified fields.")},
     {NULL, NULL}  // sentinel
 };
 
@@ -716,7 +718,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
         return;
     }
 
-    _PyStaticType_Dealloc(interp, type);
+    _PyStaticType_FiniBuiltin(interp, type);
 
     if (_Py_IsMainInterpreter(interp)) {
         // Undo _PyStructSequence_InitBuiltinWithFlags().

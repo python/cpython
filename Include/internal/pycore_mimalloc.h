@@ -36,9 +36,9 @@ typedef enum {
 #  define MI_TSAN 1
 #endif
 
-#include "mimalloc.h"
-#include "mimalloc/types.h"
-#include "mimalloc/internal.h"
+#include "mimalloc/mimalloc.h"
+#include "mimalloc/mimalloc/types.h"
+#include "mimalloc/mimalloc/internal.h"
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -52,6 +52,7 @@ struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
     mi_tld_t tld;
+    int initialized;
     struct llist_node page_list;
 };
 #endif

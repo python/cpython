@@ -34,7 +34,7 @@ module but frozen modules are disabled.
 .. nonce: veL4lJ
 .. section: Core and Builtins
 
-Specialize simple calls to Python functions (no starargs, keyowrd dict, or
+Specialize simple calls to Python functions (no starargs, keyword dict, or
 closure)
 
 ..
@@ -331,8 +331,8 @@ underlying SQLite API signals memory error. Patch by Erlend E. Aasland.
 .. nonce: 4MQt4r
 .. section: Library
 
-pprint.pprint() now handles underscore_numbers correctly. Previously it was
-always setting it to False.
+:func:`pprint.pprint` now handles *underscore_numbers* correctly.
+Previously it was always setting it to ``False``.
 
 ..
 

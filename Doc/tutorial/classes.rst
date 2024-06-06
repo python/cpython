@@ -338,11 +338,7 @@ code will print the value ``16``, without leaving a trace::
    del x.counter
 
 The other kind of instance attribute reference is a *method*. A method is a
-function that "belongs to" an object.  (In Python, the term method is not unique
-to class instances: other object types can have methods as well.  For example,
-list objects have methods called append, insert, remove, sort, and so on.
-However, in the following discussion, we'll use the term method exclusively to
-mean methods of class instance objects, unless explicitly stated otherwise.)
+function that "belongs to" an object.
 
 .. index:: pair: object; method
 
@@ -665,7 +661,7 @@ class, that calls each parent only once, and that is monotonic (meaning that a
 class can be subclassed without affecting the precedence order of its parents).
 Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
-https://www.python.org/download/releases/2.3/mro/.
+:ref:`python_2.3_mro`.
 
 
 .. _tut-private:

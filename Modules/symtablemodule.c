@@ -75,6 +75,7 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntMacro(m, DEF_NONLOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_PARAM) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_TYPE_PARAM) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_FREE) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_FREE_CLASS) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_IMPORT) < 0) return -1;
@@ -83,7 +84,8 @@ symtable_init_constants(PyObject *m)
 
     if (PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock) < 0)
         return -1;
-    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0)
+        return -1;
     if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
@@ -110,6 +112,7 @@ symtable_init_constants(PyObject *m)
 static PyModuleDef_Slot symtable_slots[] = {
     {Py_mod_exec, symtable_init_constants},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
