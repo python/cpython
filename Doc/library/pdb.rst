@@ -341,7 +341,7 @@ can be overridden by the local file.
    With a *lineno* argument, set a break at line *lineno* in the current file.
    The line number may be prefixed with a *filename* and a colon,
    to specify a breakpoint in another file (possibly one that hasn't been loaded
-   yet).  The file is searched on :data:`sys.path`.  Accepatable forms of *filename*
+   yet).  The file is searched on :data:`sys.path`.  Acceptable forms of *filename*
    are ``/abspath/to/file.py``, ``relpath/file.py``, ``module`` and
    ``package.module``.
 
