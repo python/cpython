@@ -820,6 +820,9 @@ bugs or failures in your application)::
        % (cls.__name__,))
    UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
+Some concrete path methods can raise an :exc:`OSError` if a system call fails
+(for example because the path doesn't exist).
+
 
 Parsing and generating URIs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1151,7 +1154,7 @@ Reading and writing files
    .. versionadded:: 3.5
 
 
-Listing directories
+Reading directories
 ^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.iterdir()
@@ -1174,6 +1177,9 @@ Listing directories
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
    to the directory after creating the iterator, it is unspecified whether
    a path object for that file is included.
+
+   If the path is not a directory or otherwise inaccessible, :exc:`OSError` is
+   raised.
 
 
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
@@ -1339,10 +1345,6 @@ Listing directories
 
 Other methods
 ^^^^^^^^^^^^^
-
-Some of these methods can raise an :exc:`OSError` if a system call fails (for
-example because the path doesn't exist).
-
 
 .. classmethod:: Path.cwd()
 
