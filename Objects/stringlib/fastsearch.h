@@ -469,7 +469,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     const Py_ssize_t p_stt = dir == 1 ? 0 : m - 1;
     const Py_ssize_t s_stt = dir == 1 ? 0 : n - 1;
     const Py_ssize_t p_end = dir == 1 ? m - 1 : 0;
-    const Py_ssize_t cut_idx = reversed ? m - cut : cut;
     const Py_ssize_t dir_m_m1 = reversed ? -m_m1 : m_m1;
     const STRINGLIB_CHAR *const ss = s + s_stt + dir_m_m1;
 
@@ -532,7 +531,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
         if (j != m) {
             continue;
         }
-        j = Py_MIN(memory, cut);
+        j = Py_MIN(memory, cut);    // Needed for j == cut below to be correct
         for (; j < cut; j++) {
             ihits++;
             jp = p_stt + (reversed ? -j : j);
