@@ -27,7 +27,7 @@ from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
-from test.libregrtest.filter import set_match_tests, match_test
+from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
 from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
@@ -463,6 +463,28 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--bisect']
         regrtest = self.create_regrtest(args)
         self.assertTrue(regrtest.want_bisect)
+
+    def test_verbose3_huntrleaks(self):
+        args = ['-R', '3:10', '--verbose3']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 10)
+        self.assertFalse(regrtest.output_on_failure)
+
+    def test_single_process(self):
+        args = ['-j2', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
+
+        args = ['--fast-ci', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1724,6 +1746,10 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
+        try:
+            import _testcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -2106,6 +2132,10 @@ class ArgsTestCase(BaseTestCase):
 
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+        try:
+            import _testinternalcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testinternalcapi")
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2265,6 +2295,7 @@ class TestUtils(unittest.TestCase):
         for exitcode, expected in (
             (-int(signal.SIGINT), 'SIGINT'),
             (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
             (3221225477, "STATUS_ACCESS_VIOLATION"),
             (0xC00000FD, "STATUS_STACK_OVERFLOW"),
         ):
@@ -2297,6 +2328,10 @@ class TestUtils(unittest.TestCase):
 
             def id(self):
                 return self.test_id
+
+        # Restore patterns once the test completes
+        patterns = get_match_tests()
+        self.addCleanup(set_match_tests, patterns)
 
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')

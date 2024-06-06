@@ -714,10 +714,6 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
-        goto error;
-    }
-
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
         goto error;
     }
@@ -758,6 +754,7 @@ error:
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

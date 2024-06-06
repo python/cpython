@@ -8,6 +8,12 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(mappingproxy_new__doc__,
+"mappingproxy(mapping)\n"
+"--\n"
+"\n"
+"Read-only proxy of a mapping.");
+
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping);
 
@@ -167,4 +173,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a4664ccf3da10f5a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=050e331316a04207 input=a9049054013a1b77]*/

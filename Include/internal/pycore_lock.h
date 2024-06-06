@@ -150,18 +150,10 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
-// and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns);
-
-// A one-time event notification with reference counting.
-typedef struct _PyEventRc {
-    PyEvent event;
-    Py_ssize_t refcount;
-} _PyEventRc;
-
-_PyEventRc *_PyEventRc_New(void);
-void _PyEventRc_Incref(_PyEventRc *erc);
-void _PyEventRc_Decref(_PyEventRc *erc);
+// and 0 if the timeout expired or thread was interrupted. If `detach` is
+// true, then the thread will detach/release the GIL while waiting.
+PyAPI_FUNC(int)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach);
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
 // parking lot API, and therefore can be used in the parking lot

@@ -1,2 +1,0 @@
-:mod:`typing`: raise :exc:`SyntaxError` instead of :exc:`AttributeError`
-on forward references as empty strings.

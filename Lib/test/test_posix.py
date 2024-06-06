@@ -564,6 +564,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
+    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_confstr(self):
         self.assertRaises(ValueError, posix.confstr, "CS_garbage")
         self.assertEqual(len(posix.confstr("CS_PATH")) > 0, True)
@@ -703,7 +704,8 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(posix.major(dev), major)
         self.assertRaises(TypeError, posix.major, float(dev))
         self.assertRaises(TypeError, posix.major)
-        self.assertRaises((ValueError, OverflowError), posix.major, -1)
+        for x in -2, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.major, x)
 
         minor = posix.minor(dev)
         self.assertIsInstance(minor, int)
@@ -711,13 +713,23 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(posix.minor(dev), minor)
         self.assertRaises(TypeError, posix.minor, float(dev))
         self.assertRaises(TypeError, posix.minor)
-        self.assertRaises((ValueError, OverflowError), posix.minor, -1)
+        for x in -2, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.minor, x)
 
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertRaises(TypeError, posix.makedev, float(major), minor)
         self.assertRaises(TypeError, posix.makedev, major, float(minor))
         self.assertRaises(TypeError, posix.makedev, major)
         self.assertRaises(TypeError, posix.makedev)
+        for x in -2, 2**32, 2**64, -2**63-1:
+            self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
+            self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
+
+        if sys.platform == 'linux':
+            NODEV = -1
+            self.assertEqual(posix.major(NODEV), NODEV)
+            self.assertEqual(posix.minor(NODEV), NODEV)
+            self.assertEqual(posix.makedev(NODEV, NODEV), NODEV)
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
@@ -1335,12 +1347,21 @@ class PosixTester(unittest.TestCase):
     def test_sched_setaffinity(self):
         mask = posix.sched_getaffinity(0)
         self.addCleanup(posix.sched_setaffinity, 0, list(mask))
+
         if len(mask) > 1:
             # Empty masks are forbidden
             mask.pop()
         posix.sched_setaffinity(0, mask)
         self.assertEqual(posix.sched_getaffinity(0), mask)
-        self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
+
+        try:
+            posix.sched_setaffinity(0, [])
+            # gh-117061: On RHEL9, sched_setaffinity(0, []) does not fail
+        except OSError:
+            # sched_setaffinity() manual page documents EINVAL error
+            # when the mask is empty.
+            pass
+
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])

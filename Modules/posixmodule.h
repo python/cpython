@@ -2,7 +2,6 @@
 
 #ifndef Py_POSIXMODULE_H
 #define Py_POSIXMODULE_H
-#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,5 +33,4 @@ extern int _Py_Sigset_Converter(PyObject *, void *);
 #ifdef __cplusplus
 }
 #endif
-#endif   // !Py_LIMITED_API
 #endif   // !Py_POSIXMODULE_H

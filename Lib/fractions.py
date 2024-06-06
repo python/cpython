@@ -668,7 +668,7 @@ class Fraction(numbers.Rational):
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif handle_complex and isinstance(b, complex):
-                return fallback_operator(complex(a), b)
+                return fallback_operator(float(a), b)
             else:
                 return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
@@ -681,7 +681,7 @@ class Fraction(numbers.Rational):
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif handle_complex and isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
+                return fallback_operator(complex(a), float(b))
             else:
                 return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
@@ -848,7 +848,7 @@ class Fraction(numbers.Rational):
 
     __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod, False)
 
-    def __pow__(a, b):
+    def __pow__(a, b, modulo=None):
         """a ** b
 
         If b is not an integer, the result will be a float or complex
@@ -856,6 +856,8 @@ class Fraction(numbers.Rational):
         result will be rational.
 
         """
+        if modulo is not None:
+            return NotImplemented
         if isinstance(b, numbers.Rational):
             if b.denominator == 1:
                 power = b.numerator
@@ -875,8 +877,10 @@ class Fraction(numbers.Rational):
                 # A fractional power will generally produce an
                 # irrational number.
                 return float(a) ** float(b)
-        else:
+        elif isinstance(b, (float, complex)):
             return float(a) ** b
+        else:
+            return NotImplemented
 
     def __rpow__(b, a):
         """a ** b"""

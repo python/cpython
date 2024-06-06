@@ -1,5 +1,5 @@
-:mod:`time` --- Time access and conversions
-===========================================
+:mod:`!time` --- Time access and conversions
+============================================
 
 .. module:: time
    :synopsis: Time access and conversions.
@@ -287,6 +287,15 @@ Functions
    The reference point of the returned value is undefined, so that only the
    difference between the results of two calls is valid.
 
+   Clock:
+
+   * On Windows, call ``QueryPerformanceCounter()`` and
+     ``QueryPerformanceFrequency()``.
+   * On macOS, call ``mach_absolute_time()`` and ``mach_timebase_info()``.
+   * On HP-UX, call ``gethrtime()``.
+   * Call ``clock_gettime(CLOCK_HIGHRES)`` if available.
+   * Otherwise, call ``clock_gettime(CLOCK_MONOTONIC)``.
+
    Use :func:`monotonic_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
@@ -316,6 +325,11 @@ Functions
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
+   .. impl-detail::
+
+      On CPython, use the same clock than :func:`time.monotonic()` and is a
+      monotonic clock, i.e. a clock that cannot go backwards.
+
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
@@ -323,6 +337,10 @@ Functions
 
    .. versionchanged:: 3.10
       On Windows, the function is now system-wide.
+
+   .. versionchanged:: 3.13
+      Use the same clock than :func:`time.monotonic()`.
+
 
 .. function:: perf_counter_ns() -> int
 
@@ -383,15 +401,14 @@ Functions
 
    .. audit-event:: time.sleep secs
 
-   .. versionchanged:: 3.11
-      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
-      used if available. On Windows, a waitable timer is now used.
-
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
    .. versionchanged:: 3.13
       Raises an auditing event.
@@ -600,7 +617,7 @@ Functions
         - range [1, 12]
 
       * - 2
-        - .. attribute:: tm_day
+        - .. attribute:: tm_mday
         - range [1, 31]
 
       * - 3
@@ -666,6 +683,12 @@ Functions
    :func:`localtime` function. In both cases a
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
+
+   Clock:
+
+   * On Windows, call ``GetSystemTimeAsFileTime()``.
+   * Call ``clock_gettime(CLOCK_REALTIME)`` if available.
+   * Otherwise, call ``gettimeofday()``.
 
    Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
    type.

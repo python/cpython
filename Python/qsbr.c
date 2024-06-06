@@ -38,12 +38,6 @@
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 
 
-// Wrap-around safe comparison. This is a holdover from the FreeBSD
-// implementation, which uses 32-bit sequence numbers. We currently use 64-bit
-// sequence numbers, so wrap-around is unlikely.
-#define QSBR_LT(a, b) ((int64_t)((a)-(b)) < 0)
-#define QSBR_LEQ(a, b) ((int64_t)((a)-(b)) <= 0)
-
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
@@ -166,14 +160,13 @@ qsbr_poll_scan(struct _qsbr_shared *shared)
 bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
-    assert(_PyThreadState_GET()->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
 
-    uint64_t rd_seq = _Py_atomic_load_uint64(&qsbr->shared->rd_seq);
-    if (QSBR_LEQ(goal, rd_seq)) {
+    if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
 
-    rd_seq = qsbr_poll_scan(qsbr->shared);
+    uint64_t rd_seq = qsbr_poll_scan(qsbr->shared);
     return QSBR_LEQ(goal, rd_seq);
 }
 
@@ -239,16 +232,26 @@ _Py_qsbr_register(_PyThreadStateImpl *tstate, PyInterpreterState *interp,
 }
 
 void
-_Py_qsbr_unregister(_PyThreadStateImpl *tstate)
+_Py_qsbr_unregister(PyThreadState *tstate)
 {
-    struct _qsbr_thread_state *qsbr = tstate->qsbr;
-    struct _qsbr_shared *shared = qsbr->shared;
+    struct _qsbr_shared *shared = &tstate->interp->qsbr;
+    struct _PyThreadStateImpl *tstate_imp = (_PyThreadStateImpl*) tstate;
 
-    assert(qsbr->seq == 0 && "thread state must be detached");
+    // gh-119369: GIL must be released (if held) to prevent deadlocks, because
+    // we might not have an active tstate, which means taht blocking on PyMutex
+    // locks will not implicitly release the GIL.
+    assert(!tstate->_status.holds_gil);
 
     PyMutex_Lock(&shared->mutex);
-    assert(qsbr->allocated && qsbr->tstate == (PyThreadState *)tstate);
-    tstate->qsbr = NULL;
+    // NOTE: we must load (or reload) the thread state's qbsr inside the mutex
+    // because the array may have been resized (changing tstate->qsbr) while
+    // we waited to acquire the mutex.
+    struct _qsbr_thread_state *qsbr = tstate_imp->qsbr;
+
+    assert(qsbr->seq == 0 && "thread state must be detached");
+    assert(qsbr->allocated && qsbr->tstate == tstate);
+
+    tstate_imp->qsbr = NULL;
     qsbr->tstate = NULL;
     qsbr->allocated = false;
     qsbr->freelist_next = shared->freelist;
