@@ -4263,14 +4263,18 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets and frozen sets can be created by several means:
+   Sets can be created by several means:
 
-   * Use a comma-separated list of elements within braces (or double braces for frozen sets):
-     ``{'jack', 'sjoerd'}``, ``{{'jack', 'sjoerd'}}``
-   * Use a (frozen) set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``,
-     ``{{c for c in 'abracadabra' if c not in 'abc'}}``
-   * Use the type constructor: ``set()``, ``frozenset()``, ``set('foobar')``,
-     ``frozenset('foobar')``, ``set(['a', 'b', 'foo'])``, ``frozenset(['a', 'b', 'foo'])``
+   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+   * Use a set set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+
+   You can do the same for frozen sets:
+
+   * Use a comma-separated list of elements double braces: ``{{'jack', 'sjoerd'}}``
+   * Use a frozen set comprehension: ``{{c for c in 'abracadabra' if c not in 'abc'}}``
+   * Use the type constructor: ``frozenset()``, ``frozenset('foobar')``,
+     ``frozenset(['a', 'b', 'foo'])``
 
    Instances of :class:`set` and :class:`frozenset` provide the following
    operations:
