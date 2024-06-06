@@ -51,16 +51,34 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS) && !defined(Py_GIL_DISABLED)
-// GH-89279: The MSVC compiler does not inline these static inline functions
-// in PGO build in _PyEval_EvalFrameDefault(), because this function is over
-// the limit of PGO, and that limit cannot be configured.
-// Define them as macros to make sure that they are always inlined by the
-// preprocessor.
-// TODO: implement Py_DECREF macro for Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
 
-#undef Py_DECREF
-#define Py_DECREF(arg) \
+#define INTERPRETER_DECREF Py_DECREF
+
+#else
+
+#ifdef Py_REF_DEBUG
+static inline void interpreter_decref(_PyInterpreterFrame *frame, PyObject **sp, const char *filename, int lineno, PyObject *op)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    _Py_DECREF_DecRefTotal();
+    if (--op->ob_refcnt == 0) {
+        _PyFrame_SetStackPointer(frame, sp);
+        _Py_Dealloc(op);
+        _PyFrame_GetStackPointer(frame);
+    }
+}
+#define INTERPRETER_DECREF(op) interpreter_decref(frame, stack_pointer, __FILE__, __LINE__, _PyObject_CAST(op))
+
+#else
+
+#define INTERPRETER_DECREF(arg) \
     do { \
         PyObject *op = _PyObject_CAST(arg); \
         if (_Py_IsImmortal(op)) { \
@@ -68,19 +86,14 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
-            (*dealloc)(op); \
+            _PyFrame_SetStackPointer(frame, stack_pointer) \
+            _Py_Dealloc(op); \
+            stack_pointer = _PyFrame_GetStackPointer(frame); \
         } \
     } while (0)
+#endif // Py_REF_DEBUG
 
-#undef Py_XDECREF
-#define Py_XDECREF(arg) \
-    do { \
-        PyObject *xop = _PyObject_CAST(arg); \
-        if (xop != NULL) { \
-            Py_DECREF(xop); \
-        } \
-    } while (0)
+#endif // Py_GIL_DISABLED
 
 #undef Py_IS_TYPE
 #define Py_IS_TYPE(ob, type) \
@@ -99,7 +112,6 @@
             d(op); \
         } \
     } while (0)
-#endif
 
 
 #ifdef LLTRACE
@@ -882,7 +894,9 @@ error:
                 PyTraceBack_Here(f);
             }
         }
+        SAVE_SP();
         monitor_raise(tstate, frame, next_instr-1);
+        LOAD_SP();
 exception_unwind:
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
@@ -896,7 +910,9 @@ exception_unwind:
                 PyObject **stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
                     PyObject *o = POP();
-                    Py_XDECREF(o);
+                    if (o != NULL) {
+                        INTERPRETER_DECREF(o);
+                    }
                 }
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -908,7 +924,9 @@ exception_unwind:
             PyObject **new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
                 PyObject *v = POP();
-                Py_XDECREF(v);
+                if (v != NULL) {
+                    INTERPRETER_DECREF(v);
+                }
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
@@ -927,7 +945,10 @@ exception_unwind:
             PUSH(exc);
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+            SAVE_SP();
+            int err = monitor_handled(tstate, frame, next_instr, exc);
+            LOAD_SP();
+            if (err < 0) {
                 goto exception_unwind;
             }
             /* Resume normal execution */

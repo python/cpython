@@ -130,15 +130,39 @@ def replace_decrefs(
             continue
         if var.size != "1":
             out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"Py_DECREF({var.name}[_i]);\n")
+            out.emit(f"INTERPRETER_DECREF({var.name}[_i]);\n")
             out.emit("}\n")
         elif var.condition:
             if var.condition == "1":
-                out.emit(f"Py_DECREF({var.name});\n")
+                out.emit(f"INTERPRETER_DECREF({var.name});\n")
             elif var.condition != "0":
-                out.emit(f"Py_XDECREF({var.name});\n")
+                out.emit(f"if ({var.name} != NULL) {{ INTERPRETER_DECREF({var.name}); }}\n")
         else:
-            out.emit(f"Py_DECREF({var.name});\n")
+            out.emit(f"INTERPRETER_DECREF({var.name});\n")
+
+def replace_decref(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    out.emit_at("INTERPRETER_DECREF", tkn)
+    out.emit(next(tkn_iter))
+    emit_to(out, tkn_iter, "RPAREN")
+    next(tkn_iter)  # Semi colon
+    out.emit(");\n")
+
+def replace_xdecref(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    raise Exception("XDECREF not supported")
 
 
 def replace_sync_sp(
@@ -175,6 +199,8 @@ REPLACEMENT_FUNCTIONS = {
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
     "ERROR_NO_POP": replace_error_no_pop,
+    "Py_DECREF": replace_decref,
+    "Py_XDECREF": replace_xdecref,
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
