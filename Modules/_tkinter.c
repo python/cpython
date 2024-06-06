@@ -1438,7 +1438,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
            marshal the parameters to the interpreter thread. */
         Tkapp_CallEvent *ev;
         Tcl_Condition cond = NULL;
-        PyObject *exc;
+        PyObject *exc = NULL;  // init to make static analyzers happy
         if (!WaitForMainloop(self))
             return NULL;
         ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
@@ -1712,7 +1712,8 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
     TkappObject *self = (TkappObject*)selfptr;
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         VarEvent *ev;
-        PyObject *res, *exc;
+        // init 'res' and 'exc' to make static analyzers happy
+        PyObject *res = NULL, *exc = NULL;
         Tcl_Condition cond = NULL;
 
         /* The current thread is not the interpreter thread.  Marshal
@@ -2413,6 +2414,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+        err = 0;  // init to make static analyzers happy
+
         Tcl_Condition cond = NULL;
         CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
         if (ev == NULL) {
@@ -2468,6 +2471,8 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
     TRACE(self, ("((sss))", "rename", name, ""));
 
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+        err = 0;  // init to make static analyzers happy
+
         Tcl_Condition cond = NULL;
         CommandEvent *ev;
         ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
