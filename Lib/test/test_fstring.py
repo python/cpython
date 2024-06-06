@@ -682,6 +682,7 @@ x = (
         # Inside of strings, don't interpret doubled brackets.
         self.assertEqual(f'{"{{}}"}', '{{}}')
 
+        self.assertEqual(f'{ {{1, 2, 3}} }', 'frozenset({1, 2, 3})')
         self.assertAllRaise(SyntaxError,
                             "f-string: expecting a valid expression after '{'",
                             ["f'{ {{}} }'", # invalid syntax
