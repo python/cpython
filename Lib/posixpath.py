@@ -443,6 +443,17 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
             newpath = path + name
         else:
             newpath = path + sep + name
+        if newpath in seen:
+            # Already seen this symlink
+            path = seen[newpath]
+            if path is not None:
+                # use cached value
+                continue
+            # The symlink is not resolved, so we must have a symlink loop.
+            if strict:
+                raise OSError(errno.ELOOP, os.strerror(errno.ELOOP), filename)
+            path = newpath
+            continue
         try:
             st = lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
@@ -453,21 +464,9 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 if link_count > maxlinks:
                     if strict:
                         raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                      newpath)
+                                      filename)
                     path = newpath
                     continue
-            elif newpath in seen:
-                # Already seen this path
-                path = seen[newpath]
-                if path is not None:
-                    # use cached value
-                    continue
-                # The symlink is not resolved, so we must have a symlink loop.
-                if strict:
-                    raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                  newpath)
-                path = newpath
-                continue
             target = readlink(newpath)
         except OSError:
             if strict:
