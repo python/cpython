@@ -173,10 +173,6 @@ extern managed_static_type_state * _PyStaticType_GetState(
 PyAPI_FUNC(int) _PyStaticType_InitForExtension(
     PyInterpreterState *interp,
      PyTypeObject *self);
-PyAPI_FUNC(void) _PyStaticType_FiniForExtension(
-    PyInterpreterState *interp,
-     PyTypeObject *self,
-     int final);
 
 
 /* Like PyType_GetModuleState, but skips verification

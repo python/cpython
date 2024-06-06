@@ -183,20 +183,6 @@ static_ext_type_lookup(PyInterpreterState *interp, size_t index,
     return type;
 }
 
-static inline managed_static_type_state *
-static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
-{
-    return &(interp->types.builtins.initialized[
-                        managed_static_type_index_get(self)]);
-}
-
-static inline managed_static_type_state *
-static_ext_type_state_get(PyInterpreterState *interp, PyTypeObject *self)
-{
-    return &(interp->types.for_extensions.initialized[
-                        managed_static_type_index_get(self)]);
-}
-
 static managed_static_type_state *
 managed_static_type_state_get(PyInterpreterState *interp, PyTypeObject *self)
 {
@@ -5832,12 +5818,6 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     _PyStaticType_ClearWeakRefs(interp, type);
     managed_static_type_state_clear(interp, type, isbuiltin, final);
     /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
-}
-
-void
-_PyStaticType_FiniForExtension(PyInterpreterState *interp, PyTypeObject *type, int final)
-{
-    fini_static_type(interp, type, 0, final);
 }
 
 void
