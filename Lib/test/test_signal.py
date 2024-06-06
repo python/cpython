@@ -14,7 +14,12 @@ import time
 import unittest
 from test import support
 from test.support import (
-    is_apple, is_apple_mobile, os_helper, threading_helper
+    is_apple,
+    is_apple_mobile,
+    os_helper,
+    threading_helper,
+    Py_DEBUG,
+    Py_GIL_DISABLED,
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
@@ -1345,6 +1350,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipIf(Py_DEBUG and Py_GIL_DISABLED, "free-threaded builds take up slightly more stack")
     @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
