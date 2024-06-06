@@ -16,6 +16,9 @@ import weakref
 
 __all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
 
+SCOPE_OFF = SCOPE_OFFSET  # kept for backward compatibility
+
+
 def symtable(code, filename, compile_type):
     """ Return the toplevel *SymbolTable* for the source code.
 
@@ -326,7 +329,7 @@ class Symbol:
     def is_comp_cell(self):
         """Return *True* if the symbol is a cell in an inlined comprehension.
         """
-        return bool(self.__flags & DEF_COMP_ITER)
+        return bool(self.__flags & DEF_COMP_CELL)
 
     def is_namespace(self):
         """Returns *True* if name binding introduces new namespace.
