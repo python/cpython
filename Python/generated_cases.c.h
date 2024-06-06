@@ -1637,7 +1637,7 @@
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            STACKREFS_TO_PYOBJECTS(args, positional_args, args_o);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             PyObject *res_o = PyObject_Vectorcall(
                 callable_o, args_o,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
