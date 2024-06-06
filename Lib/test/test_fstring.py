@@ -1426,8 +1426,8 @@ x = (
                              ])
 
         self.assertAllRaise(SyntaxError,
-                            "f-string: expecting a valid expression after '{'",
-                            ["f'{3:{ {>10}'",
+                            "f-string: expecting '}', or format specs",
+                            ["f'{3:{{>10}'",
                              ])
 
         # But these are just normal strings.
