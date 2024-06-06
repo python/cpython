@@ -12,8 +12,8 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
+import posixpath
 from glob import _Globber, _no_recurse_symlinks
-from errno import ENOTDIR, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
@@ -696,65 +696,34 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
-        path_root, parts = self._stack
-        path = self.with_segments(path_root)
-        try:
-            path = path.absolute()
-        except UnsupportedOperation:
-            path_tail = []
-        else:
-            path_root, path_tail = path._stack
-            path_tail.reverse()
 
-        # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
-        # and (in non-strict mode) we can improve performance by not calling `stat()`.
-        querying = strict or getattr(self.readlink, '_supported', True)
-        link_count = 0
-        while parts:
-            part = parts.pop()
-            if not part or part == '.':
-                continue
-            if part == '..':
-                if not path_tail:
-                    if path_root:
-                        # Delete '..' segment immediately following root
-                        continue
-                elif path_tail[-1] != '..':
-                    # Delete '..' segment and its predecessor
-                    path_tail.pop()
-                    continue
-            path_tail.append(part)
-            if querying and part != '..':
-                path = self.with_segments(path_root + self.parser.sep.join(path_tail))
+        def getcwd():
+            return str(self.with_segments().absolute())
+
+        if strict or getattr(self.readlink, '_supported', True):
+            def lstat(path_str):
+                path = self.with_segments(path_str)
                 path._resolving = True
-                try:
-                    st = path.stat(follow_symlinks=False)
-                    if S_ISLNK(st.st_mode):
-                        # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
-                        # encountered during resolution.
-                        link_count += 1
-                        if link_count >= self._max_symlinks:
-                            raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
-                        target_root, target_parts = path.readlink()._stack
-                        # If the symlink target is absolute (like '/etc/hosts'), set the current
-                        # path to its uppermost parent (like '/').
-                        if target_root:
-                            path_root = target_root
-                            path_tail.clear()
-                        else:
-                            path_tail.pop()
-                        # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
-                        # the stack of unresolved path parts.
-                        parts.extend(target_parts)
-                        continue
-                    elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", self._raw_path)
-                except OSError:
-                    if strict:
-                        raise
-                    else:
-                        querying = False
-        return self.with_segments(path_root + self.parser.sep.join(path_tail))
+                return path.lstat()
+
+            def readlink(path_str):
+                path = self.with_segments(path_str)
+                path._resolving = True
+                return str(path.readlink())
+        else:
+            # If the user has *not* overridden the `readlink()` method, then
+            # symlinks are unsupported and (in non-strict mode) we can improve
+            # performance by not calling `path.lstat()`.
+            def skip(path_str):
+                # This exception will be internally consumed by `_realpath()`.
+                raise OSError("Operation skipped.")
+
+            lstat = readlink = skip
+
+        return self.with_segments(posixpath._realpath(
+            str(self), strict, self.parser.sep,
+            getcwd=getcwd, lstat=lstat, readlink=readlink,
+            maxlinks=self._max_symlinks))
 
     def symlink_to(self, target, target_is_directory=False):
         """
