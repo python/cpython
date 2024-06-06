@@ -316,7 +316,8 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
     Py_ssize_t i, value_count;
     expr_ty key_node;
 
-    APPEND_STR("{");
+    // TODO only insert whitespace when necessary
+    APPEND_STR("{ ");
     value_count = asdl_seq_LEN(e->v.Dict.values);
 
     for (i = 0; i < value_count; i++) {
@@ -333,7 +334,8 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
         }
     }
 
-    APPEND_STR_FINISH("}");
+    // TODO only insert whitespace when necessary
+    APPEND_STR_FINISH(" }");
 }
 
 static int
@@ -341,14 +343,16 @@ append_ast_set(_PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
-    APPEND_STR("{");
+    // TODO only insert whitespace when necessary
+    APPEND_STR("{ ");
     elem_count = asdl_seq_LEN(e->v.Set.elts);
     for (i = 0; i < elem_count; i++) {
         APPEND_STR_IF(i > 0, ", ");
         APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Set.elts, i), PR_TEST);
     }
 
-    APPEND_STR_FINISH("}");
+    // TODO only insert whitespace when necessary
+    APPEND_STR_FINISH(" }");
 }
 
 static int
@@ -356,14 +360,14 @@ append_ast_frozenset(_PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
-    APPEND_STR("({{");
+    APPEND_STR("{{");
     elem_count = asdl_seq_LEN(e->v.FrozenSet.elts);
     for (i = 0; i < elem_count; i++) {
         APPEND_STR_IF(i > 0, ", ");
         APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.FrozenSet.elts, i), PR_TEST);
     }
 
-    APPEND_STR_FINISH("}})");
+    APPEND_STR_FINISH("}}");
 }
 
 static int
@@ -456,30 +460,34 @@ append_ast_listcomp(_PyUnicodeWriter *writer, expr_ty e)
 static int
 append_ast_setcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
-    APPEND_STR("{");
+    // TODO only insert whitespace when necessary
+    APPEND_STR("{ ");
     APPEND_EXPR(e->v.SetComp.elt, PR_TEST);
     APPEND(comprehensions, e->v.SetComp.generators);
-    APPEND_STR_FINISH("}");
+    // TODO only insert whitespace when necessary
+    APPEND_STR_FINISH(" }");
 }
 
 static int
 append_ast_frozensetcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
-    APPEND_STR("({{");
+    APPEND_STR("{{");
     APPEND_EXPR(e->v.FrozenSetComp.elt, PR_TEST);
     APPEND(comprehensions, e->v.FrozenSetComp.generators);
-    APPEND_STR_FINISH("}})");
+    APPEND_STR_FINISH("}}");
 }
 
 static int
 append_ast_dictcomp(_PyUnicodeWriter *writer, expr_ty e)
 {
-    APPEND_STR("{");
+    // TODO only insert whitespace when necessary
+    APPEND_STR("{ ");
     APPEND_EXPR(e->v.DictComp.key, PR_TEST);
     APPEND_STR(": ");
     APPEND_EXPR(e->v.DictComp.value, PR_TEST);
     APPEND(comprehensions, e->v.DictComp.generators);
-    APPEND_STR_FINISH("}");
+    // TODO only insert whitespace when necessary
+    APPEND_STR_FINISH(" }");
 }
 
 static int
