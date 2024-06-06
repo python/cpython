@@ -116,6 +116,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "pycore_abstract.h"             // _Py_ValidIndex()
 #include "pycore_bitutils.h"             // _Py_bit_length
 #include "pycore_call.h"                 // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"                // _PyEval_GetBuiltin()
@@ -2814,7 +2815,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     i = *ppos;
     if (_PyDict_HasSplitTable(mp)) {
         assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
-        if (i < 0 || i >= mp->ma_used)
+        if (!_Py_ValidIndex(i, mp->ma_used))
             return 0;
         int index = get_index_from_order(mp, i);
         value = mp->ma_values->values[index];
@@ -2824,7 +2825,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     }
     else {
         Py_ssize_t n = mp->ma_keys->dk_nentries;
-        if (i < 0 || i >= n)
+        if (!_Py_ValidIndex(i, n))
             return 0;
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(mp->ma_keys)[i];

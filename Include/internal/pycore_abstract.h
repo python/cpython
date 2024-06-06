@@ -21,6 +21,19 @@ PyObject *_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
 
 extern int _PyObject_HasLen(PyObject *o);
 
+static inline int
+_Py_ValidIndex(Py_ssize_t i, Py_ssize_t limit)
+{
+    /* The cast to size_t lets us use just a single comparison
+       to check whether i is in the range: 0 <= i < limit.
+
+       See:  Section 14.2 "Bounds Checking" in the Agner Fog
+       optimization manual found at:
+       https://www.agner.org/optimize/optimizing_cpp.pdf
+    */
+    return (size_t) i < (size_t) limit;
+}
+
 /* === Sequence protocol ================================================ */
 
 #define PY_ITERSEARCH_COUNT    1

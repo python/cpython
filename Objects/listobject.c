@@ -1,7 +1,7 @@
 /* List object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -324,19 +324,6 @@ PyList_Size(PyObject *op)
     }
 }
 
-static inline int
-valid_index(Py_ssize_t i, Py_ssize_t limit)
-{
-    /* The cast to size_t lets us use just a single comparison
-       to check whether i is in the range: 0 <= i < limit.
-
-       See:  Section 14.2 "Bounds Checking" in the Agner Fog
-       optimization manual found at:
-       https://www.agner.org/optimize/optimizing_cpp.pdf
-    */
-    return (size_t) i < (size_t) limit;
-}
-
 #ifdef Py_GIL_DISABLED
 
 static PyObject *
@@ -348,7 +335,7 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
         _PyObject_GC_SET_SHARED(self);
     }
     Py_ssize_t size = Py_SIZE(self);
-    if (!valid_index(idx, size)) {
+    if (!_Py_ValidIndex(idx, size)) {
         goto exit;
     }
 #ifdef Py_GIL_DISABLED
@@ -369,7 +356,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     }
     // Need atomic operation for the getting size.
     Py_ssize_t size = PyList_GET_SIZE(op);
-    if (!valid_index(i, size)) {
+    if (!_Py_ValidIndex(i, size)) {
         return NULL;
     }
     PyObject **ob_item = _Py_atomic_load_ptr(&op->ob_item);
@@ -378,7 +365,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     }
     Py_ssize_t cap = list_capacity(ob_item);
     assert(cap != -1 && cap >= size);
-    if (!valid_index(i, cap)) {
+    if (!_Py_ValidIndex(i, cap)) {
         return NULL;
     }
     PyObject *item = _Py_TryXGetRef(&ob_item[i]);
@@ -391,7 +378,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
 static inline PyObject*
 list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (!_Py_ValidIndex(i, Py_SIZE(op))) {
         return NULL;
     }
     return Py_NewRef(PyList_GET_ITEM(op, i));
@@ -405,7 +392,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (!_Py_ValidIndex(i, Py_SIZE(op))) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
@@ -442,7 +429,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     int ret;
     PyListObject *self = ((PyListObject *)op);
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (!valid_index(i, Py_SIZE(self))) {
+    if (!_Py_ValidIndex(i, Py_SIZE(self))) {
         Py_XDECREF(newitem);
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -655,7 +642,7 @@ static PyObject *
 list_item(PyObject *aa, Py_ssize_t i)
 {
     PyListObject *a = (PyListObject *)aa;
-    if (!valid_index(i, PyList_GET_SIZE(a))) {
+    if (!_Py_ValidIndex(i, PyList_GET_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
@@ -1056,7 +1043,7 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
 static int
 list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (!_Py_ValidIndex(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
         return -1;
@@ -1497,7 +1484,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     if (index < 0)
         index += Py_SIZE(self);
-    if (!valid_index(index, Py_SIZE(self))) {
+    if (!_Py_ValidIndex(index, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }

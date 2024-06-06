@@ -39,7 +39,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
@@ -3970,7 +3970,7 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
         PyErr_BadArgument();
         return (Py_UCS4)-1;
     }
-    if (index < 0 || index >= PyUnicode_GET_LENGTH(unicode)) {
+    if (!_Py_ValidIndex(index, PyUnicode_GET_LENGTH(unicode))) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return (Py_UCS4)-1;
     }
@@ -3986,7 +3986,7 @@ PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, Py_UCS4 ch)
         PyErr_BadArgument();
         return -1;
     }
-    if (index < 0 || index >= PyUnicode_GET_LENGTH(unicode)) {
+    if (!_Py_ValidIndex(index, PyUnicode_GET_LENGTH(unicode))) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return -1;
     }
@@ -11368,7 +11368,7 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
         PyErr_BadArgument();
         return NULL;
     }
-    if (index < 0 || index >= PyUnicode_GET_LENGTH(self)) {
+    if (!_Py_ValidIndex(index, PyUnicode_GET_LENGTH(self))) {
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return NULL;
     }

@@ -106,6 +106,7 @@ bytes(cdata)
 #  include <windows.h>
 #endif
 
+#include "pycore_abstract.h"      // _Py_ValidIndex()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #ifdef MS_WIN32
@@ -4645,7 +4646,7 @@ Array_item(PyObject *myself, Py_ssize_t index)
     CDataObject *self = (CDataObject *)myself;
     Py_ssize_t offset, size;
 
-    if (index < 0 || index >= self->b_length) {
+    if (!_Py_ValidIndex(index, self->b_length)) {
         PyErr_SetString(PyExc_IndexError,
                         "invalid index");
         return NULL;
@@ -4800,7 +4801,7 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     }
     assert(stginfo); /* Cannot be NULL for array object instances */
 
-    if (index < 0 || index >= stginfo->length) {
+    if (!_Py_ValidIndex(index, stginfo->length)) {
         PyErr_SetString(PyExc_IndexError,
                         "invalid index");
         return -1;

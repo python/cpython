@@ -2,7 +2,7 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -102,7 +102,7 @@ PyTuple_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (i < 0 || i >= Py_SIZE(op)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(op))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
@@ -118,7 +118,7 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (i < 0 || i >= Py_SIZE(op)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(op))) {
         Py_XDECREF(newitem);
         PyErr_SetString(PyExc_IndexError,
                         "tuple assignment index out of range");
@@ -363,7 +363,7 @@ tuplecontains(PyTupleObject *a, PyObject *el)
 static PyObject *
 tupleitem(PyTupleObject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }

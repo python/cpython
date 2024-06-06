@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _Py_ValidIndex()
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 
@@ -1486,7 +1487,7 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 {
     ElementObject* self = (ElementObject*) self_;
 
-    if (!self->extra || index < 0 || index >= self->extra->length) {
+    if (!self->extra || !_Py_ValidIndex(index, self->extra->length)) {
         PyErr_SetString(
             PyExc_IndexError,
             "child index out of range"
@@ -1738,7 +1739,7 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     Py_ssize_t i;
     PyObject* old;
 
-    if (!self->extra || index < 0 || index >= self->extra->length) {
+    if (!self->extra || !_Py_ValidIndex(index, self->extra->length)) {
         PyErr_SetString(
             PyExc_IndexError,
             "child assignment index out of range");

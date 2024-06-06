@@ -1,7 +1,7 @@
 /* bytes object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
@@ -1506,7 +1506,7 @@ bytes_contains(PyObject *self, PyObject *arg)
 static PyObject *
 bytes_item(PyBytesObject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
@@ -1613,7 +1613,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
             return NULL;
         if (i < 0)
             i += PyBytes_GET_SIZE(self);
-        if (i < 0 || i >= PyBytes_GET_SIZE(self)) {
+        if (!_Py_ValidIndex(i, PyBytes_GET_SIZE(self))) {
             PyErr_SetString(PyExc_IndexError,
                             "index out of range");
             return NULL;
@@ -2810,7 +2810,7 @@ _PyBytes_FromList(PyObject *x)
         if (value == -1 && PyErr_Occurred())
             goto error;
 
-        if (value < 0 || value >= 256) {
+        if (!_Py_ValidIndex(value, 256)) {
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             goto error;
@@ -2851,7 +2851,7 @@ _PyBytes_FromTuple(PyObject *x)
         if (value == -1 && PyErr_Occurred())
             goto error;
 
-        if (value < 0 || value >= 256) {
+        if (!_Py_ValidIndex(value, 256)) {
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             goto error;
@@ -2904,7 +2904,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
             goto error;
 
         /* Range check */
-        if (value < 0 || value >= 256) {
+        if (!_Py_ValidIndex(value, 256)) {
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
             goto error;
@@ -3662,4 +3662,3 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
         }
     }
 }
-

@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_abstract.h"   // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_bytes_methods.h"
 
 PyDoc_STRVAR_shared(_Py_isspace__doc__,
@@ -660,7 +660,7 @@ _Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg)
         PyBuffer_Release(&varg);
         return pos >= 0;
     }
-    if (ival < 0 || ival >= 256) {
+    if (!_Py_ValidIndex(ival, 256)) {
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         return -1;
     }

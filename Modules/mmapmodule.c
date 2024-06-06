@@ -23,7 +23,7 @@
 #endif
 
 #include <Python.h>
-#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t(), _Py_ValidIndex()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 
@@ -1131,7 +1131,7 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
         return NULL;
     }
 
-    if (start < 0 || start >= self->size) {
+    if (!_Py_ValidIndex(start, self->size)) {
         PyErr_SetString(PyExc_ValueError, "madvise start out of bounds");
         return NULL;
     }
@@ -1229,7 +1229,7 @@ static PyObject *
 mmap_item(mmap_object *self, Py_ssize_t i)
 {
     CHECK_VALID(NULL);
-    if (i < 0 || i >= self->size) {
+    if (!_Py_ValidIndex(i, self->size)) {
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
         return NULL;
     }
@@ -1251,7 +1251,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
             return NULL;
         if (i < 0)
             i += self->size;
-        if (i < 0 || i >= self->size) {
+        if (!_Py_ValidIndex(i, self->size)) {
             PyErr_SetString(PyExc_IndexError,
                 "mmap index out of range");
             return NULL;
@@ -1309,7 +1309,7 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
     const char *buf;
 
     CHECK_VALID(-1);
-    if (i < 0 || i >= self->size) {
+    if (!_Py_ValidIndex(i, self->size)) {
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
         return -1;
     }
@@ -1349,7 +1349,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += self->size;
-        if (i < 0 || i >= self->size) {
+        if (!_Py_ValidIndex(i, self->size)) {
             PyErr_SetString(PyExc_IndexError,
                             "mmap index out of range");
             return -1;

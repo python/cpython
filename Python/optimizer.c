@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_abstract.h"        // _Py_ValidIndex()
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
@@ -357,7 +358,7 @@ static PyObject *
 uop_item(_PyExecutorObject *self, Py_ssize_t index)
 {
     Py_ssize_t len = uop_len(self);
-    if (index < 0 || index >= len) {
+    if (!_Py_ValidIndex(index, len)) {
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
     }

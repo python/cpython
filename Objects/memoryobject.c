@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
@@ -2378,7 +2378,7 @@ lookup_dimension(const Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
     if (index < 0) {
         index += nitems;
     }
-    if (index < 0 || index >= nitems) {
+    if (!_Py_ValidIndex(index, nitems)) {
         PyErr_Format(PyExc_IndexError,
                      "index out of bounds on dimension %d", dim + 1);
         return NULL;

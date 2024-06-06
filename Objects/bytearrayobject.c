@@ -1,7 +1,7 @@
 /* PyByteArray (bytearray) implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _Py_ValidIndex()
 #include "pycore_bytes_methods.h"
 #include "pycore_bytesobject.h"
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
@@ -359,7 +359,7 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 static PyObject *
 bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(self)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
@@ -378,7 +378,7 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         if (i < 0)
             i += PyByteArray_GET_SIZE(self);
 
-        if (i < 0 || i >= Py_SIZE(self)) {
+        if (!_Py_ValidIndex(i, Py_SIZE(self))) {
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return NULL;
         }
@@ -573,7 +573,7 @@ bytearray_setitem(PyByteArrayObject *self, Py_ssize_t i, PyObject *value)
         i += Py_SIZE(self);
     }
 
-    if (i < 0 || i >= Py_SIZE(self)) {
+    if (!_Py_ValidIndex(i, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return -1;
     }
@@ -613,7 +613,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             i += PyByteArray_GET_SIZE(self);
         }
 
-        if (i < 0 || i >= Py_SIZE(self)) {
+        if (!_Py_ValidIndex(i, Py_SIZE(self))) {
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return -1;
         }
@@ -1911,7 +1911,7 @@ bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index)
     }
     if (index < 0)
         index += Py_SIZE(self);
-    if (index < 0 || index >= Py_SIZE(self)) {
+    if (!_Py_ValidIndex(index, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }

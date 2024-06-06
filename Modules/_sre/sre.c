@@ -39,6 +39,7 @@ static const char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #include "Python.h"
+#include "pycore_abstract.h"         // _Py_ValidIndex()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
@@ -2208,7 +2209,7 @@ match_getindex(MatchObject* self, PyObject* index)
             }
         }
     }
-    if (i < 0 || i >= self->groups) {
+    if (!_Py_ValidIndex(i, self->groups)) {
         /* raise IndexError if we were given a bad group number */
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_IndexError, "no such group");
