@@ -247,7 +247,7 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
 static inline PyTypeObject* Py_TYPE(PyObject *ob) {
 #ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ptr_relaxed(&ob->ob_type);
+    return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
 #else
     return ob->ob_type;
 #endif
