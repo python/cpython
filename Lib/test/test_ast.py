@@ -167,6 +167,7 @@ exec_tests = [
     # PEP 448: Additional Unpacking Generalizations
     "{**{1:2}, 2:3}",
     "{*{1, 2}, 3}",
+    "{{*{1, 2}, 3}}",
     # Asynchronous comprehensions
     "async def f():\n [i async for b in c]",
     # Decorated FunctionDef
@@ -240,6 +241,8 @@ eval_tests = [
   "{}",
   # Set
   "{None,}",
+  # Frozenset
+  "{{None,}}",
   # Multiline dict (test for .lineno & .col_offset)
   """{
       1
