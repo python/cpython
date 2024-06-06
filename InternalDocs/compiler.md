@@ -348,47 +348,27 @@ will produce one basic block that tests the truth value of ``x``
 and then points both (1) to the start of the ``if`` body and (2) to
 a different basic block that tests the truth value of y.
 
-CFGs are usually one step away from final code output.  Code is directly
-generated from the basic blocks (with jump targets adjusted based on the
-output order) by doing a post-order depth-first search on the CFG
-following the edges.
-
+CFGs are useful as an intermediate representation of the code because
+they are a convenient data structure for optimizations.
 
 AST to CFG to bytecode
 ======================
 
-With the AST created, the next step is to create the CFG. The first step
-is to convert the AST to Python bytecode without having jump targets
-resolved to specific offsets (this is calculated when the CFG goes to
-final bytecode). Essentially, this transforms the AST into Python
-bytecode with control flow represented by the edges of the CFG.
-
-Conversion is done in two passes.  The first creates the namespace
-(variables can be classified as local, free/cell for closures, or
-global).  With that done, the second pass essentially flattens the CFG
-into a list and calculates jump offsets for final output of bytecode.
-
-The conversion process is initiated by a call to the function
+The conversion of an ``AST`` to bytecode is initiated by a call to the function
 ``_PyAST_Compile()`` in
 [Python/compile.c](https://github.com/python/cpython/blob/main/Python/compile.c).
-This function does both
-the conversion of the AST to a CFG and outputting final bytecode from the CFG.
-The AST to CFG step is handled mostly by two functions called by
-``_PyAST_Compile()``; ``_PySymtable_Build()`` and ``compiler_mod()``.
-The former is in
-[Python/symtable.c](https://github.com/python/cpython/blob/main/Python/symtable.c)
- while the latter is
-[Python/compile.c](https://github.com/python/cpython/blob/main/Python/compile.c).
 
-``_PySymtable_Build()`` begins by entering the starting code block for the
-AST (passed-in) and then calling the proper `symtable_visit_{xx}` function
-(with *xx* being the AST node type).  Next, the AST tree is walked with
-the various code blocks that delineate the reach of a local variable
-as blocks are entered and exited using ``symtable_enter_block()`` and
-``symtable_exit_block()``, respectively.
+The first step is to construct the symbol table. This is implemented by
+``_PySymtable_Build()`` in
+[Python/symtable.c](https://github.com/python/cpython/blob/main/Python/symtable.c).
+This function begins by entering the starting code block for the AST (passed-in)
+and then calling the proper `symtable_visit_{xx}` function (with *xx* being the
+AST node type).  Next, the AST tree is walked with the various code blocks that
+delineate the reach of a local variable as blocks are entered and exited using
+``symtable_enter_block()`` and ``symtable_exit_block()``, respectively.
 
-Once the symbol table is created, it is transformed by the code in
-[Python/compile.c](https://github.com/python/cpython/blob/main/Python/compile.c)
+Once the symbol table is created, the ``AST`` is transformed by ``compiler_codegen()``
+in [Python/compile.c](https://github.com/python/cpython/blob/main/Python/compile.c)
 into a sequence of pseudo instructions. These are similar to bytecode, but
 in some cases they are more abstract, and are resolved later into actual
 bytecode. The construction of this instruction sequence is handled by several
@@ -407,19 +387,18 @@ The appropriate `compiler_visit_{xx}` function is called, based on the value
 passed in for <node type> (so `VISIT({c}, expr, {node})` calls
 `compiler_visit_expr({c}, {node})`).  The ``VISIT_SEQ()`` macro is very similar,
 but is called on AST node sequences (those values that were created as
-arguments to a node that used the '*' modifier).  There is also
-``VISIT_SLICE()`` just for handling slices.
+arguments to a node that used the '*' modifier).
 
 Emission of bytecode is handled by the following macros:
 
-* ``ADDOP(struct compiler *, int)``
+* ``ADDOP(struct compiler *, location, int)``
     add a specified opcode
-* ``ADDOP_IN_SCOPE(struct compiler *, int)``
+* ``ADDOP_IN_SCOPE(struct compiler *, location, int)``
     like ``ADDOP``, but also exits current scope; used for adding return value
     opcodes in lambdas and closures
-* ``ADDOP_I(struct compiler *, int, Py_ssize_t)``
+* ``ADDOP_I(struct compiler *, location, int, Py_ssize_t)``
     add an opcode that takes an integer argument
-* ``ADDOP_O(struct compiler *, int, PyObject *, TYPE)``
+* ``ADDOP_O(struct compiler *, location, int, PyObject *, TYPE)``
     add an opcode with the proper argument based on the position of the
     specified PyObject in PyObject sequence object, but with no handling of
     mangled names; used for when you
@@ -427,38 +406,45 @@ Emission of bytecode is handled by the following macros:
     parameters where name mangling is not possible and the scope of the
     name is known; *TYPE* is the name of PyObject sequence
     (``names`` or ``varnames``)
-* ``ADDOP_N(struct compiler *, int, PyObject *, TYPE)``
+* ``ADDOP_N(struct compiler *, location, int, PyObject *, TYPE)``
     just like ``ADDOP_O``, but steals a reference to PyObject
-* ``ADDOP_NAME(struct compiler *, int, PyObject *, TYPE)``
+* ``ADDOP_NAME(struct compiler *, location, int, PyObject *, TYPE)``
     just like ``ADDOP_O``, but name mangling is also handled; used for
     attribute loading or importing based on name
-* ``ADDOP_LOAD_CONST(struct compiler *, PyObject *)``
+* ``ADDOP_LOAD_CONST(struct compiler *, location, PyObject *)``
     add the ``LOAD_CONST`` opcode with the proper argument based on the
     position of the specified PyObject in the consts table.
-* ``ADDOP_LOAD_CONST_NEW(struct compiler *, PyObject *)``
+* ``ADDOP_LOAD_CONST_NEW(struct compiler *, location, PyObject *)``
     just like ``ADDOP_LOAD_CONST_NEW``, but steals a reference to PyObject
-* ``ADDOP_JUMP(struct compiler *, int, basicblock *)``
+* ``ADDOP_JUMP(struct compiler *, location, int, basicblock *)``
     create a jump to a basic block
 
-Several helper functions that will emit bytecode and are named
-`compiler_{xx}()` where *xx* is what the function helps with (``list``,
-``boolop``, etc.).  A rather useful one is ``compiler_nameop()``.
+The ``location`` argument is a struct with the source location to be
+associated with this instruction. It is typically extracted from an
+``AST`` node with the ``LOC`` macro. The ``NO_LOCATION`` can be used
+for *synthetic* instructions, which we do not associate with a line
+number at this stage. For example, the implicit ``return None``
+which is added at the end of a function is not associated with any
+line in the source code.
+
+There are several helper functions that will emit pseudo-instructions
+and are named `compiler_{xx}()` where *xx* is what the function helps
+with (``list``, ``boolop``, etc.).  A rather useful one is ``compiler_nameop()``.
 This function looks up the scope of a variable and, based on the
 expression context, emits the proper opcode to load, store, or delete
 the variable.
 
-As for handling the line number on which a statement is defined, this is
-handled by ``compiler_visit_stmt()`` and thus is not a worry.
-
-Once the instruction sequence is created, it is transformed into a CFG,
-which is then transformed through a number of peephole optimizations and
-finally converted back to an instruction sequence. These conversions
-and optimizations are implemented in
+Once the instruction sequence is created, it is transformed into a CFG
+by ``_PyCfg_FromInstructionSequence()``. Then ``_PyCfg_OptimizeCodeUnit()``
+applies various peephole optimizations, and
+``_PyCfg_OptimizedCfgToInstructionSequence()`` converts the optimized ``CFG``
+back into an instruction sequence. These conversions and optimizations are
+implemented in
 [Python/flowgraph.c](https://github.com/python/cpython/blob/main/Python/flowgraph.c).
 
 Finally, the sequence of pseudo-instructions is converted into actual
 bytecode. This includes transforming pseudo instructions into actual instructions,
-converting jump targets from instruction indices to relative offsets, and
+converting jump targets from logical labels to relative offsets, and
 construction of the
 [exception table](exception_handling.md) and
 [locations table](https://github.com/python/cpython/blob/main/Objects/locations.md).
