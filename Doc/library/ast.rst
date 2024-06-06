@@ -803,8 +803,8 @@ Comprehensions
                         iter=Name(id='numbers', ctx=Load()),
                         is_async=0)]))
 
-   .. versionchanged:: 3.14
-        Added ``FrozenSetComp``.
+   .. versionadded:: 3.14
+        ``FrozenSetComp``
 
 
 .. class:: comprehension(target, iter, ifs, is_async)
