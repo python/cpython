@@ -13,6 +13,7 @@ class AbstractWidgetTest(AbstractTkTest):
     _conv_pixels = round
     _conv_pad_pixels = None
     _stringify = False
+    clip_highlightthickness = True
 
     @property
     def scaling(self):
@@ -305,7 +306,8 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkPixelsParam(widget, 'highlightthickness',
                               0, 1.3, 2.6, 6, '10p')
-        self.checkParam(widget, 'highlightthickness', -2, expected=0,
+        expected = 0 if self.clip_highlightthickness else -2
+        self.checkParam(widget, 'highlightthickness', -2, expected=expected,
                         conv=self._conv_pixels)
 
     def test_configure_image(self):

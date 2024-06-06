@@ -144,11 +144,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _conv_pixels = False
-
-    def test_configure_highlightthickness(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'highlightthickness',
-                              0, 1.3, 2.6, 6, -2, '10p')
+    clip_highlightthickness = False
 
 
 @add_standard_options(StandardOptionsTests)
@@ -280,6 +276,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
     _conv_pixels = round
+    clip_highlightthickness = True
 
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
@@ -292,9 +289,6 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     def test_configure_height(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
-
-    test_configure_highlightthickness = \
-        StandardOptionsTests.test_configure_highlightthickness
 
     def test_configure_image(self):
         widget = self.create()
@@ -1482,6 +1476,7 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     _conv_pad_pixels = False
     if tk_version >= (8, 7):
         _conv_pixels = False
+        clip_highlightthickness = False
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1489,14 +1484,6 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
-
-    def test_configure_highlightthickness(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'highlightthickness',
-                              0, 1.3, 2.6, 6, '10p')
-        expected = -2 if tk_version >= (8, 7) else 0
-        self.checkParam(widget, 'highlightthickness', -2, expected=expected,
-                        conv=self._conv_pad_pixels)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
