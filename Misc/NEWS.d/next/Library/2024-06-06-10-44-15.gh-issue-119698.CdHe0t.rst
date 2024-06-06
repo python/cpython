@@ -1,0 +1,3 @@
+Deprecate :meth:`symtable.Class.get_methods`. This method may return symbols
+that are not methods and thus should not be relied on. Patch by Bénédikt
+Tran.
