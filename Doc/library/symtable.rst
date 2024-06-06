@@ -127,8 +127,19 @@ Examining Symbol Tables
 
    .. method:: get_methods()
 
-      Return a tuple containing the names of methods declared in the class.
+      Return a tuple containing the names of method-like functions declared
+      in the class.
 
+      Note that the term 'method' here designates *any* function directly
+      declared via :keyword:`def` inside the class body. For instance::
+
+      >>> st = symtable.symtable("class A:\n"
+      ...                        "    def f(): pass\n"
+      ...                        "    def g(self): pass\n",
+      ...                        "test", "exec")
+      >>> class_A = st.get_children()[0]
+      >>> class_A.get_methods()
+      ('f', 'g')
 
 .. class:: Symbol
 
