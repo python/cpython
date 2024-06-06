@@ -764,10 +764,19 @@ static Py_ssize_t
 STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                          const STRINGLIB_CHAR* p, Py_ssize_t m,
                          Py_ssize_t maxcount, int mode,
-                         int dir, int dynamic)
+                         int direction, int dynamic)
 {
     /* Boyer–Moore–Horspool algorithm
        with optional dynamic fallback to Two-Way algorithm */
+    if (mode == FAST_COUNT){
+        LOG("Horspool Counting \"%s\" in \"%s\".\n", p, s);
+    }
+    else {
+        LOG("Horspool Finding \"%s\" in \"%s\".\n", p, s);
+    }
+    int dir = direction < 0 ? -1 : 1;
+    int reversed = dir < 0;
+
     STRINGLIB(prework) pw;
     (&pw)->needle = p;
     (&pw)->len_needle = m;
@@ -775,146 +784,143 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     Py_ssize_t gap = (&pw)->gap;
     SHIFT_TYPE *table = (&pw)->table;
 
-    // Direction Agnostic Constants
+    // Direction Agnostic
     const Py_ssize_t m_m1 = m - 1;
     const Py_ssize_t m_p1 = m + 1;
     const Py_ssize_t w = n - m;
 
-    // Bi-Directional Constants
+    // Direction Sensitive
     const Py_ssize_t s_stt = dir == 1 ? 0 : n - 1;
     const Py_ssize_t p_stt = dir == 1 ? 0 : m - 1;
     const Py_ssize_t p_end = dir == 1 ? m - 1 : 0;
-    const Py_ssize_t dir_m_m1 = dir * m_m1;
-
-    // String Pointers
-    const STRINGLIB_CHAR *const p_last = p + p_end;
-    const STRINGLIB_CHAR *const s_plast = s + s_stt + dir_m_m1;
-    const STRINGLIB_CHAR *win, *win_last;;
+    const Py_ssize_t dir_m_m1 = reversed ? -m_m1 : m_m1;
+    const STRINGLIB_CHAR *const ss = s + s_stt + dir_m_m1;
+    const STRINGLIB_CHAR p_last = p[p_end];
 
     // Temporary Variables
-    Py_ssize_t shift, i, ip, j, j_stop, idx;
+    Py_ssize_t shift, i, ip, jp, j, j_off;
+    STRINGLIB_CHAR s_last;
 
-    // Use Bloom for len(needle) <= 64
-    // Initialization is costly for long needles
-    // And this is not much beneficial for large set(needle)
+    // Use Bloom for len(haystack) >= 10 * len(needle)
     unsigned long mask = 0;
     Py_ssize_t true_gap = 0;
-    if (m <= 64) {
+    Py_ssize_t j_stop = m;
+    if (n >= 10 * m) {
+        j_stop = m_m1;
         true_gap = m;
         // Note: true_gap("___aa") = 1
-        STRINGLIB_BLOOM_ADD(mask, *p_last);
+        STRINGLIB_CHAR p_tmp;
+        STRINGLIB_BLOOM_ADD(mask, p_last);
         for (j = 1; j < m; j++) {
-            ip = p_end - dir * j;
-            STRINGLIB_BLOOM_ADD(mask, p[ip]);
-            if (true_gap == m && p[ip] == *p_last) {
+            jp = p_end + (reversed ? j : -j);
+            p_tmp = p[jp];
+            STRINGLIB_BLOOM_ADD(mask, p_tmp);
+            if (true_gap == m && p_tmp == p_last) {
                 true_gap = j;
             }
         }
         LOG("Good Suffix True Gap: %ld\n", true_gap);
     }
+
+    // Total cost of two-way initialization
     // Horspool Calibration
-    const double hrs_lcost = 4.0;       // average loop cost
-    const double hrs_hcost = 0.4;       // false positive hit cost
-    const int ih_min = 100;             // minimum FP hits to fallback
+    const double hrs_lcost = 4.0;               // average loop cost
+    const double hrs_hcost = 0.4;               // false positive hit cost
     // Two-Way Calibration
-    const double twy_icost = 3.0 * m;   // initialization cost
-    const double twy_lcost = 3.0;       // loop cost
-    /* Running variables */
-    double total_time_hrs, exp_hrs, exp_twy;
-    Py_ssize_t loops_left;
+    const double twy_icost = 3.0 * (double)m;   // total initialization cost
+    const double twy_lcost = 3.0;               // loop cost
+    // Running variables
+    double exp_hrs, exp_twy, ll;    // expected run times & loops left
     Py_ssize_t count = 0;
-    Py_ssize_t iloop=0;
-    Py_ssize_t ihits=0;
+    Py_ssize_t iloop = 0, ihits_last = 0;
+    Py_ssize_t ihits = 0, iloop_last = 0;
     for (i = 0; i <= w;) {
         iloop++;
-        win_last = s_plast + dir * i;
+        ip = reversed ? -i : i;
+        s_last = ss[ip];
+        LOG("s_last: %c\n", s_last);
         if (true_gap) {
-            if (*win_last != *p_last){
-                if (i < w && !STRINGLIB_BLOOM(mask, win_last[dir])){
-                    i += m_p1;
-                    LOG("Bloom skip\n");
+            shift = 0;
+            if (s_last != p_last) {
+                if (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])){
+                    shift = m_p1;
                 }
                 else {
-                    shift = table[*win_last & TABLE_MASK];
-                    if (shift != 0){
-                        i += shift;
-                        LOG("Horspool skip\n");
-                    }
-                    else {
-                        i += 1;
-                    }
+                    shift = Py_MAX(table[s_last & TABLE_MASK], 1);
                 }
-                continue;
             }
-            assert(*win_last == *p_last);
-            j_stop = m_m1;
+            assert(s_last == p_last);
         }
         else {
-            shift = table[*win_last & TABLE_MASK];
-            if (shift != 0){
-                i += shift;
-                LOG("Horspool skip\n");
-                continue;
-            }
-            assert((*win_last & TABLE_MASK) == (*p_last & TABLE_MASK));
-            j_stop = m;
+            shift = table[s_last & TABLE_MASK];
+            assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK));
         }
-        win = win_last - p_end;
-        j = 0;
-        for (; j < j_stop; j++) {
+        if (shift != 0) {
+            LOG("Shift %ld\n", shift);
+            i += shift;
+            continue;
+        }
+        j_off = ip - p_end;
+        for (j = 0; j < j_stop; j++) {
             ihits++;
-            ip = p_stt + dir * j;
-            if (win[ip] != p[ip]) {
+            LOG("a: %c\n", ss[j_off + jp]);
+            LOG("b: %c\n", p[jp]);
+            jp = p_stt + (reversed ? -j : j);
+            if (ss[j_off + jp] != p[jp]) {
                 break;
             }
         }
         if (j == j_stop) {
-            idx = dir == 1 ? i : n - m - i;
-            LOG("Found a match at %ld!\n", idx);
+            LOG("Found a match!\n");
             if (mode != FAST_COUNT) {
-                return idx;
+                return reversed ? n - m - i : i;
             }
-            count++;
-            if (count == maxcount) {
+            if (++count == maxcount) {
                 return maxcount;
             }
             i += m;
         }
-        else if (true_gap && i < w && !STRINGLIB_BLOOM(mask, win_last[dir])) {
-            LOG("move by (m + 1) = %ld\n", m_p1);
-            i += m_p1;
-        }
-        else {
-            if (true_gap) {
-                LOG("move by bloom gap = %ld\n", gap);
+        else if (true_gap) {
+            if (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])) {
+                LOG("Move by (m + 1) = %ld\n", m_p1);
+                i += m_p1;
+            }
+            else {
+                LOG("Move by true gap = %ld\n", gap);
                 i += true_gap;
-            } else {
-                LOG("move by gap = %ld\n", gap);
-                i += gap;
             }
         }
-        if (dynamic && ihits > ih_min) {
-            loops_left = w - i + 1;
-            total_time_hrs = iloop * hrs_lcost + ihits * hrs_hcost;
-            exp_hrs = total_time_hrs / i * loops_left;
-            exp_twy = twy_icost + loops_left * twy_lcost;
+        else {
+            LOG("Move by table gap = %ld\n", gap);
+            i += gap;
+        }
+        if (dynamic) {
+            if (ihits - ihits_last < 100 && iloop - iloop_last < 100) {
+                continue;
+            }
+            ll = (double)(w - i + 1);
+            exp_hrs = ((double)iloop * hrs_lcost +
+                       (double)ihits * hrs_hcost) / (double)i * ll;
+            exp_twy = twy_icost + ll * twy_lcost;
             if (exp_twy < exp_hrs) {
                 STRINGLIB(_init_critical_fac)(&pw, dir);
                 Py_ssize_t res;
-                if (dir == 1) {
-                    res = STRINGLIB(_two_way)(
-                        s + i, n - i, maxcount - count, mode, &pw);
-                } else {
+                if (reversed) {
                     res = STRINGLIB(_two_way_rev)(
                         s, n - i, maxcount - count, mode, &pw);
+                } else {
+                    res = STRINGLIB(_two_way)(
+                        s + i, n - i, maxcount - count, mode, &pw);
                 }
                 if (mode == FAST_SEARCH) {
-                    return res == -1 ? -1 : (dir == 1 ? res + i : res);
+                    return res == -1 ? -1 : (reversed ? res : res + i);
                 }
                 else {
                     return res + count;
                 }
             }
+            ihits_last = ihits;
+            iloop_last = iloop;
         }
     }
     // Loop Counter and False Hit Counter Logging
@@ -1172,6 +1178,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
          }
     }
     if (mode != FAST_RSEARCH) {
+        // return STRINGLIB(horspool_find_old)(s, n, p, m, maxcount, mode, 0);
         return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, 1, 1);
         // return STRINGLIB(two_way_find)(s, n, p, m, maxcount, mode);
     }
