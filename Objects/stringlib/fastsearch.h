@@ -805,7 +805,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     unsigned long mask = 0;
     Py_ssize_t true_gap = 0;
     Py_ssize_t j_stop = m;
-    if (n >= 10 * m) {
+    if (n >= 30 * m) {
         j_stop = m_m1;
         true_gap = m;
         // Note: true_gap("___aa") = 1
@@ -863,9 +863,8 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         j_off = ip - p_end;
         for (j = 0; j < j_stop; j++) {
             ihits++;
-            LOG("a: %c\n", ss[j_off + jp]);
-            LOG("b: %c\n", p[jp]);
             jp = p_stt + (reversed ? -j : j);
+            LOG("Checking %c <?> %c ?\n", ss[j_off + jp], p[jp]);
             if (ss[j_off + jp] != p[jp]) {
                 break;
             }
@@ -903,6 +902,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                        (double)ihits * hrs_hcost) / (double)i * ll;
             exp_twy = twy_icost + ll * twy_lcost;
             if (exp_twy < exp_hrs) {
+                LOG("switching to two-way algorithm: n=%ld, m=%ld\n", n, m);
                 STRINGLIB(_init_critical_fac)(&pw, dir);
                 Py_ssize_t res;
                 if (reversed) {
