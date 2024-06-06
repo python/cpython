@@ -447,3 +447,26 @@ do { \
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
+
+/* Stackref macros */
+
+/* How much scratch space to give stackref to PyObject* conversion. */
+#define MAX_STACKREF_SCRATCH 10
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
+    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH]; \
+    PyObject **NAME = PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp); \
+    if (NAME == NULL) { goto error; }
+#else
+#define STACKREFS_TO_PYOBJECTS(NAME) \
+    PyObject **args_o = (PyObject **)args;
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    PyObjectArray_Free(NAME, NAME##_temp);
+#else
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    (void)(NAME);
+#endif

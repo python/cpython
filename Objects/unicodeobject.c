@@ -9828,7 +9828,7 @@ _PyUnicode_JoinStackRef_Slow(PyObject *separator, _PyStackRef const *tagged, Py_
         PyErr_NoMemory();
         return NULL;
     }
-    _Py_untag_stack_borrowed(args, tagged, seqlen);
+    _PyObjectStack_FromStackRefStack(args, tagged, seqlen);
     PyObject *res = _PyUnicode_JoinArray(separator, args, seqlen);
     PyMem_Free(args);
     return res;
@@ -9844,7 +9844,7 @@ _PyUnicode_JoinStackRef(PyObject *separator, _PyStackRef const *items_tagged, Py
     if (seqlen > MAX_UNTAG_SCRATCH) {
         return _PyUnicode_JoinStackRef_Slow(separator, items_tagged, seqlen);
     }
-    _Py_untag_stack_borrowed(args, items_tagged, seqlen);
+    _PyObjectStack_FromStackRefStack(args, items_tagged, seqlen);
     return _PyUnicode_JoinArray(separator, args, seqlen);
 #else
     (void)_PyUnicode_JoinStackRef_Slow;

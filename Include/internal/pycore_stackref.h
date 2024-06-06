@@ -111,21 +111,6 @@ PyStackRef_AsPyObjectNew(_PyStackRef tagged)
 #   define PyStackRef_AsPyObjectNew(tagged) PyStackRef_AsPyObjectBorrow(tagged)
 #endif
 
-static inline void
-_Py_untag_stack_borrowed(PyObject **dst, const _PyStackRef *src, size_t length)
-{
-    for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_AsPyObjectBorrow(src[i]);
-    }
-}
-
-static inline void
-_Py_untag_stack_steal(PyObject **dst, const _PyStackRef *src, size_t length)
-{
-    for (size_t i = 0; i < length; i++) {
-        dst[i] = PyStackRef_AsPyObjectNew(src[i]);
-    }
-}
 
 #define PyStackRef_SET(dst, src) \
     do { \
@@ -201,6 +186,15 @@ PyStackRef_XDUP(_PyStackRef tagged)
         return PyStackRef_DUP(tagged);
     }
     return tagged;
+}
+
+
+static inline void
+_PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t length)
+{
+    for (size_t i = 0; i < length; i++) {
+        dst[i] = PyStackRef_AsPyObjectBorrow(src[i]);
+    }
 }
 
 

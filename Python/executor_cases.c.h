@@ -3084,16 +3084,10 @@
             }
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
-            _PyStackRef stack[4] = {Py_STACKREF_NULL, PyStackRef_FromPyObjectSteal(exc), val, PyStackRef_FromPyObjectSteal(tb)};
-            #ifdef Py_GIL_DISABLED
+            PyObject * stack[4] = {NULL, exc, val_o, tb};
             res = PyStackRef_FromPyObjectSteal(
-                PyObject_Vectorcall_StackRef(exit_func_o, stack + 1,
-                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
-            #else
-            res = PyStackRef_FromPyObjectSteal(
-                PyObject_Vectorcall(exit_func_o, (PyObject **)stack + 1,
+                PyObject_Vectorcall(exit_func_o, stack + 1,
                                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
-            #endif
             if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3397,17 +3391,12 @@
                 total_args++;
             }
             /* Callable is not a normal Python function */
-            #ifdef Py_GIL_DISABLED
-            PyObject *res_o = PyObject_Vectorcall_StackRef(
-                callable_o, args,
-                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                NULL);
-            #else
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             PyObject *res_o = PyObject_Vectorcall(
-                callable_o, (PyObject **)args,
+                callable_o, args_o,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-            #endif
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(callable);
             for (int i = 0; i < total_args; i++) {
@@ -3800,7 +3789,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            PyObject *res_o = PyObject_TypeVectorcall_StackRef(tp, args, total_args, NULL);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 PyStackRef_CLOSE(args[i]);
@@ -3889,18 +3880,12 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
-            #ifdef Py_GIL_DISABLED
-            PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
-                ((PyCFunctionFast)(void(*)(void))cfunc),
-                PyCFunction_GET_SELF(callable_o),
-                args,
-                total_args);
-            #else
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable_o),
-                (PyObject **)args,
+                args_o,
                 total_args);
-            #endif
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3943,13 +3928,9 @@
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable_o);
-            #ifdef Py_GIL_DISABLED
-            PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
-                cfunc, PyCFunction_GET_SELF(callable_o), args, total_args, NULL
-            );
-            #else
-            PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), (PyObject **)args, total_args, NULL);
-            #endif
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4147,13 +4128,9 @@
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            #ifdef Py_GIL_DISABLED
-            PyObject *res_o = PyObject_PyCFunctionFastWithKeywordsCall_StackRef(
-                cfunc, self, (args + 1), nargs, NULL
-            );
-            #else
-            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
-            #endif
+            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -4258,13 +4235,9 @@
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            #ifdef Py_GIL_DISABLED
-            PyObject *res_o = PyObject_PyCFunctionFastCall_StackRef(
-                cfunc, self, (args + 1), nargs
-            );
-            #else
-            PyObject *res_o = cfunc(self, (PyObject **)(args + 1), nargs);
-            #endif
+            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            PyObject *res_o = cfunc(self, (args_o + 1), nargs);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
