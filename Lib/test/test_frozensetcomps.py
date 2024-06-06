@@ -149,7 +149,7 @@ We also repeat each of the above scoping tests inside a function
 """
 
 
-__test__ = {{'doctests' : doctests}}
+__test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
