@@ -5924,6 +5924,7 @@ def load_tests(loader, tests, pattern):
 
     if TODO_TESTS is None:
         from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
+        orig_context = orig_sys_decimal.getcontext().copy()
         for mod in C, P:
             if not mod:
                 continue
@@ -5931,6 +5932,7 @@ def load_tests(loader, tests, pattern):
                 sys.modules['decimal'] = mod
             def tearDown(slf):
                 sys.modules['decimal'] = orig_sys_decimal
+                orig_sys_decimal.setcontext(orig_context)
             optionflags = IGNORE_EXCEPTION_DETAIL if mod is C else 0
             sys.modules['decimal'] = mod
             tests.addTest(DocTestSuite(mod, setUp=setUp, tearDown=tearDown,
