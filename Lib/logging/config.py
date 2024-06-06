@@ -783,8 +783,10 @@ class DictConfigurator(BaseConfigurator):
                     from multiprocessing.queues import Queue as MPQueue
                     from multiprocessing import Manager as MM
                     proxy_queue = MM().Queue()
+                    proxy_joinable_queue = MM().JoinableQueue()
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue, type(proxy_queue))):
+                    if not isinstance(qspec, (queue.Queue, MPQueue,
+                                      type(proxy_queue), type(proxy_joinable_queue))):
                         if isinstance(qspec, str):
                             q = self.resolve(qspec)
                             if not callable(q):
