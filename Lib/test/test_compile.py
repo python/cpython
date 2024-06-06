@@ -1660,6 +1660,44 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
+    def test_multiline_frozenset_comprehension(self):
+        snippet = textwrap.dedent("""\
+            {{(x,
+                2*x)
+                for x
+                in [1,2,3] if (x > 0
+                               and x < 100
+                               and x != 50)}}
+            """)
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertIsInstance(compiled_code, types.CodeType)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'SET_ADD',
+            line=1, end_line=2, column=2, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
+            line=1, end_line=2, column=2, end_column=8, occurrence=1)
+
+    def test_multiline_async_frozenset_comprehension(self):
+        snippet = textwrap.dedent("""\
+            async def f():
+                {{(x,
+                    2*x)
+                    async for x
+                    in [1,2,3] if (x > 0
+                                   and x < 100
+                                   and x != 50)}}
+            """)
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        g = {}
+        eval(compiled_code, g)
+        compiled_code = g['f'].__code__
+        self.assertIsInstance(compiled_code, types.CodeType)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'SET_ADD',
+            line=2, end_line=3, column=6, end_column=12, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
+            line=2, end_line=3, column=6, end_column=12, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+            line=2, end_line=7, column=4, end_column=37, occurrence=1)
+
     def test_multiline_dict_comprehension(self):
         snippet = textwrap.dedent("""\
             {x:
