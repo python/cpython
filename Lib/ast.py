@@ -93,11 +93,11 @@ def literal_eval(node_or_string):
             return list(map(_convert, node.elts))
         elif isinstance(node, Set):
             return set(map(_convert, node.elts))
-        elif isinstance(node, FrozenSet):
-            return frozenset(map(_convert, node.elts))
         elif (isinstance(node, Call) and isinstance(node.func, Name) and
               node.func.id == 'set' and node.args == node.keywords == []):
             return set()
+        elif isinstance(node, FrozenSet):
+            return frozenset(map(_convert, node.elts))
         elif (isinstance(node, Call) and isinstance(node.func, Name) and
               node.func.id == 'frozenset' and node.args == node.keywords == []):
             return frozenset()
