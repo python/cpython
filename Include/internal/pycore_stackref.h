@@ -19,23 +19,38 @@ typedef union {
 
 #define Py_TAG_DEFERRED (1)
 
-// To catch where stackrefs leak out to the heap,
-// in both current and future code.
-#ifdef Py_DEBUG
-#   define Py_TAG_PTR   (3)
-#   define Py_TAG       (3)
-#else
-#   define Py_TAG_PTR   (0)
-#   define Py_TAG       (1)
-#endif
+#define Py_TAG_PTR      (0)
+#define Py_TAG          (1)
 
 #ifdef Py_GIL_DISABLED
 static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
+
 #else
 static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 #endif
 
 #define PyStackRef_IsNull(stackref) ((stackref).bits == Py_STACKREF_NULL.bits)
+
+static inline int
+PyStackRef_IsTrue(_PyStackRef stackref) {
+#ifdef Py_GIL_DISABLED
+    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True | Py_TAG_DEFERRED)};
+#else
+    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True)};
+#endif
+    return stackref.bits == STACKREF_TRUE.bits;
+}
+
+static inline int
+PyStackRef_IsFalse(_PyStackRef stackref) {
+#ifdef Py_GIL_DISABLED
+    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False | Py_TAG_DEFERRED)};
+#else
+    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False)};
+#endif
+    return stackref.bits == STACKREF_FALSE.bits;
+}
+
 
 static inline int
 PyStackRef_IsDeferred(_PyStackRef ref)

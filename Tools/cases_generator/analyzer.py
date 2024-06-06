@@ -422,6 +422,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
     "Py_FatalError",
+    "PyStackRef_IsTrue",
+    "PyStackRef_IsFalse",
 )
 
 ESCAPING_FUNCTIONS = (

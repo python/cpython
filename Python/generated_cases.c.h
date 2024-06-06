@@ -5275,7 +5275,7 @@
             cond = b;
             {
                 assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-                int flag = Py_IsTrue(PyStackRef_AsPyObjectBorrow(cond));
+                int flag = PyStackRef_IsTrue(cond);
                 #if ENABLE_SPECIALIZATION
                 this_instr[1].cache = (this_instr[1].cache << 1) | flag;
                 #endif
@@ -5328,7 +5328,7 @@
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = Py_IsTrue(PyStackRef_AsPyObjectBorrow(cond));
+            int flag = PyStackRef_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -6399,7 +6399,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
-            res = PyStackRef_FromPyObjectSteal(Py_IsFalse(PyStackRef_AsPyObjectBorrow(value))
+            res = PyStackRef_FromPyObjectSteal(PyStackRef_IsFalse(value)
                 ? Py_True : Py_False);
             stack_pointer[-1] = res;
             DISPATCH();

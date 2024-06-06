@@ -301,7 +301,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
-            res = PyStackRef_FromPyObjectSteal(Py_IsFalse(PyStackRef_AsPyObjectBorrow(value))
+            res = PyStackRef_FromPyObjectSteal(PyStackRef_IsFalse(value)
                 ? Py_True : Py_False);
             stack_pointer[-1] = res;
             break;

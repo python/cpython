@@ -318,7 +318,7 @@ dummy_func(
 
         pure inst(UNARY_NOT, (value -- res)) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
-            res = PyStackRef_FromPyObjectSteal(Py_IsFalse(PyStackRef_AsPyObjectBorrow(value))
+            res = PyStackRef_FromPyObjectSteal(PyStackRef_IsFalse(value)
                 ? Py_True : Py_False);
         }
 
@@ -2695,7 +2695,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = Py_IsTrue(PyStackRef_AsPyObjectBorrow(cond));
+            int flag = PyStackRef_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
