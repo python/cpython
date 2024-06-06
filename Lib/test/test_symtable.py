@@ -13,7 +13,7 @@ import sys
 
 glob = 42
 some_var = 12
-some_non_assigned_global_var = 11
+some_non_assigned_global_var: int
 some_assigned_global_var = 11
 
 class Mine:
@@ -51,6 +51,40 @@ def generic_spam[T](a):
 
 class GenericMine[T: int]:
     pass
+
+some_non_assigned_global_ident: int
+some_non_assigned_global_ident_2: int
+some_assigned_global_ident = None
+
+class ComplexClass:
+    some_non_method_const = 1234
+    
+    class some_non_method_nested: pass
+    type some_non_method_alias = int
+    
+    some_non_method_genexpr = (x for x in [])
+    some_non_method_lambda = lambda x: x 
+    
+    def a_method(self): pass
+    @classmethod
+    def a_classmethod(cls): pass
+    @staticmethod
+    def a_staticmethod(): pass
+    
+    # this one will be considered as a method because of the 'def' although
+    # it will *not* be a valid one at runtime since it is not a staticmethod.
+    def a_fakemethod(): pass
+    
+    # check that those are still considered as methods 
+    # since they are not using the 'global' keyword
+    def some_assigned_global_ident(): pass
+    def some_non_assigned_global_ident(): pass
+    
+    # this one is not picked as a method because it will not even be 
+    # visible by the class at runtime (this is equivalent to having
+    # that definition outside of the class).
+    global some_non_assigned_global_ident_2
+    def some_non_assigned_global_ident_2(): pass
 """
 
 
@@ -65,6 +99,8 @@ class SymtableTest(unittest.TestCase):
     top = symtable.symtable(TEST_CODE, "?", "exec")
     # These correspond to scopes in TEST_CODE
     Mine = find_block(top, "Mine")
+    ComplexClass = find_block(top, "ComplexClass")
+
     a_method = find_block(Mine, "a_method")
     spam = find_block(top, "spam")
     internal = find_block(spam, "internal")
@@ -239,6 +275,15 @@ class SymtableTest(unittest.TestCase):
 
     def test_class_info(self):
         self.assertEqual(self.Mine.get_methods(), ('a_method',))
+
+        self.assertEqual(self.ComplexClass.get_methods(), (
+            'a_method',
+            'a_classmethod',
+            'a_staticmethod',
+            'a_fakemethod',
+            'some_assigned_global_ident',
+            'some_non_assigned_global_ident',
+        ))
 
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
