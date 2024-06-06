@@ -305,6 +305,10 @@ class Untokenizer:
             if toknum in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
                 self.tokens.append(" ")
 
+            # Insert a space between '{' and '{{'
+            if tokval == '{{' and self.tokens and self.tokens[-1] == '{':
+                self.tokens.append(" ")
+
             toks_append(tokval)
             self.prev_type = toknum
 
