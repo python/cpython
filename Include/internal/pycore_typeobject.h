@@ -18,11 +18,9 @@ extern "C" {
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
 /* For now we hard-code this to a value for which we are confident
-   all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
-#define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
-#define _Py_MAX_MANAGED_STATIC_TYPES \
-    (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
+   all the managed static types will fit (for all builds).
+   That includes all static builtin types and managed extension types. */
+#define _Py_MAX_MANAGED_STATIC_TYPES 210
 
 struct _types_runtime_state {
     /* Used to set PyTypeObject.tp_version_tag for core static types. */
@@ -30,6 +28,12 @@ struct _types_runtime_state {
     // because of static types.
     unsigned int next_version_tag;
 
+    /* We track every managed static type.  Each one is assigned an
+     * index when it is first initialized using _PyStaticType_InitBuiltin()
+     * or _PyStaticType_InitForExtension().  It keeps that index for the
+     * duration of the process.  The same index is used when accessing
+     * the global array of type state, as well as the per-interpreter
+     * array. */
     struct {
         PyMutex mutex;
         size_t num_builtins;
@@ -116,7 +120,6 @@ struct types_state {
         size_t num_builtins;
         size_t num_types;
         struct managed_static_type_state {
-            //int initialized;
             PyTypeObject *type;
             int readying;
             int ready;
