@@ -294,23 +294,23 @@ class UnparseTestCase(ASTTestCase):
     def test_set_literal(self):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
 
-    def test_frozenset_literal(self):
-        self.check_ast_roundtrip("{{'a', 'b', 'c'}}")
-
     def test_empty_set(self):
         self.assertASTEqual(
             ast.parse(ast.unparse(ast.Set(elts=[]))),
             ast.parse('{*()}')
         )
 
+    def test_set_comprehension(self):
+        self.check_ast_roundtrip("{x for x in range(5)}")
+
+    def test_frozenset_literal(self):
+        self.check_ast_roundtrip("{{'a', 'b', 'c'}}")
+
     def test_empty_frozenset(self):
         self.assertASTEqual(
             ast.parse(ast.unparse(ast.FrozenSet(elts=[]))),
             ast.parse('{{*()}}')
         )
-
-    def test_set_comprehension(self):
-        self.check_ast_roundtrip("{x for x in range(5)}")
 
     def test_frozenset_comprehension(self):
         self.check_ast_roundtrip("{{x for x in range(5)}}")
