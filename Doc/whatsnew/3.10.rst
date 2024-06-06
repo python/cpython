@@ -352,7 +352,7 @@ was expecting an indentation, including the location of the statement:
 AttributeErrors
 ~~~~~~~~~~~~~~~
 
-When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
+When printing :exc:`AttributeError`, :c:func:`!PyErr_Display` will offer
 suggestions of similar attribute names in the object that the exception was
 raised from:
 
@@ -366,14 +366,14 @@ raised from:
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
 .. warning::
-   Notice this won't work if :c:func:`PyErr_Display` is not called to display the error
+   Notice this won't work if :c:func:`!PyErr_Display` is not called to display the error
    which can happen if some other custom error display function is used. This is a common
    scenario in some REPLs like IPython.
 
 NameErrors
 ~~~~~~~~~~
 
-When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
+When printing :exc:`NameError` raised by the interpreter, :c:func:`!PyErr_Display`
 will offer suggestions of similar variable names in the function that the exception
 was raised from:
 
@@ -388,7 +388,7 @@ was raised from:
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
 .. warning::
-   Notice this won't work if :c:func:`PyErr_Display` is not called to display the error,
+   Notice this won't work if :c:func:`!PyErr_Display` is not called to display the error,
    which can happen if some other custom error display function is used. This is a common
    scenario in some REPLs like IPython.
 
@@ -690,7 +690,7 @@ are in :pep:`635`, and a longer tutorial is in :pep:`636`.
 Optional ``EncodingWarning`` and ``encoding="locale"`` option
 -------------------------------------------------------------
 
-The default encoding of :class:`TextIOWrapper` and :func:`open` is
+The default encoding of :class:`~io.TextIOWrapper` and :func:`open` is
 platform and locale dependent. Since UTF-8 is used on most Unix
 platforms, omitting ``encoding`` option when opening UTF-8 files
 (e.g. JSON, YAML, TOML, Markdown) is a very common bug. For example::
@@ -785,7 +785,7 @@ especially when forward references or invalid types were involved. Compare::
    StrCache = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
 
-Now the :mod:`typing` module has a special value :data:`TypeAlias`
+Now the :mod:`typing` module has a special value :data:`~typing.TypeAlias`
 which lets you declare type aliases more explicitly::
 
    StrCache: TypeAlias = 'Cache[str]'  # a type alias
@@ -798,10 +798,10 @@ See :pep:`613` for more details.
 PEP 647: User-Defined Type Guards
 ---------------------------------
 
-:data:`TypeGuard` has been added to the :mod:`typing` module to annotate
+:data:`~typing.TypeGuard` has been added to the :mod:`typing` module to annotate
 type guard functions and improve information provided to static type checkers
-during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
-documentation, and :pep:`647`.
+during type narrowing.  For more information, please see
+:data:`~typing.TypeGuard`\ 's documentation, and :pep:`647`.
 
 (Contributed by Ken Jin and Guido van Rossum in :issue:`43766`.
 PEP written by Eric Traut.)
@@ -972,8 +972,8 @@ and objects representing asynchronously released resources.
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
 
-Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
-as decorators.
+Add :class:`~contextlib.AsyncContextDecorator`, for supporting usage of async
+context managers as decorators.
 
 curses
 ------
@@ -1089,8 +1089,8 @@ encodings
 enum
 ----
 
-:class:`Enum` :func:`__repr__` now returns ``enum_name.member_name`` and
-:func:`__str__` now returns ``member_name``.  Stdlib enums available as
+:class:`~enum.Enum` :func:`~object.__repr__` now returns ``enum_name.member_name`` and
+:func:`~object.__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
 
@@ -1104,7 +1104,7 @@ Add *encoding* and *errors* parameters in :func:`fileinput.input` and
 :class:`fileinput.FileInput`.
 (Contributed by Inada Naoki in :issue:`43712`.)
 
-:func:`fileinput.hook_compressed` now returns :class:`TextIOWrapper` object
+:func:`fileinput.hook_compressed` now returns :class:`~io.TextIOWrapper` object
 when *mode* is "r" and file is compressed, like uncompressed files.
 (Contributed by Inada Naoki in :issue:`5758`.)
 
@@ -1202,12 +1202,12 @@ Feature parity with ``importlib_metadata`` 4.6
 :ref:`importlib.metadata entry points <entry-points>`
 now provide a nicer experience
 for selecting entry points by group and name through a new
-:class:`importlib.metadata.EntryPoints` class. See the Compatibility
+:ref:`importlib.metadata.EntryPoints <entry-points>` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.
 
-Added :func:`importlib.metadata.packages_distributions` for resolving
-top-level Python modules and packages to their
-:class:`importlib.metadata.Distribution`.
+Added :ref:`importlib.metadata.packages_distributions() <package-distributions>`
+for resolving top-level Python modules and packages to their
+:ref:`importlib.metadata.Distribution <distributions>`.
 
 inspect
 -------
@@ -1224,7 +1224,7 @@ best practice for accessing the annotations dict defined on any Python object;
 for more information on best practices for working with annotations, please see
 :ref:`annotations-howto`.
 Relatedly, :func:`inspect.signature`,
-:func:`inspect.Signature.from_callable`, and :func:`inspect.Signature.from_function`
+:func:`inspect.Signature.from_callable`, and :func:`!inspect.Signature.from_function`
 now call :func:`inspect.get_annotations` to retrieve annotations. This means
 :func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
 also now un-stringize stringized annotations.
@@ -1484,9 +1484,9 @@ is a :class:`typing.TypedDict`.
 
 Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
-are decorated with :func:`runtime_checkable`.  Previously, these checks
+are decorated with :func:`~typing.runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
-subclasses with the :func:`runtime_checkable` decorator
+subclasses with the :func:`!runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`.)
 
@@ -1595,8 +1595,8 @@ Optimizations
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
   (Contributed by Donghee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
 
-* :class:`BZ2File` performance is improved by removing internal ``RLock``.
-  This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
+* :class:`~bz2.BZ2File` performance is improved by removing internal ``RLock``.
+  This makes :class:`!BZ2File` thread unsafe in the face of multiple simultaneous
   readers or writers, just like its equivalent classes in :mod:`gzip` and
   :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`.)
 
@@ -1620,7 +1620,7 @@ Deprecated
   cleaning up old import semantics that were kept for Python 2.7
   compatibility. Specifically,
   :meth:`!find_loader`/:meth:`!find_module`
-  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  (superseded by :meth:`~importlib.abc.MetaPathFinder.find_spec`),
   :meth:`~importlib.abc.Loader.load_module`
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
   :meth:`!module_repr` (which the import system
@@ -1647,7 +1647,7 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` instead.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* :meth:`zimport.zipimporter.load_module` has been deprecated in
+* :meth:`!zimport.zipimporter.load_module` has been deprecated in
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
@@ -1759,23 +1759,23 @@ Deprecated
 * The following :mod:`ssl` features have been deprecated since Python 3.6,
   Python 3.7, or OpenSSL 1.1.0 and will be removed in 3.11:
 
-  * :data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
-    :data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`, and
-    :data:`~ssl.OP_NO_TLSv1_3` are replaced by
-    :attr:`sslSSLContext.minimum_version` and
-    :attr:`sslSSLContext.maximum_version`.
+  * :data:`!OP_NO_SSLv2`, :data:`!OP_NO_SSLv3`, :data:`!OP_NO_TLSv1`,
+    :data:`!OP_NO_TLSv1_1`, :data:`!OP_NO_TLSv1_2`, and
+    :data:`!OP_NO_TLSv1_3` are replaced by
+    :attr:`~ssl.SSLContext.minimum_version` and
+    :attr:`~ssl.SSLContext.maximum_version`.
 
-  * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
-    :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
-    :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
-    :const:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+  * :data:`!PROTOCOL_SSLv2`, :data:`!PROTOCOL_SSLv3`,
+    :data:`!PROTOCOL_SSLv23`, :data:`!PROTOCOL_TLSv1`,
+    :data:`!PROTOCOL_TLSv1_1`, :data:`!PROTOCOL_TLSv1_2`, and
+    :const:`!PROTOCOL_TLS` are deprecated in favor of
     :const:`~ssl.PROTOCOL_TLS_CLIENT` and :const:`~ssl.PROTOCOL_TLS_SERVER`
 
-  * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
+  * :func:`!wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
 
-  * :func:`~ssl.match_hostname`
+  * :func:`!match_hostname`
 
-  * :func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`
+  * :func:`!RAND_pseudo_bytes`, :func:`!RAND_egd`
 
   * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
     :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
@@ -2331,8 +2331,7 @@ Converting between :class:`int` and :class:`str` in bases other than 2
 (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
 now raises a :exc:`ValueError` if the number of digits in string form is
 above a limit to avoid potential denial of service attacks due to the
-algorithmic complexity. This is a mitigation for `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
 This limit can be configured or disabled by environment variable, command
 line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
 length limitation <int_max_str_digits>` documentation.  The default limit

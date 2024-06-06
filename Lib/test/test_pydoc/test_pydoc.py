@@ -1372,7 +1372,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_module_level_callable_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.func_with_unrepresentable_signature
         self.assertEqual(self._get_summary_line(builtin),
             "func_with_unrepresentable_signature(a, b=<x>)")
@@ -1382,7 +1382,7 @@ class TestDescriptions(unittest.TestCase):
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),
             "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.staticmeth),
             "staticmeth(a, b=<x>)")
@@ -1393,7 +1393,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(dict.pop),
             "pop(self, key, default=<unrepresentable>, /) "
             "unbound builtins.dict method")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.meth),
             "meth(self, /, a, b=<x>) unbound "
@@ -1405,7 +1405,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line({}.pop),
             "pop(key, default=<unrepresentable>, /) "
             "method of builtins.dict instance")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         obj = _testcapi.DocStringUnrepresentableSignatureTest()
         self.assertEqual(self._get_summary_line(obj.meth),
             "meth(a, b=<x>) "
@@ -1414,7 +1414,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_unbound_builtin_classmethod_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         descr = cls.__dict__['classmeth']
         self.assertEqual(self._get_summary_line(descr),
@@ -1424,7 +1424,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_bound_builtin_classmethod_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.classmeth),
             "classmeth(a, b=<x>) class method of "

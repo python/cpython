@@ -1,5 +1,5 @@
-:mod:`time` --- Time access and conversions
-===========================================
+:mod:`!time` --- Time access and conversions
+============================================
 
 .. module:: time
    :synopsis: Time access and conversions.
@@ -617,7 +617,7 @@ Functions
         - range [1, 12]
 
       * - 2
-        - .. attribute:: tm_day
+        - .. attribute:: tm_mday
         - range [1, 31]
 
       * - 3

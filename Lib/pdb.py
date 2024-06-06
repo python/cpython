@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """
 The Python Debugger Pdb
 =======================
@@ -77,18 +75,20 @@ import dis
 import code
 import glob
 import token
+import types
 import codeop
 import pprint
 import signal
 import inspect
+import textwrap
 import tokenize
-import functools
 import traceback
 import linecache
+import _colorize
 
 from contextlib import contextmanager
 from rlcompleter import Completer
-from typing import Union
+from types import CodeType
 
 
 class Restart(Exception):
@@ -121,7 +121,10 @@ def find_function(funcname, filename):
     try:
         fp = tokenize.open(filename)
     except OSError:
-        return None
+        lines = linecache.getlines(filename)
+        if not lines:
+            return None
+        fp = io.StringIO(''.join(lines))
     funcdef = ""
     funcstart = None
     # consumer of this info expects the first line to be 1
@@ -156,52 +159,58 @@ class _rstr(str):
         return self
 
 
-class _ScriptTarget(str):
-    def __new__(cls, val):
-        # Mutate self to be the "real path".
-        res = super().__new__(cls, os.path.realpath(val))
+class _ExecutableTarget:
+    filename: str
+    code: CodeType | str
+    namespace: dict
 
-        # Store the original path for error reporting.
-        res.orig = val
 
-        return res
+class _ScriptTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = os.path.realpath(target)
 
-    def check(self):
-        if not os.path.exists(self):
-            print('Error:', self.orig, 'does not exist')
+        if not os.path.exists(self._target):
+            print(f'Error: {target} does not exist')
             sys.exit(1)
-        if os.path.isdir(self):
-            print('Error:', self.orig, 'is a directory')
+        if os.path.isdir(self._target):
+            print(f'Error: {target} is a directory')
             sys.exit(1)
 
         # If safe_path(-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
-            sys.path[0] = os.path.dirname(self)
+            sys.path[0] = os.path.dirname(self._target)
+
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self
+        return self._target
+
+    @property
+    def code(self):
+        # Open the file each time because the file may be modified
+        with io.open_code(self._target) as fp:
+            return f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
 
     @property
     def namespace(self):
         return dict(
             __name__='__main__',
-            __file__=self,
+            __file__=self._target,
             __builtins__=__builtins__,
             __spec__=None,
         )
 
-    @property
-    def code(self):
-        with io.open_code(self) as fp:
-            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
+class _ModuleTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = target
 
-class _ModuleTarget(str):
-    def check(self):
+        import runpy
         try:
-            self._details
+            _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
             print(f"ImportError: {e}")
             sys.exit(1)
@@ -209,24 +218,54 @@ class _ModuleTarget(str):
             traceback.print_exc()
             sys.exit(1)
 
-    @functools.cached_property
-    def _details(self):
-        import runpy
-        return runpy._get_module_details(self)
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self.code.co_filename
+        return self._code.co_filename
 
     @property
     def code(self):
-        name, spec, code = self._details
-        return code
+        return self._code
 
     @property
-    def _spec(self):
-        name, spec, code = self._details
-        return spec
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
+            __builtins__=__builtins__,
+        )
+
+
+class _ZipTarget(_ExecutableTarget):
+    def __init__(self, target):
+        import runpy
+
+        self._target = os.path.realpath(target)
+        sys.path.insert(0, self._target)
+        try:
+            _, self._spec, self._code = runpy._get_main_module_details()
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def __repr__(self):
+        return self._target
+
+    @property
+    def filename(self):
+        return self._code.co_filename
+
+    @property
+    def code(self):
+        return self._code
 
     @property
     def namespace(self):
@@ -351,9 +390,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary is updated from the actual frame
-        # locals whenever the .f_locals accessor is called, so we
-        # cache it here to ensure that modifications are not overwritten.
+        # The f_locals dictionary used to be updated from the actual frame
+        # locals whenever the .f_locals accessor was called, so it was
+        # cached here to ensure that modifications were not overwritten. While
+        # the caching is no longer required now that f_locals is a direct proxy
+        # on optimized frames, it's also harmless, so the code structure has
+        # been left unchanged.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
@@ -391,6 +433,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._wait_for_mainpyfile = False
         if self.bp_commands(frame):
             self.interaction(frame, None)
+
+    user_opcode = user_line
 
     def bp_commands(self, frame):
         """Call every command that was set for the current active breakpoint
@@ -583,11 +627,96 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.completenames = completenames
         return
 
+    def _exec_in_closure(self, source, globals, locals):
+        """ Run source code in closure so code object created within source
+            can find variables in locals correctly
+
+            returns True if the source is executed, False otherwise
+        """
+
+        # Determine if the source should be executed in closure. Only when the
+        # source compiled to multiple code objects, we should use this feature.
+        # Otherwise, we can just raise an exception and normal exec will be used.
+
+        code = compile(source, "<string>", "exec")
+        if not any(isinstance(const, CodeType) for const in code.co_consts):
+            return False
+
+        # locals could be a proxy which does not support pop
+        # copy it first to avoid modifying the original locals
+        locals_copy = dict(locals)
+
+        locals_copy["__pdb_eval__"] = {
+            "result": None,
+            "write_back": {}
+        }
+
+        # If the source is an expression, we need to print its value
+        try:
+            compile(source, "<string>", "eval")
+        except SyntaxError:
+            pass
+        else:
+            source = "__pdb_eval__['result'] = " + source
+
+        # Add write-back to update the locals
+        source = ("try:\n" +
+                  textwrap.indent(source, "  ") + "\n" +
+                  "finally:\n" +
+                  "  __pdb_eval__['write_back'] = locals()")
+
+        # Build a closure source code with freevars from locals like:
+        # def __pdb_outer():
+        #   var = None
+        #   def __pdb_scope():  # This is the code object we want to execute
+        #     nonlocal var
+        #     <source>
+        #   return __pdb_scope.__code__
+        source_with_closure = ("def __pdb_outer():\n" +
+                               "\n".join(f"  {var} = None" for var in locals_copy) + "\n" +
+                               "  def __pdb_scope():\n" +
+                               "\n".join(f"    nonlocal {var}" for var in locals_copy) + "\n" +
+                               textwrap.indent(source, "    ") + "\n" +
+                               "  return __pdb_scope.__code__"
+                               )
+
+        # Get the code object of __pdb_scope()
+        # The exec fills locals_copy with the __pdb_outer() function and we can call
+        # that to get the code object of __pdb_scope()
+        ns = {}
+        try:
+            exec(source_with_closure, {}, ns)
+        except Exception:
+            return False
+        code = ns["__pdb_outer"]()
+
+        cells = tuple(types.CellType(locals_copy.get(var)) for var in code.co_freevars)
+
+        try:
+            exec(code, globals, locals_copy, closure=cells)
+        except Exception:
+            return False
+
+        # get the data we need from the statement
+        pdb_eval = locals_copy["__pdb_eval__"]
+
+        # __pdb_eval__ should not be updated back to locals
+        pdb_eval["write_back"].pop("__pdb_eval__")
+
+        # Write all local variables back to locals
+        locals.update(pdb_eval["write_back"])
+        eval_result = pdb_eval["result"]
+        if eval_result is not None:
+            print(repr(eval_result))
+
+        return True
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
+            buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
                 with self._disable_command_completion():
@@ -620,7 +749,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                exec(code, globals, locals)
+                if not self._exec_in_closure(buffer, globals, locals):
+                    exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
@@ -1079,7 +1209,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if f:
                 fname = f
             item = parts[1]
-        answer = find_function(item, fname)
+        answer = find_function(item, self.canonic(fname))
         return answer or failed
 
     def checkline(self, filename, lineno):
@@ -2010,17 +2140,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         lookupmodule() translates (possibly incomplete) file or module name
         into an absolute file name.
+
+        filename could be in format of:
+            * an absolute path like '/path/to/file.py'
+            * a relative path like 'file.py' or 'dir/file.py'
+            * a module name like 'module' or 'package.module'
+
+        files and modules will be searched in sys.path.
         """
-        if os.path.isabs(filename) and  os.path.exists(filename):
-            return filename
-        f = os.path.join(sys.path[0], filename)
-        if  os.path.exists(f) and self.canonic(f) == self.mainpyfile:
-            return f
-        root, ext = os.path.splitext(filename)
-        if ext == '':
-            filename = filename + '.py'
+        if not filename.endswith('.py'):
+            # A module is passed in so convert it to equivalent file
+            filename = filename.replace('.', os.sep) + '.py'
+
         if os.path.isabs(filename):
-            return filename
+            if os.path.exists(filename):
+                return filename
+            return None
+
         for dirname in sys.path:
             while os.path.islink(dirname):
                 dirname = os.readlink(dirname)
@@ -2029,7 +2165,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _run(self, target: Union[_ModuleTarget, _ScriptTarget]):
+    def _run(self, target: _ExecutableTarget):
         # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). Take special measures to
@@ -2279,9 +2415,10 @@ def main():
         if not opts.args:
             parser.error("no module or script to run")
         file = opts.args.pop(0)
-        target = _ScriptTarget(file)
-
-    target.check()
+        if file.endswith('.pyz'):
+            target = _ZipTarget(file)
+        else:
+            target = _ScriptTarget(file)
 
     sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
@@ -2302,12 +2439,12 @@ def main():
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
         except BaseException as e:
-            traceback.print_exc()
+            traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
             pdb.interaction(None, e)
-            print("Post mortem debugger finished. The " + target +
-                  " will be restarted")
+            print(f"Post mortem debugger finished. The {target} will "
+                  "be restarted")
         if pdb._user_requested_quit:
             break
         print("The program finished and will be restarted")

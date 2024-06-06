@@ -7596,6 +7596,7 @@ socket_exec(PyObject *m)
     ADD_INT_CONST(m, "SO_VM_SOCKETS_BUFFER_MAX_SIZE", 2);
     ADD_INT_CONST(m, "VMADDR_CID_ANY", 0xffffffff);
     ADD_INT_CONST(m, "VMADDR_PORT_ANY", 0xffffffff);
+    ADD_INT_CONST(m, "VMADDR_CID_LOCAL", 1);
     ADD_INT_CONST(m, "VMADDR_CID_HOST", 2);
     ADD_INT_CONST(m, "VM_SOCKETS_INVALID_VERSION", 0xffffffff);
     ADD_INT_CONST(m, "IOCTL_VM_SOCKETS_GET_LOCAL_CID",  _IO(7, 0xb9));
@@ -8896,6 +8897,7 @@ error:
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 
