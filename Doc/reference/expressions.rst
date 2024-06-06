@@ -297,6 +297,7 @@ Frozen set displays
 
 .. index::
    pair: frozenset; display
+   pair: frozenset; comprehensions
    pair: object; frozenset
    single: {{}} (double curly brackets); frozenset expression
    single: , (comma); expression list
@@ -304,11 +305,14 @@ Frozen set displays
 A frozen set display is denoted by double curly braces:
 
 .. productionlist:: python-grammar
-   frozenset_display: "{{" starred_list "}}"
+   frozenset_display: "{{" (`starred_list` | `comprehension`) "}}"
 
 A frozen set display yields a new immutable set object, the contents being
-specified by a sequence of expressions.  Its elements are evaluated from left
-to right and added to the frozen set object.
+specified by either a sequence of expressions or a comprehension.  When a
+comma-separated list of expressions is supplied, its elements are evaluated
+from left to right and added to the frozenset object.  When a comprehension
+is supplied, the frozen set is constructed from the elements resulting from
+the comprehension.
 
 An empty frozen set cannot be constructed with ``{{}}``; this literal is
 reserved for an empty frozen dictionary.

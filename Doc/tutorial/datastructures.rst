@@ -504,6 +504,12 @@ function.
    To create an empty frozen set you have to use ``frozenset()``, not
    ``{{}}``; the latter is reserved for an empty frozen dictionary.
 
+Like sets, comprehensions are also supported::
+
+   >>> a = {{x for x in 'abracadabra' if x not in 'abc'}}
+   >>> a
+   frozenset({'r', 'd'})
+
 .. _tut-dictionaries:
 
 Dictionaries
