@@ -2,6 +2,7 @@
 
 #include "parts.h"
 #include "pycore_lock.h"
+#include "pycore_pythread.h"      // PyThread_get_thread_ident_ex()
 
 #include "clinic/test_lock.c.h"
 
@@ -476,6 +477,29 @@ test_lock_rwlock(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_lock_recursive(PyObject *self, PyObject *obj)
+{
+    _PyRecursiveMutex m = (_PyRecursiveMutex){0};
+    assert(!_PyRecursiveMutex_IsLockedByCurrentThread(&m));
+
+    _PyRecursiveMutex_Lock(&m);
+    assert(m.thread == PyThread_get_thread_ident_ex());
+    assert(PyMutex_IsLocked(&m.mutex));
+    assert(m.level == 0);
+
+    _PyRecursiveMutex_Lock(&m);
+    assert(m.level == 1);
+    _PyRecursiveMutex_Unlock(&m);
+
+    _PyRecursiveMutex_Unlock(&m);
+    assert(m.thread == 0);
+    assert(!PyMutex_IsLocked(&m.mutex));
+    assert(m.level == 0);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"test_lock_basic", test_lock_basic, METH_NOARGS},
     {"test_lock_two_threads", test_lock_two_threads, METH_NOARGS},
@@ -485,6 +509,7 @@ static PyMethodDef test_methods[] = {
     {"test_lock_benchmark", test_lock_benchmark, METH_NOARGS},
     {"test_lock_once", test_lock_once, METH_NOARGS},
     {"test_lock_rwlock", test_lock_rwlock, METH_NOARGS},
+    {"test_lock_recursive", test_lock_recursive, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
