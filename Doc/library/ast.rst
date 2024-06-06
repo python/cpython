@@ -2265,6 +2265,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.10
       For string inputs, leading spaces and tabs are now stripped.
 
+   .. versionchanged:: 3.14
+      Now supports creating empty frozen sets with ``'frozenset()'``.
+
 
 .. function:: get_docstring(node, clean=True)
 

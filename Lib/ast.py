@@ -98,6 +98,9 @@ def literal_eval(node_or_string):
         elif (isinstance(node, Call) and isinstance(node.func, Name) and
               node.func.id == 'set' and node.args == node.keywords == []):
             return set()
+        elif (isinstance(node, Call) and isinstance(node.func, Name) and
+              node.func.id == 'frozenset' and node.args == node.keywords == []):
+            return frozenset()
         elif isinstance(node, Dict):
             if len(node.keys) != len(node.values):
                 _raise_malformed_node(node)
