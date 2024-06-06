@@ -1172,8 +1172,8 @@ Listing directories
 
    The children are yielded in arbitrary order, and the special entries
    ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether a path object for
-   that file be included is unspecified.
+   to the directory after creating the iterator, it is unspecified whether
+   a path object for that file is included.
 
 
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
