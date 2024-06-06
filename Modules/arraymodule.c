@@ -1459,7 +1459,7 @@ array_item(arrayobject *a, Py_ssize_t i)
 
 void array_safe_memcpy(char* to, Py_ssize_t to_offset, char* from, Py_ssize_t from_offset, Py_ssize_t len)
 {
-    int safe_len = len;
+    Py_ssize_t safe_len = len;
 #ifdef Py_GIL_DISABLED
     Py_ssize_t from_capacity = array_capacity(from);
     Py_ssize_t to_capacity = array_capacity(to);
