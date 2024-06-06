@@ -1352,7 +1352,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Set(self, node):
         if node.elts:
-            with self.delimit("{ ", "}"):
+            with self.delimit("{", "}"):
                 expr = type(self)().visit(node.elts[0])
                 if expr.startswith("{"):
                     # Separate pair of opening brackets as "{ {"
