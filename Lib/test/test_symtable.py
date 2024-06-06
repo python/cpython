@@ -1,6 +1,8 @@
 """
 Test the API of the symtable module.
 """
+
+import re
 import symtable
 import unittest
 
@@ -238,7 +240,22 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.Mine.get_name(), "Mine")
 
     def test_class_info(self):
-        self.assertEqual(self.Mine.get_methods(), ('a_method',))
+        deprecated_method_name = re.escape('symtable.Class.get_methods')
+        with self.assertWarnsRegex(DeprecationWarning, deprecated_method_name):
+            self.assertEqual(self.Mine.get_methods(), ('a_method',))
+
+            # some objects are marked as methods even though they are not
+            st1 = symtable.symtable('class A:\n\tclass Nested: pass', '?', 'exec')
+            self.assertEqual(st1.get_children()[0].get_methods(), ('Nested',))
+
+            st2 = symtable.symtable('class A:\n\ttype Alias = int', '?', 'exec')
+            self.assertEqual(st2.get_children()[0].get_methods(), ('Alias',))
+
+            st3 = symtable.symtable('class A:\n\tx = (x for x in [])', '?', 'exec')
+            self.assertEqual(st3.get_children()[0].get_methods(), ('genexpr',))
+
+            st4 = symtable.symtable('class A:\n\tf = (lambda z: 1)', '?', 'exec')
+            self.assertEqual(st4.get_children()[0].get_methods(), ('lambda',))
 
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised

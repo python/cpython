@@ -219,6 +219,10 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        warnings.warn('The symtable.Class.get_methods() method is deprecated.',
+                      category=DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
             for st in self._table.children:
