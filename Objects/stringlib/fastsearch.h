@@ -416,12 +416,12 @@ STRINGLIB(_init_critical_fac)(STRINGLIB(prework) *pw, int dir)
     cut = STRINGLIB(_factorize)(p, m, &period, dir);
     assert(cut + period <= m);
     if (dir == 1) {
-        is_periodic = 0 == memcmp(p, p + period, cut * STRINGLIB_SIZEOF_CHAR);
+        is_periodic = memcmp(p, p + period, cut * STRINGLIB_SIZEOF_CHAR) == 0;
     }
     else {
         Py_ssize_t cut_idx = m - cut;
-        is_periodic = (0 == memcmp(p + cut_idx, p + cut_idx - period,
-                                   cut * STRINGLIB_SIZEOF_CHAR));
+        is_periodic = (memcmp(p + cut_idx, p + cut_idx - period,
+                              cut * STRINGLIB_SIZEOF_CHAR) == 0);
     }
     if (is_periodic) {
         assert(cut <= m/2);
@@ -450,15 +450,22 @@ STRINGLIB(_init_critical_fac)(STRINGLIB(prework) *pw, int dir)
 static Py_ssize_t
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
                     Py_ssize_t maxcount, int mode,
-                    STRINGLIB(prework) *pw, int direction)
+                    STRINGLIB(prework) *pw, int dir)
 {
     /* Crochemore and Perrin's (1991) Two-Way algorithm.
         See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+
+        Main Inputs
+           s - haystack
+           p - needle
+           n - len(haystack)
+           m - len(needle)
+
         Bi-Directional Conventions:
-            See docstring of horspool_find
+           See docstring of horspool_find
 
         Critical factorization reversion:
-            See docstring of _factorize
+           See docstring of _factorize
     */
     if (mode == FAST_COUNT) {
         LOG("Two-way Count.\n");
@@ -468,7 +475,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     }
     LOG("haystack: "); LOG_STRING(s, n); LOG("\n");
     LOG("needle  : "); LOG_STRING(pw->p, pw->m); LOG("\n");
-    int dir = direction < 0 ? -1 : 1;
+    dir = dir < 0 ? -1 : 1;     // This could help compiler a bit
     int reversed = dir < 0;
 
     // Prepare
@@ -491,7 +498,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     const Py_ssize_t dir_m_m1 = reversed ? -m_m1 : m_m1;
     const STRINGLIB_CHAR *const ss = s + s_stt + dir_m_m1;
 
-    // Indexers
+    // Indexers (ip and jp are directional indices. e.g. ip = pos * i)
     Py_ssize_t i, j, ip, jp;
     // Temporary
     Py_ssize_t j_off;   // offset from last to leftmost window index
@@ -591,9 +598,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 static Py_ssize_t
 STRINGLIB(two_way_find)(const STRINGLIB_CHAR *s, Py_ssize_t n,
                         const STRINGLIB_CHAR *p, Py_ssize_t m,
-                        Py_ssize_t maxcount, int mode, int direction)
+                        Py_ssize_t maxcount, int mode, int dir)
 {
-    int dir = direction < 0 ? -1 : 1;
     STRINGLIB(prework) pw;
     (&pw)->p = p;
     (&pw)->m = m;
@@ -607,95 +613,102 @@ static Py_ssize_t
 STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                          const STRINGLIB_CHAR* p, Py_ssize_t m,
                          Py_ssize_t maxcount, int mode,
-                         int direction, int dynamic)
+                         int dir, int dynamic)
 {
     /* Boyer–Moore–Horspool algorithm
        with optional dynamic fallback to Two-Way algorithm
-    Bi-Directional Conventions:
-       stt - start index
-       end - end index
-       ss - pointer to last window index that matches last needle character
-       >>> dir_fwd, dir_rev = 1, -1
-       >>> s = [0, 1, 2, 3, 4, 5]
-       >>> s_stt_fwd, s_stt_rev = 0, 5
-       >>> s_end_fwd, s_end_rev = 5, 0
-       >>> p = [0, 1]
-       >>> m = len(p)
-       >>> s = 0
-       >>> ss_fwd = s + s_stt_fwd + dir_fwd * (m - 1)
-       >>> ss_rev = s + s_stt_rev + dir_rev * (m - 1)
-       >>> ss_fwd, ss_rev
-       (1, 4)
 
-       There is one more important variable here: j_off
-       It brings ss in alignment with a needle.
-       So that it stands at the first absolute index of the window
+       Main Inputs
+          s - haystack
+          p - needle
+          n - len(haystack)
+          m - len(needle)
 
-       >>> i = 0       # first step
-       >>> p_stt_fwd, p_stt_rev = 0, 1
-       >>> p_end_fwd, p_end_rev = 1, 0
-       >>> j_off_fwd = dir_fwd * i - p_end_fwd
-       >>> ss_fwd + j_off_fwd
-       0
+       Bi-Directional Conventions:
+          stt - start index
+          end - end index
+          ss - pointer to last window index that matches last needle character
+          >>> dir_fwd, dir_rev = 1, -1
+          >>> s = [0, 1, 2, 3, 4, 5]
+          >>> s_stt_fwd, s_stt_rev = 0, 5
+          >>> s_end_fwd, s_end_rev = 5, 0
+          >>> p = [0, 1]
+          >>> m = len(p)
+          >>> s = 0
+          >>> ss_fwd = s + s_stt_fwd + dir_fwd * (m - 1)
+          >>> ss_rev = s + s_stt_rev + dir_rev * (m - 1)
+          >>> ss_fwd, ss_rev
+          (1, 4)
 
-       such that [0, 1, 2, 3, 4, 5]
-                 [0, 1]
-                  * - both indices are at 0 here
+          There is one more important variable here: j_off
+          It brings ss in alignment with a needle.
+          So that it stands at the first absolute index of the window
 
-       >>> j_off_rev = dir_rev * i - p_end_rev
-       >>> ss_rev + j_off_rev
-       4
+          >>> i = 0       # first step
+          >>> p_stt_fwd, p_stt_rev = 0, 1
+          >>> p_end_fwd, p_end_rev = 1, 0
+          >>> j_off_fwd = dir_fwd * i - p_end_fwd
+          >>> ss_fwd + j_off_fwd
+          0
 
-       such that [0, 1, 2, 3, 4, 5]
-                             [0, 1]
-                              * - both indices are at 0 here
-       Finally, which side it iterates from is determined by:
-          jp = p_stt + (reversed ? -j : j);
+          such that [0, 1, 2, 3, 4, 5]
+                    [0, 1]
+                     * - both indices are at 0 here
 
-       With this transformation the problem becomes direction agnostic
+          >>> j_off_rev = dir_rev * i - p_end_rev
+          >>> ss_rev + j_off_rev
+          4
 
-    Dynamic mode
-       'Horspool' algorithm will switch to `two_way_find` if it predicts
-           that it can solve the problem faster.
+          such that [0, 1, 2, 3, 4, 5]
+                                [0, 1]
+                                 * - both indices are at 0 here
+          Finally, which side it iterates from is determined by:
+             jp = p_stt + (reversed ? -j : j);
 
-    Calibration
-       The simple model for run time of search algorithm is as follows:
-       loop - actual loop that happens (not theoretical)
-       init_cost - initialization cost per 1 needle character in ns
-       loop_cost - cost of 1 main loop
-       hit_cost  - cost of 1 false positive character check
-       avg_hit - average number of false positive hits per 1 loop
+          With this transformation the problem becomes direction agnostic
 
-       >>> m = len(needle)
-       >>> run_time = m * m + n_loops * (loop_cost + hit_cost * avg_hit)
+       Dynamic mode
+          'Horspool' algorithm will switch to `two_way_find` if it predicts
+              that it can solve the problem faster.
 
-       Calibrate:
-          1. expose function to run without handling special cases first.
-          2. set dynamic = 0
-          3. Enable counter printing to know how many hits and loops happened
-                iloop & ihits at the end of the function
+       Calibration
+          The simple model for run time of search algorithm is as follows:
+          loop - actual loop that happens (not theoretical)
+          init_cost - initialization cost per 1 needle character in ns
+          loop_cost - cost of 1 main loop
+          hit_cost  - cost of 1 false positive character check
+          avg_hit - average number of false positive hits per 1 loop
 
-          4. init_cost = run_time(horspool_find(s='', p='*' * m)) / m
+          >>> m = len(needle)
+          >>> run_time = m * m + n_loops * (loop_cost + hit_cost * avg_hit)
 
-          5. `two_way` only has loop cost.
-                         run_time(two_way_find(s='*' * 1000)) - init_cost
-             loop_cost = ------------------------------------------------
-                                    n_loops (from stdout)
-             Note, iloop & ihits of `two_way` should be the same.
+          Calibrate:
+             1. expose function to run without handling special cases first.
+             2. set dynamic = 0
+             3. Enable counter printing to know how many hits and loops
+                happened. see printf(iloop|ihits) at the end of the function
 
-          6. To get loop_cost and hit_cost of `horspool_find` solve
-                equation system representing 2 different runs
-             n_loops1 * loop_cost + n_hits1 * hit_cost = run_time(problem_1)
-             n_loops2 * loop_cost + n_hits2 * hit_cost = run_time(problem_2)
+             4. init_cost = run_time(horspool_find(s='', p='*' * m)) / m
 
-             init_cost of `horspool` for larger problems is negligible
-             Furthermore, it is not used from within as it has already happened
+             5. `two_way` only has loop cost.
+                            run_time(two_way_find(s='*' * 1000)) - init_cost
+                loop_cost = ------------------------------------------------
+                                       n_loops (from stdout)
+                Note, iloop & ihits of `two_way` should be the same.
 
-          7. Run above for different problems. if results differ take averages
-             Compare with current calibration constants
+             6. To get loop_cost and hit_cost of `horspool_find` solve
+                   equation system representing 2 different runs
+                n_loops1 * loop_cost + n_hits1 * hit_cost = run_time(problem_1)
+                n_loops2 * loop_cost + n_hits2 * hit_cost = run_time(problem_2)
 
-          8. It works well, but is not perfect.
-             See if you can come up with more accurate model.
+                init_cost of `horspool` for larger problems is negligible
+                Furthermore, it is not used as it has already happened
+
+             7. Run above for different problems. Take averages.
+                Compare with current calibration constants.
+
+             8. It works well, but is not perfect.
+                See if you can come up with more accurate model.
     */
     if (mode == FAST_COUNT) {
         LOG("Horspool Count.\n");
@@ -705,7 +718,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     }
     LOG("haystack: "); LOG_STRING(s, n); LOG("\n");
     LOG("needle  : "); LOG_STRING(p, m); LOG("\n");
-    int dir = direction < 0 ? -1 : 1;
+    dir = dir < 0 ? -1 : 1;     // This could help compiler a bit
     int reversed = dir < 0;
 
     // Prepare
@@ -728,10 +741,10 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     const STRINGLIB_CHAR *const ss = s + s_stt + dir_m_m1;
     const STRINGLIB_CHAR p_last = p[p_end];
 
-    // Indexers
+    // Indexers (ip and jp are directional indices. e.g. ip = pos * i)
     Py_ssize_t i, j, ip, jp;
 
-    // Use Bloom for len(haystack) >= 10 * len(needle)
+    // Use Bloom for len(haystack) >= 30 * len(needle)
     unsigned long mask = 0;
     Py_ssize_t true_gap = 0;
     Py_ssize_t j_stop = m;
@@ -777,12 +790,9 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         if (true_gap) {
             shift = 0;
             if (s_last != p_last) {
-                if (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])) {
-                    shift = m_p1;
-                }
-                else {
-                    shift = Py_MAX(table[s_last & TABLE_MASK], 1);
-                }
+                shift = (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir]))
+                                ? m_p1
+                                : Py_MAX(table[s_last & TABLE_MASK], 1);
             }
         }
         else {
@@ -1109,7 +1119,6 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
          }
     }
     int dynamic = 1;
-    int direction = mode != FAST_RSEARCH ? 1 : -1;
-    return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode,
-                                    direction, dynamic);
+    int dir = mode != FAST_RSEARCH ? 1 : -1;
+    return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, dir, dynamic);
 }
