@@ -1,1 +1,1 @@
-Add :exc:`!InvalidStateError` to ``concurrent.futures.__all__`` for export in star imports.
+Add :exc:`concurrent.futures.InvalidStateError` to module's ``__all__``.
