@@ -425,11 +425,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -437,6 +437,12 @@ Glossary
       evaluates to ``2`` in contrast to the ``2.75`` returned by float true
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
+
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
 
    function
       A series of statements which returns some value to a caller. It can also

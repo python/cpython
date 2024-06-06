@@ -519,10 +519,9 @@ dummy_func(void) {
         self = sym_new_not_null(ctx);
     }
 
-    op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
-        (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {

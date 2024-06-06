@@ -28,7 +28,7 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 
 from . import commands, console, input
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
 from .trace import trace
 
 
@@ -131,6 +131,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         ("\\\\", "self-insert"),
         (r"\x1b[200~", "enable_bracketed_paste"),
         (r"\x1b[201~", "disable_bracketed_paste"),
+        (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
@@ -338,7 +339,8 @@ class Reader:
                 screeninfo.append((0, []))
         return screen
 
-    def process_prompt(self, prompt: str) -> tuple[str, int]:
+    @staticmethod
+    def process_prompt(prompt: str) -> tuple[str, int]:
         """Process the prompt.
 
         This means calculate the length of the prompt. The character \x01
@@ -349,6 +351,11 @@ class Reader:
         # The logic below also ignores the length of common escape
         # sequences if they were not explicitly within \x01...\x02.
         # They are CSI (or ANSI) sequences  ( ESC [ ... LETTER )
+
+        # wlen from utils already excludes ANSI_ESCAPE_SEQUENCE chars,
+        # which breaks the logic below so we redefine it here.
+        def wlen(s: str) -> int:
+            return sum(str_width(i) for i in s)
 
         out_prompt = ""
         l = wlen(prompt)
@@ -442,14 +449,13 @@ class Reader:
         """
         if self.arg is None:
             return default
-        else:
-            return self.arg
+        return self.arg
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
         'lineno'."""
         if self.arg is not None and cursor_on_line:
-            prompt = "(arg: %s) " % self.arg
+            prompt = f"(arg: {self.arg}) "
         elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
@@ -515,12 +521,12 @@ class Reader:
             offset = l - 1 if in_wrapped_line else l  # need to remove backslash
             if offset >= pos:
                 break
+
+            if p + sum(l2) >= self.console.width:
+                pos -= l - 1  # -1 cause backslash is not in buffer
             else:
-                if p + sum(l2) >= self.console.width:
-                    pos -= l - 1  # -1 cause backslash is not in buffer
-                else:
-                    pos -= l + 1  # +1 cause newline is in buffer
-                y += 1
+                pos -= l + 1  # +1 cause newline is in buffer
+            y += 1
         return p + sum(l2[:pos]), y
 
     def insert(self, text: str | list[str]) -> None:
@@ -582,7 +588,6 @@ class Reader:
             for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode"):
                 setattr(self, arg, prev_state[arg])
             self.prepare()
-            pass
 
     def finish(self) -> None:
         """Called when a command signals that we're finished."""
@@ -645,7 +650,15 @@ class Reader:
             self.dirty = True
 
         while True:
-            event = self.console.get_event(block)
+            input_hook = self.console.input_hook
+            if input_hook:
+                input_hook()
+                # We use the same timeout as in readline.c: 100ms
+                while not self.console.wait(100):
+                    input_hook()
+                event = self.console.get_event(block=False)
+            else:
+                event = self.console.get_event(block)
             if not event:  # can only happen if we're not blocking
                 return False
 

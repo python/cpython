@@ -18,6 +18,7 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
@@ -967,16 +968,46 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#define _PyLong_FromDev PyLong_FromLongLong
+static PyObject *
+_PyLong_FromDev(dev_t dev)
+{
+#ifdef NODEV
+    if (dev == NODEV) {
+        return PyLong_FromLongLong((long long)dev);
+    }
+#endif
+    return PyLong_FromUnsignedLongLong((unsigned long long)dev);
+}
 
 
 #if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) || defined(HAVE_DEVICE_MACROS)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
-    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
-    if (PyErr_Occurred())
+#ifdef NODEV
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
+        int overflow;
+        long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
+        if (result == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (!overflow && result == (long long)NODEV) {
+            *((dev_t *)p) = NODEV;
+            return 1;
+        }
+    }
+#endif
+
+    unsigned long long result = PyLong_AsUnsignedLongLong(obj);
+    if (result == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
+    }
+    if ((unsigned long long)(dev_t)result != result) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C dev_t");
+        return 0;
+    }
+    *((dev_t *)p) = (dev_t)result;
     return 1;
 }
 #endif /* (HAVE_MKNOD && HAVE_MAKEDEV) || HAVE_DEVICE_MACROS */
@@ -12517,9 +12548,31 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+static PyObject *
+major_minor_conv(unsigned int value)
+{
+#ifdef NODEV
+    if (value == (unsigned int)NODEV) {
+        return PyLong_FromLong((int)NODEV);
+    }
+#endif
+    return PyLong_FromUnsignedLong(value);
+}
+
+static int
+major_minor_check(dev_t value)
+{
+#ifdef NODEV
+    if (value == NODEV) {
+        return 1;
+    }
+#endif
+    return (dev_t)(unsigned int)value == value;
+}
+
 #ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
-os.major -> unsigned_int
+os.major
 
     device: dev_t
     /
@@ -12527,16 +12580,16 @@ os.major -> unsigned_int
 Extracts a device major number from a raw device number.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 os_major_impl(PyObject *module, dev_t device)
-/*[clinic end generated code: output=5b3b2589bafb498e input=1e16a4d30c4d4462]*/
+/*[clinic end generated code: output=4071ffee17647891 input=b1a0a14ec9448229]*/
 {
-    return major(device);
+    return major_minor_conv(major(device));
 }
 
 
 /*[clinic input]
-os.minor -> unsigned_int
+os.minor
 
     device: dev_t
     /
@@ -12544,28 +12597,33 @@ os.minor -> unsigned_int
 Extracts a device minor number from a raw device number.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 os_minor_impl(PyObject *module, dev_t device)
-/*[clinic end generated code: output=5e1a25e630b0157d input=0842c6d23f24c65e]*/
+/*[clinic end generated code: output=306cb78e3bc5004f input=2f686e463682a9da]*/
 {
-    return minor(device);
+    return major_minor_conv(minor(device));
 }
 
 
 /*[clinic input]
 os.makedev -> dev_t
 
-    major: int
-    minor: int
+    major: dev_t
+    minor: dev_t
     /
 
 Composes a raw device number from the major and minor device numbers.
 [clinic start generated code]*/
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor)
-/*[clinic end generated code: output=881aaa4aba6f6a52 input=4b9fd8fc73cbe48f]*/
+os_makedev_impl(PyObject *module, dev_t major, dev_t minor)
+/*[clinic end generated code: output=cad6125c51f5af80 input=2146126ec02e55c1]*/
 {
+    if (!major_minor_check(major) || !major_minor_check(minor)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C unsigned int");
+        return (dev_t)-1;
+    }
     return makedev(major, minor);
 }
 #endif /* HAVE_DEVICE_MACROS */
@@ -16726,6 +16784,37 @@ os__supports_virtual_terminal_impl(PyObject *module)
 }
 #endif
 
+/*[clinic input]
+os._inputhook
+
+Calls PyOS_CallInputHook droppong the GIL first
+[clinic start generated code]*/
+
+static PyObject *
+os__inputhook_impl(PyObject *module)
+/*[clinic end generated code: output=525aca4ef3c6149f input=fc531701930d064f]*/
+{
+     int result = 0;
+     if (PyOS_InputHook) {
+         Py_BEGIN_ALLOW_THREADS;
+         result = PyOS_InputHook();
+         Py_END_ALLOW_THREADS;
+     }
+     return PyLong_FromLong(result);
+}
+
+/*[clinic input]
+os._is_inputhook_installed
+
+Checks if PyOS_CallInputHook is set
+[clinic start generated code]*/
+
+static PyObject *
+os__is_inputhook_installed_impl(PyObject *module)
+/*[clinic end generated code: output=3b3eab4f672c689a input=ff177c9938dd76d8]*/
+{
+    return PyBool_FromLong(PyOS_InputHook != NULL);
+}
 
 static PyMethodDef posix_methods[] = {
 
@@ -16939,6 +17028,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_LEXISTS_METHODDEF
 
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+    OS__INPUTHOOK_METHODDEF
+    OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

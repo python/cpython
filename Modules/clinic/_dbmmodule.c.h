@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
@@ -218,4 +221,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=743ce0cea116747e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7d9a87d80a64278 input=a9049054013a1b77]*/
