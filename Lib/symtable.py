@@ -221,8 +221,15 @@ class Class(SymbolTable):
         """
         if self.__methods is None:
             d = {}
+
+            def is_local_symbol(ident):
+                flags = self._table.symbols.get(ident, 0)
+                return ((flags >> SCOPE_OFF) & SCOPE_MASK) == LOCAL
+
             for st in self._table.children:
-                d[st.name] = 1
+                # only pick the 'function' symbols that are local identifiers
+                if st.type == _symtable.TYPE_FUNCTION and is_local_symbol(st.name):
+                    d[st.name] = 1
             self.__methods = tuple(d)
         return self.__methods
 
