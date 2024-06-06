@@ -220,16 +220,40 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *p,
 {
     /* Do a lexicographic search. Essentially this:
            >>> max(needle[i:] for i in range(len(needle)+1))
-       Also find the period of the right half.   */
+       Also find the period of the right half.
+       Direction:
+           dir : {-1, 1}
+               if dir == -1, then the problem is reverse
+           In short:
+               _lex_search(x, -1) == _lex_search(x[::-1], 1)
+
+           Returned cut is "the size of the cut towards chosen direction".
+           E.g.:
+           >>> x = '1234'
+           >>> cut, period = factorize(x, dir=1)    # cut = 0
+           >>> cut
+           0
+           >>> cut_idx = cut
+           >>> x[:cut_idx], x[cut_idx:]
+           '', '1234'
+           >>> x = '4321'
+           >>> cut, period = factorize(x, dir=-1)
+           >>> cut
+           0
+           >>> cut_idx = len(x) - cut
+           >>> x[:cut_idx], x[cut_idx:]
+           '4321', ''
+    */
     Py_ssize_t max_suffix = 0;
     Py_ssize_t candidate = 1;
     Py_ssize_t k = 0;
     // The period of the right half.
     Py_ssize_t period = 1;
+    // stt is starting position from chosen direction
     Py_ssize_t stt = dir == 1 ? 0 : m - 1;
     STRINGLIB_CHAR a, b;
     while (candidate + k < m) {
-        // each loop increases candidate + k + max_suffix
+        // each loop increases (in chosen direction) candidate + k + max_suffix
         a = p[stt + dir*(candidate + k)];
         b = p[stt + dir*(max_suffix + k)];
         // check if the suffix at candidate is better than max_suffix
@@ -306,22 +330,12 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *p,
        The length of this minimal repetition is 7, which is indeed the
        period of the original string.
 
-       This is how reverse direction compares to forward:
-           returned cut is "the size of the cut from the start point". E.g.:
-           >>> x = '1234'
-           >>> cut, period = factorize(x, 1)    # cut = 0
-           >>> cut
-           0
-           >>> cut_idx = cut
-           >>> x[:cut_idx], x[cut_idx:]
-           '', '1234'
-           >>> x = '4321'
-           >>> cut, period = factorize(x, -1)
-           >>> cut
-           0
-           >>> cut_idx = len(x) - cut
-           >>> x[:cut_idx], x[cut_idx:]
-           '4321', ''
+       Direction:
+           dir : {-1, 1}
+               if dir == -1, then the problem is reverse
+           In short:
+               _factorize(x, -1) == _factorize(x[::-1], 1)
+           See docstring of _lex_search if still unclear
     */
     Py_ssize_t cut1, period1, cut2, period2, cut, period;
     cut1 = STRINGLIB(_lex_search)(p, m, &period1, 0, dir);
@@ -348,13 +362,13 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *p,
 #define TABLE_MASK (TABLE_SIZE - 1U)
 
 typedef struct STRINGLIB(_pre) {
-    const STRINGLIB_CHAR *p;
-    Py_ssize_t m;
-    Py_ssize_t cut;
-    Py_ssize_t period;
-    Py_ssize_t gap;
+    const STRINGLIB_CHAR *p;        // needle
+    Py_ssize_t m;                   // length of the needle
+    Py_ssize_t cut;                 // Critical Factorization Cut
+    Py_ssize_t period;              // Global Period of the string
+    Py_ssize_t gap;                 // "Good Suffix" Last Character Gap
     int is_periodic;
-    SHIFT_TYPE table[TABLE_SIZE];
+    SHIFT_TYPE table[TABLE_SIZE];   // Boyer-Moore "Bad Character" table
 } STRINGLIB(prework);
 
 
@@ -438,8 +452,14 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
                     Py_ssize_t maxcount, int mode,
                     STRINGLIB(prework) *pw, int direction)
 {
-    // Crochemore and Perrin's (1991) Two-Way algorithm.
-    // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+    /* Crochemore and Perrin's (1991) Two-Way algorithm.
+        See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+        Bi-Directional Conventions:
+            See docstring of horspool_find
+
+        Critical factorization reversion:
+            See docstring of _factorize
+    */
     if (mode == FAST_COUNT) {
         LOG("Two-way Count.\n");
     }
@@ -464,7 +484,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     // Direction Independent
     const Py_ssize_t w = n - m;
     const Py_ssize_t m_m1 = m - 1;
-
     // Direction Dependent
     const Py_ssize_t p_stt = dir == 1 ? 0 : m - 1;
     const Py_ssize_t s_stt = dir == 1 ? 0 : n - 1;
@@ -531,6 +550,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
         if (j != m) {
             continue;
         }
+
         j = Py_MIN(memory, cut);    // Needed for j == cut below to be correct
         for (; j < cut; j++) {
             ihits++;
@@ -590,7 +610,93 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                          int direction, int dynamic)
 {
     /* Boyer–Moore–Horspool algorithm
-       with optional dynamic fallback to Two-Way algorithm */
+       with optional dynamic fallback to Two-Way algorithm
+    Bi-Directional Conventions:
+       stt - start index
+       end - end index
+       ss - pointer to last window index that matches last needle character
+       >>> dir_fwd, dir_rev = 1, -1
+       >>> s = [0, 1, 2, 3, 4, 5]
+       >>> s_stt_fwd, s_stt_rev = 0, 5
+       >>> s_end_fwd, s_end_rev = 5, 0
+       >>> p = [0, 1]
+       >>> m = len(p)
+       >>> s = 0
+       >>> ss_fwd = s + s_stt_fwd + dir_fwd * (m - 1)
+       >>> ss_rev = s + s_stt_rev + dir_rev * (m - 1)
+       >>> ss_fwd, ss_rev
+       (1, 4)
+
+       There is one more important variable here: j_off
+       It brings ss in alignment with a needle.
+       So that it stands at the first absolute index of the window
+
+       >>> i = 0       # first step
+       >>> p_stt_fwd, p_stt_rev = 0, 1
+       >>> p_end_fwd, p_end_rev = 1, 0
+       >>> j_off_fwd = dir_fwd * i - p_end_fwd
+       >>> ss_fwd + j_off_fwd
+       0
+
+       such that [0, 1, 2, 3, 4, 5]
+                 [0, 1]
+                  * - both indices are at 0 here
+
+       >>> j_off_rev = dir_rev * i - p_end_rev
+       >>> ss_rev + j_off_rev
+       4
+
+       such that [0, 1, 2, 3, 4, 5]
+                             [0, 1]
+                              * - both indices are at 0 here
+       Finally, which side it iterates from is determined by:
+          jp = p_stt + (reversed ? -j : j);
+
+       With this transformation the problem becomes direction agnostic
+
+    Dynamic mode
+       'Horspool' algorithm will switch to `two_way_find` if it predicts
+           that it can solve the problem faster.
+
+    Calibration
+       The simple model for run time of search algorithm is as follows:
+       loop - actual loop that happens (not theoretical)
+       init_cost - initialization cost per 1 needle character in ns
+       loop_cost - cost of 1 main loop
+       hit_cost  - cost of 1 false positive character check
+       avg_hit - average number of false positive hits per 1 loop
+
+       >>> m = len(needle)
+       >>> run_time = m * m + n_loops * (loop_cost + hit_cost * avg_hit)
+
+       Calibrate:
+          1. expose function to run without handling special cases first.
+          2. set dynamic = 0
+          3. Enable counter printing to know how many hits and loops happened
+                iloop & ihits at the end of the function
+
+          4. init_cost = run_time(horspool_find(s='', p='*' * m)) / m
+
+          5. `two_way` only has loop cost.
+                         run_time(two_way_find(s='*' * 1000)) - init_cost
+             loop_cost = ------------------------------------------------
+                                    n_loops (from stdout)
+             Note, iloop & ihits of `two_way` should be the same.
+
+          6. To get loop_cost and hit_cost of `horspool_find` solve
+                equation system representing 2 different runs
+             n_loops1 * loop_cost + n_hits1 * hit_cost = run_time(problem_1)
+             n_loops2 * loop_cost + n_hits2 * hit_cost = run_time(problem_2)
+
+             init_cost of `horspool` for larger problems is negligible
+             Furthermore, it is not used from within as it has already happened
+
+          7. Run above for different problems. if results differ take averages
+             Compare with current calibration constants
+
+          8. It works well, but is not perfect.
+             See if you can come up with more accurate model.
+    */
     if (mode == FAST_COUNT) {
         LOG("Horspool Count.\n");
     }
@@ -614,7 +720,6 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     const Py_ssize_t m_m1 = m - 1;
     const Py_ssize_t m_p1 = m + 1;
     const Py_ssize_t w = n - m;
-
     // Direction Dependent
     const Py_ssize_t s_stt = dir == 1 ? 0 : n - 1;
     const Py_ssize_t p_stt = dir == 1 ? 0 : m - 1;
@@ -688,6 +793,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
             i += shift;
             continue;
         }
+
         // assert(s_last == p_last);                               // true_gap
         // assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK)); // else
         j_off = ip - p_end;
@@ -723,6 +829,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
             LOG("Move by table gap = %ld\n", gap);
             i += gap;
         }
+
         if (dynamic) {
             if (ihits - ihits_last < 100 && iloop - iloop_last < 100) {
                 continue;
@@ -1001,7 +1108,8 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
              return res == 0 ? 0 : -1;
          }
     }
-    int dyn = 1;
-    int dir = mode != FAST_RSEARCH ? 1 : -1;
-    return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, dir, dyn);
+    int dynamic = 1;
+    int direction = mode != FAST_RSEARCH ? 1 : -1;
+    return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode,
+                                    direction, dynamic);
 }
