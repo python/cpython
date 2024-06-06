@@ -456,8 +456,7 @@ do { \
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH]; \
-    PyObject **NAME = PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp); \
-    if (NAME == NULL) { goto error; }
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 #else
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     PyObject **args_o = (PyObject **)ARGS;
@@ -465,7 +464,7 @@ do { \
 
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
-    PyObjectArray_Free(NAME, NAME##_temp);
+    _PyObjectArray_Free(NAME, NAME##_temp);
 #else
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     (void)(NAME);

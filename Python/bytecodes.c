@@ -3416,7 +3416,8 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            STACKREFS_TO_PYOBJECTS(args, total_args, args_o)
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = PyObject_Vectorcall(
                 callable_o, args_o,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
@@ -3546,6 +3547,7 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = PyObject_Vectorcall(
                 callable_o, args_o,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
@@ -3780,6 +3782,7 @@ dummy_func(
             DEOPT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             /* Free the arguments. */
@@ -3846,6 +3849,7 @@ dummy_func(
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
@@ -3886,6 +3890,7 @@ dummy_func(
                 PyCFunction_GET_FUNCTION(callable_o);
 
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
 
@@ -4049,6 +4054,7 @@ dummy_func(
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
 
             STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4126,6 +4132,7 @@ dummy_func(
             int nargs = total_args - 1;
 
             STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4206,6 +4213,7 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = PyObject_Vectorcall(
                 callable_o, args_o,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,

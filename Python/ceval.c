@@ -675,7 +675,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 
 
 PyObject **
-PyObjectArray_FromStackRefArray(_PyStackRef *input, int nargs, PyObject **scratch)
+_PyObjectArray_FromStackRefArray(_PyStackRef *input, int nargs, PyObject **scratch)
 {
     PyObject **result;
     if (nargs > MAX_STACKREF_SCRATCH) {
@@ -694,7 +694,7 @@ PyObjectArray_FromStackRefArray(_PyStackRef *input, int nargs, PyObject **scratc
 }
 
 void
-PyObjectArray_Free(PyObject **array, PyObject **scratch)
+_PyObjectArray_Free(PyObject **array, PyObject **scratch)
 {
     if (array != scratch) {
         PyMem_Free(array);
