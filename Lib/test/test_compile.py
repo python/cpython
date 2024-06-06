@@ -2104,6 +2104,9 @@ class TestExpressionStackSize(unittest.TestCase):
     def test_set(self):
         self.check_stack_size("{" + "x, " * self.N + "x}")
 
+    def test_frozenset(self):
+        self.check_stack_size("{{" + "x, " * self.N + "x}}")
+
     def test_dict(self):
         self.check_stack_size("{" + "x:x, " * self.N + "x:x}")
 
