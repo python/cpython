@@ -3926,14 +3926,18 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
-    @unittest.skipIf(support.is_wasi, "WASI does not have multiprocessing.")
     def test_multiprocessing_queues(self):
         # See gh-119819
+
+        # will skip test if it's not available
+        import_helper.import_module('_multiprocessing')
+
         cd = copy.deepcopy(self.config_queue_handler)
         from multiprocessing import Queue as MQ, Manager as MM
         q1 = MQ()  # this can't be pickled
         q2 = MM().Queue()  # a proxy queue for use when pickling is needed
-        for qspec in (q1, q2):
+        q3 = MM().JoinableQueue()  # a joinable proxy queue
+        for qspec in (q1, q2, q3):
             fn = make_temp_file('.log', 'test_logging-cmpqh-')
             cd['handlers']['h1']['filename'] = fn
             cd['handlers']['ah']['queue'] = qspec
