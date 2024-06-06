@@ -5924,13 +5924,17 @@ def load_tests(loader, tests, pattern):
 
     if TODO_TESTS is None:
         from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
+        orig_context = orig_sys_decimal.getcontext().copy()
         for mod in C, P:
             if not mod:
                 continue
             def setUp(slf, mod=mod):
                 sys.modules['decimal'] = mod
-            def tearDown(slf):
+                init(mod)
+            def tearDown(slf, mod=mod):
                 sys.modules['decimal'] = orig_sys_decimal
+                mod.setcontext(ORIGINAL_CONTEXT[mod].copy())
+                orig_sys_decimal.setcontext(orig_context.copy())
             optionflags = IGNORE_EXCEPTION_DETAIL if mod is C else 0
             sys.modules['decimal'] = mod
             tests.addTest(DocTestSuite(mod, setUp=setUp, tearDown=tearDown,
@@ -5945,8 +5949,8 @@ def setUpModule():
     TEST_ALL = ARITH if ARITH is not None else is_resource_enabled('decimal')
 
 def tearDownModule():
-    if C: C.setcontext(ORIGINAL_CONTEXT[C])
-    P.setcontext(ORIGINAL_CONTEXT[P])
+    if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
+    P.setcontext(ORIGINAL_CONTEXT[P].copy())
     if not C:
         warnings.warn('C tests skipped: no module named _decimal.',
                       UserWarning)
