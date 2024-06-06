@@ -1,1 +1,0 @@
-Fix :func:`os.path.isfile` on Windows for pipes.
