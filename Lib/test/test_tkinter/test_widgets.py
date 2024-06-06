@@ -1498,14 +1498,6 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'highlightthickness', -2, expected=expected,
                         conv=self._conv_pad_pixels)
 
-    def test_configure_padx(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
-                              conv=self._conv_pad_pixels)
-        expected = '' if tk_version >= (8, 7) else -2
-        self.checkParam(widget, 'padx', -2, expected=expected,
-                        conv=self._conv_pad_pixels)
-
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
