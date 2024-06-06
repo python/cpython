@@ -185,11 +185,17 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 # define LOG_LEVEL 0
 #if LOG_LEVEL == 1 && STRINGLIB_SIZEOF_CHAR == 1
 # define LOG(...) printf(__VA_ARGS__)
-# define LOG_STRING(s, n)
+# define LOG2(...)
+# define LOG_STRING(s, n) if (n < 100) {                        \
+    printf("\"%.*s\"", (int)(n), s);                            \
+}
 # define LOG_LINEUP()
 #elif LOG_LEVEL == 2 && STRINGLIB_SIZEOF_CHAR == 1
 # define LOG(...) printf(__VA_ARGS__)
-# define LOG_STRING(s, n) printf("\"%.*s\"", (int)(n), s)
+# define LOG2(...) printf(__VA_ARGS__)
+# define LOG_STRING(s, n) if (n < 100) {                        \
+    printf("\"%.*s\"", (int)(n), s);                            \
+}
 # define LOG_LINEUP() do {                                      \
     if (n < 100) {                                              \
         LOG("> ");   LOG_STRING(s, n);                          \
@@ -199,6 +205,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 } while(0)
 #else
 # define LOG(...)
+# define LOG2(...)
 # define LOG_STRING(s, n)
 # define LOG_LINEUP()
 #endif
@@ -434,12 +441,13 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     // Crochemore and Perrin's (1991) Two-Way algorithm.
     // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
     if (mode == FAST_COUNT) {
-        LOG("Two-way Counting \"%s\" in \"%s\".\n", pw->p, s);
+        LOG("Two-way Count.\n");
     }
     else {
-        LOG("Two-way Finding \"%s\" in \"%s\".\n", pw->p, s);
+        LOG("Two-way Find.\n");
     }
-
+    LOG("haystack: "); LOG_STRING(s, n); LOG("\n");
+    LOG("needle  : "); LOG_STRING(pw->p, pw->m); LOG("\n");
     int dir = direction < 0 ? -1 : 1;
     int reversed = dir < 0;
 
@@ -480,10 +488,10 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     for (i = 0; i <= w;) {
         iloop++;
         ip = reversed ? -i : i;
-        LOG("Last window ch: %c\n", ss[ip]);
+        LOG2("Last window ch: %c\n", ss[ip]);
         LOG_LINEUP();
         shift = table[ss[ip] & TABLE_MASK];
-        if (shift != 0){
+        if (shift){
             if (do_mem_jump) {
                 // A mismatch has been identified to the right
                 // of where i will next start, so we can jump
@@ -505,15 +513,15 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
         for (; j < m; j++) {
             ihits++;
             jp = p_stt + (reversed ? -j : j);
-            LOG("Checking: %c vs %c\n", ss[j_off + jp], p[jp]);
-            if (ss[j_off + j] != p[j]) {
+            LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
+            if (ss[j_off + jp] != p[jp]) {
                 if (j < gap_jump_end) {
-                    LOG("Early right half mismatch: jump by gap.\n");
+                    LOG("Early later half mismatch: jump by gap.\n");
                     assert(gap >= j - cut + 1);
                     i += gap;
                 }
                 else {
-                    LOG("Late right half mismatch: jump by n (>gap)\n");
+                    LOG("Late later half mismatch: jump by n (>gap)\n");
                     assert(j - cut + 1 > gap);
                     i += j - cut + 1;
                 }
@@ -524,12 +532,13 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
         if (j != m) {
             continue;
         }
-        for (j = memory; j < cut; j++) {
+        j = Py_MIN(memory, cut);
+        for (; j < cut; j++) {
             ihits++;
             jp = p_stt + (reversed ? -j : j);
-            LOG("Checking: %c vs %c\n", ss[j_off + jp], p[jp]);
-            if (ss[j_off + j] != p[j]) {
-                LOG("Left half does not match.\n");
+            LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
+            if (ss[j_off + jp] != p[jp]) {
+                LOG("First half does not match.\n");
                 if (is_periodic) {
                     memory = m - period;
                     do_mem_jump = 1;
@@ -546,6 +555,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *s, Py_ssize_t n,
             if (++count == maxcount) {
                 return maxcount;
             }
+            memory = 0;
             i += m;
         }
 
@@ -583,11 +593,13 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     /* Boyer–Moore–Horspool algorithm
        with optional dynamic fallback to Two-Way algorithm */
     if (mode == FAST_COUNT) {
-        LOG("Horspool Counting \"%s\" in \"%s\".\n", p, s);
+        LOG("Horspool Count.\n");
     }
     else {
-        LOG("Horspool Finding \"%s\" in \"%s\".\n", p, s);
+        LOG("Horspool Find\n");
     }
+    LOG("haystack: "); LOG_STRING(s, n); LOG("\n");
+    LOG("needle  : "); LOG_STRING(p, m); LOG("\n");
     int dir = direction < 0 ? -1 : 1;
     int reversed = dir < 0;
 
@@ -657,7 +669,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         iloop++;
         ip = reversed ? -i : i;
         s_last = ss[ip];
-        LOG("Last window ch: %c\n", s_last);
+        LOG2("Last window ch: %c\n", s_last);
         if (true_gap) {
             shift = 0;
             if (s_last != p_last) {
@@ -672,7 +684,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         else {
             shift = table[s_last & TABLE_MASK];
         }
-        if (shift != 0) {
+        if (shift) {
             LOG("Shift: %ld\n", shift);
             i += shift;
             continue;
@@ -683,7 +695,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         for (j = 0; j < j_stop; j++) {
             ihits++;
             jp = p_stt + (reversed ? -j : j);
-            LOG("Checking: %c vs %c\n", ss[j_off + jp], p[jp]);
+            LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
             if (ss[j_off + jp] != p[jp]) {
                 break;
             }
@@ -990,14 +1002,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
              return res == 0 ? 0 : -1;
          }
     }
-    if (mode != FAST_RSEARCH) {
-        // return STRINGLIB(horspool_find_old)(s, n, p, m, maxcount, mode, 0);
-        // return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, 1, 1);
-        return STRINGLIB(two_way_find)(s, n, p, m, maxcount, mode, 1);
-    }
-    else {
-        /* FAST_RSEARCH */
-        // return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, -1, 1);
-        return STRINGLIB(two_way_find)(s, n, p, m, maxcount, mode, -1);
-    }
+    int dyn = 1;
+    int dir = mode != FAST_RSEARCH ? 1 : -1;
+    return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, dir, dyn);
 }
