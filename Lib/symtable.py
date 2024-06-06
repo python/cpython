@@ -8,15 +8,13 @@ from _symtable import (
     DEF_FREE, DEF_FREE_CLASS,
     DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
     DEF_COMP_ITER, DEF_COMP_CELL,
-    SCOPE_OFFSET, SCOPE_MASK,
+    SCOPE_OFF, SCOPE_MASK,
     FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
 )
 
 import weakref
 
 __all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
-
-SCOPE_OFF = SCOPE_OFFSET  # kept for backward compatibility
 
 
 def symtable(code, filename, compile_type):
@@ -165,7 +163,7 @@ class SymbolTable:
 
 
 def _get_scope(flags):  # like _PyST_GetScope()
-    return (flags >> SCOPE_OFFSET) & SCOPE_MASK
+    return (flags >> SCOPE_OFF) & SCOPE_MASK
 
 
 class Function(SymbolTable):
