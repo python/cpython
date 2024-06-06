@@ -442,9 +442,14 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack,
 {
     // Crochemore and Perrin's (1991) Two-Way algorithm.
     // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
-    // Needle
     const Py_ssize_t len_needle = pw->len_needle;
     const STRINGLIB_CHAR *const needle = pw->needle;
+    if (mode == FAST_COUNT){
+        LOG("Two-way Counting \"%s\" in \"%s\".\n", needle, haystack);
+    }
+    else {
+        LOG("Two-way Finding \"%s\" in \"%s\".\n", needle, haystack);
+    }
     // Cut & Period
     const Py_ssize_t cut = pw->cut;
     // const Py_ssize_t cut_idx = reversed ? len_needle - cut : cut;
@@ -455,13 +460,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack,
     SHIFT_TYPE *table = pw->table;
     const STRINGLIB_CHAR *window;
     // Log
-    LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
-    if (mode == FAST_COUNT){
-        LOG("###### Counting \"%s\" in \"%s\".\n", needle, haystack);
-    }
-    else {
-        LOG("###### Finding \"%s\" in \"%s\".\n", needle, haystack);
-    }
     // Prepare
     Py_ssize_t count = 0;
     Py_ssize_t gap = pw->gap;
@@ -743,8 +741,9 @@ STRINGLIB(two_way_find)(const STRINGLIB_CHAR *haystack,
                         const STRINGLIB_CHAR *needle,
                         Py_ssize_t len_needle,
                         Py_ssize_t maxcount,
-                        int mode, int dir)
+                        int mode, int direction)
 {
+    int dir = direction < 0 ? -1 : 1;
     STRINGLIB(prework) pw;
     (&pw)->needle = needle;
     (&pw)->len_needle = len_needle;
@@ -849,17 +848,17 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     shift = Py_MAX(table[s_last & TABLE_MASK], 1);
                 }
             }
-            assert(s_last == p_last);
         }
         else {
             shift = table[s_last & TABLE_MASK];
-            assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK));
         }
         if (shift != 0) {
             LOG("Shift %ld\n", shift);
             i += shift;
             continue;
         }
+        // assert(s_last == p_last);                               // true_gap
+        // assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK)); // else
         j_off = ip - p_end;
         for (j = 0; j < j_stop; j++) {
             ihits++;
