@@ -5182,9 +5182,9 @@ ex_call:
 }
 
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and (frozen) set comprehensions and generator expressions work by
+  creating a nested function to perform the actual iteration. This means that
+  the iteration variables don't leak into the current scope.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
