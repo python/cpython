@@ -131,8 +131,9 @@ Examining Symbol Tables
       in the class.
 
       Note that the term 'method' here designates *any* function directly
-      declared via :keyword:`def` inside the class body. For instance::
+      declared via :keyword:`def` inside the class body. For instance:
 
+      >>> import symtable
       >>> st = symtable.symtable("class A:\n"
       ...                        "    def f(): pass\n"
       ...                        "    def g(self): pass\n",
