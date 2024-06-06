@@ -228,8 +228,9 @@ jobs:
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # Cirrus is M1, macos-13 is default GHA Intel
-      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-13"]'
+      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+      # Cirrus used for upstream, macos-14 for forks.
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
 
   build_ubuntu:
     name: 'Ubuntu'
