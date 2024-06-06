@@ -89,7 +89,7 @@ class AbstractWidgetTest(AbstractTkTest):
             self.checkParam(widget, name, value, expected=0)
         for value in (True, 1, 'true', 'yes', 'on'):
             self.checkParam(widget, name, value, expected=1)
-        errmsg='expected boolean value but got "{}"'
+        errmsg = 'expected boolean value but got "{}"'
         self.checkInvalidParam(widget, name, '', errmsg=errmsg)
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
@@ -148,13 +148,13 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkReliefParam(self, widget, name, *, allow_empty=False):
-        options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
+        values = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
         if allow_empty:
-            options.append('')
-        self.checkParams(widget, name, *options)
-        lastop = options.pop()
-        opstring = ', '.join(options)
-        errmsg = f'bad relief "spam": must be {opstring}, or {lastop or '""'}'
+            values.append('')
+        self.checkParams(widget, name, *values)
+        errmsg = 'bad relief "{}": must be %s, or %s' % (
+                ', '.join(values[:-1]),
+                values[-1] or '""')
         if tk_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
