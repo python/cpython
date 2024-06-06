@@ -50,7 +50,7 @@ Make sure the induction variable is not exposed
     >>> i
     20
 
-Verify that syntax error's are raised for setcomps used as lvalues
+Verify that syntax error's are raised for frozensetcomps used as lvalues
 
     >>> {{y for y in (1,2)}} = 10          # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
@@ -63,7 +63,7 @@ Verify that syntax error's are raised for setcomps used as lvalues
     SyntaxError: ...
 
 
-Make a nested set comprehension that acts like set(range())
+Make a nested frozen set comprehension that acts like frozenset(range())
 
     >>> def srange(n):
     ...     return {{i for i in range(n)}}
@@ -95,7 +95,7 @@ Make sure that None is a valid return value
 Return lambdas that use the iteration variable as a default argument
 
     >>> items = {{(lambda i=i: i) for i in range(5)}}
-    >>> {{x() for x in items}} == set(range(5))
+    >>> {{x() for x in items}} == frozenset(range(5))
     True
 
 Same again, only this time as a closure variable
@@ -123,7 +123,7 @@ We also repeat each of the above scoping tests inside a function
     >>> def test_func():
     ...     items = {{(lambda i=i: i) for i in range(5)}}
     ...     return {{x() for x in items}}
-    >>> test_func() == set(range(5))
+    >>> test_func() == frozenset(range(5))
     True
 
     >>> def test_func():

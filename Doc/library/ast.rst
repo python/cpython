@@ -742,9 +742,10 @@ Comprehensions
            GeneratorExp(elt, generators)
            DictComp(key, value, generators)
 
-   List and set comprehensions, generator expressions, and dictionary
-   comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
-   representing the part that will be evaluated for each item.
+   List and (frozen) set comprehensions, generator expressions, and
+   dictionary comprehensions. ``elt`` (or ``key`` and ``value``) is
+   a single node representing the part that will be evaluated for
+   each item.
 
    ``generators`` is a list of :class:`comprehension` nodes.
 

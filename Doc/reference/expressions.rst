@@ -361,8 +361,8 @@ earlier dict items and earlier dictionary unpackings.
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
-A dict comprehension, in contrast to list and set comprehensions, needs two
-expressions separated with a colon followed by the usual "for" and "if" clauses.
+A dict comprehension, in contrast to list and (frozen) set comprehensions, needs
+two expressions separated with a colon followed by the usual "for" and "if" clauses.
 When the comprehension is run, the resulting key and value elements are inserted
 in the new dictionary in the order they are produced.
 

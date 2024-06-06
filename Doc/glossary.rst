@@ -1138,7 +1138,7 @@ Glossary
       c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
       :ref:`comprehensions`.
 
-   frozenset comprehension
+   frozen set comprehension
       A compact way to process all or part of the elements in an iterable and
       return a frozen set with the results. ``results = {{c for c in 'abracadabra'
       if c not in 'abc'}}`` generates the frozen set of strings ``{{'r', 'd'}}``.
