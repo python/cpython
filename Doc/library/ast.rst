@@ -738,6 +738,7 @@ Comprehensions
 
 .. class:: ListComp(elt, generators)
            SetComp(elt, generators)
+           FrozenSetComp(elt, generators)
            GeneratorExp(elt, generators)
            DictComp(key, value, generators)
 
@@ -789,6 +790,21 @@ Comprehensions
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
                         is_async=0)]))
+        >>> print(ast.dump(
+        ...     ast.parse('{{x for x in numbers}}', mode='eval'),
+        ...     indent=4,
+        ... ))
+        Expression(
+            body=FrozenSetComp(
+                elt=Name(id='x', ctx=Load()),
+                generators=[
+                    comprehension(
+                        target=Name(id='x', ctx=Store()),
+                        iter=Name(id='numbers', ctx=Load()),
+                        is_async=0)]))
+
+   .. versionchanged:: 3.14
+        Added ``FrozenSetComp``.
 
 
 .. class:: comprehension(target, iter, ifs, is_async)

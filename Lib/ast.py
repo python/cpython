@@ -1301,6 +1301,12 @@ class _Unparser(NodeVisitor):
             for gen in node.generators:
                 self.traverse(gen)
 
+    def visit_FrozenSetComp(self, node):
+        with self.delimit("({{", "}})"):
+            self.traverse(node.elt)
+            for gen in node.generators:
+                self.traverse(gen)
+
     def visit_DictComp(self, node):
         with self.delimit("{", "}"):
             self.traverse(node.key)
