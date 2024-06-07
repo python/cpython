@@ -182,7 +182,9 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    aarch64_trampolines: dict = dataclasses.field(default_factory=dict, init=False)
+    aarch64_trampolines: dict[str | None, int] = dataclasses.field(
+        default_factory=dict, init=False
+    )
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -214,7 +216,9 @@ class Stencil:
         ]
 
         # Remove the relocation once the bl instruction has been fixed
-        relocation_regex = re.compile(rf"{hole.offset:016x}:\s+{hole.kind}\s+_?{hole.symbol}")
+        relocation_regex = re.compile(
+            rf"{hole.offset:016x}:\s+{hole.kind}\s+_?{hole.symbol}"
+        )
         self.disassembly = [
             line2 for line2 in self.disassembly if not relocation_regex.match(line2)
         ]
