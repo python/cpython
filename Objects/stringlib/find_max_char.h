@@ -20,16 +20,13 @@ Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
-    const unsigned char *_begin = (const unsigned char *)begin;
-    const unsigned char *aligned_start = (const unsigned char *)(
-        ((intptr_t)_begin + (SIZEOF_SIZE_T - 1)) & ~(SIZEOF_SIZE_T - 1));
     const unsigned char *_end = (const unsigned char *)end;
-    const size_t *aligned_end = (const size_t *)((intptr_t)_end & ~(SIZEOF_SIZE_T - 1));
+    const size_t *aligned_end = (const size_t *)(_end - SIZEOF_SIZE_T);
     const size_t *unrolled_end = aligned_end - 3;
     unsigned char accumulator = 0;
     /* Do not test each character individually, bit use bitwise OR and test
        all characters at once. */
-    while (p < _end && p < aligned_start) {
+    while (p < _end && !_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
         accumulator |= *p;
         p += 1;
     }
