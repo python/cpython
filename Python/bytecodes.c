@@ -1784,7 +1784,13 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            PyObject *tup_o = _PyTuple_FromStackSteal(values, oparg);
+            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            if (values_o == NULL) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *tup_o = _PyTuple_FromArraySteal(values_o, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             ERROR_IF(tup_o == NULL, error);
             tup = PyStackRef_FromPyObjectSteal(tup_o);
         }

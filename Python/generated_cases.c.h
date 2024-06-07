@@ -847,7 +847,15 @@
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
-            PyObject *tup_o = _PyTuple_FromStackSteal(values, oparg);
+            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            if (values_o == NULL) {
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) { stack_pointer += -oparg; goto error; }
+            }
+            PyObject *tup_o = _PyTuple_FromArraySteal(values_o, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             if (tup_o == NULL) { stack_pointer += -oparg; goto error; }
             tup = PyStackRef_FromPyObjectSteal(tup_o);
             stack_pointer[-oparg] = tup;

@@ -408,8 +408,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_SetStackPointer",
     "_PyType_HasFeature",
     "PyUnicode_Concat",
-    "_PyList_FromStackSteal",
-    "_PyTuple_FromStackSteal",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",
@@ -428,6 +426,7 @@ NON_ESCAPING_FUNCTIONS = (
     "STACKREFS_TO_PYOBJECTS",
     "STACKREFS_TO_PYOBJECTS_CLEANUP",
     "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
 )
 
 ESCAPING_FUNCTIONS = (

@@ -1514,7 +1514,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromStackSteal((args + n), argcount - n);
+            STACKREFS_TO_PYOBJECTS_NEW((_PyStackRef *)args, argcount, args_o);
+            if (args_o == NULL) {
+                goto fail_pre_positional;
+            }
+            u = _PyTuple_FromArraySteal((args_o + n), argcount - n);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
         }
         if (u == NULL) {
             goto fail_post_positional;
