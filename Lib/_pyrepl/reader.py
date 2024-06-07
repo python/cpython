@@ -315,10 +315,19 @@ class Reader:
         del last_refresh_line_end_offsets[num_common_lines:]
 
         lines = "".join(self.buffer[offset:]).split("\n")
+        cursor_found = False
+        lines_beyond_cursor = 0
         for ln, line in enumerate(lines, num_common_lines):
             ll = len(line)
             if 0 <= pos <= ll:
                 self.lxy = pos, ln
+                cursor_found = True
+            elif cursor_found:
+                lines_beyond_cursor += 1
+                if lines_beyond_cursor > self.console.height:
+                    # No need to keep formatting lines.
+                    # The console can't show them.
+                    break
             prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
