@@ -499,9 +499,13 @@ class Variable:
         Return the name of the callback.
 
         This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_add() instead.
+        be removed in Tcl 9.0.  Use trace_add() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_variable() is deprecated and not supported with Tk 9, "
+                "use trace_add() instead",
+                DeprecationWarning, stacklevel=2)
         cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
         return cbname
@@ -517,7 +521,11 @@ class Variable:
         This deprecated method wraps a deprecated Tcl method that will
         likely be removed in the future.  Use trace_remove() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_vdelete() is deprecated and not supported with Tk 9, "
+                "use trace_remove() instead",
+                DeprecationWarning, stacklevel=2)
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
         cbname = self._tk.splitlist(cbname)[0]
         for m, ca in self.trace_info():
@@ -536,7 +544,11 @@ class Variable:
         This deprecated method wraps a deprecated Tcl method that will
         likely be removed in the future.  Use trace_info() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_vinfo() is deprecated and not supported with Tk 9, "
+                "use trace_info() instead",
+                DeprecationWarning, stacklevel=2)
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
 
