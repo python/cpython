@@ -13350,13 +13350,13 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
-    PyObject *str = PyObject_Repr(obj);
-    if (str == NULL) {
+    PyObject *repr = PyObject_Repr(obj);
+    if (repr == NULL) {
         return -1;
     }
 
-    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, str);
-    Py_DECREF(str);
+    int res = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, repr);
+    Py_DECREF(repr);
     return res;
 }
 
