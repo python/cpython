@@ -50,9 +50,6 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
-
-    /* _strptime module */
-    PyObject *strptime;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -5517,26 +5514,18 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    PyObject *string, *format;
+    PyObject *string, *format, *result;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
-    PyObject *result = NULL;
-    PyObject *current_mod = NULL;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
-    PyObject *module = st->strptime;
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
     if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL) {
-            goto exit;
-        }
-        st->strptime = module;
+        return NULL;
     }
     result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
                                         cls, string, format, NULL);
-exit:
-    RELEASE_CURRENT_STATE(st, current_mod);
+    Py_DECREF(module);
     return result;
 }
 
@@ -7068,7 +7057,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
-            .strptime = st->strptime,
         };
         return 0;
     }
@@ -7121,8 +7109,7 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
-    /* containers */
-    Py_VISIT(st->strptime);
+
     return 0;
 }
 
@@ -7138,7 +7125,6 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
-    Py_CLEAR(st->strptime);
     return 0;
 }
 
