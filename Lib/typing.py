@@ -19,8 +19,8 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
-import annotations
-from annotations import ForwardRef
+import annotationlib
+from annotationlib import ForwardRef
 import collections
 from collections import defaultdict
 import collections.abc
@@ -463,7 +463,7 @@ _sentinel = _Sentinel()
 
 
 def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=annotations.Format.VALUE, owner=None):
+               format=annotationlib.Format.VALUE, owner=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -1032,7 +1032,7 @@ def evaluate_forward_ref(
     globals=None,
     locals=None,
     type_params=None,
-    format=annotations.Format.VALUE,
+    format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
     """Evaluate a forward reference as a type hint.
@@ -1059,7 +1059,7 @@ def evaluate_forward_ref(
     if type_params is _sentinel:
         _deprecation_warning_for_no_type_params_passed("typing.evaluate_forward_ref")
         type_params = ()
-    if format == annotations.Format.SOURCE:
+    if format == annotationlib.Format.SOURCE:
         return forward_ref.__forward_arg__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
@@ -1068,7 +1068,7 @@ def evaluate_forward_ref(
         value = forward_ref.evaluate(globals=globals, locals=locals,
                                      type_params=type_params, owner=owner)
     except NameError:
-        if format == annotations.Format.FORWARDREF:
+        if format == annotationlib.Format.FORWARDREF:
             return forward_ref
         else:
             raise
@@ -2168,7 +2168,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     """Runtime representation of an annotated type.
 
     At its core 'Annotated[t, dec1, dec2, ...]' is an alias for the type 't'
-    with extra annotations. The alias behaves like a normal typing alias.
+    with extra annotationlib. The alias behaves like a normal typing alias.
     Instantiating is the same as instantiating the underlying type; binding
     it to types is also the same.
 
@@ -2353,7 +2353,7 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
 
 
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
-                   *, format=annotations.Format.VALUE):
+                   *, format=annotationlib.Format.VALUE):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
@@ -2390,8 +2390,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
     if isinstance(obj, type):
         hints = {}
         for base in reversed(obj.__mro__):
-            ann = annotations.get_annotations(base, format=format)
-            if format is annotations.Format.SOURCE:
+            ann = annotationlib.get_annotations(base, format=format)
+            if format is annotationlib.Format.SOURCE:
                 hints.update(ann)
                 continue
             if globalns is None:
@@ -2415,14 +2415,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
                 hints[name] = value
-        if include_extras or format is annotations.Format.SOURCE:
+        if include_extras or format is annotationlib.Format.SOURCE:
             return hints
         else:
             return {k: _strip_annotations(t) for k, t in hints.items()}
 
-    hints = annotations.get_annotations(obj, format=format)
+    hints = annotationlib.get_annotations(obj, format=format)
     hints = dict(hints)
-    if format is annotations.Format.SOURCE:
+    if format is annotationlib.Format.SOURCE:
         return hints
 
     if globalns is None:
@@ -2938,7 +2938,7 @@ def _make_eager_annotate(types):
     checked_types = {key: _type_check(val, f"field {key} annotation must be a type")
                      for key, val in types.items()}
     def annotate(format):
-        if format in (annotations.Format.VALUE, annotations.Format.FORWARDREF):
+        if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
             return checked_types
         else:
             return _convert_to_source(types)
@@ -2971,7 +2971,7 @@ class NamedTupleMeta(type):
             annotate = _make_eager_annotate(types)
         elif "__annotate__" in ns:
             original_annotate = ns["__annotate__"]
-            types = annotations.call_annotate_function(original_annotate, annotations.Format.FORWARDREF)
+            types = annotationlib.call_annotate_function(original_annotate, annotationlib.Format.FORWARDREF)
             field_names = list(types)
 
             # For backward compatibility, type-check all the types at creation time
@@ -2979,8 +2979,8 @@ class NamedTupleMeta(type):
                 _type_check(typ, "field annotation must be a type")
 
             def annotate(format):
-                annos = annotations.call_annotate_function(original_annotate, format)
-                if format != annotations.Format.SOURCE:
+                annos = annotationlib.call_annotate_function(original_annotate, format)
+                if format != annotationlib.Format.SOURCE:
                     return {key: _type_check(val, f"field {key} annotation must be a type")
                             for key, val in annos.items()}
                 return annos
@@ -3156,8 +3156,8 @@ class _TypedDictMeta(type):
             own_annotations = ns["__annotations__"]
         elif "__annotate__" in ns:
             own_annotate = ns["__annotate__"]
-            own_annotations = annotations.call_annotate_function(
-                own_annotate, annotations.Format.FORWARDREF, owner=tp_dict
+            own_annotations = annotationlib.call_annotate_function(
+                own_annotate, annotationlib.Format.FORWARDREF, owner=tp_dict
             )
         else:
             own_annotate = None
@@ -3224,16 +3224,16 @@ class _TypedDictMeta(type):
                 base_annotate = base.__annotate__
                 if base_annotate is None:
                     continue
-                base_annos = annotations.call_annotate_function(base.__annotate__, format, owner=base)
+                base_annos = annotationlib.call_annotate_function(base.__annotate__, format, owner=base)
                 annos.update(base_annos)
             if own_annotate is not None:
-                own = annotations.call_annotate_function(own_annotate, format, owner=tp_dict)
-                if format != annotations.Format.SOURCE:
+                own = annotationlib.call_annotate_function(own_annotate, format, owner=tp_dict)
+                if format != annotationlib.Format.SOURCE:
                     own = {
                         n: _type_check(tp, msg, module=tp_dict.__module__)
                         for n, tp in own.items()
                     }
-            elif format == annotations.Format.SOURCE:
+            elif format == annotationlib.Format.SOURCE:
                 own = _convert_to_source(own_annotations)
             else:
                 own = own_checked_annotations

@@ -5,7 +5,7 @@ import types
 import inspect
 import keyword
 import itertools
-import annotations
+import annotationlib
 import abc
 from reprlib import recursive_repr
 from types import GenericAlias
@@ -983,8 +983,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = annotations.get_annotations(cls,
-                                                  format=annotations.Format.FORWARDREF)
+    cls_annotations = annotationlib.get_annotations(
+        cls, format=annotationlib.Format.FORWARDREF)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where

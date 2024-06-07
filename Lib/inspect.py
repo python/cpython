@@ -142,7 +142,7 @@ __all__ = [
 
 
 import abc
-from annotations import get_annotations
+from annotationlib import get_annotations
 import ast
 import dis
 import collections.abc

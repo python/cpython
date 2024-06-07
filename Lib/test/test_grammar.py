@@ -3,7 +3,7 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
-import annotations
+import annotationlib
 import inspect
 import unittest
 import sys
@@ -460,7 +460,7 @@ class GrammarTests(unittest.TestCase):
         gns = {}; lns = {}
         exec("'docstring'\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotate__"](annotations.Format.VALUE), {'x': int})
+        self.assertEqual(lns["__annotate__"](annotationlib.Format.VALUE), {'x': int})
         with self.assertRaises(KeyError):
             gns['__annotate__']
 
