@@ -5529,13 +5529,13 @@ datetime_strptime(PyObject *cls, PyObject *args)
     if (module == NULL) {
         module = PyImport_ImportModule("_strptime");
         if (module == NULL) {
-            goto Done;
+            goto exit;
         }
         st->strptime = module;
     }
     result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
-                                         cls, string, format, NULL);
-Done:
+                                        cls, string, format, NULL);
+exit:
     RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }
