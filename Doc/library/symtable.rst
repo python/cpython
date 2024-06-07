@@ -199,7 +199,7 @@ Examining Symbol Tables
 
       In this example, the the class-scoped ``x`` symbol is considered
       to be free from the perspective of ``C.method``, thereby allowing
-      the ``method`` to return `1` at runtime and not `2`.
+      the ``method`` to return *1* at runtime and not *2*.
 
       .. versionadded:: 3.14
 
