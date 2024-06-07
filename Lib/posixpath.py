@@ -443,7 +443,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
             newpath = path + name
         else:
             newpath = path + sep + name
-        if newpath in seen:
+        if seen and newpath in seen:
             # Already seen this symlink
             path = seen[newpath]
             if path is not None:
