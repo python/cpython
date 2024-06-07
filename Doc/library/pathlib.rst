@@ -789,6 +789,9 @@ bugs or failures in your application)::
        % (cls.__name__,))
    NotImplementedError: cannot instantiate 'WindowsPath' on your system
 
+Some concrete path methods can raise an :exc:`OSError` if a system call fails
+(for example because the path doesn't exist).
+
 
 Querying file type and status
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1040,71 +1043,32 @@ Reading and writing files
    .. versionadded:: 3.5
 
 
-Other methods
-^^^^^^^^^^^^^
+Reading directories
+^^^^^^^^^^^^^^^^^^^
 
-Many of these methods can raise an :exc:`OSError` if a system call fails (for
-example because the path doesn't exist).
+.. method:: Path.iterdir()
 
+   When the path points to a directory, yield path objects of the directory
+   contents::
 
-.. classmethod:: Path.cwd()
+      >>> p = Path('docs')
+      >>> for child in p.iterdir(): child
+      ...
+      PosixPath('docs/conf.py')
+      PosixPath('docs/_templates')
+      PosixPath('docs/make.bat')
+      PosixPath('docs/index.rst')
+      PosixPath('docs/_build')
+      PosixPath('docs/_static')
+      PosixPath('docs/Makefile')
 
-   Return a new path object representing the current directory (as returned
-   by :func:`os.getcwd`)::
+   The children are yielded in arbitrary order, and the special entries
+   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
+   to the directory after creating the iterator, it is unspecified whether
+   a path object for that file is included.
 
-      >>> Path.cwd()
-      PosixPath('/home/antoine/pathlib')
-
-
-.. classmethod:: Path.home()
-
-   Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> Path.home()
-      PosixPath('/home/antoine')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.chmod(mode, *, follow_symlinks=True)
-
-   Change the file mode and permissions, like :func:`os.chmod`.
-
-   This method normally follows symlinks. Some Unix flavours support changing
-   permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
-
-   ::
-
-      >>> p = Path('setup.py')
-      >>> p.stat().st_mode
-      33277
-      >>> p.chmod(0o444)
-      >>> p.stat().st_mode
-      33060
-
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.expanduser()
-
-   Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`. If a home directory can't be
-   resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> p = PosixPath('~/films/Monty Python')
-      >>> p.expanduser()
-      PosixPath('/home/eric/films/Monty Python')
-
-   .. versionadded:: 3.5
-
+   If the path is not a directory or otherwise inaccessible, :exc:`OSError` is
+   raised.
 
 .. method:: Path.glob(pattern, *, case_sensitive=None)
 
@@ -1150,32 +1114,33 @@ example because the path doesn't exist).
       The *case_sensitive* parameter was added.
 
 
-.. method:: Path.group()
+.. method:: Path.rglob(pattern, *, case_sensitive=None)
 
-   Return the name of the group owning the file.  :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
+   *patterns* are the same as for :mod:`fnmatch`::
 
+      >>> sorted(Path().rglob("*.py"))
+      [PosixPath('build/lib/pathlib.py'),
+       PosixPath('docs/conf.py'),
+       PosixPath('pathlib.py'),
+       PosixPath('setup.py'),
+       PosixPath('test_pathlib.py')]
 
-.. method:: Path.iterdir()
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   When the path points to a directory, yield path objects of the directory
-   contents::
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
-      >>> p = Path('docs')
-      >>> for child in p.iterdir(): child
-      ...
-      PosixPath('docs/conf.py')
-      PosixPath('docs/_templates')
-      PosixPath('docs/make.bat')
-      PosixPath('docs/index.rst')
-      PosixPath('docs/_build')
-      PosixPath('docs/_static')
-      PosixPath('docs/Makefile')
+   .. versionchanged:: 3.11
+      Return only directories if *pattern* ends with a pathname components
+      separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-   The children are yielded in arbitrary order, and the special entries
-   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether a path object for
-   that file be included is unspecified.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
 
 .. method:: Path.walk(top_down=True, on_error=None, follow_symlinks=False)
 
@@ -1271,6 +1236,75 @@ example because the path doesn't exist).
               (root / name).rmdir()
 
    .. versionadded:: 3.12
+
+
+Other methods
+^^^^^^^^^^^^^
+
+.. classmethod:: Path.cwd()
+
+   Return a new path object representing the current directory (as returned
+   by :func:`os.getcwd`)::
+
+      >>> Path.cwd()
+      PosixPath('/home/antoine/pathlib')
+
+
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
+
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_mode
+      33277
+      >>> p.chmod(0o444)
+      >>> p.stat().st_mode
+      33060
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.group()
+
+   Return the name of the group owning the file.  :exc:`KeyError` is raised
+   if the file's gid isn't found in the system database.
+
 
 .. method:: Path.lchmod(mode)
 
@@ -1400,33 +1434,6 @@ example because the path doesn't exist).
 
    .. versionchanged:: 3.6
       The *strict* parameter was added (pre-3.6 behavior is strict).
-
-.. method:: Path.rglob(pattern, *, case_sensitive=None)
-
-   Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
-   *patterns* are the same as for :mod:`fnmatch`::
-
-      >>> sorted(Path().rglob("*.py"))
-      [PosixPath('build/lib/pathlib.py'),
-       PosixPath('docs/conf.py'),
-       PosixPath('pathlib.py'),
-       PosixPath('setup.py'),
-       PosixPath('test_pathlib.py')]
-
-   By default, or when the *case_sensitive* keyword-only argument is set to
-   ``None``, this method matches paths using platform-specific casing rules:
-   typically, case-sensitive on POSIX, and case-insensitive on Windows.
-   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
-
-   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
-
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
-
-   .. versionchanged:: 3.12
-      The *case_sensitive* parameter was added.
 
 
 .. method:: Path.rmdir()
