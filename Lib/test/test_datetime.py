@@ -37,18 +37,24 @@ def load_tests(loader, tests, pattern):
                 test_classes.extend(type(test) for test in suit)
         test_classes = sorted(set(test_classes), key=lambda cls: cls.__qualname__)
         for cls in test_classes:
+            orig_setUpClass = getattr(cls, 'setUpClass', None)
+            orig_tearDownClass = getattr(cls, 'tearDownClass', None)
             cls.__name__ += suffix
             cls.__qualname__ += suffix
             @classmethod
-            def setUpClass(cls_, module=module):
+            def setUpClass(cls_, module=module, orig_setUpClass=orig_setUpClass):
                 cls_._save_sys_modules = sys.modules.copy()
                 sys.modules[TESTS] = module
                 sys.modules['datetime'] = module.datetime_module
                 if hasattr(module, '_pydatetime'):
                     sys.modules['_pydatetime'] = module._pydatetime
                 sys.modules['_strptime'] = module._strptime
+                if orig_setUpClass is not None:
+                    orig_setUpClass()
             @classmethod
-            def tearDownClass(cls_):
+            def tearDownClass(cls_, orig_tearDownClass=orig_tearDownClass):
+                if orig_tearDownClass is not None:
+                    orig_tearDownClass()
                 sys.modules.clear()
                 sys.modules.update(cls_._save_sys_modules)
             cls.setUpClass = setUpClass
