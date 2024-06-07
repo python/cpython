@@ -43,19 +43,19 @@ _log_to_stderr = False
 
 def sub_debug(msg, *args):
     if _logger:
-        _logger.log(SUBDEBUG, msg, *args)
+        _logger.log(SUBDEBUG, msg, *args, stacklevel=2)
 
 def debug(msg, *args):
     if _logger:
-        _logger.log(DEBUG, msg, *args)
+        _logger.log(DEBUG, msg, *args, stacklevel=2)
 
 def info(msg, *args):
     if _logger:
-        _logger.log(INFO, msg, *args)
+        _logger.log(INFO, msg, *args, stacklevel=2)
 
 def sub_warning(msg, *args):
     if _logger:
-        _logger.log(SUBWARNING, msg, *args)
+        _logger.log(SUBWARNING, msg, *args, stacklevel=2)
 
 def get_logger():
     '''
@@ -64,8 +64,7 @@ def get_logger():
     global _logger
     import logging
 
-    logging._acquireLock()
-    try:
+    with logging._lock:
         if not _logger:
 
             _logger = logging.getLogger(LOGGER_NAME)
@@ -78,9 +77,6 @@ def get_logger():
             else:
                 atexit._exithandlers.remove((_exit_function, (), {}))
                 atexit._exithandlers.append((_exit_function, (), {}))
-
-    finally:
-        logging._releaseLock()
 
     return _logger
 
@@ -106,11 +102,7 @@ def log_to_stderr(level=None):
 # Abstract socket support
 
 def _platform_supports_abstract_sockets():
-    if sys.platform == "linux":
-        return True
-    if hasattr(sys, 'getandroidapilevel'):
-        return True
-    return False
+    return sys.platform in ("linux", "android")
 
 
 def is_abstract_socket_namespace(address):

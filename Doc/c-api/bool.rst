@@ -6,9 +6,15 @@ Boolean Objects
 ---------------
 
 Booleans in Python are implemented as a subclass of integers.  There are only
-two booleans, :const:`Py_False` and :const:`Py_True`.  As such, the normal
+two booleans, :c:data:`Py_False` and :c:data:`Py_True`.  As such, the normal
 creation and deletion functions don't apply to booleans.  The following macros
 are available, however.
+
+
+.. c:var:: PyTypeObject PyBool_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python boolean type; it
+   is the same object as :class:`bool` in the Python layer.
 
 
 .. c:function:: int PyBool_Check(PyObject *o)
@@ -19,29 +25,32 @@ are available, however.
 
 .. c:var:: PyObject* Py_False
 
-   The Python ``False`` object.  This object has no methods.  It needs to be
-   treated just like any other object with respect to reference counts.
+   The Python ``False`` object.  This object has no methods and is
+   :term:`immortal`.
+
+   .. versionchanged:: 3.12
+      :c:data:`Py_False` is :term:`immortal`.
 
 
 .. c:var:: PyObject* Py_True
 
-   The Python ``True`` object.  This object has no methods.  It needs to be treated
-   just like any other object with respect to reference counts.
+   The Python ``True`` object.  This object has no methods and is
+   :term:`immortal`.
+
+   .. versionchanged:: 3.12
+      :c:data:`Py_True` is :term:`immortal`.
 
 
 .. c:macro:: Py_RETURN_FALSE
 
-   Return :const:`Py_False` from a function, properly incrementing its reference
-   count.
+   Return :c:data:`Py_False` from a function.
 
 
 .. c:macro:: Py_RETURN_TRUE
 
-   Return :const:`Py_True` from a function, properly incrementing its reference
-   count.
+   Return :c:data:`Py_True` from a function.
 
 
 .. c:function:: PyObject* PyBool_FromLong(long v)
 
-   Return a new reference to :const:`Py_True` or :const:`Py_False` depending on the
-   truth value of *v*.
+   Return :c:data:`Py_True` or :c:data:`Py_False`, depending on the truth value of *v*.

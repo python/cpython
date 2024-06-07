@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -143,7 +143,7 @@ guidelines to be followed:
          arg = (1, 2, 3)
 
   When using this pattern, remember that all classes that inherit from
-  :class:`unittest.TestCase` are run as tests.  The :class:`Mixin` class in the example above
+  :class:`unittest.TestCase` are run as tests.  The :class:`!TestFuncAcceptsSequencesMixin` class in the example above
   does not have any data and so can't be run by itself, thus it does not
   inherit from :class:`unittest.TestCase`.
 
@@ -158,6 +158,9 @@ guidelines to be followed:
 
 Running tests using the command-line interface
 ----------------------------------------------
+
+.. module:: test.regrtest
+   :synopsis: Drives the regression test suite.
 
 The :mod:`test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
@@ -321,9 +324,9 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
-   Python is :ref:`built in debug mode <debug-build>`
-   (:option:`./configure --with-pydebug <--with-pydebug>`).
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
+   defined, that is, if
+   Python was :ref:`built in debug mode <debug-build>`.
 
    .. versionadded:: 3.12
 
@@ -472,7 +475,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :data:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
@@ -496,44 +499,6 @@ The :mod:`test.support` module defines the following functions:
 
    Setting *subdir* indicates a relative path to use to find the file
    rather than looking directly in the path directories.
-
-
-.. function:: match_test(test)
-
-   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
-
-
-.. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
-
-   Define match patterns on test filenames and test method names for filtering tests.
-
-
-.. function:: run_unittest(*classes)
-
-   Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_``
-   and executes the tests individually.
-
-   It is also legal to pass strings as parameters; these should be keys in
-   ``sys.modules``. Each associated module will be scanned by
-   ``unittest.TestLoader.loadTestsFromModule()``. This is usually seen in the
-   following :func:`test_main` function::
-
-      def test_main():
-          support.run_unittest(__name__)
-
-   This will run all tests defined in the named module.
-
-
-.. function:: run_doctest(module, verbosity=None, optionflags=0)
-
-   Run :func:`doctest.testmod` on the given *module*.  Return
-   ``(failure_count, test_count)``.
-
-   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
-   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
-   ``None``.  *optionflags* is passed as ``optionflags`` to
-   :func:`doctest.testmod`.
 
 
 .. function:: get_pagesize()
@@ -766,6 +731,12 @@ The :mod:`test.support` module defines the following functions:
    macOS version is less than the minimum, the test is skipped.
 
 
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
+
+
 .. decorator:: requires_IEEE_754
 
    Decorator for skipping tests on non-IEEE 754 platforms.
@@ -803,7 +774,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_limited_api
 
-   Decorator for only running the test if :ref:`Limited C API <stable>`
+   Decorator for only running the test if :ref:`Limited C API <limited-c-api>`
    is available.
 
 
@@ -1040,10 +1011,10 @@ The :mod:`test.support` module defines the following classes:
    `SetErrorMode <https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
 
    On UNIX, :func:`resource.setrlimit` is used to set
-   :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
+   :const:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
    creation.
 
-   On both platforms, the old value is restored by :meth:`__exit__`.
+   On both platforms, the old value is restored by :meth:`~object.__exit__`.
 
 
 .. class:: SaveSignals()
@@ -1443,7 +1414,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. class:: FakePath(path)
 
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   Simple :term:`path-like object`.  It implements the
+   :meth:`~os.PathLike.__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
 
@@ -1689,6 +1661,21 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 The :mod:`test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
+
+
+.. function:: ignore_warnings(*, category)
+
+   Suppress warnings that are instances of *category*,
+   which must be :exc:`Warning` or a subclass.
+   Roughly equivalent to :func:`warnings.catch_warnings`
+   with :meth:`warnings.simplefilter('ignore', category=category) <warnings.simplefilter>`.
+   For example::
+
+      @warning_helper.ignore_warnings(category=DeprecationWarning)
+      def test_suppress_warning():
+          # do something
+
+   .. versionadded:: 3.8
 
 
 .. function:: check_no_resource_warning(testcase)

@@ -1,5 +1,5 @@
-:mod:`poplib` --- POP3 protocol client
-======================================
+:mod:`!poplib` --- POP3 protocol client
+=======================================
 
 .. module:: poplib
    :synopsis: POP3 protocol client (requires sockets).
@@ -77,21 +77,14 @@ The :mod:`poplib` module provides two classes:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
-
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
+      :const:`ssl.HAS_SNI`).
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 
@@ -155,7 +148,7 @@ A :class:`POP3` instance has the following methods:
 .. method:: POP3.pass_(password)
 
    Send password, response includes message count and mailbox size. Note: the
-   mailbox on the server is locked until :meth:`~poplib.quit` is called.
+   mailbox on the server is locked until :meth:`~POP3.quit` is called.
 
 
 .. method:: POP3.apop(user, secret)
@@ -247,7 +240,7 @@ A :class:`POP3` instance has the following methods:
 
    This method supports hostname checking via
    :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-   :data:`ssl.HAS_SNI`).
+   :const:`ssl.HAS_SNI`).
 
    .. versionadded:: 3.4
 

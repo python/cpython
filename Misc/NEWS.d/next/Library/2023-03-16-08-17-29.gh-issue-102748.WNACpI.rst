@@ -1,3 +1,0 @@
-:func:`asyncio.iscoroutine` now returns ``False`` for generators as
-:mod:`asyncio` does not support legacy generator-based coroutines.
-Patch by Kumar Aditya.

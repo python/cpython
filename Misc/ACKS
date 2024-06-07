@@ -31,6 +31,7 @@ Farhan Ahmad
 Matthew Ahrens
 Nir Aides
 Akira
+Ege Akman
 Yaniv Aknin
 Jyrki Alakuijala
 Tatiana Al-Chueyr
@@ -160,6 +161,7 @@ Brice Berna
 Olivier Bernard
 Vivien Bernet-Rollande
 Maxwell Bernstein
+Jay Berry
 Eric Beser
 Steven Bethard
 Stephen Bevan
@@ -189,6 +191,7 @@ Finn Bock
 Paul Boddie
 Matthew Boedicker
 Robin Boerdijk
+Wannes Boeykens
 Andra Bogildea
 Matt Bogosian
 Nikolay Bogoychev
@@ -225,6 +228,7 @@ Erik Bray
 Brian Brazil
 Demian Brecht
 Dave Brennan
+Christopher Richard James Brett
 Tom Bridgman
 Anthony Briggs
 Keith Briggs
@@ -252,6 +256,7 @@ Curtis Bucher
 Colm Buckley
 Erik de Bueger
 Jan-Hein Bührman
+Marc Bürg
 Lars Buitinck
 Artem Bulgakov
 Dick Bulterman
@@ -287,6 +292,7 @@ Edward Catmur
 Lorenzo M. Catucci
 Bruno Cauet
 Donn Cave
+James Cave
 Charles Cazabon
 Jesús Cea Avión
 Per Cederqvist
@@ -298,6 +304,7 @@ Dave Chambers
 Pascal Chambon
 Nicholas Chammas
 Ofey Chan
+Juhi Chandalia
 John Chandler
 Hye-Shik Chang
 Jeffrey Chang
@@ -308,6 +315,7 @@ Greg Chapman
 Mitch Chapman
 Matt Chaput
 William Chargin
+Ben Chatterton
 Yogesh Chaudhari
 Gautam Chaudhuri
 David Chaum
@@ -344,6 +352,7 @@ Robbie Clemons
 Steve Clift
 Hervé Coatanhay
 Riccardo Coccioli
+Jacob Coffee
 Nick Coghlan
 Josh Cogliati
 Noam Cohen
@@ -463,6 +472,7 @@ Allen Downey
 Cesar Douady
 Dean Draayer
 Fred L. Drake, Jr.
+Mehdi Drissi
 Derk Drukker
 John DuBois
 Paul Dubois
@@ -487,6 +497,7 @@ David Edelsohn
 John Edmonds
 Benjamin Edwards
 Grant Edwards
+Vlad Efanov
 Zvi Effron
 John Ehresman
 Tal Einat
@@ -499,6 +510,7 @@ Daniel Ellis
 Phil Elson
 David Ely
 Victor van den Elzen
+Vlad Emelianov
 Jeff Epler
 Tom Epperly
 Gökcen Eraslan
@@ -598,6 +610,7 @@ Nitin Ganatra
 Soumendra Ganguly (गङ्गोपाध्याय)
 Fred Gansevles
 Paul Ganssle
+Tian Gao
 Lars Marius Garshol
 Jake Garver
 Dan Gass
@@ -613,6 +626,7 @@ Marius Gedminas
 Jan-Philip Gehrcke
 Thomas Gellekum
 Gabriel Genellina
+Andrew Geng
 Philip Georgi
 Christos Georgiou
 Elazar (אלעזר) Gershuni
@@ -622,12 +636,15 @@ Dinu Gherman
 Subhendu Ghosh
 Jonathan Giddy
 Johannes Gijsbers
+Stephen Gildea
 Michael Gilfix
 Julian Gindi
 Yannick Gingras
 Neil Girdhar
 Matt Giuca
+Andrea Giudiceandrea
 Franz Glasner
+Jeff Glass
 Wim Glenn
 Michael Goderbauer
 Karan Goel
@@ -655,6 +672,7 @@ Eddy De Greef
 Duane Griffin
 Grant Griffin
 Andrea Griffini
+Semyon Grigoryev
 Duncan Grisby
 Olivier Grisel
 Fabian Groffen
@@ -693,6 +711,7 @@ Anders Hammarquist
 Mark Hammond
 Harald Hanche-Olsen
 Manus Hand
+Michael Handler
 Andreas Hangauer
 Milton L. Hankins
 Carl Bordum Hansen
@@ -734,6 +753,7 @@ Kasun Herath
 Chris Herborth
 Ivan Herman
 Jürgen Hermann
+Joshua Jay Herman
 Gary Herron
 Ernie Hershey
 Thomas Herve
@@ -743,6 +763,7 @@ Raymond Hettinger
 Lisa Hewus Fresh
 Kevan Heydon
 Wouter van Heyst
+Derek Higgins
 Kelsey Hightower
 Jason Hildebrand
 Ryan Hileman
@@ -777,6 +798,7 @@ Thomas Holmes
 Craig Holmquist
 Philip Homburg
 Naofumi Honda
+Constantin Hong
 Weipeng Hong
 Jeffrey Honig
 Rob Hooft
@@ -911,6 +933,7 @@ Hiroaki Kawai
 Dmitry Kazakov
 Brian Kearns
 Sebastien Keim
+Russell Keith-Magee
 Ryan Kelly
 Hugo van Kemenade
 Dan Kenigsberg
@@ -950,6 +973,7 @@ Carsten Klein
 Bastian Kleineidam
 Joel Klimont
 Bob Kline
+Alois Klink
 Matthias Klose
 Jeremy Kloth
 Thomas Kluyver
@@ -1036,6 +1060,7 @@ Mark Lawrence
 Chris Laws
 Michael Layzell
 Michael Lazar
+Peter Lazorchak
 Brian Leair
 Mathieu Leduc-Hamel
 Amandine Lee
@@ -1113,6 +1138,7 @@ Jason Lowe
 Tony Lownds
 Ray Loyzaga
 Kang-Hao (Kenny) Lu
+Raymond Lu
 Lukas Lueg
 Loren Luke
 Fredrik Lundh
@@ -1142,6 +1168,7 @@ Colin Marc
 Vincent Marchetti
 David Marek
 Doug Marien
+Chris Markiewicz
 Sven Marnach
 John Marshall
 Alex Martelli
@@ -1182,6 +1209,7 @@ Andrew McNamara
 Caolan McNamara
 Jeff McNeil
 Craig McPheeters
+Corvin McPherson
 Lambert Meertens
 Bill van Melle
 Lucas Prado Melo
@@ -1259,7 +1287,7 @@ R. David Murray
 Matti Mäki
 Jörg Müller
 Kaushik N
-Dong-hee Na
+Donghee Na
 Dale Nagata
 John Nagle
 Takahiro Nakayama
@@ -1321,6 +1349,7 @@ Ethan Onstott
 Ken Jin Ooi
 Piet van Oostrum
 Tomas Oppelstrup
+Itamar Oren
 Jason Orendorff
 Yan "yyyyyyyan" Orestes
 Bastien Orivel
@@ -1331,7 +1360,7 @@ Michele Orrù
 Tomáš Orsava
 Oleg Oshmyan
 Denis Osipov
-Itamar Ostricher
+Savannah Ostrowski
 Denis S. Otkidach
 Peter Otten
 Michael Otteneder
@@ -1360,6 +1389,7 @@ Peter Parente
 Alexandre Parenteau
 Dan Parisien
 HyeSoo Park
+Moonsik Park
 William Park
 Claude Paroz
 Heikki Partanen
@@ -1443,6 +1473,7 @@ Paul Prescod
 Donovan Preston
 Eric Price
 Paul Price
+Matt Prodani
 Iuliia Proskurnia
 Dorian Pula
 Jyrki Pulliainen
@@ -1466,6 +1497,7 @@ Ajith Ramachandran
 Dhushyanth Ramasamy
 Ashwin Ramaswami
 Jeff Ramnani
+Grant Ramsay
 Bayard Randel
 Varpu Rantala
 Brodie Rao
@@ -1483,7 +1515,7 @@ John Redford
 Kalyan Reddy
 Terry J. Reedy
 Gareth Rees
-John Reese
+Amethyst Reese
 Steve Reeves
 Lennart Regebro
 John Regehr
@@ -1508,6 +1540,7 @@ Vlad Riscutia
 Wes Rishel
 Daniel Riti
 Juan M. Bello Rivas
+Stefano Rivera
 Llandy Riveron Del Risco
 Mohd Sanad Zaki Rizvi
 Davide Rizzo
@@ -1547,11 +1580,13 @@ Hugo van Rossum
 Saskia van Rossum
 Robin Roth
 Clement Rouault
+Tomas Roun
 Donald Wallace Rouse II
 Liam Routt
 Todd Rovito
 Craig Rowland
 Clinton Roy
+Ujan RoyBandyopadhyay
 Paul Rubin
 Sam Ruby
 Demur Rumed
@@ -1691,10 +1726,12 @@ Ngalim Siregar
 Kragen Sitaker
 Kaartic Sivaraam
 Stanisław Skonieczny
+Bart Skowron
 Roman Skurikhin
 Ville Skyttä
 Michael Sloan
 Nick Sloan
+Tyler Smart
 Radek Smejkal
 Václav Šmilauer
 Casper W. Smet
@@ -1855,6 +1892,7 @@ Steven Troxler
 Brent Tubbs
 Anthony Tuininga
 Erno Tukia
+Adam Turner
 David Turner
 Stephen Turner
 Itamar Turner-Trauring
@@ -1939,6 +1977,7 @@ Colin Watson
 David Watson
 Aaron Watters
 Alex Waygood
+James Webber
 Russel Webber
 Henrik Weber
 Leon Weber
@@ -2018,6 +2057,7 @@ Doug Wyatt
 Xiang Zhang
 Robert Xiao
 Florent Xicluna
+Yanbo, Xie
 Xinhang Xu
 Arnon Yaari
 Alakshendra Yadav
@@ -2053,6 +2093,7 @@ Yuxiao Zeng
 Uwe Zessin
 Cheng Zhang
 George Zhang
+Youfu Zhang
 Charlie Zhao
 Kai Zhu
 Tarek Ziadé
@@ -2060,7 +2101,5 @@ Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-Vlad Emelianov
-Andrey Doroschenko
 
 (Entries should be added in rough alphabetical order by last names)

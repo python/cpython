@@ -121,22 +121,25 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
-    if memo is None:
-        memo = {}
+    cls = type(x)
+
+    if cls in _atomic_types:
+        return x
 
     d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
-
-    cls = type(x)
+    if memo is None:
+        memo = {}
+    else:
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
 
     copier = _deepcopy_dispatch.get(cls)
     if copier is not None:
         y = copier(x, memo)
     else:
         if issubclass(cls, type):
-            y = _deepcopy_atomic(x, memo)
+            y = x # atomic copy
         else:
             copier = getattr(x, "__deepcopy__", None)
             if copier is not None:
@@ -167,26 +170,12 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
+_atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
+          int, float, bool, complex, bytes, str, types.CodeType, type, range,
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
+
 _deepcopy_dispatch = d = {}
 
-def _deepcopy_atomic(x, memo):
-    return x
-d[types.NoneType] = _deepcopy_atomic
-d[types.EllipsisType] = _deepcopy_atomic
-d[types.NotImplementedType] = _deepcopy_atomic
-d[int] = _deepcopy_atomic
-d[float] = _deepcopy_atomic
-d[bool] = _deepcopy_atomic
-d[complex] = _deepcopy_atomic
-d[bytes] = _deepcopy_atomic
-d[str] = _deepcopy_atomic
-d[types.CodeType] = _deepcopy_atomic
-d[type] = _deepcopy_atomic
-d[range] = _deepcopy_atomic
-d[types.BuiltinFunctionType] = _deepcopy_atomic
-d[types.FunctionType] = _deepcopy_atomic
-d[weakref.ref] = _deepcopy_atomic
-d[property] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
@@ -290,3 +279,16 @@ def _reconstruct(x, memo, func, args,
     return y
 
 del types, weakref
+
+
+def replace(obj, /, **changes):
+    """Return a new object replacing specified fields with new values.
+
+    This is especially useful for immutable objects, like named tuples or
+    frozen dataclasses.
+    """
+    cls = obj.__class__
+    func = getattr(cls, '__replace__', None)
+    if func is None:
+        raise TypeError(f"replace() does not support {cls.__name__} objects")
+    return func(obj, **changes)

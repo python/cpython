@@ -329,7 +329,7 @@ class Stats:
         if isinstance(sel, str):
             try:
                 rex = re.compile(sel)
-            except re.error:
+            except re.PatternError:
                 msg += "   <Invalid regular expression %r>\n" % sel
                 return new_list, msg
             new_list = []

@@ -1,10 +1,12 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_symtable.h"      // _PyFutureFeatures
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 
 static int
-future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
+future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
     int i;
 
@@ -52,7 +54,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 }
 
 static int
-future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
+future_parse(_PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 {
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind)) {
         return 1;
@@ -75,7 +77,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
          *  are another future statement and a doc string.
          */
 
-        if (s->kind == ImportFrom_kind) {
+        if (s->kind == ImportFrom_kind && s->v.ImportFrom.level == 0) {
             identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {
@@ -97,10 +99,10 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 
 
 int
-_PyFuture_FromAST(mod_ty mod, PyObject *filename, PyFutureFeatures *ff)
+_PyFuture_FromAST(mod_ty mod, PyObject *filename, _PyFutureFeatures *ff)
 {
     ff->ff_features = 0;
-    ff->ff_location = (_PyCompilerSrcLocation){-1, -1, -1, -1};
+    ff->ff_location = (_Py_SourceLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
         return 0;

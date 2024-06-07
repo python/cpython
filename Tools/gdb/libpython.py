@@ -66,11 +66,22 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
-
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
+def _sizeof_pyobject():
+    return gdb.lookup_type('PyObject').sizeof
 
+def _managed_dict_offset():
+    # See pycore_object.h
+    pyobj = gdb.lookup_type("PyObject")
+    if any(field.name == "ob_ref_local" for field in pyobj.fields()):
+        return -1 * _sizeof_void_p()
+    else:
+        return -3 * _sizeof_void_p()
+
+
+Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
@@ -110,26 +121,6 @@ def safe_range(val):
     # As per range, but don't trust the value too much: cap it to a safety
     # threshold in case the data was corrupted
     return range(safety_limit(int(val)))
-
-try:
-    os_fsencode = os.fsencode
-except AttributeError:
-    def os_fsencode(filename):
-        if not isinstance(filename, unicode):
-            return filename
-        encoding = sys.getfilesystemencoding()
-        if encoding == 'mbcs':
-            # mbcs doesn't support surrogateescape
-            return filename.encode(encoding)
-        encoded = []
-        for char in filename:
-            # surrogateescape error handler
-            if 0xDC80 <= ord(char) <= 0xDCFF:
-                byte = chr(ord(char) - 0xDC00)
-            else:
-                byte = char.encode(encoding)
-            encoded.append(byte)
-        return ''.join(encoded)
 
 class StringTruncated(RuntimeError):
     pass
@@ -174,16 +165,12 @@ class PyObjectPtr(object):
 
     def field(self, name):
         '''
-        Get the gdb.Value for the given field within the PyObject, coping with
-        some python 2 versus python 3 differences.
+        Get the gdb.Value for the given field within the PyObject.
 
         Various libpython types are defined using the "PyObject_HEAD" and
         "PyObject_VAR_HEAD" macros.
 
-        In Python 2, this these are defined so that "ob_type" and (for a var
-        object) "ob_size" are fields of the type in question.
-
-        In Python 3, this is defined as an embedded PyVarObject type thus:
+        In Python, this is defined as an embedded PyVarObject type thus:
            PyVarObject ob_base;
         so that the "ob_size" field is located insize the "ob_base" field, and
         the "ob_type" is most easily accessed by casting back to a (PyObject*).
@@ -204,8 +191,7 @@ class PyObjectPtr(object):
 
     def pyop_field(self, name):
         '''
-        Get a PyObjectPtr for the given PyObject* field within this PyObject,
-        coping with some python 2 versus python 3 differences.
+        Get a PyObjectPtr for the given PyObject* field within this PyObject.
         '''
         return PyObjectPtr.from_pyobject_ptr(self.field(name))
 
@@ -269,7 +255,7 @@ class PyObjectPtr(object):
 
         Derived classes will override this.
 
-        For example, a PyIntObject* with ob_ival 42 in the inferior process
+        For example, a PyLongObjectPtr* with long_value 42 in the inferior process
         should result in an int(42) in this process.
 
         visited: a set of all gdb.Value pyobject pointers already visited
@@ -482,7 +468,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
                 if dictoffset < 0:
                     if int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT:
                         assert dictoffset == -1
-                        dictoffset = -3 * _sizeof_void_p()
+                        dictoffset = _managed_dict_offset()
                     else:
                         type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
                         tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
@@ -510,12 +496,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        charptrptr_t = _type_char_ptr().pointer()
-        ptr = self._gdbval.cast(charptrptr_t) - 3
-        char_ptr = ptr.dereference()
-        if (int(char_ptr) & 1) == 0:
+        obj_ptr = self._gdbval.cast(_type_char_ptr())
+        dict_ptr_ptr = obj_ptr + _managed_dict_offset()
+        dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
+        if int(dict_ptr):
             return None
-        char_ptr += 1
+        char_ptr = obj_ptr + _sizeof_pyobject()
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -881,7 +867,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longobjrep.h has this declaration:
+        Python's Include/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -890,14 +876,18 @@ class PyLongObjectPtr(PyObjectPtr):
 
             struct _longobject {
                 PyObject_HEAD
-               _PyLongValue long_value;
+                _PyLongValue long_value;
             };
 
         with this description:
             The absolute value of a number is equal to
-                 SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-            Negative numbers are represented with ob_size < 0;
-            zero is represented by ob_size == 0.
+                SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+            The sign of the value is stored in the lower 2 bits of lv_tag.
+                - 0: Positive
+                - 1: Zero
+                - 2: Negative
+            The third lowest bit of lv_tag is reserved for an immortality flag, but is
+            not currently used.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -924,7 +914,7 @@ class PyLongObjectPtr(PyObjectPtr):
         return result
 
     def write_repr(self, out, visited):
-        # Write this out as a Python 3 int literal, i.e. without the "L" suffix
+        # Write this out as a Python int literal
         proxy = self.proxyval(visited)
         out.write("%s" % proxy)
 
@@ -1034,14 +1024,18 @@ class PyFramePtr:
         self._gdbval = gdbval
 
         if not self.is_optimized_out():
-            self.co = self._f_code()
-            self.co_name = self.co.pyop_field('co_name')
-            self.co_filename = self.co.pyop_field('co_filename')
+            try:
+                self.co = self._f_code()
+                self.co_name = self.co.pyop_field('co_name')
+                self.co_filename = self.co.pyop_field('co_filename')
 
-            self.f_lasti = self._f_lasti()
-            self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-            pnames = self.co.field('co_localsplusnames')
-            self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+                self.f_lasti = self._f_lasti()
+                self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
+                pnames = self.co.field('co_localsplusnames')
+                self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+                self._is_code = True
+            except:
+                self._is_code = False
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
@@ -1076,16 +1070,19 @@ class PyFramePtr:
         return self._f_special("f_builtins")
 
     def _f_code(self):
-        return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)
+        return self._f_special("f_executable", PyCodeObjectPtr.from_pyobject_ptr)
+
+    def _f_executable(self):
+        return self._f_special("f_executable")
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)
 
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
-        prev_instr = self._gdbval["prev_instr"]
+        instr_ptr = self._gdbval["instr_ptr"]
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
-        return int(prev_instr - first_instr)
+        return int(instr_ptr - first_instr)
 
     def is_shim(self):
         return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
@@ -1170,7 +1167,7 @@ class PyFramePtr:
 
         filename = self.filename()
         try:
-            with open(os_fsencode(filename), 'r', encoding="utf-8") as fp:
+            with open(os.fsencode(filename), 'r', encoding="utf-8") as fp:
                 lines = fp.readlines()
         except IOError:
             return None
@@ -1263,7 +1260,7 @@ class PySetObjectPtr(PyObjectPtr):
             return set(members)
 
     def write_repr(self, out, visited):
-        # Emulate Python 3's set_repr
+        # Emulate Python's set_repr
         tp_name = self.safe_tp_name()
 
         # Guard against infinite loops:
@@ -1272,13 +1269,13 @@ class PySetObjectPtr(PyObjectPtr):
             return
         visited.add(self.as_address())
 
-        # Python 3's set_repr special-cases the empty set:
+        # Python's set_repr special-cases the empty set:
         if not self.field('used'):
             out.write(tp_name)
             out.write('()')
             return
 
-        # Python 3 uses {} for set literals:
+        # Python uses {} for set literals:
         if tp_name != 'set':
             out.write(tp_name)
             out.write('(')
@@ -1309,13 +1306,13 @@ class PyBytesObjectPtr(PyObjectPtr):
         return str(self)
 
     def write_repr(self, out, visited):
-        # Write this out as a Python 3 bytes literal, i.e. with a "b" prefix
+        # Write this out as a Python bytes literal, i.e. with a "b" prefix
 
-        # Get a PyStringObject* within the Python 2 gdb process:
+        # Get a PyStringObject* within the Python gdb process:
         proxy = self.proxyval(visited)
 
-        # Transliteration of Python 3's Objects/bytesobject.c:PyBytes_Repr
-        # to Python 2 code:
+        # Transliteration of Python's Objects/bytesobject.c:PyBytes_Repr
+        # to Python code:
         quote = "'"
         if "'" in proxy and not '"' in proxy:
             quote = '"'
@@ -1380,7 +1377,7 @@ class PyTypeObjectPtr(PyObjectPtr):
 
 
 def _unichr_is_printable(char):
-    # Logic adapted from Python 3's Tools/unicode/makeunicodedata.py
+    # Logic adapted from Python's Tools/unicode/makeunicodedata.py
     if char == u" ":
         return True
     import unicodedata
@@ -1389,10 +1386,6 @@ def _unichr_is_printable(char):
 
 class PyUnicodeObjectPtr(PyObjectPtr):
     _typename = 'PyUnicodeObject'
-
-    def char_width(self):
-        _type_Py_UNICODE = gdb.lookup_type('Py_UNICODE')
-        return _type_Py_UNICODE.sizeof
 
     def proxyval(self, visited):
         compact = self.field('_base')
@@ -1414,23 +1407,23 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         elif repr_kind == 4:
             field_str = field_str.cast(_type_unsigned_int_ptr())
 
-        # Gather a list of ints from the Py_UNICODE array; these are either
+        # Gather a list of ints from the code point array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
-        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
+        code_points = [int(field_str[i]) for i in safe_range(field_length)]
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
-        result = u''.join(map(chr, Py_UNICODEs))
+        result = ''.join(map(chr, code_points))
         return result
 
     def write_repr(self, out, visited):
-        # Write this out as a Python 3 str literal, i.e. without a "u" prefix
+        # Write this out as a Python str literal
 
-        # Get a PyUnicodeObject* within the Python 2 gdb process:
+        # Get a PyUnicodeObject* within the Python gdb process:
         proxy = self.proxyval(visited)
 
-        # Transliteration of Python 3's Object/unicodeobject.c:unicode_repr
-        # to Python 2:
+        # Transliteration of Python's Object/unicodeobject.c:unicode_repr
+        # to Python:
         if "'" in proxy and '"' not in proxy:
             quote = '"'
         else:
@@ -1481,7 +1474,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                 # (categories Z* and C* except ASCII space)
                 if not printable:
                     if ch2 is not None:
-                        # Match Python 3's representation of non-printable
+                        # Match Python's representation of non-printable
                         # wide characters.
                         code = (ord(ch) & 0x03FF) << 10
                         code |= ord(ch2) & 0x03FF
@@ -1612,8 +1605,8 @@ The following code should ensure that the prettyprinter is registered
 if the code is autoloaded by gdb when visiting libpython.so, provided
 that this python file is installed to the same path as the library (or its
 .debug file) plus a "-gdb.py" suffix, e.g:
-  /usr/lib/libpython2.6.so.1.0-gdb.py
-  /usr/lib/debug/usr/lib/libpython2.6.so.1.0.debug-gdb.py
+  /usr/lib/libpython3.12.so.1.0-gdb.py
+  /usr/lib/debug/usr/lib/libpython3.12.so.1.0.debug-gdb.py
 """
 def register (obj):
     if obj is None:
@@ -1768,8 +1761,11 @@ class Frame(object):
             return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame gc_collect_main() within the garbage-collector?'''
-        return self._gdbframe.name() in ('collect', 'gc_collect_main')
+        '''Is this frame a collector within the garbage-collector?'''
+        return self._gdbframe.name() in (
+            'collect', 'gc_collect_full', 'gc_collect_main',
+            'gc_collect_young', 'gc_collect_increment',
+        )
 
     def get_pyop(self):
         try:
@@ -1932,7 +1928,7 @@ class PyList(gdb.Command):
             start = 1
 
         try:
-            f = open(os_fsencode(filename), 'r', encoding="utf-8")
+            f = open(os.fsencode(filename), 'r', encoding="utf-8")
         except IOError as err:
             sys.stdout.write('Unable to open %s: %s\n'
                              % (filename, err))

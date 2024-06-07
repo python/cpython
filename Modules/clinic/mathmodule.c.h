@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
@@ -203,6 +203,67 @@ PyDoc_STRVAR(math_log10__doc__,
 
 #define MATH_LOG10_METHODDEF    \
     {"log10", (PyCFunction)math_log10, METH_O, math_log10__doc__},
+
+PyDoc_STRVAR(math_fma__doc__,
+"fma($module, x, y, z, /)\n"
+"--\n"
+"\n"
+"Fused multiply-add operation.\n"
+"\n"
+"Compute (x * y) + z with a single round.");
+
+#define MATH_FMA_METHODDEF    \
+    {"fma", _PyCFunction_CAST(math_fma), METH_FASTCALL, math_fma__doc__},
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z);
+
+static PyObject *
+math_fma(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double z;
+
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[2])) {
+        z = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        z = PyFloat_AsDouble(args[2]);
+        if (z == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_fma_impl(module, x, y, z);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(math_fmod__doc__,
 "fmod($module, x, y, /)\n"
@@ -826,25 +887,59 @@ exit:
 }
 
 PyDoc_STRVAR(math_nextafter__doc__,
-"nextafter($module, x, y, /)\n"
+"nextafter($module, x, y, /, *, steps=None)\n"
 "--\n"
 "\n"
-"Return the next floating-point value after x towards y.");
+"Return the floating-point value the given number of steps after x towards y.\n"
+"\n"
+"If steps is not specified or is None, it defaults to 1.\n"
+"\n"
+"Raises a TypeError, if x or y is not a double, or if steps is not an integer.\n"
+"Raises ValueError if steps is negative.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
-    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y);
+math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps);
 
 static PyObject *
-math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(steps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "steps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "nextafter",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double x;
     double y;
+    PyObject *steps = Py_None;
 
-    if (!_PyArg_CheckPositional("nextafter", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -867,7 +962,12 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    return_value = math_nextafter_impl(module, x, y);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    steps = args[2];
+skip_optional_kwonly:
+    return_value = math_nextafter_impl(module, x, y, steps);
 
 exit:
     return return_value;
@@ -911,4 +1011,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a6437a3ba18c486a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fe3f007f474e015 input=a9049054013a1b77]*/

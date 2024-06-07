@@ -32,8 +32,8 @@ Truth Value Testing
 ===================
 
 .. index::
-   statement: if
-   statement: while
+   pair: statement; if
+   pair: statement; while
    pair: truth; value
    pair: Boolean; operations
    single: false
@@ -44,15 +44,16 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a
+:meth:`~object.__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
-* constants defined to be false: ``None`` and ``False``.
+* constants defined to be false: ``None`` and ``False``
 
 * zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
   ``Fraction(0, 1)``
@@ -61,8 +62,8 @@ objects considered false:
   ``range(0)``
 
 .. index::
-   operator: or
-   operator: and
+   pair: operator; or
+   pair: operator; and
    single: False
    single: True
 
@@ -95,9 +96,9 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 
 .. index::
-   operator: and
-   operator: or
-   operator: not
+   pair: operator; and
+   pair: operator; or
+   pair: operator; not
 
 Notes:
 
@@ -122,14 +123,14 @@ Comparisons
 .. index::
    pair: chaining; comparisons
    pair: operator; comparison
-   operator: ==
-   operator: < (less)
-   operator: <=
-   operator: > (greater)
-   operator: >=
-   operator: !=
-   operator: is
-   operator: is not
+   pair: operator; ==
+   pair: operator; < (less)
+   pair: operator; <=
+   pair: operator; > (greater)
+   pair: operator; >=
+   pair: operator; !=
+   pair: operator; is
+   pair: operator; is not
 
 There are eight comparison operations in Python.  They all have the same
 priority (which is higher than that of the Boolean operations).  Comparisons can
@@ -192,12 +193,12 @@ customized; also they can be applied to any two objects and never raise an
 exception.
 
 .. index::
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
 :keyword:`not in`, are supported by types that are :term:`iterable` or
-implement the :meth:`__contains__` method.
+implement the :meth:`~object.__contains__` method.
 
 .. _typesnumeric:
 
@@ -205,11 +206,11 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 ================================================================
 
 .. index::
-   object: numeric
-   object: Boolean
-   object: integer
-   object: floating point
-   object: complex number
+   pair: object; numeric
+   pair: object; Boolean
+   pair: object; integer
+   pair: object; floating point
+   pair: object; complex number
    pair: C; language
 
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
@@ -244,20 +245,20 @@ and imaginary parts.
 
 .. index::
    single: arithmetic
-   builtin: int
-   builtin: float
-   builtin: complex
+   pair: built-in function; int
+   pair: built-in function; float
+   pair: built-in function; complex
    single: operator; + (plus)
    single: + (plus); unary operator
    single: + (plus); binary operator
    single: operator; - (minus)
    single: - (minus); unary operator
    single: - (minus); binary operator
-   operator: * (asterisk)
-   operator: / (slash)
-   operator: //
-   operator: % (percent)
-   operator: **
+   pair: operator; * (asterisk)
+   pair: operator; / (slash)
+   pair: operator; //
+   pair: operator; % (percent)
+   pair: operator; **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
@@ -282,7 +283,7 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x / y``           | quotient of *x* and *y*         |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
-| ``x // y``          | floored quotient of *x* and     | \(1)    |                    |
+| ``x // y``          | floored quotient of *x* and     | \(1)\(2)|                    |
 |                     | *y*                             |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
 | ``x % y``           | remainder of ``x / y``          | \(2)    |                    |
@@ -319,8 +320,10 @@ the operations, see :ref:`operator-summary`):
 Notes:
 
 (1)
-   Also referred to as integer division.  The resultant value is a whole
-   integer, though the result's type is not necessarily int.  The result is
+   Also referred to as integer division.  For operands of type :class:`int`,
+   the result has type :class:`int`.  For operands of type :class:`float`,
+   the result has type :class:`float`.  In general, the result is a whole
+   integer, though the result's type is not necessarily :class:`int`.  The result is
    always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
    ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
@@ -330,7 +333,7 @@ Notes:
 
 (3)
    .. index::
-      module: math
+      pair: module; math
       single: floor() (in module math)
       single: ceil() (in module math)
       single: trunc() (in module math)
@@ -392,12 +395,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: | (vertical bar)
-   operator: ^ (caret)
-   operator: & (ampersand)
-   operator: <<
-   operator: >>
-   operator: ~ (tilde)
+   pair: operator; | (vertical bar)
+   pair: operator; ^ (caret)
+   pair: operator; & (ampersand)
+   pair: operator; <<
+   pair: operator; >>
+   pair: operator; ~ (tilde)
 
 Bitwise operations only make sense for integers. The result of bitwise
 operations is calculated as though carried out in two's complement with an
@@ -715,7 +718,7 @@ that's defined for any rational number, and hence applies to all instances of
 :class:`int` and :class:`fractions.Fraction`, and all finite instances of
 :class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
 given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
-made available to Python as the :attr:`modulus` attribute of
+made available to Python as the :attr:`~sys.hash_info.modulus` attribute of
 :data:`sys.hash_info`.
 
 .. impl-detail::
@@ -802,6 +805,40 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
+.. _bltin-boolean-values:
+.. _typebool:
+
+Boolean Type - :class:`bool`
+============================
+
+Booleans represent truth values. The :class:`bool` type has exactly two
+constant instances: ``True`` and ``False``.
+
+.. index::
+   single: False
+   single: True
+   pair: Boolean; values
+
+The built-in function :func:`bool`  converts any value to a boolean, if the
+value can be interpreted as a truth value (see section :ref:`truth` above).
+
+For logical operations, use the :ref:`boolean operators <boolean>` ``and``,
+``or`` and ``not``.
+When applying the bitwise operators ``&``, ``|``, ``^`` to two booleans, they
+return a bool equivalent to the logical operations "and", "or", "xor". However,
+the logical operators ``and``, ``or`` and ``!=`` should be preferred
+over ``&``, ``|`` and ``^``.
+
+.. deprecated:: 3.12
+
+   The use of the bitwise inversion operator ``~`` is deprecated and will
+   raise an error in Python 3.14.
+
+:class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
+many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
+However, relying on this is discouraged; explicitly convert using :func:`int`
+instead.
+
 .. _typeiter:
 
 Iterator Types
@@ -870,9 +907,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -894,7 +931,7 @@ described in dedicated sections.
 Common Sequence Operations
 --------------------------
 
-.. index:: object: sequence
+.. index:: pair: object; sequence
 
 The operations in the following table are supported by most sequence types,
 both mutable and immutable. The :class:`collections.abc.Sequence` ABC is
@@ -912,15 +949,15 @@ operations have the same priority as the corresponding numeric operations. [3]_
 
 .. index::
    triple: operations on; sequence; types
-   builtin: len
-   builtin: min
-   builtin: max
+   pair: built-in function; len
+   pair: built-in function; min
+   pair: built-in function; max
    pair: concatenation; operation
    pair: repetition; operation
    pair: subscript; operation
    pair: slice; operation
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
    single: count() (sequence method)
    single: index() (sequence method)
 
@@ -1079,8 +1116,8 @@ Immutable Sequence Types
 
 .. index::
    triple: immutable; sequence; types
-   object: tuple
-   builtin: hash
+   pair: object; tuple
+   pair: built-in function; hash
 
 The only operation that immutable sequence types generally implement that is
 not also implemented by mutable sequence types is support for the :func:`hash`
@@ -1101,8 +1138,8 @@ Mutable Sequence Types
 
 .. index::
    triple: mutable; sequence; types
-   object: list
-   object: bytearray
+   pair: object; list
+   pair: object; bytearray
 
 The operations in the following table are defined on mutable sequence types.
 The :class:`collections.abc.MutableSequence` ABC is provided to make it
@@ -1119,7 +1156,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    triple: operations on; list; type
    pair: subscript; assignment
    pair: slice; assignment
-   statement: del
+   pair: statement; del
    single: append() (sequence method)
    single: clear() (sequence method)
    single: copy() (sequence method)
@@ -1219,7 +1256,7 @@ Notes:
 Lists
 -----
 
-.. index:: object: list
+.. index:: pair: object; list
 
 Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
@@ -1298,7 +1335,7 @@ application).
 Tuples
 ------
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 Tuples are immutable sequences, typically used to store collections of
 heterogeneous data (such as the 2-tuples produced by the :func:`enumerate`
@@ -1342,7 +1379,7 @@ choice than a simple tuple object.
 Ranges
 ------
 
-.. index:: object: range
+.. index:: pair: object; range
 
 The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
@@ -1454,20 +1491,19 @@ objects that compare equal might have different :attr:`~range.start`,
    sequence of values they define (instead of comparing based on
    object identity).
 
-.. versionadded:: 3.3
-   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   Added the :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
 .. seealso::
 
-   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000-equally-spaced-numbers-linspace/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
 .. index::
    single: string; text sequence type
    single: str (built-in class); (see also string)
-   object: string
+   pair: object; string
 
 .. _textseq:
 
@@ -1491,7 +1527,7 @@ between them will be implicitly converted to a single string literal. That
 is, ``("spam " "eggs") == "spam eggs"``.
 
 See :ref:`strings` for more about the various forms of string literal,
-including supported escape sequences, and the ``r`` ("raw") prefix that
+including supported :ref:`escape sequences <escape-sequences>`, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
 Strings may also be created from other objects using the :class:`str`
@@ -1501,7 +1537,7 @@ Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.
 
 .. index::
-   object: io.StringIO
+   pair: object; io.StringIO
 
 There is also no mutable string type, but :meth:`str.join` or
 :class:`io.StringIO` can be used to efficiently construct strings from
@@ -1567,7 +1603,7 @@ String Methods
 --------------
 
 .. index::
-   module: re
+   pair: module; re
 
 Strings implement all of the :ref:`common <typesseq-common>` sequence
 operations, along with the additional methods described below.
@@ -1605,8 +1641,8 @@ expression support in the :mod:`re` module).
    converts it to ``"ss"``.
 
    The casefolding algorithm is
-   `described in section 3.13 of the Unicode Standard
-   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1732,7 +1768,7 @@ expression support in the :mod:`re` module).
       cases.
 
 
-.. method:: str.format_map(mapping)
+.. method:: str.format_map(mapping, /)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
@@ -1768,8 +1804,9 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
+   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   Ideographic' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1904,8 +1941,8 @@ expression support in the :mod:`re` module).
    lowercase.
 
    The lowercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -1980,11 +2017,14 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new[, count])
+.. method:: str.replace(old, new, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
-   *new*.  If the optional argument *count* is given, only the first *count*
-   occurrences are replaced.
+   *new*.  If *count* is given, only the first *count* occurrences are replaced.
+   If *count* is not specified or ``-1``, then all occurrences are replaced.
+
+   .. versionchanged:: 3.13
+      *count* is now supported as a keyword argument.
 
 
 .. method:: str.rfind(sub[, start[, end]])
@@ -2227,7 +2267,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
@@ -2250,8 +2290,8 @@ expression support in the :mod:`re` module).
    titlecase).
 
    The uppercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -2299,7 +2339,13 @@ String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
+For example:
+
+.. doctest::
+
+   >>> print('%s has %d quote types.' % ('Python', 2))
+   Python has 2 quote types.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -2474,10 +2520,10 @@ Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview
 =================================================================================
 
 .. index::
-   object: bytes
-   object: bytearray
-   object: memoryview
-   module: array
+   pair: object; bytes
+   pair: object; bytearray
+   pair: object; memoryview
+   pair: module; array
 
 The core built-in types for manipulating binary data are :class:`bytes` and
 :class:`bytearray`. They are supported by :class:`memoryview` which uses
@@ -2492,7 +2538,7 @@ The :mod:`array` module supports efficient storage of basic data types like
 Bytes Objects
 -------------
 
-.. index:: object: bytes
+.. index:: pair: object; bytes
 
 Bytes objects are immutable sequences of single bytes. Since many major
 binary protocols are based on the ASCII text encoding, bytes objects offer
@@ -2599,7 +2645,7 @@ always convert a bytes object into a list of integers using ``list(b)``.
 Bytearray Objects
 -----------------
 
-.. index:: object: bytearray
+.. index:: pair: object; bytearray
 
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
@@ -3632,7 +3678,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'b'``    | Bytes (any object that follows the                  | \(5)  |
 |            | :ref:`buffer protocol <bufferobjects>` or has       |       |
-|            | :meth:`__bytes__`).                                 |       |
+|            | :meth:`~object.__bytes__`).                         |       |
 +------------+-----------------------------------------------------+-------+
 | ``'s'``    | ``'s'`` is an alias for ``'b'`` and should only     | \(6)  |
 |            | be used for Python2/3 code bases.                   |       |
@@ -3714,12 +3760,15 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`.
-   If ``view.ndim = 0``, the length is 1. If ``view.ndim = 1``, the length
-   is equal to the number of elements in the view. For higher dimensions,
-   the length is equal to the length of the nested list representation of
-   the view. The :class:`~memoryview.itemsize` attribute will give you the
-   number of bytes in a single element.
+   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   is the nested list representation of the view. If ``view.ndim = 1``,
+   this is equal to the number of elements in the view.
+
+   .. versionchanged:: 3.12
+      If ``view.ndim == 0``, ``len(view)`` now raises :exc:`TypeError` instead of returning 1.
+
+   The :class:`~memoryview.itemsize` attribute will give you the number of
+   bytes in a single element.
 
    A :class:`memoryview` supports slicing and indexing to expose its data.
    One-dimensional slicing will result in a subview::
@@ -3913,7 +3962,7 @@ copying.
          >>> m = memoryview(bytearray(b'abc'))
          >>> mm = m.toreadonly()
          >>> mm.tolist()
-         [89, 98, 99]
+         [97, 98, 99]
          >>> mm[0] = 42
          Traceback (most recent call last):
            File "<stdin>", line 1, in <module>
@@ -3969,6 +4018,7 @@ copying.
       :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
+      Note that all byte lengths may depend on the operating system.
 
       Cast 1D/long to 1D/unsigned bytes::
 
@@ -3999,8 +4049,8 @@ copying.
          >>> x = memoryview(b)
          >>> x[0] = b'a'
          Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-         ValueError: memoryview: invalid value for format "B"
+           ...
+         TypeError: memoryview: invalid type for format 'B'
          >>> y = x.cast('c')
          >>> y[0] = b'a'
          >>> b
@@ -4175,7 +4225,7 @@ copying.
 Set Types --- :class:`set`, :class:`frozenset`
 ==============================================
 
-.. index:: object: set
+.. index:: pair: object; set
 
 A :dfn:`set` object is an unordered collection of distinct :term:`hashable` objects.
 Common uses include membership testing, removing duplicates from a sequence, and
@@ -4366,7 +4416,8 @@ The constructors for both classes work the same:
    :meth:`symmetric_difference_update` methods will accept any iterable as an
    argument.
 
-   Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+   Note, the *elem* argument to the :meth:`~object.__contains__`,
+   :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
    frozenset, a temporary one is created from *elem*.
 
@@ -4377,12 +4428,12 @@ Mapping Types --- :class:`dict`
 ===============================
 
 .. index::
-   object: mapping
-   object: dictionary
+   pair: object; mapping
+   pair: object; dictionary
    triple: operations on; mapping; types
    triple: operations on; dictionary; type
-   statement: del
-   builtin: len
+   pair: statement; del
+   pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
 Mappings are mutable objects.  There is currently only one standard mapping
@@ -4514,7 +4565,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable[, value])
+   .. classmethod:: fromkeys(iterable, value=None)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
@@ -4524,7 +4575,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key[, default])
+   .. method:: get(key, default=None)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4566,7 +4617,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key[, default])
+   .. method:: setdefault(key, default=None)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -4711,14 +4762,17 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and :term:`hashable`.  If all
-values are hashable, so that ``(key, value)`` pairs are unique and hashable,
-then the items view is also set-like.  (Values views are not treated as set-like
+Keys views are set-like since their entries are unique and :term:`hashable`.
+Items views also have set-like operations since the (key, value) pairs
+are unique and the keys are hashable.
+If all values in an items view are hashable as well,
+then the items view can interoperate with other sets.
+(Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
 available (for example, ``==``, ``<``, or ``^``).  While using set operators,
-set-like views accept any iterable as the other operand, unlike sets which only
-accept sets as the input.
+set-like views accept any iterable as the other operand,
+unlike sets which only accept sets as the input.
 
 An example of dictionary view usage::
 
@@ -4749,10 +4803,10 @@ An example of dictionary view usage::
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
-   >>> keys ^ {'sausage', 'juice'}
-   {'juice', 'sausage', 'bacon', 'spam'}
-   >>> keys | ['juice', 'juice', 'juice']
-   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
+   >>> keys ^ {'sausage', 'juice'} == {'juice', 'sausage', 'bacon', 'spam'}
+   True
+   >>> keys | ['juice', 'juice', 'juice'] == {'bacon', 'spam', 'juice'}
+   True
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
@@ -4813,7 +4867,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,
@@ -4852,7 +4906,7 @@ Generic Alias Type
 ------------------
 
 .. index::
-   object: GenericAlias
+   pair: object; GenericAlias
    pair: Generic; Alias
 
 ``GenericAlias`` objects are generally created by
@@ -4959,8 +5013,8 @@ exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: There are no type variables left in dict[str]
+     ...
+   TypeError: dict[str] is not a generic class
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
@@ -5007,7 +5061,6 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
-* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5107,7 +5160,7 @@ Union Type
 ----------
 
 .. index::
-   object: Union
+   pair: object; Union
    pair: union; type
 
 A union object holds the value of the ``|`` (bitwise or) operation on
@@ -5124,6 +5177,14 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       def square(number: int | float) -> int | float:
           return number ** 2
+
+   .. note::
+
+      The ``|`` operand cannot be used at runtime to define unions where one or
+      more members is a forward reference. For example, ``int | "Foo"``, where
+      ``"Foo"`` is a reference to a class not yet defined, will fail at
+      runtime. For unions which include forward references, present the
+      whole expression as a string, e.g. ``"int | Foo"``.
 
 .. describe:: union_object == other
 
@@ -5158,13 +5219,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
+   However, :ref:`parameterized generics <types-genericalias>` in
+   union objects cannot be checked::
 
-      >>> isinstance(1, int | list[int])
+      >>> isinstance(1, int | list[int])  # short-circuit evaluation
+      True
+      >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+        ...
+      TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
@@ -5179,9 +5242,11 @@ instantiated from the type::
    TypeError: cannot create 'types.UnionType' instances
 
 .. note::
-   The :meth:`__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
-   override it::
+   The :meth:`!__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
+   override it:
+
+   .. doctest::
 
       >>> class M(type):
       ...     def __or__(self, other):
@@ -5193,7 +5258,7 @@ instantiated from the type::
       >>> C | int
       'Hello'
       >>> int | C
-      int | __main__.C
+      int | C
 
 .. seealso::
 
@@ -5265,28 +5330,33 @@ See :ref:`function` for more information.
 Methods
 -------
 
-.. index:: object: method
+.. index:: pair: object; method
 
 Methods are functions that are called using the attribute notation. There are
-two flavors: built-in methods (such as :meth:`append` on lists) and class
-instance methods.  Built-in methods are described with the types that support
-them.
+two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
+on lists) and :ref:`class instance method <instance-methods>`.
+Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
 instance, you get a special object: a :dfn:`bound method` (also called
-:dfn:`instance method`) object. When called, it will add the ``self`` argument
+:ref:`instance method <instance-methods>`) object. When called, it will add
+the ``self`` argument
 to the argument list.  Bound methods have two special read-only attributes:
-``m.__self__`` is the object on which the method operates, and ``m.__func__`` is
+:attr:`m.__self__ <method.__self__>` is the object on which the method
+operates, and :attr:`m.__func__ <method.__func__>` is
 the function implementing the method.  Calling ``m(arg-1, arg-2, ..., arg-n)``
 is completely equivalent to calling ``m.__func__(m.__self__, arg-1, arg-2, ...,
 arg-n)``.
 
-Like function objects, bound method objects support getting arbitrary
+Like :ref:`function objects <user-defined-funcs>`, bound method objects support
+getting arbitrary
 attributes.  However, since method attributes are actually stored on the
-underlying function object (``meth.__func__``), setting method attributes on
+underlying function object (:attr:`method.__func__`), setting method attributes on
 bound methods is disallowed.  Attempting to set an attribute on a method
 results in an :exc:`AttributeError` being raised.  In order to set a method
-attribute, you need to explicitly set it on the underlying function object::
+attribute, you need to explicitly set it on the underlying function object:
+
+.. doctest::
 
    >>> class C:
    ...     def method(self):
@@ -5301,7 +5371,7 @@ attribute, you need to explicitly set it on the underlying function object::
    >>> c.method.whoami
    'my name is method'
 
-See :ref:`types` for more information.
+See :ref:`instance-methods` for more information.
 
 
 .. index:: object; code, code object
@@ -5312,22 +5382,22 @@ Code Objects
 ------------
 
 .. index::
-   builtin: compile
+   pair: built-in function; compile
    single: __code__ (function object attribute)
 
 Code objects are used by the implementation to represent "pseudo-compiled"
 executable Python code such as a function body. They differ from function
 objects because they don't contain a reference to their global execution
 environment.  Code objects are returned by the built-in :func:`compile` function
-and can be extracted from function objects through their :attr:`__code__`
-attribute. See also the :mod:`code` module.
+and can be extracted from function objects through their
+:attr:`~function.__code__` attribute. See also the :mod:`code` module.
 
-Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+Accessing :attr:`~function.__code__` raises an :ref:`auditing event <auditing>`
 ``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
-   builtin: exec
-   builtin: eval
+   pair: built-in function; exec
+   pair: built-in function; eval
 
 A code object can be executed or evaluated by passing it (instead of a source
 string) to the :func:`exec` or :func:`eval`  built-in functions.
@@ -5341,8 +5411,8 @@ Type Objects
 ------------
 
 .. index::
-   builtin: type
-   module: types
+   pair: built-in function; type
+   pair: module; types
 
 Type objects represent the various object types.  An object's type is accessed
 by the built-in function :func:`type`.  There are no special operations on
@@ -5385,31 +5455,10 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.  There is exactly one ``NotImplemented`` object.
-``type(NotImplemented)()`` produces the singleton instance.
+information.  There is exactly one :data:`NotImplemented` object.
+:code:`type(NotImplemented)()` produces the singleton instance.
 
-It is written as ``NotImplemented``.
-
-
-.. _bltin-boolean-values:
-
-Boolean Values
---------------
-
-Boolean values are the two constant objects ``False`` and ``True``.  They are
-used to represent truth values (although other values can also be considered
-false or true).  In numeric contexts (for example when used as the argument to
-an arithmetic operator), they behave like the integers 0 and 1, respectively.
-The built-in function :func:`bool` can be used to convert any value to a
-Boolean, if the value can be interpreted as a truth value (see section
-:ref:`truth` above).
-
-.. index::
-   single: False
-   single: True
-   pair: Boolean; values
-
-They are written as ``False`` and ``True``, respectively.
+It is written as :code:`NotImplemented`.
 
 
 .. _typesinternal:
@@ -5417,8 +5466,9 @@ They are written as ``False`` and ``True``, respectively.
 Internal Objects
 ----------------
 
-See :ref:`types` for this information.  It describes stack frame objects,
-traceback objects, and slice objects.
+See :ref:`types` for this information.  It describes
+:ref:`stack frame objects <frame-objects>`,
+:ref:`traceback objects <traceback-objects>`, and slice objects.
 
 
 .. _specialattrs:
@@ -5461,6 +5511,14 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: definition.__type_params__
+
+   The :ref:`type parameters <type-params>` of generic classes, functions,
+   and :ref:`type aliases <type-aliases>`.
+
+   .. versionadded:: 3.12
+
+
 .. attribute:: class.__mro__
 
    This attribute is a tuple of classes that are considered when looking for
@@ -5481,8 +5539,15 @@ types, where they are relevant.  Some of these are not reported by the
    definition order.  Example::
 
       >>> int.__subclasses__()
-      [<class 'bool'>]
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
+
+.. attribute:: class.__static_attributes__
+
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
+
+      .. versionadded:: 3.13
 
 .. _int_max_str_digits:
 
@@ -5501,8 +5566,7 @@ a string to a binary integer or a binary integer to a string in linear time,
 have sub-quadratic complexity. Converting a large value such as ``int('1' *
 500_000)`` can take over a second on a fast CPU.
 
-Limiting conversion size offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+Limiting conversion size offers a practical way to avoid :cve:`2020-10735`.
 
 The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores
@@ -5517,7 +5581,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5525,7 +5589,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
@@ -5595,7 +5659,7 @@ From code, you can inspect the current limit and set a new one using these
   a getter and setter for the interpreter-wide limit. Subinterpreters have
   their own limit.
 
-Information about the default and minimum can be found in :attr:`sys.int_info`:
+Information about the default and minimum can be found in :data:`sys.int_info`:
 
 * :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
   default limit.

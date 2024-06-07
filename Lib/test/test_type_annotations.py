@@ -1,4 +1,7 @@
+import textwrap
+import types
 import unittest
+from test.support import run_code
 
 class TypeAnnotationTests(unittest.TestCase):
 
@@ -101,3 +104,155 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+
+class TestSetupAnnotations(unittest.TestCase):
+    def check(self, code: str):
+        code = textwrap.dedent(code)
+        for scope in ("module", "class"):
+            with self.subTest(scope=scope):
+                if scope == "class":
+                    code = f"class C:\n{textwrap.indent(code, '    ')}"
+                ns = run_code(code)
+                if scope == "class":
+                    annotations = ns["C"].__annotations__
+                else:
+                    annotations = ns["__annotations__"]
+                self.assertEqual(annotations, {"x": int})
+
+    def test_top_level(self):
+        self.check("x: int = 1")
+
+    def test_blocks(self):
+        self.check("if True:\n    x: int = 1")
+        self.check("""
+            while True:
+                x: int = 1
+                break
+        """)
+        self.check("""
+            while False:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            for i in range(1):
+                x: int = 1
+        """)
+        self.check("""
+            for i in range(1):
+                pass
+            else:
+                x: int = 1
+        """)
+
+    def test_try(self):
+        self.check("""
+            try:
+                x: int = 1
+            except:
+                pass
+        """)
+        self.check("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                pass
+            except:
+                pass
+            finally:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                1/0
+            except:
+                x: int = 1
+        """)
+
+    def test_try_star(self):
+        self.check("""
+            try:
+                x: int = 1
+            except* Exception:
+                pass
+        """)
+        self.check("""
+            try:
+                pass
+            except* Exception:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                pass
+            except* Exception:
+                pass
+            finally:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                1/0
+            except* Exception:
+                x: int = 1
+        """)
+
+    def test_match(self):
+        self.check("""
+            match 0:
+                case 0:
+                    x: int = 1
+        """)
+
+
+class AnnotateTests(unittest.TestCase):
+    """See PEP 649."""
+    def test_manual_annotate(self):
+        def f():
+            pass
+        mod = types.ModuleType("mod")
+        class X:
+            pass
+
+        for obj in (f, mod, X):
+            with self.subTest(obj=obj):
+                self.check_annotations(obj)
+
+    def check_annotations(self, f):
+        self.assertEqual(f.__annotations__, {})
+        self.assertIs(f.__annotate__, None)
+
+        with self.assertRaisesRegex(TypeError, "__annotate__ must be callable or None"):
+            f.__annotate__ = 42
+        f.__annotate__ = lambda: 42
+        with self.assertRaisesRegex(TypeError, r"takes 0 positional arguments but 1 was given"):
+            print(f.__annotations__)
+
+        f.__annotate__ = lambda x: 42
+        with self.assertRaisesRegex(TypeError, r"__annotate__ returned non-dict of type 'int'"):
+            print(f.__annotations__)
+
+        f.__annotate__ = lambda x: {"x": x}
+        self.assertEqual(f.__annotations__, {"x": 1})
+
+        # Setting annotate to None does not invalidate the cached __annotations__
+        f.__annotate__ = None
+        self.assertEqual(f.__annotations__, {"x": 1})
+
+        # But setting it to a new callable does
+        f.__annotate__ = lambda x: {"y": x}
+        self.assertEqual(f.__annotations__, {"y": 1})
+
+        # Setting f.__annotations__ also clears __annotate__
+        f.__annotations__ = {"z": 43}
+        self.assertIs(f.__annotate__, None)

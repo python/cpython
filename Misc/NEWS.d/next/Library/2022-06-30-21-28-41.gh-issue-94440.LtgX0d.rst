@@ -1,2 +1,0 @@
-Fix a :mod:`concurrent.futures.process` bug where ``ProcessPoolExecutor`` shutdown
-could hang after a future has been quickly submitted and canceled.

@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses the usual
-flow control statements known from other languages, with some twists.
+As well as the :keyword:`while` statement just introduced, Python uses a few more
+that we will encounter in this chapter.
 
 
 .. _tut-if:
@@ -46,7 +46,7 @@ details see :ref:`tut-match`.
 ==========================
 
 .. index::
-   statement: for
+   pair: statement; for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
@@ -163,14 +163,21 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 :keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
 ============================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
+The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
-terminated by a :keyword:`break` statement.  This is exemplified by the
-following loop, which searches for prime numbers::
+A :keyword:`!for` or :keyword:`!while` loop can include an :keyword:`!else` clause.
+
+In a :keyword:`for` loop, the :keyword:`!else` clause is executed
+after the loop reaches its final iteration.
+
+In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
+
+In either kind of loop, the :keyword:`!else` clause is **not** executed
+if the loop was terminated by a :keyword:`break`.
+
+This is exemplified in the following :keyword:`!for` loop,
+which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
@@ -307,8 +314,9 @@ you can use the class name followed by an argument list resembling a
 constructor, but with the ability to capture attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def where_is(point):
         match point:
@@ -342,7 +350,13 @@ Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) o
 (recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
 
 Patterns can be arbitrarily nested.  For example, if we have a short
-list of points, we could match it like this::
+list of Points, with ``__match_args__`` added, we could match it like this::
+
+    class Point:
+        __match_args__ = ('x', 'y')
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     match points:
         case []:
@@ -520,7 +534,7 @@ This example, as usual, demonstrates some new Python features:
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
   object types and methods, using *classes*, see :ref:`tut-classes`)
-  The method :meth:`append` shown in the example is defined for list objects; it
+  The method :meth:`!append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [a]``, but more efficient.
 
@@ -545,10 +559,10 @@ defined to allow.  For example::
 
    def ask_ok(prompt, retries=4, reminder='Please try again!'):
        while True:
-           ok = input(prompt)
-           if ok in ('y', 'ye', 'yes'):
+           reply = input(prompt)
+           if reply in {'y', 'ye', 'yes'}:
                return True
-           if ok in ('n', 'no', 'nop', 'nope'):
+           if reply in {'n', 'no', 'nop', 'nope'}:
                return False
            retries = retries - 1
            if retries < 0:
@@ -1032,7 +1046,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

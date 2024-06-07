@@ -54,12 +54,9 @@ extern "C" {
 #  error "NB_SMALL_SIZE_CLASSES should be less than 64"
 #endif
 
-#define _obmalloc_state_INIT(obmalloc) \
+#define _obmalloc_global_state_INIT \
     { \
         .dump_debug_stats = -1, \
-        .pools = { \
-            .used = _obmalloc_pools_INIT(obmalloc.pools), \
-        }, \
     }
 
 

@@ -71,8 +71,9 @@ class SharedMemory:
     _flags = os.O_RDWR
     _mode = 0o600
     _prepend_leading_slash = True if _USE_POSIX else False
+    _track = True
 
-    def __init__(self, name=None, create=False, size=0):
+    def __init__(self, name=None, create=False, size=0, *, track=True):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
@@ -82,6 +83,7 @@ class SharedMemory:
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
+        self._track = track
         if _USE_POSIX:
 
             # POSIX Shared Memory
@@ -116,8 +118,8 @@ class SharedMemory:
             except OSError:
                 self.unlink()
                 raise
-
-            resource_tracker.register(self._name, "shared_memory")
+            if self._track:
+                resource_tracker.register(self._name, "shared_memory")
 
         else:
 
@@ -236,12 +238,20 @@ class SharedMemory:
     def unlink(self):
         """Requests that the underlying shared memory block be destroyed.
 
-        In order to ensure proper cleanup of resources, unlink should be
-        called once (and only once) across all processes which have access
-        to the shared memory block."""
+        Unlink should be called once (and only once) across all handles
+        which have access to the shared memory block, even if these
+        handles belong to different processes. Closing and unlinking may
+        happen in any order, but trying to access data inside a shared
+        memory block after unlinking may result in memory errors,
+        depending on platform.
+
+        This method has no effect on Windows, where the only way to
+        delete a shared memory block is to close all handles."""
+
         if _USE_POSIX and self._name:
             _posixshmem.shm_unlink(self._name)
-            resource_tracker.unregister(self._name, "shared_memory")
+            if self._track:
+                resource_tracker.unregister(self._name, "shared_memory")
 
 
 _encoding = "utf8"

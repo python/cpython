@@ -373,6 +373,16 @@ class TestVectorsTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
             hmac.HMAC(key, msg=data, digestmod='')
 
+    def test_with_fallback(self):
+        cache = getattr(hashlib, '__builtin_constructor_cache')
+        try:
+            cache['foo'] = hashlib.sha256
+            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
+            expected = '6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a'
+            self.assertEqual(hexdigest, expected)
+        finally:
+            cache.pop('foo')
+
 
 class ConstructorTestCase(unittest.TestCase):
 
@@ -467,6 +477,14 @@ class SanityTestCase(unittest.TestCase):
             h.copy()
         except Exception:
             self.fail("Exception raised during normal usage of HMAC class.")
+
+
+class UpdateTestCase(unittest.TestCase):
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_with_str_update(self):
+        with self.assertRaises(TypeError):
+            h = hmac.new(b"key", digestmod='sha256')
+            h.update("invalid update")
 
 
 class CopyTestCase(unittest.TestCase):

@@ -15,13 +15,15 @@ __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
-READ, WRITE = 1, 2
+READ = 'rb'
+WRITE = 'wb'
 
 _COMPRESS_LEVEL_FAST = 1
 _COMPRESS_LEVEL_TRADEOFF = 6
 _COMPRESS_LEVEL_BEST = 9
 
 READ_BUFFER_SIZE = 128 * 1024
+_WRITE_BUFFER_SIZE = 4 * io.DEFAULT_BUFFER_SIZE
 
 
 def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
@@ -120,6 +122,21 @@ class BadGzipFile(OSError):
     """Exception raised in some cases for invalid gzip files."""
 
 
+class _WriteBufferStream(io.RawIOBase):
+    """Minimal object to pass WriteBuffer flushes into GzipFile"""
+    def __init__(self, gzip_file):
+        self.gzip_file = gzip_file
+
+    def write(self, data):
+        return self.gzip_file._write_raw(data)
+
+    def seekable(self):
+        return False
+
+    def writable(self):
+        return True
+
+
 class GzipFile(_compression.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
@@ -162,9 +179,10 @@ class GzipFile(_compression.BaseStream):
         and 9 is slowest and produces the most compression. 0 is no compression
         at all. The default is 9.
 
-        The mtime argument is an optional numeric timestamp to be written
-        to the last modification time field in the stream when compressing.
-        If omitted or None, the current time is used.
+        The optional mtime argument is the timestamp requested by gzip. The time
+        is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+        If mtime is omitted or None, the current time is used. Use mtime = 0
+        to generate a compressed stream that does not depend on creation time.
 
         """
 
@@ -183,6 +201,7 @@ class GzipFile(_compression.BaseStream):
         origmode = mode
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
+
 
         if mode.startswith('r'):
             self.mode = READ
@@ -206,6 +225,9 @@ class GzipFile(_compression.BaseStream):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
             self._write_mtime = mtime
+            self._buffer_size = _WRITE_BUFFER_SIZE
+            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
+                                             buffer_size=self._buffer_size)
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 
@@ -230,6 +252,11 @@ class GzipFile(_compression.BaseStream):
         self.writebuf = []
         self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
+
+    def tell(self):
+        self._check_not_closed()
+        self._buffer.flush()
+        return super().tell()
 
     def _write_gzip_header(self, compresslevel):
         self.fileobj.write(b'\037\213')             # magic header
@@ -272,6 +299,10 @@ class GzipFile(_compression.BaseStream):
         if self.fileobj is None:
             raise ValueError("write() on closed GzipFile object")
 
+        return self._buffer.write(data)
+
+    def _write_raw(self, data):
+        # Called by our self._buffer underlying WriteBufferStream.
         if isinstance(data, (bytes, bytearray)):
             length = len(data)
         else:
@@ -320,11 +351,11 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None:
+        if fileobj is None or self._buffer.closed:
             return
-        self.fileobj = None
         try:
             if self.mode == WRITE:
+                self._buffer.flush()
                 fileobj.write(self.compress.flush())
                 write32u(fileobj, self.crc)
                 # self.size may exceed 2 GiB, or even 4 GiB
@@ -332,6 +363,7 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
+            self.fileobj = None
             myfileobj = self.myfileobj
             if myfileobj:
                 self.myfileobj = None
@@ -340,6 +372,7 @@ class GzipFile(_compression.BaseStream):
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
         if self.mode == WRITE:
+            self._buffer.flush()
             # Ensure the compressor's buffer is flushed
             self.fileobj.write(self.compress.flush(zlib_mode))
             self.fileobj.flush()
@@ -370,6 +403,9 @@ class GzipFile(_compression.BaseStream):
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.mode == WRITE:
+            self._check_not_closed()
+            # Flush buffer to ensure validity of self.offset
+            self._buffer.flush()
             if whence != io.SEEK_SET:
                 if whence == io.SEEK_CUR:
                     offset = self.offset + offset
@@ -378,10 +414,10 @@ class GzipFile(_compression.BaseStream):
             if offset < self.offset:
                 raise OSError('Negative seek in write mode')
             count = offset - self.offset
-            chunk = b'\0' * 1024
-            for i in range(count // 1024):
+            chunk = b'\0' * self._buffer_size
+            for i in range(count // self._buffer_size):
                 self.write(chunk)
-            self.write(b'\0' * (count % 1024))
+            self.write(b'\0' * (count % self._buffer_size))
         elif self.mode == READ:
             self._check_not_closed()
             return self._buffer.seek(offset, whence)

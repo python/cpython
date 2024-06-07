@@ -1,2 +1,0 @@
-Add ``module`` argument to :func:`dataclasses.make_dataclass` and make
-classes produced by it pickleable.

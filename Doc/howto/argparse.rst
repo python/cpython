@@ -1,10 +1,12 @@
+.. _argparse-tutorial:
+
 *****************
 Argparse Tutorial
 *****************
 
 :author: Tshepang Mbambo
 
-.. _argparse-tutorial:
+.. currentmodule:: argparse
 
 This tutorial is intended to be a gentle introduction to :mod:`argparse`, the
 recommended command-line parsing module in the Python standard library.
@@ -12,7 +14,7 @@ recommended command-line parsing module in the Python standard library.
 .. note::
 
    There are two other modules that fulfill the same task, namely
-   :mod:`getopt` (an equivalent for :c:func:`getopt` from the C
+   :mod:`getopt` (an equivalent for ``getopt()`` from the C
    language) and the deprecated :mod:`optparse`.
    Note also that :mod:`argparse` is based on :mod:`optparse`,
    and therefore very similar in terms of usage.
@@ -137,13 +139,13 @@ And running the code:
 
 Here is what's happening:
 
-* We've added the :meth:`add_argument` method, which is what we use to specify
+* We've added the :meth:`~ArgumentParser.add_argument` method, which is what we use to specify
   which command-line options the program is willing to accept. In this case,
   I've named it ``echo`` so that it's in line with its function.
 
 * Calling our program now requires us to specify an option.
 
-* The :meth:`parse_args` method actually returns some data from the
+* The :meth:`~ArgumentParser.parse_args` method actually returns some data from the
   options specified, in this case, ``echo``.
 
 * The variable is some form of 'magic' that :mod:`argparse` performs for free
@@ -256,7 +258,7 @@ Here is what is happening:
 
 * To show that the option is actually optional, there is no error when running
   the program without it. Note that by default, if an optional argument isn't
-  used, the relevant variable, in this case :attr:`args.verbosity`, is
+  used, the relevant variable, in this case ``args.verbosity``, is
   given ``None`` as a value, which is the reason it fails the truth
   test of the :keyword:`if` statement.
 
@@ -299,7 +301,7 @@ Here is what is happening:
   We even changed the name of the option to match that idea.
   Note that we now specify a new keyword, ``action``, and give it the value
   ``"store_true"``. This means that, if the option is specified,
-  assign the value ``True`` to :data:`args.verbose`.
+  assign the value ``True`` to ``args.verbose``.
   Not specifying it implies ``False``.
 
 * It complains when you specify a value, in true spirit of what flags
@@ -698,7 +700,7 @@ Conflicting options
 
 So far, we have been working with two methods of an
 :class:`argparse.ArgumentParser` instance. Let's introduce a third one,
-:meth:`add_mutually_exclusive_group`. It allows for us to specify options that
+:meth:`~ArgumentParser.add_mutually_exclusive_group`. It allows for us to specify options that
 conflict with each other. Let's also change the rest of the program so that
 the new functionality makes more sense:
 we'll introduce the ``--quiet`` option,
@@ -785,6 +787,59 @@ but not both at the same time:
      -v, --verbose
      -q, --quiet
 
+
+How to translate the argparse output
+====================================
+
+The output of the :mod:`argparse` module such as its help text and error
+messages are all made translatable using the :mod:`gettext` module. This
+allows applications to easily localize messages produced by
+:mod:`argparse`. See also :ref:`i18n-howto`.
+
+For instance, in this :mod:`argparse` output:
+
+.. code-block:: shell-session
+
+   $ python prog.py --help
+   usage: prog.py [-h] [-v | -q] x y
+
+   calculate X to the power of Y
+
+   positional arguments:
+     x              the base
+     y              the exponent
+
+   options:
+     -h, --help     show this help message and exit
+     -v, --verbose
+     -q, --quiet
+
+The strings ``usage:``, ``positional arguments:``, ``options:`` and
+``show this help message and exit`` are all translatable.
+
+In order to translate these strings, they must first be extracted
+into a ``.po`` file. For example, using `Babel <https://babel.pocoo.org/>`__,
+run this command:
+
+.. code-block:: shell-session
+
+  $ pybabel extract -o messages.po /usr/lib/python3.12/argparse.py
+
+This command will extract all translatable strings from the :mod:`argparse`
+module and output them into a file named ``messages.po``. This command assumes
+that your Python installation is in ``/usr/lib``.
+
+You can find out the location of the :mod:`argparse` module on your system
+using this script::
+
+   import argparse
+   print(argparse.__file__)
+
+Once the messages in the ``.po`` file are translated and the translations are
+installed using :mod:`gettext`, :mod:`argparse` will be able to display the
+translated messages.
+
+To translate your own strings in the :mod:`argparse` output, use :mod:`gettext`.
 
 Conclusion
 ==========

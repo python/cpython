@@ -166,6 +166,11 @@ class CMathTests(unittest.TestCase):
         self.assertEqual(cmath.nan.imag, 0.0)
         self.assertEqual(cmath.nanj.real, 0.0)
         self.assertTrue(math.isnan(cmath.nanj.imag))
+        # Also check that the sign of all of these is positive:
+        self.assertEqual(math.copysign(1., cmath.nan.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nan.imag), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.imag), 1.)
 
         # Check consistency with reprs.
         self.assertEqual(repr(cmath.inf), "inf")
