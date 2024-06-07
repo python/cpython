@@ -203,21 +203,6 @@ def _compile_pattern(pat, sep, case_sensitive, recursive, include_hidden):
     return re.compile(regex, flags=flags).match
 
 
-def _open_dir(path, dir_fd=None, rel_path=None):
-    """Prepares the directory for scanning. Returns a 3-tuple with parts:
-    1. A path or fd to supply to `os.scandir()`.
-    2. The file descriptor for the directory, or None.
-    3. Whether the caller should close the fd (bool).
-    """
-    if dir_fd is None:
-        return path, None, False
-    elif rel_path == './':
-        return dir_fd, dir_fd, False
-    else:
-        fd = os.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
-        return fd, fd, True
-
-
 class _GlobberBase:
     """Abstract class providing shell-style pattern matching and globbing.
     """
@@ -239,8 +224,26 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
+    def lstat(path, dir_fd=None):
+        """Implements os.lstat()
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def opendir(path, flags, dir_fd=None):
+        """Implements os.open()
+        """
+        raise NotImplementedError
+
+    @staticmethod
     def scandir(path):
         """Implements os.scandir().
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def closedir(fd):
+        """Implements os.close().
         """
         raise NotImplementedError
 
@@ -327,15 +330,16 @@ class _GlobberBase:
             select_next = self.selector(parts)
 
         def select_wildcard(path, dir_fd=None, rel_path=None, exists=False):
-            close_fd = False
+            fd = None
             try:
-                arg, fd, close_fd = _open_dir(path, dir_fd, rel_path)
-                if fd is not None:
+                if dir_fd is None:
+                    with self.scandir(path) as scandir_it:
+                        entries = list(scandir_it)
+                else:
+                    fd = self.opendir(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    with self.scandir(fd) as scandir_it:
+                        entries = list(scandir_it)
                     prefix = self.add_slash(path)
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(arg) as scandir_it:
-                    entries = list(scandir_it)
             except OSError:
                 pass
             else:
@@ -356,8 +360,8 @@ class _GlobberBase:
                         else:
                             yield entry_path
             finally:
-                if close_fd:
-                    os.close(fd)
+                if fd is not None:
+                    self.closedir(fd)
         return select_wildcard
 
     def recursive_selector(self, part, parts):
@@ -399,23 +403,24 @@ class _GlobberBase:
                 while stack:
                     path, dir_fd, rel_path = stack.pop()
                     if path is None:
-                        os.close(dir_fd)
+                        self.closedir(dir_fd)
 
         def select_recursive_step(stack, match_pos):
             path, dir_fd, rel_path = stack.pop()
             try:
                 if path is None:
-                    os.close(dir_fd)
+                    self.closedir(dir_fd)
                     return
-                arg, fd, close_fd = _open_dir(path, dir_fd, rel_path)
-                if fd is not None:
+                elif dir_fd is None:
+                    fd = None
+                    with self.scandir(path) as scandir_it:
+                        entries = list(scandir_it)
+                else:
+                    fd = self.opendir(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    stack.append((None, fd, None))
+                    with self.scandir(fd) as scandir_it:
+                        entries = list(scandir_it)
                     prefix = self.add_slash(path)
-                    if close_fd:
-                        stack.append((None, fd, None))
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(arg) as scandir_it:
-                    entries = list(scandir_it)
             except OSError:
                 pass
             else:
@@ -453,7 +458,7 @@ class _GlobberBase:
             yield path
         elif dir_fd is not None:
             try:
-                os.lstat(rel_path, dir_fd=dir_fd)
+                self.lstat(rel_path, dir_fd=dir_fd)
                 yield path
             except OSError:
                 pass
@@ -465,7 +470,10 @@ class _StringGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for string paths.
     """
     lexists = staticmethod(os.path.lexists)
+    lstat = staticmethod(os.lstat)
+    opendir = staticmethod(os.open)
     scandir = staticmethod(os.scandir)
+    closedir = staticmethod(os.close)
     parse_entry = operator.attrgetter('path')
     concat_path = operator.add
 
