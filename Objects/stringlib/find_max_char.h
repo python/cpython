@@ -40,7 +40,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     }
 
     /* On 64-bit platforms with 128-bit vectors (x86-64, arm64) the
-       compiler can load 4 size_t values into two 16-byte vectors and do a 
+       compiler can load 4 size_t values into two 16-byte vectors and do a
        vector bitwise OR. */
     const size_t *_p = (const size_t *)p;
     while (_p < unrolled_end) {
@@ -98,7 +98,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     max_char = MAX_CHAR_ASCII;
     mask = MASK_ASCII;
     while (p < unrolled_end) {
-        /* Loading 8 values at once allows platforms that have 16-byte vectors 
+        /* Loading 8 values at once allows platforms that have 16-byte vectors
            to do a vector load and vector bitwise OR. */
         STRINGLIB_CHAR bits = p[0] | p[1] | p[2] | p[3] | p[4] | p[5] | p[6] | p[7];
         if (bits & mask) {
