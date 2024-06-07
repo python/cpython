@@ -2276,15 +2276,11 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            cfg_instr *prev_instr = basicblock_last_instr(b);
-            // b cannot be empty because at the end of an exception handler
-            // there is always a POP_EXCEPT + RERAISE/RETURN
-            assert(prev_instr);
-
             basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             prev_instr->i_loc);
+                             NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
+            explicit_jump->b_predecessors = 1;
             b->b_next = explicit_jump;
 
             /* set target */
