@@ -18,10 +18,12 @@
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
+#include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
+#include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
@@ -723,6 +725,19 @@ _testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
     return _PyCompile_CleanDoc(doc);
 }
 
+/*[clinic input]
+
+_testinternalcapi.new_instruction_sequence -> object
+
+Return a new, empty InstructionSequence.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_new_instruction_sequence_impl(PyObject *module)
+/*[clinic end generated code: output=ea4243fddb9057fd input=1dec2591b173be83]*/
+{
+    return _PyInstructionSequence_New();
+}
 
 /*[clinic input]
 
@@ -971,6 +986,8 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
+#ifdef _Py_TIER2
+
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
@@ -998,7 +1015,10 @@ set_optimizer(PyObject *self, PyObject *opt)
 static PyObject *
 get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    PyObject *opt = NULL;
+#ifdef _Py_TIER2
+    opt = (PyObject *)PyUnstable_GetOptimizer();
+#endif
     if (opt == NULL) {
         Py_RETURN_NONE;
     }
@@ -1031,6 +1051,8 @@ invalidate_executors(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+#endif
+
 static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
@@ -1048,37 +1070,56 @@ static PyObject *
 pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *callable;
+    unsigned int num = 1;
+    int blocking = 0;
     int ensure_added = 0;
-    static char *kwlist[] = {"", "ensure_added", NULL};
+    static char *kwlist[] = {"callback", "num",
+                             "blocking", "ensure_added", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O|$p:pending_threadfunc", kwlist,
-                                     &callable, &ensure_added))
+                                     "O|I$pp:pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking, &ensure_added))
     {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* create the reference for the callbackwhile we hold the lock */
-    Py_INCREF(callable);
-
-    int r;
-    Py_BEGIN_ALLOW_THREADS
-    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-    Py_END_ALLOW_THREADS
-    if (r < 0) {
-        /* unsuccessful add */
-        if (!ensure_added) {
-            Py_DECREF(callable);
-            Py_RETURN_FALSE;
-        }
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-            Py_END_ALLOW_THREADS
-        } while (r < 0);
+    for (unsigned int i = 0; i < num; i++) {
+        Py_INCREF(callable);
     }
 
-    Py_RETURN_TRUE;
+    PyThreadState *save_tstate = NULL;
+    if (!blocking) {
+        save_tstate = PyEval_SaveThread();
+    }
+
+    unsigned int num_added = 0;
+    for (; num_added < num; num_added++) {
+        if (ensure_added) {
+            _Py_add_pending_call_result r;
+            do {
+                r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+                assert(r == _Py_ADD_PENDING_SUCCESS
+                       || r == _Py_ADD_PENDING_FULL);
+            } while (r == _Py_ADD_PENDING_FULL);
+        }
+        else {
+            if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
+                break;
+            }
+        }
+    }
+
+    if (!blocking) {
+        PyEval_RestoreThread(save_tstate);
+    }
+
+    for (unsigned int i = num_added; i < num; i++) {
+        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
+    }
+
+    /* The callable is decref'ed in _pending_callback() above. */
+    return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
 
 
@@ -1121,14 +1162,16 @@ pending_identify(PyObject *self, PyObject *args)
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
 
-    int r;
+    _Py_add_pending_call_result r;
     do {
         Py_BEGIN_ALLOW_THREADS
         r = _PyEval_AddPendingCall(interp,
                                    &_pending_identify_callback, (void *)mutex,
                                    0);
         Py_END_ALLOW_THREADS
-    } while (r < 0);
+        assert(r == _Py_ADD_PENDING_SUCCESS
+               || r == _Py_ADD_PENDING_FULL);
+    } while (r == _Py_ADD_PENDING_FULL);
 
     /* Wait for the pending call to complete. */
     PyThread_acquire_lock(mutex, WAIT_LOCK);
@@ -1923,6 +1966,32 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyObject *
+suppress_immortalization(PyObject *self, PyObject *value)
+{
+#ifdef Py_GIL_DISABLED
+    int suppress = PyObject_IsTrue(value);
+    if (suppress < 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
+#endif
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
+#else
+    Py_RETURN_FALSE;
+#endif
+}
+
+static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
@@ -1931,6 +2000,25 @@ has_inline_values(PyObject *self, PyObject *obj)
     }
     Py_RETURN_FALSE;
 }
+
+
+/*[clinic input]
+gh_119213_getargs
+
+    spam: object = None
+
+Test _PyArg_Parser.kwtuple
+[clinic start generated code]*/
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam)
+/*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
+{
+    // It must never have been called in the main interprer
+    assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
+    return Py_NewRef(spam);
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -1952,6 +2040,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
+    _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
@@ -1963,12 +2052,14 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+#ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
     {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
+#endif
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
@@ -2014,7 +2105,12 @@ static PyMethodDef module_functions[] = {
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"suppress_immortalization", suppress_immortalization, METH_O},
+    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
+#ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
+#endif
+    GH_119213_GETARGS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
@@ -2073,6 +2169,7 @@ module_exec(PyObject *module)
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

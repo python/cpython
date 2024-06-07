@@ -1,5 +1,5 @@
-:mod:`builtins` --- Built-in objects
-====================================
+:mod:`!builtins` --- Built-in objects
+=====================================
 
 .. module:: builtins
    :synopsis: The module that provides the built-in namespace.

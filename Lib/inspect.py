@@ -162,6 +162,7 @@ import builtins
 from keyword import iskeyword
 from operator import attrgetter, or_
 from collections import namedtuple, OrderedDict
+from weakref import ref as make_weakref
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -404,13 +405,13 @@ def isgeneratorfunction(obj):
     return _has_code_flag(obj, CO_GENERATOR)
 
 # A marker for markcoroutinefunction and iscoroutinefunction.
-_is_coroutine_marker = object()
+_is_coroutine_mark = object()
 
 def _has_coroutine_mark(f):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark
 
 def markcoroutinefunction(func):
     """
@@ -418,7 +419,7 @@ def markcoroutinefunction(func):
     """
     if hasattr(func, '__func__'):
         func = func.__func__
-    func._is_coroutine_marker = _is_coroutine_marker
+    func._is_coroutine_marker = _is_coroutine_mark
     return func
 
 def iscoroutinefunction(obj):
@@ -1036,79 +1037,6 @@ class ClassFoundException(Exception):
     pass
 
 
-class _ClassFinder(ast.NodeVisitor):
-
-    def __init__(self, cls, tree, lines, qualname):
-        self.stack = []
-        self.cls = cls
-        self.tree = tree
-        self.lines = lines
-        self.qualname = qualname
-        self.lineno_found = []
-
-    def visit_FunctionDef(self, node):
-        self.stack.append(node.name)
-        self.stack.append('<locals>')
-        self.generic_visit(node)
-        self.stack.pop()
-        self.stack.pop()
-
-    visit_AsyncFunctionDef = visit_FunctionDef
-
-    def visit_ClassDef(self, node):
-        self.stack.append(node.name)
-        if self.qualname == '.'.join(self.stack):
-            # Return the decorator for the class if present
-            if node.decorator_list:
-                line_number = node.decorator_list[0].lineno
-            else:
-                line_number = node.lineno
-
-            # decrement by one since lines starts with indexing by zero
-            self.lineno_found.append((line_number - 1, node.end_lineno))
-        self.generic_visit(node)
-        self.stack.pop()
-
-    def get_lineno(self):
-        self.visit(self.tree)
-        lineno_found_number = len(self.lineno_found)
-        if lineno_found_number == 0:
-            raise OSError('could not find class definition')
-        elif lineno_found_number == 1:
-            return self.lineno_found[0][0]
-        else:
-            # We have multiple candidates for the class definition.
-            # Now we have to guess.
-
-            # First, let's see if there are any method definitions
-            for member in self.cls.__dict__.values():
-                if (isinstance(member, types.FunctionType) and
-                    member.__module__ == self.cls.__module__):
-                    for lineno, end_lineno in self.lineno_found:
-                        if lineno <= member.__code__.co_firstlineno <= end_lineno:
-                            return lineno
-
-            class_strings = [(''.join(self.lines[lineno: end_lineno]), lineno)
-                             for lineno, end_lineno in self.lineno_found]
-
-            # Maybe the class has a docstring and it's unique?
-            if self.cls.__doc__:
-                ret = None
-                for candidate, lineno in class_strings:
-                    if self.cls.__doc__.strip() in candidate:
-                        if ret is None:
-                            ret = lineno
-                        else:
-                            break
-                else:
-                    if ret is not None:
-                        return ret
-
-            # We are out of ideas, just return the last one found, which is
-            # slightly better than previous ones
-            return self.lineno_found[-1][0]
-
-
 def findsource(object):
     """Return the entire source file and starting line number for an object.
 
@@ -1141,11 +1069,11 @@ def findsource(object):
         return lines, 0
 
     if isclass(object):
-        qualname = object.__qualname__
-        source = ''.join(lines)
-        tree = ast.parse(source)
-        class_finder = _ClassFinder(object, tree, lines, qualname)
-        return lines, class_finder.get_lineno()
+        try:
+            firstlineno = object.__firstlineno__
+        except AttributeError:
+            raise OSError('source code not available')
+        return lines, object.__firstlineno__ - 1
 
     if ismethod(object):
         object = object.__func__
@@ -1834,9 +1762,16 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
+
 @functools.lru_cache()
-def _shadowed_dict_from_mro_tuple(mro):
-    for entry in mro:
+def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
+    for weakref_entry in weakref_mro:
+        # Normally we'd have to check whether the result of weakref_entry()
+        # is None here, in case the object the weakref is pointing to has died.
+        # In this specific case, however, we know that the only caller of this
+        # function is `_shadowed_dict()`, and that therefore this weakref is
+        # guaranteed to point to an object that is still alive.
+        entry = weakref_entry()
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1846,8 +1781,19 @@ def _shadowed_dict_from_mro_tuple(mro):
                 return class_dict
     return _sentinel
 
+
 def _shadowed_dict(klass):
-    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
+    # gh-118013: the inner function here is decorated with lru_cache for
+    # performance reasons, *but* make sure not to pass strong references
+    # to the items in the mro. Doing so can lead to unexpected memory
+    # consumption in cases where classes are dynamically created and
+    # destroyed, and the dynamically created classes happen to be the only
+    # objects that hold strong references to other objects that take up a
+    # significant amount of memory.
+    return _shadowed_dict_from_weakref_mro_tuple(
+        *[make_weakref(entry) for entry in _static_getmro(klass)]
+    )
+
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -2163,8 +2109,10 @@ def _signature_is_builtin(obj):
             ismethoddescriptor(obj) or
             isinstance(obj, _NonUserDefinedCallables) or
             # Can't test 'isinstance(type)' here, as it would
-            # also be True for regular python classes
-            obj in (type, object))
+            # also be True for regular python classes.
+            # Can't use the `in` operator here, as it would
+            # invoke the custom __eq__ method.
+            obj is type or obj is object)
 
 
 def _signature_is_functionlike(obj):
@@ -2277,7 +2225,12 @@ def _signature_fromstr1(cls, obj, clean_signature, self_parameter, skip_bound_ar
 
     module = None
     module_dict = {}
+
     module_name = getattr(obj, '__module__', None)
+    if not module_name:
+        objclass = getattr(obj, '__objclass__', None)
+        module_name = getattr(objclass, '__module__', None)
+
     if module_name:
         module = sys.modules.get(module_name, None)
         if module:
@@ -2682,6 +2635,13 @@ def _signature_from_callable(obj, *,
         # An object with __call__
         call = getattr_static(type(obj), '__call__', None)
         if call is not None:
+            try:
+                text_sig = obj.__text_signature__
+            except AttributeError:
+                pass
+            else:
+                if text_sig:
+                    return _signature_fromstr(sigcls, obj, text_sig)
             call = _descriptor_get(call, obj)
             return _get_signature_of(call)
 
@@ -3155,6 +3115,8 @@ class Signature:
         parameters_ex = ()
         arg_vals = iter(args)
 
+        pos_only_param_in_kwargs = []
+
         while True:
             # Let's iterate through the positional arguments and corresponding
             # parameters
@@ -3175,10 +3137,10 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
-                            msg = '{arg!r} parameter is positional only, ' \
-                                  'but was passed as a keyword'
-                            msg = msg.format(arg=param.name)
-                            raise TypeError(msg) from None
+                            # Raise a TypeError once we are sure there is no
+                            # **kwargs param later.
+                            pos_only_param_in_kwargs.append(param)
+                            continue
                         parameters_ex = (param,)
                         break
                     elif (param.kind == _VAR_KEYWORD or
@@ -3260,20 +3222,22 @@ class Signature:
                                     format(arg=param_name)) from None
 
             else:
-                if param.kind == _POSITIONAL_ONLY:
-                    # This should never happen in case of a properly built
-                    # Signature object (but let's have this check here
-                    # to ensure correct behaviour just in case)
-                    raise TypeError('{arg!r} parameter is positional only, '
-                                    'but was passed as a keyword'. \
-                                    format(arg=param.name))
-
                 arguments[param_name] = arg_val
 
         if kwargs:
             if kwargs_param is not None:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
+            elif pos_only_param_in_kwargs:
+                raise TypeError(
+                    'got some positional-only arguments passed as '
+                    'keyword arguments: {arg!r}'.format(
+                        arg=', '.join(
+                            param.name
+                            for param in pos_only_param_in_kwargs
+                        ),
+                    ),
+                )
             else:
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(

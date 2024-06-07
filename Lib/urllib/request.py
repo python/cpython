@@ -650,6 +650,7 @@ class HTTPRedirectHandler(BaseHandler):
         newheaders = {k: v for k, v in req.headers.items()
                       if k.lower() not in CONTENT_HEADERS}
         return Request(newurl,
+                       method="HEAD" if m == "HEAD" else "GET",
                        headers=newheaders,
                        origin_req_host=req.origin_req_host,
                        unverifiable=True)

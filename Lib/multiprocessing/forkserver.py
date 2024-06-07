@@ -1,3 +1,4 @@
+import atexit
 import errno
 import os
 import selectors
@@ -271,6 +272,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                                 selector.close()
                                 unused_fds = [alive_r, child_w, sig_r, sig_w]
                                 unused_fds.extend(pid_to_fd.values())
+                                atexit._clear()
+                                atexit.register(util._exit_function)
                                 code = _serve_one(child_r, fds,
                                                   unused_fds,
                                                   old_handlers)
@@ -278,6 +281,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                                 sys.excepthook(*sys.exc_info())
                                 sys.stderr.flush()
                             finally:
+                                atexit._run_exitfuncs()
                                 os._exit(code)
                         else:
                             # Send pid to client process

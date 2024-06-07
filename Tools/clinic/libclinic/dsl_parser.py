@@ -119,7 +119,7 @@ class ParamState(enum.IntEnum):
     # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
     START = 0
 
-    # Left square backets before required params.
+    # Left square brackets before required params.
     LEFT_SQUARE_BEFORE = 1
 
     # In a group, before required params.
@@ -1103,6 +1103,9 @@ class DSLParser:
                     fail("A 'defining_class' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'defining_class' parameter cannot be in an optional group.")
+                if self.function.cls is None:
+                    fail("A 'defining_class' parameter cannot be defined at module level.")
+                kind = inspect.Parameter.POSITIONAL_ONLY
             else:
                 fail("A 'defining_class' parameter, if specified, must either "
                      "be the first thing in the parameter block, or come just "

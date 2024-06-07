@@ -103,6 +103,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_children = NULL;
 
     ste->ste_directives = NULL;
+    ste->ste_mangled_names = NULL;
 
     ste->ste_type = block;
     ste->ste_nested = 0;
@@ -166,6 +167,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
+    Py_XDECREF(ste->ste_mangled_names);
     PyObject_Free(ste);
 }
 
@@ -599,16 +601,17 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
       global: set of all symbol names explicitly declared as global
 */
 
-#define SET_SCOPE(DICT, NAME, I) { \
-    PyObject *o = PyLong_FromLong(I); \
-    if (!o) \
-        return 0; \
-    if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+#define SET_SCOPE(DICT, NAME, I) \
+    do { \
+        PyObject *o = PyLong_FromLong(I); \
+        if (!o) \
+            return 0; \
+        if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+            Py_DECREF(o); \
+            return 0; \
+        } \
         Py_DECREF(o); \
-        return 0; \
-    } \
-    Py_DECREF(o); \
-}
+    } while(0)
 
 /* Decide on scope of name, given flags.
 
@@ -1154,10 +1157,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             }
         }
 
-        // we inline all non-generator-expression comprehensions
+        // we inline all non-generator-expression comprehensions,
+        // except those in annotation scopes that are nested in classes
         int inline_comp =
             entry->ste_comprehension &&
-            !entry->ste_generator;
+            !entry->ste_generator &&
+            !ste->ste_can_see_class_scope;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  type_params, new_class_entry, &child_free))
@@ -1336,6 +1341,11 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     if (prev) {
         ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
     }
+    /* No need to inherit ste_mangled_names in classes, where all names
+     * are mangled. */
+    if (prev && prev->ste_mangled_names != NULL && block != ClassBlock) {
+        ste->ste_mangled_names = Py_NewRef(prev->ste_mangled_names);
+    }
     /* The entry is owned by the stack. Borrow it for st_cur. */
     Py_DECREF(ste);
     st->st_cur = ste;
@@ -1361,7 +1371,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 static long
 symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *mangled = _Py_Mangle(st->st_private, name);
+    PyObject *mangled = _Py_MaybeMangle(st->st_private, ste, name);
     if (!mangled)
         return 0;
     long ret = _PyST_GetSymbol(ste, mangled);
@@ -1382,8 +1392,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
     PyObject *o;
     PyObject *dict;
     long val;
-    PyObject *mangled = _Py_Mangle(st->st_private, name);
-
+    PyObject *mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
 
     if (!mangled)
         return 0;
@@ -1472,6 +1481,11 @@ static int
 symtable_add_def(struct symtable *st, PyObject *name, int flag,
                  int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
+    if ((flag & DEF_TYPE_PARAM) && st->st_cur->ste_mangled_names != NULL) {
+        if(PySet_Add(st->st_cur->ste_mangled_names, name) < 0) {
+            return 0;
+        }
+    }
     return symtable_add_def_helper(st, name, flag, st->st_cur,
                         lineno, col_offset, end_lineno, end_col_offset);
 }
@@ -1506,7 +1520,6 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
-        st->st_private = name;
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
@@ -1550,39 +1563,45 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     return --(ST)->recursion_depth,(X)
 
 #define VISIT(ST, TYPE, V) \
-    if (!symtable_visit_ ## TYPE((ST), (V))) \
-        VISIT_QUIT((ST), 0);
+    do { \
+        if (!symtable_visit_ ## TYPE((ST), (V))) { \
+            VISIT_QUIT((ST), 0); \
+        } \
+    } while(0)
 
-#define VISIT_SEQ(ST, TYPE, SEQ) { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-}
+#define VISIT_SEQ(ST, TYPE, SEQ) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
-    int i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);                 \
-    } \
-}
+#define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
+    do { \
+        int i; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = (START); i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);                 \
+        } \
+    } while(0)
 
-#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) {     \
-    int i = 0; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
-        if (!elt) continue; /* can be NULL */ \
-        if (!symtable_visit_ ## TYPE((ST), elt)) \
-            VISIT_QUIT((ST), 0);             \
-    } \
-}
+#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) \
+    do { \
+        int i = 0; \
+        asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+        for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+            TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+            if (!elt) continue; /* can be NULL */ \
+            if (!symtable_visit_ ## TYPE((ST), elt)) \
+                VISIT_QUIT((ST), 0);             \
+        } \
+    } while(0)
 
 static int
 symtable_record_directive(struct symtable *st, identifier name, int lineno,
@@ -1595,7 +1614,7 @@ symtable_record_directive(struct symtable *st, identifier name, int lineno,
         if (!st->st_cur->ste_directives)
             return 0;
     }
-    mangled = _Py_Mangle(st->st_private, name);
+    mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
     if (!mangled)
         return 0;
     data = Py_BuildValue("(Niiii)", mangled, lineno, col_offset, end_lineno, end_col_offset);
@@ -1671,11 +1690,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
+        tmp = st->st_private;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_enter_type_param_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.type_params,
                                                 false, false, s->kind,
                                                 LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            st->st_private = s->v.ClassDef.name;
+            st->st_cur->ste_mangled_names = PySet_New(NULL);
+            if (!st->st_cur->ste_mangled_names) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
@@ -1686,7 +1711,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
             VISIT_QUIT(st, 0);
-        tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_add_def(st, &_Py_ID(__type_params__),
@@ -1700,13 +1724,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
-        st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         if (asdl_seq_LEN(s->v.ClassDef.type_params) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
+        st->st_private = tmp;
         break;
     }
     case TypeAlias_kind: {
@@ -2140,17 +2164,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
-        if (st->st_cur->ste_can_see_class_scope) {
-            // gh-109118
-            PyErr_Format(PyExc_SyntaxError,
-                         "Cannot use lambda in annotation scope within class scope");
-            PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                              e->lineno,
-                                              e->col_offset + 1,
-                                              e->end_lineno,
-                                              e->end_col_offset + 1);
-            VISIT_QUIT(st, 0);
-        }
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
@@ -2255,11 +2268,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Slice_kind:
         if (e->v.Slice.lower)
-            VISIT(st, expr, e->v.Slice.lower)
+            VISIT(st, expr, e->v.Slice.lower);
         if (e->v.Slice.upper)
-            VISIT(st, expr, e->v.Slice.upper)
+            VISIT(st, expr, e->v.Slice.upper);
         if (e->v.Slice.step)
-            VISIT(st, expr, e->v.Slice.step)
+            VISIT(st, expr, e->v.Slice.step);
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
@@ -2285,6 +2298,24 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 }
 
 static int
+symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key)
+{
+    if (e) {
+        int is_in_class = st->st_cur->ste_can_see_class_scope;
+        if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
+            return 0;
+        st->st_cur->ste_can_see_class_scope = is_in_class;
+        if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
+            VISIT_QUIT(st, 0);
+        }
+        VISIT(st, expr, e);
+        if (!symtable_exit_block(st))
+            return 0;
+    }
+    return 1;
+}
+
+static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
     if (++st->recursion_depth > st->recursion_limit) {
@@ -2296,28 +2327,39 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
     case TypeVar_kind:
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
-        if (tp->v.TypeVar.bound) {
-            int is_in_class = st->st_cur->ste_can_see_class_scope;
-            if (!symtable_enter_block(st, tp->v.TypeVar.name,
-                                      TypeVarBoundBlock, (void *)tp,
-                                      LOCATION(tp)))
-                VISIT_QUIT(st, 0);
-            st->st_cur->ste_can_see_class_scope = is_in_class;
-            if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(tp->v.TypeVar.bound))) {
-                VISIT_QUIT(st, 0);
-            }
-            VISIT(st, expr, tp->v.TypeVar.bound);
-            if (!symtable_exit_block(st))
-                VISIT_QUIT(st, 0);
+
+        // We must use a different key for the bound and default. The obvious choice would be to
+        // use the .bound and .default_value pointers, but that fails when the expression immediately
+        // inside the bound or default is a comprehension: we would reuse the same key for
+        // the comprehension scope. Therefore, use the address + 1 as the second key.
+        // The only requirement for the key is that it is unique and it matches the logic in
+        // compile.c where the scope is retrieved.
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
+                                                        (void *)((uintptr_t)tp + 1))) {
+            VISIT_QUIT(st, 0);
         }
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     case ParamSpec_kind:
-        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
+        if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
+                                                        (void *)tp)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     }
     VISIT_QUIT(st, 1);
@@ -2600,18 +2642,6 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
-    if (st->st_cur->ste_can_see_class_scope) {
-        // gh-109118
-        PyErr_Format(PyExc_SyntaxError,
-                     "Cannot use comprehension in annotation scope within class scope");
-        PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                         e->lineno,
-                                         e->col_offset + 1,
-                                         e->end_lineno,
-                                         e->end_col_offset + 1);
-        VISIT_QUIT(st, 0);
-    }
-
     int is_generator = (e->kind == GeneratorExp_kind);
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));
@@ -2766,6 +2796,26 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
+}
+
+PyObject *
+_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name)
+{
+    /* Special case for type parameter blocks around generic classes:
+     * we want to mangle type parameter names (so a type param with a private
+     * name can be used inside the class body), but we don't want to mangle
+     * any other names that appear within the type parameter scope.
+     */
+    if (ste->ste_mangled_names != NULL) {
+        int result = PySet_Contains(ste->ste_mangled_names, name);
+        if (result < 0) {
+            return NULL;
+        }
+        if (result == 0) {
+            return Py_NewRef(name);
+        }
+    }
+    return _Py_Mangle(privateobj, name);
 }
 
 PyObject *

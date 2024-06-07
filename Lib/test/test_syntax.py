@@ -1213,6 +1213,22 @@ Missing parens after function definition
    Traceback (most recent call last):
    SyntaxError: expected '('
 
+   >>> def f -> int:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f -> int:  # type: int
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> async def f[T]:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
+   >>> def f[T] -> str:
+   Traceback (most recent call last):
+   SyntaxError: expected '('
+
 Parenthesized arguments in function definitions
 
    >>> def f(x, (y, z), w):
@@ -1699,6 +1715,18 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> from i import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> from .. import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
+>>> import
+Traceback (most recent call last):
+SyntaxError: Expected one or more names after 'import'
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
@@ -1824,28 +1852,6 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
-
-Non-matching 'elif'/'else' statements:
-
-    >>> if a == b:
-    ...     ...
-    ...     elif a == c:
-    Traceback (most recent call last):
-    SyntaxError: 'elif' must match an if-statement here
-
-    >>> if x == y:
-    ...     ...
-    ...     else:
-    Traceback (most recent call last):
-    SyntaxError: 'else' must match a valid statement here
-
-    >>> elif m == n:
-    Traceback (most recent call last):
-    SyntaxError: 'elif' must match an if-statement here
-
-    >>> else:
-    Traceback (most recent call last):
-    SyntaxError: 'else' must match a valid statement here
 
 Uses of the star operator which should fail:
 
@@ -2015,6 +2021,31 @@ Invalid bytes literals:
 
 Invalid expressions in type scopes:
 
+   >>> type A[] = int
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> class A[]: ...
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> def some[](): ...
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> def some[]()
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
+   >>> async def some[]:  # type: int
+   Traceback (most recent call last):
+   ...
+   SyntaxError: Type parameter list cannot be empty
+
    >>> type A[T: (x:=3)] = int
    Traceback (most recent call last):
       ...
@@ -2114,8 +2145,8 @@ class SyntaxTestCase(unittest.TestCase):
                      lineno=None, offset=None, end_lineno=None, end_offset=None):
         """Check that compiling code raises SyntaxError with errtext.
 
-        errtext is a regular expression that must be present in the
-        test of the exception raised. If subclass is specified, it
+        errtest is a regular expression that must be present in the
+        test of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -2138,22 +2169,6 @@ class SyntaxTestCase(unittest.TestCase):
 
         else:
             self.fail("compile() did not raise SyntaxError")
-
-    def _check_noerror(self, code,
-                       errtext="compile() raised unexpected SyntaxError",
-                       filename="<testcase>", mode="exec", subclass=None):
-        """Check that compiling code does not raise a SyntaxError.
-
-        errtext is the message passed to self.fail if there is
-        a SyntaxError. If the subclass parameter is specified,
-        it is the subclass of SyntaxError (e.g. IndentationError)
-        that the raised error is checked against.
-        """
-        try:
-            compile(code, filename, mode)
-        except SyntaxError as err:
-            if (not subclass) or isinstance(err, subclass):
-                self.fail(errtext)
 
     def test_expression_with_assignment(self):
         self._check_error(
@@ -2380,13 +2395,40 @@ if x:
             code += "): yield a"
             return code
 
-        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+        CO_MAXBLOCKS = 21  # static nesting limit of the compiler
+        MAX_MANAGERS = CO_MAXBLOCKS - 1  # One for the StopIteration block
 
-        for n in range(CO_MAXBLOCKS):
+        for n in range(MAX_MANAGERS):
             with self.subTest(f"within range: {n=}"):
                 compile(get_code(n), "<string>", "exec")
 
-        for n in range(CO_MAXBLOCKS, CO_MAXBLOCKS + 5):
+        for n in range(MAX_MANAGERS, MAX_MANAGERS + 5):
+            with self.subTest(f"out of range: {n=}"):
+                self._check_error(get_code(n), "too many statically nested blocks")
+
+    @support.cpython_only
+    def test_async_with_statement_many_context_managers(self):
+        # See gh-116767
+
+        def get_code(n):
+            code = [ textwrap.dedent("""
+                async def bug():
+                    async with (
+                    a
+                """) ]
+            for i in range(n):
+                code.append(f"    as a{i}, a\n")
+            code.append("): yield a")
+            return "".join(code)
+
+        CO_MAXBLOCKS = 21  # static nesting limit of the compiler
+        MAX_MANAGERS = CO_MAXBLOCKS - 1  # One for the StopIteration block
+
+        for n in range(MAX_MANAGERS):
+            with self.subTest(f"within range: {n=}"):
+                compile(get_code(n), "<string>", "exec")
+
+        for n in range(MAX_MANAGERS, MAX_MANAGERS + 5):
             with self.subTest(f"out of range: {n=}"):
                 self._check_error(get_code(n), "too many statically nested blocks")
 
@@ -2524,28 +2566,10 @@ while 1:
                   while 20:
                    while 21:
                     while 22:
-                     break
+                     while 23:
+                      break
 """
         self._check_error(source, "too many statically nested blocks")
-
-    def test_syntax_error_non_matching_elif_else_statements(self):
-        # Check bpo-45759: 'elif' statements that doesn't match an
-        # if-statement or 'else' statements that doesn't match any
-        # valid else-able statement (e.g. 'while')
-        self._check_error(
-            "elif m == n:\n    ...",
-            "'elif' must match an if-statement here")
-        self._check_error(
-            "else:\n    ...",
-            "'else' must match a valid statement here")
-        self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
-        self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
-        self._check_error(
-            "else = 123",
-            "invalid syntax")
-        self._check_error(
-            "elif 55 = 123",
-            "cannot assign to literal here")
 
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):

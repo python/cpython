@@ -3,10 +3,11 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import threading_helper, requires_subprocess
+from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import force_not_colorized
 
 import random
 import sys
@@ -48,7 +49,7 @@ def skip_unless_reliable_fork(test):
     if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
     if support.check_sanitizer(thread=True):
-        return unittest.skip("TSAN doesn't support threads after fork")
+        return unittest.skip("TSAN doesn't support threads after fork")(test)
     return test
 
 
@@ -780,8 +781,7 @@ class ThreadTests(BaseTestCase):
                          "current is main True\n"
                          )
 
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_foreign_thread(self, create_dummy=False):
         code = """if 1:
@@ -1793,6 +1793,7 @@ class ExceptHookTests(BaseTestCase):
         restore_default_excepthook(self)
         super().setUp()
 
+    @force_not_colorized
     def test_excepthook(self):
         with support.captured_output("stderr") as stderr:
             thread = ThreadRunFail(name="excepthook thread")
@@ -1806,6 +1807,7 @@ class ExceptHookTests(BaseTestCase):
         self.assertIn('ValueError: run failed', stderr)
 
     @support.cpython_only
+    @force_not_colorized
     def test_excepthook_thread_None(self):
         # threading.excepthook called with thread=None: log the thread
         # identifier in this case.
@@ -2022,6 +2024,7 @@ class InterruptMainTests(unittest.TestCase):
             # Restore original handler
             signal.signal(signum, handler)
 
+    @requires_gil_enabled("gh-118433: Flaky due to a longstanding bug")
     def test_interrupt_main_subthread(self):
         # Calling start_new_thread with a function that executes interrupt_main
         # should raise KeyboardInterrupt upon completion.

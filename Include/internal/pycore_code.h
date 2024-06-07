@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"        // PyMutex
+
 
 // We hide some of the newer PyCodeObject fields behind macros.
 // This helps with backporting certain changes to 3.12.
@@ -16,6 +18,14 @@ extern "C" {
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
+struct _py_code_state {
+    PyMutex mutex;
+    // Interned constants from code objects. Used by the free-threaded build.
+    struct _Py_hashtable_t *constants;
+};
+
+extern PyStatus _PyCode_Init(PyInterpreterState *interp);
+extern void _PyCode_Fini(PyInterpreterState *interp);
 
 #define CODE_MAX_WATCHERS 8
 
@@ -288,11 +298,6 @@ extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
-/* Finalizer function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Fini(PyCodeObject *co);
-/* Function to intern strings of codeobjects and quicken the bytecode */
-extern int _PyStaticCode_Init(PyCodeObject *co);
-
 #ifdef Py_STATS
 
 #include "pycore_bitutils.h"  // _Py_bit_length
@@ -310,6 +315,13 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
+#define UOP_PAIR_INC(uopcode, lastuop)                                              \
+    do {                                                                            \
+        if (lastuop && _Py_stats) {                                                 \
+            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++;    \
+        }                                                                           \
+        lastuop = uopcode;                                                          \
+    } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 #define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
@@ -337,6 +349,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
+#define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)

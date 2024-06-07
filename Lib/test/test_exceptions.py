@@ -12,7 +12,8 @@ from textwrap import dedent
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
-                          SuppressCrashReport)
+                          SuppressCrashReport,
+                          force_not_colorized)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
@@ -40,6 +41,7 @@ class BrokenStrException(Exception):
         raise Exception("str() is broken")
 
 # XXX This is not really enough, each *operation* should be tested!
+
 
 class ExceptionTests(unittest.TestCase):
 
@@ -1815,6 +1817,29 @@ class ExceptionTests(unittest.TestCase):
         rc, _, err = script_helper.assert_python_ok("-c", code)
         self.assertIn(b'MemoryError', err)
 
+    def test_keyerror_context(self):
+        # Make sure that _PyErr_SetKeyError() chains exceptions
+        try:
+            err1 = None
+            err2 = None
+            try:
+                d = {}
+                try:
+                    raise ValueError("bug")
+                except Exception as exc:
+                    err1 = exc
+                    d[1]
+            except Exception as exc:
+                err2 = exc
+
+            self.assertIsInstance(err1, ValueError)
+            self.assertIsInstance(err2, KeyError)
+            self.assertEqual(err2.__context__, err1)
+        finally:
+            # Break any potential reference cycle
+            exc1 = None
+            exc2 = None
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -1994,6 +2019,7 @@ class AssertionErrorTests(unittest.TestCase):
         _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
         return err.decode('utf-8').splitlines()
 
+    @force_not_colorized
     def test_assertion_error_location(self):
         cases = [
             ('assert None',
@@ -2070,6 +2096,7 @@ class AssertionErrorTests(unittest.TestCase):
                 result = self.write_source(source)
                 self.assertEqual(result[-3:], expected)
 
+    @force_not_colorized
     def test_multiline_not_highlighted(self):
         cases = [
             ("""
@@ -2102,6 +2129,7 @@ class AssertionErrorTests(unittest.TestCase):
 
 
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def test_range_of_offsets(self):
         cases = [
             # Basic range from 2->7

@@ -116,7 +116,7 @@ typedef enum _PyLockFlags {
 extern PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
-// Lock a mutex with aditional options. See _PyLockFlags for details.
+// Lock a mutex with additional options. See _PyLockFlags for details.
 static inline void
 PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 {
@@ -150,8 +150,10 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
-// and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns);
+// and 0 if the timeout expired or thread was interrupted. If `detach` is
+// true, then the thread will detach/release the GIL while waiting.
+PyAPI_FUNC(int)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach);
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
 // parking lot API, and therefore can be used in the parking lot
@@ -216,6 +218,18 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     }
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
+
+// A recursive mutex. The mutex should zero-initialized.
+typedef struct {
+    PyMutex mutex;
+    unsigned long long thread;  // i.e., PyThread_get_thread_ident_ex()
+    size_t level;
+} _PyRecursiveMutex;
+
+PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
+
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while

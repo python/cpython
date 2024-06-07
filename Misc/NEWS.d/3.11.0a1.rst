@@ -38,7 +38,7 @@ significant performance overhead when loading from ``.pyc`` files.
 .. section: Security
 
 Update the vendored copy of libexpat to 2.4.1 (from 2.2.8) to get the fix
-for the CVE-2013-0340 "Billion Laughs" vulnerability. This copy is most used
+for the :cve:`2013-0340` "Billion Laughs" vulnerability. This copy is most used
 on Windows and macOS.
 
 ..
@@ -972,7 +972,7 @@ manager` protocols correspondingly.
 .. section: Core and Builtins
 
 Make sure that the line number is set when entering a comprehension scope.
-Ensures that backtraces inclusing generator expressions show the correct
+This ensures that backtraces including generator expressions show the correct
 line number.
 
 ..
@@ -2722,7 +2722,7 @@ Importing typing.io or typing.re now prints a ``DeprecationWarning``.
 .. section: Library
 
 argparse actions store_const and append_const each receive a default value
-of None when the ``const`` kwarg is not provided. Previously, this raised a
+of ``None`` when the ``const`` kwarg is not provided. Previously, this raised a
 :exc:`TypeError`.
 
 ..
@@ -3995,7 +3995,7 @@ operator expressions.
 .. section: Documentation
 
 Document that :class:`collections.defaultdict` parameter ``default_factory``
-defaults to None and is positional-only.
+defaults to ``None`` and is positional-only.
 
 ..
 

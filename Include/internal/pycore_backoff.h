@@ -44,13 +44,18 @@ make_backoff_counter(uint16_t value, uint16_t backoff)
 {
     assert(backoff <= 15);
     assert(value <= 0xFFF);
-    return (_Py_BackoffCounter){.backoff = backoff, .value = value};
+    _Py_BackoffCounter result;
+    result.value = value;
+    result.backoff = backoff;
+    return result;
 }
 
 static inline _Py_BackoffCounter
 forge_backoff_counter(uint16_t counter)
 {
-    return (_Py_BackoffCounter){.as_counter = counter};
+    _Py_BackoffCounter result;
+    result.as_counter = counter;
+    return result;
 }
 
 static inline _Py_BackoffCounter

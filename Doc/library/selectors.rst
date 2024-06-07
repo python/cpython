@@ -1,5 +1,5 @@
-:mod:`selectors` --- High-level I/O multiplexing
-================================================
+:mod:`!selectors` --- High-level I/O multiplexing
+=================================================
 
 .. module:: selectors
    :synopsis: High-level I/O multiplexing.

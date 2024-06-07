@@ -1,5 +1,5 @@
-:mod:`importlib.resources.abc` -- Abstract base classes for resources
----------------------------------------------------------------------
+:mod:`!importlib.resources.abc` -- Abstract base classes for resources
+----------------------------------------------------------------------
 
 .. module:: importlib.resources.abc
     :synopsis: Abstract base classes for resources
@@ -103,11 +103,11 @@
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directory.
+       Return ``True`` if self is a directory.
 
     .. abstractmethod:: is_file()
 
-       Return True if self is a file.
+       Return ``True`` if self is a file.
 
     .. abstractmethod:: joinpath(*pathsegments)
 

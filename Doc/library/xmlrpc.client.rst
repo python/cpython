@@ -1,5 +1,5 @@
-:mod:`xmlrpc.client` --- XML-RPC client access
-==============================================
+:mod:`!xmlrpc.client` --- XML-RPC client access
+===============================================
 
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.

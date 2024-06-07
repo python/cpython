@@ -1,5 +1,5 @@
-:mod:`email.header`: Internationalized headers
-----------------------------------------------
+:mod:`!email.header`: Internationalized headers
+-----------------------------------------------
 
 .. module:: email.header
    :synopsis: Representing non-ASCII headers

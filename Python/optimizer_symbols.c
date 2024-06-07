@@ -1,3 +1,4 @@
+#ifdef _Py_TIER2
 
 #include "Python.h"
 
@@ -31,6 +32,7 @@
 // Flags for below.
 #define IS_NULL    1 << 0
 #define NOT_NULL   1 << 1
+#define NO_SPACE   1 << 2
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
@@ -46,6 +48,20 @@ static inline int get_lltrace(void) {
 #else
 #define DPRINTF(level, ...)
 #endif
+
+static _Py_UopsSymbol NO_SPACE_SYMBOL = {
+    .flags = IS_NULL | NOT_NULL | NO_SPACE,
+    .typ = NULL,
+    .const_val = NULL
+};
+
+_Py_UopsSymbol *
+out_of_space(_Py_UOpsContext *ctx)
+{
+    ctx->done = true;
+    ctx->out_of_space = true;
+    return &NO_SPACE_SYMBOL;
+}
 
 static _Py_UopsSymbol *
 sym_new(_Py_UOpsContext *ctx)
@@ -71,11 +87,13 @@ sym_set_flag(_Py_UopsSymbol *sym, int flag)
 }
 
 static inline void
-sym_set_bottom(_Py_UopsSymbol *sym)
+sym_set_bottom(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, IS_NULL | NOT_NULL);
     sym->typ = NULL;
     Py_CLEAR(sym->const_val);
+    ctx->done = true;
+    ctx->contradiction = true;
 }
 
 bool
@@ -114,45 +132,41 @@ _Py_uop_sym_get_const(_Py_UopsSymbol *sym)
     return sym->const_val;
 }
 
-bool
-_Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
+void
+_Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
     if (sym->flags & IS_NULL) {
-        sym_set_bottom(sym);
-        return false;
+        sym_set_bottom(ctx, sym);
+        return;
     }
     if (sym->typ != NULL) {
         if (sym->typ != typ) {
-            sym_set_bottom(sym);
-            return false;
+            sym_set_bottom(ctx, sym);
+            return;
         }
     }
     else {
         sym_set_flag(sym, NOT_NULL);
         sym->typ = typ;
     }
-    return true;
 }
 
-bool
-_Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
+void
+_Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val)
 {
     assert(const_val != NULL);
     if (sym->flags & IS_NULL) {
-        sym_set_bottom(sym);
-        return false;
+        sym_set_bottom(ctx, sym);
     }
     PyTypeObject *typ = Py_TYPE(const_val);
     if (sym->typ != NULL && sym->typ != typ) {
-        sym_set_bottom(sym);
-        return false;
+        sym_set_bottom(ctx, sym);
     }
     if (sym->const_val != NULL) {
         if (sym->const_val != const_val) {
             // TODO: What if they're equal?
-            sym_set_bottom(sym);
-            return false;
+            sym_set_bottom(ctx, sym);
         }
     }
     else {
@@ -160,22 +174,24 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
         sym->typ = typ;
         sym->const_val = Py_NewRef(const_val);
     }
-    return true;
 }
 
-
-bool
-_Py_uop_sym_set_null(_Py_UopsSymbol *sym)
+void
+_Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_not_null(sym)) {
+        sym_set_bottom(ctx, sym);
+    }
     sym_set_flag(sym, IS_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
 }
 
-bool
-_Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
+void
+_Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 {
+    if (_Py_uop_sym_is_null(sym)) {
+        sym_set_bottom(ctx, sym);
+    }
     sym_set_flag(sym, NOT_NULL);
-    return !_Py_uop_sym_is_bottom(sym);
 }
 
 
@@ -190,7 +206,7 @@ _Py_uop_sym_new_not_null(_Py_UOpsContext *ctx)
 {
     _Py_UopsSymbol *res = _Py_uop_sym_new_unknown(ctx);
     if (res == NULL) {
-        return NULL;
+        return out_of_space(ctx);
     }
     sym_set_flag(res, NOT_NULL);
     return res;
@@ -201,9 +217,9 @@ _Py_uop_sym_new_type(_Py_UOpsContext *ctx, PyTypeObject *typ)
 {
     _Py_UopsSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return NULL;
+        return out_of_space(ctx);
     }
-    _Py_uop_sym_set_type(res, typ);
+    _Py_uop_sym_set_type(ctx, res, typ);
     return res;
 }
 
@@ -214,9 +230,9 @@ _Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val)
     assert(const_val != NULL);
     _Py_UopsSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return NULL;
+        return out_of_space(ctx);
     }
-    _Py_uop_sym_set_const(res, const_val);
+    _Py_uop_sym_set_const(ctx, res, const_val);
     return res;
 }
 
@@ -225,10 +241,19 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
 {
     _Py_UopsSymbol *null_sym = _Py_uop_sym_new_unknown(ctx);
     if (null_sym == NULL) {
+        return out_of_space(ctx);
+    }
+    _Py_uop_sym_set_null(ctx, null_sym);
+    return null_sym;
+}
+
+PyTypeObject *
+_Py_uop_sym_get_type(_Py_UopsSymbol *sym)
+{
+    if (_Py_uop_sym_is_bottom(sym)) {
         return NULL;
     }
-    _Py_uop_sym_set_null(null_sym);
-    return null_sym;
+    return sym->typ;
 }
 
 bool
@@ -244,10 +269,7 @@ bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return false;
-    }
-    return sym->typ == typ;
+    return _Py_uop_sym_get_type(sym) == typ;
 }
 
 int
@@ -304,6 +326,8 @@ _Py_uop_frame_new(
     frame->stack_pointer = frame->stack + curr_stackentries;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
+        ctx->done = true;
+        ctx->out_of_space = true;
         return NULL;
     }
 
@@ -311,9 +335,6 @@ _Py_uop_frame_new(
     // Initialize with the initial state of all local variables
     for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
         _Py_UopsSymbol *local = _Py_uop_sym_new_unknown(ctx);
-        if (local == NULL) {
-            return NULL;
-        }
         frame->locals[i] = local;
     }
 
@@ -321,9 +342,6 @@ _Py_uop_frame_new(
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
         _Py_UopsSymbol *stackvar = _Py_uop_sym_new_unknown(ctx);
-        if (stackvar == NULL) {
-            return NULL;
-        }
         frame->stack[i] = stackvar;
     }
 
@@ -343,7 +361,7 @@ _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx)
     }
 }
 
-int
+void
 _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
 {
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
@@ -360,8 +378,6 @@ _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
 
     // Frame setup
     ctx->curr_frame_depth = 0;
-
-    return 0;
 }
 
 int
@@ -390,8 +406,8 @@ static _Py_UopsSymbol *
 make_bottom(_Py_UOpsContext *ctx)
 {
     _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
-    _Py_uop_sym_set_null(sym);
-    _Py_uop_sym_set_non_null(sym);
+    _Py_uop_sym_set_null(ctx, sym);
+    _Py_uop_sym_set_non_null(ctx, sym);
     return sym;
 }
 
@@ -438,10 +454,10 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "int is a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "int as constant is not NULL");
 
-    _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
+    _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(int and int) isn't int");
 
-    _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
+    _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(int and float) isn't bottom");
 
     val_42 = PyLong_FromLong(42);
@@ -456,7 +472,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (sym == NULL) {
         goto fail;
     }
-    _Py_uop_sym_set_const(sym, val_42);
+    _Py_uop_sym_set_const(ctx, sym, val_42);
     TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 1, "bool(42) is not True");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
@@ -466,19 +482,19 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "42 as constant is NULL");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "42 as constant isn't 42");
 
-    _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
+    _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 42) isn't an int");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "(42 and 42) as constant isn't 42");
 
-    _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
+    _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
 
     sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     if (sym == NULL) {
         goto fail;
     }
-    _Py_uop_sym_set_const(sym, val_42);
-    _Py_uop_sym_set_const(sym, val_43);  // Should make it bottom
+    _Py_uop_sym_set_const(ctx, sym, val_42);
+    _Py_uop_sym_set_const(ctx, sym, val_43);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
 
 
@@ -500,3 +516,5 @@ fail:
     Py_XDECREF(val_43);
     return NULL;
 }
+
+#endif /* _Py_TIER2 */
