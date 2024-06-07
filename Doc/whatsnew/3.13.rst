@@ -1716,11 +1716,6 @@ Pending Removal in Python 3.14
   public API.
   (Contributed by Gregory P. Smith in :gh:`88168`.)
 
-* :mod:`xml.etree.ElementTree`: Testing the truth value of an
-  :class:`~xml.etree.ElementTree.Element` is deprecated and will raise an
-  exception in Python 3.14.
-
-
 Pending Removal in Python 3.15
 ------------------------------
 
@@ -1924,6 +1919,11 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an
+  :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
+  it will always return ``True``. Prefer explicit ``len(elem)`` or
+  ``elem is not None`` tests instead.
 
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
   use :meth:`~zipimport.zipimporter.exec_module` instead.
