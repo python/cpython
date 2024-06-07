@@ -101,7 +101,7 @@ symtable
   * :meth:`~symtable.Symbol.is_comp_iter`
   * :meth:`~symtable.Symbol.is_comp_cell`
 
-  (Contributed by Bénédikt Tran in :issue:`120029`.)
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
 
 
 Optimizations
