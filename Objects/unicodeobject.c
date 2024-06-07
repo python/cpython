@@ -4700,7 +4700,6 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    Py_ssize_t length  = end - start;
     const char *size_t_end  = end - SIZEOF_SIZE_T;
     const char *unroll_end = end - (4 * SIZEOF_SIZE_T);
 
@@ -4716,7 +4715,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         while (_p <= unroll_end) {
             const size_t *restrict __p = (const size_t *)_p;
             size_t value = __p[0] | __p[1] | __p[2] | __p[3];
-            if (if value & ASCII_CHAR_MASK) {
+            if (value & ASCII_CHAR_MASK) {
                 break;
             }
             size_t *restrict _q = (size_t *)q;
@@ -4753,7 +4752,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
             while (_p <= unroll_end) {
                 const size_t *restrict __p = (const size_t *)_p;
                 size_t value = __p[0] | __p[1] | __p[2] | __p[3];
-                if (if value & ASCII_CHAR_MASK) {
+                if (value & ASCII_CHAR_MASK) {
                     break;
                 }
                 _p += (4 * SIZEOF_SIZE_T);
