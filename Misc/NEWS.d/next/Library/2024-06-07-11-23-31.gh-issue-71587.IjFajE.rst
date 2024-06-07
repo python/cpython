@@ -1,0 +1,1 @@
+Fix crash in :meth:`_datetime.datetime.strptime` when called again on the restarted interpreter.
