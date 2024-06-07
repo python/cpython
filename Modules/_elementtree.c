@@ -1504,7 +1504,7 @@ element_bool(PyObject* self_)
 {
     ElementObject* self = (ElementObject*) self_;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Testing an element's truth value will raise an exception "
+                     "Testing an element's truth value will always return True "
                      "in future versions.  Use specific 'len(elem)' or "
                      "'elem is not None' test instead.",
                      1) < 0) {

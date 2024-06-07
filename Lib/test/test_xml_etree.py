@@ -4009,7 +4009,7 @@ class BoolTest(unittest.TestCase):
     def test_warning(self):
         e = ET.fromstring('<a style="new"></a>')
         msg = (
-            r"Testing an element's truth value will raise an exception in "
+            r"Testing an element's truth value will always return True in "
             r"future versions.  "
             r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
         with self.assertWarnsRegex(DeprecationWarning, msg):
