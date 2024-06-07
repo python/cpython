@@ -6573,7 +6573,13 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                 return -1;
             }
         }
+        if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+            Py_INCREF(newto);
+        }
         Py_SET_TYPE(self, newto);
+        if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            Py_DECREF(oldto);
+
         RARE_EVENT_INC(set_class);
         return 0;
     }
