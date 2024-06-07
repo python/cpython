@@ -366,6 +366,48 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     }
 }
 
+static int
+recursive_mutex_is_owned_by(_PyRecursiveMutex *m, PyThread_ident_t tid)
+{
+    return _Py_atomic_load_ullong_relaxed(&m->thread) == tid;
+}
+
+int
+_PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m)
+{
+    return recursive_mutex_is_owned_by(m, PyThread_get_thread_ident_ex());
+}
+
+void
+_PyRecursiveMutex_Lock(_PyRecursiveMutex *m)
+{
+    PyThread_ident_t thread = PyThread_get_thread_ident_ex();
+    if (recursive_mutex_is_owned_by(m, thread)) {
+        m->level++;
+        return;
+    }
+    PyMutex_Lock(&m->mutex);
+    _Py_atomic_store_ullong_relaxed(&m->thread, thread);
+    assert(m->level == 0);
+}
+
+void
+_PyRecursiveMutex_Unlock(_PyRecursiveMutex *m)
+{
+    PyThread_ident_t thread = PyThread_get_thread_ident_ex();
+    if (!recursive_mutex_is_owned_by(m, thread)) {
+        Py_FatalError("unlocking a recursive mutex that is not owned by the"
+                      " current thread");
+    }
+    if (m->level > 0) {
+        m->level--;
+        return;
+    }
+    assert(m->level == 0);
+    _Py_atomic_store_ullong_relaxed(&m->thread, 0);
+    PyMutex_Unlock(&m->mutex);
+}
+
 #define _Py_WRITE_LOCKED 1
 #define _PyRWMutex_READER_SHIFT 2
 #define _Py_RWMUTEX_MAX_READERS (UINTPTR_MAX >> _PyRWMutex_READER_SHIFT)

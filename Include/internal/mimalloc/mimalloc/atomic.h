@@ -11,7 +11,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // --------------------------------------------------------------------------------------------
 // Atomics
 // We need to be portable between C, C++, and MSVC.
-// We base the primitives on the C/C++ atomics and create a mimimal wrapper for MSVC in C compilation mode.
+// We base the primitives on the C/C++ atomics and create a minimal wrapper for MSVC in C compilation mode.
 // This is why we try to use only `uintptr_t` and `<type>*` as atomic types.
 // To gain better insight in the range of used atomics, we use explicitly named memory order operations
 // instead of passing the memory order as a parameter.

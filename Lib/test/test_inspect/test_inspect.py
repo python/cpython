@@ -235,6 +235,7 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
+        self.assertFalse(inspect.iscoroutinefunction(inspect))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -5412,7 +5413,6 @@ class TestSignatureDefinitions(unittest.TestCase):
             'bytearray': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'bytes': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'dict': {'pop'},
-            'int': {'__round__'},
             'memoryview': {'cast', 'hex'},
             'str': {'count', 'endswith', 'find', 'index', 'maketrans', 'rfind', 'rindex', 'startswith'},
         }
