@@ -309,7 +309,8 @@ class Symbol:
         return bool(self.__scope == FREE)
 
     def is_free_class(self):
-        """Return *True* if a symbol is free from a method perspective."""
+        """Return *True* if a class-scoped symbol is free from
+        the perspective of a method."""
         return bool(self.__flags & DEF_FREE_CLASS)
 
     def is_imported(self):

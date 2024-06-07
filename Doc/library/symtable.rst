@@ -186,7 +186,8 @@ Examining Symbol Tables
 
    .. method:: is_free_class()
 
-      Return *True* if a symbol is free from a method perspective.
+      Return *True* if a class-scoped symbol is free from
+      the perspective of a method.
 
       Consider the following example::
 
