@@ -7121,8 +7121,8 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
+    /* containers */
     Py_VISIT(st->strptime);
-
     return 0;
 }
 
