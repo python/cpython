@@ -228,7 +228,6 @@ class Reader:
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
-    msg_at_bottom: bool = True
     keymap: tuple[tuple[str, str], ...] = ()
     input_trans: input.KeymapTranslator = field(init=False)
     input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
@@ -266,10 +265,6 @@ class Reader:
         for ln, line in enumerate(lines):
             ll = len(line)
             if 0 <= pos <= ll:
-                if self.msg and not self.msg_at_bottom:
-                    for mline in self.msg.split("\n"):
-                        screen.append(mline)
-                        screeninfo.append((0, []))
                 self.lxy = pos, ln
             prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
@@ -308,7 +303,7 @@ class Reader:
                     i += 1
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
-        if self.msg and self.msg_at_bottom:
+        if self.msg:
             for mline in self.msg.split("\n"):
                 screen.append(mline)
                 screeninfo.append((0, []))
