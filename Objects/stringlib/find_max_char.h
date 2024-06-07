@@ -50,10 +50,12 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     size_t value = 0;
     while (_p < aligned_end) {
         value |= *_p;
+        _p += 1;
     }
     p = (const unsigned char *)_p;
     while (p < _end) {
         value |= *p;
+        p += 1;
     }
     if (value & UCS1_ASCII_CHAR_MASK) {
         return 255;
