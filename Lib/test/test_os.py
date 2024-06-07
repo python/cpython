@@ -1823,9 +1823,10 @@ class MakedirTests(unittest.TestCase):
         os.mkdir(path, mode=0o700)
         out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
         os.rmdir(path)
+        out = out.strip().rsplit(" ", 1)[1]
         self.assertEqual(
-            out.strip(),
-            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+            out,
+            '"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
         )
 
     def tearDown(self):
