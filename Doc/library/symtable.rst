@@ -184,6 +184,25 @@ Examining Symbol Tables
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
 
+   .. method:: is_free_class()
+
+      Return *True* if a symbol is free from a method perspective.
+
+      Consider the following example::
+
+         def f():
+             x = 1  # function-scoped
+                 class C:
+                     x = 2  # class-scoped
+                     def method(self):
+                         return x
+
+      In this example, the the class-scoped ``x`` symbol is considered
+      to be free from the perspective of ``C.method``, thereby allowing
+      the ``method`` to return `1` at runtime and not `2`.
+
+      .. versionadded:: 3.14
+
    .. method:: is_assigned()
 
       Return ``True`` if the symbol is assigned to in its block.
