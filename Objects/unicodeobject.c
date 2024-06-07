@@ -4700,6 +4700,9 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
+    Py_ssize_t length  = end - start; 
+    const char *size_t_end  = end - SIZEOF_SIZE_T;
+    const char *unroll_end = end - (4 * SIZEOF_SIZE_T);
 
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
     if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
@@ -4710,7 +4713,21 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         /* Help allocation */
         const char *_p = p;
         Py_UCS1 * q = dest;
-        while (_p + SIZEOF_SIZE_T <= end) {
+        while (_p <= unroll_end) {
+            const size_t *restrict __p = (const size_t *)_p; 
+            size_t value = __p[0] | __p[1] | __p[2] | __p[3];
+            if (if value & ASCII_CHAR_MASK) {
+                break;
+            }
+            size_t *restrict _q = (size_t *)q;
+            _q[0] = __p[0];
+            _q[1] = __p[1];
+            _q[2] = __p[2];
+            _q[3] = __p[3];
+            _p += (4 * SIZEOF_SIZE_T);
+            q += (4 * SIZEOF_SIZE_T);
+        }
+        while (_p <= size_t_end) {
             size_t value = *(const size_t *) _p;
             if (value & ASCII_CHAR_MASK)
                 break;
@@ -4733,7 +4750,15 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
+            while (_p <= unroll_end) {
+                const size_t *restrict __p = (const size_t *)_p; 
+                size_t value = __p[0] | __p[1] | __p[2] | __p[3];
+                if (if value & ASCII_CHAR_MASK) {
+                    break;
+                }
+                _p += (4 * SIZEOF_SIZE_T);
+            }
+            while (_p <= size_t_end) {
                 size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK)
                     break;
