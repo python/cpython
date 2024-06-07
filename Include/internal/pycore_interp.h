@@ -400,7 +400,7 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
-        /* saturating add */                \
+        /* saturating add */ \
         int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
         if (val < UINT8_MAX) { \
             FT_ATOMIC_STORE_UINT8_RELAXED(interp->rare_events.name, val+1); \
