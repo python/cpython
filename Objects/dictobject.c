@@ -2120,17 +2120,17 @@ _PyDict_NewPresized(Py_ssize_t minused)
     return dict_new_presized(interp, minused, false);
 }
 
-PyObject*
-_PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
-                        _PyStackRef const *values, Py_ssize_t values_offset,
-                        Py_ssize_t length)
+PyObject *
+_PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
+                  PyObject *const *values, Py_ssize_t values_offset,
+                  Py_ssize_t length)
 {
     bool unicode = true;
-    _PyStackRef const *ks = keys;
+    PyObject *const *ks = keys;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        if (!PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(*ks))) {
+        if (!PyUnicode_CheckExact(*ks)) {
             unicode = false;
             break;
         }
@@ -2143,11 +2143,11 @@ _PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
     }
 
     ks = keys;
-    _PyStackRef const *vs = values;
+    PyObject *const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        PyObject *key = PyStackRef_AsPyObjectBorrow(*ks);
-        PyObject *value = PyStackRef_AsPyObjectBorrow(*vs);
+        PyObject *key = *ks;
+        PyObject *value = *vs;
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2157,15 +2157,6 @@ _PyDict_FromStackRefItems(_PyStackRef const *keys, Py_ssize_t keys_offset,
     }
 
     return dict;
-}
-
-PyObject *
-_PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
-                  PyObject *const *values, Py_ssize_t values_offset,
-                  Py_ssize_t length)
-{
-    return _PyDict_FromStackRefItems((const _PyStackRef *)keys, keys_offset,
-        (const _PyStackRef *)values, values_offset, length);
 }
 
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors

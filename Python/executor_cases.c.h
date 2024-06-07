@@ -1811,10 +1811,18 @@
             _PyStackRef map;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg*2];
-            PyObject *map_o = _PyDict_FromStackRefItems(
-                values, 2,
-                values+1, 2,
+            STACKREFS_TO_PYOBJECTS(values, oparg*2, values_o);
+            if (values_o == NULL) {
+                for (int _i = oparg*2; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                if (true) JUMP_TO_ERROR();
+            }
+            PyObject *map_o = _PyDict_FromItems(
+                values_o, 2,
+                values_o+1, 2,
                 oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             for (int _i = oparg*2; --_i >= 0;) {
                 PyStackRef_CLOSE(values[_i]);
             }
@@ -1859,9 +1867,18 @@
             PyObject *keys_o = PyStackRef_AsPyObjectBorrow(keys);
             assert(PyTuple_CheckExact(keys_o));
             assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
-            PyObject *map_o = _PyDict_FromStackRefItems(
-                (_PyStackRef *)&PyTuple_GET_ITEM(keys_o, 0), 1,
-                values, 1, oparg);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
+            if (values_o == NULL) {
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(values[_i]);
+                }
+                PyStackRef_CLOSE(keys);
+                if (true) JUMP_TO_ERROR();
+            }
+            PyObject *map_o = _PyDict_FromItems(
+                &PyTuple_GET_ITEM(keys_o, 0), 1,
+                values_o, 1, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             for (int _i = oparg; --_i >= 0;) {
                 PyStackRef_CLOSE(values[_i]);
             }

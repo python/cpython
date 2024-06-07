@@ -275,10 +275,6 @@ PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
-PyAPI_FUNC(PyObject *)_PyDict_FromStackRefItems(
-    _PyStackRef const *keys, Py_ssize_t keys_offset,
-    _PyStackRef const *values, Py_ssize_t values_offset,
-    Py_ssize_t length);
 
 static inline uint8_t *
 get_insertion_order_array(PyDictValues *values)

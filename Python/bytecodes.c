@@ -1842,10 +1842,16 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
-            PyObject *map_o = _PyDict_FromStackRefItems(
-                    values, 2,
-                    values+1, 2,
+            STACKREFS_TO_PYOBJECTS(values, oparg*2, values_o);
+            if (values_o == NULL) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *map_o = _PyDict_FromItems(
+                    values_o, 2,
+                    values_o+1, 2,
                     oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             DECREF_INPUTS();
             ERROR_IF(map_o == NULL, error);
             map = PyStackRef_FromPyObjectSteal(map_o);
@@ -1879,9 +1885,15 @@ dummy_func(
 
             assert(PyTuple_CheckExact(keys_o));
             assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
-            PyObject *map_o = _PyDict_FromStackRefItems(
-                    (_PyStackRef *)&PyTuple_GET_ITEM(keys_o, 0), 1,
-                    values, 1, oparg);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
+            if (values_o == NULL) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *map_o = _PyDict_FromItems(
+                    &PyTuple_GET_ITEM(keys_o, 0), 1,
+                    values_o, 1, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
             DECREF_INPUTS();
             ERROR_IF(map_o == NULL, error);
             map = PyStackRef_FromPyObjectSteal(map_o);
