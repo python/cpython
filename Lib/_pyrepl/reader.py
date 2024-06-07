@@ -236,6 +236,7 @@ class Reader:
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
+    can_colorize: bool = False
 
     ## cached metadata to speed up screen refreshes
     last_refresh_in_bracketed_paste: bool = False
@@ -257,6 +258,7 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
+        self.can_colorize = can_colorize()
 
         self.last_refresh_screeninfo = self.screeninfo
         self.last_refresh_pos = self.pos
@@ -496,7 +498,7 @@ class Reader:
         else:
             prompt = self.ps1
 
-        if can_colorize():
+        if self.can_colorize:
             prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
         return prompt
 
