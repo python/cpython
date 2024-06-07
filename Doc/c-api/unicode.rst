@@ -487,7 +487,8 @@ APIs:
 
       * - ``s``
         - :c:expr:`const char*` or :c:expr:`const wchar_t*`
-        - A null-terminated C character array.
+        - A null-terminated C character array. The argument is decoded from
+          UTF-8 with the "strict" error handler.
 
       * - ``p``
         - :c:expr:`const void*`
@@ -575,6 +576,10 @@ APIs:
 
    .. versionchanged:: 3.13
       Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
+
+   .. versionchanged:: 3.14
+      The ``"%s"`` format now decodes its argument from UTF-8 with the "strict"
+      error handler, instead of the "replace" error handler.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)

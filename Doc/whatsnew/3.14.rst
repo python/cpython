@@ -261,6 +261,11 @@ New Features
 Porting to Python 3.14
 ----------------------
 
+* :c:func:`PyUnicode_FromFormat` now decodes the ``"%s"`` format argument from
+  UTF-8 with the "strict" error handler, instead of the "replace" error
+  handler.
+  (Contributed by Victor Stinner in :gh:`119182`.)
+
 Deprecated
 ----------
 

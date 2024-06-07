@@ -384,12 +384,11 @@ class CAPITest(unittest.TestCase):
         check_format('ascii\x7f=unicode\xe9',
                      b'ascii\x7f=%U', 'unicode\xe9')
 
-        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
-        # raises an error
-        self.assertRaisesRegex(ValueError,
-            r'^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
-            'string, got a non-ASCII byte: 0xe9$',
-            PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
+        # "%s" format decodes its argument from UTF-8/strict
+        check_format('value=\u20ac',
+                     b'value=%s', '\u20ac'.encode())
+        with self.assertRaises(UnicodeDecodeError):
+            PyUnicode_FromFormat(b'value=%s', b'invalid\xe9')
 
         # test "%c"
         check_format('\uabcd',
@@ -412,11 +411,13 @@ class CAPITest(unittest.TestCase):
         check_format('%abc',
                      b'%%%s', b'abc')
 
-        # truncated string
+        # test "%s" format with precision
         check_format('abc',
                      b'%.3s', b'abcdef')
-        check_format('abc[\ufffd',
-                     b'%.5s', 'abc[\u20ac]'.encode('utf8'))
+        with self.assertRaises(UnicodeDecodeError):
+            PyUnicode_FromFormat(b'%.5s', 'abc[\u20ac]'.encode('utf8'))
+        check_format('abc[\u20ac',
+                     b'%.7s', 'abc[\u20ac]'.encode('utf8'))
         check_format("'\\u20acABC'",
                      b'%A', '\u20acABC')
         check_format("'\\u20",
@@ -431,8 +432,8 @@ class CAPITest(unittest.TestCase):
                      b'%.3U', '\u20acABCDEF')
         check_format('\u20acAB',
                      b'%.3V', '\u20acABCDEF', None)
-        check_format('abc[\ufffd',
-                     b'%.5V', None, 'abc[\u20ac]'.encode('utf8'))
+        with self.assertRaises(UnicodeDecodeError):
+            PyUnicode_FromFormat(b'%.5V', None, 'abc[\u20ac]'.encode('utf8'))
 
         # following tests comes from #7330
         # test width modifier and precision modifier with %S
@@ -723,9 +724,9 @@ class CAPITest(unittest.TestCase):
         check_format('repr=\u4eba\u6c11',
                      b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
 
-        #Test replace error handler.
-        check_format('repr=abc\ufffd',
-                     b'repr=%V', None, b'abc\xff')
+        # Test replace the "strict" error handler.
+        with self.assertRaises(UnicodeDecodeError):
+            PyUnicode_FromFormat(b'repr=%V', None, b'abc\xff')
 
         # Issue #33817: empty strings
         check_format('',

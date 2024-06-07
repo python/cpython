@@ -1,0 +1,3 @@
+:c:func:`PyUnicode_FromFormat` now decodes the ``"%s"`` format argument from
+UTF-8 with the "strict" error handler, instead of the "replace" error handler.
+Patch by Victor Stinner.

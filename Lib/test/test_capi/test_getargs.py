@@ -1298,8 +1298,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 self.assertEqual(parse((), {}, '|O', [invalid]), (NULL,))
                 self.assertEqual(parse((1,), {'b': 2}, 'O|O', [invalid, 'b']),
                                     (1, 2))
-                with self.assertRaisesRegex(TypeError,
-                        f"function missing required argument '{name}\ufffd'"):
+                with self.assertRaises(UnicodeDecodeError):
                     parse((), {}, 'O', [invalid])
                 with self.assertRaisesRegex(UnicodeDecodeError,
                         f"'utf-8' codec can't decode bytes? "):
