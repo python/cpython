@@ -13,7 +13,7 @@ Test simple loop with conditional
 Test simple case
 
     >>> {{2*y + x + 1 for x in (0,) for y in (1,)}}
-    frozenset({3})
+    {{3}}
 
 Test simple nesting
 
@@ -88,7 +88,7 @@ Generators can call other generators:
 Make sure that None is a valid return value
 
     >>> {{None for i in range(10)}}
-    frozenset({None})
+    {{None}}
 
 ########### Tests for various scoping corner cases ############
 
@@ -102,21 +102,21 @@ Same again, only this time as a closure variable
 
     >>> items = {{(lambda: i) for i in range(5)}}
     >>> {{x() for x in items}}
-    frozenset({4})
+    {{4}}
 
 Another way to test that the iteration variable is local to the frozenset comp
 
     >>> items = {{(lambda: i) for i in range(5)}}
     >>> i = 20
     >>> {{x() for x in items}}
-    frozenset({4})
+    {{4}}
 
 And confirm that a closure can jump over the frozenset comp scope
 
     >>> items = {{(lambda: y) for i in range(5)}}
     >>> y = 2
     >>> {{x() for x in items}}
-    frozenset({2})
+    {{2}}
 
 We also repeat each of the above scoping tests inside a function
 
@@ -130,21 +130,21 @@ We also repeat each of the above scoping tests inside a function
     ...     items = {{(lambda: i) for i in range(5)}}
     ...     return {{x() for x in items}}
     >>> test_func()
-    frozenset({4})
+    {{4}}
 
     >>> def test_func():
     ...     items = {{(lambda: i) for i in range(5)}}
     ...     i = 20
     ...     return {{x() for x in items}}
     >>> test_func()
-    frozenset({4})
+    {{4}}
 
     >>> def test_func():
     ...     items = {{(lambda: y) for i in range(5)}}
     ...     y = 2
     ...     return {{x() for x in items}}
     >>> test_func()
-    frozenset({2})
+    {{2}}
 
 """
 

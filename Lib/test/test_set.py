@@ -317,6 +317,8 @@ class TestJointOps:
         w.value = s
         if self.thetype == set:
             self.assertEqual(repr(s), '{set(...)}')
+        elif self.thetype == frozenset:
+            self.assertEqual(repr(s), '{{frozenset(...)}}')
         else:
             name = repr(s).partition('(')[0]    # strip class name
             self.assertEqual(repr(s), '%s({%s(...)})' % (name, name))

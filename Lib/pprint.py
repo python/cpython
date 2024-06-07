@@ -271,7 +271,25 @@ class PrettyPrinter:
         stream.write(endchar)
 
     _dispatch[set.__repr__] = _pprint_set
-    _dispatch[frozenset.__repr__] = _pprint_set
+
+    def _pprint_frozenset(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        typ = object.__class__
+        if typ is frozenset:
+            stream.write('{{')
+            endchar = '}}'
+        else:
+            stream.write(typ.__name__ + '({')
+            endchar = '})'
+            indent += len(typ.__name__)
+        object = sorted(object, key=_safe_key)
+        self._format_items(object, stream, indent + 1, allowance + len(endchar),
+                           context, level)
+        stream.write(endchar)
+
+    _dispatch[frozenset.__repr__] = _pprint_frozenset
 
     def _pprint_str(self, object, stream, indent, allowance, context, level):
         write = stream.write

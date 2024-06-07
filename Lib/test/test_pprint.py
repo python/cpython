@@ -602,15 +602,15 @@ set2({0,
 
         self.assertEqual(pprint.pformat(frozenset()), 'frozenset()')
         self.assertEqual(pprint.pformat(frozenset(range(3))),
-                         'frozenset({0, 1, 2})')
+                         '{{0, 1, 2}}')
         self.assertEqual(pprint.pformat(frozenset(range(7)), width=20), '''\
-frozenset({0,
-           1,
-           2,
-           3,
-           4,
-           5,
-           6})''')
+{{0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6}}''')
         self.assertEqual(pprint.pformat(frozenset2(range(7)), width=20), '''\
 frozenset2({0,
             1,
@@ -652,13 +652,13 @@ frozenset2({0,
         fs1 = frozenset(('abc', 'xyz'))
         data = frozenset((fs0, fs1))
         self.assertEqual(pprint.pformat(data),
-                         'frozenset({%r, %r})' % (fs0, fs1))
+                         '{{%r, %r}}' % (fs0, fs1))
         self.assertEqual(pprint.pformat(data), repr(data))
 
         fs2 = frozenset(('one', 'two'))
         data = {fs2: frozenset((fs0, fs1))}
         self.assertEqual(pprint.pformat(data),
-                         "{%r: frozenset({%r, %r})}" % (fs2, fs0, fs1))
+                         "{%r: {{%r, %r}}}" % (fs2, fs0, fs1))
         self.assertEqual(pprint.pformat(data), repr(data))
 
         # Single-line, unordered:
@@ -675,15 +675,15 @@ frozenset2({0,
         fs1 = frozenset(('regular string', 'other string'))
         fs2 = frozenset(('third string', 'one more string'))
         check(
-            pprint.pformat(frozenset((fs1, fs2))),
+            pprint.pformat({{fs1, fs2}}, width=60),
             [
                 """
-                frozenset({%r,
-                           %r})
+                {{%r,
+                  %r}}
                 """ % (fs1, fs2),
                 """
-                frozenset({%r,
-                           %r})
+                {{%r,
+                  %r}}
                 """ % (fs2, fs1),
             ],
         )
@@ -691,44 +691,45 @@ frozenset2({0,
         # Everything is multiline, unordered:
         check(
             pprint.pformat(
-                frozenset((
-                    frozenset((
+                {{
+                    {{
                         "xyz very-very long string",
                         "qwerty is also absurdly long",
-                    )),
-                    frozenset((
+                    }},
+                    {{
                         "abcd is even longer that before",
                         "spam is not so long",
-                    )),
-                )),
+                    }},
+                }},
+                width=40
             ),
             [
                 """
-                frozenset({frozenset({'abcd is even longer that before',
-                                      'spam is not so long'}),
-                           frozenset({'qwerty is also absurdly long',
-                                      'xyz very-very long string'})})
+                {{{{'abcd is even longer that before',
+                    'spam is not so long'}},
+                  {{'qwerty is also absurdly long',
+                    'xyz very-very long string'}}}}
                 """,
 
                 """
-                frozenset({frozenset({'abcd is even longer that before',
-                                      'spam is not so long'}),
-                           frozenset({'xyz very-very long string',
-                                      'qwerty is also absurdly long'})})
+                {{{{'abcd is even longer that before',
+                    'spam is not so long'}},
+                  {{'xyz very-very long string',
+                    'qwerty is also absurdly long'}}}}
                 """,
 
                 """
-                frozenset({frozenset({'qwerty is also absurdly long',
-                                      'xyz very-very long string'}),
-                           frozenset({'abcd is even longer that before',
-                                      'spam is not so long'})})
+                {{{{'qwerty is also absurdly long',
+                    'xyz very-very long string'}},
+                  {{'abcd is even longer that before',
+                    'spam is not so long'}}}}
                 """,
 
                 """
-                frozenset({frozenset({'qwerty is also absurdly long',
-                                      'xyz very-very long string'}),
-                           frozenset({'spam is not so long',
-                                      'abcd is even longer that before'})})
+                {{{{'qwerty is also absurdly long',
+                    'xyz very-very long string'}},
+                {{{{'spam is not so long',
+                    'abcd is even longer that before'}}}}
                 """,
             ],
         )
@@ -759,7 +760,7 @@ frozenset2({0,
         self.assertEqual(clean(pprint.pformat(set(keys))),
             '{' + ','.join(map(repr, skeys)) + '}')
         self.assertEqual(clean(pprint.pformat(frozenset(keys))),
-            'frozenset({' + ','.join(map(repr, skeys)) + '})')
+            '{{' + ','.join(map(repr, skeys)) + '}}')
         self.assertEqual(clean(pprint.pformat(dict.fromkeys(keys))),
             '{' + ','.join('%r:None' % k for k in skeys) + '}')
 
