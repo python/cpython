@@ -154,10 +154,16 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
     }
 }
 
-void
+bool
 _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version)
 {
+    // if the type version was already set, then it must be different and we should set it to bottom
+    if (sym->type_version) {
+        sym_set_bottom(ctx, sym);
+        return false;
+    }
     sym->type_version = version;
+    return true;
 }
 
 void
