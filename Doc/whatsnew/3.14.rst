@@ -92,6 +92,16 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :issue:`120029`.)
 
 
 Optimizations
