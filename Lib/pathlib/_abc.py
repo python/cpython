@@ -12,8 +12,9 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
+import operator
 import posixpath
-from glob import _Globber, _no_recurse_symlinks
+from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
@@ -84,6 +85,33 @@ class ParserBase:
         raise UnsupportedOperation(self._unsupported_msg('isabs()'))
 
 
+class PathGlobber(_GlobberBase):
+    """
+    Class providing shell-style globbing for path objects.
+    """
+
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        import contextlib
+        return contextlib.nullcontext(path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path."""
+        return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir()."""
+        return entry
+
+
 class PurePathBase:
     """Base class for pure path objects.
 
@@ -104,7 +132,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = _Globber
+    _globber = PathGlobber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
