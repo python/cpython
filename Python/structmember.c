@@ -16,8 +16,8 @@ member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
         PyObject *obj = (PyObject *) obj_addr;
         PyTypeObject *tp = Py_TYPE(obj);
         PyErr_Format(PyExc_AttributeError,
-                     "'%.200s' object has no attribute '%s'",
-                     tp->tp_name, l->name);
+                     "'%N' object has no attribute '%s'",
+                     tp, l->name);
     }
     return v;
 }
