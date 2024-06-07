@@ -7682,7 +7682,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     PyCodeObject *co = NULL;
     PyObject *consts = consts_dict_keys_inorder(u->u_metadata.u_consts);
     if (consts == NULL) {
-        goto error;
+        return NULL;
     }
     cfg_builder g;
     if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {
