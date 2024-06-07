@@ -50,6 +50,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    /* _strptime module */
+    PyObject *strptime;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -5514,19 +5517,27 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
     PyObject *string, *format;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
+    PyObject *result = NULL;
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    PyObject *module = st->strptime;
     if (module == NULL) {
         module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
-            return NULL;
+        if (module == NULL) {
+            goto Done;
+        }
+        st->strptime = module;
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
                                          cls, string, format, NULL);
+Done:
+    RELEASE_CURRENT_STATE(st, current_mod);
+    return result;
 }
 
 /* Return new datetime from date/datetime and time arguments. */
@@ -7057,6 +7068,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
+            .strptime = Py_NewRef(st_old->strptime),
         };
         return 0;
     }
@@ -7109,6 +7121,7 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
+    Py_VISIT(st->strptime);
 
     return 0;
 }
@@ -7125,6 +7138,7 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
+    Py_CLEAR(st->strptime);
     return 0;
 }
 
