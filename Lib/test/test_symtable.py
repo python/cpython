@@ -52,39 +52,66 @@ def generic_spam[T](a):
 class GenericMine[T: int]:
     pass
 
-some_non_assigned_global_ident: int
-some_non_assigned_global_ident_2: int
-some_assigned_global_ident = None
+# test case: ComplexClass
+glob_unassigned_meth: int
+glob_unassigned_meth_pep_695: int
+glob_assigned_meth = 1234
+glob_assigned_meth_pep_695 = 1234
+
+glob_unassigned_meth_ignore: int
+glob_unassigned_meth_pep_695_ignore: int
+glob_assigned_meth_ignore = 1234
+glob_assigned_meth_pep_695_ignore = 1234
 
 class ComplexClass:
     some_non_method_const = 1234
 
     class some_non_method_nested: pass
+    class some_non_method_nested_pep_695[T]: pass
+
     type some_non_method_alias = int
+    type some_non_method_alias_pep_695[T] = list[T]
 
     some_non_method_genexpr = (x for x in [])
     some_non_method_lambda = lambda x: x
 
     def a_method(self): pass
+    def a_method_pep_695[T](self): pass
+
     @classmethod
     def a_classmethod(cls): pass
+    @classmethod
+    def a_classmethod_pep_695[T](self): pass
+
     @staticmethod
     def a_staticmethod(): pass
+    @staticmethod
+    def a_staticmethod_pep_695[T](self): pass
 
-    # This one will be considered as a method because of the 'def' although
-    # it will *not* be a valid one at runtime since it is not a staticmethod.
+    # These ones will be considered as methods because of the 'def' although
+    # they are *not* valid methods at runtime since they are not decorated
+    # with @staticmethod.
     def a_fakemethod(): pass
+    def a_fakemethod_pep_695[T](): pass
 
     # Check that those are still considered as methods
     # since they are not using the 'global' keyword.
-    def some_assigned_global_ident(): pass
-    def some_non_assigned_global_ident(): pass
+    def glob_unassigned_meth(): pass
+    def glob_unassigned_meth_pep_695[T](): pass
+    def glob_assigned_meth(): pass
+    def glob_assigned_meth_pep_695[T](): pass
 
-    # This one is not picked as a method because it will not even be
+    # The following are not picked as a method because thy are not
     # visible by the class at runtime (this is equivalent to having
-    # that definition outside of the class).
-    global some_non_assigned_global_ident_2
-    def some_non_assigned_global_ident_2(): pass
+    # the definitions outside of the class).
+    global glob_unassigned_meth_ignore
+    def glob_unassigned_meth_ignore(): pass
+    global glob_unassigned_meth_pep_695_ignore
+    def glob_unassigned_meth_pep_695_ignore[T](): pass
+    global glob_assigned_meth_ignore
+    def glob_assigned_meth_ignore(): pass
+    global glob_assigned_meth_pep_695_ignore
+    def glob_assigned_meth_pep_695_ignore[T](): pass
 """
 
 
@@ -277,12 +304,12 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.Mine.get_methods(), ('a_method',))
 
         self.assertEqual(self.ComplexClass.get_methods(), (
-            'a_method',
-            'a_classmethod',
-            'a_staticmethod',
-            'a_fakemethod',
-            'some_assigned_global_ident',
-            'some_non_assigned_global_ident',
+            'a_method', 'a_method_pep_695',
+            'a_classmethod', 'a_classmethod_pep_695',
+            'a_staticmethod', 'a_staticmethod_pep_695',
+            'a_fakemethod', 'a_fakemethod_pep_695',
+            'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
+            'glob_assigned_meth', 'glob_assigned_meth_pep_695',
         ))
 
     def test_filename_correct(self):

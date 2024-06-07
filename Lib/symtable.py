@@ -227,9 +227,19 @@ class Class(SymbolTable):
                 return ((flags >> SCOPE_OFF) & SCOPE_MASK) == LOCAL
 
             for st in self._table.children:
-                # only pick the 'function' symbols that are local identifiers
-                if st.type == _symtable.TYPE_FUNCTION and is_local_symbol(st.name):
-                    d[st.name] = 1
+                # pick the function-like symbols that are local identifiers
+                if is_local_symbol(st.name):
+                    if st.type == _symtable.TYPE_TYPE_PARAM:
+                        # Current 'st' is an annotation scope with one or
+                        # more children (we expect only one, but ,
+                        # so we need to find the corresponding inner function,
+                        # class or type alias.
+                        st = next((c for c in st.children if c.name == st.name), None)
+                        # if 'st' is None, then the annotation scopes are broken
+                        assert st is not None, 'annotation scopes are broken'
+
+                    if st.type == _symtable.TYPE_FUNCTION:
+                        d[st.name] = 1
             self.__methods = tuple(d)
         return self.__methods
 
