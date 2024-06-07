@@ -198,7 +198,7 @@ Examining Symbol Tables
                  def method(self):
                      return x
 
-      In this example, the class-scoped ``x`` symbol is considered to
+      In this example, the class-scoped symbol ``x`` is considered to
       be free from the perspective of ``C.method``, thereby allowing
       the latter to return *1* at runtime and not *2*.
 
