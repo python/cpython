@@ -9820,38 +9820,6 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     return NULL;
 }
 
-PyObject*
-_PyUnicode_JoinStackRef_Slow(PyObject *separator, _PyStackRef const *tagged, Py_ssize_t seqlen)
-{
-    PyObject **args = PyMem_Malloc(seqlen * sizeof(PyObject *));
-    if (args == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    _PyObjectStack_FromStackRefStack(args, tagged, seqlen);
-    PyObject *res = _PyUnicode_JoinArray(separator, args, seqlen);
-    PyMem_Free(args);
-    return res;
-}
-
-#define MAX_UNTAG_SCRATCH 10
-
-PyObject *
-_PyUnicode_JoinStackRef(PyObject *separator, _PyStackRef const *items_tagged, Py_ssize_t seqlen)
-{
-#ifdef Py_GIL_DISABLED
-    PyObject *args[MAX_UNTAG_SCRATCH];
-    if (seqlen > MAX_UNTAG_SCRATCH) {
-        return _PyUnicode_JoinStackRef_Slow(separator, items_tagged, seqlen);
-    }
-    _PyObjectStack_FromStackRefStack(args, items_tagged, seqlen);
-    return _PyUnicode_JoinArray(separator, args, seqlen);
-#else
-    (void)_PyUnicode_JoinStackRef_Slow;
-    return _PyUnicode_JoinArray(separator, (PyObject **)items_tagged, seqlen);
-#endif
-}
-
 void
 _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
                     Py_UCS4 fill_char)

@@ -1769,7 +1769,13 @@ dummy_func(
         }
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
-            PyObject *str_o = _PyUnicode_JoinStackRef(&_Py_STR(empty), pieces, oparg);
+            STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
+            if (pieces_o == NULL) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
             DECREF_INPUTS();
             ERROR_IF(str_o == NULL, error);
             str = PyStackRef_FromPyObjectSteal(str_o);

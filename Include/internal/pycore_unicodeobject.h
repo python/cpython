@@ -12,7 +12,6 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_stackref.h"      // _PyStackRef
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -208,12 +207,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *const *items,
     Py_ssize_t seqlen
     );
-
-PyAPI_FUNC(PyObject*) _PyUnicode_JoinStackRef(
-    PyObject *separator,
-    _PyStackRef const *items,
-    Py_ssize_t seqlen
-);
 
 /* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
    0 otherwise.  The right argument must be ASCII identifier.
