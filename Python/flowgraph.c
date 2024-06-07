@@ -2861,7 +2861,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 }
 
 /* This is used by _PyCompile_Assemble to fill in the jump and exception
- * targets in a synthetic CFG (which is not the ouptut of the builtin compiler).
+ * targets in a synthetic CFG (which is not the output of the builtin compiler).
  */
 int
 _PyCfg_JumpLabelsToTargets(cfg_builder *g)

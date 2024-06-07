@@ -187,18 +187,20 @@ class complete(commands.Command):
             if p:
                 r.insert(p)
             if last_is_completer:
-                if not r.cmpltn_menu_visible:
-                    r.cmpltn_menu_visible = True
+                r.cmpltn_menu_visible = True
+                r.cmpltn_message_visible = False
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
                 r.dirty = True
-            elif stem + p in completions:
-                r.msg = "[ complete but not unique ]"
-                r.dirty = True
-            else:
-                r.msg = "[ not unique ]"
-                r.dirty = True
+            elif not r.cmpltn_menu_visible:
+                r.cmpltn_message_visible = True
+                if stem + p in completions:
+                    r.msg = "[ complete but not unique ]"
+                    r.dirty = True
+                else:
+                    r.msg = "[ not unique ]"
+                    r.dirty = True
 
 
 class self_insert(commands.self_insert):
@@ -207,6 +209,9 @@ class self_insert(commands.self_insert):
         r = self.reader  # type: ignore[assignment]
 
         commands.self_insert.do(self)
+
+        if r.cmpltn_menu_visible or r.cmpltn_message_visible:
+            r.calc_screen = r.calc_complete_screen
 
         if r.cmpltn_menu_visible:
             stem = r.get_stem()
@@ -236,6 +241,7 @@ class CompletingReader(Reader):
     ### Instance variables
     cmpltn_menu: list[str] = field(init=False)
     cmpltn_menu_visible: bool = field(init=False)
+    cmpltn_message_visible: bool = field(init=False)
     cmpltn_menu_end: int = field(init=False)
     cmpltn_menu_choices: list[str] = field(init=False)
 
@@ -271,6 +277,7 @@ class CompletingReader(Reader):
     def cmpltn_reset(self) -> None:
         self.cmpltn_menu = []
         self.cmpltn_menu_visible = False
+        self.cmpltn_message_visible = False
         self.cmpltn_menu_end = 0
         self.cmpltn_menu_choices = []
 

@@ -218,8 +218,8 @@ def _open_dir(path, dir_fd=None, rel_path=None):
         return fd, fd, True
 
 
-class _Globber:
-    """Class providing shell-style pattern matching and globbing.
+class _GlobberBase:
+    """Abstract class providing shell-style pattern matching and globbing.
     """
 
     def __init__(self, sep=os.path.sep, case_sensitive=os.name != 'nt',
@@ -230,30 +230,37 @@ class _Globber:
         self.recursive = recursive
         self.include_hidden = include_hidden
 
-    # Low-level methods
+    # Abstract methods
 
-    lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
+    @staticmethod
+    def lexists(path):
+        """Implements os.path.lexists().
+        """
+        raise NotImplementedError
 
     @staticmethod
     def scandir(path):
-        """Emulates os.scandir(), which returns an object that can be used as
-        a context manager. This method is called by walk() and glob().
+        """Implements os.scandir().
         """
-        from contextlib import nullcontext
-        return nullcontext(path.iterdir())
+        raise NotImplementedError
+
+    @staticmethod
+    def add_slash(path):
+        """Returns a path with a trailing slash added.
+        """
+        raise NotImplementedError
 
     @staticmethod
     def concat_path(path, text):
-        """Appends text to the given path.
+        """Implements path concatenation.
         """
-        return path.with_segments(path._raw_path + text)
+        raise NotImplementedError
 
     @staticmethod
     def parse_entry(entry):
         """Returns the path of an entry yielded from scandir().
         """
-        return entry
+        raise NotImplementedError
 
     # High-level methods
 
@@ -454,7 +461,9 @@ class _Globber:
             yield path
 
 
-class _StringGlobber(_Globber):
+class _StringGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for string paths.
+    """
     lexists = staticmethod(os.path.lexists)
     scandir = staticmethod(os.scandir)
     parse_entry = operator.attrgetter('path')

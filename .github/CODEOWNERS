@@ -40,6 +40,7 @@ Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
+Python/symtable.c             @JelleZijlstra @carljm 
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
@@ -153,10 +154,10 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Tools/cases_generator/        @markshannon
 
 # AST
-Python/ast.c                  @isidentical
-Parser/asdl.py                @isidentical
-Parser/asdl_c.py              @isidentical
-Lib/ast.py                    @isidentical
+Python/ast.c                  @isidentical @JelleZijlstra
+Parser/asdl.py                @isidentical @JelleZijlstra
+Parser/asdl_c.py              @isidentical @JelleZijlstra
+Lib/ast.py                    @isidentical @JelleZijlstra
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
@@ -172,6 +173,10 @@ Lib/ast.py                    @isidentical
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# debugger
+**/*pdb*                      @gaogaotiantian
+**/*bdb*                      @gaogaotiantian
 
 # Limited C API & stable ABI
 Tools/build/stable_abi.py     @encukou

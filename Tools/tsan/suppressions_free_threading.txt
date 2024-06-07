@@ -25,15 +25,11 @@ race:free_threadstate
 
 race_top:_add_to_weak_set
 race_top:_in_weak_set
-race_top:_mi_heap_delayed_free_partial
 race_top:_PyEval_EvalFrameDefault
-race_top:_PyImport_AcquireLock
-race_top:_PyImport_ReleaseLock
 race_top:_PyType_HasFeature
 race_top:assign_version_tag
 race_top:insertdict
 race_top:lookup_tp_dict
-race_top:mi_heap_visit_pages
 race_top:PyMember_GetOne
 race_top:PyMember_SetOne
 race_top:new_reference
@@ -43,9 +39,7 @@ race_top:set_discard_entry
 race_top:set_inheritable
 race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
-race_top:_PyImport_AcquireLock
 race_top:_Py_dict_lookup_threadsafe
-race_top:_imp_release_lock
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:dictiter_new
 race_top:dictresize
@@ -58,7 +52,6 @@ race_top:_Py_slot_tp_getattr_hook
 race_top:add_threadstate
 race_top:dump_traceback
 race_top:fatal_error
-race_top:mi_page_decode_padding
 race_top:_multiprocessing_SemLock_release_impl
 race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
