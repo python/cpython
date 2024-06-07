@@ -4714,15 +4714,19 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         Py_UCS1 * q = dest;
         while (_p <= unroll_end) {
             const size_t *restrict __p = (const size_t *)_p;
-            size_t value = __p[0] | __p[1] | __p[2] | __p[3];
+            size_t value0 = __p[0];
+            size_t value1 = __p[1];
+            size_t value2 = __p[2];
+            size_t value3 = __p[3];
+            size_t value = value0 | value1 | value2 | value3;
             if (value & ASCII_CHAR_MASK) {
                 break;
             }
             size_t *restrict _q = (size_t *)q;
-            _q[0] = __p[0];
-            _q[1] = __p[1];
-            _q[2] = __p[2];
-            _q[3] = __p[3];
+            _q[0] = value0;
+            _q[1] = value1;
+            _q[2] = value2;
+            _q[3] = value3;
             _p += (4 * SIZEOF_SIZE_T);
             q += (4 * SIZEOF_SIZE_T);
         }
