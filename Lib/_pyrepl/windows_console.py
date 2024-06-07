@@ -136,7 +136,7 @@ class WindowsConsole(Console):
             # Console I/O is redirected, fallback...
             self.out = None
 
-    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
+    def refresh(self, screen: list[str], c_xy: tuple[int, int], scroll: bool = True) -> None:
         """
         Refresh the console screen.
 
@@ -165,12 +165,13 @@ class WindowsConsole(Console):
             offset = cy - height + 1
             scroll_lines = offset - old_offset
 
-            # Scrolling the buffer as the current input is greater than the visible
-            # portion of the window.  We need to scroll the visible portion and the
-            # entire history
-            self._scroll(scroll_lines, self._getscrollbacksize())
-            self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
-            self.__offset += scroll_lines
+            if scroll:
+                # Scrolling the buffer as the current input is greater than the visible
+                # portion of the window.  We need to scroll the visible portion and the
+                # entire history
+                self._scroll(scroll_lines, self._getscrollbacksize())
+                self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
+                self.__offset += scroll_lines
 
             for i in range(scroll_lines):
                 self.screen.append("")

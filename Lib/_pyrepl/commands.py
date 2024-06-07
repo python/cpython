@@ -482,3 +482,4 @@ class disable_bracketed_paste(Command):
         self.reader.in_bracketed_paste = False
         self.reader.dirty = True
         self.reader.calc_screen = self.reader.calc_complete_screen
+        self.reader.scroll_on_next_refresh = False

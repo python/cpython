@@ -27,7 +27,6 @@ import re
 import select
 import signal
 import struct
-import sys
 import termios
 import time
 from fcntl import ioctl
@@ -206,7 +205,7 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen, c_xy):
+    def refresh(self, screen, c_xy, scroll=True):
         """
         Refresh the console screen.
 
@@ -248,22 +247,23 @@ class UnixConsole(Console):
         newscr = screen[offset : offset + height]
 
         # use hardware scrolling if we have it.
-        if old_offset > offset and self._ri:
-            self.__hide_cursor()
-            self.__write_code(self._cup, 0, 0)
-            self.__posxy = 0, old_offset
-            for i in range(old_offset - offset):
-                self.__write_code(self._ri)
-                oldscr.pop(-1)
-                oldscr.insert(0, "")
-        elif old_offset < offset and self._ind:
-            self.__hide_cursor()
-            self.__write_code(self._cup, self.height - 1, 0)
-            self.__posxy = 0, old_offset + self.height - 1
-            for i in range(offset - old_offset):
-                self.__write_code(self._ind)
-                oldscr.pop(0)
-                oldscr.append("")
+        if scroll:
+            if old_offset > offset and self._ri:
+                self.__hide_cursor()
+                self.__write_code(self._cup, 0, 0)
+                self.__posxy = 0, old_offset
+                for i in range(old_offset - offset):
+                    self.__write_code(self._ri)
+                    oldscr.pop(-1)
+                    oldscr.insert(0, "")
+            elif old_offset < offset and self._ind:
+                self.__hide_cursor()
+                self.__write_code(self._cup, self.height - 1, 0)
+                self.__posxy = 0, old_offset + self.height - 1
+                for i in range(offset - old_offset):
+                    self.__write_code(self._ind)
+                    oldscr.pop(0)
+                    oldscr.append("")
 
         self.__offset = offset
 
@@ -310,14 +310,13 @@ class UnixConsole(Console):
         """
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
-        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
+        raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
         raw.cflag |= termios.CS8
-        raw.lflag &= ~(
-            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
-        )
-        raw.cc[termios.VMIN] = 1
+        raw.iflag |= termios.BRKINT
+        raw.lflag &= ~(termios.ICANON | termios.ECHO | termios.IEXTEN)
+        raw.lflag |= termios.ISIG
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
@@ -370,10 +369,21 @@ class UnixConsole(Console):
         Returns:
         - Event: Event object from the event queue.
         """
+        if self.wait(timeout=0):
+            try:
+                chars = os.read(self.input_fd, 1024)
+                for char in chars:
+                    self.push_char(char)
+            except OSError as err:
+                    if err.errno == errno.EINTR:
+                        raise
+
         while self.event_queue.empty():
             while True:
                 try:
-                    self.push_char(os.read(self.input_fd, 1))
+                    chars = os.read(self.input_fd, 1024)
+                    for char in chars:
+                        self.push_char(char)
                 except OSError as err:
                     if err.errno == errno.EINTR:
                         if not self.event_queue.empty():

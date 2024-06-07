@@ -69,7 +69,8 @@ class Console(ABC):
             self.output_fd = f_out.fileno()
 
     @abstractmethod
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None: ...
+    def refresh(self, screen: list[str], xy: tuple[int, int],
+                scroll: bool = False) -> None: ...
 
     @abstractmethod
     def prepare(self) -> None: ...

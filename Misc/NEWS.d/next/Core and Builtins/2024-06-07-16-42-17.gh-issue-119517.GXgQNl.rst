@@ -1,0 +1,2 @@
+Fix extraneous new lines in the scroll buffer when pasting in the REPL and
+make signals work again to interrupt slow operations. Patch by Pablo Galindo

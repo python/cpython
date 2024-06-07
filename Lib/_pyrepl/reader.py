@@ -240,6 +240,8 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     calc_screen: CalcScreen = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
+    can_colorize: bool = False
+    scroll_on_next_refresh: bool = True
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -253,13 +255,16 @@ class Reader:
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
         self.calc_screen = self.calc_complete_screen
-
+        self.can_colorize = can_colorize()
+    
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
     def append_to_screen(self) -> list[str]:
         new_screen = self.screen.copy() or ['']
 
+        if not self.buffer:
+            return []
         new_character = self.buffer[-1]
         new_character_len = wlen(new_character)
 
@@ -468,7 +473,7 @@ class Reader:
         else:
             prompt = self.ps1
 
-        if can_colorize():
+        if self.can_colorize:
             prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
         return prompt
 
@@ -606,8 +611,9 @@ class Reader:
         """Recalculate and refresh the screen."""
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
-        self.console.refresh(self.screen, self.cxy)
+        self.console.refresh(self.screen, self.cxy, scroll=self.scroll_on_next_refresh)
         self.dirty = False
+        self.scroll_on_next_refresh = True
 
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
         """`cmd` is a tuple of "event_name" and "event", which in the current
