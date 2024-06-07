@@ -1356,7 +1356,7 @@ Creating files and directories
 
    .. seealso::
       The :meth:`~Path.open`, :meth:`~Path.write_text` and
-      :meth:`~Path.write_bytes` methods are commonly used to create files.
+      :meth:`~Path.write_bytes` methods are often used to create files.
 
 
 .. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
