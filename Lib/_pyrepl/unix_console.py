@@ -369,9 +369,10 @@ class UnixConsole(Console):
         Returns:
         - Event: Event object from the event queue.
         """
+        BUFFER_SIZE = 1024*100
         if self.wait(timeout=0):
             try:
-                chars = os.read(self.input_fd, 1024)
+                chars = os.read(self.input_fd, BUFFER_SIZE)
                 for char in chars:
                     self.push_char(char)
             except OSError as err:
@@ -381,7 +382,7 @@ class UnixConsole(Console):
         while self.event_queue.empty():
             while True:
                 try:
-                    chars = os.read(self.input_fd, 1024)
+                    chars = os.read(self.input_fd, BUFFER_SIZE)
                     for char in chars:
                         self.push_char(char)
                 except OSError as err:

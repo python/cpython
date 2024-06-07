@@ -256,7 +256,7 @@ class Reader:
         self.lxy = (self.pos, 0)
         self.calc_screen = self.calc_complete_screen
         self.can_colorize = can_colorize()
-    
+
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
