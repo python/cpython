@@ -1,0 +1,2 @@
+Remove unused macros in ``symtable.c``.
+Patch by Bénédikt Tran.
