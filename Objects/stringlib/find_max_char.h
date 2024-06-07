@@ -92,13 +92,15 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     Py_UCS4 mask;
     Py_ssize_t n = end - begin;
     const STRINGLIB_CHAR *p = begin;
-    const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 4);
+    const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 8);
     Py_UCS4 max_char;
 
     max_char = MAX_CHAR_ASCII;
     mask = MASK_ASCII;
     while (p < unrolled_end) {
-        STRINGLIB_CHAR bits = p[0] | p[1] | p[2] | p[3];
+        /* Loading 8 values at once allows platforms that have 16-byte vectors 
+           to do a vector load and vector bitwise OR. */
+        STRINGLIB_CHAR bits = p[0] | p[1] | p[2] | p[3] | p[4] | p[5] | p[6] | p[7];
         if (bits & mask) {
             if (mask == mask_limit) {
                 /* Limit reached */
@@ -117,7 +119,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
             /* We check the new mask on the same chars in the next iteration */
             continue;
         }
-        p += 4;
+        p += 8;
     }
     while (p < end) {
         if (p[0] & mask) {
