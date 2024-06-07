@@ -666,7 +666,7 @@ de_instrument_per_instruction(PyCodeObject *code, int i)
     int original_opcode = code->_co_monitoring->per_instruction_opcodes[i];
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
-    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, original_opcode);
+    *opcode_ptr = original_opcode;
     if (_PyOpcode_Caches[original_opcode]) {
         instr[1].counter = adaptive_counter_warmup();
     }
@@ -717,7 +717,7 @@ instrument_line(PyCodeObject *code, int i)
     _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
     lines->original_opcode = _PyOpcode_Deopt[opcode];
     CHECK(lines->original_opcode > 0);
-    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_LINE);
+    *opcode_ptr = INSTRUMENTED_LINE;
 }
 
 static void
@@ -746,7 +746,7 @@ instrument_per_instruction(PyCodeObject *code, int i)
         code->_co_monitoring->per_instruction_opcodes[i] = _PyOpcode_Deopt[opcode];
     }
     assert(code->_co_monitoring->per_instruction_opcodes[i] > 0);
-    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_INSTRUCTION);
+    *opcode_ptr = INSTRUMENTED_INSTRUCTION;
 }
 
 static void
