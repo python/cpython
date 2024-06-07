@@ -731,7 +731,6 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
-    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
@@ -828,6 +827,7 @@ extern "C" {
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
     INIT_ID(c_return), \
+    INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
     INIT_ID(cafile), \

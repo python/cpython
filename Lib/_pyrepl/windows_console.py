@@ -23,6 +23,8 @@ import io
 from multiprocessing import Value
 import os
 import sys
+import time
+import msvcrt
 
 from abc import ABC, abstractmethod
 from collections import deque
@@ -201,6 +203,15 @@ class WindowsConsole(Console):
 
         self.screen = screen
         self.move_cursor(cx, cy)
+
+    @property
+    def input_hook(self):
+        try:
+            import nt
+        except ImportError:
+            return None
+        if nt._is_inputhook_installed():
+            return nt._inputhook
 
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
@@ -460,9 +471,16 @@ class WindowsConsole(Console):
         processed."""
         return Event("key", "", b"")
 
-    def wait(self) -> None:
+    def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
-        raise NotImplementedError("No wait support")
+        # Poor man's Windows select loop
+        start_time = time.time()
+        while True:
+            if msvcrt.kbhit(): # type: ignore[attr-defined]
+                return True
+            if timeout and time.time() - start_time > timeout:
+                return False
+            time.sleep(0.01)
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")

@@ -907,7 +907,7 @@ Specification: Generators and Exception Propagation
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
       File "<stdin>", line 2, in f
-    ZeroDivisionError: integer division or modulo by zero
+    ZeroDivisionError: division by zero
     >>> next(k)  # and the generator cannot be resumed
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?

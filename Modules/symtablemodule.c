@@ -75,6 +75,7 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntMacro(m, DEF_NONLOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_PARAM) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_TYPE_PARAM) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_FREE) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_FREE_CLASS) < 0) return -1;
     if (PyModule_AddIntMacro(m, DEF_IMPORT) < 0) return -1;
@@ -83,7 +84,8 @@ symtable_init_constants(PyObject *m)
 
     if (PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock) < 0)
         return -1;
-    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0)
+        return -1;
     if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
         return -1;
     if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
