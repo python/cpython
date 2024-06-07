@@ -41,7 +41,7 @@ if False:
 def disp_str(buffer: str) -> tuple[str, list[int]]:
     """disp_str(buffer:string) -> (string, [int])
 
-    Return the string that should be the printed represenation of
+    Return the string that should be the printed representation of
     |buffer| and a list detailing where the characters of |buffer|
     get used up.  E.g.:
 
@@ -52,11 +52,17 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     b: list[int] = []
     s: list[str] = []
     for c in buffer:
-        if ord(c) > 128 and unicodedata.category(c).startswith("C"):
+        if ord(c) < 128:
+            s.append(c)
+            b.append(1)
+        elif unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
-        s.append(c)
-        b.append(wlen(c))
-        b.extend([0] * (len(c) - 1))
+            s.append(c)
+            b.append(str_width(c))
+            b.extend([0] * (len(c) - 1))
+        else:
+            s.append(c)
+            b.append(str_width(c))
     return "".join(s), b
 
 
