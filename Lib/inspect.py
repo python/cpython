@@ -1593,19 +1593,22 @@ def getclosurevars(func):
     global_vars = {}
     builtin_vars = {}
     unbound_names = set()
+    global_names = set()
     for instruction in dis.get_instructions(code):
         opname = instruction.opname
         name = instruction.argval
-        if opname == "LOAD_GLOBAL":
-            try:
-                global_vars[name] = global_ns[name]
-            except KeyError:
-                try:
-                    builtin_vars[name] = builtin_ns[name]
-                except KeyError:
-                    unbound_names.add(name)
-        elif opname == "LOAD_ATTR":
+        if opname == "LOAD_ATTR":
             unbound_names.add(name)
+        elif opname == "LOAD_GLOBAL":
+            global_names.add(name)
+    for name in global_names:
+        try:
+            global_vars[name] = global_ns[name]
+        except KeyError:
+            try:
+                builtin_vars[name] = builtin_ns[name]
+            except KeyError:
+                unbound_names.add(name)
 
     return ClosureVars(nonlocal_vars, global_vars,
                        builtin_vars, unbound_names)
