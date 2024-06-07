@@ -157,7 +157,7 @@ typedef enum {
     /* For now, this means the GIL is enabled.
 
        gh-116329: This will eventually change to "the GIL is disabled but can
-       be reenabled by loading an incompatible extension module." */
+       be re-enabled by loading an incompatible extension module." */
     _PyConfig_GIL_DEFAULT = -1,
 
     /* The GIL has been forced off or on, and will not be affected by module loading. */
