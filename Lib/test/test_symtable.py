@@ -310,6 +310,18 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(repr(st2.lookup("x")),
                          "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER|DEF_COMP_CELL>")
 
+        st3 = symtable.symtable("def f():\n"
+                                "   x = 1\n"
+                                "   class A:\n"
+                                "       x = 2\n"
+                                "       def method():\n"
+                                "           return x\n",
+                                "?", "exec")
+        func_f = st3.get_children()[0]
+        class_A = func_f.get_children()[0]
+        self.assertEqual(repr(class_A.lookup('x')),
+                         "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
+
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
