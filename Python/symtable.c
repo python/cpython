@@ -318,17 +318,16 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         int scope = _PyST_GetScope(ste, name);
         long flags = _PyST_GetSymbol(ste, name);
         printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
+        if (flags & USE) printf(" USE");
+        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
+        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
         if (flags & DEF_GLOBAL) printf(" DEF_GLOBAL");
+        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
         if (flags & DEF_LOCAL) printf(" DEF_LOCAL");
         if (flags & DEF_PARAM) printf(" DEF_PARAM");
-        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
-        if (flags & USE) printf(" USE");
-        if (flags & DEF_FREE) printf(" DEF_FREE");
-        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
-        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
-        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
-        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
         if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
+        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
+        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
         if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
         switch (scope) {
             case LOCAL: printf(" LOCAL"); break;
@@ -791,7 +790,6 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 // letting it be marked as free in class scope will break due to
                 // drop_class_free
                 scope = GLOBAL_IMPLICIT;
-                only_flags &= ~DEF_FREE;
                 if (PySet_Discard(comp_free, k) < 0) {
                     return 0;
                 }

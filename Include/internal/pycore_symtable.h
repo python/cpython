@@ -134,36 +134,43 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
 
-#define DEF_GLOBAL 1             /* global stmt */
-#define DEF_LOCAL 2              /* assignment in code block */
-#define DEF_PARAM (2<<1)         /* formal parameter */
-#define DEF_NONLOCAL (2<<2)      /* nonlocal stmt */
-#define USE (2<<3)               /* name is used */
-#define DEF_FREE (2<<4)          /* name used but not defined in nested block */
-#define DEF_FREE_CLASS (2<<5)    /* free variable from class's method */
-#define DEF_IMPORT (2<<6)        /* assignment occurred via import */
-#define DEF_ANNOT (2<<7)         /* this name is annotated */
-#define DEF_COMP_ITER (2<<8)     /* this name is a comprehension iteration variable */
-#define DEF_TYPE_PARAM (2<<9)    /* this name is a type parameter */
-#define DEF_COMP_CELL (2<<10)    /* this name is a cell in an inlined comprehension */
+#define USE             (1 << 0)    /* this name is used */
+#define DEF_ANNOT       (1 << 1)    /* this name is annotated */
 
-#define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
+#define DEF_IMPORT      (1 << 2)    /* assignment by an 'import' statement */
+#define DEF_GLOBAL      (1 << 3)    /* (re-)declaration by a 'global' statement */
+#define DEF_NONLOCAL    (1 << 4)    /* (re-)declaration by a 'nonlocal' statement */
+#define DEF_LOCAL       (1 << 5)    /* assignment in a code block */
 
-/* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
-   table.  GLOBAL is returned from PyST_GetScope() for either of them.
-   It is stored in ste_symbols at bits 13-16.
-*/
-#define SCOPE_OFFSET 12
-#define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
+#define DEF_PARAM       (1 << 6)    /* this name is a formal parameter */
+#define DEF_TYPE_PARAM  (1 << 7)    /* this name is a formal type parameter */
 
+#define DEF_FREE_CLASS  (1 << 8)    /* this name is a free from a method perspective */
+#define DEF_COMP_ITER   (1 << 9)    /* this name is a comprehension iteration variable */
+#define DEF_COMP_CELL   (1 << 10)   /* this name is a cell in an inlined comprehension */
+
+#define DEF_BOUND       (DEF_IMPORT | DEF_LOCAL | DEF_PARAM)
+
+// The scope is stored in "ste_symbols" at bits 11, 12 and 13 (bits indexed
+// from 0, from right to left), namely:
+//
+//      ste_symbols = (SCOPE << SCOPE_OFFSET) | DEF_OR_USE_FLAGS
+//
+// Whenever a 'def-use' flag (resp., a 'scope' value) is added or removed,
+// the SCOPE_OFFSET (resp., SCOPE_MASK) value must be changed accordingly.
+#define SCOPE_OFFSET    11          /* 1 + highest bit for a DEF_* flag */
+#define SCOPE_MASK      0b111       /* 3 bits for storing the scope */
+
+// Scopes for a symbol.
+//
+// GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
+// table. For symbols with such scopes, the ``symtable.Symbol.is_global``
+// method returns True.
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
 #define GLOBAL_IMPLICIT 3
 #define FREE 4
 #define CELL 5
-
-#define GENERATOR 1
-#define GENERATOR_EXPRESSION 2
 
 // Used by symtablemodule.c
 extern struct symtable* _Py_SymtableStringObjectFlags(
