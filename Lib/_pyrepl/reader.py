@@ -237,6 +237,15 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
 
+    ## cached metadata to speed up screen refreshes
+    last_refresh_in_bracketed_paste: bool = False
+    last_refresh_screen: list[str] = field(default_factory=list)
+    last_refresh_screeninfo: list[tuple[int, list[int]]] = field(init=False)
+    last_refresh_line_end_offsets: list[int] = field(default_factory=list)
+    last_refresh_pos: int = field(init=False)
+    last_refresh_cxy: tuple[int, int] = field(init=False)
+    last_refresh_dimensions: tuple[int, int] = field(init=False)
+
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
         # facilitate the tab completion hack implemented for
@@ -249,26 +258,63 @@ class Reader:
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
 
+        self.last_refresh_screeninfo = self.screeninfo
+        self.last_refresh_pos = self.pos
+        self.last_refresh_cxy = self.cxy
+        self.last_refresh_dimensions = (0, 0)
+
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
     def calc_screen(self) -> list[str]:
-        """The purpose of this method is to translate changes in
-        self.buffer into changes in self.screen.  Currently it rips
-        everything down and starts from scratch, which whilst not
-        especially efficient is certainly simple(r).
-        """
-        lines = self.get_unicode().split("\n")
-        screen: list[str] = []
-        screeninfo: list[tuple[int, list[int]]] = []
+        """Translate changes in self.buffer into changes in self.console.screen."""
+        # Since the last call to calc_screen:
+        # screen and screeninfo may differ due to a completion menu being shown
+        # pos and cxy may differ due to edits, cursor movements, or completion menus
+
+        # Lines that are above both the old and new cursor position can't have changed,
+        # unless the terminal has been resized (which might cause reflowing) or we've
+        # entered or left paste mode (which changes prompts, causing reflowing).
+        dimensions = self.console.width, self.console.height
+        dimensions_changed = dimensions != self.last_refresh_dimensions
+        paste_changed = self.in_bracketed_paste != self.last_refresh_in_bracketed_paste
+        cache_valid = not (dimensions_changed or paste_changed)
+
+        num_common_lines = 0
+        offset = 0
+        if cache_valid:
+            earliest_common_pos = min(self.pos, self.last_refresh_pos)
+
+            num_common_lines = len(self.last_refresh_line_end_offsets)
+            while num_common_lines > 0:
+                offset = self.last_refresh_line_end_offsets[num_common_lines - 1]
+                if earliest_common_pos > offset:
+                    break
+                num_common_lines -= 1
+            else:
+                offset = 0
+
         pos = self.pos
-        for ln, line in enumerate(lines):
+        pos -= offset
+
+        screen = self.last_refresh_screen
+        del screen[num_common_lines:]
+
+        screeninfo = self.last_refresh_screeninfo
+        del screeninfo[num_common_lines:]
+
+        last_refresh_line_end_offsets = self.last_refresh_line_end_offsets
+        del last_refresh_line_end_offsets[num_common_lines:]
+
+        lines = "".join(self.buffer[offset:]).split("\n")
+        for ln, line in enumerate(lines, num_common_lines):
             ll = len(line)
             if 0 <= pos <= ll:
                 self.lxy = pos, ln
             prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
+                last_refresh_line_end_offsets.append(offset)
                 screen.append(pre_prompt)
                 screeninfo.append((0, []))
             pos -= ll + 1
@@ -276,6 +322,8 @@ class Reader:
             l, l2 = disp_str(line)
             wrapcount = (wlen(l) + lp) // self.console.width
             if wrapcount == 0:
+                offset += ll + 1  # Takes all of the line plus the newline
+                last_refresh_line_end_offsets.append(offset)
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
             else:
@@ -291,11 +339,14 @@ class Reader:
                         column += character_width
                     pre = prompt if i == 0 else ""
                     if len(l) > index_to_wrap_before:
+                        offset += index_to_wrap_before
                         post = "\\"
                         after = [1]
                     else:
+                        offset += index_to_wrap_before + 1  # Takes the newline
                         post = ""
                         after = []
+                    last_refresh_line_end_offsets.append(offset)
                     screen.append(pre + l[:index_to_wrap_before] + post)
                     screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
                     l = l[index_to_wrap_before:]
@@ -307,6 +358,13 @@ class Reader:
             for mline in self.msg.split("\n"):
                 screen.append(mline)
                 screeninfo.append((0, []))
+
+        self.last_refresh_in_bracketed_paste = self.in_bracketed_paste
+        self.last_refresh_screen = screen.copy()
+        self.last_refresh_screeninfo = screeninfo.copy()
+        self.last_refresh_pos = self.pos
+        self.last_refresh_cxy = self.cxy
+        self.last_refresh_dimensions = dimensions
         return screen
 
     @staticmethod
