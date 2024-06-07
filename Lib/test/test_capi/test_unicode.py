@@ -384,12 +384,12 @@ class CAPITest(unittest.TestCase):
         check_format('ascii\x7f=unicode\xe9',
                      b'ascii\x7f=%U', 'unicode\xe9')
 
-        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
-        # raises an error
-        self.assertRaisesRegex(ValueError,
-            r'^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
-            'string, got a non-ASCII byte: 0xe9$',
-            PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
+        # Non-ASCII format and non-ASCII arguments are both decoded
+        # from UTF-8/replace
+        check_format('unicode\xe9=\u20ac',
+                     'unicode\xe9=%s'.encode(), '\u20ac'.encode())
+        check_format('invalid\ufffd=abc\ufffd',
+                     b'invalid\xe9=%s', b'abc\xe9')
 
         # test "%c"
         check_format('\uabcd',

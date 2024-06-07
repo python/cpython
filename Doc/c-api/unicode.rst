@@ -387,7 +387,8 @@ APIs:
    arguments, calculate the size of the resulting Python Unicode string and return
    a string with the values formatted into it.  The variable arguments must be C
    types and must correspond exactly to the format characters in the *format*
-   ASCII-encoded string.
+   string. The *format* string is decoded from UTF-8 with the "replace" error
+   handler.
 
    A conversion specifier contains two or more characters and has the following
    components, which must occur in this order:
@@ -487,7 +488,8 @@ APIs:
 
       * - ``s``
         - :c:expr:`const char*` or :c:expr:`const wchar_t*`
-        - A null-terminated C character array.
+        - A null-terminated C character array. :c:expr:`const char*` is decoded
+          from UTF-8 with the "replace" error handler.
 
       * - ``p``
         - :c:expr:`const void*`
@@ -575,6 +577,9 @@ APIs:
 
    .. versionchanged:: 3.13
       Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
+
+   .. versionchanged:: 3.14
+      The format string is now decoded from UTF-8 instead of ASCII.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
