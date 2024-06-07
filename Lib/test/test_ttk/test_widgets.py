@@ -289,8 +289,8 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
 
         cbtn['command'] = ''
         res = cbtn.invoke()
-        if tk_version >= (8, 7):
-            self.assertFalse(res, ())
+        if tk_version >= (8, 7) and self.wantobjects:
+            self.assertEqual(res, ())
         else:
             self.assertEqual(str(res), '')
         self.assertLessEqual(len(success), 1)
@@ -986,7 +986,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         if tk_version >= (8, 7):
             self.checkPixelsParam(widget, 'width', 402, -402, 0, '3c', conv=False)
-            self.checkPixelsParam(widget, 'height', 401.2, 402.6, conv=False)
+            self.checkPixelsParam(widget, 'width', 401.2, 402.6, conv=False)
         else:
             self.checkIntegerParam(widget, 'width', 402, -402, 0)
 
