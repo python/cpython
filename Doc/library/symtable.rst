@@ -192,10 +192,10 @@ Examining Symbol Tables
 
          def f():
              x = 1  # function-scoped
-                 class C:
-                     x = 2  # class-scoped
-                     def method(self):
-                         return x
+             class C:
+                 x = 2  # class-scoped
+                 def method(self):
+                     return x
 
       In this example, the the class-scoped ``x`` symbol is considered
       to be free from the perspective of ``C.method``, thereby allowing
