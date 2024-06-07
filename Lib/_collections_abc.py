@@ -87,7 +87,8 @@ dict_items = type({}.items())
 mappingproxy = type(type.__dict__)
 def get_framelocalsproxy():
     return type(sys._getframe().f_locals)
-framelocalsproxy = get_framelocalsproxy()
+framelocalsproxy = _get_framelocalsproxy()
+del _get_framelocalsproxy
 generator = type((lambda: (yield))())
 ## coroutine ##
 async def _coro(): pass
