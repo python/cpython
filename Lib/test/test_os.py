@@ -1699,6 +1699,27 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
+    @unittest.skipIf(
+        support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
+    )
+    def test_fd_finalization(self):
+        # Check that close()ing the fwalk() generator closes FDs
+        def getfd():
+            fd = os.dup(1)
+            os.close(fd)
+            return fd
+        for topdown in (False, True):
+            old_fd = getfd()
+            it = self.fwalk(os_helper.TESTFN, topdown=topdown)
+            self.assertEqual(getfd(), old_fd)
+            next(it)
+            self.assertGreater(getfd(), old_fd)
+            it.close()
+            self.assertEqual(getfd(), old_fd)
+
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
 
@@ -1830,9 +1851,10 @@ class MakedirTests(unittest.TestCase):
         os.mkdir(path, mode=0o700)
         out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
         os.rmdir(path)
+        out = out.strip().rsplit(" ", 1)[1]
         self.assertEqual(
-            out.strip(),
-            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+            out,
+            '"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
         )
 
     def tearDown(self):

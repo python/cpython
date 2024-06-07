@@ -1385,18 +1385,35 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    ERROR_NO_POP();
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                            (PyDictObject *)BUILTINS(),
+                                            name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                            * an exception if the key doesn't exist */
+                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                                    NAME_ERROR_MSG, name);
+                        }
                         ERROR_NO_POP();
                     }
+                }
+                else {
+                    /* Slow-path if globals or builtins is not a dict */
+                    /* namespace 1: globals */
+                    ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0, error);
                     if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                                    tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG, name);
-                        ERROR_NO_POP();
+                        /* namespace 2: builtins */
+                        ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0, error);
+                        if (v == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            ERROR_IF(true, error);
+                        }
                     }
                 }
             }
@@ -1553,7 +1570,7 @@ dummy_func(
 
         inst(MAKE_CELL, (--)) {
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via the f_locals proxy before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {

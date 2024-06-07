@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from test.support import force_not_colorized
 
-from _pyrepl.simple_interact import InteractiveColoredConsole
+from _pyrepl.console import InteractiveColoredConsole
 
 
 class TestSimpleInteract(unittest.TestCase):

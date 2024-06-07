@@ -216,7 +216,15 @@ class interrupt(FinishCommand):
         import signal
 
         self.reader.console.finish()
+        self.reader.finish()
         os.kill(os.getpid(), signal.SIGINT)
+
+
+class ctrl_c(Command):
+    def do(self) -> None:
+        self.reader.console.finish()
+        self.reader.finish()
+        raise KeyboardInterrupt
 
 
 class suspend(Command):

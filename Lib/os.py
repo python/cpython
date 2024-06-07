@@ -479,8 +479,15 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         top = fspath(top)
         stack = [(_fwalk_walk, (True, dir_fd, top, top, None))]
         isbytes = isinstance(top, bytes)
-        while stack:
-            yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
+        try:
+            while stack:
+                yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
+        finally:
+            # Close any file descriptors still on the stack.
+            while stack:
+                action, value = stack.pop()
+                if action == _fwalk_close:
+                    close(value)
 
     # Each item in the _fwalk() stack is a pair (action, args).
     _fwalk_walk = 0  # args: (isroot, dirfd, toppath, topname, entry)
