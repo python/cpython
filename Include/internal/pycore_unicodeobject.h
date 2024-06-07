@@ -189,7 +189,7 @@ extern PyObject* _PyUnicode_EncodeCharmap(
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
-// Coverts a Unicode object holding a decimal value to an ASCII string
+// Converts a Unicode object holding a decimal value to an ASCII string
 // for using in int, float and complex parsers.
 // Transforms code points that have decimal digit property to the
 // corresponding ASCII digit code points.  Transforms spaces to ASCII.

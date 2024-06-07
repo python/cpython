@@ -42,7 +42,7 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
      level exceeds "current recursion limit + 50". By construction, this
      protection can only be triggered when the "overflowed" flag is set. It
      means the cleanup code has itself gone into an infinite loop, or the
-     RecursionError has been mistakingly ignored. When this protection is
+     RecursionError has been mistakenly ignored. When this protection is
      triggered, the interpreter aborts with a Fatal Error.
 
    In addition, the "overflowed" flag is automatically reset when the
