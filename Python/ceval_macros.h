@@ -459,7 +459,7 @@ do { \
     PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 #else
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    PyObject **args_o = (PyObject **)ARGS;
+    PyObject **NAME = (PyObject **)ARGS;
 #endif
 
 #ifdef Py_GIL_DISABLED
