@@ -147,7 +147,7 @@ PyAPI_FUNC(int) PyThread_start_joinable_thread(void (*func)(void *),
 PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
 /*
  * Detach a thread started with `PyThread_start_joinable_thread`, such
- * that its resources are relased as soon as it exits.
+ * that its resources are released as soon as it exits.
  * This function cannot be interrupted. It returns 0 on success,
  * a non-zero value on failure.
  */
