@@ -648,7 +648,8 @@ dummy_func(
         macro(BINARY_SUBSCR) = _SPECIALIZE_BINARY_SUBSCR + _BINARY_SUBSCR;
 
         inst(BINARY_SLICE, (container, start, stop -- res)) {
-            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectNew(start),
+                                                        PyStackRef_AsPyObjectNew(stop));
             PyObject *res_o;
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -665,7 +666,8 @@ dummy_func(
         }
 
         inst(STORE_SLICE, (v, container, start, stop -- )) {
-            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectNew(start),
+                                                        PyStackRef_AsPyObjectNew(stop));
             int err;
             if (slice == NULL) {
                 err = 1;

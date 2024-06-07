@@ -688,7 +688,8 @@
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
-            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectNew(start),
+                PyStackRef_AsPyObjectNew(stop));
             PyObject *res_o;
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -716,7 +717,8 @@
             start = stack_pointer[-2];
             container = stack_pointer[-3];
             v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeStackRefs(start, stop);
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectNew(start),
+                PyStackRef_AsPyObjectNew(stop));
             int err;
             if (slice == NULL) {
                 err = 1;

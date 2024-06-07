@@ -127,7 +127,7 @@ void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_final
 */
 
 static PySliceObject *
-_PyBuildSlice_Steal3(PyObject *start, PyObject *stop, PyObject *step)
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj;
@@ -149,14 +149,13 @@ _PyBuildSlice_Steal3(PyObject *start, PyObject *stop, PyObject *step)
 
     obj->start = start;
     obj->stop = stop;
-    obj->step = step;
+    obj->step = Py_NewRef(step);
 
     _PyObject_GC_TRACK(obj);
     return obj;
 error:
     Py_DECREF(start);
     Py_DECREF(stop);
-    Py_DECREF(step);
     return NULL;
 }
 
@@ -172,18 +171,15 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-    return (PyObject *)_PyBuildSlice_Steal3(Py_NewRef(start),
-                                              Py_NewRef(stop), Py_NewRef(step));
+    return (PyObject *)_PyBuildSlice_Consume2(Py_NewRef(start),
+                                              Py_NewRef(stop), step);
 }
 
 PyObject *
-_PyBuildSlice_ConsumeStackRefs(_PyStackRef start, _PyStackRef stop)
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
 {
-    assert(PyStackRef_AsPyObjectBorrow(start) != NULL && PyStackRef_AsPyObjectBorrow(stop) != NULL);
-    PyObject *res = (PyObject *)_PyBuildSlice_Steal3(PyStackRef_AsPyObjectNew(start),
-                                                     PyStackRef_AsPyObjectNew(stop),
-                                                     Py_None);
-    return res;
+    assert(start != NULL && stop != NULL);
+    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
 }
 
 PyObject *
