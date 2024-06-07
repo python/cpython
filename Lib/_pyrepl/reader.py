@@ -579,6 +579,9 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
+        if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
+            return
+
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
         self.console.refresh(self.screen, self.cxy)
@@ -602,7 +605,7 @@ class Reader:
 
         self.after_command(command)
 
-        if self.dirty and not self.in_bracketed_paste:
+        if self.dirty:
             self.refresh()
         else:
             self.update_cursor()
