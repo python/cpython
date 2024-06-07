@@ -1,0 +1,2 @@
+Slight code improvement to ASCII decoding and maximum character checking
+that allows vectorization by the compiler.
