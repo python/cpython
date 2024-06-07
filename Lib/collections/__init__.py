@@ -298,7 +298,7 @@ class OrderedDict(dict):
     def copy(self):
         'od.copy() -> a shallow copy of od'
         return self.__class__(self)
-    
+
     def reorder_by_values(self):
         '''Reorder the OrderedDict based on its values.'''
         sorted_items = sorted(self.items(), key=lambda item: item[1])
