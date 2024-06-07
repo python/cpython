@@ -2308,6 +2308,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
                              NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
+            explicit_jump->b_predecessors = 1;
             b->b_next = explicit_jump;
 
             /* set target */
