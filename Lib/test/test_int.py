@@ -517,6 +517,12 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
+    def test_round_with_none_arg_direct_call(self):
+        for val in [(1).__round__(None),
+                    round(1),
+                    round(1, None)]:
+            self.assertEqual(val, 1)
+            self.assertIs(type(val), int)
 
 class IntStrDigitLimitsTests(unittest.TestCase):
 
