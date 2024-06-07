@@ -693,6 +693,25 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, int nargs, PyObject **scrat
     return result;
 }
 
+PyObject **
+_PyNewObjectArray_FromStackRefArray(_PyStackRef *input, int nargs, PyObject **scratch)
+{
+    PyObject **result;
+    if (nargs > MAX_STACKREF_SCRATCH) {
+        result = PyMem_Malloc(nargs * sizeof(PyObject *));
+        if (result == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        result = scratch;
+    }
+    for (int i = 0; i < nargs; i++) {
+        result[i] = PyStackRef_AsPyObjectNew(input[i]);
+    }
+    return result;
+}
+
 void
 _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 {

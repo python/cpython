@@ -465,6 +465,17 @@ do { \
 #endif
 
 #ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS_NEW(ARGS, ARG_COUNT, NAME) \
+    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH]; \
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
+#else
+#define STACKREFS_TO_PYOBJECTS_NEW(ARGS, ARG_COUNT, NAME) \
+    PyObject **NAME = (PyObject **)ARGS; \
+    /* This hopefully hints to the compiler to DCE the NULL check for error */ \
+    assert(NAME != NULL);
+#endif
+
+#ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     _PyObjectArray_Free(NAME, NAME##_temp);
 #else

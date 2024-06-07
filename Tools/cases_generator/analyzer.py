@@ -424,6 +424,10 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_FatalError",
     "PyStackRef_IsTrue",
     "PyStackRef_IsFalse",
+    "STACKREFS_TO_PYOBJECTS_NEW",
+    "STACKREFS_TO_PYOBJECTS",
+    "STACKREFS_TO_PYOBJECTS_CLEANUP",
+    "_PyList_FromArraySteal",
 )
 
 ESCAPING_FUNCTIONS = (
