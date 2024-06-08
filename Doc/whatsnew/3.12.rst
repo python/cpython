@@ -1324,10 +1324,10 @@ Deprecated
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
-* Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
-  Python 3.10 via :pep:`626`,
-  but it only got a proper :exc:`DeprecationWarning` in 3.12,
-  therefore it will be removed in 3.14.
+* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  deprecated in :pep:`626` since 3.10 and was planned to be removed in 3.12,
+  but it only got a proper :exc:`DeprecationWarning` in 3.12. May be removed
+  in a future version. Use the :meth:`codeobject.co_lines` method instead.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 Pending Removal in Python 3.13
@@ -1442,8 +1442,6 @@ and will be removed in Python 3.14.
 
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
-* The :attr:`~codeobject.co_lnotab` attribute of code objects.
-
 Pending Removal in Python 3.15
 ------------------------------
 
@@ -1462,6 +1460,8 @@ The following APIs were deprecated in earlier Python versions and will be remove
 although there is currently no date scheduled for their removal.
 
 * :mod:`array`'s ``'u'`` format code (:gh:`57281`)
+
+* The :attr:`~codeobject.co_lnotab` attribute of code objects.
 
 * :class:`typing.Text` (:gh:`92332`)
 

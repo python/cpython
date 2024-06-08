@@ -404,7 +404,7 @@ expected line number.
 
 The :attr:`~codeobject.co_lnotab` attribute of
 :ref:`code objects <code-objects>` is deprecated and
-will be removed in 3.12.
+may be removed in a future version.
 Code that needs to convert from offset to line number should use the new
 :meth:`~codeobject.co_lines` method instead.
 

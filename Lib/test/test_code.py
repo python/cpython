@@ -348,7 +348,7 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
-    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14
+    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14 or later
         def func():
             pass
 
