@@ -107,7 +107,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_LOAD_FROM_DICT_OR_GLOBALS] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_GLOBALS_VERSION] = HAS_DEOPT_FLAG,
     [_GUARD_BUILTINS_VERSION] = HAS_DEOPT_FLAG,
@@ -152,6 +151,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_CLASS] = HAS_ARG_FLAG | HAS_OPARG_AND_1_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_DEOPT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = 0,
+    [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR_SLOT] = 0,
     [_COMPARE_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_COMPARE_OP_FLOAT] = HAS_ARG_FLAG,
@@ -438,7 +438,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
     [_LOAD_FAST_LOAD_FAST] = "_LOAD_FAST_LOAD_FAST",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
-    [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
@@ -474,6 +473,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_STORE_ATTR] = "_STORE_ATTR",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
     [_STORE_ATTR_SLOT] = "_STORE_ATTR_SLOT",
+    [_STORE_ATTR_WITH_HINT] = "_STORE_ATTR_WITH_HINT",
     [_STORE_DEREF] = "_STORE_DEREF",
     [_STORE_FAST] = "_STORE_FAST",
     [_STORE_FAST_0] = "_STORE_FAST_0",
@@ -690,8 +690,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_LOCALS:
             return 0;
-        case _LOAD_FROM_DICT_OR_GLOBALS:
-            return 1;
         case _LOAD_GLOBAL:
             return 0;
         case _GUARD_GLOBALS_VERSION:
@@ -779,6 +777,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_DORV_NO_DICT:
             return 1;
         case _STORE_ATTR_INSTANCE_VALUE:
+            return 2;
+        case _STORE_ATTR_WITH_HINT:
             return 2;
         case _STORE_ATTR_SLOT:
             return 2;

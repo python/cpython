@@ -225,15 +225,11 @@ extern "C" {
 #define JUMP                                   256
 #define JUMP_NO_INTERRUPT                      257
 #define LOAD_CLOSURE                           258
-#define LOAD_METHOD                            259
-#define LOAD_SUPER_METHOD                      260
-#define LOAD_ZERO_SUPER_ATTR                   261
-#define LOAD_ZERO_SUPER_METHOD                 262
-#define POP_BLOCK                              263
-#define SETUP_CLEANUP                          264
-#define SETUP_FINALLY                          265
-#define SETUP_WITH                             266
-#define STORE_FAST_MAYBE_NULL                  267
+#define POP_BLOCK                              259
+#define SETUP_CLEANUP                          260
+#define SETUP_FINALLY                          261
+#define SETUP_WITH                             262
+#define STORE_FAST_MAYBE_NULL                  263
 
 #define HAVE_ARGUMENT                           43
 #define MIN_INSTRUMENTED_OPCODE                236
