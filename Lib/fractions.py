@@ -3,7 +3,6 @@
 
 """Fraction, infinite-precision, rational numbers."""
 
-from decimal import Decimal
 import functools
 import math
 import numbers
@@ -244,7 +243,8 @@ class Fraction(numbers.Rational):
                 self._denominator = numerator.denominator
                 return self
 
-            elif isinstance(numerator, (float, Decimal)):
+            elif (isinstance(numerator, numbers.Number) and
+                  hasattr(numerator, 'as_integer_ratio')):
                 # Exact conversion
                 self._numerator, self._denominator = numerator.as_integer_ratio()
                 return self

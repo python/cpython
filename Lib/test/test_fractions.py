@@ -355,6 +355,29 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(OverflowError, F, Decimal('inf'))
         self.assertRaises(OverflowError, F, Decimal('-inf'))
 
+    def testInitFromIntegerRatio(self):
+        class Ratio:
+            def __init__(self, ratio):
+                self._ratio = ratio
+            def as_integer_ratio(self):
+                return self._ratio
+        class RatioNumber(Ratio):
+            pass
+        numbers.Number.register(RatioNumber)
+
+        self.assertEqual((7, 3), _components(F(RatioNumber((7, 3)))))
+        # not a number
+        self.assertRaises(TypeError, F, Ratio((7, 3)))
+        # the type also has an "as_integer_ratio" attribute.
+        self.assertRaises(TypeError, F, RatioNumber)
+        # bad ratio
+        self.assertRaises(TypeError, F, RatioNumber(7))
+        self.assertRaises(ValueError, F, RatioNumber((7,)))
+        self.assertRaises(ValueError, F, RatioNumber((7, 3, 1)))
+        # only single-argument form
+        self.assertRaises(TypeError, F, RatioNumber((3, 7)), 11)
+        self.assertRaises(TypeError, F, 2, RatioNumber((-10, 9)))
+
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
