@@ -833,6 +833,18 @@ def test_pdb_where_command():
     """
 
 
+def test_pdb_commands_at_init():
+    """Test that commands can be passed to the constructor
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, commands=['p x', 'c']).set_trace()
+
+    >>> test_function()
+    1
+    """
+
+
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.
 if not sys.flags.no_site:
