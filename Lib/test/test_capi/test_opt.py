@@ -1333,6 +1333,153 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIs(type(s), float)
         self.assertEqual(s, 1024.0)
 
+    def test_guard_type_version_removed(self):
+        def thing(a):
+            x = 0
+            for _ in range(100):
+                x += a.attr
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 1)
+
+    def test_guard_type_version_removed_inlined(self):
+        """
+        Verify that the guard type version if we have an inlined function
+        """
+
+        def fn():
+            pass
+
+        def thing(a):
+            x = 0
+            for _ in range(100):
+                x += a.attr
+                fn()
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 1)
+
+    def test_guard_type_version_not_removed(self):
+        """
+        Verify that the guard type version is not removed if we modify the class
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                # for the first 90 iterations we set the attribute on this dummy function which shouldn't
+                # trigger the type watcher
+                # then after 90  it should trigger it and stop optimizing
+                # Note that the code needs to be in this weird form so it's optimized inline without any control flow
+                setattr((Foo, Bar)[i < 90], "attr", 2)
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        class Bar:
+            pass
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 219)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 2)
+
+
+    @unittest.expectedFailure
+    def test_guard_type_version_not_removed_escaping(self):
+        """
+        Verify that the guard type version is not removed if have an escaping function
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                # eval should be escaping and so should cause optimization to stop and preserve both type versions
+                eval("None")
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        # Note: This will actually be 1 for noe
+        # https://github.com/python/cpython/pull/119365#discussion_r1626220129
+        self.assertEqual(guard_type_version_count, 2)
+
+
+    def test_guard_type_version_executor_invalidated(self):
+        """
+        Verify that the executor is invalided on a type change.
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        self.assertEqual(res, 200)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(iter_opnames(ex)).count("_GUARD_TYPE_VERSION"), 1)
+        self.assertTrue(ex.is_valid())
+        Foo.attr = 0
+        self.assertFalse(ex.is_valid())
+
+    def test_type_version_doesnt_segfault(self):
+        """
+        Tests that setting a type version doesn't cause a segfault when later looking at the stack.
+        """
+
+        # Minimized from mdp.py benchmark
+
+        class A:
+            def __init__(self):
+                self.attr = {}
+
+            def method(self, arg):
+                self.attr[arg] = None
+
+        def fn(a):
+            for _ in range(100):
+                (_ for _ in [])
+                (_ for _ in [a.method(None)])
+
+        fn(A())
+
 
 if __name__ == "__main__":
     unittest.main()

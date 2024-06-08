@@ -10,8 +10,9 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 type_get_version = _testcapi.type_get_version
-type_assign_specific_version_unsafe = _testcapi.type_assign_specific_version_unsafe
+type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
 

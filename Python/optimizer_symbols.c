@@ -52,7 +52,8 @@ static inline int get_lltrace(void) {
 static _Py_UopsSymbol NO_SPACE_SYMBOL = {
     .flags = IS_NULL | NOT_NULL | NO_SPACE,
     .typ = NULL,
-    .const_val = NULL
+    .const_val = NULL,
+    .type_version = 0,
 };
 
 _Py_UopsSymbol *
@@ -76,6 +77,7 @@ sym_new(_Py_UOpsContext *ctx)
     self->flags = 0;
     self->typ = NULL;
     self->const_val = NULL;
+    self->type_version = 0;
 
     return self;
 }
@@ -150,6 +152,18 @@ _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *ty
         sym_set_flag(sym, NOT_NULL);
         sym->typ = typ;
     }
+}
+
+bool
+_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version)
+{
+    // if the type version was already set, then it must be different and we should set it to bottom
+    if (sym->type_version) {
+        sym_set_bottom(ctx, sym);
+        return false;
+    }
+    sym->type_version = version;
+    return true;
 }
 
 void
@@ -256,6 +270,12 @@ _Py_uop_sym_get_type(_Py_UopsSymbol *sym)
     return sym->typ;
 }
 
+unsigned int
+_Py_uop_sym_get_type_version(_Py_UopsSymbol *sym)
+{
+    return sym->type_version;
+}
+
 bool
 _Py_uop_sym_has_type(_Py_UopsSymbol *sym)
 {
@@ -271,6 +291,13 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
     assert(typ != NULL && PyType_Check(typ));
     return _Py_uop_sym_get_type(sym) == typ;
 }
+
+bool
+_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version)
+{
+    return _Py_uop_sym_get_type_version(sym) == version;
+}
+
 
 int
 _Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
@@ -311,9 +338,9 @@ _Py_UOpsAbstractFrame *
 _Py_uop_frame_new(
     _Py_UOpsContext *ctx,
     PyCodeObject *co,
-    _Py_UopsSymbol **localsplus_start,
-    int n_locals_already_filled,
-    int curr_stackentries)
+    int curr_stackentries,
+    _Py_UopsSymbol **args,
+    int arg_len)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
@@ -321,19 +348,22 @@ _Py_uop_frame_new(
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
 
-    frame->locals = localsplus_start;
+    frame->locals = ctx->n_consumed;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
-    ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
+    ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         ctx->done = true;
         ctx->out_of_space = true;
         return NULL;
     }
 
-
     // Initialize with the initial state of all local variables
-    for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
+    for (int i = 0; i < arg_len; i++) {
+        frame->locals[i] = args[i];
+    }
+
+    for (int i = arg_len; i < co->co_nlocalsplus; i++) {
         _Py_UopsSymbol *local = _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }

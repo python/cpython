@@ -79,6 +79,7 @@ increment_mutations(PyObject* dict) {
  * so we don't need to check that they haven't been used */
 #define BUILTINS_WATCHER_ID 0
 #define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
 
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
@@ -89,6 +90,14 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict, 1);
     increment_mutations(dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
+    return 0;
+}
+
+static int
+type_watcher_callback(PyTypeObject* type)
+{
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
+    PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
     return 0;
 }
 
@@ -166,6 +175,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
+    }
+    if (interp->type_watchers[TYPE_WATCHER_ID] == NULL) {
+        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
@@ -310,9 +322,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
@@ -395,7 +409,7 @@ optimize_uops(
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
     _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;
     }
