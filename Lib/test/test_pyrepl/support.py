@@ -103,7 +103,7 @@ class FakeConsole(Console):
     def getheightwidth(self) -> tuple[int, int]:
         return self.height, self.width
 
-    def refresh(self, screen: list[str], xy: tuple[int, int], scroll:bool = True) -> None:
+    def refresh(self, screen: list[str], xy: tuple[int, int], scroll: bool = True) -> None:
         pass
 
     def prepare(self) -> None:
