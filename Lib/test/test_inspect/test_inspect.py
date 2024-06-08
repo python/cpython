@@ -47,6 +47,7 @@ from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
+from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 # Functions tested in this suite:
@@ -1691,6 +1692,38 @@ class TestClassesAndFunctions(unittest.TestCase):
         # test that local namespace lookups work
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
+
+    def test_get_annotations_with_stringized_pep695_annotations(self):
+        from typing import Unpack
+        ann_module695 = inspect_stringized_annotations_pep695
+
+        A_annotations = inspect.get_annotations(ann_module695.A, eval_str=True)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(A_annotations["x"], A_type_params[0])
+        self.assertEqual(A_annotations["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
+
+        B_annotations = inspect.get_annotations(ann_module695.B, eval_str=True)
+        self.assertEqual(B_annotations.keys(), {"x", "y", "z"})
+        self.assertEqual(
+            set(B_annotations.values()).intersection(ann_module695.B.__type_params__),
+            set()
+        )
+
+        generic_function_annotations = inspect.get_annotations(
+            ann_module695.generic_function, eval_str=True
+        )
+        func_t_params = ann_module695.generic_function.__type_params__
+        self.assertEqual(
+            generic_function_annotations.keys(), {"x", "y", "z", "zz", "return"}
+        )
+        self.assertIs(generic_function_annotations["x"], func_t_params[0])
+        self.assertEqual(
+            generic_function_annotations["y"],
+            Unpack[func_t_params[1]]
+        )
+        self.assertIs(generic_function_annotations["z"].__origin__, func_t_params[2])
+        self.assertIs(generic_function_annotations["zz"].__origin__, func_t_params[2])
 
 
 class TestFormatAnnotation(unittest.TestCase):
