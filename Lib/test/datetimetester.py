@@ -1338,7 +1338,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_fromtimestamp_with_none_arg(self):
         # See gh-120268 for more details
-        print(self.theclass)
         with self.assertRaises(TypeError):
             self.theclass.fromtimestamp(None)
 
