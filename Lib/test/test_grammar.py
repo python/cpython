@@ -439,9 +439,9 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_module_semantics(self):
         self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
-                     {'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
+                         {'x': int, 'y': str, 'f': typing.Tuple[int, int], 'u': int | float})
         self.assertEqual(ann_module.M.__annotations__,
-                              {'o': type})
+                         {'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
 
     def test_var_annot_in_module(self):

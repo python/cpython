@@ -1922,8 +1922,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     Py_ssize_t annotations_len = 0;
 
     PySTEntryObject *ste;
-    int result = _PySymtable_LookupOptional(c->c_st, args, &ste);
-    if (result == -1) {
+    if (_PySymtable_LookupOptional(c->c_st, args, &ste) < 0) {
         return ERROR;
     }
     assert(ste != NULL);
