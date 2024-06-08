@@ -33,6 +33,8 @@ struct _Py_UopsSymbol {
     int flags;  // 0 bits: Top; 2 or more bits: Bottom
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
+    int tuple_count;
+    struct _Py_UopsSymbol **tuple_val;
 };
 
 #define UOP_FORMAT_TARGET 0
@@ -92,6 +94,12 @@ typedef struct ty_arena {
     _Py_UopsSymbol arena[TY_ARENA_SIZE];
 } ty_arena;
 
+typedef struct tup_arena {
+    int tup_curr_number;
+    int tup_max_number;
+    _Py_UopsSymbol *arena[TY_ARENA_SIZE];
+} tup_arena;
+
 struct _Py_UOpsContext {
     char done;
     char out_of_space;
@@ -103,6 +111,9 @@ struct _Py_UOpsContext {
 
     // Arena for the symbolic types.
     ty_arena t_arena;
+
+    // Arena for the symbolic tuple objects.
+    tup_arena tup_arena;
 
     _Py_UopsSymbol **n_consumed;
     _Py_UopsSymbol **limit;
@@ -119,6 +130,8 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_unknown(_Py_UOpsContext *ctx);
 extern _Py_UopsSymbol *_Py_uop_sym_new_not_null(_Py_UOpsContext *ctx);
 extern _Py_UopsSymbol *_Py_uop_sym_new_type(
     _Py_UOpsContext *ctx, PyTypeObject *typ);
+extern _Py_UopsSymbol *_Py_uop_sym_new_tuple(_Py_UOpsContext *ctx, int count);
+extern _Py_UopsSymbol *_Py_uop_sym_tuple_at(_Py_UopsSymbol *sym, int idx);
 extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);

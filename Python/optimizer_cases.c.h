@@ -496,8 +496,18 @@
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
+            _Py_UopsSymbol *sub;
+            _Py_UopsSymbol *tuple;
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            sub = stack_pointer[-1];
+            tuple = stack_pointer[-2];
+            if (sym_has_type(tuple) && sym_matches_type(tuple, &PyTuple_Type) && sym_is_const(sub) ) {
+                PyObject* value = sym_get_const(sub);
+                Py_ssize_t index = ((PyLongObject*)value)->long_value.ob_digit[0];
+                res = sym_tuple_at(tuple, index);
+            } else {
+                res = sym_new_unknown(ctx);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -830,8 +840,15 @@
         }
 
         case _BUILD_TUPLE: {
+            _Py_UopsSymbol **values;
             _Py_UopsSymbol *tup;
-            tup = sym_new_not_null(ctx);
+            values = &stack_pointer[-oparg];
+            tup = sym_new_tuple(ctx, oparg);
+            assert(tup != NULL);
+            assert(!ctx->out_of_space);
+            for (int i = 0; i < oparg; i++) {
+                tup->tuple_val[i] = values[i];
+            }
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
             break;

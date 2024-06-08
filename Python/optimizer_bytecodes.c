@@ -20,6 +20,8 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_null _Py_uop_sym_is_null
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
+#define sym_new_tuple _Py_uop_sym_new_tuple
+#define sym_tuple_at _Py_uop_sym_tuple_at
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_has_type _Py_uop_sym_has_type
@@ -759,6 +761,25 @@ dummy_func(void) {
 
     op(_EXIT_TRACE, (--)) {
         ctx->done = true;
+    }
+
+    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
+        tup = sym_new_tuple(ctx, oparg);
+        assert(tup != NULL);
+        assert(!ctx->out_of_space);
+        for (int i = 0; i < oparg; i++) {
+            tup->tuple_val[i] = values[i];
+        }
+    }
+
+    op(_BINARY_SUBSCR_TUPLE_INT, (tuple, sub -- res)) {
+        if (sym_has_type(tuple) && sym_matches_type(tuple, &PyTuple_Type) && sym_is_const(sub) ) {
+            PyObject* value = sym_get_const(sub);
+            Py_ssize_t index = ((PyLongObject*)value)->long_value.ob_digit[0];
+            res = sym_tuple_at(tuple, index);
+        } else {
+            res = sym_new_unknown(ctx);
+        }
     }
 
 
