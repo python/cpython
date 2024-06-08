@@ -1704,11 +1704,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
 
         B_annotations = inspect.get_annotations(ann_module695.B, eval_str=True)
-        self.assertEqual(B_annotations.keys(), {"x", "y", "z"})
-        self.assertEqual(
-            set(B_annotations.values()).intersection(ann_module695.B.__type_params__),
-            set()
-        )
+        self.assertEqual(B_annotations, {"x": int, "y": str, "P": bytes})
 
         generic_function_annotations = inspect.get_annotations(
             ann_module695.generic_function, eval_str=True
