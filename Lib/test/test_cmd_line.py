@@ -932,7 +932,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()
-                self.assertIn('Dumping', contents)
+                self.assertIn('Remaining objects', contents)
 
     @unittest.skipUnless(sys.platform == 'darwin', 'PYTHONEXECUTABLE only works on macOS')
     def test_python_executable(self):
