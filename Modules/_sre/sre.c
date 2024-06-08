@@ -1572,6 +1572,7 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
         }
         self->items[i].literal = Py_XNewRef(literal);
     }
+    PyObject_GC_Track(self);
     return (PyObject*) self;
 
 bad_template:
