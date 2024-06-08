@@ -231,13 +231,15 @@ class Class(SymbolTable):
                 if is_local_symbol(st.name):
                     if st.type == _symtable.TYPE_TYPE_PARAM:
                         # Current 'st' is an annotation scope with one or
-                        # more children (we expect only one, but ,
-                        # so we need to find the corresponding inner function,
-                        # class or type alias.
+                        # more children (we expect only one, but we might
+                        # have more in the future). In particular, we need
+                        # to find the corresponding inner function, class or
+                        # type alias.
                         st = next((c for c in st.children if c.name == st.name), None)
                         # if 'st' is None, then the annotation scopes are broken
                         assert st is not None, 'annotation scopes are broken'
 
+                    # only select function-like symbols
                     if st.type == _symtable.TYPE_FUNCTION:
                         d[st.name] = 1
             self.__methods = tuple(d)
