@@ -659,9 +659,9 @@ class PydocDocTest(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
-    @unittest.mock.patch('pydoc.getpager')
+    @unittest.mock.patch('pydoc.pager')
     @requires_docstrings
-    def test_help_output_redirect(self, getpager_mock):
+    def test_help_output_redirect(self, pager_mock):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
         self.maxDiff = None
@@ -689,13 +689,13 @@ class PydocDocTest(unittest.TestCase):
             self.assertEqual('', err.getvalue())
             self.assertEqual(expected_text, result)
 
-        getpager_mock.assert_not_called()
+        pager_mock.assert_not_called()
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
-    @unittest.mock.patch('pydoc.getpager')
-    def test_help_output_redirect_various_requests(self, getpager_mock):
+    @unittest.mock.patch('pydoc.pager')
+    def test_help_output_redirect_various_requests(self, pager_mock):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
 
@@ -710,7 +710,7 @@ class PydocDocTest(unittest.TestCase):
                 self.assertEqual('', output.getvalue(), msg=f'failed on request "{request}"')
                 self.assertEqual('', err.getvalue(), msg=f'failed on request "{request}"')
                 self.assertIn(expected_text_part, result, msg=f'failed on request "{request}"')
-                getpager_mock.assert_not_called()
+                pager_mock.assert_not_called()
 
         self.maxDiff = None
 
@@ -751,21 +751,21 @@ class PydocDocTest(unittest.TestCase):
             expected = "no documentation found for 'abd'"
             self.assertEqual(expected, showtopic_io.getvalue().strip())
 
-    @unittest.mock.patch('pydoc.getpager')
-    def test_fail_showtopic_output_redirect(self, getpager_mock):
+    @unittest.mock.patch('pydoc.pager')
+    def test_fail_showtopic_output_redirect(self, pager_mock):
         with StringIO() as buf:
             helper = pydoc.Helper(output=buf)
             helper.showtopic("abd")
             expected = "no documentation found for 'abd'"
             self.assertEqual(expected, buf.getvalue().strip())
 
-        getpager_mock.assert_not_called()
+        pager_mock.assert_not_called()
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
-    @unittest.mock.patch('pydoc.getpager')
-    def test_showtopic_output_redirect(self, getpager_mock):
+    @unittest.mock.patch('pydoc.pager')
+    def test_showtopic_output_redirect(self, pager_mock):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.showtopic should be redirected
         self.maxDiff = None
@@ -780,7 +780,7 @@ class PydocDocTest(unittest.TestCase):
             self.assertEqual('', err.getvalue())
             self.assertIn('The "with" statement', result)
 
-        getpager_mock.assert_not_called()
+        pager_mock.assert_not_called()
 
     def test_lambda_with_return_annotation(self):
         func = lambda a, b, c: 1
