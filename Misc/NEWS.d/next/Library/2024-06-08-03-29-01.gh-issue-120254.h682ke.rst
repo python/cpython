@@ -1,1 +1,1 @@
-Added `commands` argument to :class:`pdb.Pdb` which allows user to send debugger commands in the source file.
+Added ``commands`` argument to :class:`pdb.Pdb` which allows user to send debugger commands in the source file.
