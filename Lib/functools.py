@@ -281,17 +281,21 @@ class PlaceholderType:
     The type of the Placeholder singleton.
     Used as a placeholder for partial arguments.
     """
-    _instance = None
+    _singleton = None
+
     def __new__(cls):
-        if cls._instance is None:
-            cls._instance = object.__new__(cls)
-        return cls._instance
+        if cls._singleton is None:
+            cls._singleton = object.__new__(cls)
+        return cls._singleton
 
     def __repr__(self):
         return 'Placeholder'
 
     def __bool__(self):
         raise TypeError("Placeholder should not be used in a boolean context")
+
+    def __reduce__(self):
+        return type(self), ()
 
 
 Placeholder = PlaceholderType()
@@ -406,7 +410,7 @@ class partial:
         self.placeholder_count = placeholder_count
 
 try:
-    from _functools import partial, Placeholder
+    from _functools import partial, PlaceholderType, Placeholder
 except ImportError:
     pass
 

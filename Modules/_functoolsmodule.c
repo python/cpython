@@ -74,8 +74,8 @@ static void
 placeholder_dealloc(PyObject* placeholder)
 {
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref None out of existence. Instead,
-     * since None is an immortal object, re-set the reference count.
+     * we accidentally decref Placeholder out of existence. Instead,
+     * since Placeholder is an immortal object, re-set the reference count.
      */
     _Py_SetImmortal(placeholder);
 }
@@ -114,7 +114,7 @@ static PyType_Slot placeholder_type_slots[] = {
 };
 
 static PyType_Spec placeholder_type_spec = {
-    .name = "partial.PlaceholderType",
+    .name = "functools.PlaceholderType",
     .basicsize = sizeof(placeholderobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = placeholder_type_slots
@@ -1701,9 +1701,6 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    // if (PyModule_AddObject(module, "Placeholder", Py_GetPlaceholder()) < 0) {
-    //     return -1;
-    // }
     state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &placeholder_type_spec, NULL);
     if (state->placeholder_type == NULL) {

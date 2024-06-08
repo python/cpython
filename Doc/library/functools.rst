@@ -353,8 +353,8 @@ The :mod:`functools` module defines the following functions:
                                   f"got {len(fargs)}")
               newargs = list(args)
               j = 0
-              for i in range(len(args)):
-                  if args[i] is Placeholder:
+              for i, arg in enumarate(args):
+                  if arg is Placeholder:
                       newargs[i] = fargs[j]
                       j += 1
               newargs.extend(fargs[j:])
@@ -381,7 +381,7 @@ The :mod:`functools` module defines the following functions:
    If ``Placeholder`` sentinels are present in *args*, they will be filled first
    when :func:`partial` is called. This allows custom selection of positional arguments
    to be pre-filled when constructing :ref:`partial object<partial-objects>`.
-   If ``Placeholder`` sentinels are used, all of them must be filled at call time.:
+   If ``Placeholder`` sentinels are used, all of them must be filled at call time:
 
       >>> from functools import partial, Placeholder
       >>> say_to_world = partial(print, Placeholder, 'world!')

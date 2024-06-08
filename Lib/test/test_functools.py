@@ -247,6 +247,13 @@ class TestPartial:
         expected = (-1, 0, 1, 2, 3, 4, 5)
         self.assertTrue(expected == got and empty == {})
 
+    def test_construct_placeholder_singleton(self):
+        PH = self.module.Placeholder
+        tp = type(PH)
+        self.assertIs(tp(), PH)
+        self.assertRaises(TypeError, tp, 1, 2)
+        self.assertRaises(TypeError, tp, a=1, b=2)
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
