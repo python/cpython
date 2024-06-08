@@ -955,7 +955,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
         self.assertIn(expected.encode(), out)
 
-    @unittest.skipIf("-fsanitize" in sysconfig.get_config_var('PY_CFLAGS'),
+    @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
                      "PYTHONMALLOCSTATS doesn't work with ASAN")
     def test_python_malloc_stats(self):
         code = "pass"
