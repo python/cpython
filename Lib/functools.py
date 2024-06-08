@@ -284,22 +284,22 @@ class partial:
     and keywords.
     """
 
-    __slots__ = "func", "args", "keywords", "__dict__", "__weakref__"
+    __slots__ = ("func", "args", "keywords", "placeholder_count",
+                 "__dict__", "__weakref__")
 
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-
-        np = 0
+        placeholder_count = 0
         nargs = len(args)
         if args:
             while nargs and args[nargs-1] is Placeholder:
                 nargs -= 1
             args = args[:nargs]
-            np = args.count(Placeholder)
+            placeholder_count = args.count(Placeholder)
         if isinstance(func, partial):
             pargs = func.args
-            pnp = func.np
+            pnp = func.placeholder_count
             if pnp and args:
                 all_args = list(pargs)
                 nargs = len(args)
@@ -312,39 +312,37 @@ class partial:
                     pos += 1
                 if pnp < nargs:
                     all_args.extend(args[pnp:])
-                np += pnp - end
+                placeholder_count += pnp - end
                 args = tuple(all_args)
             else:
-                np += pnp
+                placeholder_count += pnp
                 args = func.args + args
             keywords = {**func.keywords, **keywords}
             func = func.func
 
         self = super(partial, cls).__new__(cls)
-
         self.func = func
         self.args = args
         self.keywords = keywords
-        self.np = np
+        self.placeholder_count = placeholder_count
         return self
 
     def __call__(self, /, *args, **keywords):
-        if not hasattr(self, 'np'):
-            self.np = self.args.count(Placeholder)
-        if np := self.np:
-            if len(args) < np:
-                raise TypeError("unfilled placeholders in 'partial' call")
+        keywords = {**self.keywords, **keywords}
+        if placeholder_count := self.placeholder_count:
+            if len(args) < placeholder_count:
+                raise TypeError(
+                    "missing positional arguments in 'partial' call; expected "
+                    f"at least {placeholder_count}, got {len(fargs)}")
             f_args = list(self.args)
             j, pos = 0, 0
-            while j < np:
+            while j < placeholder_count:
                 pos = f_args.index(Placeholder, pos)
                 f_args[pos] = args[j]
                 j += 1
                 pos += 1
-            keywords = {**self.keywords, **keywords}
-            return self.func(*f_args, *args[np:], **keywords)
+            return self.func(*f_args, *args[j:], **keywords)
         else:
-            keywords = {**self.keywords, **keywords}
             return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
@@ -359,16 +357,18 @@ class partial:
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
-               self.keywords or None, self.__dict__ or None)
+               self.keywords or None, self.placeholder_count,
+               self.__dict__ or None)
 
     def __setstate__(self, state):
         if not isinstance(state, tuple):
             raise TypeError("argument to __setstate__ must be a tuple")
-        if len(state) != 4:
-            raise TypeError(f"expected 4 items in state, got {len(state)}")
-        func, args, kwds, namespace = state
+        if len(state) != 5:
+            raise TypeError(f"expected 5 items in state, got {len(state)}")
+        func, args, kwds, placeholder_count, namespace = state
         if (not callable(func) or not isinstance(args, tuple) or
            (kwds is not None and not isinstance(kwds, dict)) or
+           not isinstance(placeholder_count, int) or
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
@@ -384,6 +384,7 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
+        self.placeholder_count = placeholder_count
 
 try:
     from _functools import partial, Placeholder

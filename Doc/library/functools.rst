@@ -337,13 +337,33 @@ The :mod:`functools` module defines the following functions:
    supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
+      Placeholder = object()
+
       def partial(func, /, *args, **keywords):
+          # Trim trailing placeholders and count how many remaining
+          nargs = len(args)
+          while nargs and args[nargs-1] is Placeholder:
+              nargs -= 1
+          args = args[:nargs]
+          placeholder_count = args.count(Placeholder)
           def newfunc(*fargs, **fkeywords):
+              if len(fargs) < placeholder_count:
+                  raise TypeError("missing positional arguments in 'partial' call;"
+                                  f" expected at least {placeholder_count}, "
+                                  f"got {len(fargs)}")
+              newargs = list(args)
+              j = 0
+              for i in range(len(args)):
+                  if args[i] is Placeholder:
+                      newargs[i] = fargs[j]
+                      j += 1
+              newargs.extend(fargs[j:])
               newkeywords = {**keywords, **fkeywords}
-              return func(*args, *fargs, **newkeywords)
+              return func(*newargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
+          newfunc.placeholder_count = placeholder_count
           return newfunc
 
    The :func:`partial` is used for partial function application which "freezes"
@@ -365,6 +385,8 @@ The :mod:`functools` module defines the following functions:
 
       >>> from functools import partial, Placeholder
       >>> say_to_world = partial(print, Placeholder, 'world!')
+      >>> say_to_world.placeholder_count
+      1
       >>> say_to_world('Hello')
       Hello world!
 

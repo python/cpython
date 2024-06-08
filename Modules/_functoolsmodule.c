@@ -57,13 +57,13 @@ static PyType_Slot placeholder_type_slots[] = {
 };
 
 static PyType_Spec placeholder_type_spec = {
-    .name = "partial.Placeholder",
+    .name = "functools.Placeholder",
     .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+    .flags = Py_TPFLAGS_DEFAULT |
              Py_TPFLAGS_IMMUTABLETYPE |
              Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = placeholder_type_slots
-};
+}; // TODO> test: test.support.check_disallow_instantiation
 
 
 typedef struct {
@@ -154,13 +154,14 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
-    if (nnargs > 0){
+    if (nnargs > 0) {
         /* Trim placeholders from the end if needed */
         Py_ssize_t nnargs_old = nnargs;
         for (; nnargs > 0; nnargs--) {
             item = PyTuple_GET_ITEM(nargs, nnargs-1);
-            if (!Py_Is(item, pto->placeholder))
+            if (!Py_Is(item, pto->placeholder)) {
                 break;
+            }
         }
         if (nnargs != nnargs_old) {
             PyObject *tmp = PyTuple_GetSlice(nargs, 0, nnargs);
@@ -168,11 +169,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             nargs = tmp;
         }
         /* Count placeholders */
-        if (nnargs > 1){
-            for (Py_ssize_t i=0; i < nnargs - 1; i++){
+        if (nnargs > 1) {
+            for (Py_ssize_t i=0; i < nnargs - 1; i++) {
                 item = PyTuple_GET_ITEM(nargs, i);
-                if (Py_Is(item, pto->placeholder))
+                if (Py_Is(item, pto->placeholder)) {
                     nnp++;
+                }
             }
         }
     }
@@ -185,12 +187,13 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         for (Py_ssize_t i=0, j=0; i < nfargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pargs, i);
-                if ((j < nnargs) & Py_Is(item, pto->placeholder)){
+                if ((j < nnargs) & Py_Is(item, pto->placeholder)) {
                     item = PyTuple_GET_ITEM(nargs, j);
                     j++;
                     pnp--;
                 }
-            } else {
+            }
+            else {
                 item = PyTuple_GET_ITEM(nargs, j);
                 j++;
             }
@@ -200,10 +203,12 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         pto->args = fargs;
         pto->np = pnp + nnp;
         Py_DECREF(nargs);
-    } else if (pargs == NULL) {
+    }
+    else if (pargs == NULL) {
         pto->args = nargs;
         pto->np = nnp;
-    } else {
+    }
+    else {
         pto->args = PySequence_Concat(pargs, nargs);
         pto->np = pnp + nnp;
         Py_DECREF(nargs);
@@ -306,8 +311,9 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     }
     Py_ssize_t np = pto->np;
     if (nargs < np) {
-        PyErr_SetString(PyExc_TypeError,
-                        "unfilled placeholders in 'partial' call");
+        PyErr_Format(PyExc_TypeError,
+                     "missing positional arguments in 'partial' call; "
+                     "expected at least %zd, got %zd", np, nargs);
         return NULL;
     }
 
@@ -358,19 +364,22 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     Py_ssize_t nargs_new;
     if (np) {
         nargs_new = pto_nargs + nargs - np;
-        Py_ssize_t j = 0;   // Placeholder counter
+        Py_ssize_t j = 0;       // New args index
         for (Py_ssize_t i=0; i < pto_nargs; i++) {
             if (Py_Is(pto_args[i], pto->placeholder)){
                 memcpy(stack + i, args + j, 1 * sizeof(PyObject*));
                 j += 1;
-            } else {
+            }
+            else {
                 memcpy(stack + i, pto_args + i, 1 * sizeof(PyObject*));
             }
         }
-        if (nargs_total > np){
-            memcpy(stack + pto_nargs, args + np, (nargs_total - np) * sizeof(PyObject*));
+        assert(j == np);
+        if (nargs_total > np) {
+            memcpy(stack + pto_nargs, args + j, (nargs_total - j) * sizeof(PyObject*));
         }
-    } else {
+    }
+    else {
         nargs_new = pto_nargs + nargs;
         /* Copy to new stack, using borrowed references */
         memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
@@ -411,8 +420,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t np = pto->np;
     if (nargs < np) {
-        PyErr_SetString(PyExc_TypeError,
-                        "unfilled placeholders in 'partial' call");
+        PyErr_Format(PyExc_TypeError,
+                     "missing positional arguments in 'partial' call; "
+                     "expected at least %zd, got %zd", np, nargs);
         return NULL;
     }
 
@@ -445,25 +455,31 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
         Py_ssize_t nargs_new = pto_nargs + nargs - np;
         args2 = PyTuple_New(nargs_new);
+        if (args2 == NULL) {
+            Py_XDECREF(kwargs2);
+            return NULL;
+        }
         PyObject *pto_args = pto->args;
         PyObject *item;
-        Py_ssize_t j = 0;   // Placeholder counter
+        Py_ssize_t j = 0;   // New args index
         for (Py_ssize_t i=0; i < pto_nargs; i++) {
             item = PyTuple_GET_ITEM(pto_args, i);
-            if (Py_Is(item, pto->placeholder)){
+            if (Py_Is(item, pto->placeholder)) {
                 item = PyTuple_GET_ITEM(args, j);
                 j += 1;
             }
             PyTuple_SET_ITEM(args2, i, item);
         }
-        if (nargs > np){
+        assert(j == np);
+        if (nargs > np) {
             for (Py_ssize_t i=pto_nargs; i < nargs_new; i++) {
                 item = PyTuple_GET_ITEM(args, j);
                 PyTuple_SET_ITEM(args2, i, item);
                 j += 1;
             }
         }
-    } else {
+    }
+    else {
         /* Note: tupleconcat() is optimized for empty tuples */
         args2 = PySequence_Concat(pto->args, args);
     }
@@ -491,7 +507,7 @@ static PyMemberDef partial_memberlist[] = {
      "tuple of arguments to future partial calls"},
     {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
-    {"np",              Py_T_PYSSIZET,      OFF(np),        Py_READONLY,
+    {"placeholder_count",   Py_T_PYSSIZET,      OFF(np),        Py_READONLY,
      "number of placeholders"},
     {"__weaklistoffset__", Py_T_PYSSIZET,
      offsetof(partialobject, weakreflist), Py_READONLY},
