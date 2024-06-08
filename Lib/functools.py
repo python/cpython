@@ -274,8 +274,27 @@ except ImportError:
 ################################################################################
 
 
-class Placeholder:
-    """placeholder for partial arguments"""
+class PlaceholderType:
+    """PlaceholderType()
+    --
+
+    The type of the Placeholder singleton.
+    Used as a placeholder for partial arguments.
+    """
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
+
+    def __repr__(self):
+        return 'Placeholder'
+
+    def __bool__(self):
+        raise TypeError("Placeholder should not be used in a boolean context")
+
+
+Placeholder = PlaceholderType()
 
 
 # Purely functional, no descriptor behaviour

@@ -93,7 +93,8 @@ static PyNumberMethods placeholder_as_number = {
 PyDoc_STRVAR(placeholder_doc,
 "PlaceholderType()\n"
 "--\n\n"
-"The type of the Placeholder singleton.");
+"The type of the Placeholder singleton."
+"Used as a placeholder for partial arguments.");
 
 PyTypeObject _PyPlaceholder_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
