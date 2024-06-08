@@ -930,6 +930,28 @@
         }
 
         case _GUARD_TYPE_VERSION: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                // add watcher so that whenever the type changes we invalidate this
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                // if the type is null, it was not found in the cache (there was a conflict)
+                // with the key, in which case we can't trust the version
+                if (type) {
+                    // if the type version was set properly, then add a watcher
+                    // if it wasn't this means that the type version was previously set to something else
+                    // and we set the owner to bottom, so we don't need to add a watcher because we must have
+                    // already added one earlier.
+                    if (sym_set_type_version(owner, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                }
+            }
             break;
         }
 
@@ -1583,16 +1605,11 @@
                 args--;
                 argcount++;
             }
-            _Py_UopsSymbol **localsplus_start = ctx->n_consumed;
-            int n_locals_already_filled = 0;
-            // Can determine statically, so we interleave the new locals
-            // and make the current stack the new locals.
-            // This also sets up for true call inlining.
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                localsplus_start = args;
-                n_locals_already_filled = argcount;
+                new_frame = frame_new(ctx, co, 0, args, argcount);
+            } else {
+                new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            new_frame = frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;
