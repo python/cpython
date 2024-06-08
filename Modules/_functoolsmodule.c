@@ -43,27 +43,118 @@ get_functools_state(PyObject *module)
 /* partial object **********************************************************/
 
 
-typedef struct {
-    PyObject_HEAD
-} placeholderobject;
+/*
+Placeholder is an object that can be used to signal that positional
+   argument place is empty when using `partial` class
+*/
 
+PyObject*
+Py_GetPlaceholder(void);
 
-PyDoc_STRVAR(placeholder_doc, "placeholder for partial arguments");
+static PyObject *
+placeholder_repr(PyObject *op)
+{
+    return PyUnicode_FromString("Placeholder");
+}
 
+static void
+placeholder_dealloc(PyObject* placeholder)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref None out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(placeholder);
+}
 
-static PyType_Slot placeholder_type_slots[] = {
-    {Py_tp_doc, (void *)placeholder_doc},
-    {0, 0}
+static PyObject *
+placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
+        PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
+        return NULL;
+    }
+    return Py_GetPlaceholder();
+}
+
+static int
+placeholder_bool(PyObject *v)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Placeholder should not be used in a boolean context");
+    return -1;
+}
+
+static PyNumberMethods placeholder_as_number = {
+    .nb_bool = placeholder_bool,
 };
 
-static PyType_Spec placeholder_type_spec = {
-    .name = "functools.Placeholder",
-    .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT |
-             Py_TPFLAGS_IMMUTABLETYPE |
-             Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .slots = placeholder_type_slots
-}; // TODO> test: test.support.check_disallow_instantiation
+
+PyDoc_STRVAR(placeholder_doc,
+"PlaceholderType()\n"
+"--\n\n"
+"The type of the Placeholder singleton.");
+
+PyTypeObject _PyPlaceholder_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "PlaceholderType",
+    0,
+    0,
+    placeholder_dealloc,    /*tp_dealloc*/ /*never called*/
+    0,                      /*tp_vectorcall_offset*/
+    0,                      /*tp_getattr*/
+    0,                      /*tp_setattr*/
+    0,                      /*tp_as_async*/
+    placeholder_repr,       /*tp_repr*/
+    &placeholder_as_number, /*tp_as_number*/
+    0,                      /*tp_as_sequence*/
+    0,                      /*tp_as_mapping*/
+    0,                      /*tp_hash */
+    0,                      /*tp_call */
+    0,                      /*tp_str */
+    0,                      /*tp_getattro */
+    0,                      /*tp_setattro */
+    0,                      /*tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,     /*tp_flags */
+    placeholder_doc,        /*tp_doc */
+    0,                      /*tp_traverse */
+    0,                      /*tp_clear */
+    0,                      /*tp_richcompare */
+    0,                      /*tp_weaklistoffset */
+    0,                      /*tp_iter */
+    0,                      /*tp_iternext */
+    0,                      /*tp_methods */
+    0,                      /*tp_members */
+    0,                      /*tp_getset */
+    0,                      /*tp_base */
+    0,                      /*tp_dict */
+    0,                      /*tp_descr_get */
+    0,                      /*tp_descr_set */
+    0,                      /*tp_dictoffset */
+    0,                      /*tp_init */
+    0,                      /*tp_alloc */
+    placeholder_new,        /*tp_new */
+};
+
+PyObject _Py_PlaceholderStruct = _PyObject_HEAD_INIT(&_PyPlaceholder_Type);
+
+#define PY_CONSTANT_PLACEHOLDER 0
+
+static PyObject* constants[] = {
+    &_Py_PlaceholderStruct,         // PY_CONSTANT_PLACEHOLDER
+};
+
+PyObject*
+Py_GetPlaceholder(void)
+{
+    if (PY_CONSTANT_PLACEHOLDER < Py_ARRAY_LENGTH(constants)) {
+        return constants[PY_CONSTANT_PLACEHOLDER];
+    }
+    else {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+}
 
 
 typedef struct {
@@ -150,7 +241,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->placeholder = (PyObject *) state->placeholder_type;
+    pto->placeholder = Py_GetPlaceholder();
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
@@ -598,8 +689,8 @@ partial_repr(partialobject *pto)
 static PyObject *
 partial_reduce(partialobject *pto, PyObject *unused)
 {
-    return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
-                         pto->args, pto->kw,
+    return Py_BuildValue("O(O)(OOOnO)", Py_TYPE(pto), pto->fn, pto->fn,
+                         pto->args, pto->kw, pto->np,
                          pto->dict ? pto->dict : Py_None);
 }
 
@@ -607,9 +698,10 @@ static PyObject *
 partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
+    Py_ssize_t np;
 
     if (!PyTuple_Check(state) ||
-        !PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
+        !PyArg_ParseTuple(state, "OOOnO", &fn, &fnargs, &kw, &np, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
         (kw != Py_None && !PyDict_Check(kw)))
@@ -640,10 +732,10 @@ partial_setstate(partialobject *pto, PyObject *state)
         dict = NULL;
     else
         Py_INCREF(dict);
-
     Py_SETREF(pto->fn, Py_NewRef(fn));
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
+    pto->np = np;
     Py_XSETREF(pto->dict, dict);
     partial_setvectorcall(pto);
     Py_RETURN_NONE;
@@ -1626,6 +1718,7 @@ static PyType_Spec lru_cache_type_spec = {
 
 /* module level code ********************************************************/
 
+
 PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
@@ -1644,15 +1737,9 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
-        &placeholder_type_spec, NULL);
-    if (state->placeholder_type == NULL) {
+    if (PyModule_AddObject(module, "Placeholder", Py_GetPlaceholder()) < 0) {
         return -1;
     }
-    if (PyModule_AddType(module, state->placeholder_type) < 0) {
-        return -1;
-    }
-
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
@@ -1697,7 +1784,6 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
-    Py_VISIT(state->placeholder_type);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1709,7 +1795,6 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
-    Py_CLEAR(state->placeholder_type);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);

@@ -275,25 +275,25 @@ class TestPartial:
         name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
-        f.__setstate__((f, (), {}, {}))
+        f.__setstate__((f, (), {}, 0, {}))
         try:
             self.assertEqual(repr(f), '%s(...)' % (name,))
         finally:
-            f.__setstate__((capture, (), {}, {}))
+            f.__setstate__((capture, (), {}, 0, {}))
 
         f = self.partial(capture)
-        f.__setstate__((capture, (f,), {}, {}))
+        f.__setstate__((capture, (f,), {}, 0, {}))
         try:
             self.assertEqual(repr(f), '%s(%r, ...)' % (name, capture,))
         finally:
-            f.__setstate__((capture, (), {}, {}))
+            f.__setstate__((capture, (), {}, 0, {}))
 
         f = self.partial(capture)
-        f.__setstate__((capture, (), {'a': f}, {}))
+        f.__setstate__((capture, (), {'a': f}, 0, {}))
         try:
             self.assertEqual(repr(f), '%s(%r, a=...)' % (name, capture,))
         finally:
-            f.__setstate__((capture, (), {}, {}))
+            f.__setstate__((capture, (), {}, 0, {}))
 
     def test_pickle(self):
         with replaced_module('functools', self.module):
@@ -325,24 +325,24 @@ class TestPartial:
 
     def test_setstate(self):
         f = self.partial(signature)
-        f.__setstate__((capture, (1,), dict(a=10), dict(attr=[])))
+        f.__setstate__((capture, (1,), dict(a=10), 0, dict(attr=[])))
 
         self.assertEqual(signature(f),
                          (capture, (1,), dict(a=10), dict(attr=[])))
         self.assertEqual(f(2, b=20), ((1, 2), {'a': 10, 'b': 20}))
 
-        f.__setstate__((capture, (1,), dict(a=10), None))
+        f.__setstate__((capture, (1,), dict(a=10), 0, None))
 
         self.assertEqual(signature(f), (capture, (1,), dict(a=10), {}))
         self.assertEqual(f(2, b=20), ((1, 2), {'a': 10, 'b': 20}))
 
-        f.__setstate__((capture, (1,), None, None))
+        f.__setstate__((capture, (1,), None, 0, None))
         #self.assertEqual(signature(f), (capture, (1,), {}, {}))
         self.assertEqual(f(2, b=20), ((1, 2), {'b': 20}))
         self.assertEqual(f(2), ((1, 2), {}))
         self.assertEqual(f(), ((1,), {}))
 
-        f.__setstate__((capture, (), {}, None))
+        f.__setstate__((capture, (), {}, 0, None))
         self.assertEqual(signature(f), (capture, (), {}, {}))
         self.assertEqual(f(2, b=20), ((2,), {'b': 20}))
         self.assertEqual(f(2), ((2,), {}))
@@ -360,7 +360,7 @@ class TestPartial:
 
     def test_setstate_subclasses(self):
         f = self.partial(signature)
-        f.__setstate__((capture, MyTuple((1,)), MyDict(a=10), None))
+        f.__setstate__((capture, MyTuple((1,)), MyDict(a=10), 0, None))
         s = signature(f)
         self.assertEqual(s, (capture, (1,), dict(a=10), {}))
         self.assertIs(type(s[1]), tuple)
@@ -370,7 +370,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
         self.assertIs(type(r[1]), dict)
 
-        f.__setstate__((capture, BadTuple((1,)), {}, None))
+        f.__setstate__((capture, BadTuple((1,)), {}, 0, None))
         s = signature(f)
         self.assertEqual(s, (capture, (1,), {}, {}))
         self.assertIs(type(s[1]), tuple)
@@ -381,7 +381,7 @@ class TestPartial:
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(capture)
-            f.__setstate__((f, (), {}, {}))
+            f.__setstate__((f, (), {}, 0, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     # gh-117008: Small limit since pickle uses C stack memory
@@ -389,31 +389,31 @@ class TestPartial:
                         with self.assertRaises(RecursionError):
                             pickle.dumps(f, proto)
             finally:
-                f.__setstate__((capture, (), {}, {}))
+                f.__setstate__((capture, (), {}, 0, {}))
 
             f = self.partial(capture)
-            f.__setstate__((capture, (f,), {}, {}))
+            f.__setstate__((capture, (f,), {}, 0, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     f_copy = pickle.loads(pickle.dumps(f, proto))
                     try:
                         self.assertIs(f_copy.args[0], f_copy)
                     finally:
-                        f_copy.__setstate__((capture, (), {}, {}))
+                        f_copy.__setstate__((capture, (), {}, 0, {}))
             finally:
-                f.__setstate__((capture, (), {}, {}))
+                f.__setstate__((capture, (), {}, 0, {}))
 
             f = self.partial(capture)
-            f.__setstate__((capture, (), {'a': f}, {}))
+            f.__setstate__((capture, (), {'a': f}, 0, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     f_copy = pickle.loads(pickle.dumps(f, proto))
                     try:
                         self.assertIs(f_copy.keywords['a'], f_copy)
                     finally:
-                        f_copy.__setstate__((capture, (), {}, {}))
+                        f_copy.__setstate__((capture, (), {}, 0, {}))
             finally:
-                f.__setstate__((capture, (), {}, {}))
+                f.__setstate__((capture, (), {}, 0, {}))
 
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):

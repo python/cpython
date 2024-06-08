@@ -333,7 +333,7 @@ class partial:
             if len(args) < placeholder_count:
                 raise TypeError(
                     "missing positional arguments in 'partial' call; expected "
-                    f"at least {placeholder_count}, got {len(fargs)}")
+                    f"at least {placeholder_count}, got {len(args)}")
             f_args = list(self.args)
             j, pos = 0, 0
             while j < placeholder_count:
