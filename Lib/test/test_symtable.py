@@ -52,16 +52,30 @@ def generic_spam[T](a):
 class GenericMine[T: int]:
     pass
 
-# test case: ComplexClass
+# The following symbols are defined in ComplexClass
+# without being introduced by a 'global' statement.
 glob_unassigned_meth: int
 glob_unassigned_meth_pep_695: int
+glob_unassigned_async_meth: int
+glob_unassigned_async_meth_pep_695: int
+
 glob_assigned_meth = 1234
 glob_assigned_meth_pep_695 = 1234
+glob_assigned_async_meth = 1234
+glob_assigned_async_meth_pep_695 = 1234
 
+# The following symbols are defined in ComplexClass after
+# being introduced by a 'global' statement (and therefore
+# are not considered as methods of ComplexClass).
 glob_unassigned_meth_ignore: int
 glob_unassigned_meth_pep_695_ignore: int
+glob_unassigned_async_meth_ignore: int
+glob_unassigned_async_meth_pep_695_ignore: int
+
 glob_assigned_meth_ignore = 1234
 glob_assigned_meth_pep_695_ignore = 1234
+glob_assigned_async_meth_ignore = 1234
+glob_assigned_async_meth_pep_695_ignore = 1234
 
 class ComplexClass:
     some_non_method_const = 1234
@@ -78,15 +92,28 @@ class ComplexClass:
     def a_method(self): pass
     def a_method_pep_695[T](self): pass
 
+    async def an_async_method(self): pass
+    async def an_async_method_pep_695[T](self): pass
+
     @classmethod
     def a_classmethod(cls): pass
     @classmethod
     def a_classmethod_pep_695[T](self): pass
 
+    @classmethod
+    async def an_async_classmethod(cls): pass
+    @classmethod
+    async def an_async_classmethod_pep_695[T](self): pass
+
     @staticmethod
     def a_staticmethod(): pass
     @staticmethod
     def a_staticmethod_pep_695[T](self): pass
+
+    @staticmethod
+    def an_async_staticmethod(): pass
+    @staticmethod
+    def an_async_staticmethod_pep_695[T](self): pass
 
     # These ones will be considered as methods because of the 'def' although
     # they are *not* valid methods at runtime since they are not decorated
@@ -94,12 +121,22 @@ class ComplexClass:
     def a_fakemethod(): pass
     def a_fakemethod_pep_695[T](): pass
 
+    async def an_async_fakemethod(): pass
+    async def an_async_fakemethod_pep_695[T](): pass
+
     # Check that those are still considered as methods
     # since they are not using the 'global' keyword.
     def glob_unassigned_meth(): pass
     def glob_unassigned_meth_pep_695[T](): pass
+
+    async def glob_unassigned_async_meth(): pass
+    async def glob_unassigned_async_meth_pep_695[T](): pass
+
     def glob_assigned_meth(): pass
     def glob_assigned_meth_pep_695[T](): pass
+
+    async def glob_assigned_async_meth(): pass
+    async def glob_assigned_async_meth_pep_695[T](): pass
 
     # The following are not picked as a method because thy are not
     # visible by the class at runtime (this is equivalent to having
@@ -108,10 +145,21 @@ class ComplexClass:
     def glob_unassigned_meth_ignore(): pass
     global glob_unassigned_meth_pep_695_ignore
     def glob_unassigned_meth_pep_695_ignore[T](): pass
+
+    global glob_unassigned_async_meth_ignore
+    async def glob_unassigned_async_meth_ignore(): pass
+    global glob_unassigned_async_meth_pep_695_ignore
+    async def glob_unassigned_async_meth_pep_695_ignore[T](): pass
+
     global glob_assigned_meth_ignore
     def glob_assigned_meth_ignore(): pass
     global glob_assigned_meth_pep_695_ignore
     def glob_assigned_meth_pep_695_ignore[T](): pass
+
+    global glob_assigned_async_meth_ignore
+    async def glob_assigned_async_meth_ignore(): pass
+    global glob_assigned_async_meth_pep_695_ignore
+    async def glob_assigned_async_meth_pep_695_ignore[T](): pass
 """
 
 
@@ -305,11 +353,17 @@ class SymtableTest(unittest.TestCase):
 
         self.assertEqual(self.ComplexClass.get_methods(), (
             'a_method', 'a_method_pep_695',
+            'an_async_method', 'an_async_method_pep_695',
             'a_classmethod', 'a_classmethod_pep_695',
+            'an_async_classmethod', 'an_async_classmethod_pep_695',
             'a_staticmethod', 'a_staticmethod_pep_695',
+            'an_async_staticmethod', 'an_async_staticmethod_pep_695',
             'a_fakemethod', 'a_fakemethod_pep_695',
+            'an_async_fakemethod', 'an_async_fakemethod_pep_695',
             'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
+            'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
             'glob_assigned_meth', 'glob_assigned_meth_pep_695',
+            'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
         ))
 
     def test_filename_correct(self):
