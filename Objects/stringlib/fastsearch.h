@@ -223,26 +223,25 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *p,
        Also find the period of the right half.
        Direction:
            dir : {-1, 1}
-               if dir == -1, then the problem is reverse
+              if dir == -1, then the problem is reverse
            In short:
-               _lex_search(x, -1) == _lex_search(x[::-1], 1)
+              _lex_search(x, -1) == _lex_search(x[::-1], 1)
 
-           Returned cut is "the size of the cut towards chosen direction".
-           E.g.:
-           >>> x = '1234'
-           >>> cut, period = factorize(x, dir=1)    # cut = 0
-           >>> cut
-           0
-           >>> cut_idx = cut
-           >>> x[:cut_idx], x[cut_idx:]
-           '', '1234'
-           >>> x = '4321'
-           >>> cut, period = factorize(x, dir=-1)
-           >>> cut
-           0
-           >>> cut_idx = len(x) - cut
-           >>> x[:cut_idx], x[cut_idx:]
-           '4321', ''
+           Returned cut is the size of the cut towards chosen direction. E.g.:
+              >>> x = '1234'
+              >>> cut, period = factorize(x, dir=1)    # cut = 0
+              >>> cut
+              0
+              >>> cut_idx = cut
+              >>> x[:cut_idx], x[cut_idx:]
+              '', '1234'
+              >>> x = '4321'
+              >>> cut, period = factorize(x, dir=-1)
+              >>> cut
+              0
+              >>> cut_idx = len(x) - cut
+              >>> x[:cut_idx], x[cut_idx:]
+              '4321', ''
     */
     Py_ssize_t max_suffix = 0;
     Py_ssize_t candidate = 1;
@@ -640,7 +639,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
           >>> ss_fwd, ss_rev
           (1, 4)
 
-          There is one more important variable here: j_off
+          There is one more important variable: j_off
           It brings ss in alignment with a needle.
           So that it stands at the first absolute index of the window
 
@@ -653,7 +652,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
           such that [0, 1, 2, 3, 4, 5]
                     [0, 1]
-                     * - both indices are at 0 here
+                     * - both indices are at 0
 
           >>> j_off_rev = dir_rev * i - p_end_rev
           >>> ss_rev + j_off_rev
@@ -661,9 +660,10 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
           such that [0, 1, 2, 3, 4, 5]
                                 [0, 1]
-                                 * - both indices are at 0 here
+                                 * - both indices are at 0
           Finally, which side it iterates from is determined by:
              jp = p_stt + (reversed ? -j : j);
+          , where j is an increasing needle-size counter in both cases
 
           With this transformation the problem becomes direction agnostic
 
@@ -770,7 +770,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
     const double hrs_lcost = 4.0;               // average loop cost
     const double hrs_hcost = 0.4;               // false positive hit cost
     // Two-Way Calibration
-    const double twy_icost = 3.0 * (double)m;   // total initialization cost
+    const double twy_icost = 3.5 * (double)m;   // total initialization cost
     const double twy_lcost = 3.0;               // loop cost
     // Temporary
     double exp_hrs, exp_twy, ll;   // expected run times & loops left
@@ -1118,7 +1118,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
              return res == 0 ? 0 : -1;
          }
     }
-    int dynamic = 1;
+    int dynamic = 1;    // dynamic fallback to two-way algorithm flag
     int dir = mode != FAST_RSEARCH ? 1 : -1;
     return STRINGLIB(horspool_find)(s, n, p, m, maxcount, mode, dir, dynamic);
 }
