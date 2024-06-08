@@ -1064,11 +1064,11 @@ class ForwardRef(_Final, _root=True):
                 # "Inject" type parameters into the local namespace
                 # (unless they are shadowed by assignments *in* the local namespace),
                 # as a way of emulating annotation scopes when calling `eval()`
-                locals_to_pass = {param.__name__: param for param in type_params} | localns
+                globals_to_pass = {param.__name__: param for param in type_params} | globalns
             else:
-                locals_to_pass = localns
+                globals_to_pass = globalns
             type_ = _type_check(
-                eval(self.__forward_code__, globalns, locals_to_pass),
+                eval(self.__forward_code__, globals_to_pass, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
                 allow_special_forms=self.__forward_is_class__,
