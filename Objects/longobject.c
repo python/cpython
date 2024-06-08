@@ -3121,8 +3121,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
     PyLongObject *z;
 
     if (size_b == 0) {
-        PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer division or modulo by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -3185,7 +3184,7 @@ long_rem(PyLongObject *a, PyLongObject *b, PyLongObject **prem)
 
     if (size_b == 0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "integer modulo by zero");
+                        "division by zero");
         return -1;
     }
     if (size_a < size_b ||
@@ -6046,7 +6045,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 /*[clinic input]
 int.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Rounding an Integral returns itself.
@@ -6056,7 +6055,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=30c2aec788263144]*/
 {
     PyObject *temp, *result, *ndigits;
 
@@ -6074,7 +6073,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == NULL)
+    if (o_ndigits == Py_None)
         return long_long(self);
 
     ndigits = _PyNumber_Index(o_ndigits);

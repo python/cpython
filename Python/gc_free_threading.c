@@ -252,6 +252,10 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
     // visit each thread's heaps for GC objects
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         struct _mimalloc_thread_state *m = &((_PyThreadStateImpl *)p)->mimalloc;
+        if (!_Py_atomic_load_int(&m->initialized)) {
+            // The thread may not have called tstate_mimalloc_bind() yet.
+            continue;
+        }
 
         arg->offset = offset_base;
         if (!mi_heap_visit_blocks(&m->heaps[_Py_MIMALLOC_HEAP_GC], true,
@@ -703,11 +707,9 @@ _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        // gh-117783: immortalize objects that would use deferred refcounting
-        // once the first non-main thread is created.
-        gcstate->immortalize.enable_on_thread_created = 1;
-    }
+    // gh-117783: immortalize objects that would use deferred refcounting
+    // once the first non-main thread is created (but not in subinterpreters).
+    gcstate->immortalize = _Py_IsMainInterpreter(interp) ? 0 : -1;
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -1808,8 +1810,10 @@ _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
-    gc_visit_heaps(interp, &immortalize_visitor, &args);
-    interp->gc.immortalize.enabled = 1;
+    if (interp->gc.immortalize == 0) {
+        gc_visit_heaps(interp, &immortalize_visitor, &args);
+        interp->gc.immortalize = 1;
+    }
     _PyEval_StartTheWorld(interp);
 }
 
