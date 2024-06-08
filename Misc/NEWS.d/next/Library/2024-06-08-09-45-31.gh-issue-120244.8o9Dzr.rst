@@ -1,0 +1,1 @@
+Fix memory leak in :meth:`re.sub()` when ``\number`` is specified to refer to a group.
