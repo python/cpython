@@ -5,11 +5,17 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
@@ -20,8 +26,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  interpreter:
+    name: Interpreter (Debug)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build tier two interpreter
+        run: |
+          ./configure --enable-experimental-jit=interpreter --with-pydebug
+          make all --jobs 4
+      - name: Test tier two interpreter
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+    needs: interpreter
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
@@ -144,3 +164,22 @@ jobs:
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations ' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
           ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  jit-with-disabled-gil:
+    name: Free-Threaded (Debug)
+    needs: interpreter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build with JIT enabled and GIL disabled
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 18
+          export PATH="$(llvm-config-18 --bindir):$PATH"
+          ./configure --enable-experimental-jit --with-pydebug --disable-gil
+          make all --jobs 4
+      - name: Run tests
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3

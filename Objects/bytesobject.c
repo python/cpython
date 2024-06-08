@@ -52,25 +52,25 @@ static inline PyObject* bytes_get_empty(void)
 
 
 /*
-   For PyBytes_FromString(), the parameter `str' points to a null-terminated
-   string containing exactly `size' bytes.
+   For PyBytes_FromString(), the parameter 'str' points to a null-terminated
+   string containing exactly 'size' bytes.
 
-   For PyBytes_FromStringAndSize(), the parameter `str' is
-   either NULL or else points to a string containing at least `size' bytes.
-   For PyBytes_FromStringAndSize(), the string in the `str' parameter does
+   For PyBytes_FromStringAndSize(), the parameter 'str' is
+   either NULL or else points to a string containing at least 'size' bytes.
+   For PyBytes_FromStringAndSize(), the string in the 'str' parameter does
    not have to be null-terminated.  (Therefore it is safe to construct a
-   substring by calling `PyBytes_FromStringAndSize(origstring, substrlen)'.)
-   If `str' is NULL then PyBytes_FromStringAndSize() will allocate `size+1'
+   substring by calling 'PyBytes_FromStringAndSize(origstring, substrlen)'.)
+   If 'str' is NULL then PyBytes_FromStringAndSize() will allocate 'size+1'
    bytes (setting the last byte to the null terminating character) and you can
-   fill in the data yourself.  If `str' is non-NULL then the resulting
+   fill in the data yourself.  If 'str' is non-NULL then the resulting
    PyBytes object must be treated as immutable and you must not fill in nor
    alter the data yourself, since the strings may be shared.
 
-   The PyObject member `op->ob_size', which denotes the number of "extra
+   The PyObject member 'op->ob_size', which denotes the number of "extra
    items" in a variable-size object, will contain the number of bytes
    allocated for string data, not counting the null terminating character.
-   It is therefore equal to the `size' parameter (for
-   PyBytes_FromStringAndSize()) or the length of the string in the `str'
+   It is therefore equal to the 'size' parameter (for
+   PyBytes_FromStringAndSize()) or the length of the string in the 'str'
    parameter (for PyBytes_FromString()).
 */
 static PyObject *
@@ -477,21 +477,32 @@ formatlong(PyObject *v, int flags, int prec, int type)
 static int
 byte_converter(PyObject *arg, char *p)
 {
-    if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
+    if (PyBytes_Check(arg)) {
+        if (PyBytes_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "%%c requires an integer in range(256) or "
+                         "a single byte, not a bytes object of length %zd",
+                         PyBytes_GET_SIZE(arg));
+            return 0;
+        }
         *p = PyBytes_AS_STRING(arg)[0];
         return 1;
     }
-    else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
+    else if (PyByteArray_Check(arg)) {
+        if (PyByteArray_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "%%c requires an integer in range(256) or "
+                         "a single byte, not a bytearray object of length %zd",
+                         PyByteArray_GET_SIZE(arg));
+            return 0;
+        }
         *p = PyByteArray_AS_STRING(arg)[0];
         return 1;
     }
-    else {
+    else if (PyIndex_Check(arg)) {
         int overflow;
         long ival = PyLong_AsLongAndOverflow(arg, &overflow);
         if (ival == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                goto onError;
-            }
             return 0;
         }
         if (!(0 <= ival && ival <= 255)) {
@@ -503,9 +514,9 @@ byte_converter(PyObject *arg, char *p)
         *p = (char)ival;
         return 1;
     }
-  onError:
-    PyErr_SetString(PyExc_TypeError,
-        "%c requires an integer in range(256) or a single byte");
+    PyErr_Format(PyExc_TypeError,
+        "%%c requires an integer in range(256) or a single byte, not %T",
+        arg);
     return 0;
 }
 

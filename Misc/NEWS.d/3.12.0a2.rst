@@ -822,7 +822,7 @@ and to indicate when it became late-bound.
 .. nonce: 7KinCV
 .. section: Tests
 
-The Python test suite now fails wit exit code 4 if no tests ran. It should
+The Python test suite now fails with exit code 4 if no tests ran. It should
 help detecting typos in test names and test methods.
 
 ..

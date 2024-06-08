@@ -343,7 +343,7 @@ class FTP:
         connection and the expected size of the transfer.  The
         expected size may be None if it could not be determined.
 
-        Optional `rest' argument can be a string that is sent as the
+        Optional 'rest' argument can be a string that is sent as the
         argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
