@@ -34,7 +34,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
+from test.support import cpython_only, import_helper, suppress_immortalization
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -235,6 +235,7 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
+        self.assertFalse(inspect.iscoroutinefunction(inspect))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -768,6 +769,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
+    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -2430,6 +2432,7 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
+    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -5087,14 +5090,29 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, 30, c_po=31, foo=4, bar=5),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        self.assertEqual(self.call(test, 1, 2, 30, foo=4, bar=5, c_po=31),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
+
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
+
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def without_var_kwargs(c_po=3, d_po=4, /):
+            return c_po, d_po
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "positional-only arguments passed as keyword arguments: 'c_po, d_po'",
+        ):
+            self.call(without_var_kwargs, c_po=33, d_po=44)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
@@ -5395,7 +5413,6 @@ class TestSignatureDefinitions(unittest.TestCase):
             'bytearray': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'bytes': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'dict': {'pop'},
-            'int': {'__round__'},
             'memoryview': {'cast', 'hex'},
             'str': {'count', 'endswith', 'find', 'index', 'maketrans', 'rfind', 'rindex', 'startswith'},
         }

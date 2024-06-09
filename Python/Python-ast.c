@@ -5221,6 +5221,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
             }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
             else {
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(

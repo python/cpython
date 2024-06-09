@@ -1237,7 +1237,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->oparg = oparg;
     executor->vm_data.valid = true;
     executor->vm_data.linked = false;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
 #ifdef Py_DEBUG
@@ -1455,7 +1455,7 @@ PyUnstable_Optimizer_NewCounter(void)
 
 /* We use a bloomfilter with k = 6, m = 256
  * The choice of k and the following constants
- * could do with a more rigourous analysis,
+ * could do with a more rigorous analysis,
  * but here is a simple analysis:
  *
  * We want to keep the false positive rate low.
@@ -1496,7 +1496,7 @@ address_to_hash(void *ptr) {
     uintptr_t addr = (uintptr_t)ptr;
     for (int i = 0; i < SIZEOF_VOID_P; i++) {
         uhash ^= addr & 255;
-        uhash *= (uint64_t)_PyHASH_MULTIPLIER;
+        uhash *= (uint64_t)PyHASH_MULTIPLIER;
         addr >>= 8;
     }
     return uhash;
@@ -1505,7 +1505,7 @@ address_to_hash(void *ptr) {
 void
 _Py_BloomFilter_Init(_PyBloomFilter *bloom)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
 }
@@ -1530,7 +1530,7 @@ _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
 static bool
 bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
             return false;
         }
@@ -1591,7 +1591,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);

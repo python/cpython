@@ -151,6 +151,10 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a parameter.
 
+   .. method:: is_type_parameter()
+
+      Return ``True`` if the symbol is a type parameter.
+
    .. method:: is_global()
 
       Return ``True`` if the symbol is global.

@@ -13,6 +13,7 @@ import shutil
 import zipfile
 
 from test.support.import_helper import DirsOnSysPath
+from test.support.os_helper import FakePath
 from test.test_importlib.util import uncache
 
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
@@ -121,7 +122,7 @@ class PkgutilTests(unittest.TestCase):
 
             # make sure iter_modules accepts Path objects
             names = []
-            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+            for moduleinfo in pkgutil.iter_modules([FakePath(zip_file)]):
                 self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
                 names.append(moduleinfo.name)
             self.assertEqual(names, [pkg])

@@ -52,7 +52,7 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
    The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
    If you wish to capture and combine both streams into one,
    set *stdout* to :data:`~subprocess.PIPE`
@@ -1443,36 +1443,8 @@ Environment example::
 
 
 
-Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   (child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdin, child_stdout) = (p.stdin, p.stdout)
-
-::
-
-   (child_stdin,
-    child_stdout,
-    child_stderr) = os.popen3(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-   (child_stdin,
-    child_stdout,
-    child_stderr) = (p.stdin, p.stdout, p.stderr)
-
-::
-
-   (child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-   (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+Replacing :func:`os.popen`
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Return code handling translates as follows::
 
@@ -1487,44 +1459,6 @@ Return code handling translates as follows::
    process.stdin.close()
    if process.wait() != 0:
        print("There were some errors")
-
-
-Replacing functions from the :mod:`!popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   If the cmd argument to popen2 functions is a string, the command is executed
-   through /bin/sh.  If it is a list, the command is directly executed.
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
-   ==>
-   p = Popen("somestring", shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
-   ==>
-   p = Popen(["mycmd", "myarg"], bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-:class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as
-:class:`subprocess.Popen`, except that:
-
-* :class:`Popen` raises an exception if the execution fails.
-
-* The *capturestderr* argument is replaced with the *stderr* argument.
-
-* ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
-
-* popen2 closes all file descriptors by default, but you have to specify
-  ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
-  all platforms or past Python versions.
 
 
 Legacy Shell Invocation Functions

@@ -5,6 +5,7 @@ import itertools
 import contextlib
 import pathlib
 import re
+import stat
 import sys
 
 from .glob import Translator
@@ -390,9 +391,11 @@ class Path:
 
     def is_symlink(self):
         """
-        Return whether this path is a symlink. Always false (python/cpython#82102).
+        Return whether this path is a symlink.
         """
-        return False
+        info = self.root.getinfo(self.at)
+        mode = info.external_attr >> 16
+        return stat.S_ISLNK(mode)
 
     def glob(self, pattern):
         if not pattern:

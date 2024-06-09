@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
@@ -1245,4 +1245,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4249187a725a3b3e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8eead000083dc5fa input=a9049054013a1b77]*/
