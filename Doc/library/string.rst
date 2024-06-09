@@ -69,6 +69,8 @@ The constants defined in this module are:
 
    String of non-blank ASCII characters. This is a combination of
    :const:`digits`, :const:`ascii_letters`, and :const:`punctuation`.
+   
+   .. versionadded:: 3.14
 
 .. data:: whitespace
 
