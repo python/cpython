@@ -4871,8 +4871,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(hints_for_B, {"x": int, "y": str, "z": bytes})
 
         hints_for_C = get_type_hints(ann_module695.C)
-        self.assertNotIn(int, hints_for_C.values())
-        self.assertNotIn(str, hints_for_C.values())
         self.assertEqual(
             set(hints_for_C.values()),
             set(ann_module695.C.__type_params__)
@@ -4889,8 +4887,6 @@ class GenericTests(BaseTestCase):
         self.assertIs(hints_for_generic_function["zz"].__origin__, func_t_params[2])
 
         hints_for_generic_method = get_type_hints(ann_module695.D.generic_method)
-        self.assertNotIn(int, hints_for_generic_method.values())
-        self.assertNotIn(str, hints_for_generic_method.values())
         params = {
             param.__name__: param
             for param in ann_module695.D.generic_method.__type_params__
