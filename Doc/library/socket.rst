@@ -451,7 +451,8 @@ Constants
       network interface instead of its name.
 
    .. versionchanged:: 3.14
-      Added ``IP_RECVERR`` and ``IP_RECVTTL``.
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
 
 .. data:: AF_CAN
           PF_CAN
