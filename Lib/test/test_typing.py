@@ -4858,7 +4858,7 @@ class GenericTests(BaseTestCase):
             {'x': list[list[ForwardRef('X')]]}
         )
 
-    def test_pep695_generic_with_future_annotations(self):
+    def test_pep695_generic_class_with_future_annotations(self):
         original_globals = dict(ann_module695.__dict__)
 
         hints_for_A = get_type_hints(ann_module695.A)
@@ -4867,15 +4867,21 @@ class GenericTests(BaseTestCase):
         self.assertEqual(hints_for_A["y"].__args__[0], Unpack[A_type_params[1]])
         self.assertIs(hints_for_A["z"].__args__[0], A_type_params[2])
 
+        # should not have changed as a result of the get_type_hints() calls!
+        self.assertEqual(ann_module695.__dict__, original_globals)
+
+    def test_pep695_generic_class_with_future_annotations_and_local_shadowing(self):
         hints_for_B = get_type_hints(ann_module695.B)
         self.assertEqual(hints_for_B, {"x": int, "y": str, "z": bytes})
 
+    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
         hints_for_C = get_type_hints(ann_module695.C)
         self.assertEqual(
             set(hints_for_C.values()),
             set(ann_module695.C.__type_params__)
         )
 
+    def test_pep_695_generic_function_with_future_annotations(self):
         hints_for_generic_function = get_type_hints(ann_module695.generic_function)
         func_t_params = ann_module695.generic_function.__type_params__
         self.assertEqual(
@@ -4886,6 +4892,13 @@ class GenericTests(BaseTestCase):
         self.assertIs(hints_for_generic_function["z"].__origin__, func_t_params[2])
         self.assertIs(hints_for_generic_function["zz"].__origin__, func_t_params[2])
 
+    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(get_type_hints(ann_module695.generic_function_2).values()),
+            set(ann_module695.generic_function_2.__type_params__)
+        )
+
+    def test_pep_695_generic_method_with_future_annotations(self):
         hints_for_generic_method = get_type_hints(ann_module695.D.generic_method)
         params = {
             param.__name__: param
@@ -4896,8 +4909,36 @@ class GenericTests(BaseTestCase):
             {"x": params["Foo"], "y": params["Bar"], "return": types.NoneType}
         )
 
-        # should not have changed as a result of the get_type_hints() calls!
-        self.assertEqual(ann_module695.__dict__, original_globals)
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(get_type_hints(ann_module695.D.generic_method_2).values()),
+            set(ann_module695.D.generic_method_2.__type_params__)
+        )
+
+    def test_pep_695_generics_with_future_annotations_nested_in_function(self):
+        results = ann_module695.nested()
+
+        self.assertEqual(
+            set(results.hints_for_E.values()),
+            set(results.E.__type_params__)
+        )
+        self.assertEqual(
+            set(results.hints_for_E_meth.values()),
+            set(results.E.generic_method.__type_params__)
+        )
+        self.assertNotEqual(
+            set(results.hints_for_E_meth.values()),
+            set(results.E.__type_params__)
+        )
+        self.assertEqual(
+            set(results.hints_for_E_meth.values()).intersection(results.E.__type_params__),
+            set()
+        )
+
+        self.assertEqual(
+            set(results.hints_for_generic_func.values()),
+            set(results.generic_func.__type_params__)
+        )
 
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
