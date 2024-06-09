@@ -17,6 +17,15 @@ class B[T, *Ts, **P]:
     z: P
 
 
+Eggs = int
+Spam = str
+
+
+class C[Eggs, **Spam]:
+    x: Eggs
+    y: Spam
+
+
 def generic_function[T, *Ts, **P](
     x: T, *y: *Ts, z: P.args, zz: P.kwargs
 ) -> None: ...

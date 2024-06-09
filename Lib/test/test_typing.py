@@ -4868,6 +4868,11 @@ class GenericTests(BaseTestCase):
         hints_for_B = get_type_hints(ann_module695.B)
         self.assertEqual(hints_for_B, {"x": int, "y": str, "z": bytes})
 
+        hints_for_C = get_type_hints(ann_module695.C)
+        self.assertNotIn(int, hints_for_C.values())
+        self.assertNotIn(str, hints_for_C.values())
+        self.assertEqual(set(hints_for_C.values()), set(C.__type_params__))
+
         hints_for_generic_function = get_type_hints(ann_module695.generic_function)
         func_t_params = ann_module695.generic_function.__type_params__
         self.assertEqual(
