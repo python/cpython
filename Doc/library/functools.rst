@@ -382,7 +382,7 @@ The :mod:`functools` module defines the following functions:
    when :func:`partial` is called. This allows custom selection of positional arguments
    to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
 
-   If :data:`Placeholder` sentinels are used, all of them must be filled at call time:
+   If :data:`!Placeholder` sentinels are used, all of them must be filled at call time:
 
       >>> from functools import partial, Placeholder
       >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")

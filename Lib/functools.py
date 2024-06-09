@@ -275,10 +275,8 @@ except ImportError:
 
 
 class PlaceholderType:
-    """PlaceholderType()
-    --
+    """The type of the Placeholder singleton.
 
-    The type of the Placeholder singleton.
     Used as a placeholder for partial arguments.
     """
     __instance = None
@@ -288,14 +286,14 @@ class PlaceholderType:
             cls.__instance = object.__new__(cls)
         return cls.__instance
 
-    def __repr__(self):
-        return 'Placeholder'
-
     def __bool__(self):
         raise TypeError("Placeholder should not be used in a boolean context")
 
+    def __repr__(self):
+        return 'Placeholder'
+
     def __reduce__(self):
-        return type(self), ()
+        return 'Placeholder'
 
 
 Placeholder = PlaceholderType()
@@ -314,25 +312,24 @@ class partial:
         if not callable(func):
             raise TypeError("the first argument must be callable")
         np = 0
-        nargs = len(args)
         if args:
-            while nargs and args[nargs - 1] is Placeholder:
-                nargs -= 1
-            args = args[:nargs]
-            np = args.count(Placeholder)
+            if args[-1] is Placeholder:
+                raise TypeError("trailing Placeholders are not allowed")
+            np = args[:-1].count(Placeholder)
         if isinstance(func, partial):
             pargs = func.args
             pnp = func.placeholder_count
+            # merge args with args of `func` which is `partial`
             if pnp and args:
                 all_args = list(pargs)
                 nargs = len(args)
-                j, pos = 0, 0
+                pos, j = 0, 0
                 end = nargs if nargs < pnp else pnp
                 while j < end:
                     pos = all_args.index(Placeholder, pos)
                     all_args[pos] = args[j]
-                    j += 1
                     pos += 1
+                    j += 1
                 if pnp < nargs:
                     all_args.extend(args[pnp:])
                 np += pnp - end

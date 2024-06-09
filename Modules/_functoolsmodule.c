@@ -44,25 +44,17 @@ get_functools_state(PyObject *module)
 /* partial object **********************************************************/
 
 
-/*
-Placeholder is an object that can be used to signal that positional
-   argument place is empty when using `partial` class
-*/
+// The 'Placeholder' singleton indicates which formal positional
+// parameters are to be bound first when using a 'partial' object.
 
-#define PY_CONSTANT_PLACEHOLDER 0
-
-static PyObject* constants[] = {
-    NULL,         // PY_CONSTANT_PLACEHOLDER
-};
+static PyObject* placeholder_instance;
 
 typedef struct {
     PyObject_HEAD
 } placeholderobject;
 
 PyDoc_STRVAR(placeholder_doc,
-"PlaceholderType()\n"
-"--\n\n"
-"The type of the Placeholder singleton.\n"
+"The type of the Placeholder singleton.\n\n"
 "Used as a placeholder for partial arguments.");
 
 static PyObject *
@@ -88,12 +80,10 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
         return NULL;
     }
-    PyObject *singleton = constants[PY_CONSTANT_PLACEHOLDER];
-    if (singleton == NULL) {
-        singleton = PyType_GenericNew(type, NULL, NULL);
-        constants[PY_CONSTANT_PLACEHOLDER] = singleton;
+    if (placeholder_instance == NULL) {
+        placeholder_instance = PyType_GenericNew(type, NULL, NULL);
     }
-    return singleton;
+    return placeholder_instance;
 }
 
 static int
@@ -156,10 +146,18 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *func, *pargs, *nargs, *pkw;
     partialobject *pto;
     Py_ssize_t pnp = 0;
+    Py_ssize_t nnargs = PyTuple_GET_SIZE(args);
 
-    if (PyTuple_GET_SIZE(args) < 1) {
+    if (nnargs < 1) {
         PyErr_SetString(PyExc_TypeError,
                         "type 'partial' takes at least one argument");
+        return NULL;
+    }
+    nnargs--;
+    func = PyTuple_GET_ITEM(args, 0);
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "the first argument must be callable");
         return NULL;
     }
 
@@ -169,8 +167,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     pargs = pkw = NULL;
-    func = PyTuple_GET_ITEM(args, 0);
-
     int res = PyObject_TypeCheck(func, state->partial_type);
     if (res == -1) {
         return NULL;
@@ -187,11 +183,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             assert(PyDict_Check(pkw));
         }
     }
-    if (!PyCallable_Check(func)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "the first argument must be callable");
-        return NULL;
-    }
 
     /* create partialobject structure */
     pto = (partialobject *)type->tp_alloc(type, 0);
@@ -200,47 +191,38 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pto->fn = Py_NewRef(func);
 
-    nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    pto->placeholder = state->placeholder;
+    if (Py_Is(PyTuple_GET_ITEM(args, nnargs), pto->placeholder)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "trailing Placeholders are not allowed");
+        return NULL;
+    }
+
+    nargs = PyTuple_GetSlice(args, 1, nnargs + 1);
     if (nargs == NULL) {
         Py_DECREF(pto);
         return NULL;
     }
 
-    pto->placeholder = state->placeholder;
     Py_ssize_t nnp = 0;
-    Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
-    if (nnargs > 0) {
-        /* Trim placeholders from the end if needed */
-        Py_ssize_t nnargs_old = nnargs;
-        for (; nnargs > 0; nnargs--) {
-            item = PyTuple_GET_ITEM(nargs, nnargs-1);
-            if (!Py_Is(item, pto->placeholder)) {
-                break;
-            }
-        }
-        if (nnargs != nnargs_old) {
-            PyObject *tmp = PyTuple_GetSlice(nargs, 0, nnargs);
-            Py_DECREF(nargs);
-            nargs = tmp;
-        }
-        /* Count placeholders */
-        if (nnargs > 1) {
-            for (Py_ssize_t i=0; i < nnargs - 1; i++) {
-                item = PyTuple_GET_ITEM(nargs, i);
-                if (Py_Is(item, pto->placeholder)) {
-                    nnp++;
-                }
+    /* Count placeholders */
+    if (nnargs > 1) {
+        for (Py_ssize_t i = 0; i < nnargs - 1; i++) {
+            item = PyTuple_GET_ITEM(nargs, i);
+            if (Py_Is(item, pto->placeholder)) {
+                nnp++;
             }
         }
     }
+    /* merge args with args of `func` which is `partial` */
     if ((pnp > 0) && (nnargs > 0)) {
         Py_ssize_t npargs = PyTuple_GET_SIZE(pargs);
         Py_ssize_t nfargs = npargs;
         if (nnargs > pnp)
             nfargs += nnargs - pnp;
         PyObject *fargs = PyTuple_New(nfargs);
-        for (Py_ssize_t i=0, j=0; i < nfargs; i++) {
+        for (Py_ssize_t i = 0, j = 0; i < nfargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pargs, i);
                 if ((j < nnargs) & Py_Is(item, pto->placeholder)) {
@@ -421,7 +403,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     if (np) {
         nargs_new = pto_nargs + nargs - np;
         Py_ssize_t j = 0;       // New args index
-        for (Py_ssize_t i=0; i < pto_nargs; i++) {
+        for (Py_ssize_t i = 0; i < pto_nargs; i++) {
             if (Py_Is(pto_args[i], pto->placeholder)){
                 memcpy(stack + i, args + j, 1 * sizeof(PyObject*));
                 j += 1;
@@ -528,7 +510,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         }
         assert(j == np);
         if (nargs > np) {
-            for (Py_ssize_t i=pto_nargs; i < nargs_new; i++) {
+            for (Py_ssize_t i = pto_nargs; i < nargs_new; i++) {
                 item = PyTuple_GET_ITEM(args, j);
                 PyTuple_SET_ITEM(args2, i, item);
                 j += 1;
@@ -1682,7 +1664,6 @@ static PyType_Spec lru_cache_type_spec = {
 
 
 /* module level code ********************************************************/
-
 
 PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");

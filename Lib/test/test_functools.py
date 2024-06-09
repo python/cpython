@@ -210,15 +210,11 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
-    def test_placeholders_trailing_trim(self):
+    def test_placeholders_trailing_raise(self):
         PH = self.module.Placeholder
-        for args in [(PH,), (PH, 0), (0, PH), (0, PH, 1, PH, PH, PH)]:
-            expected, n = tuple(args), len(args)
-            while n and args[n-1] is PH:
-                n -= 1
-            expected = expected[:n]
-            p = self.partial(capture, *args)
-            self.assertTrue(p.args == expected)
+        for args in [(PH,), (0, PH), (0, PH, 1, PH, PH, PH)]:
+            with self.assertRaises(TypeError):
+                self.partial(capture, *args)
 
     def test_placeholders(self):
         PH = self.module.Placeholder
