@@ -245,15 +245,14 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle,
     */
     int dir = reversed ? -1 : 1;
     // starting position from chosen direction
-    Py_ssize_t stt = reversed ? m - 1 : 0;
-    Py_ssize_t m = needle_len;
+    Py_ssize_t stt = reversed ? needle_len - 1 : 0;
     Py_ssize_t max_suffix = 0;
     Py_ssize_t candidate = 1;
     Py_ssize_t k = 0;
     // The period of the right half.
     Py_ssize_t period = 1;
     STRINGLIB_CHAR a, b;
-    while (candidate + k < m) {
+    while (candidate + k < needle_len) {
         // each loop increases (in chosen direction) candidate + k + max_suffix
         a = needle[stt + dir*(candidate + k)];
         b = needle[stt + dir*(max_suffix + k)];
