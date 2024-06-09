@@ -6,7 +6,7 @@ from _symtable import (
     DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL,
     DEF_PARAM, DEF_TYPE_PARAM, DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
     SCOPE_OFF, SCOPE_MASK,
-    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
+    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL,
 )
 
 import weakref
@@ -229,19 +229,17 @@ class Class(SymbolTable):
             for st in self._table.children:
                 # pick the function-like symbols that are local identifiers
                 if is_local_symbol(st.name):
-                    if st.type == _symtable.TYPE_TYPE_PARAM:
-                        # Current 'st' is an annotation scope with one or
-                        # more children (we expect only one, but we might
-                        # have more in the future). In particular, we need
-                        # to find the corresponding inner function, class or
-                        # type alias.
-                        st = next((c for c in st.children if c.name == st.name), None)
-                        # if 'st' is None, then the annotation scopes are broken
-                        assert st is not None, 'annotation scopes are broken'
-
-                    # only select function-like symbols
-                    if st.type == _symtable.TYPE_FUNCTION:
-                        d[st.name] = 1
+                    match st.type:
+                        case _symtable.TYPE_FUNCTION:
+                            d[st.name] = 1
+                        case _symtable.TYPE_TYPE_PARAM:
+                            # Get the function-def block in the annotation
+                            # scope 'st' with the same identifier, if any.
+                            scope_name = st.name
+                            for c in st.children:
+                                if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
+                                    d[st.name] = 1
+                                    break
             self.__methods = tuple(d)
         return self.__methods
 
