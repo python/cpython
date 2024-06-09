@@ -59,7 +59,7 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
-        exists = not os.path.root(anchor)[0]
+        exists = not os.path.splitroot(anchor)[0]
         paths = select(anchor, dir_fd, anchor, exists)
     else:
         # Relative pattern.
