@@ -26,6 +26,7 @@ typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
     PyTypeObject *placeholder_type;
+    PyObject *placeholder;
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -205,7 +206,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    pto->placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    pto->placeholder = state->placeholder;
     Py_ssize_t nnp = 0;
     Py_ssize_t nnargs = PyTuple_GET_SIZE(nargs);
     PyObject *item;
@@ -517,7 +518,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
         PyObject *pto_args = pto->args;
         PyObject *item;
         Py_ssize_t j = 0;   // New args index
-        for (Py_ssize_t i=0; i < pto_nargs; i++) {
+        for (Py_ssize_t i = 0; i < pto_nargs; i++) {
             item = PyTuple_GET_ITEM(pto_args, i);
             if (Py_Is(item, pto->placeholder)) {
                 item = PyTuple_GET_ITEM(args, j);
@@ -537,10 +538,10 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     else {
         /* Note: tupleconcat() is optimized for empty tuples */
         args2 = PySequence_Concat(pto->args, args);
-    }
-    if (args2 == NULL) {
-        Py_XDECREF(kwargs2);
-        return NULL;
+        if (args2 == NULL) {
+            Py_XDECREF(kwargs2);
+            return NULL;
+        }
     }
 
     PyObject *res = PyObject_Call(pto->fn, args2, kwargs2);
@@ -1709,7 +1710,11 @@ _functools_exec(PyObject *module)
     if (PyModule_AddType(module, state->placeholder_type) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "Placeholder", PyObject_CallNoArgs((PyObject *)state->placeholder_type)) < 0) {
+    state->placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    if (state->placeholder == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "Placeholder", state->placeholder) < 0) {
         return -1;
     }
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,

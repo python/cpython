@@ -330,7 +330,7 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: partial(func, /, *args, **keywords)
 
-   Return a new :ref:`partial object<partial-objects>` which when called
+   Return a new :ref:`partial object <partial-objects>` which when called
    will behave like *func* called with the positional arguments *args*
    and keyword arguments *keywords*. If more arguments are supplied to the
    call, they are appended to *args*. If additional keyword arguments are
@@ -380,7 +380,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
    when :func:`partial` is called. This allows custom selection of positional arguments
-   to be pre-filled when constructing :ref:`partial object<partial-objects>`.
+   to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
+
    If :data:`Placeholder` sentinels are used, all of them must be filled at call time:
 
       >>> from functools import partial, Placeholder
@@ -390,16 +391,16 @@ The :mod:`functools` module defines the following functions:
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
 
-   Calling ``say_to_world('Hello')`` would result in :exc:`TypeError`.
+   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`.
 
    .. versionchanged:: 3.14
       Support for :data:`Placeholder` in *args*
 
 .. data:: Placeholder
 
-   This is a singleton object that is used as a sentinel for representing a
-   gap in positional arguments when calling :func:`partial`.
-   It has similar features as :data:`None`:
+   A singleton object used as a sentinel to represent a
+   "gap" in positional arguments when calling :func:`partial`.
+   This object has features similar to ``None``:
 
       >>> type(Placeholder)() is Placeholder
       True

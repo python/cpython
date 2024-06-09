@@ -281,12 +281,12 @@ class PlaceholderType:
     The type of the Placeholder singleton.
     Used as a placeholder for partial arguments.
     """
-    _singleton = None
+    __instance = None
 
     def __new__(cls):
-        if cls._singleton is None:
-            cls._singleton = object.__new__(cls)
-        return cls._singleton
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+        return cls.__instance
 
     def __repr__(self):
         return 'Placeholder'
@@ -313,13 +313,13 @@ class partial:
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        placeholder_count = 0
+        np = 0
         nargs = len(args)
         if args:
-            while nargs and args[nargs-1] is Placeholder:
+            while nargs and args[nargs - 1] is Placeholder:
                 nargs -= 1
             args = args[:nargs]
-            placeholder_count = args.count(Placeholder)
+            np = args.count(Placeholder)
         if isinstance(func, partial):
             pargs = func.args
             pnp = func.placeholder_count
@@ -335,10 +335,10 @@ class partial:
                     pos += 1
                 if pnp < nargs:
                     all_args.extend(args[pnp:])
-                placeholder_count += pnp - end
+                np += pnp - end
                 args = tuple(all_args)
             else:
-                placeholder_count += pnp
+                np += pnp
                 args = func.args + args
             keywords = {**func.keywords, **keywords}
             func = func.func
@@ -347,26 +347,28 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = keywords
-        self.placeholder_count = placeholder_count
+        self.placeholder_count = np
         return self
 
     def __call__(self, /, *args, **keywords):
-        keywords = {**self.keywords, **keywords}
-        if placeholder_count := self.placeholder_count:
-            if len(args) < placeholder_count:
+        np = self.placeholder_count
+        p_args = self.args
+        if np:
+            if len(args) < np:
                 raise TypeError(
-                    "missing positional arguments in 'partial' call; expected "
-                    f"at least {placeholder_count}, got {len(args)}")
-            f_args = list(self.args)
+                    "missing positional arguments "
+                    "in 'partial' call; expected "
+                    f"at least {np}, got {len(args)}")
+            p_args = list(p_args)
             j, pos = 0, 0
-            while j < placeholder_count:
-                pos = f_args.index(Placeholder, pos)
-                f_args[pos] = args[j]
+            while j < np:
+                pos = p_args.index(Placeholder, pos)
+                p_args[pos] = args[j]
                 j += 1
                 pos += 1
-            return self.func(*f_args, *args[j:], **keywords)
-        else:
-            return self.func(*self.args, *args, **keywords)
+            args = args[j:]
+        keywords = {**self.keywords, **keywords}
+        return self.func(*p_args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):

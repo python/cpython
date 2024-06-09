@@ -1,2 +1,2 @@
-``partial`` of ``functools`` module now supports placeholders for positional
-arguments.
+Positional arguments of :func:`functools.partial` objects
+now support placeholders via :data:`functools.Placeholder`.
