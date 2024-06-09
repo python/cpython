@@ -4871,7 +4871,10 @@ class GenericTests(BaseTestCase):
         hints_for_C = get_type_hints(ann_module695.C)
         self.assertNotIn(int, hints_for_C.values())
         self.assertNotIn(str, hints_for_C.values())
-        self.assertEqual(set(hints_for_C.values()), set(C.__type_params__))
+        self.assertEqual(
+            set(hints_for_C.values()),
+            set(ann_module695.C.__type_params__)
+        )
 
         hints_for_generic_function = get_type_hints(ann_module695.generic_function)
         func_t_params = ann_module695.generic_function.__type_params__
@@ -4882,6 +4885,18 @@ class GenericTests(BaseTestCase):
         self.assertEqual(hints_for_generic_function["y"], Unpack[func_t_params[1]])
         self.assertIs(hints_for_generic_function["z"].__origin__, func_t_params[2])
         self.assertIs(hints_for_generic_function["zz"].__origin__, func_t_params[2])
+
+        hints_for_generic_method = get_type_hints(ann_module695.D.generic_method)
+        self.assertNotIn(int, hints_for_generic_method.values())
+        self.assertNotIn(str, hints_for_generic_method.values())
+        params = {
+            param.__name__: param
+            for param in ann_module695.D.generic_method.__type_params__
+        }
+        self.assertEqual(
+            hints_for_generic_method,
+            {"x": params["Foo"], "y": params["Bar"], "return": types.NoneType}
+        )
 
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...

@@ -29,3 +29,12 @@ class C[Eggs, **Spam]:
 def generic_function[T, *Ts, **P](
     x: T, *y: *Ts, z: P.args, zz: P.kwargs
 ) -> None: ...
+
+
+class D:
+    Foo = int
+    Bar = str
+
+    def generic_method[Foo, **Bar](
+        self, x: Foo, y: Bar
+    ) -> None: ...
