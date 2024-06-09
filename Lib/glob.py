@@ -53,14 +53,17 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         yield from _iglob(pathname, root_dir, dir_fd, recursive, include_hidden)
 
 def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
-    anchor, parts = _split_pathname(pathname)
+    if os.name == 'nt':
+        pathname = pathname.replace('/', '\\')
+    drive, root, tail = os.path.splitroot(pathname)
+    anchor = drive + root
+    parts = tail.split(os.path.sep)[::-1] if tail else []
     globber = _StringGlobber(recursive=recursive, include_hidden=include_hidden)
     select = globber.selector(parts)
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
-        exists = not os.path.splitroot(anchor)[0]
-        paths = select(anchor, dir_fd, anchor, exists)
+        paths = select(anchor, dir_fd, anchor, not drive)
     else:
         # Relative pattern.
         if root_dir is None:
@@ -87,23 +90,6 @@ def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
     return list(_relative_glob(_StringGlobber().wildcard_selector(pattern, []), dirname))
-
-def _split_pathname(pathname):
-    """Split the given path into a pair (anchor, parts), where *anchor* is the
-    path drive and root (if any), and *parts* is a reversed list of path parts.
-    For example:
-
-        _split_pathname('C:\\a\\b') == ('C:\\', ['b', 'a'])
-        _split_pathname('/usr/bin') == ('/', ['bin', 'usr'])
-    """
-    parts = []
-    split = os.path.split
-    dirname, part = split(pathname)
-    while dirname != pathname:
-        parts.append(part)
-        pathname = dirname
-        dirname, part = split(pathname)
-    return dirname, parts
 
 def _relative_glob(select, dirname, dir_fd=None):
     """Globs using a *select* function from the given dirname. The dirname
