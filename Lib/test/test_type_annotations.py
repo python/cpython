@@ -391,9 +391,20 @@ class DeferredEvaluationTests(unittest.TestCase):
 
         def f(x: int) -> int: pass
         """
-        ns = run_code(textwrap.dedent(code))
+        ns = run_code(code)
         f = ns["f"]
         self.assertIsInstance(f.__annotate__, types.FunctionType)
         annos = {"x": "int", "return": "int"}
         self.assertEqual(f.__annotate__(inspect.VALUE), annos)
         self.assertEqual(f.__annotations__, annos)
+
+    def test_name_clash_with_format(self):
+        # this test would fail if __annotate__'s parameter was called "format"
+        code = """
+        class format: pass
+
+        def f(x: format): pass
+        """
+        ns = run_code(code)
+        f = ns["f"]
+        self.assertEqual(f.__annotations__, {"x": ns["format"]})
