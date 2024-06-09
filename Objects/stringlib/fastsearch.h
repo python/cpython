@@ -459,8 +459,7 @@ STRINGLIB(prepare_search)(STRINGLIB(prework) *pw,
             LOG("Needle is periodic.\n");
         }
         else {
-            // A lower bound on the period
-            // CLARIFY> An upper bound?
+            // Upper bound on the period
             period = Py_MAX(cut, m - cut) + 1;
             LOG("Needle is not periodic.\n");
         }

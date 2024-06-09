@@ -1,1 +1,1 @@
-Another round of optimization of string search algorithms has been done. In addition, they were adapted to reverse search (`rfind`).
+Another round of optimization of string search algorithms has been done. In addition, they were adapted to reverse search (``str.rfind``).
