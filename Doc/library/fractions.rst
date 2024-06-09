@@ -28,7 +28,7 @@ another rational number, or from a string.
 
    The second version requires that
    *number* is an instance of :class:`numbers.Rational` or is an instance
-   of :class:`numbers.Number` and has the :meth:`~as_integer_ratio` method
+   of :class:`numbers.Number` and has the :meth:`!as_integer_ratio` method
    (this includes :class:`float` and :class:`decimal.Decimal`).
    It returns a :class:`Fraction` instance with exactly the same value.
    Note that due to the
@@ -111,6 +111,10 @@ another rational number, or from a string.
    .. versionchanged:: 3.13
       Formatting of :class:`Fraction` instances without a presentation type
       now supports fill, alignment, sign handling, minimum width and grouping.
+
+   .. versionchanged:: 3.14
+      The :class:`Fraction` constructor now accepts any numbers with the
+      :meth:`!as_integer_ratio` method.
 
    .. attribute:: numerator
 
