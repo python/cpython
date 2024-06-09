@@ -86,6 +86,12 @@ New Modules
 Improved Modules
 ================
 
+string
+------
+* Add :const:`visible` to :mod:`string`, containing all non-whitespace
+  printable ASCII characters.
+  (Contributed by James Murray in :gh:`119080`.)
+
 
 Optimizations
 =============
