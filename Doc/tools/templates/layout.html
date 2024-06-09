@@ -41,4 +41,9 @@
       {{ "}" }}
     </style>
 {{ super() }}
+
+{%- if not embedded %}
+            <script type="text/javascript" src="{{ pathto('_static/rtd_switcher.js', 1) }}"></script>
+            <meta name="readthedocs-addons-api-version" content="1">
+{%- endif %}
 {% endblock %}

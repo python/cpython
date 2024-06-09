@@ -532,6 +532,26 @@ class GeneratorCloseTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             gen.close()
 
+    def test_close_releases_frame_locals(self):
+        # See gh-118272
+
+        class Foo:
+            pass
+
+        f = Foo()
+        f_wr = weakref.ref(f)
+
+        def genfn():
+            a = f
+            yield
+
+        g = genfn()
+        next(g)
+        del f
+        g.close()
+        support.gc_collect()
+        self.assertIsNone(f_wr())
+
 
 class GeneratorThrowTest(unittest.TestCase):
 

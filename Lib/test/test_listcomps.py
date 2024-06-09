@@ -622,9 +622,14 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_frame_locals(self):
         code = """
-            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+            val = "a" in [sys._getframe().f_locals for a in [0]][0]
         """
         import sys
+        self._check_in_scopes(code, {"val": False}, ns={"sys": sys})
+
+        code = """
+            val = [sys._getframe().f_locals["a"] for a in [0]][0]
+        """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
 
     def _recursive_replace(self, maybe_code):
@@ -666,6 +671,20 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, expected)
         self._check_in_scopes(code, expected, exec_func=self._replacing_exec)
 
+    def test_multiple_comprehension_name_reuse(self):
+        code = """
+            [x for x in [1]]
+            y = [x for _ in [1]]
+        """
+        self._check_in_scopes(code, {"y": [3]}, ns={"x": 3})
+
+        code = """
+            x = 2
+            [x for x in [1]]
+            y = [x for _ in [1]]
+        """
+        self._check_in_scopes(code, {"x": 2, "y": [3]}, ns={"x": 3}, scopes=["class"])
+        self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
 
 __test__ = {'doctests' : doctests}
 

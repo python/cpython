@@ -142,6 +142,9 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         }
         memcpy(array->ob_item, self->ob_item, target_bytes);
     }
+    if (new_allocated > (size_t)allocated) {
+        memset(array->ob_item + allocated, 0, sizeof(PyObject *) * (new_allocated - allocated));
+    }
      _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
     self->allocated = new_allocated;
     Py_SET_SIZE(self, newsize);
@@ -189,6 +192,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
     items = array->ob_item;
+    memset(items, 0, size * sizeof(PyObject *));
 #else
     items = PyMem_New(PyObject*, size);
     if (items == NULL) {
@@ -196,7 +200,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
 #endif
-    self->ob_item = items;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, items);
     self->allocated = size;
     return 0;
 }
@@ -347,7 +351,11 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
+#ifdef Py_GIL_DISABLED
+    item = _Py_NewRefWithLock(self->ob_item[idx]);
+#else
     item = Py_NewRef(self->ob_item[idx]);
+#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -502,7 +510,7 @@ _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
         Py_DECREF(newitem);
         return -1;
     }
-    PyList_SET_ITEM(self, len, newitem);
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], newitem);
     return 0;
 }
 
@@ -652,14 +660,15 @@ list_item(PyObject *aa, Py_ssize_t i)
         return NULL;
     }
     PyObject *item;
-    Py_BEGIN_CRITICAL_SECTION(a);
 #ifdef Py_GIL_DISABLED
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
-        _PyObject_GC_SET_SHARED(a);
+    item = list_get_item_ref(a, i);
+    if (item == NULL) {
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
     }
-#endif
+#else
     item = Py_NewRef(a->ob_item[i]);
-    Py_END_CRITICAL_SECTION();
+#endif
     return item;
 }
 
@@ -1181,7 +1190,7 @@ list_extend_fast(PyListObject *self, PyObject *iterable)
     PyObject **dest = self->ob_item + m;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *o = src[i];
-        dest[i] = Py_NewRef(o);
+        FT_ATOMIC_STORE_PTR_RELEASE(dest[i], Py_NewRef(o));
     }
     return 0;
 }
@@ -1238,7 +1247,7 @@ list_extend_iter_lock_held(PyListObject *self, PyObject *iterable)
 
         if (Py_SIZE(self) < self->allocated) {
             Py_ssize_t len = Py_SIZE(self);
-            PyList_SET_ITEM(self, len, item);  // steals item ref
+            FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[len], item);  // steals item ref
             Py_SET_SIZE(self, len + 1);
         }
         else {
@@ -1287,8 +1296,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
     Py_hash_t hash;
     PyObject *key;
     PyObject **dest = self->ob_item + m;
-    while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
-        Py_INCREF(key);
+    while (_PySet_NextEntryRef((PyObject *)other, &setpos, &key, &hash)) {
         FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }

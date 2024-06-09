@@ -24,7 +24,6 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
-    passthrough: bool
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
@@ -54,7 +53,6 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
-            passthrough=all(p.passthrough for p in properties),
         )
 
     @property
@@ -81,7 +79,6 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     side_exit=False,
     pure=False,
-    passthrough=False,
 )
 
 
@@ -106,9 +103,6 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
-    type_prop: None | tuple[str, None | str] = field(
-        default_factory=lambda: None, init=True, compare=False, hash=False
-    )
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -241,6 +235,7 @@ class Instruction:
 @dataclass
 class PseudoInstruction:
     name: str
+    stack: StackEffect
     targets: list[Instruction]
     flags: list[str]
     opcode: int = -1
@@ -301,7 +296,7 @@ def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -
         item.name, item.type, cond, (item.size or "1")
     )
 
-def analyze_stack(op: parser.InstDef, replace_op_arg_1: str | None = None) -> StackEffect:
+def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None) -> StackEffect:
     inputs: list[StackItem] = [
         convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
@@ -360,10 +355,12 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GetManagedDict",
     "_PyObject_ManagedDictPointer",
     "_PyObject_InlineValues",
     "_PyDictValues_AddToInsertionOrder",
     "Py_DECREF",
+    "Py_XDECREF",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",
     "PyUnicode_Append",
@@ -371,6 +368,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_SIZE",
     "Py_TYPE",
     "PyList_GET_ITEM",
+    "PyList_SET_ITEM",
     "PyTuple_GET_ITEM",
     "PyList_GET_SIZE",
     "PyTuple_GET_SIZE",
@@ -406,8 +404,15 @@ NON_ESCAPING_FUNCTIONS = (
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",
+    "STAT_INC",
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
+    "_PyEval_FrameClearAndPop",
+    "_PyFrame_StackPush",
+    "PyCell_New",
+    "PyFloat_AS_DOUBLE",
+    "_PyFrame_PushUnchecked",
+    "Py_FatalError",
 )
 
 ESCAPING_FUNCTIONS = (
@@ -432,6 +437,8 @@ def makes_escaping_api_call(instr: parser.InstDef) -> bool:
         if next_tkn.kind != lexer.LPAREN:
             continue
         if tkn.text in ESCAPING_FUNCTIONS:
+            return True
+        if tkn.text == "tp_vectorcall":
             return True
         if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
             continue
@@ -536,8 +543,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    infallible = not error_with_pop and not error_without_pop
-    passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
         error_with_pop=error_with_pop,
@@ -557,7 +562,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
-        passthrough=passthrough,
         tier=tier_variable(op),
     )
 
@@ -703,6 +707,7 @@ def add_pseudo(
 ) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
         pseudo.name,
+        analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
         pseudo.flags,
     )

@@ -747,6 +747,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
                 del expected[key]
+            # Resolve bool/int mismatches to reduce noise in diffs
+            if isinstance(value, (bool, int)) and isinstance(config.get(key), (bool, int)):
+                expected[key] = type(config[key])(expected[key])
         self.assertEqual(config, expected)
 
     def check_global_config(self, configs):

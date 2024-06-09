@@ -909,6 +909,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
 
     descr = (PyDescrObject *)PyType_GenericAlloc(descrtype, 0);
     if (descr != NULL) {
+        _PyObject_SetDeferredRefcount((PyObject *)descr);
         descr->d_type = (PyTypeObject*)Py_XNewRef(type);
         descr->d_name = PyUnicode_InternFromString(name);
         if (descr->d_name == NULL) {
@@ -1165,8 +1166,8 @@ mappingproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef mappingproxy_methods[] = {
     {"get",       _PyCFunction_CAST(mappingproxy_get), METH_FASTCALL,
-     PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
-               "  d defaults to None.")},
+     PyDoc_STR("get($self, key, default=None, /)\n--\n\n"
+        "Return the value for key if key is in the mapping, else default.")},
     {"keys",      mappingproxy_keys,       METH_NOARGS,
      PyDoc_STR("D.keys() -> a set-like object providing a view on D's keys")},
     {"values",    mappingproxy_values,     METH_NOARGS,
@@ -1254,11 +1255,12 @@ mappingproxy.__new__ as mappingproxy_new
 
     mapping: object
 
+Read-only proxy of a mapping.
 [clinic start generated code]*/
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=d2d620d4f598d4f8]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
 {
     mappingproxyobject *mappingproxy;
 
@@ -2024,7 +2026,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_MAPPING,                     /* tp_flags */
-    0,                                          /* tp_doc */
+    mappingproxy_new__doc__,                    /* tp_doc */
     mappingproxy_traverse,                      /* tp_traverse */
     0,                                          /* tp_clear */
     mappingproxy_richcompare,                   /* tp_richcompare */

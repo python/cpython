@@ -78,6 +78,40 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+
+static PyObject *
+BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
+                         size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *type = _PyType_CAST(type_obj);
+    if (!_PyArg_NoKwnames(type->tp_name, kwnames)) {
+        return NULL;
+    }
+
+    PyBaseExceptionObject *self;
+    self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    // The dict is created on the fly in PyObject_GenericSetAttr()
+    self->dict = NULL;
+    self->notes = NULL;
+    self->traceback = NULL;
+    self->cause = NULL;
+    self->context = NULL;
+    self->suppress_context = 0;
+
+    self->args = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    if (!self->args) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+
 static int
 BaseException_clear(PyBaseExceptionObject *self)
 {
@@ -486,6 +520,7 @@ static PyTypeObject _PyExc_BaseException = {
     (initproc)BaseException_init, /* tp_init */
     0,                          /* tp_alloc */
     BaseException_new,          /* tp_new */
+    .tp_vectorcall = BaseException_vectorcall,
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
 from the previous implementation and also allowing Python objects to be used
@@ -3674,6 +3709,11 @@ _PyExc_InitTypes(PyInterpreterState *interp)
         PyTypeObject *exc = static_exceptions[i].exc;
         if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
+        }
+        if (exc->tp_new == BaseException_new
+            && exc->tp_init == (initproc)BaseException_init)
+        {
+            exc->tp_vectorcall = BaseException_vectorcall;
         }
     }
     return 0;

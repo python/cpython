@@ -7,10 +7,10 @@ import inspect
 from collections.abc import Iterable, Iterator, Sequence
 from typing import Final, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from clinic import Clinic
     from libclinic.converter import CConverter
     from libclinic.converters import self_converter
     from libclinic.return_converters import CReturnConverter
+    from libclinic.app import Clinic
 
 from libclinic import VersionTuple, unspecified
 
@@ -53,7 +53,6 @@ class Class:
 
 
 class FunctionKind(enum.Enum):
-    INVALID         = enum.auto()
     CALLABLE        = enum.auto()
     STATIC_METHOD   = enum.auto()
     CLASS_METHOD    = enum.auto()
@@ -70,7 +69,6 @@ class FunctionKind(enum.Enum):
         return f"<clinic.FunctionKind.{self.name}>"
 
 
-INVALID: Final = FunctionKind.INVALID
 CALLABLE: Final = FunctionKind.CALLABLE
 STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
@@ -109,6 +107,7 @@ class Function:
     # functions with optional groups because we can't represent
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
+    forced_text_signature: str | None = None
     critical_section: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
 

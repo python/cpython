@@ -1,5 +1,0 @@
-Ensure ``DirEntry.stat().st_ctime`` behaves consistently with
-:func:`os.stat` during the deprecation period of ``st_ctime`` by containing
-the same value as ``st_birthtime``. After the deprecation period,
-``st_ctime`` will be the metadata change time (or unavailable through
-``DirEntry``), and only ``st_birthtime`` will contain the creation time.

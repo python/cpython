@@ -188,16 +188,16 @@ _Py_c_abs(Py_complex z)
     /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
     double result;
 
-    if (!Py_IS_FINITE(z.real) || !Py_IS_FINITE(z.imag)) {
+    if (!isfinite(z.real) || !isfinite(z.imag)) {
         /* C99 rules: if either the real or the imaginary part is an
            infinity, return infinity, even if the other part is a
            NaN. */
-        if (Py_IS_INFINITY(z.real)) {
+        if (isinf(z.real)) {
             result = fabs(z.real);
             errno = 0;
             return result;
         }
-        if (Py_IS_INFINITY(z.imag)) {
+        if (isinf(z.imag)) {
             result = fabs(z.imag);
             errno = 0;
             return result;
@@ -207,7 +207,7 @@ _Py_c_abs(Py_complex z)
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
-    if (!Py_IS_FINITE(result))
+    if (!isfinite(result))
         errno = ERANGE;
     else
         errno = 0;

@@ -1,4 +1,0 @@
-Restore support of ``None`` and other false values in :mod:`urllib.parse`
-functions :func:`~urllib.parse.parse_qs` and
-:func:`~urllib.parse.parse_qsl`. Also, they now raise a TypeError for
-non-zero integers and non-empty sequences.

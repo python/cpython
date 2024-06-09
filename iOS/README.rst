@@ -50,7 +50,7 @@ iOS specific arguments to configure
 
     Unless you know what you're doing, changing the name of the Python
     framework on iOS is not advised. If you use this option, you won't be able
-    to run the ``make testios`` target without making signficant manual
+    to run the ``make testios`` target without making significant manual
     alterations, and you won't be able to use any binary packages unless you
     compile them yourself using your own framework name.
 
@@ -224,7 +224,7 @@ content of the two "thin" ``Python.framework`` directories, plus the ``bin`` and
 
     $ lipo -create -output module.dylib path/to/x86_64/module.dylib path/to/arm64/module.dylib
 
-* The header files will be indentical on both architectures, except for
+* The header files will be identical on both architectures, except for
   ``pyconfig.h``. Copy all the headers from one platform (say, arm64), rename
   ``pyconfig.h`` to ``pyconfig-arm64.h``, and copy the ``pyconfig.h`` for the
   other architecture into the merged header folder as ``pyconfig-x86_64.h``.
@@ -355,7 +355,7 @@ pass in command line arguments to configure test suite operation. To work around
 this limitation, the arguments that would normally be passed as command line
 arguments are configured as a static string at the start of the XCTest method
 ``- (void)testPython`` in ``iOSTestbedTests.m``. To pass an argument to the test
-suite, add a a string to the ``argv`` defintion. These arguments will be passed
+suite, add a a string to the ``argv`` definition. These arguments will be passed
 to the test suite as if they had been passed to ``python -m test`` at the
 command line.
 

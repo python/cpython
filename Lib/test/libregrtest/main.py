@@ -7,7 +7,8 @@ import sysconfig
 import time
 import trace
 
-from test.support import os_helper, MS_WINDOWS, flush_std_streams
+from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
+                          suppress_immortalization)
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -526,7 +527,10 @@ class Regrtest:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
             else:
-                self.run_tests_sequentially(runtests)
+                # gh-117783: don't immortalize deferred objects when tracking
+                # refleaks. Only releveant for the free-threaded build.
+                with suppress_immortalization(runtests.hunt_refleak):
+                    self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)

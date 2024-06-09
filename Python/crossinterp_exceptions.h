@@ -6,9 +6,9 @@ static PyTypeObject _PyExc_InterpreterError = {
     .tp_name = "interpreters.InterpreterError",
     .tp_doc = PyDoc_STR("A cross-interpreter operation failed"),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    //.tp_traverse = ((PyTypeObject *)PyExc_BaseException)->tp_traverse,
-    //.tp_clear = ((PyTypeObject *)PyExc_BaseException)->tp_clear,
-    //.tp_base = (PyTypeObject *)PyExc_BaseException,
+    //.tp_traverse = ((PyTypeObject *)PyExc_Exception)->tp_traverse,
+    //.tp_clear = ((PyTypeObject *)PyExc_Exception)->tp_clear,
+    //.tp_base = (PyTypeObject *)PyExc_Exception,
 };
 PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
 
@@ -19,8 +19,8 @@ static PyTypeObject _PyExc_InterpreterNotFoundError = {
     .tp_name = "interpreters.InterpreterNotFoundError",
     .tp_doc = PyDoc_STR("An interpreter was not found"),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    //.tp_traverse = ((PyTypeObject *)PyExc_BaseException)->tp_traverse,
-    //.tp_clear = ((PyTypeObject *)PyExc_BaseException)->tp_clear,
+    //.tp_traverse = ((PyTypeObject *)PyExc_Exception)->tp_traverse,
+    //.tp_clear = ((PyTypeObject *)PyExc_Exception)->tp_clear,
     .tp_base = &_PyExc_InterpreterError,
 };
 PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
@@ -61,7 +61,7 @@ _get_not_shareable_error_type(PyInterpreterState *interp)
 static int
 init_exceptions(PyInterpreterState *interp)
 {
-    PyTypeObject *base = (PyTypeObject *)PyExc_BaseException;
+    PyTypeObject *base = (PyTypeObject *)PyExc_Exception;
 
     // builtin static types
 

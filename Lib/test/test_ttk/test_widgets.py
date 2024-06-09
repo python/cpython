@@ -1879,13 +1879,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self._test_widget(ttk.Label)
 
 
-tests_gui = (
-        ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
-        FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
-        NotebookTest, PanedWindowTest, ProgressbarTest,
-        RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
-        )
-
 if __name__ == "__main__":
     unittest.main()

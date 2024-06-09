@@ -14,8 +14,8 @@ terms of the MIT license. A copy of the license can be found in the file
 // functions and macros.
 // --------------------------------------------------------------------------
 
-#include "mimalloc/types.h"
-#include "mimalloc/track.h"
+#include "types.h"
+#include "track.h"
 
 #if (MI_DEBUG>0)
 #define mi_trace_message(...)  _mi_trace_message(__VA_ARGS__)

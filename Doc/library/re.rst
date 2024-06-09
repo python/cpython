@@ -1,5 +1,5 @@
-:mod:`re` --- Regular expression operations
-===========================================
+:mod:`!re` --- Regular expression operations
+============================================
 
 .. module:: re
    :synopsis: Regular expression operations.
@@ -48,7 +48,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.org/project/regex/>`_ module,
+   The third-party :pypi:`regex` module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 

@@ -1,6 +1,5 @@
-
-:mod:`pathlib` --- Object-oriented filesystem paths
-===================================================
+:mod:`!pathlib` --- Object-oriented filesystem paths
+====================================================
 
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths
@@ -450,6 +449,10 @@ Pure paths provide the following methods and properties:
 
    This is commonly called the file extension.
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 .. attribute:: PurePath.suffixes
 
    A list of the path's suffixes, often called file extensions::
@@ -460,6 +463,10 @@ Pure paths provide the following methods and properties:
       ['.tar', '.gz']
       >>> PurePosixPath('my/library').suffixes
       []
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
 
 
 .. attribute:: PurePath.stem
@@ -628,8 +635,8 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   When *walk_up* is False (the default), the path must start with *other*.
-   When the argument is True, ``..`` entries may be added to form the
+   When *walk_up* is false (the default), the path must start with *other*.
+   When the argument is true, ``..`` entries may be added to form the
    relative path. In all other cases, such as the paths referencing
    different drives, :exc:`ValueError` is raised.::
 
@@ -713,6 +720,11 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix. In previous
+      versions, :exc:`ValueError` is raised if a single dot is supplied.
 
 
 .. method:: PurePath.with_segments(*pathsegments)
@@ -809,8 +821,8 @@ bugs or failures in your application)::
    UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
 
-File URIs
-^^^^^^^^^
+Parsing and generating URIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Concrete path objects can be created from, and represented as, 'file' URIs
 conforming to :rfc:`8089`.
@@ -870,12 +882,8 @@ conforming to :rfc:`8089`.
    it strictly impure.
 
 
-Methods
-^^^^^^^
-
-Concrete paths provide the following methods in addition to pure paths
-methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist).
+Querying file type and status
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionchanged:: 3.8
 
@@ -886,28 +894,14 @@ call fails (for example because the path doesn't exist).
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
 
+.. versionchanged:: 3.14
 
-.. classmethod:: Path.cwd()
-
-   Return a new path object representing the current directory (as returned
-   by :func:`os.getcwd`)::
-
-      >>> Path.cwd()
-      PosixPath('/home/antoine/pathlib')
-
-
-.. classmethod:: Path.home()
-
-   Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> Path.home()
-      PosixPath('/home/antoine')
-
-   .. versionadded:: 3.5
+   The methods given above now return ``False`` instead of raising any
+   :exc:`OSError` exception from the operating system. In previous versions,
+   some kinds of :exc:`OSError` exception are raised, and others suppressed.
+   The new behaviour is consistent with :func:`os.path.exists`,
+   :func:`os.path.isdir`, etc. Use :meth:`~Path.stat` to retrieve the file
+   status without suppressing exceptions.
 
 
 .. method:: Path.stat(*, follow_symlinks=True)
@@ -929,29 +923,18 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.chmod(mode, *, follow_symlinks=True)
 
-   Change the file mode and permissions, like :func:`os.chmod`.
+.. method:: Path.lstat()
 
-   This method normally follows symlinks. Some Unix flavours support changing
-   permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+   Like :meth:`Path.stat` but, if the path points to a symbolic link, return
+   the symbolic link's information rather than its target's.
 
-   ::
-
-      >>> p = Path('setup.py')
-      >>> p.stat().st_mode
-      33277
-      >>> p.chmod(0o444)
-      >>> p.stat().st_mode
-      33060
-
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
 
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
+   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
    the argument ``follow_symlinks=False``.
@@ -970,101 +953,16 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.expanduser()
 
-   Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`. If a home directory can't be
-   resolved, :exc:`RuntimeError` is raised.
+.. method:: Path.is_file(*, follow_symlinks=True)
 
-   ::
+   Return ``True`` if the path points to a regular file. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a regular file. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
-      >>> p = PosixPath('~/films/Monty Python')
-      >>> p.expanduser()
-      PosixPath('/home/eric/films/Monty Python')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.glob(pattern, *, case_sensitive=None, follow_symlinks=None)
-
-   Glob the given relative *pattern* in the directory represented by this path,
-   yielding all matching files (of any kind)::
-
-      >>> sorted(Path('.').glob('*.py'))
-      [PosixPath('pathlib.py'), PosixPath('setup.py'), PosixPath('test_pathlib.py')]
-      >>> sorted(Path('.').glob('*/*.py'))
-      [PosixPath('docs/conf.py')]
-      >>> sorted(Path('.').glob('**/*.py'))
-      [PosixPath('build/lib/pathlib.py'),
-       PosixPath('docs/conf.py'),
-       PosixPath('pathlib.py'),
-       PosixPath('setup.py'),
-       PosixPath('test_pathlib.py')]
-
-   .. seealso::
-      :ref:`pathlib-pattern-language` documentation.
-
-   This method calls :meth:`Path.is_dir` on the top-level directory and
-   propagates any :exc:`OSError` exception that is raised. Subsequent
-   :exc:`OSError` exceptions from scanning directories are suppressed.
-
-   By default, or when the *case_sensitive* keyword-only argument is set to
-   ``None``, this method matches paths using platform-specific casing rules:
-   typically, case-sensitive on POSIX, and case-insensitive on Windows.
-   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
-
-   By default, or when the *follow_symlinks* keyword-only argument is set to
-   ``None``, this method follows symlinks except when expanding "``**``"
-   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
-   ``False`` to treat all symlinks as files.
-
-   .. tip::
-      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
-      of recursive globbing.
-
-   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
-
-   .. versionchanged:: 3.12
-      The *case_sensitive* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *pattern* parameter accepts a :term:`path-like object`.
-
-
-.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
-
-   Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*.
-
-   .. seealso::
-      :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
-
-   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
-
-   .. versionchanged:: 3.12
-      The *case_sensitive* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *pattern* parameter accepts a :term:`path-like object`.
-
-
-.. method:: Path.group(*, follow_symlinks=True)
-
-   Return the name of the group owning the file. :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
-
-   This method normally follows symlinks; to get the group of the symlink, add
-   the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
@@ -1072,11 +970,10 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory, ``False`` if it points
-   to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a directory. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a directory. Use :meth:`Path.stat` to distinguish
+   between these cases.
 
    This method normally follows symlinks; to exclude symlinks to directories,
    add the argument ``follow_symlinks=False``.
@@ -1085,19 +982,12 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* parameter was added.
 
 
-.. method:: Path.is_file(*, follow_symlinks=True)
+.. method:: Path.is_symlink()
 
-   Return ``True`` if the path points to a regular file, ``False`` if it
-   points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
-
-   This method normally follows symlinks; to exclude symlinks, add the
-   argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
+   Return ``True`` if the path points to a symbolic link, even if that symlink
+   is broken. ``False`` will be returned if the path is invalid, inaccessible
+   or missing, or if it points to something other than a symbolic link. Use
+   :meth:`Path.stat` to distinguish between these cases.
 
 
 .. method:: Path.is_junction()
@@ -1124,49 +1014,203 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.12
       Windows support was added.
 
-
-.. method:: Path.is_symlink()
-
-   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
-
-   ``False`` is also returned if the path doesn't exist; other errors (such
-   as permission errors) are propagated.
-
-
 .. method:: Path.is_socket()
 
-   Return ``True`` if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a Unix socket. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a Unix socket. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_fifo()
 
-   Return ``True`` if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a FIFO. ``False`` will be returned if
+   the path is invalid, inaccessible or missing, or if it points to something
+   other than a FIFO. Use :meth:`Path.stat` to distinguish between these
+   cases.
 
 
 .. method:: Path.is_block_device()
 
-   Return ``True`` if the path points to a block device (or a symbolic link
-   pointing to a block device), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   Return ``True`` if the path points to a block device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a block device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
 
 .. method:: Path.is_char_device()
 
-   Return ``True`` if the path points to a character device (or a symbolic link
-   pointing to a character device), ``False`` if it points to another kind of file.
+   Return ``True`` if the path points to a character device. ``False`` will be
+   returned if the path is invalid, inaccessible or missing, or if it points
+   to something other than a character device. Use :meth:`Path.stat` to
+   distinguish between these cases.
 
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+
+.. method:: Path.samefile(other_path)
+
+   Return whether this path points to the same file as *other_path*, which
+   can be either a Path object, or a string.  The semantics are similar
+   to :func:`os.path.samefile` and :func:`os.path.samestat`.
+
+   An :exc:`OSError` can be raised if either file cannot be accessed for some
+   reason.
+
+   ::
+
+      >>> p = Path('spam')
+      >>> q = Path('eggs')
+      >>> p.samefile(q)
+      False
+      >>> p.samefile('spam')
+      True
+
+   .. versionadded:: 3.5
+
+
+Other methods
+^^^^^^^^^^^^^
+
+Some of these methods can raise an :exc:`OSError` if a system call fails (for
+example because the path doesn't exist).
+
+
+.. classmethod:: Path.cwd()
+
+   Return a new path object representing the current directory (as returned
+   by :func:`os.getcwd`)::
+
+      >>> Path.cwd()
+      PosixPath('/home/antoine/pathlib')
+
+
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
+
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_mode
+      33277
+      >>> p.chmod(0o444)
+      >>> p.stat().st_mode
+      33060
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
+
+   Glob the given relative *pattern* in the directory represented by this path,
+   yielding all matching files (of any kind)::
+
+      >>> sorted(Path('.').glob('*.py'))
+      [PosixPath('pathlib.py'), PosixPath('setup.py'), PosixPath('test_pathlib.py')]
+      >>> sorted(Path('.').glob('*/*.py'))
+      [PosixPath('docs/conf.py')]
+      >>> sorted(Path('.').glob('**/*.py'))
+      [PosixPath('build/lib/pathlib.py'),
+       PosixPath('docs/conf.py'),
+       PosixPath('pathlib.py'),
+       PosixPath('setup.py'),
+       PosixPath('test_pathlib.py')]
+
+   .. seealso::
+      :ref:`pathlib-pattern-language` documentation.
+
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   By default, or when the *recurse_symlinks* keyword-only argument is set to
+   ``False``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
+
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *recurse_symlinks* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. In previous versions, such exceptions are suppressed in many
+      cases, but not all.
+
+
+.. method:: Path.rglob(pattern, *, case_sensitive=None, recurse_symlinks=False)
+
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. seealso::
+      :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *recurse_symlinks* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
+
+
+.. method:: Path.group(*, follow_symlinks=True)
+
+   Return the name of the group owning the file. :exc:`KeyError` is raised
+   if the file's gid isn't found in the system database.
+
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.iterdir()
@@ -1289,12 +1333,6 @@ call fails (for example because the path doesn't exist).
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
-
-
-.. method:: Path.lstat()
-
-   Like :meth:`Path.stat` but, if the path points to a symbolic link, return
-   the symbolic link's information rather than its target's.
 
 
 .. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
@@ -1486,27 +1524,6 @@ call fails (for example because the path doesn't exist).
    Remove this directory.  The directory must be empty.
 
 
-.. method:: Path.samefile(other_path)
-
-   Return whether this path points to the same file as *other_path*, which
-   can be either a Path object, or a string.  The semantics are similar
-   to :func:`os.path.samefile` and :func:`os.path.samestat`.
-
-   An :exc:`OSError` can be raised if either file cannot be accessed for some
-   reason.
-
-   ::
-
-      >>> p = Path('spam')
-      >>> q = Path('eggs')
-      >>> p.samefile(q)
-      False
-      >>> p.samefile('spam')
-      True
-
-   .. versionadded:: 3.5
-
-
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
    Make this path a symbolic link pointing to *target*.
@@ -1675,7 +1692,7 @@ The patterns accepted and results generated by :meth:`Path.glob` and
    passing ``recursive=True`` to :func:`glob.glob`.
 3. "``**``" pattern components do not follow symlinks by default in pathlib.
    This behaviour has no equivalent in :func:`glob.glob`, but you can pass
-   ``follow_symlinks=True`` to :meth:`Path.glob` for compatible behaviour.
+   ``recurse_symlinks=True`` to :meth:`Path.glob` for compatible behaviour.
 4. Like all :class:`PurePath` and :class:`Path` objects, the values returned
    from :meth:`Path.glob` and :meth:`Path.rglob` don't include trailing
    slashes.

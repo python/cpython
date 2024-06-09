@@ -966,6 +966,18 @@ static struct PyMethodDef operator_methods[] = {
 
 };
 
+
+static PyObject *
+text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj, /)");
+}
+
+static PyGetSetDef common_getset[] = {
+    {"__text_signature__", text_signature, (setter)NULL},
+    {NULL}
+};
+
 /* itemgetter object **********************************************************/
 
 typedef struct {
@@ -1171,6 +1183,7 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
     {Py_tp_members, itemgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
@@ -1528,6 +1541,7 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_clear, attrgetter_clear},
     {Py_tp_methods, attrgetter_methods},
     {Py_tp_members, attrgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, attrgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, attrgetter_repr},
@@ -1863,6 +1877,7 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
     {Py_tp_members, methodcaller_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, methodcaller_repr},
@@ -1913,6 +1928,7 @@ operator_exec(PyObject *module)
 static struct PyModuleDef_Slot operator_slots[] = {
     {Py_mod_exec, operator_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

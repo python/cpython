@@ -556,7 +556,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     If the optional symlinks flag is true, symbolic links in the
     source tree result in symbolic links in the destination tree; if
     it is false, the contents of the files pointed to by symbolic
-    links are copied. If the file pointed by the symlink doesn't
+    links are copied. If the file pointed to by the symlink doesn't
     exist, an exception will be added in the list of errors raised in
     an Error exception at the end of the copy process.
 
@@ -606,37 +606,21 @@ else:
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
-    try:
-        with os.scandir(path) as scandir_it:
-            entries = list(scandir_it)
-    except FileNotFoundError:
-        return
-    except OSError as err:
-        onexc(os.scandir, path, err)
-        entries = []
-    for entry in entries:
-        fullname = entry.path
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except FileNotFoundError:
-            continue
-        except OSError:
-            is_dir = False
-
-        if is_dir and not entry.is_junction():
+    def onerror(err):
+        if not isinstance(err, FileNotFoundError):
+            onexc(os.scandir, err.filename, err)
+    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+    for dirpath, dirnames, filenames in results:
+        for name in dirnames:
+            fullname = os.path.join(dirpath, name)
             try:
-                if entry.is_symlink():
-                    # This can only happen if someone replaces
-                    # a directory with a symlink after the call to
-                    # os.scandir or entry.is_dir above.
-                    raise OSError("Cannot call rmtree on a symbolic link")
+                os.rmdir(fullname)
             except FileNotFoundError:
                 continue
             except OSError as err:
-                onexc(os.path.islink, fullname, err)
-                continue
-            _rmtree_unsafe(fullname, onexc)
-        else:
+                onexc(os.rmdir, fullname, err)
+        for name in filenames:
+            fullname = os.path.join(dirpath, name)
             try:
                 os.unlink(fullname)
             except FileNotFoundError:
@@ -1442,11 +1426,18 @@ elif _WINDOWS:
         return _ntuple_diskusage(total, used, free)
 
 
-def chown(path, user=None, group=None):
+def chown(path, user=None, group=None, *, dir_fd=None, follow_symlinks=True):
     """Change owner user and group of the given path.
 
     user and group can be the uid/gid or the user/group names, and in that case,
     they are converted to their respective uid/gid.
+
+    If dir_fd is set, it should be an open file descriptor to the directory to
+    be used as the root of *path* if it is relative.
+
+    If follow_symlinks is set to False and the last element of the path is a
+    symbolic link, chown will modify the link itself and not the file being
+    referenced by the link.
     """
     sys.audit('shutil.chown', path, user, group)
 
@@ -1472,7 +1463,8 @@ def chown(path, user=None, group=None):
         if _group is None:
             raise LookupError("no such group: {!r}".format(group))
 
-    os.chown(path, _user, _group)
+    os.chown(path, _user, _group, dir_fd=dir_fd,
+             follow_symlinks=follow_symlinks)
 
 def get_terminal_size(fallback=(80, 24)):
     """Get the size of the terminal window.

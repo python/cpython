@@ -5,13 +5,13 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
-#include "pycore_time.h"          // _PyTime_MonotonicUnchecked()
+#include "pycore_time.h"          // _PyTime_Add()
 
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>        // SwitchToThread()
+#  include <windows.h>            // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
-#  include <sched.h>          // sched_yield()
+#  include <sched.h>              // sched_yield()
 #endif
 
 // If a thread waits on a lock for longer than TIME_TO_BE_FAIR_NS (1 ms), then
@@ -66,7 +66,9 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         return PY_LOCK_FAILURE;
     }
 
-    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t now;
+    // silently ignore error: cannot report error to the caller
+    (void)PyTime_MonotonicRaw(&now);
     PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyTime_Add(now, timeout);
@@ -143,7 +145,9 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
 {
     uint8_t v = 0;
     if (entry) {
-        PyTime_t now = _PyTime_MonotonicUnchecked();
+        PyTime_t now;
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&now);
         int should_be_fair = now > entry->time_to_be_fair;
 
         entry->handed_off = should_be_fair;
@@ -277,12 +281,12 @@ _PyEvent_Notify(PyEvent *evt)
 void
 PyEvent_Wait(PyEvent *evt)
 {
-    while (!PyEvent_WaitTimed(evt, -1))
+    while (!PyEvent_WaitTimed(evt, -1, /*detach=*/1))
         ;
 }
 
 int
-PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach)
 {
     for (;;) {
         uint8_t v = _Py_atomic_load_uint8(&evt->v);
@@ -298,7 +302,7 @@ PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
 
         uint8_t expected = _Py_HAS_PARKED;
         (void) _PyParkingLot_Park(&evt->v, &expected, sizeof(evt->v),
-                                  timeout_ns, NULL, 1);
+                                  timeout_ns, NULL, detach);
 
         return _Py_atomic_load_uint8(&evt->v) == _Py_LOCKED;
     }
@@ -472,7 +476,7 @@ _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
 
 void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 {
-    // lock the entry by setting by moving to an odd sequence number
+    // lock by moving to an odd sequence number
     uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
     while (1) {
         if (SEQLOCK_IS_UPDATING(prev)) {
@@ -492,14 +496,14 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 
 void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence - 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) - 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
 
 void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
 {
-    uint32_t new_seq = seqlock->sequence + 1;
+    uint32_t new_seq = _Py_atomic_load_uint32_relaxed(&seqlock->sequence) + 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
     _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
