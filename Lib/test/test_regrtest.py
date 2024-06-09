@@ -473,14 +473,18 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.hunt_refleak.runs, 10)
         self.assertFalse(regrtest.output_on_failure)
 
-    def test_xml_huntrleaks(self):
-        args = ['-R', '3:12', '--junit-xml', 'output.xml']
+    def test_single_process(self):
+        args = ['-j2', '--single-process']
         with support.captured_stderr():
             regrtest = self.create_regrtest(args)
-        self.assertIsNotNone(regrtest.hunt_refleak)
-        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
-        self.assertEqual(regrtest.hunt_refleak.runs, 12)
-        self.assertIsNone(regrtest.junit_filename)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
+
+        args = ['--fast-ci', '--single-process']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.single_process)
 
 
 @dataclasses.dataclass(slots=True)

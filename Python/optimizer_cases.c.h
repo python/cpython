@@ -628,7 +628,7 @@
             break;
         }
 
-        case _LOAD_ASSERTION_ERROR: {
+        case _LOAD_COMMON_CONSTANT: {
             _Py_UopsSymbol *value;
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;
@@ -740,12 +740,7 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
-            _Py_UopsSymbol *v;
-            v = sym_new_not_null(ctx);
-            stack_pointer[-1] = v;
-            break;
-        }
+        /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
         /* _LOAD_NAME is not a viable micro-op for tier 2 */
 
@@ -935,6 +930,28 @@
         }
 
         case _GUARD_TYPE_VERSION: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                // add watcher so that whenever the type changes we invalidate this
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                // if the type is null, it was not found in the cache (there was a conflict)
+                // with the key, in which case we can't trust the version
+                if (type) {
+                    // if the type version was set properly, then add a watcher
+                    // if it wasn't this means that the type version was previously set to something else
+                    // and we set the owner to bottom, so we don't need to add a watcher because we must have
+                    // already added one earlier.
+                    if (sym_set_type_version(owner, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                }
+            }
             break;
         }
 
@@ -1079,7 +1096,10 @@
             break;
         }
 
-        /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 */
+        case _STORE_ATTR_WITH_HINT: {
+            stack_pointer += -2;
+            break;
+        }
 
         case _STORE_ATTR_SLOT: {
             stack_pointer += -2;
@@ -1537,10 +1557,8 @@
             _Py_UopsSymbol *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)this_instr->operand;
             sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
-            (void)func_version;
             break;
         }
 
@@ -1587,16 +1605,11 @@
                 args--;
                 argcount++;
             }
-            _Py_UopsSymbol **localsplus_start = ctx->n_consumed;
-            int n_locals_already_filled = 0;
-            // Can determine statically, so we interleave the new locals
-            // and make the current stack the new locals.
-            // This also sets up for true call inlining.
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                localsplus_start = args;
-                n_locals_already_filled = argcount;
+                new_frame = frame_new(ctx, co, 0, args, argcount);
+            } else {
+                new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            new_frame = frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;

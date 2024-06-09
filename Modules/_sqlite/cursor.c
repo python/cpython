@@ -675,6 +675,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
                         "supplied a sequence which requires nameless (qmark) "
                         "placeholders.",
                         i+1, name);
+                return;
             }
 
             if (PyTuple_CheckExact(parameters)) {

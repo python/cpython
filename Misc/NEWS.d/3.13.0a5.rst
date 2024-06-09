@@ -962,7 +962,7 @@ On Windows, commas passed in arguments to ``Tools\buildbot\test.bat`` and
 .. nonce: -dlzfI
 .. section: Tests
 
-Fix translation of exception hander targets by
+Fix translation of exception handler targets by
 ``_testinternalcapi.optimize_cfg``.
 
 ..
