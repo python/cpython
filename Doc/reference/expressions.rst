@@ -873,9 +873,13 @@ primary is subscripted, the evaluated result of the expression list will be
 passed to one of these methods. For more details on when ``__class_getitem__``
 is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the expression list contains at least one comma, it will evaluate to a
-:class:`tuple` containing the items of the expression list. Otherwise, the
-expression list will evaluate to the value of the list's sole member.
+If the expression list contains at least one comma, or if any of the expressions
+is starred, the expression list will evaluate to a :class:`tuple` containing the
+items of the expression list. Otherwise, the expression list will evaluate to
+the value of the list's sole member.
+
+.. versionchanged:: 3.11
+   Expressions in an expression list may be starred. See :pep:`646` for details.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
@@ -1874,7 +1878,7 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
-   expression_list: `expression` ("," `expression`)* [","]
+   expression_list: `starred_expression` ("," `starred_expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
    starred_item: `assignment_expression` | "*" `or_expr`
@@ -1897,6 +1901,9 @@ the unpacking.
 
 .. versionadded:: 3.5
    Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 .. index:: pair: trailing; comma
 
