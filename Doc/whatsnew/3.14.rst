@@ -94,9 +94,9 @@ Added :func:`ast.compare` for comparing two ASTs.
 
 string
 ------
-* Add :const:`!visible` to :mod:`string`, containing all non-whitespace
+* Add :const:`~string.visible` to :mod:`string`, containing all non-whitespace
   printable ASCII characters.
-  (Contributed by James Murray in :gh:`119080`.)
+  (Contributed by James Murray in :gh:`119067`.)
 
 
 Optimizations

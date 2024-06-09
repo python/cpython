@@ -1,2 +1,3 @@
-Add :const:`visible` to :mod:`string`, containing all non-blank ASCII characters
-(i.e., everything in :const:`printable` except for :const:`whitespace`).
+Add :const:`~string.visible` to :mod:`string`, containing all non-blank ASCII
+characters (i.e., everything in :const:`printable` except for
+:const:`whitespace`).
