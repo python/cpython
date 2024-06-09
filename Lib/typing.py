@@ -1068,14 +1068,16 @@ class ForwardRef(_Final, _root=True):
             # names in the global scope (which here are called `localns`!),
             # but should in turn be overridden by names in the class scope
             # (which here are called `globalns`!)
-            type_params = {param.__name__: param for param in type_params}
-            if self.__forward_is_class__:
-                for name, param in type_params.items():
-                    if name not in globalns:
-                        globalns[name] = param
-                        localns.pop(name, None)
-            else:
-                localns = type_params | localns
+            if type_params:
+                name_to_param_map = {param.__name__: param for param in type_params}
+                if self.__forward_is_class__:
+                    globalns, localns = dict(globalns), dict(localns)
+                    for name, param in name_to_param_map.items():
+                        if name not in globalns:
+                            globalns[name] = param
+                            localns.pop(name, None)
+                else:
+                    localns = name_to_param_map | localns
 
             type_ = _type_check(
                 eval(self.__forward_code__, globalns, localns),

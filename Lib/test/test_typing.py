@@ -4859,6 +4859,8 @@ class GenericTests(BaseTestCase):
         )
 
     def test_pep695_generic_with_future_annotations(self):
+        original_globals = dict(ann_module695.__dict__)
+
         hints_for_A = get_type_hints(ann_module695.A)
         A_type_params = ann_module695.A.__type_params__
         self.assertIs(hints_for_A["x"], A_type_params[0])
@@ -4897,6 +4899,9 @@ class GenericTests(BaseTestCase):
             hints_for_generic_method,
             {"x": params["Foo"], "y": params["Bar"], "return": types.NoneType}
         )
+
+        # should not have changed as a result of the get_type_hints() calls!
+        self.assertEqual(ann_module695.__dict__, original_globals)
 
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
