@@ -290,12 +290,6 @@ init_interned_dict(PyInterpreterState *interp)
 static void
 clear_interned_dict(PyInterpreterState *interp)
 {
-    PyObject *interned = get_interned_dict(interp);
-    if (interned != NULL) {
-        PyDict_Clear(interned);
-        Py_DECREF(interned);
-        _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
-    }
     if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
         _Py_hashtable_destroy(INTERNED_STRINGS);
         INTERNED_STRINGS = NULL;
@@ -15532,9 +15526,6 @@ void
 _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
-
-    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-    assert(get_interned_dict(interp) == NULL);
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
