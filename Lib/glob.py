@@ -59,7 +59,7 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
-        exists = not os.path.splitdrive(anchor)[0]
+        exists = not os.path.root(anchor)[0]
         paths = select(anchor, dir_fd, anchor, exists)
     else:
         # Relative pattern.
@@ -91,6 +91,10 @@ def glob1(dirname, pattern):
 def _split_pathname(pathname):
     """Split the given path into a pair (anchor, parts), where *anchor* is the
     path drive and root (if any), and *parts* is a reversed list of path parts.
+    For example:
+
+        _split_pathname('C:\\a\\b') == ('C:\\', ['b', 'a'])
+        _split_pathname('/usr/bin') == ('/', ['bin', 'usr'])
     """
     parts = []
     split = os.path.split
@@ -102,7 +106,7 @@ def _split_pathname(pathname):
     return dirname, parts
 
 def _relative_glob(select, dirname, dir_fd=None):
-    """Globs using a select function from the given dirname. The dirname
+    """Globs using a *select* function from the given dirname. The dirname
     prefix is removed from results.
     """
     dirname = _StringGlobber.add_slash(dirname)
@@ -230,7 +234,7 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
-    def opendir(path, flags, dir_fd=None):
+    def open(path, flags, dir_fd=None):
         """Implements os.open()
         """
         raise NotImplementedError
@@ -242,7 +246,7 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
-    def closedir(fd):
+    def close(fd):
         """Implements os.close().
         """
         raise NotImplementedError
@@ -336,7 +340,7 @@ class _GlobberBase:
                     with self.scandir(path) as scandir_it:
                         entries = list(scandir_it)
                 else:
-                    fd = self.opendir(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     with self.scandir(fd) as scandir_it:
                         entries = list(scandir_it)
                     prefix = self.add_slash(path)
@@ -361,7 +365,7 @@ class _GlobberBase:
                             yield entry_path
             finally:
                 if fd is not None:
-                    self.closedir(fd)
+                    self.close(fd)
         return select_wildcard
 
     def recursive_selector(self, part, parts):
@@ -403,20 +407,20 @@ class _GlobberBase:
                 while stack:
                     path, dir_fd, rel_path = stack.pop()
                     if path is None:
-                        self.closedir(dir_fd)
+                        self.close(dir_fd)
 
         def select_recursive_step(stack, match_pos):
             path, dir_fd, rel_path = stack.pop()
             try:
                 if path is None:
-                    self.closedir(dir_fd)
+                    self.close(dir_fd)
                     return
                 elif dir_fd is None:
                     fd = None
                     with self.scandir(path) as scandir_it:
                         entries = list(scandir_it)
                 else:
-                    fd = self.opendir(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     stack.append((None, fd, None))
                     with self.scandir(fd) as scandir_it:
                         entries = list(scandir_it)
@@ -471,9 +475,9 @@ class _StringGlobber(_GlobberBase):
     """
     lexists = staticmethod(os.path.lexists)
     lstat = staticmethod(os.lstat)
-    opendir = staticmethod(os.open)
+    open = staticmethod(os.open)
     scandir = staticmethod(os.scandir)
-    closedir = staticmethod(os.close)
+    close = staticmethod(os.close)
     parse_entry = operator.attrgetter('path')
     concat_path = operator.add
 
