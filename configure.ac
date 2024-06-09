@@ -10,7 +10,7 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.13])
+m4_define([PYTHON_VERSION], [3.14])
 
 AC_PREREQ([2.71])
 
@@ -3417,7 +3417,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -3980,6 +3980,13 @@ AC_ARG_WITH(
   [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
+AC_DEFUN([USE_BUNDLED_LIBMPDEC],
+         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no])
+
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
   [PKG_CHECK_MODULES(
@@ -3987,9 +3994,7 @@ AS_VAR_IF(
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
      LIBMPDEC_INTERNAL=])],
-  [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-   LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
+  [USE_BUNDLED_LIBMPDEC()])
 
 AS_VAR_IF([with_system_libmpdec], [yes],
   [WITH_SAVE_ENV([
@@ -4006,13 +4011,15 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       [have_mpdec=yes],
       [have_mpdec=no])
   ])],
-  [AS_VAR_SET([have_mpdec], [yes])
-   AC_MSG_WARN([m4_normalize([
+  [AC_MSG_WARN([m4_normalize([
      the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
      consider using a system installed mpdecimal library.])])])
 
 AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
-      [AC_MSG_WARN([no system libmpdecimal found; unable to build _decimal])])
+      [AC_MSG_WARN([m4_normalize([
+         no system libmpdecimal found; falling back to bundled libmpdecimal
+         (deprecated and scheduled for removal in Python 3.15)])])
+       USE_BUNDLED_LIBMPDEC()])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(

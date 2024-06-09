@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -923,7 +923,7 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
    In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
@@ -1718,7 +1718,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
    pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with

@@ -12,32 +12,13 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-from glob import _Globber, _no_recurse_symlinks
-from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
+import operator
+import posixpath
+from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 
 __all__ = ["UnsupportedOperation"]
-
-#
-# Internals
-#
-
-_WINERROR_NOT_READY = 21  # drive exists but is not accessible
-_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
-_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
-
-# EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERRNOS = (ENOENT, ENOTDIR, EBADF, ELOOP)
-
-_IGNORED_WINERRORS = (
-    _WINERROR_NOT_READY,
-    _WINERROR_INVALID_NAME,
-    _WINERROR_CANT_RESOLVE_FILENAME)
-
-def _ignore_error(exception):
-    return (getattr(exception, 'errno', None) in _IGNORED_ERRNOS or
-            getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
 @functools.cache
@@ -88,6 +69,12 @@ class ParserBase:
         drive. Either part may be empty."""
         raise UnsupportedOperation(self._unsupported_msg('splitdrive()'))
 
+    def splitext(self, path):
+        """Split the path into a pair (root, ext), where *ext* is empty or
+        begins with a begins with a period and contains at most one period,
+        and *root* is everything before the extension."""
+        raise UnsupportedOperation(self._unsupported_msg('splitext()'))
+
     def normcase(self, path):
         """Normalize the case of the path."""
         raise UnsupportedOperation(self._unsupported_msg('normcase()'))
@@ -96,6 +83,33 @@ class ParserBase:
         """Returns whether the path is absolute, i.e. unaffected by the
         current directory or drive."""
         raise UnsupportedOperation(self._unsupported_msg('isabs()'))
+
+
+class PathGlobber(_GlobberBase):
+    """
+    Class providing shell-style globbing for path objects.
+    """
+
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        import contextlib
+        return contextlib.nullcontext(path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path."""
+        return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir()."""
+        return entry
 
 
 class PurePathBase:
@@ -118,7 +132,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = _Globber
+    _globber = PathGlobber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -171,12 +185,7 @@ class PurePathBase:
 
         This includes the leading period. For example: '.txt'
         """
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[i:]
-        else:
-            return ''
+        return self.parser.splitext(self.name)[1]
 
     @property
     def suffixes(self):
@@ -185,21 +194,18 @@ class PurePathBase:
 
         These include the leading periods. For example: ['.tar', '.gz']
         """
-        name = self.name
-        if name.endswith('.'):
-            return []
-        name = name.lstrip('.')
-        return ['.' + suffix for suffix in name.split('.')[1:]]
+        split = self.parser.splitext
+        stem, suffix = split(self.name)
+        suffixes = []
+        while suffix:
+            suffixes.append(suffix)
+            stem, suffix = split(stem)
+        return suffixes[::-1]
 
     @property
     def stem(self):
         """The final path component, minus its last suffix."""
-        name = self.name
-        i = name.rfind('.')
-        if 0 < i < len(name) - 1:
-            return name[:i]
-        else:
-            return name
+        return self.parser.splitext(self.name)[0]
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
@@ -225,15 +231,13 @@ class PurePathBase:
         string, remove the suffix from the path.
         """
         stem = self.stem
-        if not suffix:
-            return self.with_name(stem)
-        elif not stem:
+        if not stem:
             # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
-        elif suffix.startswith('.') and len(suffix) > 1:
-            return self.with_name(stem + suffix)
-        else:
+        elif suffix and not suffix.startswith('.'):
             raise ValueError(f"Invalid suffix {suffix!r}")
+        else:
+            return self.with_name(stem + suffix)
 
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -450,12 +454,7 @@ class PathBase(PurePathBase):
         """
         try:
             self.stat(follow_symlinks=follow_symlinks)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
         return True
 
@@ -465,14 +464,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_file(self, *, follow_symlinks=True):
@@ -482,14 +474,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_mount(self):
@@ -518,13 +503,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISLNK(self.lstat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_junction(self):
@@ -542,14 +521,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISBLK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_char_device(self):
@@ -558,14 +530,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISCHR(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_fifo(self):
@@ -574,14 +539,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISFIFO(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def is_socket(self):
@@ -590,14 +548,7 @@ class PathBase(PurePathBase):
         """
         try:
             return S_ISSOCK(self.stat().st_mode)
-        except OSError as e:
-            if not _ignore_error(e):
-                raise
-            # Path doesn't exist or is a broken symlink
-            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
-            return False
-        except ValueError:
-            # Non-encodable path
+        except (OSError, ValueError):
             return False
 
     def samefile(self, other_path):
@@ -698,7 +649,37 @@ class PathBase(PurePathBase):
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
-        return self._globber.walk(self, top_down, on_error, follow_symlinks)
+        paths = [self]
+        while paths:
+            path = paths.pop()
+            if isinstance(path, tuple):
+                yield path
+                continue
+            dirnames = []
+            filenames = []
+            if not top_down:
+                paths.append((path, dirnames, filenames))
+            try:
+                for child in path.iterdir():
+                    try:
+                        if child.is_dir(follow_symlinks=follow_symlinks):
+                            if not top_down:
+                                paths.append(child)
+                            dirnames.append(child.name)
+                        else:
+                            filenames.append(child.name)
+                    except OSError:
+                        filenames.append(child.name)
+            except OSError as error:
+                if on_error is not None:
+                    on_error(error)
+                if not top_down:
+                    while not isinstance(paths.pop(), tuple):
+                        pass
+                continue
+            if top_down:
+                yield path, dirnames, filenames
+                paths += [path.joinpath(d) for d in reversed(dirnames)]
 
     def absolute(self):
         """Return an absolute version of this path
@@ -743,65 +724,34 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
-        path_root, parts = self._stack
-        path = self.with_segments(path_root)
-        try:
-            path = path.absolute()
-        except UnsupportedOperation:
-            path_tail = []
-        else:
-            path_root, path_tail = path._stack
-            path_tail.reverse()
 
-        # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
-        # and (in non-strict mode) we can improve performance by not calling `stat()`.
-        querying = strict or getattr(self.readlink, '_supported', True)
-        link_count = 0
-        while parts:
-            part = parts.pop()
-            if not part or part == '.':
-                continue
-            if part == '..':
-                if not path_tail:
-                    if path_root:
-                        # Delete '..' segment immediately following root
-                        continue
-                elif path_tail[-1] != '..':
-                    # Delete '..' segment and its predecessor
-                    path_tail.pop()
-                    continue
-            path_tail.append(part)
-            if querying and part != '..':
-                path = self.with_segments(path_root + self.parser.sep.join(path_tail))
+        def getcwd():
+            return str(self.with_segments().absolute())
+
+        if strict or getattr(self.readlink, '_supported', True):
+            def lstat(path_str):
+                path = self.with_segments(path_str)
                 path._resolving = True
-                try:
-                    st = path.stat(follow_symlinks=False)
-                    if S_ISLNK(st.st_mode):
-                        # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
-                        # encountered during resolution.
-                        link_count += 1
-                        if link_count >= self._max_symlinks:
-                            raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
-                        target_root, target_parts = path.readlink()._stack
-                        # If the symlink target is absolute (like '/etc/hosts'), set the current
-                        # path to its uppermost parent (like '/').
-                        if target_root:
-                            path_root = target_root
-                            path_tail.clear()
-                        else:
-                            path_tail.pop()
-                        # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
-                        # the stack of unresolved path parts.
-                        parts.extend(target_parts)
-                        continue
-                    elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", self._raw_path)
-                except OSError:
-                    if strict:
-                        raise
-                    else:
-                        querying = False
-        return self.with_segments(path_root + self.parser.sep.join(path_tail))
+                return path.lstat()
+
+            def readlink(path_str):
+                path = self.with_segments(path_str)
+                path._resolving = True
+                return str(path.readlink())
+        else:
+            # If the user has *not* overridden the `readlink()` method, then
+            # symlinks are unsupported and (in non-strict mode) we can improve
+            # performance by not calling `path.lstat()`.
+            def skip(path_str):
+                # This exception will be internally consumed by `_realpath()`.
+                raise OSError("Operation skipped.")
+
+            lstat = readlink = skip
+
+        return self.with_segments(posixpath._realpath(
+            str(self), strict, self.parser.sep,
+            getcwd=getcwd, lstat=lstat, readlink=readlink,
+            maxlinks=self._max_symlinks))
 
     def symlink_to(self, target, target_is_directory=False):
         """

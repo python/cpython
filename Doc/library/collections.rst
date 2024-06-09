@@ -1,5 +1,5 @@
-:mod:`collections` --- Container datatypes
-==========================================
+:mod:`!collections` --- Container datatypes
+===========================================
 
 .. module:: collections
     :synopsis: Container datatypes

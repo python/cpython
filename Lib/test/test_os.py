@@ -1685,10 +1685,29 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
+    @unittest.skipIf(
+        support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
+    )
+    def test_fd_finalization(self):
+        # Check that close()ing the fwalk() generator closes FDs
+        def getfd():
+            fd = os.dup(1)
+            os.close(fd)
+            return fd
+        for topdown in (False, True):
+            old_fd = getfd()
+            it = self.fwalk(os_helper.TESTFN, topdown=topdown)
+            self.assertEqual(getfd(), old_fd)
+            next(it)
+            self.assertGreater(getfd(), old_fd)
+            it.close()
+            self.assertEqual(getfd(), old_fd)
+
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
-    # fwalk() still uses recursion
-    test_walk_above_recursion_limit = None
 
 
 class BytesWalkTests(WalkTests):
@@ -1814,21 +1833,15 @@ class MakedirTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', "requires Windows")
     def test_win32_mkdir_700(self):
         base = os_helper.TESTFN
-        path1 = os.path.join(os_helper.TESTFN, 'dir1')
-        path2 = os.path.join(os_helper.TESTFN, 'dir2')
-        # mode=0o700 is special-cased to override ACLs on Windows
-        # There's no way to know exactly how the ACLs will look, so we'll
-        # check that they are different from a regularly created directory.
-        os.mkdir(path1, mode=0o700)
-        os.mkdir(path2, mode=0o777)
-
-        out1 = subprocess.check_output(["icacls.exe", path1], encoding="oem")
-        out2 = subprocess.check_output(["icacls.exe", path2], encoding="oem")
-        os.rmdir(path1)
-        os.rmdir(path2)
-        out1 = out1.replace(path1, "<PATH>")
-        out2 = out2.replace(path2, "<PATH>")
-        self.assertNotEqual(out1, out2)
+        path = os.path.abspath(os.path.join(os_helper.TESTFN, 'dir'))
+        os.mkdir(path, mode=0o700)
+        out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
+        os.rmdir(path)
+        out = out.strip().rsplit(" ", 1)[1]
+        self.assertEqual(
+            out,
+            '"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+        )
 
     def tearDown(self):
         path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
@@ -3226,9 +3239,8 @@ class Win32NtTests(unittest.TestCase):
             self.skipTest("Unable to create inaccessible file")
 
         def cleanup():
-            # Give delete permission. We are the file owner, so we can do this
-            # even though we removed all permissions earlier.
-            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+            # Give delete permission to the owner (us)
+            subprocess.check_output([ICACLS, filename, "/grant", "*WD:(D)"],
                                     stderr=subprocess.STDOUT)
             os.unlink(filename)
 

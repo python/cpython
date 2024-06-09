@@ -1,5 +1,5 @@
-:mod:`decimal` --- Decimal fixed point and floating point arithmetic
-====================================================================
+:mod:`!decimal` --- Decimal fixed point and floating point arithmetic
+=====================================================================
 
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.

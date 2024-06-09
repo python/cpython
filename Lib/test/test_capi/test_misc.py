@@ -26,7 +26,8 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
-from test.support import requires_gil_enabled, expected_failure_if_gil_disabled
+from test.support import suppress_immortalization
+from test.support import expected_failure_if_gil_disabled
 from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
@@ -481,6 +482,7 @@ class CAPITest(unittest.TestCase):
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
+    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -498,6 +500,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
         self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
 
+    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
         class A(_testcapi.HeapGcCType):
             def __init__(self):
@@ -774,33 +777,11 @@ class CAPITest(unittest.TestCase):
                 with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_immutable_type_with_mutable_base(self):
-        # Add deprecation warning here so it's removed in 3.14
-        warnings._deprecated(
-            'creating immutable classes with mutable bases', remove=(3, 14))
+        class MutableBase: ...
 
-        class MutableBase:
-            def meth(self):
-                return 'original'
-
-        with self.assertWarns(DeprecationWarning):
-            ImmutableSubclass = _testcapi.make_immutable_type_with_base(
-                MutableBase)
-        instance = ImmutableSubclass()
-
-        self.assertEqual(instance.meth(), 'original')
-
-        # Cannot override the static type's method
-        with self.assertRaisesRegex(
-                TypeError,
-                "cannot set 'meth' attribute of immutable type"):
-            ImmutableSubclass.meth = lambda self: 'overridden'
-        self.assertEqual(instance.meth(), 'original')
-
-        # Can change the method on the mutable base
-        MutableBase.meth = lambda self: 'changed'
-        self.assertEqual(instance.meth(), 'changed')
+        with self.assertRaisesRegex(TypeError, 'Creating immutable type'):
+            _testcapi.make_immutable_type_with_base(MutableBase)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -2884,6 +2865,22 @@ class TestThreadState(unittest.TestCase):
         t = threading.Thread(target=target)
         t.start()
         t.join()
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_thread_gilstate_in_clear(self):
+        # See https://github.com/python/cpython/issues/119585
+        class C:
+            def __del__(self):
+                _testcapi.gilstate_ensure_release()
+
+        # Thread-local variables are destroyed in `PyThreadState_Clear()`.
+        local_var = threading.local()
+
+        def callback():
+            local_var.x = C()
+
+        _testcapi._test_thread_state(callback)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()

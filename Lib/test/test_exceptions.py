@@ -1817,6 +1817,29 @@ class ExceptionTests(unittest.TestCase):
         rc, _, err = script_helper.assert_python_ok("-c", code)
         self.assertIn(b'MemoryError', err)
 
+    def test_keyerror_context(self):
+        # Make sure that _PyErr_SetKeyError() chains exceptions
+        try:
+            err1 = None
+            err2 = None
+            try:
+                d = {}
+                try:
+                    raise ValueError("bug")
+                except Exception as exc:
+                    err1 = exc
+                    d[1]
+            except Exception as exc:
+                err2 = exc
+
+            self.assertIsInstance(err1, ValueError)
+            self.assertIsInstance(err2, KeyError)
+            self.assertEqual(err2.__context__, err1)
+        finally:
+            # Break any potential reference cycle
+            exc1 = None
+            exc2 = None
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):

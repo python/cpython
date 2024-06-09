@@ -63,16 +63,10 @@ class TestLowLevelInternals(unittest.TestCase):
             tempfile._infer_return_type(b'', None, '')
 
     def test_infer_return_type_pathlib(self):
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+        self.assertIs(str, tempfile._infer_return_type(os_helper.FakePath('/')))
 
     def test_infer_return_type_pathlike(self):
-        class Path:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
+        Path = os_helper.FakePath
         self.assertIs(str, tempfile._infer_return_type(Path('/')))
         self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
         self.assertIs(str, tempfile._infer_return_type('', Path('')))
@@ -443,7 +437,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
-            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
+            self.do_create(dir=os_helper.FakePath(dir)).write(b"blat")
         finally:
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
@@ -681,7 +675,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
-            self.do_create(dir=pathlib.Path(dir))
+            self.do_create(dir=os_helper.FakePath(dir))
         finally:
             os.rmdir(dir)
 
@@ -782,7 +776,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
-            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
+            os.rmdir(self.do_create(dir=os_helper.FakePath(dir)))
         finally:
             os.rmdir(dir)
 

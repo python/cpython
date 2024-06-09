@@ -1,5 +1,5 @@
-:mod:`multiprocessing` --- Process-based parallelism
-====================================================
+:mod:`!multiprocessing` --- Process-based parallelism
+=====================================================
 
 .. module:: multiprocessing
    :synopsis: Process-based parallelism.
@@ -2483,9 +2483,9 @@ multiple connections at the same time.
    generally be omitted since it can usually be inferred from the format of
    *address*. (See :ref:`multiprocessing-address-formats`)
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 
@@ -2518,9 +2518,9 @@ multiple connections at the same time.
    to the :meth:`~socket.socket.listen` method of the socket once it has been
    bound.
 
-   If *authkey* is given and not None, it should be a byte string and will be
+   If *authkey* is given and not ``None``, it should be a byte string and will be
    used as the secret key for an HMAC-based authentication challenge. No
-   authentication is done if *authkey* is None.
+   authentication is done if *authkey* is ``None``.
    :exc:`~multiprocessing.AuthenticationError` is raised if authentication fails.
    See :ref:`multiprocessing-auth-keys`.
 

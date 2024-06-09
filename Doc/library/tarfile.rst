@@ -1,5 +1,5 @@
-:mod:`tarfile` --- Read and write tar archive files
-===================================================
+:mod:`!tarfile` --- Read and write tar archive files
+====================================================
 
 .. module:: tarfile
    :synopsis: Read and write tar-format archive files.

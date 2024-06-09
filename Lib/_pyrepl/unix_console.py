@@ -40,9 +40,13 @@ from .unix_eventqueue import EventQueue
 from .utils import wlen
 
 
+TYPE_CHECKING = False
+
 # types
-if False:
-    from typing import IO
+if TYPE_CHECKING:
+    from typing import IO, Literal, overload
+else:
+    overload = lambda func: None
 
 
 class InvalidTerminal(RuntimeError):
@@ -114,9 +118,12 @@ except AttributeError:
 
         def register(self, fd, flag):
             self.fd = fd
-
-        def poll(self):  # note: a 'timeout' argument would be *milliseconds*
-            r, w, e = select.select([self.fd], [], [])
+        # note: The 'timeout' argument is received as *milliseconds*
+        def poll(self, timeout: float | None = None) -> list[int]:
+            if timeout is None:
+                r, w, e = select.select([self.fd], [], [])
+            else:
+                r, w, e = select.select([self.fd], [], [], timeout/1000)
             return r
 
     poll = MinimalPoll  # type: ignore[assignment]
@@ -139,25 +146,20 @@ class UnixConsole(Console):
         - term (str): Terminal name.
         - encoding (str): Encoding to use for I/O operations.
         """
-
-        self.encoding = encoding or sys.getdefaultencoding()
-
-        if isinstance(f_in, int):
-            self.input_fd = f_in
-        else:
-            self.input_fd = f_in.fileno()
-
-        if isinstance(f_out, int):
-            self.output_fd = f_out
-        else:
-            self.output_fd = f_out.fileno()
+        super().__init__(f_in, f_out, term, encoding)
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
         curses.setupterm(term or None, self.output_fd)
         self.term = term
 
-        def _my_getstr(cap, optional=0):
+        @overload
+        def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
+
+        @overload
+        def _my_getstr(cap: str, optional: bool) -> bytes | None: ...
+
+        def _my_getstr(cap: str, optional: bool = False) -> bytes | None:
             r = curses.tigetstr(cap)
             if not optional and r is None:
                 raise InvalidTerminal(
@@ -283,7 +285,7 @@ class UnixConsole(Console):
 
         self.__show_cursor()
 
-        self.screen = screen
+        self.screen = screen.copy()
         self.move_cursor(cx, cy)
         self.flushoutput()
 
@@ -386,11 +388,11 @@ class UnixConsole(Console):
                 break
         return self.event_queue.get()
 
-    def wait(self):
+    def wait(self, timeout: float | None = None) -> bool:
         """
         Wait for events on the console.
         """
-        self.pollob.poll()
+        return bool(self.pollob.poll(timeout))
 
     def set_cursor_vis(self, visible):
         """
@@ -528,6 +530,15 @@ class UnixConsole(Console):
         self.__posxy = 0, 0
         self.screen = []
 
+    @property
+    def input_hook(self):
+        try:
+            import posix
+        except ImportError:
+            return None
+        if posix._is_inputhook_installed():
+            return posix._inputhook
+
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
 
@@ -582,14 +593,19 @@ class UnixConsole(Console):
         px_pos = 0
         j = 0
         for c in oldline:
-            if j >= px_coord: break
+            if j >= px_coord:
+                break
             j += wlen(c)
             px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
         # sequene
-        while x_coord < minlen and oldline[x_pos] == newline[x_pos] and newline[x_pos] != "\x1b":
+        while (
+            x_coord < minlen
+            and oldline[x_pos] == newline[x_pos]
+            and newline[x_pos] != "\x1b"
+        ):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
@@ -609,7 +625,11 @@ class UnixConsole(Console):
             self.__posxy = x_coord + character_width, y
 
         # if it's a single character change in the middle of the line
-        elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+        elif (
+            x_coord < minlen
+            and oldline[x_pos + 1 :] == newline[x_pos + 1 :]
+            and wlen(oldline[x_pos]) == wlen(newline[x_pos])
+        ):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
@@ -672,18 +692,18 @@ class UnixConsole(Console):
         elif dy < 0:
             self.__write_code(self._cuu, -dy)
 
-    def __move_x_hpa(self, x):
+    def __move_x_hpa(self, x: int) -> None:
         if x != self.__posxy[0]:
             self.__write_code(self._hpa, x)
 
-    def __move_x_cub1_cuf1(self, x):
+    def __move_x_cub1_cuf1(self, x: int) -> None:
         dx = x - self.__posxy[0]
         if dx > 0:
             self.__write_code(self._cuf1 * dx)
         elif dx < 0:
             self.__write_code(self._cub1 * (-dx))
 
-    def __move_x_cub_cuf(self, x):
+    def __move_x_cub_cuf(self, x: int) -> None:
         dx = x - self.__posxy[0]
         if dx > 0:
             self.__write_code(self._cuf, dx)

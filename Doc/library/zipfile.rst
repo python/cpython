@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
@@ -584,6 +584,15 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 .. method:: Path.is_file()
 
    Return ``True`` if the current context references a file.
+
+.. method:: Path.is_symlink()
+
+   Return ``True`` if the current context references a symbolic link.
+
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Previously, ``is_symlink`` would unconditionally return ``False``.
 
 .. method:: Path.exists()
 

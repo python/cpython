@@ -4,7 +4,6 @@ import filecmp
 import importlib.util
 import io
 import os
-import pathlib
 import py_compile
 import shutil
 import struct
@@ -31,6 +30,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta
+from test.support.os_helper import FakePath
 
 
 def get_pyc(script, opt):
@@ -156,28 +156,28 @@ class CompileallTestsBase:
         self.assertFalse(os.path.isfile(self.bc_path))
         # we should also test the output
         with support.captured_stdout() as stdout:
-            self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
+            self.assertTrue(compileall.compile_file(FakePath(self.source_path)))
         self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                ddir=pathlib.Path('ddir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                ddir=FakePath('ddir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                stripdir=FakePath('stripdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                prependdir=FakePath('prependdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -228,22 +228,22 @@ class CompileallTestsBase:
     def test_compile_dir_pathlike(self):
         self.assertFalse(os.path.isfile(self.bc_path))
         with support.captured_stdout() as stdout:
-            compileall.compile_dir(pathlib.Path(self.directory))
+            compileall.compile_dir(FakePath(self.directory))
         line = stdout.getvalue().splitlines()[0]
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               stripdir=FakePath('stripdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               prependdir=FakePath('prependdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 

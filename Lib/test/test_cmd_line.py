@@ -981,7 +981,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
         res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
-        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
     def res2int(self, res):

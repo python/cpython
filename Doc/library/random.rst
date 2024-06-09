@@ -1,5 +1,5 @@
-:mod:`random` --- Generate pseudo-random numbers
-================================================
+:mod:`!random` --- Generate pseudo-random numbers
+=================================================
 
 .. module:: random
    :synopsis: Generate pseudo-random numbers with various common distributions.
