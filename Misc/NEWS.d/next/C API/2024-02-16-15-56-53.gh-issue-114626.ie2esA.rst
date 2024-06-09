@@ -1,4 +1,0 @@
-Add again ``_PyCFunctionFastWithKeywords`` name, removed in Python 3.13
-alpha 4 by mistake.  Keep the old private ``_PyCFunctionFastWithKeywords``
-name (Python 3.7) as an alias to the new public name
-``PyCFunctionFastWithKeywords`` (Python 3.13a4). Patch by Victor Stinner.

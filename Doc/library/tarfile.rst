@@ -1,5 +1,5 @@
-:mod:`tarfile` --- Read and write tar archive files
-===================================================
+:mod:`!tarfile` --- Read and write tar archive files
+====================================================
 
 .. module:: tarfile
    :synopsis: Read and write tar-format archive files.
@@ -565,6 +565,10 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
 
+   .. versionchanged:: 3.13
+      The returned :class:`io.BufferedReader` object has the :attr:`!mode`
+      attribute which is always equal to ``'rb'``.
+
 .. attribute:: TarFile.errorlevel
    :type: int
 
@@ -637,10 +641,14 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.addfile(tarinfo, fileobj=None)
 
-   Add the :class:`TarInfo` object *tarinfo* to the archive. If *fileobj* is given,
-   it should be a :term:`binary file`, and
-   ``tarinfo.size`` bytes are read from it and added to the archive.  You can
+   Add the :class:`TarInfo` object *tarinfo* to the archive. If *tarinfo* represents
+   a non zero-size regular file, the *fileobj* argument should be a :term:`binary file`,
+   and ``tarinfo.size`` bytes are read from it and added to the archive.  You can
    create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
+
+   .. versionchanged:: 3.13
+
+      *fileobj* must be given for non-zero-sized regular files.
 
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)

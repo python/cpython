@@ -116,7 +116,7 @@ typedef enum _PyLockFlags {
 extern PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
-// Lock a mutex with aditional options. See _PyLockFlags for details.
+// Lock a mutex with additional options. See _PyLockFlags for details.
 static inline void
 PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 {
@@ -136,6 +136,10 @@ typedef struct {
     uint8_t v;
 } PyEvent;
 
+// Check if the event is set without blocking. Returns 1 if the event is set or
+// 0 otherwise.
+PyAPI_FUNC(int) _PyEvent_IsSet(PyEvent *evt);
+
 // Set the event and notify any waiting threads.
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(void) _PyEvent_Notify(PyEvent *evt);
@@ -146,9 +150,10 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
-// and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns);
-
+// and 0 if the timeout expired or thread was interrupted. If `detach` is
+// true, then the thread will detach/release the GIL while waiting.
+PyAPI_FUNC(int)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach);
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
 // parking lot API, and therefore can be used in the parking lot
@@ -214,6 +219,18 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
+// A recursive mutex. The mutex should zero-initialized.
+typedef struct {
+    PyMutex mutex;
+    unsigned long long thread;  // i.e., PyThread_get_thread_ident_ex()
+    size_t level;
+} _PyRecursiveMutex;
+
+PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
+
+
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
 // the lock is read-locked then, new readers will be blocked. This avoids
@@ -258,7 +275,7 @@ PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
 // underlying data and then read the sequence number again after reading the data.  If the
 // sequence has not changed the data is valid.
 //
-// Differs a little bit in that we use CAS on sequence as the lock, instead of a seperate spin lock.
+// Differs a little bit in that we use CAS on sequence as the lock, instead of a separate spin lock.
 // The writer can also detect that the undelering data has not changed and abandon the write
 // and restore the previous sequence.
 typedef struct {
@@ -271,7 +288,7 @@ PyAPI_FUNC(void) _PySeqLock_LockWrite(_PySeqLock *seqlock);
 // Unlock the sequence lock and move to the next sequence number.
 PyAPI_FUNC(void) _PySeqLock_UnlockWrite(_PySeqLock *seqlock);
 
-// Abandon the current update indicating that no mutations have occured
+// Abandon the current update indicating that no mutations have occurred
 // and restore the previous sequence value.
 PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
 

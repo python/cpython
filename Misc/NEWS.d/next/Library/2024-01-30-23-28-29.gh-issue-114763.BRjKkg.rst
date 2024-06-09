@@ -1,3 +1,0 @@
-Protect modules loaded with :class:`importlib.util.LazyLoader` from race
-conditions when multiple threads try to access attributes before the loading
-is complete.

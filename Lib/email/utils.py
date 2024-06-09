@@ -466,23 +466,15 @@ def collapse_rfc2231_value(value, errors='replace',
 # better than not having it.
 #
 
-def localtime(dt=None, isdst=None):
+def localtime(dt=None):
     """Return local time as an aware datetime object.
 
     If called without arguments, return current time.  Otherwise *dt*
     argument should be a datetime instance, and it is converted to the
     local time zone according to the system time zone database.  If *dt* is
     naive (that is, dt.tzinfo is None), it is assumed to be in local time.
-    The isdst parameter is ignored.
 
     """
-    if isdst is not None:
-        import warnings
-        warnings._deprecated(
-            "The 'isdst' parameter to 'localtime'",
-            message='{name} is deprecated and slated for removal in Python {remove}',
-            remove=(3, 14),
-            )
     if dt is None:
         dt = datetime.datetime.now()
     return dt.astimezone()

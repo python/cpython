@@ -22,6 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -1335,6 +1336,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
 
+    def test_fromtimestamp_with_none_arg(self):
+        # See gh-120268 for more details
+        with self.assertRaises(TypeError):
+            self.theclass.fromtimestamp(None)
+
     def test_today(self):
         import time
 
@@ -1927,6 +1933,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-02-29',       # Invalid leap day
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
+            '0000-W25-1',       # Invalid year
+            '10000-W25-1',      # Invalid year
+            '2020-W25-0',       # Invalid day-of-week
+            '2020-W25-8',       # Invalid day-of-week
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -2792,6 +2802,20 @@ class TestDateTime(TestDate):
                               target=target):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            # The existing behavior that GH-70647 seeks to change.
+            self.theclass.strptime('02-29', '%m-%d')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
@@ -4393,6 +4417,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-',         # Extra at end of microsecond time
             '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
+            '12.5',                     # Decimal mark at end of hour
+            '12:30,5',                  # Decimal mark at end of minute
         ]
 
         for bad_str in bad_strs:

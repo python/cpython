@@ -4,16 +4,12 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -28,10 +24,10 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch, UNUSED
+from stack import Stack, SizeMismatch, UNUSED
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = ROOT / "Python/optimizer_bytecodes.c"
+DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -41,10 +37,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UOpsSymType **"
+        return f"_Py_UopsSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UOpsSymType *"
+    return f"_Py_UopsSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -87,15 +83,12 @@ def emit_default(out: CWriter, uop: Uop) -> None:
         if var.name != "unused" and not var.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = _Py_uop_sym_new_unknown(ctx);\n")
-                out.emit(f"if ({var.name}[_i] == NULL) goto out_of_space;\n")
+                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                 out.emit("}\n")
             elif var.name == "null":
-                out.emit(f"{var.name} = _Py_uop_sym_new_null(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
+                out.emit(f"{var.name} = sym_new_null(ctx);\n")
             else:
-                out.emit(f"{var.name} = _Py_uop_sym_new_unknown(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
+                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
 
 def write_uop(
@@ -148,7 +141,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UOpsSymType *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -218,19 +211,22 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument("input", nargs=1, help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs='*', help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
-    "base", nargs=argparse.REMAINDER, help="The base instruction definition file(s)"
+    "base", nargs="*", help="The base instruction definition file(s)"
 )
 
 arg_parser.add_argument("-d", "--debug", help="Insert debug calls", action="store_true")
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
-    if len(args.base) == 0:
-        args.input.append(DEFAULT_INPUT)
+    if not args.input:
+        args.base.append(DEFAULT_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
+    else:
+        args.base.append(args.input[-1])
+        args.input.pop()
     abstract = analyze_files(args.input)
     base = analyze_files(args.base)
     with open(args.output, "w") as outfile:

@@ -1,5 +1,5 @@
-:mod:`email.header`: Internationalized headers
-----------------------------------------------
+:mod:`!email.header`: Internationalized headers
+-----------------------------------------------
 
 .. module:: email.header
    :synopsis: Representing non-ASCII headers
@@ -77,7 +77,7 @@ Here is the :class:`Header` class description:
    The maximum line length can be specified explicitly via *maxlinelen*.  For
    splitting the first line to a shorter value (to account for the field header
    which isn't included in *s*, e.g. :mailheader:`Subject`) pass in the name of the
-   field in *header_name*.  The default *maxlinelen* is 76, and the default value
+   field in *header_name*.  The default *maxlinelen* is 78, and the default value
    for *header_name* is ``None``, meaning it is not taken into account for the
    first line of a long, split header.
 

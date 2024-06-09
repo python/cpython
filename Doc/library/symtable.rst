@@ -1,5 +1,5 @@
-:mod:`symtable` --- Access to the compiler's symbol tables
-==========================================================
+:mod:`!symtable` --- Access to the compiler's symbol tables
+===========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
@@ -150,6 +150,10 @@ Examining Symbol Tables
    .. method:: is_parameter()
 
       Return ``True`` if the symbol is a parameter.
+
+   .. method:: is_type_parameter()
+
+      Return ``True`` if the symbol is a type parameter.
 
    .. method:: is_global()
 

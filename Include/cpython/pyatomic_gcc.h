@@ -492,9 +492,17 @@ static inline void *
 _Py_atomic_load_ptr_acquire(const void *obj)
 { return (void *)__atomic_load_n((void **)obj, __ATOMIC_ACQUIRE); }
 
+static inline uintptr_t
+_Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
+{ return (uintptr_t)__atomic_load_n((uintptr_t *)obj, __ATOMIC_ACQUIRE); }
+
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)
 { __atomic_store_n((void **)obj, value, __ATOMIC_RELEASE); }
+
+static inline void
+_Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
 _Py_atomic_store_int_release(int *obj, int value)
@@ -507,6 +515,10 @@ _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
+static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
 _Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)

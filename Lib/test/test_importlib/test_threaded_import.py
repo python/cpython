@@ -13,6 +13,7 @@ import time
 import shutil
 import threading
 import unittest
+from test import support
 from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
@@ -260,7 +261,7 @@ def setUpModule():
     try:
         old_switchinterval = sys.getswitchinterval()
         unittest.addModuleCleanup(sys.setswitchinterval, old_switchinterval)
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
     except AttributeError:
         pass
 

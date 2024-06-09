@@ -1622,6 +1622,7 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
         }
         self->items[i].literal = Py_XNewRef(literal);
     }
+    PyObject_GC_Track(self);
     return (PyObject*) self;
 
 bad_template:
@@ -3272,6 +3273,7 @@ error:
 static PyModuleDef_Slot sre_slots[] = {
     {Py_mod_exec, sre_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

@@ -1,0 +1,2 @@
+Fixes creation of ACLs in :func:`os.mkdir` on Windows to work correctly on
+non-English machines.

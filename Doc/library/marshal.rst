@@ -1,5 +1,5 @@
-:mod:`marshal` --- Internal Python object serialization
-=======================================================
+:mod:`!marshal` --- Internal Python object serialization
+========================================================
 
 .. module:: marshal
    :synopsis: Convert Python objects to streams of bytes and back (with different
@@ -10,7 +10,7 @@
 This module contains functions that can read and write Python values in a binary
 format.  The format is specific to Python, but independent of machine
 architecture issues (e.g., you can write a Python value to a file on a PC,
-transport the file to a Sun, and read it back there).  Details of the format are
+transport the file to a Mac, and read it back there).  Details of the format are
 undocumented on purpose; it may change between Python versions (although it
 rarely does). [#]_
 

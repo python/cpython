@@ -1,5 +1,5 @@
-:mod:`gzip` --- Support for :program:`gzip` files
-=================================================
+:mod:`!gzip` --- Support for :program:`gzip` files
+==================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
@@ -100,10 +100,12 @@ The module defines the following items:
    compression, and ``9`` is slowest and produces the most compression. ``0``
    is no compression. The default is ``9``.
 
-   The *mtime* argument is an optional numeric timestamp to be written to
-   the last modification time field in the stream when compressing.  It
-   should only be provided in compression mode.  If omitted or ``None``, the
-   current time is used.  See the :attr:`mtime` attribute for more details.
+   The optional *mtime* argument is the timestamp requested by gzip. The time
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+   If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
+   to generate a compressed stream that does not depend on creation time.
+
+   See below for the :attr:`mtime` attribute that is set when decompressing.
 
    Calling a :class:`GzipFile` object's :meth:`!close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
@@ -131,17 +133,19 @@ The module defines the following items:
 
       .. versionadded:: 3.2
 
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionchanged:: 3.13
+         In previous versions it was an integer ``1`` or ``2``.
+
    .. attribute:: mtime
 
-      When decompressing, the value of the last modification time field in
-      the most recently read header may be read from this attribute, as an
-      integer.  The initial value before reading any headers is ``None``.
-
-      All :program:`gzip` compressed streams are required to contain this
-      timestamp field.  Some programs, such as :program:`gunzip`\ , make use
-      of the timestamp.  The format is the same as the return value of
-      :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
-      the object returned by :func:`os.stat`.
+      When decompressing, this attribute is set to the last timestamp in the most
+      recently read header.  It is an integer, holding the number of seconds
+      since the Unix epoch (00:00:00 UTC, January 1, 1970).
+      The initial value before reading any headers is ``None``.
 
    .. attribute:: name
 
@@ -171,13 +175,13 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
-      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
-      attribute instead.
-
    .. deprecated:: 3.9
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
+
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
 
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)

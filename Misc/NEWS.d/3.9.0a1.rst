@@ -44,7 +44,7 @@ rendering the document page as HTML. (Contributed by Donghee Na in
 .. section: Security
 
 Update vendorized expat library version to 2.2.8, which resolves
-CVE-2019-15903.
+:cve:`2019-15903`.
 
 ..
 
@@ -1396,7 +1396,7 @@ way to :func:`email.message.get`.
 .. section: Library
 
 Deprecated the ``split()`` method in :class:`_tkinter.TkappType` in favour
-of the ``splitlist()`` method which has more consistent and predicable
+of the ``splitlist()`` method which has more consistent and predictable
 behavior.
 
 ..
@@ -5616,7 +5616,7 @@ heap type
 .. nonce: 4DcUaI
 .. section: C API
 
-Add :c:func:`_PyObject_FunctionStr` to get a user-friendly string
+Add :c:func:`!_PyObject_FunctionStr` to get a user-friendly string
 representation of a function-like object. Patch by Jeroen Demeyer.
 
 ..
