@@ -30,6 +30,20 @@ class CProfileTest(ProfileTest):
 
             self.assertEqual(cm.unraisable.exc_type, TypeError)
 
+    def test_evil_external_timer(self):
+        import _lsprof
+        class EvilTimer():
+            def __call__(self):
+                profiler_with_evil_timer.disable()
+                return True
+
+        with support.catch_unraisable_exception() as cm:
+            profiler_with_evil_timer = _lsprof.Profiler(EvilTimer())
+            profiler_with_evil_timer.enable()
+            # Make a call to trigger timer
+            (lambda: None)()
+            self.assertEqual(cm.unraisable.exc_type, RuntimeError)
+
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.

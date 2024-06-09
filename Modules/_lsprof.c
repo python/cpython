@@ -87,8 +87,16 @@ _lsprof_get_state(PyObject *module)
 
 static PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
+    ProfilerContext *context = pObj->currentProfilerContext;
     PyObject *o = _PyObject_CallNoArgs(pObj->externalTimer);
     if (o == NULL) {
+        PyErr_WriteUnraisable(pObj->externalTimer);
+        return 0;
+    }
+
+    if (pObj->currentProfilerContext != context) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "external timer callback changed the profiler context");
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
     }
