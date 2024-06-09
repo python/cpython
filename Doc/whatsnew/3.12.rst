@@ -1440,8 +1440,6 @@ and will be removed in Python 3.14.
 
 * :mod:`typing`: :class:`!typing.ByteString`
 
-* :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`.
-
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
 * The :attr:`~codeobject.co_lnotab` attribute of code objects.
@@ -1466,6 +1464,11 @@ although there is currently no date scheduled for their removal.
 * :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :class:`typing.Text` (:gh:`92332`)
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an
+  :class:`xml.etree.ElementTree.Element` is deprecated. In a future release it
+  will always return True. Prefer explicit ``len(elem)`` or
+  ``elem is not None`` tests instead.
 
 * Currently Python accepts numeric literals immediately followed by keywords,
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing

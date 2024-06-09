@@ -103,6 +103,10 @@ Optimizations
 Deprecated
 ==========
 
+* Passing a complex number as the *real* or *imag* argument in the
+  :func:`complex` constructor is now deprecated; it should only be passed
+  as a single positional argument.
+  (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
 
 Removed
@@ -214,12 +218,24 @@ typing
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
 
+urllib
+------
+
+* Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
+  It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
+  (Contributed by Nikita Sobolev in :gh:`118827`.)
+
 Others
 ------
 
 * Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
   by Jelle Zijlstra in :gh:`118767`.)
+
+* The :func:`int` built-in no longer delegates to
+  :meth:`~object.__trunc__`. Classes that want to support conversion to
+  integer must implement either :meth:`~object.__int__` or
+  :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
 Porting to Python 3.14
@@ -239,6 +255,9 @@ C API Changes
 New Features
 ------------
 
+* Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
+  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
+
 Porting to Python 3.14
 ----------------------
 
@@ -254,3 +273,5 @@ Deprecated
 Removed
 -------
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases was deprecated since 3.12 and now raises a :exc:`TypeError`.

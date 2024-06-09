@@ -8685,7 +8685,7 @@ PyDoc_STRVAR(os_major__doc__,
 #define OS_MAJOR_METHODDEF    \
     {"major", (PyCFunction)os_major, METH_O, os_major__doc__},
 
-static unsigned int
+static PyObject *
 os_major_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8693,16 +8693,11 @@ os_major(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_major_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_major_impl(module, device);
 
 exit:
     return return_value;
@@ -8721,7 +8716,7 @@ PyDoc_STRVAR(os_minor__doc__,
 #define OS_MINOR_METHODDEF    \
     {"minor", (PyCFunction)os_minor, METH_O, os_minor__doc__},
 
-static unsigned int
+static PyObject *
 os_minor_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8729,16 +8724,11 @@ os_minor(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_minor_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_minor_impl(module, device);
 
 exit:
     return return_value;
@@ -8758,25 +8748,23 @@ PyDoc_STRVAR(os_makedev__doc__,
     {"makedev", _PyCFunction_CAST(os_makedev), METH_FASTCALL, os_makedev__doc__},
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor);
+os_makedev_impl(PyObject *module, dev_t major, dev_t minor);
 
 static PyObject *
 os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int major;
-    int minor;
+    dev_t major;
+    dev_t minor;
     dev_t _return_value;
 
     if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
         goto exit;
     }
-    major = PyLong_AsInt(args[0]);
-    if (major == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[0], &major)) {
         goto exit;
     }
-    minor = PyLong_AsInt(args[1]);
-    if (minor == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[1], &minor)) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -12128,6 +12116,42 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os__inputhook__doc__,
+"_inputhook($module, /)\n"
+"--\n"
+"\n"
+"Calls PyOS_CallInputHook droppong the GIL first");
+
+#define OS__INPUTHOOK_METHODDEF    \
+    {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
+
+static PyObject *
+os__inputhook_impl(PyObject *module);
+
+static PyObject *
+os__inputhook(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__inputhook_impl(module);
+}
+
+PyDoc_STRVAR(os__is_inputhook_installed__doc__,
+"_is_inputhook_installed($module, /)\n"
+"--\n"
+"\n"
+"Checks if PyOS_CallInputHook is set");
+
+#define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
+    {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
+
+static PyObject *
+os__is_inputhook_installed_impl(PyObject *module);
+
+static PyObject *
+os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__is_inputhook_installed_impl(module);
+}
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12795,4 +12819,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=300bd1c54dc43765 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=faaa5e5ffb7b165d input=a9049054013a1b77]*/

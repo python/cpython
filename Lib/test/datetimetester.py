@@ -22,7 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper, no_rerun
+from test.support import warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -1335,6 +1335,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for insane in -1e200, 1e200:
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
+
+    def test_fromtimestamp_with_none_arg(self):
+        # See gh-120268 for more details
+        with self.assertRaises(TypeError):
+            self.theclass.fromtimestamp(None)
 
     def test_today(self):
         import time
@@ -4412,6 +4417,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-',         # Extra at end of microsecond time
             '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
+            '12.5',                     # Decimal mark at end of hour
+            '12:30,5',                  # Decimal mark at end of minute
         ]
 
         for bad_str in bad_strs:
@@ -6383,7 +6390,6 @@ class IranTest(ZoneInfoTest):
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-@no_rerun("the encapsulated datetime C API does not support reloading")
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests
