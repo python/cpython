@@ -85,7 +85,7 @@ dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
-def get_framelocalsproxy():
+def _get_framelocalsproxy():
     return type(sys._getframe().f_locals)
 framelocalsproxy = _get_framelocalsproxy()
 del _get_framelocalsproxy
