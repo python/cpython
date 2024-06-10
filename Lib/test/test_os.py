@@ -1338,8 +1338,8 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
             # test os.environb.refresh() with unsetenv()
             os.unsetenv('test_env')
-            self.assertEqual(os.environb[b'test_env'], b'new_value')
-            self.assertEqual(os.environ['test_env'], 'new_value')
+            self.assertEqual(os.environb[b'test_env'], b'new_value2')
+            self.assertEqual(os.environ['test_env'], 'new_value2')
 
             os.environb.refresh()
             self.assertNotIn(b'test_env', os.environb)
