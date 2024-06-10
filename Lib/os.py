@@ -64,6 +64,10 @@ if 'posix' in _names:
         from posix import _have_functions
     except ImportError:
         pass
+    try:
+        from posix import _create_environ
+    except ImportError:
+        pass
 
     import posix
     __all__.extend(_get_exports_list(posix))
@@ -86,6 +90,10 @@ elif 'nt' in _names:
 
     try:
         from nt import _have_functions
+    except ImportError:
+        pass
+    try:
+        from nt import _create_environ
     except ImportError:
         pass
 
@@ -773,7 +781,18 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
-def _createenviron():
+    if _exists("_create_environ"):
+        def refresh(self):
+            data = _create_environ()
+            if name == 'nt':
+                data = {self.encodekey(key): value
+                        for key, value in data.items()}
+
+            # modify in-place to keep os.environb in sync
+            self._data.clear()
+            self._data.update(data)
+
+def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
         def check_str(value):
@@ -803,8 +822,8 @@ def _createenviron():
         encode, decode)
 
 # unicode environ
-environ = _createenviron()
-del _createenviron
+environ = _create_environ_mapping()
+del _create_environ_mapping
 
 
 def getenv(key, default=None):

@@ -1298,6 +1298,52 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self._test_underlying_process_env('_A_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
+    def test_refresh(self):
+        # Test os.environ.refresh()
+        has_environb = hasattr(os, 'environb')
+
+        # Test with putenv() which doesn't update os.environ
+        os.environ['test_env'] = 'python_value'
+        os.putenv("test_env", "new_value")
+        self.assertEqual(os.environ['test_env'], 'python_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'python_value')
+
+        os.environ.refresh()
+        self.assertEqual(os.environ['test_env'], 'new_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
+
+        # Test with unsetenv() which doesn't update os.environ
+        os.unsetenv('test_env')
+        self.assertEqual(os.environ['test_env'], 'new_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
+
+        os.environ.refresh()
+        self.assertNotIn('test_env', os.environ)
+        if has_environb:
+            self.assertNotIn(b'test_env', os.environb)
+
+        if has_environb:
+            # test os.environb.refresh() with putenv()
+            os.environb[b'test_env'] = b'python_value2'
+            os.putenv("test_env", "new_value2")
+            self.assertEqual(os.environb[b'test_env'], b'python_value2')
+            self.assertEqual(os.environ['test_env'], 'python_value2')
+
+            os.environb.refresh()
+            self.assertEqual(os.environb[b'test_env'], b'new_value2')
+            self.assertEqual(os.environ['test_env'], 'new_value2')
+
+            # test os.environb.refresh() with unsetenv()
+            os.unsetenv('test_env')
+            self.assertEqual(os.environb[b'test_env'], b'new_value2')
+            self.assertEqual(os.environ['test_env'], 'new_value2')
+
+            os.environb.refresh()
+            self.assertNotIn(b'test_env', os.environb)
+            self.assertNotIn('test_env', os.environ)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
