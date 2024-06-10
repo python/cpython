@@ -45,8 +45,9 @@ class TestTokenize(unittest.TestCase):
             tokenize.TokenInfo(type=0, string='', start=(2, -1), end=(2, -1), line='  pass'),
         ]
 
-        for token in tokens:
-            self.assertIn(token, expected_tokens)
+        tokens.sort()
+        expected_tokens.sort()
+        self.assertListEqual(tokens, expected_tokens)
 
 
 if __name__ == "__main__":
