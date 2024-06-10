@@ -92,6 +92,13 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+fractions
+---------
+
+Added support for converting any numbers that have the
+:meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
+(Contributed by Serhiy Storchaka in :gh:`82017`.)
+
 
 
 Optimizations
