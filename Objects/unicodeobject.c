@@ -15037,12 +15037,6 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
     }
     Py_DECREF(t);
 
-    if (_Py_IsImmortal(s)) {
-        // XXX Restrict this to the main interpreter?
-        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-        return;
-    }
-
 #ifdef Py_REF_DEBUG
     /* The reference count value excluding the 2 references from the
        interned dictionary should be excluded from the RefTotal. The
