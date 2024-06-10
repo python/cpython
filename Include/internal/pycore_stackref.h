@@ -127,15 +127,6 @@ PyStackRef_AsPyObjectNew(_PyStackRef tagged)
 #endif
 
 
-#define PyStackRef_SET(dst, src) \
-    do { \
-        _PyStackRef *_tmp_dst_ptr = &(dst); \
-        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
-        *_tmp_dst_ptr = (src); \
-        PyStackRef_CLOSE(_tmp_old_dst); \
-    } while (0)
-
-
 #define PyStackRef_XSET(dst, src) \
     do { \
         _PyStackRef *_tmp_dst_ptr = &(dst); \
