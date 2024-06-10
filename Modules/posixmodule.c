@@ -4218,6 +4218,11 @@ os_getcwdb_impl(PyObject *module)
     return posix_getcwd(1);
 }
 
+#ifdef __wasi__
+# define LINK_DEFAULT_FOLLOW_SYMLINKS 0
+#else
+# define LINK_DEFAULT_FOLLOW_SYMLINKS 1
+#endif
 
 #if ((!defined(HAVE_LINK)) && defined(MS_WINDOWS))
 #define HAVE_LINK 1
@@ -4233,7 +4238,8 @@ os.link
     *
     src_dir_fd : dir_fd = None
     dst_dir_fd : dir_fd = None
-    follow_symlinks: bool = True
+    follow_symlinks: bool(c_default="LINK_DEFAULT_FOLLOW_SYMLINKS", \
+                          py_default="(os.sys.platform != 'wasi')") = LINK_DEFAULT_FOLLOW_SYMLINKS
 
 Create a hard link to a file.
 
@@ -4251,7 +4257,7 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=b0095ebbcbaa7e04]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=3739365b903a9fad]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;
@@ -4295,7 +4301,12 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #ifdef HAVE_LINKAT
     if ((src_dir_fd != DEFAULT_DIR_FD) ||
         (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (!follow_symlinks)) {
+#ifdef __APPLE__
+        (!follow_symlinks)
+#else
+        (follow_symlinks)
+#endif
+    ) {
 
         if (HAVE_LINKAT_RUNTIME) {
 

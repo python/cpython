@@ -2452,10 +2452,11 @@ class LinkTests(unittest.TestCase):
     def setUp(self):
         self.file1 = os_helper.TESTFN
         self.file2 = os.path.join(os_helper.TESTFN + "2")
+        self.file3 = os.path.join(os_helper.TESTFN + "3")
 
     def tearDown(self):
-        for file in (self.file1, self.file2):
-            if os.path.exists(file):
+        for file in (self.file1, self.file2, self.file3):
+            if os.path.exists(file) or os.path.lexists(file):
                 os.unlink(file)
 
     def _test_link(self, file1, file2):
@@ -2484,6 +2485,34 @@ class LinkTests(unittest.TestCase):
         self.file1 += "\xf1"
         self.file2 = self.file1 + "2"
         self._test_link(self.file1, self.file2)
+
+    @unittest.skipUnless(
+        hasattr(os, 'symlink') and
+        hasattr(os.path, 'islink') and
+        os.link in os.supports_follow_symlinks and
+        not support.is_wasi,
+        'requires os.symlink, os.path.islink and supports follow_symlinks'
+    )
+    def test_follow_symlinks(self):
+        create_file(self.file1)
+        os.symlink(self.file1, self.file2)
+        os.link(self.file2, self.file3)
+
+        self.assertFalse(os.path.islink(self.file3))
+
+    @unittest.skipUnless(
+        hasattr(os, 'symlink') and
+        hasattr(os.path, 'islink') and
+        os.link in os.supports_follow_symlinks and
+        not support.is_wasi,
+        'requires os.symlink, os.path.islink and supports follow_symlinks'
+    )
+    def test_follow_symlinks_false(self):
+        create_file(self.file1)
+        os.symlink(self.file1, self.file2)
+        os.link(self.file2, self.file3, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(self.file3))
 
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class PosixUidGidTests(unittest.TestCase):
