@@ -88,11 +88,11 @@ class ComplexClass:
     a_genexpr = (x for x in [])
     a_lambda = lambda x: x
 
-    class a_class: pass
-    class a_class_pep_695[T]: pass
-
     type a_type_alias = int
     type a_type_alias_pep_695[T] = list[T]
+
+    class a_class: pass
+    class a_class_pep_695[T]: pass
 
     def a_method(self): pass
     def a_method_pep_695[T](self): pass
