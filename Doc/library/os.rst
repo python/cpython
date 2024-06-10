@@ -568,6 +568,8 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
@@ -815,6 +817,8 @@ process and user.
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
+
+   See also the :data:`os.environ.refresh() <os.environ>` method.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
