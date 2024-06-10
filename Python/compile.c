@@ -2981,6 +2981,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
 
     VISIT(c, expr, s->v.For.iter);
+    loc = LOC(s->v.For.iter);
     ADDOP(c, loc, GET_ITER);
 
     USE_LABEL(c, start);
