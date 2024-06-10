@@ -1515,21 +1515,24 @@ object.
 
    An Unicode writer instance.
 
+   The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
+   success, or :c:func:`PyUnicodeWriter_Discard` on error.
+
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
    Create an Unicode writer instance.
 
    Set an exception and return ``NULL`` on error.
 
-.. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
-
-   Discard an Unicode writer instance.
-
 .. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 
-   Return the final Python :class:`str` object and free the writer instance.
+   Return the final Python :class:`str` object and destroy the writer instance.
 
    Set an exception and return ``NULL`` on error.
+
+.. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
+
+   Discard the internal Unicode buffer and destroy the writer instance.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
