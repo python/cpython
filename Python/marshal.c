@@ -1184,8 +1184,11 @@ r_object(RFILE *p)
             v = PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, ptr, n);
             if (v == NULL)
                 break;
-            if (is_interned)
-                PyUnicode_InternInPlace(&v);
+            if (is_interned) {
+                // marshal is meant to serialization of .pyc files with code
+                // objects, and code-related strings are currently immortal.
+                PyUnicode_InternImmortal(&v);
+            }
             retval = v;
             R_REF(retval);
             break;
@@ -1217,8 +1220,11 @@ r_object(RFILE *p)
         }
         if (v == NULL)
             break;
-        if (is_interned)
-            PyUnicode_InternInPlace(&v);
+        if (is_interned) {
+            // marshal is meant to serialization of .pyc files with code
+            // objects, and code-related strings are currently immortal.
+            PyUnicode_InternImmortal(&v);
+        }
         retval = v;
         R_REF(retval);
         break;

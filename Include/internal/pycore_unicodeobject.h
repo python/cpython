@@ -318,6 +318,8 @@ extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
 PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
 PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
+// Public-looking name is kept for the stable ABI; user should not call this:
+PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.

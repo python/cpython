@@ -14984,9 +14984,8 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
 }
 
-
 void
-_PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
+_PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
 {
     PyObject *s = *p;
 #ifdef Py_DEBUG
@@ -15057,6 +15056,14 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
     _Py_SetImmortal(s);
 }
 
+
+void
+_PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
+{
+    _PyUnicode_InternImmortal(interp, p);
+    return;
+}
+
 void
 PyUnicode_InternInPlace(PyObject **p)
 {
@@ -15064,14 +15071,13 @@ PyUnicode_InternInPlace(PyObject **p)
     _PyUnicode_InternInPlace(interp, p);
 }
 
-// Function kept for the stable ABI.
+// Public-looking name kept for the stable ABI; user should not call this:
 PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 void
 PyUnicode_InternImmortal(PyObject **p)
 {
-    PyUnicode_InternInPlace(p);
-    // Leak a reference on purpose
-    Py_INCREF(*p);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, p);
 }
 
 PyObject *
