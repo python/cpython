@@ -64,7 +64,7 @@ language using this mechanism:
 | generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
 |                  |             |              | *StopIteration handling inside generators*  |
 +------------------+-------------+--------------+---------------------------------------------+
-| annotations      | 3.7.0b1     | 3.14 [1]_    | :pep:`563`:                                 |
+| annotations      | 3.7.0b1     | Never [1]_   | :pep:`563`:                                 |
 |                  |             |              | *Postponed evaluation of annotations*       |
 +------------------+-------------+--------------+---------------------------------------------+
 
@@ -115,10 +115,7 @@ language using this mechanism:
 
 .. [1]
    ``from __future__ import annotations`` was previously scheduled to become mandatory in
-   Python 3.10, but the Python Steering Council decided to delay the change until 3.14
-   (`announcement for Python 3.10 <https://mail.python.org/archives/list/python-dev@python.org/message/CLVXXPQ2T2LQ5MP2Y53VVQFCXYWQJHKZ/>`__;
-   `announcement for Python 3.11 <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__).
-   See also :pep:`563` and :pep:`649`.
+   Python 3.10, but was deprecated and replaced by :pep:`649` in Python 3.14.
 
 
 .. seealso::
