@@ -15016,6 +15016,87 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
     /* Look in the global cache first. */
     PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
     if (r != NULL && r != s) {
+        assert(_Py_IsImmortal(r));
+        Py_SETREF(*p, Py_NewRef(r));
+        return;
+    }
+
+    /* Look in the per-interpreter cache. */
+    PyObject *interned = get_interned_dict(interp);
+    assert(interned != NULL);
+
+    PyObject *t;
+    int res = PyDict_SetDefaultRef(interned, s, s, &t);
+    if (res < 0) {
+        PyErr_Clear();
+        return;
+    }
+    else if (res == 1) {
+        Py_SETREF(*p, t);
+        s = *p;
+        // value was already present (not inserted)
+        switch (_PyUnicode_STATE(*p).interned) {
+            case SSTATE_INTERNED_IMMORTAL:
+                assert(_Py_IsImmortal(s));
+                return;
+            case SSTATE_INTERNED_MORTAL:
+                assert(!_Py_IsImmortal(s));
+                goto immortalize_s;
+            default:
+                Py_UNREACHABLE();
+        }
+    }
+    Py_DECREF(t);
+
+immortalize_s:
+#ifdef Py_REF_DEBUG
+    /* The reference count value excluding the 2 references from the
+       interned dictionary should be excluded from the RefTotal. The
+       decrements to these objects will not be registered so they
+       need to be accounted for in here. */
+    for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
+        _Py_DecRefTotal(_PyThreadState_GET());
+    }
+#endif
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
+    _Py_SetImmortal(s);
+}
+
+void
+_PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
+{
+    PyObject *s = *p;
+#ifdef Py_DEBUG
+    assert(s != NULL);
+    assert(_PyUnicode_CHECK(s));
+#else
+    if (s == NULL || !PyUnicode_Check(s)) {
+        return;
+    }
+#endif
+
+    /* If it's immortal, intern it that way. */
+    if (_Py_IsImmortal(s)) {
+        _PyUnicode_InternImmortal(interp, p);
+        return;
+    }
+
+    /* statically allocated strings should be immortal already */
+    assert(!_PyUnicode_STATE(s).statically_allocated);
+
+    /* If it's a subclass, we don't really know what putting
+       it in the interned dict might do. */
+    if (!PyUnicode_CheckExact(s)) {
+        return;
+    }
+
+    if (PyUnicode_CHECK_INTERNED(s)) {
+        return;
+    }
+
+    /* Look in the global cache first. */
+    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+    if (r != NULL && r != s) {
         Py_SETREF(*p, Py_NewRef(r));
         return;
     }
@@ -15037,6 +15118,8 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
     }
     Py_DECREF(t);
 
+    assert(_PyUnicode_STATE(*p).interned == SSTATE_NOT_INTERNED);
+    // XXX keep immortalizing for now
 #ifdef Py_REF_DEBUG
     /* The reference count value excluding the 2 references from the
        interned dictionary should be excluded from the RefTotal. The
