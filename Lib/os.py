@@ -785,9 +785,8 @@ class _Environ(MutableMapping):
         def refresh(self):
             environ = _create_environ()
             if name == 'nt':
-                data = {}
-                for key, value in environ.items():
-                    data[self.encodekey(key)] = value
+                data = {self.encodekey(key): value
+                        for key, value in environ.items()}
             else:
                 data = environ
 
