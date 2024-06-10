@@ -236,7 +236,7 @@ class ListTest(list_tests.CommonTest):
 
     def test_lt_operator_modifying_operand(self):
         # See gh-120298
-        class evil(object):
+        class evil:
             def __lt__(self, other):
                 other.clear()
                 return NotImplemented
