@@ -1547,6 +1547,24 @@ class TestCase(unittest.TestCase):
         self.assertTrue(is_dataclass(type(a)))
         self.assertTrue(is_dataclass(a))
 
+    def test_is_dataclass_inheritance(self):
+        @dataclass
+        class X:
+            y: int
+
+        class Z(X):
+            pass
+
+        self.assertTrue(is_dataclass(X), "X should be a dataclass")
+        self.assertTrue(
+            is_dataclass(Z),
+            "Z should be a dataclass because it inherits from X",
+        )
+        z_instance = Z(y=5)
+        self.assertTrue(
+            is_dataclass(z_instance),
+            "z_instance should be a dataclass because it is an instance of Z",
+        )
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,

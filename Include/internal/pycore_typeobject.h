@@ -44,10 +44,12 @@ struct type_cache {
 
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds). */
-#define _Py_MAX_STATIC_BUILTIN_TYPES 200
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
+#define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 
 typedef struct {
     PyTypeObject *type;
+    int isbuiltin;
     int readying;
     int ready;
     // XXX tp_dict can probably be statically allocated,
@@ -59,7 +61,9 @@ typedef struct {
        are also some diagnostic uses for the list of weakrefs,
        so we still keep it. */
     PyObject *tp_weaklist;
-} static_builtin_state;
+} managed_static_type_state;
+
+#define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
 
 struct types_state {
     /* Used to set PyTypeObject.tp_version_tag.
@@ -105,9 +109,23 @@ struct types_state {
        num_builtins_initialized is incremented once for each static
        builtin type.  Once initialization is over for a subinterpreter,
        the value will be the same as for all other interpreters.  */
-    size_t num_builtins_initialized;
-    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    struct {
+        size_t num_initialized;
+        managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES];
+    } builtins;
+    /* We apply a similar strategy for managed extension modules. */
+    struct {
+        size_t num_initialized;
+        size_t next_index;
+        managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
+    } for_extensions;
     PyMutex mutex;
+
+    // Borrowed references to type objects whose
+    // tp_version_tag % TYPE_VERSION_CACHE_SIZE
+    // once was equal to the index in the table.
+    // They are cleared when the type object is deallocated.
+    PyTypeObject *type_version_cache[TYPE_VERSION_CACHE_SIZE];
 };
 
 
@@ -130,11 +148,34 @@ typedef struct wrapperbase pytype_slotdef;
 
 
 static inline PyObject **
-_PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
+_PyStaticType_GET_WEAKREFS_LISTPTR(managed_static_type_state *state)
 {
     assert(state != NULL);
     return &state->tp_weaklist;
 }
+
+extern int _PyStaticType_InitBuiltin(
+    PyInterpreterState *interp,
+    PyTypeObject *type);
+extern void _PyStaticType_FiniBuiltin(
+    PyInterpreterState *interp,
+    PyTypeObject *type);
+extern void _PyStaticType_ClearWeakRefs(
+    PyInterpreterState *interp,
+    PyTypeObject *type);
+extern managed_static_type_state * _PyStaticType_GetState(
+    PyInterpreterState *interp,
+    PyTypeObject *type);
+
+// Export for '_datetime' shared extension.
+PyAPI_FUNC(int) _PyStaticType_InitForExtension(
+    PyInterpreterState *interp,
+     PyTypeObject *self);
+PyAPI_FUNC(void) _PyStaticType_FiniForExtension(
+    PyInterpreterState *interp,
+     PyTypeObject *self,
+     int final);
+
 
 /* Like PyType_GetModuleState, but skips verification
  * that type is a heap type with an associated module */
@@ -150,11 +191,6 @@ _PyType_GetModuleState(PyTypeObject *type)
     return mod->md_state;
 }
 
-
-extern int _PyStaticType_InitBuiltin(PyInterpreterState *, PyTypeObject *type);
-extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTypeObject *);
-extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
-extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
 // Export for 'math' shared extension, used via _PyType_IsReady() static inline
 // function
@@ -202,6 +238,9 @@ extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
+extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
+PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
+PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
 #ifdef __cplusplus
 }

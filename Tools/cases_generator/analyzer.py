@@ -235,6 +235,7 @@ class Instruction:
 @dataclass
 class PseudoInstruction:
     name: str
+    stack: StackEffect
     targets: list[Instruction]
     flags: list[str]
     opcode: int = -1
@@ -295,7 +296,7 @@ def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -
         item.name, item.type, cond, (item.size or "1")
     )
 
-def analyze_stack(op: parser.InstDef, replace_op_arg_1: str | None = None) -> StackEffect:
+def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None) -> StackEffect:
     inputs: list[StackItem] = [
         convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
@@ -706,6 +707,7 @@ def add_pseudo(
 ) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
         pseudo.name,
+        analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
         pseudo.flags,
     )
