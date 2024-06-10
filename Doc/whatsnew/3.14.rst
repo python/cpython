@@ -97,7 +97,7 @@ os
 
 * Added the :meth:`os.environ.refresh() <os.environ>` method to update
   :data:`os.environ` with environment changes made in the same process outside
-  Python.
+  Python or by :func:`os.putenv`.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
 

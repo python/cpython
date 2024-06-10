@@ -195,7 +195,7 @@ process and user.
 
    The :meth:`!os.environ.refresh()` method updates
    :data:`os.environ` with changes to the environment made in the same process
-   outside Python.
+   outside Python or by :func:`os.putenv`.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
