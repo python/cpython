@@ -629,6 +629,42 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
+
+    /* Check interning state */
+#ifdef Py_DEBUG
+    switch (PyUnicode_CHECK_INTERNED(op)) {
+        case SSTATE_NOT_INTERNED:
+            if (ascii->state.statically_allocated) {
+                // This state is questionable, but:
+                // - strings are currently checked before they're interned
+                // - the empty string and 256 one-latin1-character strings
+                //   are static but use SSTATE_NOT_INTERNED
+                // - not all statically allocated strings are interned
+                // So we allow this.
+                // All static strings should be immortal though.
+                CHECK(_Py_IsImmortal(op));
+            }
+            else {
+                CHECK(!_Py_IsImmortal(op));
+            }
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            CHECK(!ascii->state.statically_allocated);
+            CHECK(!_Py_IsImmortal(op));
+            break;
+        case SSTATE_INTERNED_IMMORTAL:
+            CHECK(!ascii->state.statically_allocated);
+            CHECK(_Py_IsImmortal(op));
+            break;
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            CHECK(ascii->state.statically_allocated);
+            CHECK(_Py_IsImmortal(op));
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+#endif
+
     return 1;
 
 #undef CHECK
@@ -14914,6 +14950,40 @@ error:
     return _PyStatus_ERR("Can't initialize unicode types");
 }
 
+void
+_PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
+{
+    PyObject *s = *p;
+    assert(s != NULL);
+    assert(_PyUnicode_CHECK(s));
+    assert(_PyUnicode_STATE(s).statically_allocated);
+    assert(_Py_IsImmortal(s));
+
+    switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_NOT_INTERNED:
+            break;
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            return;
+        default:
+            Py_FatalError("_PyUnicode_InternStatic called on wrong string");
+    }
+
+    /* Look in the global cache first. */
+    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+    if (r != NULL && r != s) {
+        assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
+        Py_SETREF(*p, Py_NewRef(r));
+        assert(_PyUnicode_CHECK(r));
+        return;
+    }
+
+    if (_Py_hashtable_set(INTERNED_STRINGS, s, s) < -1) {
+        Py_FatalError("failed to intern static string");
+    }
+
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+}
+
 
 void
 _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
@@ -14938,19 +15008,16 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
+    /* Handle statically allocated strings. */
+    if (_PyUnicode_STATE(s).statically_allocated) {
+        _PyUnicode_InternStatic(interp, p);
+        return;
+    }
+
     /* Look in the global cache first. */
     PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
     if (r != NULL && r != s) {
         Py_SETREF(*p, Py_NewRef(r));
-        return;
-    }
-
-    /* Handle statically allocated strings. */
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        assert(_Py_IsImmortal(s));
-        if (_Py_hashtable_set(INTERNED_STRINGS, s, s) == 0) {
-            _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
-        }
         return;
     }
 
