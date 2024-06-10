@@ -675,22 +675,19 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (existing == NULL && PyErr_Occurred()) {
             return 0;
         }
+        // __class__ is never allowed to be free through a class scope (see
+        // drop_class_free)
+        if (scope == FREE && ste->ste_type == ClassBlock &&
+                _PyUnicode_EqualToASCIIString(k, "__class__")) {
+            scope = GLOBAL_IMPLICIT;
+            if (PySet_Discard(comp_free, k) < 0) {
+                return 0;
+            }
+            remove_dunder_class = 1;
+        }
         if (!existing) {
             // name does not exist in scope, copy from comprehension
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
-            if (scope == FREE && ste->ste_type == ClassBlock &&
-                _PyUnicode_EqualToASCIIString(k, "__class__")) {
-                // if __class__ is unbound in the enclosing class scope and free
-                // in the comprehension scope, it needs special handling; just
-                // letting it be marked as free in class scope will break due to
-                // drop_class_free
-                scope = GLOBAL_IMPLICIT;
-                only_flags &= ~DEF_FREE;
-                if (PySet_Discard(comp_free, k) < 0) {
-                    return 0;
-                }
-                remove_dunder_class = 1;
-            }
             PyObject *v_flags = PyLong_FromLong(only_flags);
             if (v_flags == NULL) {
                 return 0;
