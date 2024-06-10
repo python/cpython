@@ -240,7 +240,7 @@ Doc/howto/clinic.rst          @erlend-aasland
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
 Lib/test/support/interpreters/  @ericsnowcurrently
-Modules/_xx*interp*module.c   @ericsnowcurrently
+Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
