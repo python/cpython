@@ -783,12 +783,10 @@ class _Environ(MutableMapping):
 
     if _exists("_create_environ"):
         def refresh(self):
-            environ = _create_environ()
+            data = _create_environ()
             if name == 'nt':
                 data = {self.encodekey(key): value
-                        for key, value in environ.items()}
-            else:
-                data = environ
+                        for key, value in data.items()}
 
             # modify in-place to keep os.environb in sync
             self._data.clear()
