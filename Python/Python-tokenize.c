@@ -247,7 +247,13 @@ tokenizeriter_next(tokenizeriterobject *it)
     }
     if (it->done || type == ERRORTOKEN) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
+
+#ifdef Py_GIL_DISABLED
         _Py_atomic_store_int(&it->done, 1);
+#else
+        it->done = 1;
+#endif
+
         goto exit;
     }
     PyObject *str = NULL;
@@ -332,7 +338,11 @@ tokenizeriter_next(tokenizeriterobject *it)
 exit:
     _PyToken_Free(&token);
     if (type == ENDMARKER) {
+#ifdef Py_GIL_DISABLED
         _Py_atomic_store_int(&it->done, 1);
+#else
+        it->done = 1;
+#endif
     }
     return result;
 }
