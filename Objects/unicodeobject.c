@@ -15119,18 +15119,11 @@ _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
     Py_DECREF(t);
 
     assert(_PyUnicode_STATE(*p).interned == SSTATE_NOT_INTERNED);
-    // XXX keep immortalizing for now
-#ifdef Py_REF_DEBUG
-    /* The reference count value excluding the 2 references from the
-       interned dictionary should be excluded from the RefTotal. The
-       decrements to these objects will not be registered so they
-       need to be accounted for in here. */
-    for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
-        _Py_DecRefTotal(_PyThreadState_GET());
-    }
-#endif
-    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
-    _Py_SetImmortal(s);
+    assert(!_Py_IsImmortal(*p));
+    /* The two references in interned dict (key and value) are not counted.
+      unicode_dealloc() and _PyUnicode_ClearInterned() take care of this. */
+    Py_SET_REFCNT(*p, Py_REFCNT(*p) - 2);
+    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_MORTAL;
 }
 
 
@@ -15223,7 +15216,10 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             }
             break;
         case SSTATE_INTERNED_MORTAL:
-            /* fall through */
+            // Restore 2 references held by the interned dict; these will
+            // be decref'd by clear_interned_dict's PyDict_Clear.
+            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+            break;
         case SSTATE_NOT_INTERNED:
             /* fall through */
         default:
