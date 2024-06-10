@@ -51,43 +51,48 @@ def generic_spam[T](a):
 
 class GenericMine[T: int]:
     pass
+"""
 
+TEST_COMPLEX_CLASS_CODE = """
 # The following symbols are defined in ComplexClass
 # without being introduced by a 'global' statement.
-glob_unassigned_meth: int
-glob_unassigned_meth_pep_695: int
-glob_unassigned_async_meth: int
-glob_unassigned_async_meth_pep_695: int
+glob_unassigned_meth: Any
+glob_unassigned_meth_pep_695: Any
 
-glob_assigned_meth = 1234
-glob_assigned_meth_pep_695 = 1234
-glob_assigned_async_meth = 1234
-glob_assigned_async_meth_pep_695 = 1234
+glob_unassigned_async_meth: Any
+glob_unassigned_async_meth_pep_695: Any
+
+def glob_assigned_meth(): pass
+def glob_assigned_meth_pep_695[T](): pass
+
+async def glob_assigned_async_meth(): pass
+async def glob_assigned_async_meth_pep_695[T](): pass
 
 # The following symbols are defined in ComplexClass after
 # being introduced by a 'global' statement (and therefore
-# are not considered as methods of ComplexClass).
-glob_unassigned_meth_ignore: int
-glob_unassigned_meth_pep_695_ignore: int
-glob_unassigned_async_meth_ignore: int
-glob_unassigned_async_meth_pep_695_ignore: int
+# are not considered as local symbols of ComplexClass).
+glob_unassigned_meth_ignore: Any
+glob_unassigned_meth_pep_695_ignore: Any
 
-glob_assigned_meth_ignore = 1234
-glob_assigned_meth_pep_695_ignore = 1234
-glob_assigned_async_meth_ignore = 1234
-glob_assigned_async_meth_pep_695_ignore = 1234
+glob_unassigned_async_meth_ignore: Any
+glob_unassigned_async_meth_pep_695_ignore: Any
+
+def glob_assigned_meth_ignore(): pass
+def glob_assigned_meth_pep_695_ignore[T](): pass
+
+async def glob_assigned_async_meth_ignore(): pass
+async def glob_assigned_async_meth_pep_695_ignore[T](): pass
 
 class ComplexClass:
-    some_non_method_const = 1234
+    a_var = 1234
+    a_genexpr = (x for x in [])
+    a_lambda = lambda x: x
 
-    class some_non_method_nested: pass
-    class some_non_method_nested_pep_695[T]: pass
+    class a_class: pass
+    class a_class_pep_695[T]: pass
 
-    type some_non_method_alias = int
-    type some_non_method_alias_pep_695[T] = list[T]
-
-    some_non_method_genexpr = (x for x in [])
-    some_non_method_lambda = lambda x: x
+    type a_type_alias = int
+    type a_type_alias_pep_695[T] = list[T]
 
     def a_method(self): pass
     def a_method_pep_695[T](self): pass
@@ -111,9 +116,9 @@ class ComplexClass:
     def a_staticmethod_pep_695[T](self): pass
 
     @staticmethod
-    def an_async_staticmethod(): pass
+    async def an_async_staticmethod(): pass
     @staticmethod
-    def an_async_staticmethod_pep_695[T](self): pass
+    async def an_async_staticmethod_pep_695[T](self): pass
 
     # These ones will be considered as methods because of the 'def' although
     # they are *not* valid methods at runtime since they are not decorated
@@ -138,9 +143,9 @@ class ComplexClass:
     async def glob_assigned_async_meth(): pass
     async def glob_assigned_async_meth_pep_695[T](): pass
 
-    # The following are not picked as a method because thy are not
-    # visible by the class at runtime (this is equivalent to having
-    # the definitions outside of the class).
+    # The following are not picked as local symbols because they are not
+    # visible by the class at runtime (this is equivalent to having the
+    # definitions outside of the class).
     global glob_unassigned_meth_ignore
     def glob_unassigned_meth_ignore(): pass
     global glob_unassigned_meth_pep_695_ignore
@@ -174,7 +179,6 @@ class SymtableTest(unittest.TestCase):
     top = symtable.symtable(TEST_CODE, "?", "exec")
     # These correspond to scopes in TEST_CODE
     Mine = find_block(top, "Mine")
-    ComplexClass = find_block(top, "ComplexClass")
 
     a_method = find_block(Mine, "a_method")
     spam = find_block(top, "spam")
@@ -351,7 +355,10 @@ class SymtableTest(unittest.TestCase):
     def test_class_info(self):
         self.assertEqual(self.Mine.get_methods(), ('a_method',))
 
-        self.assertEqual(self.ComplexClass.get_methods(), (
+        top = symtable.symtable(TEST_COMPLEX_CLASS_CODE, "?", "exec")
+        this = find_block(top, "ComplexClass")
+
+        self.assertEqual(this.get_methods(), (
             'a_method', 'a_method_pep_695',
             'an_async_method', 'an_async_method_pep_695',
             'a_classmethod', 'a_classmethod_pep_695',
