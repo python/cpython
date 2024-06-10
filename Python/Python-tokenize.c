@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "errcode.h"
+#include "internal/pycore_lock.h" // PyMutex
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
@@ -37,6 +38,10 @@ typedef struct
     PyObject *last_line;
     Py_ssize_t last_lineno;
     Py_ssize_t byte_col_offset_diff;
+
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;
+#endif
 } tokenizeriterobject;
 
 /*[clinic input]
@@ -73,6 +78,10 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
         self->tok->tok_extra_tokens = 1;
     }
     self->done = 0;
+
+#ifdef Py_GIL_DISABLED
+    self->mutex = (PyMutex) {_Py_UNLOCKED};
+#endif
 
     self->last_line = NULL;
     self->byte_col_offset_diff = 0;
@@ -182,7 +191,14 @@ tokenizeriter_next(tokenizeriterobject *it)
     struct token token;
     _PyToken_Init(&token);
 
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&it->mutex);
+#endif
     int type = _PyTokenizer_Get(it->tok, &token);
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&it->mutex);
+#endif
+
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
             _tokenizer_error(it->tok);
