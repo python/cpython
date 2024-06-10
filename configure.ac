@@ -7049,6 +7049,23 @@ AS_CASE([$with_ensurepip],
 AC_MSG_RESULT([$ENSUREPIP])
 AC_SUBST([ENSUREPIP])
 
+# IDLE option
+IDLE=yes
+AC_MSG_CHECKING([for --with-idle])
+AC_ARG_WITH([idle],
+  AS_HELP_STRING([--without-idle],
+                 [do not install Integrated Development and Learning Environment]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT([no]);
+  IDLE=no
+else
+  AC_MSG_RESULT([yes]);
+fi],
+[AC_MSG_RESULT([yes])])
+AC_SUBST([IDLE])
+
 # check if the dirent structure of a d_type field and DT_UNKNOWN is defined
 AC_CACHE_CHECK([if the dirent structure of a d_type field], [ac_cv_dirent_d_type], [
 AC_LINK_IFELSE(

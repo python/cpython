@@ -824,6 +824,7 @@ LIBB2_CFLAGS
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
+IDLE
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -1122,6 +1123,7 @@ with_wheel_pkg_dir
 with_readline
 with_computed_gotos
 with_ensurepip
+with_idle
 with_openssl
 with_openssl_rpath
 with_ssl_default_suites
@@ -1928,6 +1930,8 @@ Optional Packages:
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
+  --without-idle          do not install Integrated Development and Learning
+                          Environment
   --with-openssl=DIR      root of the OpenSSL directory
   --with-openssl-rpath=[DIR|auto|no]
                           Set runtime library directory (rpath) for OpenSSL
@@ -27800,6 +27804,31 @@ case $with_ensurepip in #(
 esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ENSUREPIP" >&5
 printf "%s\n" "$ENSUREPIP" >&6; }
+
+
+# IDLE option
+IDLE=yes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-idle" >&5
+printf %s "checking for --with-idle... " >&6; }
+
+# Check whether --with-idle was given.
+if test ${with_idle+y}
+then :
+  withval=$with_idle;
+if test "$withval" = no
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; };
+  IDLE=no
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; };
+fi
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
 
 
 # check if the dirent structure of a d_type field and DT_UNKNOWN is defined

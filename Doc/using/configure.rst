@@ -509,6 +509,12 @@ Install Options
 
    .. versionadded:: 3.6
 
+.. option:: --without-idle
+
+   Do not install :term:`IDLE`.
+
+   .. versionadded:: 3.13
+
 
 Performance options
 -------------------

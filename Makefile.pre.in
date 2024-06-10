@@ -213,6 +213,9 @@ RUNSHARED=       @RUNSHARED@
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
 
+# Option to control the installation of IDLE
+IDLE=@IDLE@
+
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
@@ -2274,8 +2277,10 @@ bininstall: commoninstall altbininstall
 	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python3.pc)
 	-rm -f $(DESTDIR)$(LIBPC)/python3-embed.pc
 	(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python3-embed.pc)
-	-rm -f $(DESTDIR)$(BINDIR)/idle3
-	(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(VERSION) idle3)
+	-if test "x$(IDLE)" != "xno" ; then \
+		rm -f $(DESTDIR)$(BINDIR)/idle3 ; \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s idle$(VERSION) idle3) ; \
+	fi
 	-rm -f $(DESTDIR)$(BINDIR)/pydoc3
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pydoc$(VERSION) pydoc3)
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
@@ -2308,6 +2313,7 @@ maninstall:	altmaninstall
 	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
 
 # Install the library
+IDLELIBSUBDIRS=idlelib idlelib/Icons
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	asyncio \
 		collections \
@@ -2321,7 +2327,6 @@ LIBSUBDIRS=	asyncio \
 		ensurepip ensurepip/_bundled \
 		html \
 		http \
-		idlelib idlelib/Icons \
 		importlib importlib/resources importlib/metadata \
 		json \
 		logging \
@@ -2345,8 +2350,8 @@ LIBSUBDIRS=	asyncio \
 		zoneinfo \
 		_pyrepl \
 		__phello__
-TESTSUBDIRS=	idlelib/idle_test \
-		test \
+IDLETESTSUBDIRS=idlelib/idle_test
+TESTSUBDIRS=test \
 		test/archivetestdata \
 		test/audiodata \
 		test/certdata \
@@ -2506,8 +2511,16 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
+	@if test "x$(IDLE)" != "xno"; then \
+		subdirs="$(LIBSUBDIRS) $(IDLELIBSUBDIRS)"; \
+	else \
+		subdirs="$(LIBSUBDIRS)"; \
+	fi
 	@if test "$(TEST_MODULES)" = yes; then \
 		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
+		if test "x$(IDLE)" != "xno"; then \
+			subdirs="$(LIBSUBDIRS) $(IDLETESTSUBDIRS)"; \
+		fi; \
 	else \
 		subdirs="$(LIBSUBDIRS)"; \
 	fi; \
@@ -2534,6 +2547,9 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	done
 	@if test "$(TEST_MODULES)" = yes; then \
 		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
+		if test "x$(IDLE)" != "xno"; then \
+			subdirs="$(LIBSUBDIRS) $(IDLETESTSUBDIRS)"; \
+		fi; \
 	else \
 		subdirs="$(LIBSUBDIRS)"; \
 	fi; \
@@ -2552,6 +2568,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 			*~) ;; \
 			*) \
 				if test -d $$i; then continue; fi; \
+				if test `basename $$i` = test_idle.py -a "x$(IDLE)" = "xno"; then continue; fi; \
 				if test -x $$i; then \
 				    echo $(INSTALL_SCRIPT) $$i $$b; \
 				    $(INSTALL_SCRIPT) $$i $(DESTDIR)$$b; \
@@ -2710,7 +2727,9 @@ libainstall: all scripts
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
 	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(LDVERSION)-config
-	$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION)
+	if test "x$(IDLE)" != "xno" ; then \
+		$(INSTALL_SCRIPT) $(SCRIPT_IDLE) $(DESTDIR)$(BINDIR)/idle$(VERSION) ; \
+	fi
 	$(INSTALL_SCRIPT) $(SCRIPT_PYDOC) $(DESTDIR)$(BINDIR)/pydoc$(VERSION)
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \

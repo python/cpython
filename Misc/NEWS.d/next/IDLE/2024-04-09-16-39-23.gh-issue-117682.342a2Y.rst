@@ -1,0 +1,2 @@
+The ``configure`` script now supports the ``--without-idle`` option, which
+causes IDLE not to be installed. IDLE is still installed by default.
