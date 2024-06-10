@@ -88,6 +88,10 @@ function_watcher_callback(
   PyFunctionObject *func,
   PyObject *new_value)
 {
+    // Don't invalidate if we are destroying funciton
+    if (event == PyFunction_EVENT_DESTROY) {
+        return 0;
+    }
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), func, 1);
     return 0;
 }

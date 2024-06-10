@@ -1480,6 +1480,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+
     def test_guard_function_version_removed(self):
         def thing(f):
             x = 0
@@ -1505,7 +1506,7 @@ class TestUopsOptimization(unittest.TestCase):
             return 1
         res, ex = self._run_with_optimizer(thing, fn)
         self.assertTrue(ex.is_valid())
-        fn.__code__ = fn.__code__
+        fn.__code__ = fn.__code__.replace(co_name="new_name")
         self.assertFalse(ex.is_valid())
 
 
