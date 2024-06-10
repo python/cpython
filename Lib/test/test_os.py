@@ -1326,7 +1326,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
 
         if has_environb:
-            # test os.environb.refresh()
+            # test os.environb.refresh() with putenv()
             os.environb[b'test_env'] = b'python_value2'
             os.putenv("test_env", "new_value2")
             self.assertEqual(os.environb[b'test_env'], b'python_value2')
@@ -1336,6 +1336,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertEqual(os.environb[b'test_env'], b'new_value2')
             self.assertEqual(os.environ['test_env'], 'new_value2')
 
+            # test os.environb.refresh() with unsetenv()
+            os.unsetenv('test_env')
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
+            self.assertEqual(os.environ['test_env'], 'new_value')
+
+            os.environb.refresh()
+            self.assertNotIn(b'test_env', os.environb)
+            self.assertNotIn('test_env', os.environ)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
