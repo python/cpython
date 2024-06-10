@@ -782,6 +782,18 @@ class TestVariousIteratorArgs(unittest.TestCase):
         d.append(10)
         self.assertRaises(RuntimeError, next, it)
 
+    def test_use_after_free_gh120298(self):
+        class evil(object):
+            def __lt__(self, other):
+                other.pop()
+                return NotImplemented
+
+        a = [[[evil()]]]
+        b = deque(a[0])
+        c = deque(a)
+        with self.assertRaises(TypeError):
+            b < c
+
 class Deque(deque):
     pass
 
