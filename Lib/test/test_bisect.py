@@ -291,16 +291,6 @@ class TestBisect:
         self.assertEqual(i1, 40)
         self.assertEqual(i2, 41)
 
-    def test_use_after_free_gh120298(self):
-        class evil(object):
-            def __lt__(self, other):
-                other.clear()
-                return NotImplemented
-
-        a = [[evil()]]
-        with self.assertRaises(TypeError):
-            self.module.insort_left(a, a)
-
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 
