@@ -2291,7 +2291,7 @@ The
       >>> 'Python'.rjust(10, '.')
       '....Python'
 
-The original string is returned if *width* is less than or equal to ``len(s)``.
+    The original string is returned if *width* is less than or equal to ``len(s)``.
 
    See also :meth:`ljust`.
 
@@ -2304,8 +2304,8 @@ The original string is returned if *width* is less than or equal to ``len(s)``.
       >>> "Monty Python's Flying Circus".rpartition(' ')
       ("Monty Python's Flying", ' ', 'Circus')
 
-If the separator is not found, return a 3-tuple containing
-   two empty strings, followed by the string itself.
+    If the separator is not found, return a 3-tuple containing
+    two empty strings, followed by the string itself.
 
    See also :meth:`partition`.
 
