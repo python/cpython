@@ -638,7 +638,7 @@ class SMTP:
         mechanism = mechanism.upper()
         initial_response = (authobject() if initial_response_ok else None)
         if initial_response is not None:
-            response = encode_base64(initial_response.encode('ascii'), eol='')
+            response = encode_base64(initial_response.encode(self.command_encoding), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
             self._auth_challenge_count = 1
         else:
@@ -649,7 +649,7 @@ class SMTP:
             self._auth_challenge_count += 1
             challenge = base64.decodebytes(resp)
             response = encode_base64(
-                authobject(challenge).encode('ascii'), eol='')
+                authobject(challenge).encode(self.command_encoding), eol='')
             (code, resp) = self.docmd(response)
             # If server keeps sending challenges, something is wrong.
             if self._auth_challenge_count > _MAXCHALLENGE:
@@ -668,7 +668,7 @@ class SMTP:
         if challenge is None:
             return None
         return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+            self.password.encode(self.command_encoding), challenge, 'md5').hexdigest()
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
