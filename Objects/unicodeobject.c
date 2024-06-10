@@ -13149,7 +13149,7 @@ PyUnicodeWriter_Create(Py_ssize_t length)
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
     if (pub_writer == NULL) {
-        return PyErr_NoMemory();
+        return (PyUnicodeWriter *)PyErr_NoMemory();
     }
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
 
