@@ -13297,7 +13297,8 @@ _PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
     return _PyUnicodeWriter_WriteCharInline(writer, ch);
 }
 
-int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
+int
+PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 {
     return _PyUnicodeWriter_WriteChar((_PyUnicodeWriter*)writer, ch);
 }
