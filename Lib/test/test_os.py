@@ -1302,6 +1302,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
                          'need os.environ.refresh()')
     def test_refresh(self):
         # Use putenv() which doesn't update os.environ
+        has_environb = hasattr(os, 'environb')
         try:
             from posix import putenv
         except ImportError:
@@ -1310,15 +1311,16 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ['test_env'] = 'python_value'
         putenv("test_env", "new_value")
         self.assertEqual(os.environ['test_env'], 'python_value')
-        if hasattr(os, 'environb'):
+        if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'python_value')
 
         os.environ.refresh()
         self.assertEqual(os.environ['test_env'], 'new_value')
-        if hasattr(os, 'environb'):
+        if has_environb:
             self.assertEqual(os.environb[b'test_env'], b'new_value')
 
-        if hasattr(os, 'environb'):
+        if has_environb:
+            # test os.environb.refresh()
             os.environb[b'test_env'] = b'python_value2'
             putenv("test_env", "new_value2")
             self.assertEqual(os.environb[b'test_env'], b'python_value2')
