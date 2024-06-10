@@ -1678,7 +1678,7 @@ expression support in the :mod:`re` module).
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
    interpreted as in slice notation.
-
+.. change to statement, then example
    If *sub* is empty, returns the number of empty strings between characters
    which is the length of the string plus one. These are examples of each case::
 
@@ -1695,7 +1695,14 @@ expression support in the :mod:`re` module).
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
-   Return the string encoded to :class:`bytes`.
+   Return the string encoded to :class:`bytes` ::
+
+      >>> encoded_str_to_byte = 'Python'.encode()
+      >>> type(encoded_str_to_byte)
+      <class 'bytes'>
+      >>> encoded_str_to_byte
+      b'¿como estás?'
+
 
    *encoding* defaults to ``'utf-8'``;
    see :ref:`standard-encodings` for possible values.
@@ -1712,11 +1719,6 @@ expression support in the :mod:`re` module).
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used::
 
-      >>> encoded_str_to_byte = 'Python'.encode()
-      >>> type(encoded_str_to_byte)
-      <class 'bytes'>
-      >>> encoded_str_to_byte
-      b'Python'
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1756,16 +1758,18 @@ expression support in the :mod:`re` module).
    Return a copy of the string where all tab characters are replaced by one or
    more spaces, depending on the current column and the given tab size.  Tab
    positions occur every *tabsize* characters (default is 8, giving tab
-   positions at columns 0, 8, 16 and so on).  To expand the string, the current
-   column is set to zero and the string is examined character by character.  If
-   the character is a tab (``\t``), one or more space characters are inserted
-   in the result until the current column is equal to the next tab position.
-   (The tab character itself is not copied.)::
+   positions at columns 0, 8, 16 and so on).
 
       >>> '01\t012\t0123\t01234'.expandtabs()
       '01      012     0123    01234'
       >>> '01\t012\t0123\t01234'.expandtabs(4)
       '01  012 0123    01234'
+
+   To expand the string, the current
+   column is set to zero and the string is examined character by character.  If
+   the character is a tab (``\t``), one or more space characters are inserted
+   in the result until the current column is equal to the next tab position.
+   (The tab character itself is not copied.)
 
    If the character is a newline (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero::
@@ -1784,7 +1788,7 @@ expression support in the :mod:`re` module).
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``::
 
-      >>> 'spam, spam, spam'.find('sp')
+  ..    >>> 'spam, spam, spam'.find(',')
       0
 
    Optional arguments *start* and *end* are interpreted as in slice notation::
@@ -1883,9 +1887,9 @@ expression support in the :mod:`re` module).
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo"::
 
-      >>> 'a commom word'.isalpha()
+      >>> 'a common word'.isalpha()
       False
-      >>> 'acommomword'.isalpha()
+      >>> 'acommonword'.isalpha()
       True
       >>> 'µ'.isalpha()
       True
@@ -1910,11 +1914,6 @@ expression support in the :mod:`re` module).
       >>> 'acommomword'.isascii()
       True
       >>> 'µ'.isascii()
-      False
-      >>> 'æ'.isascii()
-      False
-      >>> 'Ŧ'.isascii()
-      False
 
    ASCII characters have code points in the range U+0000-U+007F.
 
@@ -1934,8 +1933,8 @@ expression support in the :mod:`re` module).
 
       >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
-      >>> '²'.isdecimal(), '²'.isdigit()
-      (False, True)
+      >>> '²'.isdecimal()
+      True
 
    Formally a decimal character is a character in the Unicode General Category "Nd".
    See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
@@ -1950,8 +1949,8 @@ expression support in the :mod:`re` module).
       True
       >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO to NINE
       True
-      >>> '²'.isdigit(), '²'.isdecimal()
-      (True, False)
+      >>> '²'.isdigit()
+      True
 
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
@@ -2006,7 +2005,6 @@ expression support in the :mod:`re` module).
       >>> '0123456789'.isnumeric()
       True
 
-
    Numeric characters include digit characters, and all characters
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH::
@@ -2034,13 +2032,13 @@ expression support in the :mod:`re` module).
 
       >>> ''.isprintable()
       True
-      >>> ' '.isprintable()
-      True
 
    Nonprintable characters are those characters defined
    in the Unicode character database as "Other" or "Separator", excepting the
    ASCII space (0x20) which is considered printable::
 
+      >>> ' '.isprintable()
+      True
 
       >>> '\t\n'.isprintable()  # TAB and BREAK LINE
       False
@@ -2064,8 +2062,12 @@ expression support in the :mod:`re` module).
       True
       >>> '\t\n'.isspace()  # TAB and BREAK LINE
       True
+
+
       >>> '\u3000'.isspace()  # IDEOGRAPHIC SPACE
       True
+
+.. use banana in the example
 
    See also :meth:`isprintable`.
 
@@ -2111,6 +2113,7 @@ expression support in the :mod:`re` module).
 .. _meth-str-join:
 
 .. method:: str.join(iterable)
+.. use & in thestead of comma
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
@@ -2128,14 +2131,14 @@ expression support in the :mod:`re` module).
 .. method:: str.ljust(width[, fillchar])
 
    Return the string left justified in a string of length *width*. Padding is
-   done using the specified *fillchar* (default is an ASCII space). The
-   original string is returned if *width* is less than or equal to ``len(s)``::
+   done using the specified *fillchar* (default is an ASCII space) ::
 
       >>> 'Python'.ljust(10)
       'Python    '
       >>> 'Python'.ljust(10, '.')
       'Python....'
-
+The
+   original string is returned if *width* is less than or equal to ``len(s)``
    See also :meth:`rjust`.
 
 .. method:: str.lower()
@@ -2180,7 +2183,7 @@ expression support in the :mod:`re` module).
    ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
    strings (of arbitrary lengths) or ``None``.  Character keys will then be
    converted to ordinals::
-
+.. remove examples , too esoteric
       >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
       {97: 'A', 98: 'Boo', 99: None}
 
@@ -2257,8 +2260,8 @@ expression support in the :mod:`re` module).
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation::
 
-      >>> 'spam, spam, spam'.rfind('sp')
-      12
+      >>> 'spam, spam, spam'.rfind(',')
+      10
       >>> 'spam, spam, spam'.rfind('sp', 0, 10)
       6
 
@@ -2474,8 +2477,8 @@ If the separator is not found, return a 3-tuple containing
 
    With optional *end*, stop comparing string at that position::
 
-      >>> 'Python is amazing, yet not mysterious'.startswith('ama', 10, 15)
-      True
+      >>> 'Python is amazing, yet not mysterious'.startswith('ama', 10, 12)
+      False
 
    See also :meth:`endswith` and :meth:`removeprefix`.
 
@@ -2569,16 +2572,18 @@ If the separator is not found, return a 3-tuple containing
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
-   contains uncased characters or if the Unicode category of the resulting
-   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
-   titlecase).
-
-   ::
+   uppercase::
 
       >>> 'Monty Python'.upper()
       'MONTY PYTHON'
-      >>> '𐊠'.upper().isupper()  # 'CARIAN LETTER A'
+
+   Note that ``s.upper().isupper()`` might be ``False`` if ``s``
+   contains uncased characters or if the Unicode category of the resulting
+   character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
+   titlecase)::
+
+
+      >>> '  '.upper().isupper()  # spaces
       False
 
    The uppercasing algorithm used is
