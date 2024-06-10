@@ -171,8 +171,8 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-``from __future__ import annotations`` was previously scheduled to become mandatory in
-Python 3.10, but was deprecated and replaced by :pep:`649` in Python 3.14.
+It was previously scheduled to become mandatory in Python 3.10, but was
+deprecated and replaced by :pep:`649` in Python 3.14.
 
 .. seealso::
 
