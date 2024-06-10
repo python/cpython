@@ -55,12 +55,9 @@ _Py_c_neg(Py_complex a)
 Py_complex
 _Py_c_prod(Py_complex z, Py_complex w)
 {
-    Py_complex r;
     double a = z.real, b = z.imag, c = w.real, d = w.imag;
     double ac = a*c, bd = b*d, ad = a*d, bc = b*c;
-
-    r.real = ac - bd;
-    r.imag = ad + bc;
+    Py_complex r = {ac - bd, ad + bc};
 
     /* Recover infinities that computed as nan+nanj.  See e.g. the C11,
        Annex G.5.2, routine _Cmultd(). */
