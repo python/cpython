@@ -1523,24 +1523,23 @@ object.
 
 .. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 
-   Discard an Unicode writer instance: free its memory.
+   Discard an Unicode writer instance.
 
 .. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 
-   Get the final Python :class:`str` object and free the writer instance.
+   Return the final Python :class:`str` object and free the writer instance.
 
    Set an exception and return ``NULL`` on error.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
-   Write a single Unicode character.
+   Write the single Unicode character *ch* into *writer*.
 
    Return ``0`` on success, or set an exception and return ``-1`` on error.
 
 .. c:function:: int PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
 
-   Decode a string from UTF-8 in strict mode and write the output into the
-   writer.
+   Decode the string *str* from UTF-8 in strict mode and write the output into *writer*.
 
    *size* is the string length in bytes. If *size* is equal to ``-1``, call
    ``strlen(str)`` to get the string length.
@@ -1549,21 +1548,19 @@ object.
 
 .. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *str)
 
-   Call :c:func:`PyObject_Str(obj) <PyObject_Str>` and write the output into
-   the writer.
+   Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
 
    Return ``0`` on success, or set an exception and return ``-1`` on error.
 
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
-   Call :c:func:`PyObject_Repr(obj) <PyObject_Repr>` and write the output into
-   the writer.
+   Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
    Return ``0`` on success, or set an exception and return ``-1`` on error.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 
-   Write the substring ``str[start:end]`` into the writer.
+   Write the substring ``str[start:end]`` into *writer*.
 
    *str* must be Python :class:`str` object. *start* must be greater than or
    equal to 0, and less than or equal to *end*. *end* must be less than or
@@ -1573,7 +1570,6 @@ object.
 
 .. c:function:: int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 
-   Similar to :c:func:`PyUnicode_FromFormat`, but write directly the output
-   into the writer.
+   Similar to :c:func:`PyUnicode_FromFormat`, but write the output directly into *writer*.
 
    Return ``0`` on success, or set an exception and return ``-1`` on error.
