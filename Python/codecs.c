@@ -147,7 +147,12 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     if (v == NULL) {
         return NULL;
     }
-    PyUnicode_InternInPlace(&v);
+
+    /* Intern the string.
+       A successful lookup will insert `v` in the codecs search cache,
+       effectively immortalizing it. We don't want to immortalize the key
+       when lookup fails. */
+    _PyUnicode_InternMortal(interp, &v);
 
     /* First, try to lookup the name in the registry dictionary */
     PyObject *result;
