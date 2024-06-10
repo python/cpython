@@ -314,6 +314,11 @@ struct _Py_unicode_state {
 extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
+// Explicit interning routines
+PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
+
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.
 PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
