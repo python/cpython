@@ -1538,7 +1538,8 @@ object.
 
    Write the single Unicode character *ch* into *writer*.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
 
@@ -1547,19 +1548,22 @@ object.
    *size* is the string length in bytes. If *size* is equal to ``-1``, call
    ``strlen(str)`` to get the string length.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 
@@ -1569,10 +1573,12 @@ object.
    equal to 0, and less than or equal to *end*. *end* must be less than or
    equal to *str* length.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 
    Similar to :c:func:`PyUnicode_FromFormat`, but write the output directly into *writer*.
 
-   Return ``0`` on success, or set an exception and return ``-1`` on error.
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.

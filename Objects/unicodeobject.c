@@ -2955,12 +2955,17 @@ int
 PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 {
     _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
+    Py_ssize_t old_pos = _writer->pos;
 
     va_list vargs;
     va_start(vargs, format);
-    int ret = unicode_from_format(_writer, format, vargs);
+    int res = unicode_from_format(_writer, format, vargs);
     va_end(vargs);
-    return ret;
+
+    if (res < 0) {
+        _writer->pos = old_pos;
+    }
+    return res;
 }
 
 static Py_ssize_t
@@ -13484,8 +13489,15 @@ PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
     if (size < 0) {
         size = strlen(str);
     }
-    return unicode_decode_utf8_writer((_PyUnicodeWriter*)writer, str, size,
-                                      _Py_ERROR_STRICT, NULL, NULL);
+
+    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
+    Py_ssize_t old_pos = _writer->pos;
+    int res = unicode_decode_utf8_writer(_writer, str, size,
+                                         _Py_ERROR_STRICT, NULL, NULL);
+    if (res < 0) {
+        _writer->pos = old_pos;
+    }
+    return res;
 }
 
 int

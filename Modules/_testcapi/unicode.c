@@ -347,6 +347,34 @@ test_unicodewriter_invalid_utf8(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
+test_unicodewriter_recover_error(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // test recovering from PyUnicodeWriter_WriteUTF8() error
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    assert(PyUnicodeWriter_WriteUTF8(writer, "value=", -1) == 0);
+
+    // write fails with an invalid string
+    assert(PyUnicodeWriter_WriteUTF8(writer, "invalid\xFF", -1) < 0);
+    PyErr_Clear();
+
+    // retry write with a valid string
+    assert(PyUnicodeWriter_WriteUTF8(writer, "valid", -1) == 0);
+
+    PyObject *result = PyUnicodeWriter_Finish(writer);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(result, "value=valid"));
+    Py_DECREF(result);
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
 test_unicodewriter_format(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
@@ -379,6 +407,35 @@ error:
 }
 
 
+static PyObject *
+test_unicodewriter_format_recover_error(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // test recovering from PyUnicodeWriter_Format() error
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    assert(PyUnicodeWriter_Format(writer, "%s", "Hello") == 0);
+
+    // PyUnicodeWriter_Format() fails with an invalid format string
+    assert(PyUnicodeWriter_Format(writer, "%s\xff", "World") < 0);
+    PyErr_Clear();
+
+    // Retry PyUnicodeWriter_Format() with a valid format string
+    assert(PyUnicodeWriter_Format(writer, "%s.", "World") == 0);
+
+    PyObject *result = PyUnicodeWriter_Finish(writer);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(result, "Hello World."));
+    Py_DECREF(result);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"unicode_new",              unicode_new,                    METH_VARARGS},
     {"unicode_fill",             unicode_fill,                   METH_VARARGS},
@@ -390,7 +447,9 @@ static PyMethodDef TestMethods[] = {
     {"test_unicodewriter",       test_unicodewriter,             METH_NOARGS},
     {"test_unicodewriter_utf8",  test_unicodewriter_utf8,        METH_NOARGS},
     {"test_unicodewriter_invalid_utf8", test_unicodewriter_invalid_utf8, METH_NOARGS},
+    {"test_unicodewriter_recover_error", test_unicodewriter_recover_error, METH_NOARGS},
     {"test_unicodewriter_format", test_unicodewriter_format,     METH_NOARGS},
+    {"test_unicodewriter_format_recover_error", test_unicodewriter_format_recover_error, METH_NOARGS},
     {NULL},
 };
 
