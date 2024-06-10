@@ -1969,11 +1969,16 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             if (info->filename != NULL) {
                 // XXX There's a refleak somewhere with the filename.
                 // Until we can track it down, we intern it.
-                // The original filename may be allocated by subinterpreter's
-                // obmaloc, so we create a copy here.
-                PyObject *filename = PyUnicode_FromString(PyUnicode_AsUTF8(info->filename));
-                if (filename == NULL) {
-                    return NULL;
+                PyObject *filename = NULL;
+                if (switched) {
+                    // The original filename may be allocated by subinterpreter's
+                    // obmaloc, so we create a copy here.
+                    filename = PyUnicode_FromString(PyUnicode_AsUTF8(info->filename));
+                    if (filename == NULL) {
+                        return NULL;
+                    }
+                } else {
+                    filename = Py_NewRef(info->filename);
                 }
                 PyUnicode_InternInPlace(&filename);
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
