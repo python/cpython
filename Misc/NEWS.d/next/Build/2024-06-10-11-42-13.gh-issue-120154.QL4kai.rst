@@ -1,0 +1,2 @@
+On WASI, test modules, such as ``_testimportmultiple`` or ``xxlimited``, are no
+longer built. Patch by Victor Stinner.

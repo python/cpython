@@ -7302,9 +7302,15 @@ AS_CASE([$ac_sys_system],
         dnl WASI SDK 15.0 does not support file locking, mmap, and more.
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
+          [_testexternalinspection],
+          [_testimportmultiple],
+          [_testmultiphase],
+          [_testsinglephase],
           [fcntl],
           [mmap],
           [termios],
+          [xxlimited],
+          [xxlimited_35],
         )
       ]
     )
