@@ -4,7 +4,7 @@ import textwrap
 import threading
 import unittest
 from unittest.mock import patch
-from test.support import import_helper
+from test.support import import_helper, threading_helper
 
 
 ADAPTIVE_WARMUP_DELAY = 2
@@ -506,6 +506,7 @@ class TestSuper(unittest.TestCase):
         for _ in range(ADAPTIVE_WARMUP_DELAY):
             C.some(C)
 
+    @threading_helper.requires_working_threading()
     def test___class___modification_multithreaded(self):
         """ Note: this test isn't actually testing anything on its own.
         It requires a sys audithook to be set to crash on older Python.
