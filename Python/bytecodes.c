@@ -4325,10 +4325,8 @@ dummy_func(
                 if (tuple == NULL) {
                     ERROR_NO_POP();
                 }
-                _PyStackRef *temp_dst_ptr = &callargs_st;
-                _PyStackRef temp_old_dst = *temp_dst_ptr;
-                *temp_dst_ptr = PyStackRef_FromPyObjectSteal(tuple);
-                PyStackRef_CLOSE(temp_old_dst);
+                PyStackRef_CLOSE(callargs_st);
+                callargs_st = PyStackRef_FromPyObjectSteal(tuple);
                 callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
