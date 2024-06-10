@@ -145,7 +145,8 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
 static inline int
 _PyEval_IsGILEnabled(PyThreadState *tstate)
 {
-    return tstate->interp->ceval.gil->enabled != 0;
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    return _Py_atomic_load_int_relaxed(&gil->enabled) != 0;
 }
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which

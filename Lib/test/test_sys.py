@@ -394,10 +394,15 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.refcount_test
     def test_refcount(self):
-        # n here must be a global in order for this test to pass while
-        # tracing with a python function.  Tracing calls PyFrame_FastToLocals
-        # which will add a copy of any locals to the frame object, causing
-        # the reference count to increase by 2 instead of 1.
+        # n here originally had to be a global in order for this test to pass
+        # while tracing with a python function. Tracing used to call
+        # PyFrame_FastToLocals, which would add a copy of any locals to the
+        # frame object, causing the ref count to increase by 2 instead of 1.
+        # While that no longer happens (due to PEP 667), this test case retains
+        # its original global-based implementation
+        # PEP 683's immortal objects also made this point moot, since the
+        # refcount for None doesn't change anyway. Maybe this test should be
+        # using a different constant value? (e.g. an integer)
         global n
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
