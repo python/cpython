@@ -2417,6 +2417,12 @@ _Py_SetImmortalUntracked(PyObject *op)
 void
 _Py_SetImmortal(PyObject *op)
 {
+#ifdef Py_DEBUG
+    if (PyUnicode_CheckExact(op)) {
+        // For strings, use _PyUnicode_InternImmortal instead.
+        assert(_PyASCIIObject_CAST(op)->state.interned);
+    }
+#endif
     if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }

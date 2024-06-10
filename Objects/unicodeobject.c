@@ -15053,8 +15053,8 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    _Py_SetImmortal(s);
     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
+    _Py_SetImmortal(s);
 }
 
 void
