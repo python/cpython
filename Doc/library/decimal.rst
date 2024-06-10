@@ -899,9 +899,11 @@ Decimal objects
 
    Decimal numbers can be rounded using the :func:`.round` function:
 
-   .. describe:: round(number, ndigits=None)
+   .. describe:: round(number)
+   .. describe:: round(number, ndigits)
 
-      If *ndigits* is ``None``, returns the nearest :class:`int` to *number*,
+      If *ndigits* is not given or ``None``,
+      returns the nearest :class:`int` to *number*,
       rounding ties to even, and ignoring the rounding mode of the
       :class:`Decimal` context.  Raises :exc:`OverflowError` if *number* is an
       infinity or :exc:`ValueError` if it is a (quiet or signaling) NaN.
