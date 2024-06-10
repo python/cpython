@@ -1549,7 +1549,7 @@ object.
 
    Return ``0`` on success, or set an exception and return ``-1`` on error.
 
-.. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *str)
+.. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
 

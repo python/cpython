@@ -462,7 +462,7 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
     PyUnicodeWriter *writer,
-    PyObject *str);
+    PyObject *obj);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteRepr(
     PyUnicodeWriter *writer,
     PyObject *obj);
