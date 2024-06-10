@@ -3723,7 +3723,7 @@ class ProtocolTests(BaseTestCase):
 
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
-            '__init__', '__annotations__', '__subclasshook__',
+            '__init__', '__annotations__', '__subclasshook__', '__annotate__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(

@@ -158,8 +158,9 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+
+        # See https://bugs.python.org/issue4630#msg356516 for following.
         # self.blink_off_time = <first editor text>['insertofftime']
-        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()

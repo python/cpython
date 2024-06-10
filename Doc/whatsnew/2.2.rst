@@ -1062,7 +1062,7 @@ code, none of the changes described here will affect you very much.
   simply been changed to use the new C-level interface.  (Contributed by Fred L.
   Drake, Jr.)
 
-* Another low-level API, primarily of interest to implementors of Python
+* Another low-level API, primarily of interest to implementers of Python
   debuggers and development tools, was added. :c:func:`PyInterpreterState_Head` and
   :c:func:`PyInterpreterState_Next` let a caller walk through all the existing
   interpreter objects; :c:func:`PyInterpreterState_ThreadHead` and

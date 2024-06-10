@@ -82,7 +82,7 @@ Victor Stinner.
 .. section: Core and Builtins
 
 Fixed a bug that was causing a buffer overflow if the tokenizer copies a
-line missing the newline caracter from a file that is as long as the
+line missing the newline character from a file that is as long as the
 available tokenizer buffer. Patch by Pablo galindo
 
 ..
