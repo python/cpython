@@ -13149,8 +13149,7 @@ PyUnicodeWriter_Create(Py_ssize_t length)
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
     if (pub_writer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        return PyErr_NoMemory();
     }
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
 
@@ -13481,7 +13480,7 @@ PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
                           const char *str,
                           Py_ssize_t size)
 {
-    if (size == -1) {
+    if (size < 0) {
         size = strlen(str);
     }
     return unicode_decode_utf8_writer((_PyUnicodeWriter*)writer, str, size,
