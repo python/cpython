@@ -42,6 +42,7 @@ typedef struct _ProfilerContext {
     PyTime_t subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
+    bool inFreeList;
 } ProfilerContext;
 
 typedef struct {
@@ -296,6 +297,7 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
     self->ctxEntry = entry;
     self->subt = 0;
     self->previous = pObj->currentProfilerContext;
+    self->inFreeList = false;
     pObj->currentProfilerContext = self;
     ++entry->recursionLevel;
     if ((pObj->flags & POF_SUBCALLS) && self->previous) {
@@ -315,6 +317,9 @@ Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
     PyTime_t tt = call_timer(pObj) - self->t0;
     PyTime_t it = tt - self->subt;
+    // call_timer could have flushed all contexts
+    if (pObj->currentProfilerContext == NULL)
+        return;
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -400,9 +405,13 @@ ptrace_leave_call(PyObject *self, void *key)
     else {
         pObj->currentProfilerContext = pContext->previous;
     }
-    /* put pContext into the free list */
-    pContext->previous = pObj->freelistProfilerContext;
-    pObj->freelistProfilerContext = pContext;
+    /* put pContext into the free list if it's not already in */
+    /* we need to check because Stop could potentially call disable*/
+    if (!pContext->inFreeList) {
+        pContext->previous = pObj->freelistProfilerContext;
+        pObj->freelistProfilerContext = pContext;
+        pContext->inFreeList = true;
+    }
 }
 
 static int
@@ -764,6 +773,7 @@ flush_unmatched(ProfilerObject *pObj)
             pObj->currentProfilerContext = pContext->previous;
         pContext->previous = pObj->freelistProfilerContext;
         pObj->freelistProfilerContext = pContext;
+        pContext->inFreeList = true;
     }
 
 }

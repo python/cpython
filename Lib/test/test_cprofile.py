@@ -52,6 +52,7 @@ class CProfileTest(ProfileTest):
         profiler_with_evil_timer.enable()
         # Make a call to trigger timer
         (lambda: None)()
+        profiler_with_evil_timer.clear()
 
         # this will trigger external timer to disable profiler at
         # return event - in Stop in _lsprof.c
@@ -59,6 +60,7 @@ class CProfileTest(ProfileTest):
         profiler_with_evil_timer.enable()
         # Make a call to trigger timer
         (lambda: None)()
+        profiler_with_evil_timer.clear()
 
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
