@@ -1143,19 +1143,13 @@ range_iter(PyObject *seq)
 
     /* If all three fields and the length convert to long, use the int
      * version */
-    lstop = PyLong_AsLong(r->stop);
-    if (lstop == -1 && PyErr_Occurred()) {
+    lstart = PyLong_AsLong(r->start);
+    if (lstart == -1 && PyErr_Occurred()) {
         PyErr_Clear();
         goto long_range;
     }
-
-    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne()) {
-        /* fast path for one argument range */
-        return fast_range_iter(0, lstop, 1, Py_MAX(0, lstop));
-    }
-
-    lstart = PyLong_AsLong(r->start);
-    if (lstart == -1 && PyErr_Occurred()) {
+    lstop = PyLong_AsLong(r->stop);
+    if (lstop == -1 && PyErr_Occurred()) {
         PyErr_Clear();
         goto long_range;
     }
