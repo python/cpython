@@ -130,17 +130,36 @@ Examining Symbol Tables
       Return a tuple containing the names of method-like functions declared
       in the class.
 
-      Note that the term 'method' here designates *any* function directly
-      declared via :keyword:`def` inside the class body. For instance::
+      Here, the term 'method' designates *any* function defined in the class
+      body via :keyword:`def` or :keyword:`async def`.
+
+      Functions defined in a deeper scope (e.g., in an inner class) are not
+      picked by :meth:`get_methods`.
+
+      For example:
 
          >>> import symtable
-         >>> st = symtable.symtable("class A:\n"
-         ...                        "    def f(): pass\n"
-         ...                        "    def g(self): pass\n",
-         ...                        "test", "exec")
-         >>> class_A = st.get_children()[0]
+         >>> st = symtable.symtable('''
+         ... def outer(): pass
+         ...
+         ... class A:
+         ...    def f():
+         ...        def w(): pass
+         ...
+         ...    def g(self): pass
+         ...
+         ...    @classmethod
+         ...    async def h(cls): pass
+         ...
+         ...    global outer
+         ...    def outer(self): pass
+         ... ''', 'test', 'exec')
+         >>> _outer, class_A = st.get_children()
          >>> class_A.get_methods()
-         ('f', 'g')
+         >>> ('f', 'g', 'h')
+
+      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
+      considered as a method-like function.
 
 .. class:: Symbol
 
