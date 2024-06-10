@@ -5,7 +5,10 @@ import tokenize
 from functools import partial
 from threading import Thread
 
+from test.support import threading_helper
 
+
+@threading_helper.requires_working_threading()
 class TestTokenize(unittest.TestCase):
     def test_tokenizer_iter(self):
         source = io.StringIO("for _ in a:\n  pass")
