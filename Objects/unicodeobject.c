@@ -1624,15 +1624,60 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref an immortal string out of existence. Since
-     * the string is an immortal object, just re-set the reference count.
-     */
-    if (PyUnicode_CHECK_INTERNED(unicode)
-        || _PyUnicode_STATE(unicode).statically_allocated)
-    {
+    if (_PyUnicode_STATE(unicode).statically_allocated) {
+        /* This should never get called, but we also don't want to SEGV if
+        * we accidentally decref an immortal string out of existence. Since
+        * the string is an immortal object, just re-set the reference count.
+        */
+#ifdef Py_DEBUG
+        Py_UNREACHABLE();
+#endif
         _Py_SetImmortal(unicode);
         return;
+    }
+    switch (_PyUnicode_STATE(unicode).interned) {
+        case SSTATE_NOT_INTERNED:
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyObject *interned = get_interned_dict(interp);
+            assert(interned != NULL);
+            /* Remove the object from the intern dict.
+             * Before doing so, we set the refcount to 2: the key and value
+             * in the interned_dict.
+             */
+            assert(Py_REFCNT(unicode) == 0);
+            Py_SET_REFCNT(unicode, 2);
+            PyObject *popped;
+            int r = PyDict_Pop(interned, unicode, &popped);
+            if (r == -1) {
+                // We don't know what happened to the string, so we
+                // play it safe: leak it.
+                PyErr_WriteUnraisable(unicode);
+                _Py_SetImmortal(unicode);
+                return;
+            }
+            if (r == 0) {
+                // The interned string was not found in the interned_dict.
+#ifdef Py_DEBUG
+                Py_UNREACHABLE();
+#endif
+                _Py_SetImmortal(unicode);
+                return;
+            }
+            // Successfully popped.
+            assert(popped == unicode);
+            // Only our `popped` reference should be left; remove it too.
+            assert(Py_REFCNT(unicode) == 1);
+            Py_SET_REFCNT(unicode, 0);
+            break;
+        default:
+            // As with `statically_allocated` above.
+#ifdef Py_REF_DEBUG
+            Py_UNREACHABLE();
+#endif
+            _Py_SetImmortal(unicode);
+            return;
     }
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyMem_Free(_PyUnicode_UTF8(unicode));
