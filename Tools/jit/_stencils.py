@@ -2,9 +2,9 @@
 
 import dataclasses
 import enum
+import re
 import sys
 import typing
-import re
 
 import _schema
 
@@ -182,7 +182,7 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    aarch64_trampolines: dict[str | None, int] = dataclasses.field(
+    trampolines: dict[str | None, int] = dataclasses.field(
         default_factory=dict, init=False
     )
 
@@ -195,10 +195,10 @@ class Stencil:
 
     def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
-        reuse_trampoline = hole.symbol in self.aarch64_trampolines
+        reuse_trampoline = hole.symbol in self.trampolines
         if reuse_trampoline:
             # Re-use the base address of the previously created trampoline
-            base = self.aarch64_trampolines[hole.symbol]
+            base = self.trampolines[hole.symbol]
         else:
             self.pad(alignment)
             base = len(self.body)
@@ -208,26 +208,9 @@ class Stencil:
         instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
         self.body[where] = instruction.to_bytes(4, sys.byteorder)
 
-        # Fix the disassembly for the branch to call the trampoline
-        bl_instruction = f"{hole.offset:x}: {instruction:x}      bl      {hole.offset:#x} <{hole.symbol}>  // trampoline"
-        self.disassembly = [
-            bl_instruction if line.startswith(f"{hole.offset:x}:") else line
-            for line in self.disassembly
-        ]
-
-        # Remove the relocation once the bl instruction has been fixed
-        relocation_regex = re.compile(
-            rf"{hole.offset:016x}:\s+{hole.kind}\s+_?{hole.symbol}"
-        )
-        self.disassembly = [
-            line2 for line2 in self.disassembly if not relocation_regex.match(line2)
-        ]
-
         if reuse_trampoline:
-            # There is no need to emit a new trampoline.
             return
 
-        # Emit a new trampoline only if is not already present in the Stencil
         self.disassembly += [
             f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
             f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
@@ -256,7 +239,7 @@ class Stencil:
             ]
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
-        self.aarch64_trampolines.update({hole.symbol: base})
+        self.trampolines[hole.symbol] = base
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
