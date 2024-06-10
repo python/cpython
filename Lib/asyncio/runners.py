@@ -5,7 +5,7 @@ import enum
 import functools
 import threading
 import signal
-from . import coroutines
+from inspect import isawaitable
 from . import events
 from . import exceptions
 from . import tasks
@@ -83,10 +83,10 @@ class Runner:
         self._lazy_init()
         return self._loop
 
-    def run(self, coro, *, context=None):
-        """Run a coroutine inside the embedded event loop."""
-        if not coroutines.iscoroutine(coro):
-            raise ValueError("a coroutine was expected, got {!r}".format(coro))
+    def run(self, obj, *, context=None):
+        """Run an awaitable object inside the embedded event loop."""
+        if not isawaitable(obj):
+            raise ValueError("a coroutine was expected, got {!r}".format(obj))
 
         if events._get_running_loop() is not None:
             # fail fast with short traceback
@@ -97,7 +97,7 @@ class Runner:
 
         if context is None:
             context = self._context
-        task = self._loop.create_task(coro, context=context)
+        task = self._loop.create_task(obj, context=context)
 
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
