@@ -1155,8 +1155,7 @@ GetComError(ctypes_state *st, HRESULT errcode, GUID *riid, IUnknown *pIunk)
 }
 #endif
 
-#if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
-    defined(__aarch64__) || defined(__riscv)
+#if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__)))
 #define CTYPES_PASS_BY_REF_HACK
 #define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
 #define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
