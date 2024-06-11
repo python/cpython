@@ -15008,6 +15008,14 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
             Py_FatalError("_PyUnicode_InternStatic called on wrong string");
     }
 
+#ifdef Py_DEBUG
+    /* We must not add process-global interned string if there's already a
+     * per-interpreter interned_dict, which might contain duplicates.
+     * Except "short string" singletons: those are special-cased. */
+    PyObject *interned = get_interned_dict(interp);
+    assert(interned == NULL || unicode_is_singleton(s));
+#endif
+
     /* Look in the global cache first. */
     PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
     if (r != NULL && r != s) {
@@ -15015,29 +15023,6 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
         Py_SETREF(*p, Py_NewRef(r));
         assert(_PyUnicode_CHECK(r));
         return;
-    }
-
-    PyObject *interned = get_interned_dict(interp);
-    if (interned) {
-        int res = PyDict_GetItemRef(interned, s, &r);
-        if (res < 0) {
-            PyErr_WriteUnraisable(*p);
-        }
-        else if (res == 1) {
-            // Someone "beat us to it"; there's an interpreter-specific key
-            // we must use :(
-            if (_Py_IsImmortal(r)) {
-                *p = r;
-            } else {
-                // Immortalize it.
-                // For now this is a slow path that re-does all the checks
-                // and lookups.
-                _PyUnicode_InternImmortal(interp, p);
-            }
-            _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
-            assert(_Py_IsImmortal(*p));
-            return;
-        }
     }
 
     if (_Py_hashtable_set(INTERNED_STRINGS, s, s) < -1) {
