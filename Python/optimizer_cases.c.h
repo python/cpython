@@ -1063,7 +1063,38 @@
             break;
         }
 
-        case _CHECK_ATTR_CLASS: {
+        case _CHECK_IS_TYPE: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            if (sym_is_type_subclass(owner)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_is_type_subclass(owner);
+            }
+            break;
+        }
+
+        case _CHECK_CLASS_TYPE_VERSION: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            assert(type_version);
+            if (sym_is_type_subclass(owner) &&
+                sym_matches_type_version(owner, type_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                if (!sym_is_type_subclass(owner)) {
+                    ctx->done = true;
+                }
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                if (type) {
+                    if (sym_set_type_version(owner, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
+                    }
+                }
+            }
             break;
         }
 
@@ -1073,8 +1104,30 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
+            if (sym_is_const(owner)) {
+                assert(sym_is_type_subclass(owner));
+                PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
+                assert(PyType_Check((PyObject *)ty));
+                // No guard previously, indicates the descr is valid.
+                if ((this_instr - 1)->opcode == _NOP) {
+                    // Previous guards should have already watched the version, so
+                    // we don't need to watch it again.
+                    REPLACE_OP(this_instr, (oparg & 1)
+                           ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                        0,
+                        (uintptr_t)descr);
+                    attr = sym_new_const(ctx, descr);
+                    null = sym_new_null(ctx);
+                }
+                else {
+                    attr = sym_new_not_null(ctx);
+                    null = sym_new_null(ctx);
+                }
+            }
+            else {
+                attr = sym_new_not_null(ctx);
+                null = sym_new_null(ctx);
+            }
             (void)descr;
             (void)owner;
             stack_pointer[-1] = attr;
@@ -2020,6 +2073,17 @@
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
+            break;
+        }
+
+        case _POP_TOP_LOAD_CONST_INLINE_WITH_NULL: {
+            _Py_UopsSymbol *value;
+            _Py_UopsSymbol *null;
+            value = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+            stack_pointer[-1] = value;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
             break;
         }
 

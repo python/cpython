@@ -108,6 +108,8 @@ struct _Py_UOpsContext {
     _Py_UopsSymbol **n_consumed;
     _Py_UopsSymbol **limit;
     _Py_UopsSymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+
+    _PyBloomFilter *dependencies;
 };
 
 typedef struct _Py_UOpsContext _Py_UOpsContext;
@@ -115,6 +117,7 @@ typedef struct _Py_UOpsContext _Py_UOpsContext;
 extern bool _Py_uop_sym_is_null(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_is_not_null(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_is_const(_Py_UopsSymbol *sym);
+extern bool _Py_uop_sym_is_type_subclass(_Py_UopsSymbol *sym);
 extern PyObject *_Py_uop_sym_get_const(_Py_UopsSymbol *sym);
 extern _Py_UopsSymbol *_Py_uop_sym_new_unknown(_Py_UOpsContext *ctx);
 extern _Py_UopsSymbol *_Py_uop_sym_new_not_null(_Py_UOpsContext *ctx);
@@ -130,6 +133,7 @@ extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version);
 extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
+extern void _Py_uop_sym_set_is_type_subclass(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
 extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
 extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsSymbol *sym);
@@ -149,6 +153,12 @@ extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
+
+/* The first two dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID 0
+#define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
 
 #ifdef __cplusplus
 }

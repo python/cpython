@@ -1481,5 +1481,25 @@ class TestUopsOptimization(unittest.TestCase):
         fn(A())
 
 
+    def test_type_attribute_constant_propagated(self):
+        ns = {}
+        src = textwrap.dedent("""
+            class MyEnum:
+                A = 1
+    
+            def testfunc(n):
+                for i in range(n):
+                    x = MyEnum.A
+                    y = MyEnum.A
+        """)
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD + 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_LOAD_ATTR_CLASS_0", uops)
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+
+
 if __name__ == "__main__":
     unittest.main()

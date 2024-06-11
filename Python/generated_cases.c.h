@@ -3780,11 +3780,15 @@
             PyObject *attr;
             PyObject *null = NULL;
             /* Skip 1 cache entry */
-            // _CHECK_ATTR_CLASS
+            // _CHECK_IS_TYPE
             owner = stack_pointer[-1];
             {
-                uint32_t type_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyType_Check(owner), LOAD_ATTR);
+            }
+            // _CHECK_CLASS_TYPE_VERSION
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                assert(PyType_Check(owner));
                 assert(type_version != 0);
                 DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, LOAD_ATTR);
             }

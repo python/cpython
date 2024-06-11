@@ -138,6 +138,35 @@ dummy_func(void) {
         }
     }
 
+    op(_CHECK_IS_TYPE, (owner -- owner)) {
+        if (sym_is_type_subclass(owner)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        else {
+            sym_set_is_type_subclass(owner);
+        }
+    }
+
+    op(_CHECK_CLASS_TYPE_VERSION, (type_version/2, owner -- owner)) {
+        assert(type_version);
+        if (sym_is_type_subclass(owner) &&
+            sym_matches_type_version(owner, type_version)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        } else {
+            if (!sym_is_type_subclass(owner)) {
+                ctx->done = true;
+            }
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            if (type) {
+                if (sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
+
+        }
+    }
+
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
         if (sym_matches_type(left, &PyFloat_Type)) {
             if (sym_matches_type(right, &PyFloat_Type)) {
@@ -514,8 +543,31 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
-        attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
+        if (sym_is_const(owner)) {
+            assert(sym_is_type_subclass(owner));
+            PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
+            assert(PyType_Check((PyObject *)ty));
+            // No guard previously, indicates the descr is valid.
+            if ((this_instr - 1)->opcode == _NOP) {
+                // Previous guards should have already watched the version, so
+                // we don't need to watch it again.
+                REPLACE_OP(this_instr, (oparg & 1)
+                    ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                    0,
+                    (uintptr_t)descr);
+                attr = sym_new_const(ctx, descr);
+                null = sym_new_null(ctx);
+            }
+            else {
+                attr = sym_new_not_null(ctx);
+                null = sym_new_null(ctx);
+            }
+
+        }
+        else {
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+        }
         (void)descr;
         (void)owner;
     }

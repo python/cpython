@@ -75,12 +75,6 @@ increment_mutations(PyObject* dict) {
     d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
 }
 
-/* The first two dict watcher IDs are reserved for CPython,
- * so we don't need to check that they haven't been used */
-#define BUILTINS_WATCHER_ID 0
-#define GLOBALS_WATCHER_ID  1
-#define TYPE_WATCHER_ID  0
-
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
@@ -317,6 +311,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_not_null _Py_uop_sym_new_not_null
 #define sym_new_type _Py_uop_sym_new_type
 #define sym_is_null _Py_uop_sym_is_null
+#define sym_is_type_subclass _Py_uop_sym_is_type_subclass
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_has_type _Py_uop_sym_has_type
@@ -325,6 +320,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
+#define sym_set_is_type_subclass(SYM) _Py_uop_sym_set_is_type_subclass(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
@@ -418,6 +414,7 @@ optimize_uops(
     ctx->done = false;
     ctx->out_of_space = false;
     ctx->contradiction = false;
+    ctx->dependencies = dependencies;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
@@ -489,6 +486,65 @@ error:
 
 }
 
+static inline bool
+op_is_simple_load(int opcode) {
+    switch (opcode) {
+        case _LOAD_CONST_INLINE_BORROW:
+        case _LOAD_CONST_INLINE:
+        case _LOAD_FAST:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool
+remove_simple_pops(int num_popped, _PyUOpInstruction *curr, _PyUOpInstruction *limit){
+    int remaining = num_popped;
+    _PyUOpInstruction *original_curr = curr;
+    while (curr > limit && remaining != 0) {
+        int opcode = curr->opcode;
+        switch (opcode) {
+            case _NOP:
+            case _CHECK_VALIDITY_AND_SET_IP:
+            case _CHECK_VALIDITY:
+            case _SET_IP:
+                break;
+            default:
+                // Hit a non-simple instruction. Just bail early,
+                // so we don't end up with quadratic time.
+                if (!op_is_simple_load(opcode)) {
+                    return false;
+                }
+                remaining--;
+                break;
+        }
+        curr--;
+    }
+    if (remaining != 0) {
+        return false;
+    }
+    // Can eliminate.
+    remaining = num_popped;
+    curr = original_curr;
+    while (remaining != 0) {
+        int opcode = curr->opcode;
+        switch (opcode) {
+            case _NOP:
+            case _CHECK_VALIDITY_AND_SET_IP:
+            case _CHECK_VALIDITY:
+            case _SET_IP:
+                break;
+            default:
+                assert(op_is_simple_load(opcode));
+                curr->opcode = _NOP;
+                remaining--;
+                break;
+        }
+        curr--;
+    }
+    return true;
+}
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -502,6 +558,16 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
+            case _POP_TOP_LOAD_CONST_INLINE_BORROW:
+                if (remove_simple_pops(1, &buffer[pc-1], buffer)) {
+                    buffer[pc].opcode = _LOAD_CONST_INLINE_BORROW;
+                }
+                break;
+            case _POP_TOP_LOAD_CONST_INLINE_WITH_NULL:
+                if (remove_simple_pops(1, &buffer[pc-1], buffer)) {
+                    buffer[pc].opcode = _LOAD_CONST_INLINE_WITH_NULL;
+                }
+                break;
             case _START_EXECUTOR:
                 may_have_escaped = false;
                 break;

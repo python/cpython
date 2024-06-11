@@ -2035,11 +2035,14 @@ dummy_func(
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             unused/5;
 
-        op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
-            DEOPT_IF(!PyType_Check(owner));
-            assert(type_version != 0);
-            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
+        op(_CHECK_IS_TYPE, (owner -- owner)) {
+            EXIT_IF(!PyType_Check(owner));
+        }
 
+        op(_CHECK_CLASS_TYPE_VERSION, (type_version/2, owner -- owner)) {
+            assert(PyType_Check(owner));
+            assert(type_version != 0);
+            EXIT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
@@ -2052,7 +2055,8 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
-            _CHECK_ATTR_CLASS +
+            _CHECK_IS_TYPE +
+            _CHECK_CLASS_TYPE_VERSION +
             unused/2 +
             _LOAD_ATTR_CLASS;
 
@@ -4244,6 +4248,12 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
+            value = Py_NewRef(ptr);
+            null = NULL;
+        }
+
+        tier2 pure op(_POP_TOP_LOAD_CONST_INLINE_WITH_NULL, (ptr/4, pop -- value, null)) {
+            Py_DECREF(pop);
             value = Py_NewRef(ptr);
             null = NULL;
         }

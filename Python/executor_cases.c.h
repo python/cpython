@@ -2157,14 +2157,21 @@
 
         /* _LOAD_ATTR_SLOT is split on (oparg & 1) */
 
-        case _CHECK_ATTR_CLASS: {
+        case _CHECK_IS_TYPE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (!PyType_Check(owner)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _CHECK_CLASS_TYPE_VERSION: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
+            assert(PyType_Check(owner));
             assert(type_version != 0);
             if (((PyTypeObject *)owner)->tp_version_tag != type_version) {
                 UOP_STAT_INC(uopcode, miss);
@@ -4359,6 +4366,21 @@
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
+            break;
+        }
+
+        case _POP_TOP_LOAD_CONST_INLINE_WITH_NULL: {
+            PyObject *pop;
+            PyObject *value;
+            PyObject *null;
+            pop = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            Py_DECREF(pop);
+            value = Py_NewRef(ptr);
+            null = NULL;
+            stack_pointer[-1] = value;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
             break;
         }
 

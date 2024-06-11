@@ -30,9 +30,10 @@
  */
 
 // Flags for below.
-#define IS_NULL    1 << 0
-#define NOT_NULL   1 << 1
-#define NO_SPACE   1 << 2
+#define IS_NULL          1 << 0
+#define NOT_NULL         1 << 1
+#define NO_SPACE         1 << 2
+#define IS_TYPE_SUBCLASS 1 << 3
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
@@ -123,6 +124,13 @@ _Py_uop_sym_is_null(_Py_UopsSymbol *sym)
 }
 
 bool
+_Py_uop_sym_is_type_subclass(_Py_UopsSymbol *sym)
+{
+    int res = sym->flags & IS_TYPE_SUBCLASS;
+    return res;
+}
+
+bool
 _Py_uop_sym_is_const(_Py_UopsSymbol *sym)
 {
     return sym->const_val != NULL;
@@ -188,6 +196,20 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const
         sym->typ = typ;
         sym->const_val = Py_NewRef(const_val);
     }
+
+    if (PyType_Check(const_val)) {
+        sym_set_flag(sym, IS_TYPE_SUBCLASS);
+        _Py_BloomFilter_Add(ctx->dependencies, const_val);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)const_val);
+        sym->type_version = ((PyTypeObject *)const_val)->tp_version_tag;
+    }
+    else {
+        PyTypeObject *ty = Py_TYPE(const_val);
+        _Py_BloomFilter_Add(ctx->dependencies, ty);
+        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)ty);
+        sym->type_version = ty->tp_version_tag;
+    }
+
 }
 
 void
@@ -208,6 +230,14 @@ _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
     sym_set_flag(sym, NOT_NULL);
 }
 
+void
+_Py_uop_sym_set_is_type_subclass(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
+{
+    if (sym->typ != NULL) {
+        sym_set_bottom(ctx, sym);
+    }
+    sym_set_flag(sym, IS_TYPE_SUBCLASS);
+}
 
 _Py_UopsSymbol *
 _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
