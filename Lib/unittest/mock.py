@@ -800,6 +800,9 @@ class NonCallableMock(Base):
             mock_name = f'{self._extract_mock_name()}.{name}'
             raise AttributeError(f'Cannot set {mock_name}')
 
+        if isinstance(value, PropertyMock):
+            self.__dict__[name] = value
+            return
         return object.__setattr__(self, name, value)
 
 
