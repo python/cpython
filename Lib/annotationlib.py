@@ -157,7 +157,9 @@ class ForwardRef:
         if self.__ast_node__ is not None:
             self.__arg__ = ast.unparse(self.__ast_node__)
             return self.__arg__
-        raise RuntimeError("Forward reference is not initialized")
+        raise AssertionError(
+            "Attempted to access '__forward_arg__' on an uninitialized ForwardRef"
+        )
 
     @property
     def __forward_code__(self):
