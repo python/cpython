@@ -26,8 +26,6 @@ race:free_threadstate
 race_top:_add_to_weak_set
 race_top:_in_weak_set
 race_top:_PyEval_EvalFrameDefault
-race_top:_PyImport_AcquireLock
-race_top:_PyImport_ReleaseLock
 race_top:_PyType_HasFeature
 race_top:assign_version_tag
 race_top:insertdict
@@ -41,9 +39,7 @@ race_top:set_discard_entry
 race_top:set_inheritable
 race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
-race_top:_PyImport_AcquireLock
 race_top:_Py_dict_lookup_threadsafe
-race_top:_imp_release_lock
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:dictiter_new
 race_top:dictresize

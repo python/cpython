@@ -12,8 +12,9 @@ struct _mod;   // Type defined in pycore_ast.h
 
 typedef enum _block_type {
     FunctionBlock, ClassBlock, ModuleBlock,
-    // Used for annotations if 'from __future__ import annotations' is active.
-    // Annotation blocks cannot bind names and are not evaluated.
+    // Used for annotations. If 'from __future__ import annotations' is active,
+    // annotation blocks cannot bind names and are not evaluated. Otherwise, they
+    // are lazily evaluated (see PEP 649).
     AnnotationBlock,
     // Used for generics and type aliases. These work mostly like functions
     // (see PEP 695 for details). The three different blocks function identically;
@@ -89,6 +90,7 @@ typedef struct _symtable_entry {
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
+    unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
     _Py_comprehension_ty ste_comprehension;  /* Kind of comprehension (if any) */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
@@ -110,6 +112,7 @@ typedef struct _symtable_entry {
     int ste_end_col_offset;  /* end offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
+    struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
     struct symtable *ste_table;
 } PySTEntryObject;
 
@@ -126,6 +129,7 @@ extern struct symtable* _PySymtable_Build(
     PyObject *filename,
     _PyFutureFeatures *future);
 extern PySTEntryObject* _PySymtable_Lookup(struct symtable *, void *);
+extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject **);
 
 extern void _PySymtable_Free(struct symtable *);
 
