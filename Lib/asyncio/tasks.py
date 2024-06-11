@@ -96,16 +96,16 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None, context=None,
+    def __init__(self, awaitable, *, loop=None, name=None, context=None,
                  eager_start=False):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        if not coroutines.iscoroutine(coro):
+        if not inspect.isawaitable(awaitable):
             # raise after Future.__init__(), attrs are required for __del__
             # prevent logging for pending task in __del__
             self._log_destroy_pending = False
-            raise TypeError(f"a coroutine was expected, got {coro!r}")
+            raise TypeError(f"an awaitable object was expected, got {coro!r}")
 
         if name is None:
             self._name = f'Task-{_task_name_counter()}'
@@ -115,7 +115,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._num_cancels_requested = 0
         self._must_cancel = False
         self._fut_waiter = None
-        self._coro = coro
+        self._awaitable = awaitable
         if context is None:
             self._context = contextvars.copy_context()
         else:
@@ -143,8 +143,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def __repr__(self):
         return base_tasks._task_repr(self)
 
-    def get_coro(self):
-        return self._coro
+    def get_awaitable(self):
+        return self._awaitable
 
     def get_context(self):
         return self._context

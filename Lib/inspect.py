@@ -466,7 +466,7 @@ def isawaitable(object):
     return (isinstance(object, types.CoroutineType) or
             isinstance(object, types.GeneratorType) and
                 bool(object.gi_code.co_flags & CO_ITERABLE_COROUTINE) or
-            isinstance(object, collections.abc.Awaitable))
+            isinstance(object, collections.abc.Awaitable)
 
 def istraceback(object):
     """Return true if the object is a traceback.

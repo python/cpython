@@ -44,7 +44,6 @@ def iscoroutine(obj):
     else:
         return False
 
-
 def _format_coroutine(coro):
     assert iscoroutine(coro)
 

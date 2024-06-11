@@ -316,7 +316,7 @@ class RunnerTests(BaseTest):
 
         self.assertTrue(loop.is_closed())
 
-    def test_run_non_coro(self):
+    def test_run_non_awaitable(self):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
                 ValueError,
@@ -327,11 +327,13 @@ class RunnerTests(BaseTest):
     def test_run_future(self):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
+                RuntimeError,
+                "Runner is closed"
             ):
                 fut = runner.get_loop().create_future()
                 runner.run(fut)
+
+        self.assertTrue(loop.is_closed())
 
     def test_explicit_close(self):
         runner = asyncio.Runner()
