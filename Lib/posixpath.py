@@ -428,13 +428,14 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
 
     while rest:
         name = rest.pop()
-        if name is None:
-            # resolved symlink target
-            seen[rest.pop()] = path
-            continue
         if not name or name == curdir:
-            # current dir
-            continue
+            if name is None:
+                # resolved symlink target
+                seen[rest.pop()] = path
+                continue
+            else:
+                # current dir
+                continue
         if name == pardir:
             # parent dir
             path = path[:path.rindex(sep)] or sep
