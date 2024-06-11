@@ -35,6 +35,12 @@ from types import ModuleType
 from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
+
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import _error
@@ -74,7 +80,7 @@ REPL_COMMANDS = {
     "clear": _clear_screen,
 }
 
-DEFAULT_NAMESPACE = {
+DEFAULT_NAMESPACE: dict[str, Any] = {
     '__name__': '__main__',
     '__doc__': None,
     '__package__': None,
