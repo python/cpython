@@ -1494,11 +1494,11 @@ class TestUopsOptimization(unittest.TestCase):
         """)
         exec(src, ns, ns)
         testfunc = ns['testfunc']
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD + 1)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD * 2)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertNotIn("_LOAD_ATTR_CLASS_0", uops)
-        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+        self.assertLessEqual(uops.count("_LOAD_ATTR_CLASS_0"), 1)
+        self.assertLessEqual(uops.count("_CHECK_ATTR_CLASS"), 1)
 
 
 if __name__ == "__main__":

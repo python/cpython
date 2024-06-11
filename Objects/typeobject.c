@@ -913,6 +913,17 @@ PyType_Watch(int watcher_id, PyObject* obj)
 }
 
 int
+PyType_IsWatched(int watcher_id, PyObject* obj)
+{
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot check non-type");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *)obj;
+    return type->tp_watched & (1 << watcher_id);
+}
+
+int
 PyType_Unwatch(int watcher_id, PyObject* obj)
 {
     if (!PyType_Check(obj)) {

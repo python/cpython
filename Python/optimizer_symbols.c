@@ -34,6 +34,8 @@
 #define NOT_NULL         1 << 1
 #define NO_SPACE         1 << 2
 #define IS_TYPE_SUBCLASS 1 << 3
+#define HAS_TYPE_VERSION_GUARD 1 << 4
+#define HAS_CLASS_VERSION_GUARD 1 << 5
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
@@ -199,15 +201,15 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const
 
     if (PyType_Check(const_val)) {
         sym_set_flag(sym, IS_TYPE_SUBCLASS);
-        _Py_BloomFilter_Add(ctx->dependencies, const_val);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)const_val);
-        sym->type_version = ((PyTypeObject *)const_val)->tp_version_tag;
+        if (PyType_IsWatched(TYPE_WATCHER_ID, const_val)) {
+            sym->type_version = ((PyTypeObject *)const_val)->tp_version_tag;
+        }
     }
     else {
         PyTypeObject *ty = Py_TYPE(const_val);
-        _Py_BloomFilter_Add(ctx->dependencies, ty);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)ty);
-        sym->type_version = ty->tp_version_tag;
+        if (PyType_IsWatched(TYPE_WATCHER_ID, (PyObject *)ty)) {
+            sym->type_version = ty->tp_version_tag;
+        }
     }
 
 }
