@@ -1593,11 +1593,6 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
-    def test_annotation_format(self):
-        self.assertIs(inspect.VALUE, inspect.AnnotationsFormat.VALUE)
-        self.assertEqual(inspect.VALUE.value, 1)
-        self.assertEqual(inspect.VALUE, 1)
-
     def test_get_annotations_with_stock_annotations(self):
         def foo(a:int, b:str): pass
         self.assertEqual(inspect.get_annotations(foo), {'a': int, 'b': str})

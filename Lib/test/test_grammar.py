@@ -459,7 +459,7 @@ class GrammarTests(unittest.TestCase):
         gns = {}; lns = {}
         exec("'docstring'\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotate__"](inspect.VALUE), {'x': int})
+        self.assertEqual(lns["__annotate__"](1), {'x': int})
         with self.assertRaises(KeyError):
             gns['__annotate__']
 
