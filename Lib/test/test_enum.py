@@ -1504,6 +1504,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Example.A.value, 1)
         self.assertEqual(Example.B.value, 2)
         self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
 
     def test_nested_classes_in_enum_with_member(self):
         """Support locally-defined nested classes."""
