@@ -1064,8 +1064,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *positional_args = NULL;
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
@@ -1118,8 +1117,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple,
-                                   dict);
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -1130,7 +1128,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(remaining_fields);
     Py_XDECREF(positional_args);
     return result;
 }
