@@ -1,4 +1,3 @@
-import importlib
 import io
 import itertools
 import os
@@ -848,6 +847,8 @@ class TestMain(TestCase):
             "\'__name__\', \'__package__\', \'__spec__\']"
         )
         output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn(expected_output, output)
 
