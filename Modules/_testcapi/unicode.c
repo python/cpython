@@ -416,7 +416,7 @@ test_unicodewriter_format_recover_error(PyObject *self, PyObject *Py_UNUSED(args
         return NULL;
     }
 
-    assert(PyUnicodeWriter_Format(writer, "%s", "Hello") == 0);
+    assert(PyUnicodeWriter_Format(writer, "%s ", "Hello") == 0);
 
     // PyUnicodeWriter_Format() fails with an invalid format string
     assert(PyUnicodeWriter_Format(writer, "%s\xff", "World") < 0);
