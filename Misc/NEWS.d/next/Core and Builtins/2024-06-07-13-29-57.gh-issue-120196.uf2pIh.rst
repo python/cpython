@@ -1,2 +1,2 @@
-Slight code improvement to ASCII decoding and maximum character checking
-that allows vectorization by the compiler.
+Improve performance of ASCII decoding and maximum character checking
+by allowing vectorization by the compiler on suitable platforms.
