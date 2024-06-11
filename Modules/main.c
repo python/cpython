@@ -542,7 +542,8 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    if (!isatty(fileno(stdin))) {
+    if (!isatty(fileno(stdin))
+        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
         *exitcode = (run != 0);
