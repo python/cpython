@@ -264,20 +264,6 @@ hashtable_unicode_compare(const void *key1, const void *key2)
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        assert(INTERNED_STRINGS == NULL);
-        _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
-        INTERNED_STRINGS = _Py_hashtable_new_full(
-            hashtable_unicode_hash,
-            hashtable_unicode_compare,
-            NULL,
-            NULL,
-            &hashtable_alloc
-        );
-        if (INTERNED_STRINGS == NULL) {
-            return -1;
-        }
-    }
     assert(get_interned_dict(interp) == NULL);
     PyObject *interned = interned = PyDict_New();
     if (interned == NULL) {
@@ -14949,13 +14935,21 @@ _PyUnicode_InitState(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
-    // Initialize the global interned dict
-    if (init_interned_dict(interp)) {
-        PyErr_Clear();
-        return _PyStatus_ERR("failed to create interned dict");
-    }
-
     if (_Py_IsMainInterpreter(interp)) {
+        assert(INTERNED_STRINGS == NULL);
+        _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
+        INTERNED_STRINGS = _Py_hashtable_new_full(
+            hashtable_unicode_hash,
+            hashtable_unicode_compare,
+            NULL,
+            NULL,
+            &hashtable_alloc
+        );
+        if (INTERNED_STRINGS == NULL) {
+            PyErr_Clear();
+            return _PyStatus_ERR("failed to create global interned dict");
+        }
+
         /* Intern statically allocated string identifiers and deepfreeze strings.
          * This must be done before any module initialization so that statically
          * allocated string identifiers are used instead of heap allocated strings.
@@ -14971,6 +14965,11 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
             assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
         }
 #endif
+    }
+
+    if (init_interned_dict(interp)) {
+        PyErr_Clear();
+        return _PyStatus_ERR("failed to create interned dict");
     }
 
     return _PyStatus_OK();
