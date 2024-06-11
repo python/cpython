@@ -324,13 +324,13 @@ class UnixConsole(Console):
         """
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
-        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
+        raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
         raw.cflag |= termios.CS8
-        raw.lflag &= ~(
-            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
-        )
+        raw.iflag |= termios.BRKINT
+        raw.lflag &= ~(termios.ICANON | termios.ECHO | termios.IEXTEN)
+        raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
