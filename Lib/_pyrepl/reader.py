@@ -245,13 +245,48 @@ class Reader:
     can_colorize: bool = False
 
     ## cached metadata to speed up screen refreshes
-    last_refresh_in_bracketed_paste: bool = False
-    last_refresh_screen: list[str] = field(default_factory=list)
-    last_refresh_screeninfo: list[tuple[int, list[int]]] = field(init=False)
-    last_refresh_line_end_offsets: list[int] = field(default_factory=list)
-    last_refresh_pos: int = field(init=False)
-    last_refresh_cxy: tuple[int, int] = field(init=False)
-    last_refresh_dimensions: tuple[int, int] = field(init=False)
+    @dataclass
+    class RefreshCache:
+        in_bracketed_paste: bool = False
+        screen: list[str] = field(default_factory=list)
+        screeninfo: list[tuple[int, list[int]]] = field(init=False)
+        line_end_offsets: list[int] = field(default_factory=list)
+        pos: int = field(init=False)
+        cxy: tuple[int, int] = field(init=False)
+        dimensions: tuple[int, int] = field(init=False)
+
+        def update_cache(self,
+                         reader: Reader,
+                         screen: list[str],
+                         screeninfo: list[tuple[int, list[int]]],
+            ) -> None:
+            self.in_bracketed_paste = reader.in_bracketed_paste
+            self.screen = screen.copy()
+            self.screeninfo = screeninfo.copy()
+            self.pos = reader.pos
+            self.cxy = reader.cxy
+            self.dimensions = reader.console.width, reader.console.height
+
+        def valid(self, reader: Reader) -> bool:
+            dimensions = reader.console.width, reader.console.height
+            dimensions_changed = dimensions != self.dimensions
+            paste_changed = reader.in_bracketed_paste != self.in_bracketed_paste
+            return not (dimensions_changed or paste_changed)
+
+        def get_cached_location(self, reader: Reader) -> tuple[int, int]:
+            offset = 0
+            earliest_common_pos = min(reader.pos, self.pos)
+            num_common_lines = len(self.line_end_offsets)
+            while num_common_lines > 0:
+                offset = self.line_end_offsets[num_common_lines - 1]
+                if earliest_common_pos > offset:
+                    break
+                num_common_lines -= 1
+            else:
+                offset = 0
+            return offset, num_common_lines
+
+    last_refresh_cache: RefreshCache = field(default_factory=RefreshCache)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -266,10 +301,10 @@ class Reader:
         self.lxy = (self.pos, 0)
         self.can_colorize = can_colorize()
 
-        self.last_refresh_screeninfo = self.screeninfo
-        self.last_refresh_pos = self.pos
-        self.last_refresh_cxy = self.cxy
-        self.last_refresh_dimensions = (0, 0)
+        self.last_refresh_cache.screeninfo = self.screeninfo
+        self.last_refresh_cache.pos = self.pos
+        self.last_refresh_cache.cxy = self.cxy
+        self.last_refresh_cache.dimensions = (0, 0)
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
@@ -283,36 +318,22 @@ class Reader:
         # Lines that are above both the old and new cursor position can't have changed,
         # unless the terminal has been resized (which might cause reflowing) or we've
         # entered or left paste mode (which changes prompts, causing reflowing).
-        dimensions = self.console.width, self.console.height
-        dimensions_changed = dimensions != self.last_refresh_dimensions
-        paste_changed = self.in_bracketed_paste != self.last_refresh_in_bracketed_paste
-        cache_valid = not (dimensions_changed or paste_changed)
-
         num_common_lines = 0
         offset = 0
-        if cache_valid:
-            earliest_common_pos = min(self.pos, self.last_refresh_pos)
+        if self.last_refresh_cache.valid(self):
+            offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-            num_common_lines = len(self.last_refresh_line_end_offsets)
-            while num_common_lines > 0:
-                offset = self.last_refresh_line_end_offsets[num_common_lines - 1]
-                if earliest_common_pos > offset:
-                    break
-                num_common_lines -= 1
-            else:
-                offset = 0
+        screen = self.last_refresh_cache.screen
+        del screen[num_common_lines:]
+
+        screeninfo = self.last_refresh_cache.screeninfo
+        del screeninfo[num_common_lines:]
+
+        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets
+        del last_refresh_line_end_offsets[num_common_lines:]
 
         pos = self.pos
         pos -= offset
-
-        screen = self.last_refresh_screen
-        del screen[num_common_lines:]
-
-        screeninfo = self.last_refresh_screeninfo
-        del screeninfo[num_common_lines:]
-
-        last_refresh_line_end_offsets = self.last_refresh_line_end_offsets
-        del last_refresh_line_end_offsets[num_common_lines:]
 
         lines = "".join(self.buffer[offset:]).split("\n")
         cursor_found = False
@@ -376,12 +397,7 @@ class Reader:
                 screen.append(mline)
                 screeninfo.append((0, []))
 
-        self.last_refresh_in_bracketed_paste = self.in_bracketed_paste
-        self.last_refresh_screen = screen.copy()
-        self.last_refresh_screeninfo = screeninfo.copy()
-        self.last_refresh_pos = self.pos
-        self.last_refresh_cxy = self.cxy
-        self.last_refresh_dimensions = dimensions
+        self.last_refresh_cache.update_cache(self, screen, screeninfo)
         return screen
 
     @staticmethod
