@@ -1422,7 +1422,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             count = None
         else:
             try:
-                count = int(arg or None)
+                count = int(arg)
             except ValueError:
                 self.error('Invalid count (%s)' % arg)
                 return
