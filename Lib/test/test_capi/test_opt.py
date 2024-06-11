@@ -1486,7 +1486,7 @@ class TestUopsOptimization(unittest.TestCase):
         src = textwrap.dedent("""
             class MyEnum:
                 A = 1
-    
+
             def testfunc(n):
                 for i in range(n):
                     x = MyEnum.A
