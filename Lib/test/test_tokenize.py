@@ -1204,6 +1204,17 @@ async def f():
     NAME       'x'           (1, 3) (1, 4)
     """)
 
+    def test_multiline_non_ascii_fstring(self):
+        self.check_tokenize("""\
+a = f'''
+    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli'''""", """\
+    NAME       'a'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    FSTRING_START "f\'\'\'"        (1, 4) (1, 8)
+    FSTRING_MIDDLE '\\n    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli' (1, 8) (2, 68)
+    FSTRING_END "\'\'\'"         (2, 68) (2, 71)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
