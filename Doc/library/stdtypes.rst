@@ -1626,8 +1626,8 @@ expression support in the :mod:`re` module).
 
       >>> 'PYTHON IS AMAZING'.capitalize()
       'Python is amazing'
-      >>> 'ǋemačka Starts With a non-English Digraph'.capitalize()
-      'ǋemačka starts with a non-English digraph'
+      >>> 'åhléns starts with a non-english digraph'.capitalize()
+      'Åhléns starts with a non-english digraph'
 
    See also :meth:`title`.
 
@@ -1676,20 +1676,33 @@ expression support in the :mod:`re` module).
 .. method:: str.count(sub[, start[, end]])
 
    Return the number of non-overlapping occurrences of substring *sub* in the
-   range [*start*, *end*].  Optional arguments *start* and *end* are
-   interpreted as in slice notation.
-.. change to statement, then example
+   (optional) range [*start*, *end*]::
+
+         >>> 'spam, spam, spam'.count('spam')
+      3
+
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+
+   The arguments *start* and *end* are optional and interpreted as in :func:`slice` notation::
+
+
+
+      >>> 'spam, spam, spam'[5:10].count('spam')
+      1
+
+           Or, perhaps more readable alternative::
+
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+
+
+      >>> 'spam, spam, spam'.count('eggs')
+      0
+
    If *sub* is empty, returns the number of empty strings between characters
    which is the length of the string plus one. These are examples of each case::
 
-      >>> 'spam, spam, spam'.count('spam')
-      3
-      >>> 'spam, spam, spam'.count('spam', 5)
-      2
-      >>> 'spam, spam, spam'.count('spam', 5, 10)
-      1
-      >>> 'spam, spam, spam'.count('eggs')
-      0
       >>> 'spam, spam, spam'.count('')
       17
 
@@ -1788,7 +1801,7 @@ expression support in the :mod:`re` module).
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``::
 
-  ..    >>> 'spam, spam, spam'.find(',')
+      >>> 'spam, spam, spam'.find(',')
       0
 
    Optional arguments *start* and *end* are interpreted as in slice notation::
@@ -1964,10 +1977,7 @@ expression support in the :mod:`re` module).
    definition, section :ref:`identifiers`.
 
    :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
-   identifier, such as :keyword:`def` and :keyword:`class`.
-
-   Example:
-   ::
+   identifier, such as :keyword:`def` and :keyword:`class`::
 
       >>> from keyword import iskeyword
 
@@ -2033,13 +2043,12 @@ expression support in the :mod:`re` module).
       >>> ''.isprintable()
       True
 
-   Nonprintable characters are those characters defined
+   Non-printable characters are those characters defined
    in the Unicode character database as "Other" or "Separator", excepting the
    ASCII space (0x20) which is considered printable::
 
       >>> ' '.isprintable()
       True
-
       >>> '\t\n'.isprintable()  # TAB and BREAK LINE
       False
       >>> '\u3000'.isprintable()  # IDEOGRAPHIC SPACE
@@ -2056,18 +2065,15 @@ expression support in the :mod:`re` module).
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise::
 
-      >>> ''.isspace()
+      >>> 'banana'.isspace()
       False
       >>> ' '.isspace()
       True
       >>> '\t\n'.isspace()  # TAB and BREAK LINE
       True
-
-
       >>> '\u3000'.isspace()  # IDEOGRAPHIC SPACE
       True
 
-.. use banana in the example
 
    See also :meth:`isprintable`.
 
@@ -2083,11 +2089,9 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise::
 
-      >>> 'Spam, Spam, Spam'.istitle()
+      >>> 'Don Quixote'.istitle()
       True
-      >>> 'spam, spam, spam'.istitle()
-      False
-      >>> 'SPAM, SPAM, SPAM'.istitle()
+      >>> 'Don quixote'.istitle()
       False
 
    See also :meth:`title`.
@@ -2113,14 +2117,13 @@ expression support in the :mod:`re` module).
 .. _meth-str-join:
 
 .. method:: str.join(iterable)
-.. use & in thestead of comma
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
-   *iterable*, including :class:`bytes` objects::
+   *iterable*,  including :class:`bytes` objects::
 
-      >>> ', '.join(['spam', 'spam', 'spam'])
-      'spam, spam, spam'
+      >>> ' & '.join(['spam', 'spam', 'spam'])
+      'spam & spam & spam'
       >>> '-'.join('Python')
       'P-y-t-h-o-n'
 
