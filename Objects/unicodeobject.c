@@ -2401,7 +2401,7 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
         while (length < precision && str[length]) {
             length++;
         }
-        pconsumed = &consumed;
+        pconsumed = (length < precision) ? NULL : &consumed;
     }
 
     if (width < 0) {

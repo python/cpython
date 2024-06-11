@@ -425,6 +425,8 @@ class CAPITest(unittest.TestCase):
                      b'%.6s', b'abc[\xe2\x82]')
         check_format('abc[\ufffd]',
                      b'%.7s', b'abc[\xe2\x82]')
+        check_format('abc[\ufffd',
+                     b'%.7s', b'abc[\xe2\x82\0')
         check_format('      abc[',
                      b'%10.6s', 'abc[\u20ac]'.encode('utf8'))
         check_format('     abc[\u20ac',
@@ -471,6 +473,8 @@ class CAPITest(unittest.TestCase):
                      b'%10.6V', None, b'abc[\xe2\x82]')
         check_format('    abc[\ufffd]',
                      b'%10.7V', None, b'abc[\xe2\x82]')
+        check_format('     abc[\ufffd',
+                     b'%10.7V', None, b'abc[\xe2\x82\0')
 
         # following tests comes from #7330
         # test width modifier and precision modifier with %S
