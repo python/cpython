@@ -1784,7 +1784,7 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
@@ -1796,7 +1796,7 @@ dummy_func(
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
@@ -4025,7 +4025,7 @@ dummy_func(
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o));
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectNew(arg)) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg)) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             PyStackRef_CLOSE(self);
@@ -4643,7 +4643,7 @@ dummy_func(
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
             SYNC_SP();
-            if (!PyStackRef_IsNone(value)) {
+            if (!PyStackRef_IsNone(val)) {
                 PyStackRef_CLOSE(val);
                 EXIT_IF(1);
             }

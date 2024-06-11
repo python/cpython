@@ -715,7 +715,7 @@
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
@@ -847,7 +847,7 @@
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
@@ -1820,7 +1820,7 @@
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectNew(arg)) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg)) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             PyStackRef_CLOSE(self);

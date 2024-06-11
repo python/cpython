@@ -1744,7 +1744,7 @@
             _PyStackRef tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
@@ -1765,7 +1765,7 @@
             _PyStackRef list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS_NEW(values, oparg, values_o);
+            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
             if (values_o == NULL) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
@@ -4591,7 +4591,7 @@
             _PyStackRef val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (!PyStackRef_IsNone(value)) {
+            if (!PyStackRef_IsNone(val)) {
                 PyStackRef_CLOSE(val);
                 if (1) {
                     UOP_STAT_INC(uopcode, miss);
