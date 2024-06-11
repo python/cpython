@@ -556,7 +556,7 @@ dummy_func(void) {
                 // Previous guards should have already watched the version, so
                 // we don't need to watch it again.
                 REPLACE_OP(this_instr, (oparg & 1)
-                    ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                    ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE,
                     0,
                     (uintptr_t)descr);
                 attr = sym_new_const(ctx, descr);

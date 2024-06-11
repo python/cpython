@@ -1117,7 +1117,7 @@
                     // Previous guards should have already watched the version, so
                     // we don't need to watch it again.
                     REPLACE_OP(this_instr, (oparg & 1)
-                           ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE_BORROW,
+                           ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE,
                         0,
                         (uintptr_t)descr);
                     attr = sym_new_const(ctx, descr);
@@ -2049,6 +2049,13 @@
             value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
+            break;
+        }
+
+        case _POP_TOP_LOAD_CONST_INLINE: {
+            _Py_UopsSymbol *value;
+            value = sym_new_not_null(ctx);
+            stack_pointer[-1] = value;
             break;
         }
 
