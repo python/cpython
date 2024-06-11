@@ -2820,8 +2820,8 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = Py_TYPE(PyStackRef_AsPyObjectBorrow(subject))->tp_flags & Py_TPFLAGS_MAPPING;
-            res = PyStackRef_FromPyObjectSteal(match ? Py_True : Py_False);
+            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            res = match ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -2831,8 +2831,8 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = Py_TYPE(PyStackRef_AsPyObjectBorrow(subject))->tp_flags & Py_TPFLAGS_SEQUENCE;
-            res = PyStackRef_FromPyObjectSteal(match ? Py_True : Py_False);
+            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            res = match ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -3948,7 +3948,6 @@
                 }
                 if (true) JUMP_TO_ERROR();
             }
-            if (args_o == NULL) JUMP_TO_ERROR();
             PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
@@ -4098,15 +4097,11 @@
             if (retval < 0) {
                 JUMP_TO_ERROR();
             }
-            PyObject *res_o = PyBool_FromLong(retval);
-            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            if (res_o == NULL) {
-                GOTO_ERROR(error);
-            }
+            res = retval ? PyStackRef_True() : PyStackRef_False();
+            assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(inst_stackref);
             PyStackRef_CLOSE(cls_stackref);
             PyStackRef_CLOSE(callable);
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             break;
@@ -4571,26 +4566,24 @@
         case _GUARD_IS_TRUE_POP: {
             _PyStackRef flag;
             flag = stack_pointer[-1];
-            PyObject *flag_o = PyStackRef_AsPyObjectBorrow(flag);
             stack_pointer += -1;
-            if (!Py_IsTrue(flag_o)) {
+            if (!PyStackRef_IsTrue(flag)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(Py_IsTrue(flag_o));
+            assert(PyStackRef_IsTrue(flag));
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
             _PyStackRef flag;
             flag = stack_pointer[-1];
-            PyObject *flag_o = PyStackRef_AsPyObjectBorrow(flag);
             stack_pointer += -1;
-            if (!Py_IsFalse(flag_o)) {
+            if (!PyStackRef_IsFalse(flag)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(Py_IsFalse(flag_o));
+            assert(PyStackRef_IsFalse(flag));
             break;
         }
 

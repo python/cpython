@@ -105,6 +105,12 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef tagged)
 #   define PyStackRef_AsPyObjectBorrow(tagged) ((PyObject *)(tagged).bits)
 #endif
 
+static inline PyTypeObject *
+PyStackRef_TYPE(_PyStackRef stackref)
+{
+    return Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
 // Converts a PyObject * to a PyStackRef, stealing the reference
 static inline _PyStackRef
 _PyStackRef_FromPyObjectSteal(PyObject *obj)

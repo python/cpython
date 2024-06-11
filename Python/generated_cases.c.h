@@ -1346,7 +1346,6 @@
                     }
                     if (true) { stack_pointer += -2 - oparg; goto error; }
                 }
-                if (args_o == NULL) { stack_pointer += -2 - oparg; goto error; }
                 PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                     PyCFunction_GET_SELF(callable_o),
                     args_o,
@@ -1639,15 +1638,11 @@
             if (retval < 0) {
                 goto error;
             }
-            PyObject *res_o = PyBool_FromLong(retval);
-            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            if (res_o == NULL) {
-                GOTO_ERROR(error);
-            }
+            res = retval ? PyStackRef_True() : PyStackRef_False();
+            assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(inst_stackref);
             PyStackRef_CLOSE(cls_stackref);
             PyStackRef_CLOSE(callable);
-            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             DISPATCH();
@@ -3745,9 +3740,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_FALSE);
             /* Skip 1 cache entry */
-            PyObject *cond = PyStackRef_AsPyObjectBorrow(POP());
-            assert(PyBool_Check(cond));
-            int flag = Py_IsFalse(cond);
+            _PyStackRef cond = POP();
+            assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
+            int flag = PyStackRef_IsFalse(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
@@ -3808,9 +3803,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_TRUE);
             /* Skip 1 cache entry */
-            PyObject *cond = PyStackRef_AsPyObjectBorrow(POP());
-            assert(PyBool_Check(cond));
-            int flag = Py_IsTrue(cond);
+            _PyStackRef cond = POP();
+            assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
+            int flag = PyStackRef_IsTrue(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
@@ -5299,8 +5294,8 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = Py_TYPE(PyStackRef_AsPyObjectBorrow(subject))->tp_flags & Py_TPFLAGS_MAPPING;
-            res = PyStackRef_FromPyObjectSteal(match ? Py_True : Py_False);
+            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            res = match ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[0] = res;
             stack_pointer += 1;
             DISPATCH();
@@ -5313,8 +5308,8 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = Py_TYPE(PyStackRef_AsPyObjectBorrow(subject))->tp_flags & Py_TPFLAGS_SEQUENCE;
-            res = PyStackRef_FromPyObjectSteal(match ? Py_True : Py_False);
+            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            res = match ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[0] = res;
             stack_pointer += 1;
             DISPATCH();
