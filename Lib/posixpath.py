@@ -444,19 +444,17 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
             newpath = path + name
         else:
             newpath = path + sep + name
-        if seen:
-            if newpath in seen:
-                # Already seen this symlink
-                path = seen[newpath]
-                if path is not None:
-                    # use cached value
-                    continue
-                # The symlink is not resolved, so we must have a symlink loop.
-                if strict:
-                    raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                  filename)
-                path = newpath
+        if seen and newpath in seen:
+            # Already seen this symlink
+            path = seen[newpath]
+            if path is not None:
+                # use cached value
                 continue
+            # The symlink is not resolved, so we must have a symlink loop.
+            if strict:
+                raise OSError(errno.ELOOP, os.strerror(errno.ELOOP), filename)
+            path = newpath
+            continue
         try:
             st = lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
