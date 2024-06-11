@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-#include <intrin.h>
+#  include <intrin.h>
 #endif
 
 /* Object and type object interface */
