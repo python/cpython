@@ -1,4 +1,3 @@
-import inspect
 import textwrap
 import types
 import unittest
