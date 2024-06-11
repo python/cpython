@@ -85,14 +85,16 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
 }
 
 static int
-_tokenizer_error(struct tok_state *tok)
+_tokenizer_error(tokenizeriterobject *it)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     if (PyErr_Occurred()) {
         return -1;
     }
 
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
+    struct tok_state *tok = it->tok;
     switch (tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -182,7 +184,7 @@ static PyObject *
 _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
-    PyObject *line;
+    PyObject *line = it->last_line;
     if (it->tok->lineno != it->last_lineno) {
         // Line has changed since last token, so we fetch the new line and cache it
         // in the iter object.
@@ -192,10 +194,6 @@ _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t si
         if (it->tok->lineno != it->last_end_lineno) {
             it->byte_col_offset_diff = 0;
         }
-    }
-    else {
-        // Line hasn't changed so we reuse the cached one.
-        line = it->last_line;
     }
     return line;
 }
@@ -235,30 +233,23 @@ static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
     PyObject* result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(it);
+
     struct token token;
     _PyToken_Init(&token);
 
-    int type;
-    Py_BEGIN_CRITICAL_SECTION(it);
-    type = _PyTokenizer_Get(it->tok, &token);
-    Py_END_CRITICAL_SECTION();
-
+    int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
-            _tokenizer_error(it->tok);
+            _tokenizer_error(it);
             assert(PyErr_Occurred());
         }
         goto exit;
     }
     if (it->done || type == ERRORTOKEN) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
-
-#ifdef Py_GIL_DISABLED
-        _Py_atomic_store_int(&it->done, 1);
-#else
         it->done = 1;
-#endif
-
         goto exit;
     }
     PyObject *str = NULL;
@@ -287,9 +278,7 @@ tokenizeriter_next(tokenizeriterobject *it)
             size -= 1;
         }
 
-        Py_BEGIN_CRITICAL_SECTION(it);
         line = _get_current_line(it, line_start, size);
-        Py_END_CRITICAL_SECTION();
     }
     if (line == NULL) {
         Py_DECREF(str);
@@ -300,10 +289,7 @@ tokenizeriter_next(tokenizeriterobject *it)
     Py_ssize_t end_lineno = it->tok->lineno;
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
-
-    Py_BEGIN_CRITICAL_SECTION(it);
     _get_col_offsets(it, token, line_start, line, lineno, end_lineno, &col_offset, &end_col_offset);
-    Py_END_CRITICAL_SECTION();
 
     if (it->tok->tok_extra_tokens) {
         if (is_trailing_token) {
@@ -343,12 +329,10 @@ tokenizeriter_next(tokenizeriterobject *it)
 exit:
     _PyToken_Free(&token);
     if (type == ENDMARKER) {
-#ifdef Py_GIL_DISABLED
-        _Py_atomic_store_int(&it->done, 1);
-#else
         it->done = 1;
-#endif
     }
+
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
