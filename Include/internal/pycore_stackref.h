@@ -167,7 +167,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 // Converts a PyStackRef back to a PyObject *, converting deferred references
 // to new references.
 static inline PyObject *
-PyStackRef_AsPyObjectNew(_PyStackRef tagged)
+PyStackRef_AsPyObjectDeferredToNew(_PyStackRef tagged)
 {
     if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
         assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
@@ -176,7 +176,7 @@ PyStackRef_AsPyObjectNew(_PyStackRef tagged)
     return PyStackRef_AsPyObjectBorrow(tagged);
 }
 #else
-#   define PyStackRef_AsPyObjectNew(tagged) PyStackRef_AsPyObjectBorrow(tagged)
+#   define PyStackRef_AsPyObjectDeferredToNew(tagged) PyStackRef_AsPyObjectBorrow(tagged)
 #endif
 
 
