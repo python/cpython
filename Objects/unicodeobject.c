@@ -2390,23 +2390,27 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
 {
     /* UTF-8 */
     Py_ssize_t length;
+    Py_ssize_t consumed;
+    Py_ssize_t *pconsumed;
     if (precision == -1) {
         length = strlen(str);
+        pconsumed = NULL;
     }
     else {
         length = 0;
         while (length < precision && str[length]) {
             length++;
         }
+        pconsumed = &consumed;
     }
 
     if (width < 0) {
         return unicode_decode_utf8_writer(writer, str, length,
-                                          _Py_ERROR_REPLACE, "replace", NULL);
+                                          _Py_ERROR_REPLACE, "replace", pconsumed);
     }
 
     PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
-                                                     "replace", NULL);
+                                                     "replace", pconsumed);
     if (unicode == NULL)
         return -1;
 

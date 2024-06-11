@@ -415,8 +415,27 @@ class CAPITest(unittest.TestCase):
         # truncated string
         check_format('abc',
                      b'%.3s', b'abcdef')
+        check_format('abc[',
+                     b'%.6s', 'abc[\u20ac]'.encode('utf8'))
+        check_format('abc[\u20ac',
+                     b'%.7s', 'abc[\u20ac]'.encode('utf8'))
         check_format('abc[\ufffd',
-                     b'%.5s', 'abc[\u20ac]'.encode('utf8'))
+                     b'%.5s', b'abc[\xff]')
+        check_format('abc[',
+                     b'%.6s', b'abc[\xe2\x82]')
+        check_format('abc[\ufffd]',
+                     b'%.7s', b'abc[\xe2\x82]')
+        check_format('      abc[',
+                     b'%10.6s', 'abc[\u20ac]'.encode('utf8'))
+        check_format('     abc[\u20ac',
+                     b'%10.7s', 'abc[\u20ac]'.encode('utf8'))
+        check_format('     abc[\ufffd',
+                     b'%10.5s', b'abc[\xff]')
+        check_format('      abc[',
+                     b'%10.6s', b'abc[\xe2\x82]')
+        check_format('    abc[\ufffd]',
+                     b'%10.7s', b'abc[\xe2\x82]')
+
         check_format("'\\u20acABC'",
                      b'%A', '\u20acABC')
         check_format("'\\u20",
@@ -429,10 +448,29 @@ class CAPITest(unittest.TestCase):
                      b'%.3S', '\u20acABCDEF')
         check_format('\u20acAB',
                      b'%.3U', '\u20acABCDEF')
+
         check_format('\u20acAB',
                      b'%.3V', '\u20acABCDEF', None)
+        check_format('abc[',
+                     b'%.6V', None, 'abc[\u20ac]'.encode('utf8'))
+        check_format('abc[\u20ac',
+                     b'%.7V', None, 'abc[\u20ac]'.encode('utf8'))
         check_format('abc[\ufffd',
-                     b'%.5V', None, 'abc[\u20ac]'.encode('utf8'))
+                     b'%.5V', None, b'abc[\xff]')
+        check_format('abc[',
+                     b'%.6V', None, b'abc[\xe2\x82]')
+        check_format('abc[\ufffd]',
+                     b'%.7V', None, b'abc[\xe2\x82]')
+        check_format('      abc[',
+                     b'%10.6V', None, 'abc[\u20ac]'.encode('utf8'))
+        check_format('     abc[\u20ac',
+                     b'%10.7V', None, 'abc[\u20ac]'.encode('utf8'))
+        check_format('     abc[\ufffd',
+                     b'%10.5V', None, b'abc[\xff]')
+        check_format('      abc[',
+                     b'%10.6V', None, b'abc[\xe2\x82]')
+        check_format('    abc[\ufffd]',
+                     b'%10.7V', None, b'abc[\xe2\x82]')
 
         # following tests comes from #7330
         # test width modifier and precision modifier with %S
