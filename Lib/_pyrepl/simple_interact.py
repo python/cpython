@@ -27,12 +27,19 @@ from __future__ import annotations
 
 import _sitebuiltins
 import linecache
+import builtins
 import sys
 import code
 from types import ModuleType
 
 from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
 
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
@@ -73,20 +80,28 @@ REPL_COMMANDS = {
     "clear": _clear_screen,
 }
 
+DEFAULT_NAMESPACE: dict[str, Any] = {
+    '__name__': '__main__',
+    '__doc__': None,
+    '__package__': None,
+    '__loader__': None,
+    '__spec__': None,
+    '__annotations__': {},
+    '__builtins__': builtins,
+}
 
 def run_multiline_interactive_console(
     mainmodule: ModuleType | None = None,
     future_flags: int = 0,
     console: code.InteractiveConsole | None = None,
 ) -> None:
-    import __main__
     from .readline import _setup
     _setup()
 
-    mainmodule = mainmodule or __main__
+    namespace = mainmodule.__dict__ if mainmodule else DEFAULT_NAMESPACE
     if console is None:
         console = InteractiveColoredConsole(
-            mainmodule.__dict__, filename="<stdin>"
+            namespace, filename="<stdin>"
         )
     if future_flags:
         console.compile.compiler.flags |= future_flags
