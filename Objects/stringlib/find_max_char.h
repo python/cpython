@@ -24,7 +24,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     const size_t *aligned_end = (const size_t *)(_end - SIZEOF_SIZE_T);
     const size_t *unrolled_end = aligned_end - 3;
     unsigned char accumulator = 0;
-    /* Do not test each character individually, bit use bitwise OR and test
+    /* Do not test each character individually, but use bitwise OR and test
        all characters at once. */
     while (p < _end && !_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
         accumulator |= *p;
