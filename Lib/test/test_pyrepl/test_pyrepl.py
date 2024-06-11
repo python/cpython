@@ -6,7 +6,7 @@ import rlcompleter
 import select
 import subprocess
 import sys
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
 
@@ -22,6 +22,10 @@ from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
+try:
+    import pty
+except ImportError:
+    pty = None
 
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
@@ -835,16 +839,16 @@ class TestPasteEvent(TestCase):
         self.assertEqual(output, input_code)
 
 
+@skipUnless(pty, "requires pty")
 class TestMain(TestCase):
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         expected_output = (
-            '["__annotations__", "__builtins__", "__doc__", "__loader__", '
-            '"__name__", "__package__", "__spec__"]'
+            "[\'__annotations__\', \'__builtins__\', \'__doc__\', \'__loader__\', "
+            "\'__name__\', \'__package__\', \'__spec__\']"
         )
         output, exit_code = self.run_repl(["sorted(dir())", "exit"])
         self.assertEqual(exit_code, 0)
-        output = output.replace("\'", '"')
         self.assertIn(expected_output, output)
 
     def test_dumb_terminal_exits_cleanly(self):
@@ -857,10 +861,6 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
-        try:
-            import pty
-        except ImportError:
-            self.skipTest("pty module not available")
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(
             [sys.executable, "-i", "-u"],
