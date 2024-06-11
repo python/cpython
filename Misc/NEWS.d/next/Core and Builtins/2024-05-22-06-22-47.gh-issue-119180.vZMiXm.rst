@@ -1,1 +1,1 @@
-Evaluation of annotations is now deferred. See PEP 649 for details.
+Evaluation of annotations is now deferred. See :pep:`649` for details.
