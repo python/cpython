@@ -387,7 +387,7 @@ APIs:
    arguments, calculate the size of the resulting Python Unicode string and return
    a string with the values formatted into it.  The variable arguments must be C
    types and must correspond exactly to the format characters in the *format*
-   string. The *format* string is decoded from UTF-8 with the "replace" error
+   string. The *format* string is decoded from UTF-8 with the "strict" error
    handler.
 
    A conversion specifier contains two or more characters and has the following

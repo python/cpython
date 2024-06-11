@@ -264,21 +264,18 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         PyErr_Format = getattr(pythonapi, name)
         PyErr_Format.argtypes = (py_object, c_char_p,)
         PyErr_Format.restype = py_object
-
         with self.assertRaises(ZeroDivisionError) as e:
             PyErr_Format(ZeroDivisionError, b'%s %d', b'error', c_int(42))
         self.assertEqual(e.exception.args, ('error 42',))
-
-        with self.assertRaises(ZeroDivisionError) as e:
-            PyErr_Format(ZeroDivisionError, b'invalid \xff')
-        self.assertEqual(e.exception.args, ('invalid \ufffd',))
-
         with self.assertRaises(ZeroDivisionError) as e:
             PyErr_Format(ZeroDivisionError, b'%s', 'помилка'.encode())
         self.assertEqual(e.exception.args, ('помилка',))
 
         with self.assertRaisesRegex(OverflowError, 'not in range'):
             PyErr_Format(ZeroDivisionError, b'%c', c_int(-1))
+        with self.assertRaisesRegex(ValueError, 'format string') as cm:
+            PyErr_Format(ZeroDivisionError, b'\xff')
+        self.assertIsInstance(cm.exception.__context__, UnicodeDecodeError)
 
         self.assertRaises(SystemError, PyErr_Format, list, b'error')
         # CRASHES PyErr_Format(ZeroDivisionError, NULL)
@@ -382,7 +379,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
             self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
                              firstline + 15)
-            self.assertEqual(cm.unraisable.err_msg, 'undecodable \ufffd')
+            self.assertIsNone(cm.unraisable.err_msg)
             self.assertIsNone(cm.unraisable.object)
 
         with support.catch_unraisable_exception() as cm:
@@ -406,8 +403,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
               support.captured_stderr() as stderr):
             formatunraisable(CustomError('oops!'), b'undecodable \xff')
         lines = stderr.getvalue().splitlines()
-        self.assertEqual(lines[0], 'undecodable \ufffd:')
-        self.assertEqual(lines[1], 'Traceback (most recent call last):')
+        self.assertEqual(lines[0], 'Traceback (most recent call last):')
         self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
 
         with (support.swap_attr(sys, 'unraisablehook', None),

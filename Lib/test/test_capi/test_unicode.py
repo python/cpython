@@ -384,12 +384,13 @@ class CAPITest(unittest.TestCase):
         check_format('ascii\x7f=unicode\xe9',
                      b'ascii\x7f=%U', 'unicode\xe9')
 
-        # Non-ASCII format and non-ASCII arguments are both decoded
-        # from UTF-8/replace
-        check_format('unicode\xe9=\u20ac',
-                     'unicode\xe9=%s'.encode(), '\u20ac'.encode())
-        check_format('invalid\ufffd=abc\ufffd',
-                     b'invalid\xe9=%s', b'abc\xe9')
+        # The %s arguments are decoded from UTF-8/replace.
+        # The format string is decoded from UTF-8/strict.
+        check_format('value=utf8 \u20ac',
+                     'value=%s'.encode(), 'utf8 \u20ac'.encode())
+        with self.assertRaisesRegex(ValueError, 'format string') as cm:
+            PyUnicode_FromFormat(b'invalid format string\xff: %s', b'abc')
+        self.assertIsInstance(cm.exception.__context__, UnicodeDecodeError)
 
         # test "%c"
         check_format('\uabcd',

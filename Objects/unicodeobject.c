@@ -2905,7 +2905,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             }
 
             if (unicode_decode_utf8_writer(&writer, f, len,
-                                           _Py_ERROR_REPLACE, "replace") < 0) {
+                                           _Py_ERROR_STRICT, "strict") < 0) {
+                PyObject *exc = PyErr_GetRaisedException();
+                PyErr_Format(PyExc_ValueError,
+                    "PyUnicode_FromFormatV() expects a valid UTF-8-encoded "
+                    "format string, got an invalid UTF-8 string");
+                _PyErr_ChainExceptions1(exc);
                 goto fail;
             }
 
