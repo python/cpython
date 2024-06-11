@@ -51,6 +51,10 @@
 #  error "The limited API is not currently supported in the free-threaded build"
 #endif
 
+#if defined(Py_GIL_DISABLED) && defined(_MSC_VER)
+#  include <intrin.h>             // __readgsqword()
+#endif
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
