@@ -42,7 +42,6 @@ typedef struct _ProfilerContext {
     PyTime_t subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
-    bool inFreeList;
 } ProfilerContext;
 
 typedef struct {
@@ -297,7 +296,6 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
     self->ctxEntry = entry;
     self->subt = 0;
     self->previous = pObj->currentProfilerContext;
-    self->inFreeList = false;
     pObj->currentProfilerContext = self;
     ++entry->recursionLevel;
     if ((pObj->flags & POF_SUBCALLS) && self->previous) {
@@ -313,13 +311,17 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 }
 
 static void
-Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
+Stop(ProfilerObject *pObj, ProfilerContext **pself, ProfilerEntry *entry)
 {
+    ProfilerContext *self = *pself;
     PyTime_t tt = call_timer(pObj) - self->t0;
     PyTime_t it = tt - self->subt;
-    // call_timer could have flushed all contexts
-    if (pObj->currentProfilerContext == NULL)
+    // call_timer could have flushed all contexts, in this case, set pself to NULL
+    // to indicate that there's nothing needs to be done for it
+    if (pObj->currentProfilerContext == NULL) {
+        *pself = NULL;
         return;
+    }
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -400,17 +402,16 @@ ptrace_leave_call(PyObject *self, void *key)
         return;
     profEntry = getEntry(pObj, key);
     if (profEntry) {
-        Stop(pObj, pContext, profEntry);
+        Stop(pObj, &pContext, profEntry);
     }
     else {
         pObj->currentProfilerContext = pContext->previous;
     }
-    /* put pContext into the free list if it's not already in */
-    /* we need to check because Stop could potentially call disable*/
-    if (!pContext->inFreeList) {
+    /* put pContext into the free list if it's not NULL */
+    /* we need to check because Stop could potentially set pContext to NULL*/
+    if (pContext != NULL) {
         pContext->previous = pObj->freelistProfilerContext;
         pObj->freelistProfilerContext = pContext;
-        pContext->inFreeList = true;
     }
 }
 
@@ -768,12 +769,13 @@ flush_unmatched(ProfilerObject *pObj)
         ProfilerContext *pContext = pObj->currentProfilerContext;
         ProfilerEntry *profEntry= pContext->ctxEntry;
         if (profEntry)
-            Stop(pObj, pContext, profEntry);
+            Stop(pObj, &pContext, profEntry);
         else
             pObj->currentProfilerContext = pContext->previous;
-        pContext->previous = pObj->freelistProfilerContext;
-        pObj->freelistProfilerContext = pContext;
-        pContext->inFreeList = true;
+        if (pContext != NULL) {
+            pContext->previous = pObj->freelistProfilerContext;
+            pObj->freelistProfilerContext = pContext;
+        }
     }
 
 }
