@@ -5709,7 +5709,6 @@ differs:
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-    PyTypeObject *oldto = Py_TYPE(self);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5728,6 +5727,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                     self, "__class__", value) < 0) {
         return -1;
     }
+
+    PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
        compatible_for_assignment was not set up to correctly check for memory
