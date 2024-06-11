@@ -205,7 +205,8 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 static int
 unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
                            const char *s, Py_ssize_t size,
-                           _Py_error_handler error_handler, const char *errors);
+                           _Py_error_handler error_handler, const char *errors,
+                           Py_ssize_t *consumed);
 #ifdef Py_DEBUG
 static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
@@ -2401,7 +2402,7 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
 
     if (width < 0) {
         return unicode_decode_utf8_writer(writer, str, length,
-                                          _Py_ERROR_REPLACE, "replace");
+                                          _Py_ERROR_REPLACE, "replace", NULL);
     }
 
     PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
@@ -2905,7 +2906,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             }
 
             if (unicode_decode_utf8_writer(&writer, f, len,
-                                           _Py_ERROR_STRICT, "strict") < 0) {
+                                           _Py_ERROR_STRICT, "strict",
+                                           NULL) < 0) {
                 PyObject *exc = PyErr_GetRaisedException();
                 PyErr_SetString(PyExc_ValueError,
                     "PyUnicode_FromFormatV() expects a valid UTF-8-encoded "
@@ -4927,9 +4929,13 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 static int
 unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
                            const char *s, Py_ssize_t size,
-                           _Py_error_handler error_handler, const char *errors)
+                           _Py_error_handler error_handler, const char *errors,
+                           Py_ssize_t *consumed)
 {
     if (size == 0) {
+        if (consumed) {
+            *consumed = 0;
+        }
         return 0;
     }
 
@@ -4947,6 +4953,9 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
         writer->pos += decoded;
 
         if (decoded == size) {
+            if (consumed) {
+                *consumed = size;
+            }
             return 0;
         }
         s += decoded;
@@ -4954,7 +4963,7 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
     }
 
     return unicode_decode_utf8_impl(writer, starts, s, end,
-                                    error_handler, errors, NULL);
+                                    error_handler, errors, consumed);
 }
 
 
