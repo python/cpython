@@ -229,6 +229,17 @@ class ListTest(list_tests.CommonTest):
         list4 = [1]
         self.assertFalse(list3 == list4)
 
+    def test_lt_operator_modifying_operand(self):
+        # See gh-120298
+        class evil:
+            def __lt__(self, other):
+                other.clear()
+                return NotImplemented
+
+        a = [[evil()]]
+        with self.assertRaises(TypeError):
+            a[0] < a
+
     @cpython_only
     def test_preallocation(self):
         iterable = [0] * 10
