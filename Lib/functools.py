@@ -274,7 +274,7 @@ except ImportError:
 ################################################################################
 
 
-class PlaceholderType:
+class __PlaceholderTypeBase:
     """The type of the Placeholder singleton.
 
     Used as a placeholder for partial arguments.
@@ -296,7 +296,7 @@ class PlaceholderType:
         return 'Placeholder'
 
 
-Placeholder = PlaceholderType()
+Placeholder = type('PlaceholderType', (__PlaceholderTypeBase,), {})()
 
 
 # Purely functional, no descriptor behaviour
@@ -311,11 +311,12 @@ class partial:
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        np = 0
         if args:
             if args[-1] is Placeholder:
                 raise TypeError("trailing Placeholders are not allowed")
-            np = args[:-1].count(Placeholder)
+            np = args.count(Placeholder)
+        else:
+            np = 0
         if isinstance(func, partial):
             pargs = func.args
             pnp = func.placeholder_count
@@ -323,7 +324,7 @@ class partial:
             if pnp and args:
                 all_args = list(pargs)
                 nargs = len(args)
-                pos, j = 0, 0
+                pos = j = 0
                 end = nargs if nargs < pnp else pnp
                 while j < end:
                     pos = all_args.index(Placeholder, pos)
@@ -351,19 +352,20 @@ class partial:
         np = self.placeholder_count
         p_args = self.args
         if np:
-            if len(args) < np:
+            n = len(args)
+            if n < np:
                 raise TypeError(
                     "missing positional arguments "
                     "in 'partial' call; expected "
-                    f"at least {np}, got {len(args)}")
+                    f"at least {np}, got {n}")
             p_args = list(p_args)
-            j, pos = 0, 0
+            pos = j = 0
             while j < np:
                 pos = p_args.index(Placeholder, pos)
                 p_args[pos] = args[j]
-                j += 1
                 pos += 1
-            args = args[j:]
+                j += 1
+            args = args[np:] if n > np else ()
         keywords = {**self.keywords, **keywords}
         return self.func(*p_args, *args, **keywords)
 
@@ -409,7 +411,7 @@ class partial:
         self.placeholder_count = placeholder_count
 
 try:
-    from _functools import partial, PlaceholderType, Placeholder
+    from _functools import partial, Placeholder
 except ImportError:
     pass
 
