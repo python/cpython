@@ -844,10 +844,6 @@ class TestMain(TestCase):
             '["__annotations__", "__builtins__", "__doc__", "__loader__", '
             '"__name__", "__package__", "__spec__"]'
         )
-
-        with patch('_pyrepl.simple_interact.
-
-
         output, exit_code = self.run_repl(["sorted(dir())", "exit"])
         self.assertEqual(exit_code, 0)
         output = output.replace("\'", '"')
