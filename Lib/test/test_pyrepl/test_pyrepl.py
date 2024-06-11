@@ -10,6 +10,7 @@ import sys
 import termios
 from unittest import TestCase
 from unittest.mock import patch
+from test.support import force_not_colorized
 
 from .support import (
     FakeConsole,
@@ -837,13 +838,15 @@ class TestPasteEvent(TestCase):
 
 
 class TestMain(TestCase):
+    @force_not_colorized
     def test_exposed_globals_in_repl(self):
         expected_output = (
-            "['__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', "
-            "'__loader__', '__name__', '__package__', '__spec__', 'interactive_console']"
+            '["__annotations__", "__builtins__", "__doc__", "__loader__", '
+            '"__name__", "__package__", "__spec__"]'
         )
-        output, exit_code = self.run_repl(["dir()", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
         self.assertEqual(exit_code, 0)
+        output = output.replace("\'", '"')
         self.assertIn(expected_output, output)
 
     def test_dumb_terminal_exits_cleanly(self):
@@ -865,7 +868,7 @@ class TestMain(TestCase):
             text=True,
             close_fds=True,
             env=env if env else os.environ,
-        )
+       )
         if isinstance(repl_input, list):
             repl_input = "\n".join(repl_input) + "\n"
         os.write(master_fd, repl_input.encode("utf-8"))
