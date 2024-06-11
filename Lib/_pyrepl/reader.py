@@ -650,7 +650,15 @@ class Reader:
             self.dirty = True
 
         while True:
-            event = self.console.get_event(block)
+            input_hook = self.console.input_hook
+            if input_hook:
+                input_hook()
+                # We use the same timeout as in readline.c: 100ms
+                while not self.console.wait(100):
+                    input_hook()
+                event = self.console.get_event(block=False)
+            else:
+                event = self.console.get_event(block)
             if not event:  # can only happen if we're not blocking
                 return False
 

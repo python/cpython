@@ -216,11 +216,14 @@ class interrupt(FinishCommand):
         import signal
 
         self.reader.console.finish()
+        self.reader.finish()
         os.kill(os.getpid(), signal.SIGINT)
 
 
 class ctrl_c(Command):
     def do(self) -> None:
+        self.reader.console.finish()
+        self.reader.finish()
         raise KeyboardInterrupt
 
 
@@ -365,12 +368,7 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
-        if (
-            len(text) == 1 and
-            r.pos == len(r.buffer) and
-            not r.cmpltn_menu_visible and  # type: ignore[attr-defined]
-            not r.cmpltn_message_visible  # type: ignore[attr-defined]
-        ):
+        if len(text) == 1 and r.pos == len(r.buffer):
             r.calc_screen = r.append_to_screen
 
 

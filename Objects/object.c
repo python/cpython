@@ -401,24 +401,27 @@ Py_ssize_t
 _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
 {
     assert(!_Py_IsImmortal(op));
-    Py_ssize_t refcnt;
-    Py_ssize_t new_shared;
-    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
-    do {
-        refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-        refcnt += (Py_ssize_t)op->ob_ref_local;
-        refcnt += extra;
-
-        new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
-    } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
-                                                &shared, new_shared));
 
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyThreadState_GET(), extra);
 #endif
 
+    // gh-119999: Write to ob_ref_local and ob_tid before merging the refcount.
+    Py_ssize_t local = (Py_ssize_t)op->ob_ref_local;
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
+
+    Py_ssize_t refcnt;
+    Py_ssize_t new_shared;
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    do {
+        refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
+        refcnt += local;
+        refcnt += extra;
+
+        new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
+    } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
+                                                &shared, new_shared));
     return refcnt;
 }
 #endif  /* Py_GIL_DISABLED */
