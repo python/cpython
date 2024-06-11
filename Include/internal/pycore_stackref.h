@@ -20,42 +20,76 @@ typedef union {
 #define Py_TAG_DEFERRED (1)
 
 #define Py_TAG_PTR      (0)
-#define Py_TAG          (1)
+#define Py_TAG_BITS     (1)
 
 #ifdef Py_GIL_DISABLED
-static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
-
+    static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
 #else
-static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
+    static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
 #endif
 
 #define PyStackRef_IsNull(stackref) ((stackref).bits == Py_STACKREF_NULL.bits)
 
-static inline int
-PyStackRef_IsTrue(_PyStackRef stackref) {
+static inline _PyStackRef
+PyStackRef_True(void)
+{
 #ifdef Py_GIL_DISABLED
-    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True | Py_TAG_DEFERRED)};
+    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True |
+                                                Py_TAG_DEFERRED)};
 #else
     const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True)};
 #endif
-    return stackref.bits == STACKREF_TRUE.bits;
+    return STACKREF_TRUE;
+}
+
+static inline _PyStackRef
+PyStackRef_False(void)
+{
+#ifdef Py_GIL_DISABLED
+    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False |
+                                                Py_TAG_DEFERRED)};
+#else
+    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False)};
+#endif
+    return STACKREF_FALSE;
+}
+
+static inline _PyStackRef
+PyStackRef_None(void)
+{
+#ifdef Py_GIL_DISABLED
+    const _PyStackRef STACKREF_NONE = {.bits = ((uintptr_t)Py_None |
+                                                 Py_TAG_DEFERRED)};
+#else
+    const _PyStackRef STACKREF_NONE = {.bits = ((uintptr_t)Py_None)};
+#endif
+    return STACKREF_NONE;
+}
+
+static inline int
+PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
+    return a.bits == b.bits;
+}
+
+static inline int
+PyStackRef_IsTrue(_PyStackRef stackref) {
+    return PyStackRef_Is(stackref, PyStackRef_True());
 }
 
 static inline int
 PyStackRef_IsFalse(_PyStackRef stackref) {
-#ifdef Py_GIL_DISABLED
-    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False | Py_TAG_DEFERRED)};
-#else
-    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False)};
-#endif
-    return stackref.bits == STACKREF_FALSE.bits;
+    return PyStackRef_Is(stackref, PyStackRef_False());
 }
 
+static inline int
+PyStackRef_IsNone(_PyStackRef stackref) {
+    return PyStackRef_Is(stackref, PyStackRef_None());
+}
 
 static inline int
 PyStackRef_IsDeferred(_PyStackRef ref)
 {
-    return ((ref.bits & Py_TAG) == Py_TAG_DEFERRED);
+    return ((ref.bits & Py_TAG_BITS) == Py_TAG_DEFERRED);
 }
 
 #ifdef Py_GIL_DISABLED
@@ -63,11 +97,11 @@ PyStackRef_IsDeferred(_PyStackRef ref)
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef tagged)
 {
-    PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG)));
+    PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG_BITS)));
     return cleared;
 }
 #else
-// Need to define as macro because some platforms have very sensitive stack sizes.
+// Need to define as macro because WASI has very sensitive stack sizes.
 #   define PyStackRef_AsPyObjectBorrow(tagged) ((PyObject *)(tagged).bits)
 #endif
 
@@ -76,7 +110,7 @@ static inline _PyStackRef
 _PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
-    assert(((uintptr_t)obj & Py_TAG) == 0);
+    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
@@ -93,7 +127,7 @@ static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
-    assert(((uintptr_t)obj & Py_TAG) == 0);
+    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
     // TODO (gh-117139): Add deferred objects later.
     if (_Py_IsImmortal(obj)) {
