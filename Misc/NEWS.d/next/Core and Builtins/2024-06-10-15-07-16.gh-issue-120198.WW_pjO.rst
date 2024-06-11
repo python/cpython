@@ -1,0 +1,1 @@
+Fix a crash when multiple threads read and write to the same ``__class__`` of an object concurrently.
