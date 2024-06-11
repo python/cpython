@@ -1127,6 +1127,14 @@ class TestCallList(unittest.TestCase):
         p.assert_called_once_with()
 
 
+    def test_propertymock_attach(self):
+        m = Mock()
+        p = PropertyMock()
+        type(m).foo = p
+        m.attach_mock(p, 'foo')
+        self.assertEqual(m.mock_calls, [])
+
+
 class TestCallablePredicate(unittest.TestCase):
 
     def test_type(self):
