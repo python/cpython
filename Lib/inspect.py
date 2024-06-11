@@ -38,7 +38,6 @@ __all__ = [
     "AGEN_CREATED",
     "AGEN_RUNNING",
     "AGEN_SUSPENDED",
-    "AnnotationsFormat",
     "ArgInfo",
     "Arguments",
     "Attribute",
@@ -62,7 +61,6 @@ __all__ = [
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
-    "FORWARDREF",
     "FrameInfo",
     "FullArgSpec",
     "GEN_CLOSED",
@@ -136,11 +134,9 @@ __all__ = [
     "istraceback",
     "markcoroutinefunction",
     "signature",
-    "SOURCE",
     "stack",
     "trace",
     "unwrap",
-    "VALUE",
     "walktree",
 ]
 
@@ -175,13 +171,6 @@ del k, v, mod_dict
 
 # See Include/object.h
 TPFLAGS_IS_ABSTRACT = 1 << 20
-
-
-@enum.global_enum
-class AnnotationsFormat(enum.IntEnum):
-    VALUE = 1
-    FORWARDREF = 2
-    SOURCE = 3
 
 
 def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
