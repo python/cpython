@@ -6634,7 +6634,7 @@ class GetTypeHintTests(BaseTestCase):
             gth(None)
 
     def test_get_type_hints_modules(self):
-        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
+        ann_module_type_hints = {'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
@@ -6652,7 +6652,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
-        self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
+        self.assertEqual(gth(ann_module.M), {'o': type})
         self.assertEqual(gth(ann_module.D),
                          {'j': str, 'k': str, 'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.Y), {'z': int})

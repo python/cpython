@@ -352,32 +352,21 @@ lst[fun(0)]: int = 1
 dis_annot_stmt_str = """\
   0           RESUME                   0
 
-  2           SETUP_ANNOTATIONS
-              LOAD_CONST               0 (1)
+  2           LOAD_CONST               0 (1)
               STORE_NAME               0 (x)
-              LOAD_NAME                1 (int)
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               1 ('x')
-              STORE_SUBSCR
-
-  3           LOAD_NAME                3 (fun)
-              PUSH_NULL
-              LOAD_CONST               0 (1)
-              CALL                     1
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               2 ('y')
-              STORE_SUBSCR
 
   4           LOAD_CONST               0 (1)
-              LOAD_NAME                4 (lst)
-              LOAD_NAME                3 (fun)
+              LOAD_NAME                1 (lst)
+              LOAD_NAME                2 (fun)
               PUSH_NULL
-              LOAD_CONST               3 (0)
+              LOAD_CONST               1 (0)
               CALL                     1
               STORE_SUBSCR
-              LOAD_NAME                1 (int)
-              POP_TOP
-              RETURN_CONST             4 (None)
+
+  2           LOAD_CONST               2 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              STORE_NAME               3 (__annotate__)
+              RETURN_CONST             3 (None)
 """
 
 compound_stmt_str = """\

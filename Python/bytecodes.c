@@ -3975,6 +3975,11 @@ dummy_func(
                     assert(func_obj->func_defaults == NULL);
                     func_obj->func_defaults = attr;
                     break;
+                case MAKE_FUNCTION_ANNOTATE:
+                    assert(PyCallable_Check(attr));
+                    assert(func_obj->func_annotate == NULL);
+                    func_obj->func_annotate = attr;
+                    break;
                 default:
                     Py_UNREACHABLE();
             }

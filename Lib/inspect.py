@@ -220,13 +220,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     """
     if isinstance(obj, type):
         # class
-        obj_dict = getattr(obj, '__dict__', None)
-        if obj_dict and hasattr(obj_dict, 'get'):
-            ann = obj_dict.get('__annotations__', None)
-            if isinstance(ann, types.GetSetDescriptorType):
-                ann = None
-        else:
-            ann = None
+        ann = obj.__annotations__
 
         obj_globals = None
         module_name = getattr(obj, '__module__', None)
