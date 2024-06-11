@@ -517,7 +517,7 @@ class Reader:
         'lineno'."""
         if self.arg is not None and cursor_on_line:
             prompt = f"(arg: {self.arg}) "
-        elif self.paste_mode:
+        elif self.paste_mode and not self.in_bracketed_paste:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
