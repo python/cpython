@@ -5900,7 +5900,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-
+    loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_ASYNC_WITH);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -5998,7 +5998,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    location loc = LOC(s);
+    location loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_WITH);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
@@ -6031,7 +6031,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    loc = LOC(s);
     RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
     ADDOP(c, loc, POP_TOP);
     ADDOP_JUMP(c, loc, JUMP, exit);
