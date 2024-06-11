@@ -449,6 +449,10 @@ Pure paths provide the following methods and properties:
 
    This is commonly called the file extension.
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 .. attribute:: PurePath.suffixes
 
    A list of the path's suffixes, often called file extensions::
@@ -459,6 +463,10 @@ Pure paths provide the following methods and properties:
       ['.tar', '.gz']
       >>> PurePosixPath('my/library').suffixes
       []
+
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
 
 
 .. attribute:: PurePath.stem
@@ -713,6 +721,11 @@ Pure paths provide the following methods and properties:
       >>> p.with_suffix('')
       PureWindowsPath('README')
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix. In previous
+      versions, :exc:`ValueError` is raised if a single dot is supplied.
+
 
 .. method:: PurePath.with_segments(*pathsegments)
 
@@ -806,6 +819,9 @@ bugs or failures in your application)::
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
    UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
+
+Some concrete path methods can raise an :exc:`OSError` if a system call fails
+(for example because the path doesn't exist).
 
 
 Parsing and generating URIs
@@ -1054,69 +1070,116 @@ Querying file type and status
    .. versionadded:: 3.5
 
 
-Other methods
-^^^^^^^^^^^^^
-
-Some of these methods can raise an :exc:`OSError` if a system call fails (for
-example because the path doesn't exist).
+Reading and writing files
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-.. classmethod:: Path.cwd()
+.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
 
-   Return a new path object representing the current directory (as returned
-   by :func:`os.getcwd`)::
-
-      >>> Path.cwd()
-      PosixPath('/home/antoine/pathlib')
-
-
-.. classmethod:: Path.home()
-
-   Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> Path.home()
-      PosixPath('/home/antoine')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.chmod(mode, *, follow_symlinks=True)
-
-   Change the file mode and permissions, like :func:`os.chmod`.
-
-   This method normally follows symlinks. Some Unix flavours support changing
-   permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
-
-   ::
+   Open the file pointed to by the path, like the built-in :func:`open`
+   function does::
 
       >>> p = Path('setup.py')
-      >>> p.stat().st_mode
-      33277
-      >>> p.chmod(0o444)
-      >>> p.stat().st_mode
-      33060
+      >>> with p.open() as f:
+      ...     f.readline()
+      ...
+      '#!/usr/bin/env python3\n'
 
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
 
-.. method:: Path.expanduser()
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
 
-   Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`. If a home directory can't be
-   resolved, :exc:`RuntimeError` is raised.
+   Return the decoded contents of the pointed-to file as a string::
 
-   ::
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
 
-      >>> p = PosixPath('~/films/Monty Python')
-      >>> p.expanduser()
-      PosixPath('/home/eric/films/Monty Python')
+   The file is opened and then closed. The optional parameters have the same
+   meaning as in :func:`open`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
+
+
+.. method:: Path.read_bytes()
+
+   Return the binary contents of the pointed-to file as a bytes object::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
+
+   Open the file pointed to in text mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_text_file')
+      >>> p.write_text('Text file contents')
+      18
+      >>> p.read_text()
+      'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
+
+
+.. method:: Path.write_bytes(data)
+
+   Open the file pointed to in bytes mode, write *data* to it, and close the
+   file::
+
+      >>> p = Path('my_binary_file')
+      >>> p.write_bytes(b'Binary file contents')
+      20
+      >>> p.read_bytes()
+      b'Binary file contents'
+
+   An existing file of the same name is overwritten.
+
+   .. versionadded:: 3.5
+
+
+Reading directories
+^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.iterdir()
+
+   When the path points to a directory, yield path objects of the directory
+   contents::
+
+      >>> p = Path('docs')
+      >>> for child in p.iterdir(): child
+      ...
+      PosixPath('docs/conf.py')
+      PosixPath('docs/_templates')
+      PosixPath('docs/make.bat')
+      PosixPath('docs/index.rst')
+      PosixPath('docs/_build')
+      PosixPath('docs/_static')
+      PosixPath('docs/Makefile')
+
+   The children are yielded in arbitrary order, and the special entries
+   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
+   to the directory after creating the iterator, it is unspecified whether
+   a path object for that file is included.
+
+   If the path is not a directory or otherwise inaccessible, :exc:`OSError` is
+   raised.
 
 
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
@@ -1183,43 +1246,6 @@ example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
 
-
-.. method:: Path.group(*, follow_symlinks=True)
-
-   Return the name of the group owning the file. :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
-
-   This method normally follows symlinks; to get the group of the symlink, add
-   the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.iterdir()
-
-   When the path points to a directory, yield path objects of the directory
-   contents::
-
-      >>> p = Path('docs')
-      >>> for child in p.iterdir(): child
-      ...
-      PosixPath('docs/conf.py')
-      PosixPath('docs/_templates')
-      PosixPath('docs/make.bat')
-      PosixPath('docs/index.rst')
-      PosixPath('docs/_build')
-      PosixPath('docs/_static')
-      PosixPath('docs/Makefile')
-
-   The children are yielded in arbitrary order, and the special entries
-   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
-   to the directory after creating the iterator, whether a path object for
-   that file be included is unspecified.
 
 .. method:: Path.walk(top_down=True, on_error=None, follow_symlinks=False)
 
@@ -1316,6 +1342,84 @@ example because the path doesn't exist).
 
    .. versionadded:: 3.12
 
+
+Other methods
+^^^^^^^^^^^^^
+
+.. classmethod:: Path.cwd()
+
+   Return a new path object representing the current directory (as returned
+   by :func:`os.getcwd`)::
+
+      >>> Path.cwd()
+      PosixPath('/home/antoine/pathlib')
+
+
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
+
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_mode
+      33277
+      >>> p.chmod(0o444)
+      >>> p.stat().st_mode
+      33060
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.group(*, follow_symlinks=True)
+
+   Return the name of the group owning the file. :exc:`KeyError` is raised
+   if the file's gid isn't found in the system database.
+
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
@@ -1347,18 +1451,6 @@ example because the path doesn't exist).
       The *exist_ok* parameter was added.
 
 
-.. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to by the path, like the built-in :func:`open`
-   function does::
-
-      >>> p = Path('setup.py')
-      >>> with p.open() as f:
-      ...     f.readline()
-      ...
-      '#!/usr/bin/env python3\n'
-
-
 .. method:: Path.owner(*, follow_symlinks=True)
 
    Return the name of the user owning the file. :exc:`KeyError` is raised
@@ -1374,37 +1466,6 @@ example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-
-.. method:: Path.read_bytes()
-
-   Return the binary contents of the pointed-to file as a bytes object::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.read_text(encoding=None, errors=None, newline=None)
-
-   Return the decoded contents of the pointed-to file as a string::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   The file is opened and then closed. The optional parameters have the same
-   meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.13
-      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
@@ -1578,42 +1639,6 @@ example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
-
-
-.. method:: Path.write_bytes(data)
-
-   Open the file pointed to in bytes mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_binary_file')
-      >>> p.write_bytes(b'Binary file contents')
-      20
-      >>> p.read_bytes()
-      b'Binary file contents'
-
-   An existing file of the same name is overwritten.
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
-
-   Open the file pointed to in text mode, write *data* to it, and close the
-   file::
-
-      >>> p = Path('my_text_file')
-      >>> p.write_text('Text file contents')
-      18
-      >>> p.read_text()
-      'Text file contents'
-
-   An existing file of the same name is overwritten. The optional parameters
-   have the same meaning as in :func:`open`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.10
-      The *newline* parameter was added.
 
 
 .. _pathlib-pattern-language:

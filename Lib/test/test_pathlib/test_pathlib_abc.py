@@ -50,6 +50,7 @@ class ParserBaseTest(unittest.TestCase):
         self.assertRaises(e, m.join, 'foo')
         self.assertRaises(e, m.split, 'foo')
         self.assertRaises(e, m.splitdrive, 'foo')
+        self.assertRaises(e, m.splitext, 'foo')
         self.assertRaises(e, m.normcase, 'foo')
         self.assertRaises(e, m.isabs, 'foo')
 
@@ -789,8 +790,12 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/.hg.rc').suffix, '.rc')
         self.assertEqual(P('a/b.tar.gz').suffix, '.gz')
         self.assertEqual(P('/a/b.tar.gz').suffix, '.gz')
-        self.assertEqual(P('a/Some name. Ending with a dot.').suffix, '')
-        self.assertEqual(P('/a/Some name. Ending with a dot.').suffix, '')
+        self.assertEqual(P('a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('/a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('a/..d.o.t..').suffix, '.')
+        self.assertEqual(P('a/inn.er..dots').suffix, '.dots')
+        self.assertEqual(P('photo').suffix, '')
+        self.assertEqual(P('photo.jpg').suffix, '.jpg')
 
     @needs_windows
     def test_suffix_windows(self):
@@ -807,8 +812,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:/a/.hg.rc').suffix, '.rc')
         self.assertEqual(P('c:a/b.tar.gz').suffix, '.gz')
         self.assertEqual(P('c:/a/b.tar.gz').suffix, '.gz')
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').suffix, '')
-        self.assertEqual(P('c:/a/Some name. Ending with a dot.').suffix, '')
+        self.assertEqual(P('c:a/trailing.dot.').suffix, '.')
+        self.assertEqual(P('c:/a/trailing.dot.').suffix, '.')
         self.assertEqual(P('//My.py/Share.php').suffix, '')
         self.assertEqual(P('//My.py/Share.php/a/b').suffix, '')
 
@@ -828,8 +833,12 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/.hg.rc').suffixes, ['.rc'])
         self.assertEqual(P('a/b.tar.gz').suffixes, ['.tar', '.gz'])
         self.assertEqual(P('/a/b.tar.gz').suffixes, ['.tar', '.gz'])
-        self.assertEqual(P('a/Some name. Ending with a dot.').suffixes, [])
-        self.assertEqual(P('/a/Some name. Ending with a dot.').suffixes, [])
+        self.assertEqual(P('a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('/a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('a/..d.o.t..').suffixes, ['.o', '.t', '.', '.'])
+        self.assertEqual(P('a/inn.er..dots').suffixes, ['.er', '.', '.dots'])
+        self.assertEqual(P('photo').suffixes, [])
+        self.assertEqual(P('photo.jpg').suffixes, ['.jpg'])
 
     @needs_windows
     def test_suffixes_windows(self):
@@ -848,8 +857,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:/a/b.tar.gz').suffixes, ['.tar', '.gz'])
         self.assertEqual(P('//My.py/Share.php').suffixes, [])
         self.assertEqual(P('//My.py/Share.php/a/b').suffixes, [])
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').suffixes, [])
-        self.assertEqual(P('c:/a/Some name. Ending with a dot.').suffixes, [])
+        self.assertEqual(P('c:a/trailing.dot.').suffixes, ['.dot', '.'])
+        self.assertEqual(P('c:/a/trailing.dot.').suffixes, ['.dot', '.'])
 
     def test_stem_empty(self):
         P = self.cls
@@ -865,8 +874,11 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/.hgrc').stem, '.hgrc')
         self.assertEqual(P('a/.hg.rc').stem, '.hg')
         self.assertEqual(P('a/b.tar.gz').stem, 'b.tar')
-        self.assertEqual(P('a/Some name. Ending with a dot.').stem,
-                         'Some name. Ending with a dot.')
+        self.assertEqual(P('a/trailing.dot.').stem, 'trailing.dot')
+        self.assertEqual(P('a/..d.o.t..').stem, '..d.o.t.')
+        self.assertEqual(P('a/inn.er..dots').stem, 'inn.er.')
+        self.assertEqual(P('photo').stem, 'photo')
+        self.assertEqual(P('photo.jpg').stem, 'photo')
 
     @needs_windows
     def test_stem_windows(self):
@@ -880,8 +892,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('c:a/.hgrc').stem, '.hgrc')
         self.assertEqual(P('c:a/.hg.rc').stem, '.hg')
         self.assertEqual(P('c:a/b.tar.gz').stem, 'b.tar')
-        self.assertEqual(P('c:a/Some name. Ending with a dot.').stem,
-                         'Some name. Ending with a dot.')
+        self.assertEqual(P('c:a/trailing.dot.').stem, 'trailing.dot')
+
     def test_with_name_common(self):
         P = self.cls
         self.assertEqual(P('a/b').with_name('d.xml'), P('a/d.xml'))
@@ -929,16 +941,16 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/b.py').with_stem('d'), P('a/d.py'))
         self.assertEqual(P('/a/b.py').with_stem('d'), P('/a/d.py'))
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
-        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
-        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d.'))
+        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d.'))
 
     @needs_windows
     def test_with_stem_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_stem('d'), P('c:a/d'))
         self.assertEqual(P('c:/a/b').with_stem('d'), P('c:/a/d'))
-        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d'))
-        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d'))
+        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d.'))
+        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d.'))
         self.assertRaises(ValueError, P('c:').with_stem, 'd')
         self.assertRaises(ValueError, P('c:/').with_stem, 'd')
         self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
@@ -974,6 +986,11 @@ class DummyPurePathTest(unittest.TestCase):
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
+        # Single dot
+        self.assertEqual(P('a/b').with_suffix('.'), P('a/b.'))
+        self.assertEqual(P('/a/b').with_suffix('.'), P('/a/b.'))
+        self.assertEqual(P('a/b.py').with_suffix('.'), P('a/b.'))
+        self.assertEqual(P('/a/b.py').with_suffix('.'), P('/a/b.'))
 
     @needs_windows
     def test_with_suffix_windows(self):
@@ -1012,7 +1029,6 @@ class DummyPurePathTest(unittest.TestCase):
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
-        self.assertRaises(ValueError, P('a/b').with_suffix, '.')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/.gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, 'c/d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')

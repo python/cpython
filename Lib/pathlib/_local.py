@@ -361,6 +361,40 @@ class PurePath(PurePathBase):
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
+    @property
+    def stem(self):
+        """The final path component, minus its last suffix."""
+        name = self.name
+        i = name.rfind('.')
+        if i != -1:
+            stem = name[:i]
+            # Stem must contain at least one non-dot character.
+            if stem.lstrip('.'):
+                return stem
+        return name
+
+    @property
+    def suffix(self):
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
+        name = self.name.lstrip('.')
+        i = name.rfind('.')
+        if i != -1:
+            return name[i:]
+        return ''
+
+    @property
+    def suffixes(self):
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
+        return ['.' + ext for ext in self.name.lstrip('.').split('.')[1:]]
+
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
@@ -638,7 +672,9 @@ class Path(PathBase, PurePath):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         root_dir = str(self)
-        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        if not follow_symlinks:
+            follow_symlinks = os._walk_symlinks_as_files
+        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
         for path_str, dirnames, filenames in results:
             if root_dir == '.':
                 path_str = path_str[2:]

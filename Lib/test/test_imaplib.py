@@ -458,18 +458,14 @@ class NewIMAPTestsMixin():
         with self.imap_class(*server.server_address):
             pass
 
-    @requires_resource('walltime')
     def test_imaplib_timeout_test(self):
-        _, server = self._setup(SimpleIMAPHandler)
-        addr = server.server_address[1]
-        client = self.imap_class("localhost", addr, timeout=None)
-        self.assertEqual(client.sock.timeout, None)
-        client.shutdown()
-        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
-        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
-        client.shutdown()
+        _, server = self._setup(SimpleIMAPHandler, connect=False)
+        with self.imap_class(*server.server_address, timeout=None) as client:
+            self.assertEqual(client.sock.timeout, None)
+        with self.imap_class(*server.server_address, timeout=support.LOOPBACK_TIMEOUT) as client:
+            self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         with self.assertRaises(ValueError):
-            client = self.imap_class("localhost", addr, timeout=0)
+            self.imap_class(*server.server_address, timeout=0)
 
     def test_imaplib_timeout_functionality_test(self):
         class TimeoutHandler(SimpleIMAPHandler):
@@ -552,7 +548,6 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = IMAP4_SSL
     server_class = SecureTCPServer
 
-    @requires_resource('walltime')
     def test_ssl_raises(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ssl_context.verify_mode, ssl.CERT_REQUIRED)
@@ -566,17 +561,16 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
             CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
         )""", re.X)
         with self.assertRaisesRegex(ssl.CertificateError, regex):
-            _, server = self._setup(SimpleIMAPHandler)
+            _, server = self._setup(SimpleIMAPHandler, connect=False)
             client = self.imap_class(*server.server_address,
                                      ssl_context=ssl_context)
             client.shutdown()
 
-    @requires_resource('walltime')
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
-        _, server = self._setup(SimpleIMAPHandler)
+        _, server = self._setup(SimpleIMAPHandler, connect=False)
         client = self.imap_class("localhost", server.server_address[1],
                                  ssl_context=ssl_context)
         client.shutdown()

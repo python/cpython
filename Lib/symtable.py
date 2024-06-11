@@ -1,9 +1,13 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
-     DEF_IMPORT, DEF_BOUND, DEF_ANNOT, SCOPE_OFF, SCOPE_MASK, FREE,
-     LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
+from _symtable import (
+    USE,
+    DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL,
+    DEF_PARAM, DEF_TYPE_PARAM, DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
+    SCOPE_OFF, SCOPE_MASK,
+    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
+)
 
 import weakref
 
@@ -253,12 +257,17 @@ class Symbol:
         """Return *True* if the symbol is used in
         its block.
         """
-        return bool(self.__flags & _symtable.USE)
+        return bool(self.__flags & USE)
 
     def is_parameter(self):
         """Return *True* if the symbol is a parameter.
         """
         return bool(self.__flags & DEF_PARAM)
+
+    def is_type_parameter(self):
+        """Return *True* if the symbol is a type parameter.
+        """
+        return bool(self.__flags & DEF_TYPE_PARAM)
 
     def is_global(self):
         """Return *True* if the symbol is global.

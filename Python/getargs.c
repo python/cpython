@@ -589,6 +589,17 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
     return msgbuf;
 }
 
+static const char *
+convertcharerr(const char *expected, const char *what, Py_ssize_t size,
+               char *msgbuf, size_t bufsize)
+{
+    assert(expected != NULL);
+    PyOS_snprintf(msgbuf, bufsize,
+                  "must be %.50s, not %.50s of length %zd",
+                  expected, what, size);
+    return msgbuf;
+}
+
 #define CONV_UNICODE "(unicode conversion error)"
 
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
@@ -795,10 +806,22 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'c': {/* char */
         char *p = va_arg(*p_va, char *);
-        if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1)
+        if (PyBytes_Check(arg)) {
+            if (PyBytes_GET_SIZE(arg) != 1) {
+                return convertcharerr("a byte string of length 1",
+                                      "a bytes object", PyBytes_GET_SIZE(arg),
+                                      msgbuf, bufsize);
+            }
             *p = PyBytes_AS_STRING(arg)[0];
-        else if (PyByteArray_Check(arg) && PyByteArray_Size(arg) == 1)
+        }
+        else if (PyByteArray_Check(arg)) {
+            if (PyByteArray_GET_SIZE(arg) != 1) {
+                return convertcharerr("a byte string of length 1",
+                                      "a bytearray object", PyByteArray_GET_SIZE(arg),
+                                      msgbuf, bufsize);
+            }
             *p = PyByteArray_AS_STRING(arg)[0];
+        }
         else
             return converterr("a byte string of length 1", arg, msgbuf, bufsize);
         break;
@@ -812,8 +835,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (!PyUnicode_Check(arg))
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
-        if (PyUnicode_GET_LENGTH(arg) != 1)
-            return converterr("a unicode character", arg, msgbuf, bufsize);
+        if (PyUnicode_GET_LENGTH(arg) != 1) {
+            return convertcharerr("a unicode character",
+                                  "a string", PyUnicode_GET_LENGTH(arg),
+                                  msgbuf, bufsize);
+        }
 
         kind = PyUnicode_KIND(arg);
         data = PyUnicode_DATA(arg);
