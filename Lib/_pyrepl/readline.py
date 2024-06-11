@@ -263,6 +263,10 @@ class maybe_accept(commands.Command):
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
 
+        if self.reader.in_bracketed_paste:
+            r.insert("\n")
+            return
+
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
         text = r.get_unicode()
