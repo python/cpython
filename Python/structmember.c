@@ -13,11 +13,9 @@ member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
 {
     PyObject *v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
     if (v == NULL) {
-        PyObject *obj = (PyObject *) obj_addr;
-        PyTypeObject *tp = Py_TYPE(obj);
         PyErr_Format(PyExc_AttributeError,
-                     "'%N' object has no attribute '%s'",
-                     tp, l->name);
+                     "'%T' object has no attribute '%s'",
+                     (PyObject *)obj_addr, l->name);
     }
     return v;
 }
