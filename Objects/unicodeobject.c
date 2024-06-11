@@ -15084,6 +15084,19 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
+    /* if it's a short string, get the singleton */
+    if (PyUnicode_GET_LENGTH(s) == 0) {
+        Py_SETREF(*p, unicode_get_empty());
+        assert(!_PyUnicode_STATE(*p).statically_allocated);
+        return;
+    }
+    if (PyUnicode_GET_LENGTH(s) == 1 && PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
+        Py_SETREF(*p, LATIN1(*(unsigned char*)PyUnicode_DATA(s)));
+        assert(!_PyUnicode_STATE(*p).statically_allocated);
+        return;
+    }
+    assert(!unicode_is_singleton(s));
+
     /* Look in the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
@@ -15163,6 +15176,19 @@ _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
         Py_SETREF(*p, Py_NewRef(r));
         return;
     }
+
+    /* if it's a short string, get the singleton */
+    if (PyUnicode_GET_LENGTH(s) == 0) {
+        Py_SETREF(*p, unicode_get_empty());
+        assert(!_PyUnicode_STATE(*p).statically_allocated);
+        return;
+    }
+    if (PyUnicode_GET_LENGTH(s) == 1 && PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
+        Py_SETREF(*p, LATIN1(*(unsigned char*)PyUnicode_DATA(s)));
+        assert(!_PyUnicode_STATE(*p).statically_allocated);
+        return;
+    }
+    assert(!unicode_is_singleton(s));
 
     /* Look in the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
