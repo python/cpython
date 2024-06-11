@@ -1,3 +1,2 @@
-:c:func:`PyUnicode_FromFormat` now decodes the format string from UTF-8 with
-the "strict" error handler, instead of decoding it from ASCII. Patch by
-Victor Stinner.
+:c:func:`PyUnicode_FromFormat` now decodes the format string from UTF-8,
+instead of ASCII. Patch by Victor Stinner.

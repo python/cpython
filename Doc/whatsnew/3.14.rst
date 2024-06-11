@@ -261,8 +261,8 @@ New Features
 Porting to Python 3.14
 ----------------------
 
-* :c:func:`PyUnicode_FromFormat` now decodes the format string from UTF-8 with
-  the "strict" error handler, instead of decoding it from ASCII.
+* :c:func:`PyUnicode_FromFormat` now decodes the format string from UTF-8,
+  instead of ASCII.
   (Contributed by Victor Stinner in :gh:`119182`.)
 
 Deprecated
