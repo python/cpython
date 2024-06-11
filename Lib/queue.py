@@ -44,6 +44,8 @@ class Queue:
     '''
 
     def __init__(self, maxsize=0):
+        if not isinstance(maxsize, int):
+            raise TypeError('maxsize expected int, got %s' % type(maxsize))
         self.maxsize = maxsize
         self._init(maxsize)
 
