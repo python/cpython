@@ -16809,6 +16809,20 @@ os__is_inputhook_installed_impl(PyObject *module)
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }
 
+/*[clinic input]
+os._create_environ
+
+Create the environment dictionary.
+[clinic start generated code]*/
+
+static PyObject *
+os__create_environ_impl(PyObject *module)
+/*[clinic end generated code: output=19d9039ab14f8ad4 input=a4c05686b34635e8]*/
+{
+    return convertenviron();
+}
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17023,6 +17037,7 @@ static PyMethodDef posix_methods[] = {
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
+    OS__CREATE_ENVIRON_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

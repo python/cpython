@@ -37,6 +37,7 @@ typedef struct
     /* Needed to cache line for performance */
     PyObject *last_line;
     Py_ssize_t last_lineno;
+    Py_ssize_t last_end_lineno;
     Py_ssize_t byte_col_offset_diff;
 } tokenizeriterobject;
 
@@ -78,6 +79,7 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
     self->last_line = NULL;
     self->byte_col_offset_diff = 0;
     self->last_lineno = 0;
+    self->last_end_lineno = 0;
 
     return (PyObject *)self;
 }
@@ -187,7 +189,9 @@ _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t si
         Py_XDECREF(it->last_line);
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
         it->last_line = line;
-        it->byte_col_offset_diff = 0;
+        if (it->tok->lineno != it->last_end_lineno) {
+            it->byte_col_offset_diff = 0;
+        }
     }
     else {
         // Line hasn't changed so we reuse the cached one.
@@ -224,6 +228,7 @@ _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_s
         }
     }
     it->last_lineno = lineno;
+    it->last_end_lineno = end_lineno;
 }
 
 static PyObject *
