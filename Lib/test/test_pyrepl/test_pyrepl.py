@@ -2,12 +2,10 @@ import importlib
 import io
 import itertools
 import os
-import pty
 import rlcompleter
 import select
 import subprocess
 import sys
-import termios
 from unittest import TestCase
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -859,6 +857,10 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+        try:
+            import pty
+        except ImportError:
+            self.skipTest("pty module not available")
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(
             [sys.executable, "-i", "-u"],
