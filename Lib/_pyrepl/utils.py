@@ -16,6 +16,8 @@ def str_width(c: str) -> int:
 
 
 def wlen(s: str) -> int:
+    if len(s) == 1:
+        return str_width(s)
     length = sum(str_width(i) for i in s)
     # remove lengths of any escape sequences
     sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
