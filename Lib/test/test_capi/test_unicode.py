@@ -380,7 +380,7 @@ class CAPITest(unittest.TestCase):
             text = PyUnicode_FromFormat(format, *args)
             self.assertEqual(expected, text)
 
-        # ascii format, non-ascii argument
+        # ASCII format, non-ASCII %U argument
         check_format('ascii\x7f=unicode\xe9',
                      b'ascii\x7f=%U', 'unicode\xe9')
 
@@ -391,6 +391,12 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'format string') as cm:
             PyUnicode_FromFormat(b'invalid format string\xff: %s', b'abc')
         self.assertIsInstance(cm.exception.__context__, UnicodeDecodeError)
+
+        # Truncated UTF-8 format strings
+        with self.assertRaisesRegex(ValueError, 'format string'):
+            PyUnicode_FromFormat(b'truncated utf8: \xc3')
+        with self.assertRaisesRegex(ValueError, 'format string'):
+            PyUnicode_FromFormat(b'truncated utf8: \xe2\x82')
 
         # test "%c"
         check_format('\uabcd',
