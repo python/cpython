@@ -949,6 +949,7 @@ class RoundTestCase(unittest.TestCase):
             self.assertEqual(x, 2)
             self.assertIsInstance(x, int)
 
+    @support.cpython_only
     def test_round_with_none_arg_direct_call(self):
         for val in [(1.0).__round__(None),
                     round(1.0),
