@@ -193,7 +193,8 @@ _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t si
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
         it->last_line = line;
         it->byte_col_offset_diff = 0;
-    } else {
+    }
+    else {
         line = it->last_line;
         *line_changed = 0;
     }
