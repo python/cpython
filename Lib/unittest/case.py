@@ -603,9 +603,18 @@ class TestCase(object):
         self.setUp()
 
     def _callTestMethod(self, method):
-        if method() is not None:
-            warnings.warn(f'It is deprecated to return a value that is not None from a '
-                          f'test case ({method})', DeprecationWarning, stacklevel=3)
+        result = method()
+        if result is not None:
+            import inspect
+            msg = (
+                f'It is deprecated to return a value that is not None '
+                f'from a test case ({method} returned {type(result).__name__!r})'
+            )
+            if inspect.iscoroutine(result):
+                msg += (
+                    '. Maybe you forgot to use IsolatedAsyncioTestCase as the base class?'
+                )
+            warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
     def _callTearDown(self):
         self.tearDown()

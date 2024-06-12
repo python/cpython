@@ -1,0 +1,3 @@
+Improve a warning message when a test method in :mod:`unittest` returns
+something other than ``None``. Now we show the returned object type and
+optional asyncio-related tip.
