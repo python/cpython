@@ -1159,9 +1159,10 @@ class CallableMixin(Base):
     def __call__(self, /, *args, **kwargs):
         # can't use self in-case a function / method we are mocking uses self
         # in the signature
-        self._mock_check_sig(*args, **kwargs)
-        self._increment_mock_call(*args, **kwargs)
-        return self._mock_call(*args, **kwargs)
+        with NonCallableMock._lock:
+            self._mock_check_sig(*args, **kwargs)
+            self._increment_mock_call(*args, **kwargs)
+            return self._mock_call(*args, **kwargs)
 
 
     def _mock_call(self, /, *args, **kwargs):

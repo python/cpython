@@ -200,21 +200,28 @@ class TestThreadingMock(unittest.TestCase):
 
 class TestRaceConditions(unittest.TestCase):
     def test_str(self):
+        def get_delayed_setattr(_setattr=MagicMock.__setattr__):
+            def _delayed_setattr(self, name, value):
+                if name == 'return_value' and type(value) is str:
+                    # double the delay time to allow __str__ to be called by
+                    # the other thread before return_value is set
+                    time.sleep(VERY_SHORT_TIMEOUT * 2)
+                return _setattr(self, name, value)
+            return _delayed_setattr
         def f():
-            for m in mocks:
-                try:
-                    str(m)
-                except TypeError:
-                    nonlocal fail
-                    fail = True
-        fail = False
-        mocks = [MagicMock() for _ in range(1000)]
-        threads = [Thread(target=f) for _ in range(10)]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
-        self.assertFalse(fail)
+            with patch.object(MagicMock, '__setattr__', get_delayed_setattr()):
+                str(m)
+        m = MagicMock()
+        thread = Thread(target=f)
+        thread.start()
+        # allow child mock for __str__ to be created by f() first
+        time.sleep(VERY_SHORT_TIMEOUT)
+        try:
+            str(m)
+        except TypeError:
+            raise AssertionError(
+                '__str__ called by a different thread before return_value is set')
+        thread.join()
 
 
 if __name__ == "__main__":
