@@ -2,7 +2,6 @@
 
 import dataclasses
 import enum
-import re
 import sys
 import typing
 
@@ -182,9 +181,7 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    trampolines: dict[str | None, int] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    trampolines: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -195,6 +192,7 @@ class Stencil:
 
     def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
+        assert hole.symbol is not None
         reuse_trampoline = hole.symbol in self.trampolines
         if reuse_trampoline:
             # Re-use the base address of the previously created trampoline
