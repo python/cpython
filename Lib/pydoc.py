@@ -77,7 +77,9 @@ from traceback import format_exception_only
 
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager,
-                           plain)  # noqa
+
+# Expose plain() as pydoc.plain()
+from _pyrepl.pager import plain  # noqa
 
 
 # --------------------------------------------------------- old names
