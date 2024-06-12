@@ -1,7 +1,6 @@
 target-version = "py310"
 fix = true
 
-
 [lint]
 select = [
     "F",  # Enable all pyflakes rules
