@@ -608,7 +608,7 @@ class TestCase(object):
             from unittest.async_case import IsolatedAsyncioTestCase
             msg = (
                 'It is deprecated to return a value that is not None, '
-                f'from a test case ({method}) returned {type(result).__name__!r}'
+                f'from a test case ({method} returned {type(result).__name__!r})'
             )
             if (
                 inspect.iscoroutine(result)
