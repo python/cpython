@@ -1,19 +1,19 @@
 """The machinery of importlib: finders, loaders, hooks, etc."""
 
-from ._bootstrap import ModuleSpec  # noqa
-from ._bootstrap import BuiltinImporter  # noqa
-from ._bootstrap import FrozenImporter  # noqa
-from ._bootstrap_external import (SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,  # noqa
-                     OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES,  # noqa
-                     EXTENSION_SUFFIXES)  # noqa
-from ._bootstrap_external import WindowsRegistryFinder  # noqa
-from ._bootstrap_external import PathFinder  # noqa
-from ._bootstrap_external import FileFinder  # noqa
-from ._bootstrap_external import SourceFileLoader  # noqa
-from ._bootstrap_external import SourcelessFileLoader  # noqa
-from ._bootstrap_external import ExtensionFileLoader  # noqa
-from ._bootstrap_external import AppleFrameworkLoader  # noqa
-from ._bootstrap_external import NamespaceLoader  # noqa
+from ._bootstrap import ModuleSpec
+from ._bootstrap import BuiltinImporter
+from ._bootstrap import FrozenImporter
+from ._bootstrap_external import (SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,
+                     OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES,
+                     EXTENSION_SUFFIXES)
+from ._bootstrap_external import WindowsRegistryFinder
+from ._bootstrap_external import PathFinder
+from ._bootstrap_external import FileFinder
+from ._bootstrap_external import SourceFileLoader
+from ._bootstrap_external import SourcelessFileLoader
+from ._bootstrap_external import ExtensionFileLoader
+from ._bootstrap_external import AppleFrameworkLoader
+from ._bootstrap_external import NamespaceLoader
 
 
 def all_suffixes():

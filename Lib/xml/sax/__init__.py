@@ -20,10 +20,10 @@ expatreader -- Driver that allows use of the Expat parser with SAX.
 """
 
 from .xmlreader import InputSource
-from .handler import ContentHandler, ErrorHandler  # noqa
-from ._exceptions import (SAXException, SAXNotRecognizedException,  # noqa
-                          SAXParseException, SAXNotSupportedException,  # noqa
-                          SAXReaderNotAvailable)  # noqa
+from .handler import ContentHandler, ErrorHandler
+from ._exceptions import SAXException, SAXNotRecognizedException, \
+                        SAXParseException, SAXNotSupportedException, \
+                        SAXReaderNotAvailable
 
 
 def parse(source, handler, errorHandler=ErrorHandler()):
@@ -55,7 +55,7 @@ default_parser_list = ["xml.sax.expatreader"]
 # tell modulefinder that importing sax potentially imports expatreader
 _false = 0
 if _false:
-    import xml.sax.expatreader  # noqa
+    import xml.sax.expatreader
 
 import os, sys
 if not sys.flags.ignore_environment and "PY_SAX_PARSER" in os.environ:

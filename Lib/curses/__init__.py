@@ -51,7 +51,7 @@ def start_color():
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 
 try:
-    has_key  # noqa
+    has_key
 except NameError:
     from .has_key import has_key  # noqa
 

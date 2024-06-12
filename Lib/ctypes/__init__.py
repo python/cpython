@@ -5,13 +5,13 @@ import types as _types
 
 __version__ = "1.1.0"
 
-from _ctypes import Union, Structure, Array  # noqa
-from _ctypes import _Pointer  # noqa
-from _ctypes import CFuncPtr as _CFuncPtr  # noqa
-from _ctypes import __version__ as _ctypes_version  # noqa
-from _ctypes import RTLD_LOCAL, RTLD_GLOBAL  # noqa
-from _ctypes import ArgumentError  # noqa
-from _ctypes import SIZEOF_TIME_T  # noqa
+from _ctypes import Union, Structure, Array
+from _ctypes import _Pointer
+from _ctypes import CFuncPtr as _CFuncPtr
+from _ctypes import __version__ as _ctypes_version
+from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
+from _ctypes import ArgumentError
+from _ctypes import SIZEOF_TIME_T
 
 from struct import calcsize as _calcsize
 
@@ -138,9 +138,9 @@ if _os.name == "nt":
 elif _os.name == "posix":
     from _ctypes import dlopen as _dlopen
 
-from _ctypes import sizeof, byref, addressof, alignment, resize  # noqa
-from _ctypes import get_errno, set_errno  # noqa
-from _ctypes import _SimpleCData  # noqa
+from _ctypes import sizeof, byref, addressof, alignment, resize
+from _ctypes import get_errno, set_errno
+from _ctypes import _SimpleCData
 
 def _check_size(typ, typecode=None):
     # Check if sizeof(ctypes_type) against struct.calcsize.  This
@@ -252,7 +252,7 @@ _check_size(c_void_p)
 class c_bool(_SimpleCData):
     _type_ = "?"
 
-from _ctypes import POINTER, pointer, _pointer_type_cache  # noqa
+from _ctypes import POINTER, pointer, _pointer_type_cache
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
@@ -492,7 +492,7 @@ if _os.name == "nt":
     oledll = LibraryLoader(OleDLL)
 
     GetLastError = windll.kernel32.GetLastError
-    from _ctypes import get_last_error, set_last_error  # noqa
+    from _ctypes import get_last_error, set_last_error
 
     def WinError(code=None, descr=None):
         if code is None:
@@ -568,8 +568,8 @@ if _os.name == "nt": # COM stuff
             return 0 # S_OK
         return ccom.DllCanUnloadNow()
 
-from ctypes._endian import BigEndianStructure, LittleEndianStructure  # noqa
-from ctypes._endian import BigEndianUnion, LittleEndianUnion  # noqa
+from ctypes._endian import BigEndianStructure, LittleEndianStructure
+from ctypes._endian import BigEndianUnion, LittleEndianUnion
 
 # Fill in specifically-sized types
 c_int8 = c_byte
