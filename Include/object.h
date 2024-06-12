@@ -331,7 +331,11 @@ static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
 static inline PyTypeObject* Py_TYPE(PyObject *ob) {
+#ifdef Py_GIL_DISABLED
+    return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
+#else
     return ob->ob_type;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
@@ -421,7 +425,11 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ptr(&ob->ob_type, type);
+#else
     ob->ob_type = type;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
