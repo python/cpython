@@ -507,7 +507,7 @@ _operator_not_in_impl(PyObject *module, PyObject *a, PyObject *b)
 {
     int result = PySequence_Contains(b, a);
     if (result != -1) {
-        result = 1 - result;
+        result = !result;
     }
     return result;
 }

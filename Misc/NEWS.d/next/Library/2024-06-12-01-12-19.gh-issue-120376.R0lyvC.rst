@@ -1,1 +1,1 @@
-:func:`operator.in_` and :func:`operator.not_in` added to ``operator`` module.
+Add :func:`operator.in_` and :func:`operator.not_in` to the :mod:`operator` module.
