@@ -54,5 +54,3 @@ For all other builds, pass the new `--enable-experimental-jit` option to `config
 Otherwise, just configure and build as you normally would. Cross-compiling "just works", since the JIT is built for the host platform.
 
 [^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing and disassembly), it's convenient to only support one toolchain at this time.
-
-
