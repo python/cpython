@@ -1646,6 +1646,11 @@ unicode_dealloc(PyObject *unicode)
              */
             assert(Py_REFCNT(unicode) == 0);
             Py_SET_REFCNT(unicode, 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
             PyObject *popped;
             int r = PyDict_Pop(interned, unicode, &popped);
             if (r == -1) {
@@ -1668,6 +1673,10 @@ unicode_dealloc(PyObject *unicode)
             // Only our `popped` reference should be left; remove it too.
             assert(Py_REFCNT(unicode) == 1);
             Py_SET_REFCNT(unicode, 0);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_DecRefTotal(_PyThreadState_GET());
+#endif
             break;
         default:
             // As with `statically_allocated` above.
@@ -15213,6 +15222,11 @@ _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
     /* The two references in interned dict (key and value) are not counted.
       unicode_dealloc() and _PyUnicode_ClearInterned() take care of this. */
     Py_SET_REFCNT(*p, Py_REFCNT(*p) - 2);
+#ifdef Py_REF_DEBUG
+    /* let's be pedantic with the ref total */
+    _Py_DecRefTotal(_PyThreadState_GET());
+    _Py_DecRefTotal(_PyThreadState_GET());
+#endif
     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_MORTAL;
 }
 
@@ -15309,6 +15323,11 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             // Restore 2 references held by the interned dict; these will
             // be decref'd by clear_interned_dict's PyDict_Clear.
             Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
             break;
         case SSTATE_NOT_INTERNED:
             /* fall through */
