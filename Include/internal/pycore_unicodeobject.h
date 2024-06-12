@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -321,6 +322,11 @@ PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject 
 PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 // Public-looking name is kept for the stable ABI; user should not call this:
 PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
+
+#define _Py_LATIN1_CHAR_STRING(CH) \
+    ((CH) < 128 \
+     ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
+     : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.

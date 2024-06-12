@@ -2,6 +2,7 @@
 #include "pycore_ast.h"           // expr_ty
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_unicodeobject.h" // _Py_LATIN1_CHAR_STRING()
 #include <float.h>                // DBL_MAX_10_EXP
 #include <stdbool.h>
 
@@ -10,9 +11,7 @@
  * See ast.unparse for a full unparser (written in Python)
  */
 
-_Py_DECLARE_STR(open_br, "{");
 _Py_DECLARE_STR(dbl_open_br, "{{");
-_Py_DECLARE_STR(close_br, "}");
 _Py_DECLARE_STR(dbl_close_br, "}}");
 
 /* We would statically initialize this if doing so were simple enough. */
@@ -580,11 +579,13 @@ escape_braces(PyObject *orig)
 {
     PyObject *temp;
     PyObject *result;
-    temp = PyUnicode_Replace(orig, &_Py_STR(open_br), &_Py_STR(dbl_open_br), -1);
+    temp = PyUnicode_Replace(orig, _Py_LATIN1_CHAR_STRING('{'),
+                             &_Py_STR(dbl_open_br), -1);
     if (!temp) {
         return NULL;
     }
-    result = PyUnicode_Replace(temp, &_Py_STR(close_br), &_Py_STR(dbl_close_br), -1);
+    result = PyUnicode_Replace(temp, _Py_LATIN1_CHAR_STRING('}'),
+                               &_Py_STR(dbl_close_br), -1);
     Py_DECREF(temp);
     return result;
 }
@@ -678,7 +679,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
+    if (PyUnicode_Find(temp_fv_str, _Py_LATIN1_CHAR_STRING('{'), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";

@@ -422,10 +422,19 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
             if name not in IGNORED:
                 identifiers.add(name)
         else:
+            if len(string) == 1 and ord(string) < 256:
+                raise ValueError(
+                    'don not use &_PyID or &_Py_STR for one-byte strings, '
+                    + f'use _Py_LATIN1_CHAR_STRING instead: {string!r}')
             if string not in strings:
                 strings[string] = name
             elif name != strings[string]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+    overlap = identifiers & set(strings.keys())
+    if overlap:
+        raise ValueError(
+            'do not use both _PyID and _Py_DECLARE_STR for the same string: '
+            + repr(overlap))
     return identifiers, strings
 
 

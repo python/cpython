@@ -19,6 +19,7 @@
 #include "pycore_runtime.h"           // _Py_ID()
 #include "pycore_setobject.h"         // _PySet_NextEntry()
 #include "pycore_sysmodule.h"         // _PySys_GetAttr()
+#include "pycore_unicodeobject.h"     // _Py_LATIN1_CHAR_STRING()
 
 #include <stdlib.h>               // strtol()
 
@@ -1807,8 +1808,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
+    dotted_path = PyUnicode_Split(name, _Py_LATIN1_CHAR_STRING('.'), -1);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);

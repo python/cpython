@@ -25,7 +25,8 @@ Python uses three different mechanisms to intern strings:
   `_PyRuntime.cached_objects.interned_strings` (`INTERNED_STRINGS`),
   at runtime initialization.
 
-- The 256 possible one-character latin-1 strings are singletons stored in
+- The 256 possible one-character latin-1 strings are singletons,
+  which can be retrieved with `_Py_LATIN1_CHAR_STRING(c)`, are stored in
   runtime-global arrays, `_PyRuntime.static_objects.strings.ascii` and
   `_PyRuntime.static_objects.strings.latin1`.
 
@@ -43,6 +44,10 @@ Python uses three different mechanisms to intern strings:
   `PyInterpreterState.cached_objects.interned_strings`.
 
   The key and value of each entry in this dict reference the same object.
+
+The three sets of singletons (`_Py_STR`, `_Py_ID` and one-byte strings)
+are disjoint.
+If you have such a singleton, it (and no other copy) will be interned.
 
 
 ## Immortality and reference counting

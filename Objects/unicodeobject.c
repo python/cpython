@@ -177,10 +177,7 @@ NOTE: In the interpreter's initialization phase, some globals are currently
             *_to++ = (to_type) *_iter++;                \
     } while (0)
 
-#define LATIN1(CH)  \
-    ((CH) < 128 \
-     ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
-     : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
+#define LATIN1 _Py_LATIN1_CHAR_STRING
 
 #ifdef MS_WINDOWS
    /* On Windows, overallocate by 50% is the best factor */

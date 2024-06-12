@@ -2624,7 +2624,7 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
+                "output=be13a4396237eb4c input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()

@@ -21,6 +21,16 @@ if TYPE_CHECKING:
     from libclinic.app import Clinic
 
 
+def c_id(name):
+    if len(name) == 1 and ord(name) < 256:
+        if name.isalnum():
+            return f"_Py_LATIN1_CHAR_STRING('{name}')"
+        else:
+            return f'_Py_LATIN1_CHAR_STRING({ord(name)})'
+    else:
+        return f'&_Py_ID({name})'
+
+
 class CLanguage(Language):
 
     body_prefix   = "#"
@@ -167,13 +177,17 @@ class CLanguage(Language):
                 if argname_fmt:
                     conditions.append(f"nargs < {i+1} && {argname_fmt % i}")
                 elif fastcall:
-                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, {c_id(p.name)})")
                     containscheck = "PySequence_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
+                    codegen.add_include('pycore_unicodeobject.h',
+                                        '_Py_LATIN1_CHAR_STRING()')
                 else:
-                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, &_Py_ID({p.name}))")
+                    conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, {c_id(p.name)})")
                     containscheck = "PyDict_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
+                    codegen.add_include('pycore_unicodeobject.h',
+                                        '_Py_LATIN1_CHAR_STRING()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
@@ -459,7 +473,7 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+        template_dict['keywords_py'] = ' '.join(c_id(k) + ','
                                                 for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)
