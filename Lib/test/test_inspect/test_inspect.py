@@ -235,6 +235,7 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
+        self.assertFalse(inspect.iscoroutinefunction(inspect))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(

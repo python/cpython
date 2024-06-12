@@ -1,9 +1,13 @@
-import itertools
 import io
+import itertools
 import os
 import rlcompleter
-from unittest import TestCase
+import select
+import subprocess
+import sys
+from unittest import TestCase, skipUnless
 from unittest.mock import patch
+from test.support import force_not_colorized
 
 from .support import (
     FakeConsole,
@@ -17,6 +21,10 @@ from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
+try:
+    import pty
+except ImportError:
+    pty = None
 
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
@@ -828,3 +836,54 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
+
+
+@skipUnless(pty, "requires pty")
+class TestMain(TestCase):
+    @force_not_colorized
+    def test_exposed_globals_in_repl(self):
+        expected_output = (
+            "[\'__annotations__\', \'__builtins__\', \'__doc__\', \'__loader__\', "
+            "\'__name__\', \'__package__\', \'__spec__\']"
+        )
+        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn(expected_output, output)
+
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+        master_fd, slave_fd = pty.openpty()
+        process = subprocess.Popen(
+            [sys.executable, "-i", "-u"],
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+       )
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], 0.5)[0]:
+            data = os.read(master_fd, 1024).decode("utf-8")
+            if not data:
+                break
+            output.append(data)
+
+        os.close(master_fd)
+        os.close(slave_fd)
+        exit_code = process.wait()
+        return "\n".join(output), exit_code

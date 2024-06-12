@@ -63,6 +63,8 @@ typedef struct {
     PyObject *tp_weaklist;
 } managed_static_type_state;
 
+#define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
+
 struct types_state {
     /* Used to set PyTypeObject.tp_version_tag.
        It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
@@ -118,6 +120,12 @@ struct types_state {
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
+
+    // Borrowed references to type objects whose
+    // tp_version_tag % TYPE_VERSION_CACHE_SIZE
+    // once was equal to the index in the table.
+    // They are cleared when the type object is deallocated.
+    PyTypeObject *type_version_cache[TYPE_VERSION_CACHE_SIZE];
 };
 
 
@@ -230,6 +238,9 @@ extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
+extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
+PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
+PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
 #ifdef __cplusplus
 }

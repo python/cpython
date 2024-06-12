@@ -205,12 +205,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_annotated(self):
         st1 = symtable.symtable('def f():\n    x: int\n', 'test', 'exec')
-        st2 = st1.get_children()[0]
+        st2 = st1.get_children()[1]
+        self.assertEqual(st2.get_type(), "function")
         self.assertTrue(st2.lookup('x').is_local())
         self.assertTrue(st2.lookup('x').is_annotated())
         self.assertFalse(st2.lookup('x').is_global())
         st3 = symtable.symtable('def f():\n    x = 1\n', 'test', 'exec')
-        st4 = st3.get_children()[0]
+        st4 = st3.get_children()[1]
+        self.assertEqual(st4.get_type(), "function")
         self.assertTrue(st4.lookup('x').is_local())
         self.assertFalse(st4.lookup('x').is_annotated())
 

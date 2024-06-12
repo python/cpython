@@ -222,6 +222,8 @@ class Class(SymbolTable):
         if self.__methods is None:
             d = {}
             for st in self._table.children:
+                if st.type == _symtable.TYPE_ANNOTATION:
+                    continue
                 d[st.name] = 1
             self.__methods = tuple(d)
         return self.__methods
