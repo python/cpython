@@ -1,2 +1,3 @@
-Clarify the behaviour of :meth:`multiprocessing.Queue.empty` on closed
-queues. Patch by Bénédikt Tran.
+Clarify the behaviours of :meth:`multiprocessing.Queue.empty` and
+:meth:`multiprocessing.SimpleQueue.empty` on closed queues.
+Patch by Bénédikt Tran.
