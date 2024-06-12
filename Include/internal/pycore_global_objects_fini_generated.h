@@ -776,6 +776,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_showwarnmsg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_shutdown));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_slotnames));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_swappedbytes_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_type_));

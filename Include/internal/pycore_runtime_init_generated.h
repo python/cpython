@@ -774,6 +774,7 @@ extern "C" {
     INIT_ID(_showwarnmsg), \
     INIT_ID(_shutdown), \
     INIT_ID(_slotnames), \
+    INIT_ID(_strptime), \
     INIT_ID(_strptime_datetime), \
     INIT_ID(_swappedbytes_), \
     INIT_ID(_type_), \
