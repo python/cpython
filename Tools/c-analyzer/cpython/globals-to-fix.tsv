@@ -434,7 +434,6 @@ Modules/_ctypes/_ctypes.c	CreateSwappedType	swapped_suffix	-
 Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	array_cache	-
 Modules/_cursesmodule.c	-	ModDict	-
-Modules/_datetimemodule.c	datetime_strptime	module	-
 
 ## state
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
