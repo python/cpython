@@ -458,12 +458,13 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         con->stacksize = 1;
     }
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
-    PyUnicode_InternInPlace(&co->co_filename);
-    PyUnicode_InternInPlace(&co->co_name);
-    PyUnicode_InternInPlace(&co->co_qualname);
+    _PyUnicode_InternMortal(interp, &co->co_filename);
+    _PyUnicode_InternMortal(interp, &co->co_name);
+    _PyUnicode_InternMortal(interp, &co->co_qualname);
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -489,7 +490,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_GIL_DISABLED
     PyMutex_Lock(&interp->func_state.mutex);
 #endif
