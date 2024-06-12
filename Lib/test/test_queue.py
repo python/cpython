@@ -662,12 +662,30 @@ class QueueTest(BaseQueueTestMixin):
 
 class PyQueueTest(QueueTest, unittest.TestCase):
     queue = py_queue
+    def test_maxsize_non_int_type(self):
+        for val in (None, "test", 1.0, [1,2]):
+            with self.assertRaises(TypeError):
+                self.queue.Queue(maxsize=val)
 
+    def test_maxsize_int_type(self):
+        try:
+            self.queue.Queue(maxsize=1)
+        except TypeError:
+            self.fail("Queue(maxsize=1) unexpectedly raised TypeError.")
 
 @need_c_queue
 class CQueueTest(QueueTest, unittest.TestCase):
     queue = c_queue
+    def test_maxsize_non_int_type(self):
+        for val in (None, "test", 1.0, [1,2]):
+            with self.assertRaises(TypeError):
+                self.queue.Queue(maxsize=val)
 
+    def test_maxsize_int_type(self):
+        try:
+            self.queue.Queue(maxsize=1)
+        except TypeError:
+            self.fail("Queue(maxsize=1) unexpectedly raised TypeError.")
 
 class LifoQueueTest(BaseQueueTestMixin):
 

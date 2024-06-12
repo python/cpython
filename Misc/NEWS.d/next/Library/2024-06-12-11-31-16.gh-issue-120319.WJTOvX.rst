@@ -1,0 +1,2 @@
+Update :mod:`queue.Queue` so that ``maxsize`` is typechecked during
+initialization.
