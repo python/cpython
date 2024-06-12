@@ -393,7 +393,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 ## initialized once
 Modules/_cursesmodule.c	-	ModDict	-
-Modules/_datetimemodule.c	datetime_strptime	module	-
 
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
