@@ -1237,6 +1237,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     /* prepare attr while checking args */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         int dot_count;
@@ -1260,7 +1261,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         if (dot_count == 0) {
             Py_INCREF(item);
-            PyUnicode_InternInPlace(&item);
+            _PyUnicode_InternMortal(interp, &item);
             PyTuple_SET_ITEM(attr, idx, item);
         } else { /* make it a tuple of non-dotted attrnames */
             PyObject *attr_chain = PyTuple_New(dot_count + 1);
@@ -1286,7 +1287,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(attr);
                     return NULL;
                 }
-                PyUnicode_InternInPlace(&attr_chain_item);
+                _PyUnicode_InternMortal(interp, &attr_chain_item);
                 PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
                 ++attr_chain_idx;
                 unibuff_till = unibuff_from = unibuff_till + 1;
@@ -1300,7 +1301,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(attr);
                 return NULL;
             }
-            PyUnicode_InternInPlace(&attr_chain_item);
+            _PyUnicode_InternMortal(interp, &attr_chain_item);
             PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
 
             PyTuple_SET_ITEM(attr, idx, attr_chain);
