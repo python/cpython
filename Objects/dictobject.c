@@ -4924,7 +4924,7 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     if (kv == NULL)
         return -1;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternMortal(interp, &kv);
+    _PyUnicode_InternImmortal(interp, &kv); /* XXX Should we really? */
     err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
