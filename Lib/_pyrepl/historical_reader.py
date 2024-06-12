@@ -27,7 +27,7 @@ from .reader import Reader
 
 
 if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+    from .types import SimpleContextManager, KeySpec, CommandName
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(

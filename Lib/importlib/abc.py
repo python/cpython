@@ -13,7 +13,6 @@ except ImportError:
     _frozen_importlib_external = _bootstrap_external
 from ._abc import Loader
 import abc
-import warnings
 
 from .resources import abc as _resources_abc
 
