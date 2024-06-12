@@ -930,7 +930,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
     if (u == NULL) {
         return NULL;
     }
-    _PyUnicode_InternInPlace(interp, &u);
+    _PyUnicode_InternImmortal(interp, &u);
     return u;
 }
 
@@ -950,7 +950,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
     if (u == NULL) {
         return NULL;
     }
-    _PyUnicode_InternInPlace(interp, &u);
+    _PyUnicode_InternImmortal(interp, &u);
     return u;
 }
 
@@ -972,8 +972,9 @@ sys_intern_impl(PyObject *module, PyObject *s)
 /*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
     if (PyUnicode_CheckExact(s)) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         Py_INCREF(s);
-        PyUnicode_InternInPlace(&s);
+        _PyUnicode_InternMortal(interp, &s);
         return s;
     }
     else {
