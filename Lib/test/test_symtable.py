@@ -319,7 +319,8 @@ class SymtableTest(unittest.TestCase):
                                 "       def method():\n"
                                 "           return x\n",
                                 "?", "exec")
-        func_f = st3.get_children()[0]
+        # child 0 is for __annotate__
+        func_f = st3.get_children()[1]
         class_A = func_f.get_children()[0]
         self.assertEqual(repr(class_A.lookup('x')),
                          "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
