@@ -15127,14 +15127,16 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
                 return;
             case SSTATE_INTERNED_MORTAL:
                 assert(!_Py_IsImmortal(s));
-                goto immortalize_s;
+                break;
             default:
                 Py_UNREACHABLE();
         }
     }
-    Py_DECREF(t);
+    else {
+        // value was newly inserted
+        Py_DECREF(t);
+    }
 
-immortalize_s:
 #ifdef Py_REF_DEBUG
     /* The reference count value excluding the 2 references from the
        interned dictionary should be excluded from the RefTotal. The
