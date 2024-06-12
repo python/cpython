@@ -79,16 +79,16 @@ _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watc
 
 if _mswindows:
     import _winapi
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
-                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
-                         STD_ERROR_HANDLE, SW_HIDE,
-                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
-                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,
-                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
-                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
-                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
-                         CREATE_NO_WINDOW, DETACHED_PROCESS,
-                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,  # noqa
+                         STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,  # noqa
+                         STD_ERROR_HANDLE, SW_HIDE,  # noqa
+                         STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,  # noqa
+                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,  # noqa
+                         ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,  # noqa
+                         HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,  # noqa
+                         NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,  # noqa
+                         CREATE_NO_WINDOW, DETACHED_PROCESS,  # noqa
+                         CREATE_DEFAULT_ERROR_MODE, CREATE_BREAKAWAY_FROM_JOB)  # noqa
 
     __all__.extend(["CREATE_NEW_CONSOLE", "CREATE_NEW_PROCESS_GROUP",
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",

@@ -485,10 +485,10 @@ def register_readline():
     """
     import atexit
     try:
-        import readline
-        import rlcompleter
-        import _pyrepl.readline
-        import _pyrepl.unix_console
+        import readline  # noqa
+        import rlcompleter  # noqa
+        import _pyrepl.readline  # noqa
+        import _pyrepl.unix_console  # noqa
     except ImportError:
         return
 
@@ -603,7 +603,7 @@ def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
         try:
-            import sitecustomize
+            import sitecustomize  # noqa
         except ImportError as exc:
             if exc.name == 'sitecustomize':
                 pass
@@ -623,7 +623,7 @@ def execusercustomize():
     """Run custom user specific code, if available."""
     try:
         try:
-            import usercustomize
+            import usercustomize  # noqa
         except ImportError as exc:
             if exc.name == 'usercustomize':
                 pass
