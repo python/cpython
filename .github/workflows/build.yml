@@ -37,7 +37,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
-          if [ -z "$GITHUB_BASE_REF" ]; then
+          if [ -z "$GITHUB_BASE_REFF" ]; then
             echo "run_tests=true" >> $GITHUB_OUTPUT
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
