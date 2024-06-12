@@ -55,6 +55,11 @@ Command = commands.Command
 from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
 
 MoreLinesCallable = Callable[[str], bool]
 
@@ -92,7 +97,7 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = RLCompleter().complete
+    readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
 
 
@@ -554,7 +559,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup() -> None:
+def _setup(namespace: dict[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -570,9 +575,11 @@ def _setup() -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
+    # set up namespace in rlcompleter
+    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
-
     raw_input = builtins.input
     builtins.input = _wrapper.input
 

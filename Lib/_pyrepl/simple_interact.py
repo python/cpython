@@ -96,9 +96,9 @@ def run_multiline_interactive_console(
     console: code.InteractiveConsole | None = None,
 ) -> None:
     from .readline import _setup
-    _setup()
-
     namespace = mainmodule.__dict__ if mainmodule else DEFAULT_NAMESPACE
+    _setup(namespace)
+
     if console is None:
         console = InteractiveColoredConsole(
             namespace, filename="<stdin>"
