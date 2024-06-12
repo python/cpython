@@ -60,6 +60,9 @@ Pretty printing::
         "6": 7
     }
 
+.. seealso::
+   The :mod:`pprint` module for pretty printing of most Python objects.
+
 Specializing JSON object encoding::
 
    >>> import json
