@@ -6,7 +6,7 @@ import sys
 import unittest
 import warnings
 
-from test.support import is_wasi, Py_DEBUG
+from test.support import is_wasi, Py_DEBUG, infinite_recursion
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 
@@ -389,6 +389,15 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob_above_recursion_limit(self):
+        depth = 30
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+        pattern = os.path.join(base, '**', 'd')
+        with infinite_recursion(depth - 5):
+            glob.glob(pattern, recursive=True)
 
     def test_glob0(self):
         with self.assertWarns(DeprecationWarning):
