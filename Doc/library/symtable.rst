@@ -156,7 +156,7 @@ Examining Symbol Tables
          ... ''', 'test', 'exec')
          >>> class_A = st.get_children()[2]
          >>> class_A.get_methods()
-         >>> ('f', 'g', 'h')
+         ('f', 'g', 'h')
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
