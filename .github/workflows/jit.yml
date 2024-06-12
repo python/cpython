@@ -2,24 +2,20 @@ name: JIT
 on:
   pull_request:
     paths:
-      - 'Tools/jit/*.py'
-      - 'Tools/jit/*.c'
-      - 'Tools/jit/ignore-tests-emulated-linux.txt'
+      - '!**/*.md'
+      - '!**/*.ini'
+      - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
       - '!Python/perf_jit_trampoline.c'
-      - '!**/*.md'
-      - '!**/*.ini'
   push:
     paths:
-      - 'Tools/jit/*.py'
-      - 'Tools/jit/*.c'
-      - 'Tools/jit/ignore-tests-emulated-linux.txt'
+      - '!**/*.md'
+      - '!**/*.ini'
+      - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
       - '!Python/perf_jit_trampoline.c'
-      - '!**/*.md'
-      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
