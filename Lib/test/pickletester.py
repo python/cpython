@@ -1866,11 +1866,22 @@ class AbstractPickleTests:
 
     def test_bytearray_memoization_bug(self):
         for proto in protocols:
-            for s in b'', b'xyz', b'xyz'*100:
-                b = bytearray(s)
-                p = self.dumps((b, b), proto)
-                b1, b2 = self.loads(p)
-                self.assertIs(b1, b2)
+            for array_type in [bytearray, ZeroCopyBytes, ZeroCopyBytearray]:
+                for s in b'', b'xyz', b'xyz'*100:
+                    b = array_type(s)
+                    p = self.dumps((b, b), proto)
+                    b1, b2 = self.loads(p)
+                    self.assertIs(b1, b2)
+
+                    b1a, b2a = array_type(s), array_type(s)
+                    p = self.dumps((b1a, b2a), proto)
+                    b1b, b2b = self.loads(p)
+
+                    self.assertIsNot(b1a, b1b)
+                    self.assert_is_copy(b1a, b1b)
+
+                    self.assertIsNot(b2a, b2b)
+                    self.assert_is_copy(b2a, b2b)
 
     def test_ints(self):
         for proto in protocols:
