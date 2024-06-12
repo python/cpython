@@ -1,1 +1,0 @@
-Small (10 - 20%) and trivial performance improvement of :func:`urrlib.request.getproxies_environment`, typically useful when there are many environment variables to go over.

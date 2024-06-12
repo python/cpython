@@ -1,3 +1,0 @@
-Set the C recursion limit to 4000 on Windows, and 10000 on Linux/OSX. This
-seems to be near the sweet spot to maintain safety, but not compromise
-backwards compatibility.

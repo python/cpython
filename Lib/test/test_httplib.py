@@ -651,22 +651,25 @@ class BasicTest(TestCase):
                 'Client must specify Content-Length')
             PRECONDITION_FAILED = (412, 'Precondition Failed',
                 'Precondition in headers is false')
-            REQUEST_ENTITY_TOO_LARGE = (413, 'Request Entity Too Large',
-                'Entity is too large')
-            REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',
-                'URI is too long')
+            CONTENT_TOO_LARGE = (413, 'Content Too Large',
+                'Content is too large')
+            REQUEST_ENTITY_TOO_LARGE = CONTENT_TOO_LARGE
+            URI_TOO_LONG = (414, 'URI Too Long', 'URI is too long')
+            REQUEST_URI_TOO_LONG = URI_TOO_LONG
             UNSUPPORTED_MEDIA_TYPE = (415, 'Unsupported Media Type',
                 'Entity body in unsupported format')
-            REQUESTED_RANGE_NOT_SATISFIABLE = (416,
-                'Requested Range Not Satisfiable',
+            RANGE_NOT_SATISFIABLE = (416,
+                'Range Not Satisfiable',
                 'Cannot satisfy request range')
+            REQUESTED_RANGE_NOT_SATISFIABLE = RANGE_NOT_SATISFIABLE
             EXPECTATION_FAILED = (417, 'Expectation Failed',
                 'Expect condition could not be satisfied')
             IM_A_TEAPOT = (418, 'I\'m a Teapot',
                 'Server refuses to brew coffee because it is a teapot.')
             MISDIRECTED_REQUEST = (421, 'Misdirected Request',
                 'Server is not able to produce a response')
-            UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
+            UNPROCESSABLE_CONTENT = 422, 'Unprocessable Content'
+            UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
             LOCKED = 423, 'Locked'
             FAILED_DEPENDENCY = 424, 'Failed Dependency'
             TOO_EARLY = 425, 'Too Early'
@@ -1718,13 +1721,17 @@ class OfflineTest(TestCase):
             'GONE',
             'LENGTH_REQUIRED',
             'PRECONDITION_FAILED',
+            'CONTENT_TOO_LARGE',
             'REQUEST_ENTITY_TOO_LARGE',
+            'URI_TOO_LONG',
             'REQUEST_URI_TOO_LONG',
             'UNSUPPORTED_MEDIA_TYPE',
+            'RANGE_NOT_SATISFIABLE',
             'REQUESTED_RANGE_NOT_SATISFIABLE',
             'EXPECTATION_FAILED',
             'IM_A_TEAPOT',
             'MISDIRECTED_REQUEST',
+            'UNPROCESSABLE_CONTENT',
             'UNPROCESSABLE_ENTITY',
             'LOCKED',
             'FAILED_DEPENDENCY',
@@ -2407,6 +2414,22 @@ class TunnelTests(TestCase):
                       self.conn.sock.data)
         self.assertIn(b'PUT / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
                       self.conn.sock.data)
+
+    def test_connect_put_request_ipv6(self):
+        self.conn.set_tunnel('[1:2:3::4]', 1234)
+        self.conn.request('PUT', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT [1:2:3::4]:1234', self.conn.sock.data)
+        self.assertIn(b'Host: [1:2:3::4]:1234', self.conn.sock.data)
+
+    def test_connect_put_request_ipv6_port(self):
+        self.conn.set_tunnel('[1:2:3::4]:1234')
+        self.conn.request('PUT', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT [1:2:3::4]:1234', self.conn.sock.data)
+        self.assertIn(b'Host: [1:2:3::4]:1234', self.conn.sock.data)
 
     def test_tunnel_debuglog(self):
         expected_header = 'X-Dummy: 1'

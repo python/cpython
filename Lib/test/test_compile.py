@@ -1,5 +1,8 @@
+import contextlib
 import dis
+import io
 import math
+import opcode
 import os
 import unittest
 import sys
@@ -9,9 +12,11 @@ import tempfile
 import types
 import textwrap
 import warnings
+import _testinternalcapi
+
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
-                          requires_specialization, Py_C_RECURSION_LIMIT)
+                          requires_specialization, get_c_recursion_limit)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -112,7 +117,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        repeat = int(Py_C_RECURSION_LIMIT * 0.9)
+        repeat = int(get_c_recursion_limit() * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -449,9 +454,17 @@ class TestSpecifics(unittest.TestCase):
         compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
     def test_condition_expression_with_redundant_comparisons_compiles(self):
-        # See gh-113054
-        with self.assertWarns(SyntaxWarning):
-            compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+        # See gh-113054, gh-114083
+        exprs = [
+            'if 9<9<9and 9or 9:9',
+            'if 9<9<9and 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9or 9:9',
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertWarns(SyntaxWarning):
+                    compile(expr, '<eval>', 'exec')
 
     def test_dead_code_with_except_handler_compiles(self):
         compile(textwrap.dedent("""
@@ -517,11 +530,11 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(TypeError, compile, co1, '<ast>', 'eval')
 
         # raise exception when node type is no start node
-        self.assertRaises(TypeError, compile, _ast.If(), '<ast>', 'exec')
+        self.assertRaises(TypeError, compile, _ast.If(test=_ast.Name(id='x', ctx=_ast.Load())), '<ast>', 'exec')
 
         # raise exception when node has invalid children
         ast = _ast.Module()
-        ast.body = [_ast.BoolOp()]
+        ast.body = [_ast.BoolOp(op=_ast.Or())]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
     def test_compile_invalid_typealias(self):
@@ -624,9 +637,10 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is Py_C_RECURSION_LIMIT
-        fail_depth = Py_C_RECURSION_LIMIT + 1
-        crash_depth = Py_C_RECURSION_LIMIT * 100
-        success_depth = int(Py_C_RECURSION_LIMIT * 0.8)
+        limit = get_c_recursion_limit()
+        fail_depth = limit + 1
+        crash_depth = limit * 100
+        success_depth = int(limit * 0.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -739,7 +753,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", "used"))
+                         (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -784,7 +798,7 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -803,6 +817,30 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(
             'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
+
+    @support.cpython_only
+    def test_docstring_omitted(self):
+        # See gh-115347
+        src = textwrap.dedent("""
+            def f():
+                "docstring1"
+                def h():
+                    "docstring2"
+                    return 42
+
+                class C:
+                    "docstring3"
+                    pass
+
+                return h
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    dis.dis(code)
+                self.assertNotIn('NOP' , output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -1013,6 +1051,8 @@ class TestSpecifics(unittest.TestCase):
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1096,6 +1136,17 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def check_line_numbers(self, code, opnames=None):
+        # Check that all instructions whose op matches opnames
+        # have a line number. opnames can be a single name, or
+        # a sequence of names. If it is None, match all ops.
+
+        if isinstance(opnames, str):
+            opnames = (opnames, )
+        for inst in dis.Bytecode(code):
+            if opnames and inst.opname in opnames:
+                self.assertIsNotNone(inst.positions.lineno)
+
     def test_line_number_synthetic_jump_multiple_predecessors(self):
         def f():
             for x in it:
@@ -1105,25 +1156,52 @@ class TestSpecifics(unittest.TestCase):
                 except OSError:
                     pass
 
-        # Ensure that all JUMP_BACKWARDs have line number
-        code = f.__code__
-        for inst in dis.Bytecode(code):
-            if inst.opname == 'JUMP_BACKWARD':
-                self.assertIsNotNone(inst.positions.lineno)
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
-    def test_lineno_of_backward_jump(self):
+    def test_line_number_synthetic_jump_multiple_predecessors_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            X = 4
+                    except OSError:
+                        pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_line_number_synthetic_jump_multiple_predecessors_more_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            if C4:
+                                X = 4
+                    except OSError:
+                        try:
+                            if C3:
+                                if C4:
+                                    X = 5
+                        except OSError:
+                            pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_lineno_of_backward_jump_conditional_in_loop(self):
         # Issue gh-107901
         def f():
             for i in x:
                 if y:
                     pass
 
-        linenos = list(inst.positions.lineno
-                       for inst in dis.get_instructions(f.__code__)
-                       if inst.opname == 'JUMP_BACKWARD')
-
-        self.assertTrue(len(linenos) > 0)
-        self.assertTrue(all(l is not None for l in linenos))
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -1331,6 +1409,16 @@ class TestSpecifics(unittest.TestCase):
         for kw in ("except", "except*"):
             exec(code % kw, g, l);
 
+    def test_regression_gh_120225(self):
+        async def name_4():
+            match b'':
+                case True:
+                    pass
+                case name_5 if f'e':
+                    {name_3: name_4 async for name_2 in name_5}
+                case []:
+                    pass
+            [[]]
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1452,6 +1540,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_multiline_assert(self):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
@@ -1459,7 +1548,7 @@ class TestSourcePositions(unittest.TestCase):
                     ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_COMMON_CONSTANT',
             line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
@@ -1879,10 +1968,71 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_load_super_attr(self):
         source = "class C:\n  def __init__(self):\n    super().__init__()"
-        code = compile(source, "<test>", "exec").co_consts[0].co_consts[1]
+        for const in compile(source, "<test>", "exec").co_consts[0].co_consts:
+            if isinstance(const, types.CodeType):
+                code = const
+                break
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
+
+
+class TestExpectedAttributes(unittest.TestCase):
+
+    def test_basic(self):
+        class C:
+            def f(self):
+                self.a = self.b = 42
+
+        self.assertIsInstance(C.__static_attributes__, tuple)
+        self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
+
+    def test_nested_function(self):
+        class C:
+            def f(self):
+                self.x = 1
+                self.y = 2
+                self.x = 3   # check deduplication
+
+            def g(self, obj):
+                self.y = 4
+                self.z = 5
+
+                def h(self, a):
+                    self.u = 6
+                    self.v = 7
+
+                obj.self = 8
+
+        self.assertEqual(sorted(C.__static_attributes__), ['u', 'v', 'x', 'y', 'z'])
+
+    def test_nested_class(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+            class D:
+                def g(self):
+                    self.y = 42
+                    self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(C.D.__static_attributes__), ['y', 'z'])
+
+    def test_subclass(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+        class D(C):
+            def g(self):
+                self.y = 42
+                self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(D.__static_attributes__), ['y', 'z'])
 
 
 class TestExpressionStackSize(unittest.TestCase):
@@ -2284,6 +2434,49 @@ class TestStackSizeStability(unittest.TestCase):
                     a
             """
         self.check_stack_size(snippet, async_=True)
+
+class TestInstructionSequence(unittest.TestCase):
+    def compare_instructions(self, seq, expected):
+        self.assertEqual([(opcode.opname[i[0]],) + i[1:] for i in seq.get_instructions()],
+                         expected)
+
+    def test_basics(self):
+        seq = _testinternalcapi.new_instruction_sequence()
+
+        def add_op(seq, opname, oparg, bl, bc=0, el=0, ec=0):
+            seq.addop(opcode.opmap[opname], oparg, bl, bc, el, el)
+
+        add_op(seq, 'LOAD_CONST', 1, 1)
+        add_op(seq, 'JUMP', lbl1 := seq.new_label(), 2)
+        add_op(seq, 'LOAD_CONST', 1, 3)
+        add_op(seq, 'JUMP', lbl2 := seq.new_label(), 4)
+        seq.use_label(lbl1)
+        add_op(seq, 'LOAD_CONST', 2, 4)
+        seq.use_label(lbl2)
+        add_op(seq, 'RETURN_VALUE', 0, 3)
+
+        expected = [('LOAD_CONST', 1, 1),
+                    ('JUMP', 4, 2),
+                    ('LOAD_CONST', 1, 3),
+                    ('JUMP', 5, 4),
+                    ('LOAD_CONST', 2, 4),
+                    ('RETURN_VALUE', None, 3),
+                   ]
+
+        self.compare_instructions(seq, [ex + (0,0,0) for ex in expected])
+
+    def test_nested(self):
+        seq = _testinternalcapi.new_instruction_sequence()
+        seq.addop(opcode.opmap['LOAD_CONST'], 1, 1, 0, 0, 0)
+        nested = _testinternalcapi.new_instruction_sequence()
+        nested.addop(opcode.opmap['LOAD_CONST'], 2, 2, 0, 0, 0)
+
+        self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
+        self.compare_instructions(nested, [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+        seq.add_nested(nested)
+        self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
+        self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
 
 
 if __name__ == "__main__":

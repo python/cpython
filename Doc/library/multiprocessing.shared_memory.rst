@@ -1,5 +1,5 @@
-:mod:`multiprocessing.shared_memory` --- Shared memory for direct access across processes
-=========================================================================================
+:mod:`!multiprocessing.shared_memory` --- Shared memory for direct access across processes
+==========================================================================================
 
 .. module:: multiprocessing.shared_memory
    :synopsis: Provides shared memory for direct access across processes.
@@ -23,7 +23,7 @@ processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
 :class:`~multiprocessing.managers.SharedMemoryManager`, is also provided in the
 :mod:`multiprocessing.managers` module.
 
-In this module, shared memory refers to "System V style" shared memory blocks
+In this module, shared memory refers to "POSIX style" shared memory blocks
 (though is not necessarily implemented explicitly as such) and does not refer
 to "distributed shared memory".  This style of shared memory permits distinct
 processes to potentially read and write to a common (or shared) region of
@@ -38,7 +38,8 @@ copying of data.
 
 .. class:: SharedMemory(name=None, create=False, size=0, *, track=True)
 
-   Creates a new shared memory block or attaches to an existing shared
+   Create an instance of the :class:`!SharedMemory` class for either
+   creating a new shared memory block or attaching to an existing shared
    memory block.  Each shared memory block is assigned a unique name.
    In this way, one process can create a shared memory block with a
    particular name and a different process can attach to that same shared
@@ -51,41 +52,48 @@ copying of data.
    When a shared memory block is no longer needed by any process, the
    :meth:`unlink` method should be called to ensure proper cleanup.
 
-   *name* is the unique name for the requested shared memory, specified as
-   a string.  When creating a new shared memory block, if ``None`` (the
-   default) is supplied for the name, a novel name will be generated.
+   :param name:
+      The unique name for the requested shared memory, specified as a string.
+      When creating a new shared memory block, if ``None`` (the default)
+      is supplied for the name, a novel name will be generated.
+   :type name: str | None
 
-   *create* controls whether a new shared memory block is created (``True``)
-   or an existing shared memory block is attached (``False``).
+   :param bool create:
+      Control whether a new shared memory block is created (``True``)
+      or an existing shared memory block is attached (``False``).
 
-   *size* specifies the requested number of bytes when creating a new shared
-   memory block.  Because some platforms choose to allocate chunks of memory
-   based upon that platform's memory page size, the exact size of the shared
-   memory block may be larger or equal to the size requested.  When attaching
-   to an existing shared memory block, the *size* parameter is ignored.
+   :param int size:
+      The requested number of bytes when creating a new shared memory block.
+      Because some platforms choose to allocate chunks of memory
+      based upon that platform's memory page size, the exact size of the shared
+      memory block may be larger or equal to the size requested.
+      When attaching to an existing shared memory block,
+      the *size* parameter is ignored.
 
-   *track*, when enabled, registers the shared memory block with a resource
-   tracker process on platforms where the OS does not do this automatically.
-   The resource tracker ensures proper cleanup of the shared memory even
-   if all other processes with access to the memory exit without doing so.
-   Python processes created from a common ancestor using :mod:`multiprocessing`
-   facilities share a single resource tracker process, and the lifetime of
-   shared memory segments is handled automatically among these processes.
-   Python processes created in any other way will receive their own
-   resource tracker when accessing shared memory with *track* enabled.
-   This will cause the shared memory to be deleted by the resource tracker
-   of the first process that terminates.
-   To avoid this issue, users of :mod:`subprocess` or standalone Python
-   processes should set *track* to ``False`` when there is already another
-   process in place that does the bookkeeping.
-   *track* is ignored on Windows, which has its own tracking and
-   automatically deletes shared memory when all handles to it have been closed.
+   :param bool track:
+      When ``True``, register the shared memory block with a resource
+      tracker process on platforms where the OS does not do this automatically.
+      The resource tracker ensures proper cleanup of the shared memory even
+      if all other processes with access to the memory exit without doing so.
+      Python processes created from a common ancestor using :mod:`multiprocessing`
+      facilities share a single resource tracker process, and the lifetime of
+      shared memory segments is handled automatically among these processes.
+      Python processes created in any other way will receive their own
+      resource tracker when accessing shared memory with *track* enabled.
+      This will cause the shared memory to be deleted by the resource tracker
+      of the first process that terminates.
+      To avoid this issue, users of :mod:`subprocess` or standalone Python
+      processes should set *track* to ``False`` when there is already another
+      process in place that does the bookkeeping.
+      *track* is ignored on Windows, which has its own tracking and
+      automatically deletes shared memory when all handles to it have been closed.
 
-   .. versionchanged:: 3.13 Added *track* parameter.
+   .. versionchanged:: 3.13
+      Added the *track* parameter.
 
    .. method:: close()
 
-      Closes the file descriptor/handle to the shared memory from this
+      Close the file descriptor/handle to the shared memory from this
       instance.  :meth:`close` should be called once access to the shared
       memory block from this instance is no longer needed.  Depending
       on operating system, the underlying memory may or may not be freed
@@ -94,7 +102,7 @@ copying of data.
 
    .. method:: unlink()
 
-      Deletes the underlying shared memory block.  This should be called only
+      Delete the underlying shared memory block.  This should be called only
       once per shared memory block regardless of the number of handles to it,
       even in other processes.
       :meth:`unlink` and :meth:`close` can be called in any order, but
@@ -277,7 +285,7 @@ finishes execution.
 
 .. class:: ShareableList(sequence=None, *, name=None)
 
-   Provides a mutable list-like object where all values stored within are
+   Provide a mutable list-like object where all values stored within are
    stored in a shared memory block.
    This constrains storable values to the following built-in data types:
 
@@ -334,12 +342,12 @@ finishes execution.
 
    .. method:: count(value)
 
-      Returns the number of occurrences of *value*.
+      Return the number of occurrences of *value*.
 
    .. method:: index(value)
 
-      Returns first index position of *value*.  Raises :exc:`ValueError` if
-      *value* is not present.
+      Return first index position of *value*.
+      Raise :exc:`ValueError` if *value* is not present.
 
    .. attribute:: format
 

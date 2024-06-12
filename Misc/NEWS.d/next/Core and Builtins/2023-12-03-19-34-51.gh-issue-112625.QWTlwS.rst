@@ -1,1 +1,0 @@
-Fixes a bug where a bytearray object could be cleared while iterating over an argument in the ``bytearray.join()`` method that could result in reading memory after it was freed.

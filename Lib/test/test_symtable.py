@@ -205,12 +205,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_annotated(self):
         st1 = symtable.symtable('def f():\n    x: int\n', 'test', 'exec')
-        st2 = st1.get_children()[0]
+        st2 = st1.get_children()[1]
+        self.assertEqual(st2.get_type(), "function")
         self.assertTrue(st2.lookup('x').is_local())
         self.assertTrue(st2.lookup('x').is_annotated())
         self.assertFalse(st2.lookup('x').is_global())
         st3 = symtable.symtable('def f():\n    x = 1\n', 'test', 'exec')
-        st4 = st3.get_children()[0]
+        st4 = st3.get_children()[1]
+        self.assertEqual(st4.get_type(), "function")
         self.assertTrue(st4.lookup('x').is_local())
         self.assertFalse(st4.lookup('x').is_annotated())
 
@@ -299,6 +301,8 @@ class SymtableTest(unittest.TestCase):
                          "<symbol 'x': FREE, USE>")
         self.assertEqual(repr(self.other_internal.lookup("some_var")),
                          "<symbol 'some_var': FREE, USE|DEF_NONLOCAL|DEF_LOCAL>")
+        self.assertEqual(repr(self.GenericMine.lookup("T")),
+                         "<symbol 'T': LOCAL, DEF_LOCAL|DEF_TYPE_PARAM>")
 
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"

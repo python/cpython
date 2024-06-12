@@ -53,7 +53,7 @@ def _new_module(name):
 
 # For a list that can have a weakref to it.
 class _List(list):
-    pass
+    __slots__ = ("__weakref__",)
 
 
 # Copied from weakref.py with some simplifications and modifications unique to
@@ -1134,7 +1134,7 @@ class FrozenImporter:
         # part of the importer), instead of here (the finder part).
         # The loader is the usual place to get the data that will
         # be loaded into the module.  (For example, see _LoaderBasics
-        # in _bootstra_external.py.)  Most importantly, this importer
+        # in _bootstrap_external.py.)  Most importantly, this importer
         # is simpler if we wait to get the data.
         # However, getting as much data in the finder as possible
         # to later load the module is okay, and sometimes important.

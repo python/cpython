@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
@@ -96,7 +96,7 @@ _io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
         return NULL;
     }
@@ -1245,4 +1245,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=442b05b9a117df6c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8eead000083dc5fa input=a9049054013a1b77]*/

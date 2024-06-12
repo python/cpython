@@ -1,5 +1,5 @@
-:mod:`token` --- Constants used with Python parse trees
-=======================================================
+:mod:`!token` --- Constants used with Python parse trees
+========================================================
 
 .. module:: token
    :synopsis: Constants representing terminal nodes of the parse tree.

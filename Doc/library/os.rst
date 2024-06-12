@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -34,12 +34,12 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, large
-  parts of the :mod:`os` module are not available or behave differently. API
-  related to processes (e.g. :func:`~os.fork`, :func:`~os.execve`), signals
-  (e.g. :func:`~os.kill`, :func:`~os.wait`), and resources
-  (e.g. :func:`~os.nice`) are not available. Others like :func:`~os.getuid`
-  and :func:`~os.getpid` are emulated or stubs.
+* On WebAssembly platforms, and on iOS, large parts of the :mod:`os` module are
+  not available or behave differently. API related to processes (e.g.
+  :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
+  are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
+  emulated or stubs. WebAssembly platforms also lack support for signals (e.g.
+  :func:`~os.kill`, :func:`~os.wait`).
 
 
 .. note::
@@ -178,7 +178,7 @@ process and user.
 
    Return the filename corresponding to the controlling terminal of the process.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: environ
@@ -192,6 +192,10 @@ process and user.
    typically during Python startup as part of processing :file:`site.py`.  Changes
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
+
+   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
+   changes to the environment made by :func:`os.putenv`, by
+   :func:`os.unsetenv`, or made outside Python in the same process.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -224,6 +228,9 @@ process and user.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.14
+      Added the :meth:`!os.environ.refresh()` method.
 
 
 .. data:: environb
@@ -355,7 +362,7 @@ process and user.
    Return the effective group id of the current process.  This corresponds to the
    "set id" bit on the file being executed in the current process.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: geteuid()
@@ -364,7 +371,7 @@ process and user.
 
    Return the current process's effective user id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: getgid()
@@ -375,8 +382,8 @@ process and user.
 
    .. availability:: Unix.
 
-      The function is a stub on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is a stub on WASI, see :ref:`wasm-availability` for more
+      information.
 
 
 .. function:: getgrouplist(user, group, /)
@@ -386,7 +393,7 @@ process and user.
    field from the password record for *user*, because that group ID will
    otherwise be potentially omitted.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -395,7 +402,7 @@ process and user.
 
    Return list of supplemental group ids associated with the current process.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. note::
 
@@ -423,7 +430,7 @@ process and user.
    falls back to ``pwd.getpwuid(os.getuid())[0]`` to get the login name of the
    current real user id.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
 
 .. function:: getpgid(pid)
@@ -431,7 +438,7 @@ process and user.
    Return the process group id of the process with process id *pid*. If *pid* is 0,
    the process group id of the current process is returned.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 .. function:: getpgrp()
 
@@ -439,7 +446,7 @@ process and user.
 
    Return the id of the current process group.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: getpid()
@@ -448,8 +455,8 @@ process and user.
 
    Return the current process id.
 
-   The function is a stub on Emscripten and WASI, see
-   :ref:`wasm-availability` for more information.
+   The function is a stub on WASI, see :ref:`wasm-availability` for more
+   information.
 
 .. function:: getppid()
 
@@ -459,7 +466,7 @@ process and user.
    the id returned is the one of the init process (1), on Windows it is still
    the same id, which may be already reused by another process.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionchanged:: 3.2
       Added support for Windows.
@@ -477,7 +484,7 @@ process and user.
    (respectively) the calling process, the process group of the calling process,
    or the real user ID of the calling process.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -488,7 +495,7 @@ process and user.
 
    Parameters for the :func:`getpriority` and :func:`setpriority` functions.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -509,7 +516,7 @@ process and user.
    Return a tuple (ruid, euid, suid) denoting the current process's
    real, effective, and saved user ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -519,7 +526,7 @@ process and user.
    Return a tuple (rgid, egid, sgid) denoting the current process's
    real, effective, and saved group ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -532,8 +539,8 @@ process and user.
 
    .. availability:: Unix.
 
-      The function is a stub on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is a stub on WASI, see :ref:`wasm-availability` for more
+      information.
 
 
 .. function:: initgroups(username, gid, /)
@@ -542,7 +549,7 @@ process and user.
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -561,6 +568,8 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
@@ -576,21 +585,21 @@ process and user.
 
    Set the current process's effective group id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setgid(gid, /)
 
    Set the current process' group id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setgroups(groups, /)
@@ -599,7 +608,7 @@ process and user.
    *groups*. *groups* must be a sequence, and each element must be an integer
    identifying a group. This operation is typically available only to the superuser.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
@@ -649,7 +658,7 @@ process and user.
    Call the system call :c:func:`!setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setpgid(pid, pgrp, /)
@@ -658,7 +667,7 @@ process and user.
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setpriority(which, who, priority)
@@ -675,7 +684,7 @@ process and user.
    *priority* is a value in the range -20 to 19. The default priority is 0;
    lower priorities cause more favorable scheduling.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -684,14 +693,14 @@ process and user.
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -700,7 +709,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -709,21 +718,21 @@ process and user.
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: getsid(pid, /)
 
    Call the system call :c:func:`!getsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setsid()
 
    Call the system call :c:func:`!setsid`.  See the Unix manual for the semantics.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setuid(uid, /)
@@ -732,7 +741,7 @@ process and user.
 
    Set the current process's user id.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -755,8 +764,8 @@ process and user.
 
    Set the current numeric umask and return the previous umask.
 
-   The function is a stub on Emscripten and WASI, see
-   :ref:`wasm-availability` for more information.
+   The function is a stub on WASI, see :ref:`wasm-availability` for more
+   information.
 
 
 .. function:: uname()
@@ -784,6 +793,11 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
+   On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
+   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname()`
+   can be used to get the user-facing operating system name and version on iOS and
+   Android.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.3
@@ -803,6 +817,8 @@ process and user.
    corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
+
+   See also the :data:`os.environ.refresh() <os.environ>` method.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
@@ -918,10 +934,10 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
-   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
+   In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1003,8 +1019,8 @@ as internal buffering of data.
 
    .. availability:: Unix, Windows.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
    .. versionchanged:: 3.13
       Added support on Windows.
@@ -1021,8 +1037,8 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
 
 .. function:: fdatasync(fd)
@@ -1112,8 +1128,8 @@ as internal buffering of data.
 
    .. availability:: Unix, Windows.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
       On Windows, this function is limited to pipes.
 
@@ -1121,6 +1137,20 @@ as internal buffering of data.
 
    .. versionchanged:: 3.12
       Added support for pipes on Windows.
+
+
+.. function:: grantpt(fd, /)
+
+   Grant access to the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the C standard library function :c:func:`grantpt`.
+
+   .. availability:: Unix, not WASI.
+
+   .. versionadded:: 3.13
+
 
 .. function:: isatty(fd, /)
 
@@ -1161,7 +1191,7 @@ as internal buffering of data.
    Make the calling process a session leader; make the tty the controlling tty,
    the stdin, the stdout, and the stderr of the calling process; close fd.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.11
 
@@ -1254,8 +1284,8 @@ as internal buffering of data.
       :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
       wrap a file descriptor in a file object, use :func:`fdopen`.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1345,7 +1375,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
    portable approach, use the :mod:`pty` module.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionchanged:: 3.4
       The new file descriptors are now non-inheritable.
@@ -1371,7 +1401,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1381,7 +1411,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
 
-   .. availability:: Unix, not Emscripten.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -1427,6 +1457,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: posix_openpt(oflag, /)
+
+   Open and return a file descriptor for a master pseudo-terminal device.
+
+   Calls the C standard library function :c:func:`posix_openpt`. The *oflag*
+   argument is used to set file status flags and file access modes as
+   specified in the manual page of :c:func:`posix_openpt` of your system.
+
+   The returned file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+   If the value :data:`O_CLOEXEC` is available on the system, it is added to
+   *oflag*.
+
+   .. availability:: Unix, not WASI.
+
+   .. versionadded:: 3.13
 
 
 .. function:: preadv(fd, buffers, offset, flags=0, /)
@@ -1484,6 +1531,21 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
+
+
+.. function:: ptsname(fd, /)
+
+   Return the name of the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the reentrant C standard library function :c:func:`ptsname_r` if
+   it is available; otherwise, the C standard library function
+   :c:func:`ptsname`, which is not guaranteed to be thread-safe, is called.
+
+   .. availability:: Unix, not WASI.
+
+   .. versionadded:: 3.13
 
 
 .. function:: pwrite(fd, str, offset, /)
@@ -1608,7 +1670,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Cross-platform applications should not use *headers*, *trailers* and *flags*
    arguments.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. note::
 
@@ -1628,7 +1690,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Parameters to the :func:`sendfile` function, if the implementation supports
    them.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1637,7 +1699,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Parameter to the :func:`sendfile` function, if the implementation supports
    it. The data won't be cached in the virtual memory and will be freed afterwards.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.11
 
@@ -1651,8 +1713,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix, Windows.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
       On Windows, this function is limited to pipes.
 
@@ -1667,9 +1729,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
-   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
    :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1736,6 +1798,19 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    exception is raised.
 
    .. availability:: Unix.
+
+
+.. function:: unlockpt(fd, /)
+
+   Unlock the slave pseudo-terminal device associated with the master
+   pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the C standard library function :c:func:`unlockpt`.
+
+   .. availability:: Unix, not WASI.
+
+   .. versionadded:: 3.13
 
 
 .. function:: write(fd, str, /)
@@ -1834,8 +1909,7 @@ Using the :mod:`subprocess` module, all file descriptors except standard
 streams are closed, and inheritable handles are only inherited if the
 *close_fds* parameter is ``False``.
 
-On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, the file
-descriptor cannot be modified.
+On WebAssembly platforms, the file descriptor cannot be modified.
 
 .. function:: get_inheritable(fd, /)
 
@@ -1991,7 +2065,7 @@ features:
 
    .. audit-event:: os.chdir path os.chdir
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
 
@@ -2021,10 +2095,10 @@ features:
 
    .. audit-event:: os.chflags path,flags os.chflags
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
-   .. versionadded:: 3.3
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.3
+      Added the *follow_symlinks* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2067,12 +2141,12 @@ features:
       constants or a corresponding integer value).  All other bits are ignored.
       The default value of *follow_symlinks* is ``False`` on Windows.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2100,10 +2174,10 @@ features:
 
    .. availability:: Unix.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2115,7 +2189,7 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2155,7 +2229,7 @@ features:
 
    .. audit-event:: os.chflags path,flags os.lchflags
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2205,13 +2279,13 @@ features:
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
-   .. availability:: Unix, Windows, not Emscripten.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
 
-   .. versionadded:: 3.3
-      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2247,7 +2321,7 @@ features:
    .. versionchanged:: 3.2
       The *path* parameter became optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
@@ -2367,6 +2441,10 @@ features:
    platform-dependent.  On some platforms, they are ignored and you should call
    :func:`chmod` explicitly to set them.
 
+   On Windows, a *mode* of ``0o700`` is specifically handled to apply access
+   control to the new directory such that only the current user and
+   administrators have access. Other values of *mode* are ignored.
+
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
@@ -2375,11 +2453,14 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.mkdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Windows now handles a *mode* of ``0o700``.
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False)
@@ -2409,8 +2490,8 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.makedirs
 
-   .. versionadded:: 3.2
-      The *exist_ok* parameter.
+   .. versionchanged:: 3.2
+      Added the *exist_ok* parameter.
 
    .. versionchanged:: 3.4.1
 
@@ -2441,10 +2522,10 @@ features:
    FIFO for reading, and the client opens it for writing.  Note that :func:`mkfifo`
    doesn't open the FIFO --- it just creates the rendezvous point.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2463,10 +2544,10 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2546,8 +2627,8 @@ features:
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` on Unix.
@@ -2555,7 +2636,6 @@ features:
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
 
-   .. versionchanged:: 3.8
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
@@ -2577,8 +2657,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.remove
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2628,8 +2708,8 @@ features:
 
    .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.rename
 
-   .. versionadded:: 3.3
-      The *src_dir_fd* and *dst_dir_fd* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd* and *dst_dir_fd* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2684,8 +2764,8 @@ features:
 
    .. audit-event:: os.rmdir path,dir_fd os.rmdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2759,7 +2839,7 @@ features:
 
    .. versionadded:: 3.5
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Added support for the :term:`context manager` protocol and the
       :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
@@ -2973,9 +3053,9 @@ features:
 
       :func:`fstat` and :func:`lstat` functions.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* and *follow_symlinks* arguments, specifying a file
-      descriptor instead of a path.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* and *follow_symlinks* parameters,
+      specifying a file descriptor instead of a path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3056,15 +3136,21 @@ features:
 
       Time of most recent access expressed in nanoseconds as an integer.
 
+      .. versionadded:: 3.3
+
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
+      .. versionadded:: 3.3
+
    .. attribute:: st_ctime_ns
 
       Time of most recent metadata change expressed in nanoseconds as an
       integer.
+
+      .. versionadded:: 3.3
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
@@ -3166,6 +3252,8 @@ features:
       See the :const:`!FILE_ATTRIBUTE_* <stat.FILE_ATTRIBUTE_ARCHIVE>`
       constants in the :mod:`stat` module.
 
+      .. versionadded:: 3.5
+
    .. attribute:: st_reparse_tag
 
       When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
@@ -3186,21 +3274,14 @@ features:
    some implementations. For compatibility with older Python versions,
    accessing :class:`stat_result` as a tuple always returns integers.
 
-   .. versionadded:: 3.3
-      Added the :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and
-      :attr:`st_ctime_ns` members.
-
-   .. versionadded:: 3.5
-      Added the :attr:`st_file_attributes` member on Windows.
-
    .. versionchanged:: 3.5
       Windows now returns the file index as :attr:`st_ino` when
       available.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       Added the :attr:`st_reparse_tag` member on Windows.
 
    .. versionchanged:: 3.8
@@ -3214,16 +3295,13 @@ features:
       platforms, but for now still contains creation time.
       Use :attr:`st_birthtime` for the creation time.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_ino` may now be up to 128 bits, depending
       on the file system. Previously it would not be above 64 bits, and
       larger file identifiers would be arbitrarily packed.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_rdev` no longer returns a value. Previously
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
-   .. versionadded:: 3.12
       Added the :attr:`st_birthtime` member on Windows.
 
 
@@ -3257,7 +3335,7 @@ features:
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.4
@@ -3269,8 +3347,8 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.7
-      Added :attr:`f_fsid`.
+   .. versionchanged:: 3.7
+      Added the :attr:`f_fsid` attribute.
 
 
 .. data:: supports_dir_fd
@@ -3388,14 +3466,14 @@ features:
 
    .. availability:: Unix, Windows.
 
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
+      The function is limited on WASI, see :ref:`wasm-availability` for more
+      information.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* argument, and now allow *target_is_directory*
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter, and now allow *target_is_directory*
       on non-Windows platforms.
 
    .. versionchanged:: 3.6
@@ -3443,8 +3521,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.unlink
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3482,7 +3560,7 @@ features:
 
    .. audit-event:: os.utime path,times,ns,dir_fd os.utime
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
 
@@ -4215,9 +4293,9 @@ to be ignored.
 
    .. audit-event:: os.exec path,args,env os.execl
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor
       for :func:`execve`.
 
@@ -4258,49 +4336,49 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means the command was used incorrectly, such as when the wrong
    number of arguments are given.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_DATAERR
 
    Exit code that means the input data was incorrect.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_NOINPUT
 
    Exit code that means an input file did not exist or was not readable.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_NOUSER
 
    Exit code that means a specified user did not exist.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_NOHOST
 
    Exit code that means a specified host did not exist.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_UNAVAILABLE
 
    Exit code that means that a required service is unavailable.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_SOFTWARE
 
    Exit code that means an internal software error was detected.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_OSERR
@@ -4308,7 +4386,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means an operating system error was detected, such as the
    inability to fork or create a pipe.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_OSFILE
@@ -4316,21 +4394,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means some system file did not exist, could not be opened, or had
    some other kind of error.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_CANTCREAT
 
    Exit code that means a user specified output file could not be created.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_IOERR
 
    Exit code that means that an error occurred while doing I/O on some file.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_TEMPFAIL
@@ -4339,7 +4417,7 @@ written in Python, such as a mail server's external command delivery program.
    that may not really be an error, such as a network connection that couldn't be
    made during a retryable operation.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_PROTOCOL
@@ -4347,7 +4425,7 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that a protocol exchange was illegal, invalid, or not
    understood.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_NOPERM
@@ -4355,21 +4433,21 @@ written in Python, such as a mail server's external command delivery program.
    Exit code that means that there were insufficient permissions to perform the
    operation (but not intended for file system problems).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_CONFIG
 
    Exit code that means that some kind of configuration error occurred.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. data:: EX_NOTFOUND
 
    Exit code that means something like "an entry was not found".
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: fork()
@@ -4418,7 +4496,7 @@ written in Python, such as a mail server's external command delivery program.
       for technical details of why we're surfacing this longstanding
       platform compatibility problem to developers.
 
-   .. availability:: POSIX, not Emscripten, not WASI.
+   .. availability:: POSIX, not WASI, not iOS.
 
 
 .. function:: forkpty()
@@ -4436,16 +4514,16 @@ written in Python, such as a mail server's external command delivery program.
       On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
 
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
+
    .. versionchanged:: 3.12
       If Python is able to detect that your process has multiple
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
 
-   .. versionchanged:: 3.8
-      Calling ``forkpty()`` in a subinterpreter is no longer supported
-      (:exc:`RuntimeError` is raised).
-
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: kill(pid, sig, /)
@@ -4469,10 +4547,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.kill pid,sig os.kill
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
-   .. versionadded:: 3.2
-      Windows support.
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: killpg(pgid, sig, /)
@@ -4485,14 +4563,14 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.killpg pgid,sig os.killpg
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: nice(increment, /)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: pidfd_open(pid, flags=0)
@@ -4522,7 +4600,7 @@ written in Python, such as a mail server's external command delivery program.
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
@@ -4554,7 +4632,7 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
-   .. availability:: not Emscripten, not WASI.
+   .. availability:: not WASI, not iOS.
 
    .. note::
       The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
@@ -4659,12 +4737,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionchanged:: 3.13
       *env* parameter accepts ``None``.
-
-   .. versionchanged:: 3.13
       ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
       :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 .. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4680,7 +4756,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: POSIX, not Emscripten, not WASI.
+   .. availability:: POSIX, not WASI, not iOS.
 
       See :func:`posix_spawn` documentation.
 
@@ -4713,7 +4789,7 @@ written in Python, such as a mail server's external command delivery program.
 
    There is no way to unregister a function.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. versionadded:: 3.7
 
@@ -4782,7 +4858,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
       :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
@@ -4906,7 +4982,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.system command os.system
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
 
 .. function:: times()
@@ -4950,7 +5026,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. seealso::
 
@@ -4984,7 +5060,7 @@ written in Python, such as a mail server's external command delivery program.
    Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5025,7 +5101,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -5045,7 +5121,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: wait4(pid, options)
@@ -5059,7 +5135,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. data:: P_PID
@@ -5076,7 +5152,7 @@ written in Python, such as a mail server's external command delivery program.
    * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
      *id* (a process file descriptor created with :func:`pidfd_open`).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
 
@@ -5091,7 +5167,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` causes child processes to be reported if they have been
    continued from a job control stop since they were last reported.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. data:: WEXITED
@@ -5102,7 +5178,7 @@ written in Python, such as a mail server's external command delivery program.
    The other ``wait*`` functions always report children that have terminated,
    so this option is not available for them.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5114,7 +5190,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5127,7 +5203,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for :func:`waitid`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. data:: WNOHANG
@@ -5136,7 +5212,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` to return right away if no child process status is available
    immediately.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. data:: WNOWAIT
@@ -5146,7 +5222,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. data:: CLD_EXITED
@@ -5159,7 +5235,7 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for :attr:`!si_code` in the result returned by
    :func:`waitid`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5194,7 +5270,7 @@ written in Python, such as a mail server's external command delivery program.
       :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
       :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI, not iOS.
 
    .. versionadded:: 3.9
 
@@ -5210,7 +5286,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WIFCONTINUED(status)
@@ -5221,7 +5297,7 @@ used to determine the disposition of a process.
 
    See :data:`WCONTINUED` option.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WIFSTOPPED(status)
@@ -5233,14 +5309,14 @@ used to determine the disposition of a process.
    done using :data:`WUNTRACED` option or when the process is being traced (see
    :manpage:`ptrace(2)`).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 .. function:: WIFSIGNALED(status)
 
    Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WIFEXITED(status)
@@ -5249,7 +5325,7 @@ used to determine the disposition of a process.
    by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WEXITSTATUS(status)
@@ -5258,7 +5334,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFEXITED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WSTOPSIG(status)
@@ -5267,7 +5343,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSTOPPED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 .. function:: WTERMSIG(status)
@@ -5276,7 +5352,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI, not iOS.
 
 
 Interface to the scheduler
@@ -5648,19 +5724,19 @@ Random numbers
       easy-to-use interface to the random number generator provided by your
       platform, please see :class:`random.SystemRandom`.
 
-   .. versionchanged:: 3.6.0
-      On Linux, ``getrandom()`` is now used in blocking mode to increase the
-      security.
-
-   .. versionchanged:: 3.5.2
-      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
-      is not initialized yet), fall back on reading ``/dev/urandom``.
-
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.5.2
+      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
+      is not initialized yet), fall back on reading ``/dev/urandom``.
+
+   .. versionchanged:: 3.6
+      On Linux, ``getrandom()`` is now used in blocking mode to increase the
+      security.
 
    .. versionchanged:: 3.11
       On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``

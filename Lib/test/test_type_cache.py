@@ -2,7 +2,7 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -10,8 +10,9 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 type_get_version = _testcapi.type_get_version
-type_assign_specific_version_unsafe = _testcapi.type_assign_specific_version_unsafe
+type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
 
@@ -79,8 +80,22 @@ class TypeCacheTests(unittest.TestCase):
 
         _clear_type_cache()
 
+    def test_per_class_limit(self):
+        class C:
+            x = 0
+
+        type_assign_version(C)
+        orig_version = type_get_version(C)
+        for i in range(1001):
+            C.x = i
+            type_assign_version(C)
+
+        new_version = type_get_version(C)
+        self.assertEqual(new_version, 0)
+
 
 @support.cpython_only
+@requires_specialization
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
         _clear_type_cache()

@@ -7,7 +7,7 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
-from test.support import import_helper
+from test.support import import_helper, requires_subprocess
 import contextlib
 import os
 import tempfile
@@ -1810,6 +1810,7 @@ class TraceOpcodesTestCase(TraceTestCase):
     def make_tracer():
         return Tracer(trace_opcode_events=True)
 
+    @requires_subprocess()
     def test_trace_opcodes_after_settrace(self):
         """Make sure setting f_trace_opcodes after starting trace works even
         if it's the first time f_trace_opcodes is being set. GH-103615"""
@@ -3038,7 +3039,7 @@ class TestExtendedArgs(unittest.TestCase):
 
     def test_trace_lots_of_globals(self):
 
-        count = min(1000, int(support.Py_C_RECURSION_LIMIT * 0.8))
+        count = min(1000, int(support.get_c_recursion_limit() * 0.8))
 
         code = """if 1:
             def f():

@@ -275,7 +275,16 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._shadowed_dict_from_weakref_mro_tuple.cache_clear()
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
+    try:
+        importlib_metadata = sys.modules['importlib.metadata']
+    except KeyError:
+        pass
+    else:
+        importlib_metadata.FastPath.__new__.cache_clear()
 
 
 def get_build_info():
@@ -422,7 +431,7 @@ def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
-    # milisecond clock resolution. Use randint() instead.
+    # millisecond clock resolution. Use randint() instead.
     if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
@@ -684,6 +693,14 @@ WINDOWS_STATUS = {
 def get_signal_name(exitcode):
     if exitcode < 0:
         signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
         try:
             return signal.Signals(signum).name
         except ValueError:

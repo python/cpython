@@ -951,7 +951,7 @@ New :class:`~collections.abc.Awaitable`, :class:`~collections.abc.Coroutine`,
 (Contributed by Yury Selivanov in :issue:`24184`.)
 
 For earlier Python versions, a backport of the new ABCs is available in an
-external `PyPI package <https://pypi.org/project/backports_abc>`_.
+external :pypi:`PyPI package <backports_abc>`.
 
 
 compileall
@@ -2418,7 +2418,7 @@ Changes in the Python API
   (Contributed by Victor Stinner in :issue:`21205`.)
 
 * The deprecated "strict" mode and argument of :class:`~html.parser.HTMLParser`,
-  :meth:`HTMLParser.error`, and the :exc:`HTMLParserError` exception have been
+  :meth:`!HTMLParser.error`, and the :exc:`!HTMLParserError` exception have been
   removed.  (Contributed by Ezio Melotti in :issue:`15114`.)
   The *convert_charrefs* argument of :class:`~html.parser.HTMLParser` is
   now ``True`` by default.  (Contributed by Berker Peksag in :issue:`21047`.)

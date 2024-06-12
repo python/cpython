@@ -1,2 +1,0 @@
-Created a Software Bill-of-Materials document and tooling for tracking
-dependencies.
