@@ -10,7 +10,8 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
-__all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
+__all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat',
+           'in_', 'not_in', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
@@ -150,9 +151,21 @@ def concat(a, b):
         raise TypeError(msg)
     return a + b
 
+
+def in_(a, b):
+    "Same as a in b."
+    return a in b
+
+
+def not_in(a, b):
+    "Same as a not in b."
+    return a not in b
+
+
 def contains(a, b):
     "Same as b in a (note reversed operands)."
     return b in a
+
 
 def countOf(a, b):
     "Return the number of items in a which are, or which equal, b."

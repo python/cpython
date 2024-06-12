@@ -475,6 +475,44 @@ _operator_iconcat_impl(PyObject *module, PyObject *a, PyObject *b)
 }
 
 /*[clinic input]
+_operator.in_ -> bool
+
+    a: object
+    b: object
+    /
+
+Same as a in b.
+[clinic start generated code]*/
+
+static int
+_operator_in__impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=cd4eca456096fa9a input=8bd20ace23fe9808]*/
+{
+    return PySequence_Contains(b, a);
+}
+
+/*[clinic input]
+_operator.not_in -> bool
+
+    a: object
+    b: object
+    /
+
+Same as a not in b.
+[clinic start generated code]*/
+
+static int
+_operator_not_in_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=93a4db26908835bd input=203499d558a29ee3]*/
+{
+    int result = PySequence_Contains(b, a);
+    if (result != -1) {
+        result = 1 - result;
+    }
+    return result;
+}
+
+/*[clinic input]
 _operator.contains -> bool
 
     a: object
@@ -910,6 +948,8 @@ _operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 static struct PyMethodDef operator_methods[] = {
 
     _OPERATOR_TRUTH_METHODDEF
+    _OPERATOR_IN__METHODDEF
+    _OPERATOR_NOT_IN_METHODDEF
     _OPERATOR_CONTAINS_METHODDEF
     _OPERATOR_INDEXOF_METHODDEF
     _OPERATOR_COUNTOF_METHODDEF

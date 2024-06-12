@@ -886,6 +886,76 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_operator_in___doc__,
+"in_($module, a, b, /)\n"
+"--\n"
+"\n"
+"Same as a in b.");
+
+#define _OPERATOR_IN__METHODDEF    \
+    {"in_", _PyCFunction_CAST(_operator_in_), METH_FASTCALL, _operator_in___doc__},
+
+static int
+_operator_in__impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+_operator_in_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+    int _return_value;
+
+    if (!_PyArg_CheckPositional("in_", nargs, 2, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    _return_value = _operator_in__impl(module, a, b);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_operator_not_in__doc__,
+"not_in($module, a, b, /)\n"
+"--\n"
+"\n"
+"Same as a not in b.");
+
+#define _OPERATOR_NOT_IN_METHODDEF    \
+    {"not_in", _PyCFunction_CAST(_operator_not_in), METH_FASTCALL, _operator_not_in__doc__},
+
+static int
+_operator_not_in_impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+_operator_not_in(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+    int _return_value;
+
+    if (!_PyArg_CheckPositional("not_in", nargs, 2, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    _return_value = _operator_not_in_impl(module, a, b);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_operator_contains__doc__,
 "contains($module, a, b, /)\n"
 "--\n"
@@ -1489,4 +1559,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ddbba2cd943571eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c240b42c5e1a2d8f input=a9049054013a1b77]*/

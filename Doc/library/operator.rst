@@ -208,6 +208,16 @@ Operations which work with sequences (some of them with mappings too) include:
    Return ``a + b`` for *a* and *b* sequences.
 
 
+.. function:: in_(a, b)
+
+   Return the outcome of the test ``a in b``.
+
+
+.. function:: not_in(a, b)
+
+   Return the outcome of the test ``a not in b``.
+
+
 .. function:: contains(a, b)
               __contains__(a, b)
 

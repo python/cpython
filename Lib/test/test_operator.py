@@ -290,6 +290,22 @@ class OperatorTestCase:
         self.assertEqual(operator.rshift(5, 0), 5)
         self.assertRaises(ValueError, operator.rshift, 2, -1)
 
+    def test_in(self):
+        operator = self.module
+        self.assertRaises(TypeError, operator.in_)
+        self.assertRaises(TypeError, operator.in_, None, None)
+        self.assertRaises(ZeroDivisionError, operator.in_, 1, BadIterable())
+        self.assertTrue(operator.in_(2, range(4)))
+        self.assertFalse(operator.in_(5, range(4)))
+
+    def test_not_in(self):
+        operator = self.module
+        self.assertRaises(TypeError, operator.not_in)
+        self.assertRaises(TypeError, operator.not_in, None, None)
+        self.assertRaises(ZeroDivisionError, operator.not_in, 1, BadIterable())
+        self.assertFalse(operator.not_in(2, range(4)))
+        self.assertTrue(operator.not_in(5, range(4)))
+
     def test_contains(self):
         operator = self.module
         self.assertRaises(TypeError, operator.contains)
