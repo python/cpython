@@ -739,7 +739,7 @@ inspect
 itertools
 ---------
 
-* Add :class:`itertools.batched()` for collecting into even-sized
+* Add :func:`itertools.batched` for collecting into even-sized
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
