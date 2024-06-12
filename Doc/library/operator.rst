@@ -212,10 +212,14 @@ Operations which work with sequences (some of them with mappings too) include:
 
    Return the outcome of the test ``a in b``.
 
+   .. versionadded:: 3.14
+
 
 .. function:: not_in(a, b)
 
    Return the outcome of the test ``a not in b``.
+
+   .. versionadded:: 3.14
 
 
 .. function:: contains(a, b)
