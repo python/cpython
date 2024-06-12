@@ -106,23 +106,10 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef tagged)
 #endif
 
 #ifdef Py_GIL_DISABLED
-// Gets a PyObject * from a _PyStackRef, stealing the reference
-static inline PyObject *
-PyStackRef_AsPyObjectSteal(_PyStackRef tagged)
-{
-    PyObject *cleared = ((PyObject *)((tagged).bits & (~Py_TAG_BITS)));
-    return cleared;
-}
-#else
-// Need to define as macro because WASI has very sensitive stack sizes.
-#   define PyStackRef_AsPyObjectSteal(tagged) ((PyObject *)(tagged).bits)
-#endif
-
-#ifdef Py_GIL_DISABLED
 // Converts a PyStackRef back to a PyObject *, converting deferred references
 // to new references.
 static inline PyObject *
-PyStackRef_AsPyObjectDeferredToSteal(_PyStackRef tagged)
+PyStackRef_AsPyObjectSteal(_PyStackRef tagged)
 {
     if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
         return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
@@ -130,7 +117,7 @@ PyStackRef_AsPyObjectDeferredToSteal(_PyStackRef tagged)
     return PyStackRef_AsPyObjectBorrow(tagged);
 }
 #else
-#   define PyStackRef_AsPyObjectDeferredToSteal(tagged) PyStackRef_AsPyObjectBorrow(tagged)
+#   define PyStackRef_AsPyObjectSteal(tagged) PyStackRef_AsPyObjectBorrow(tagged)
 #endif
 
 static inline PyTypeObject *

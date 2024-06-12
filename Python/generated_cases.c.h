@@ -455,8 +455,8 @@
             stop = stack_pointer[-1];
             start = stack_pointer[-2];
             container = stack_pointer[-3];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectDeferredToSteal(start),
-                PyStackRef_AsPyObjectDeferredToSteal(stop));
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
+                PyStackRef_AsPyObjectSteal(stop));
             PyObject *res_o;
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -775,7 +775,7 @@
             for (int i = 0; i < oparg; i++) {
                 _PyStackRef item = values[i];
                 if (err == 0) {
-                    err = PySet_Add(set_o, PyStackRef_AsPyObjectDeferredToSteal(item));
+                    err = PySet_Add(set_o, PyStackRef_AsPyObjectSteal(item));
                 }
                 PyStackRef_CLOSE(item);
             }
@@ -930,7 +930,7 @@
                     int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectDeferredToSteal(callable), locals,
+                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                         args, total_args, NULL
                     );
                     // Manipulate stack directly since we leave using DISPATCH_INLINED().
@@ -1217,7 +1217,7 @@
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame_o = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectDeferredToSteal(callable), locals,
+                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                     args, total_args, NULL
                 );
                 // The frame has stolen all the arguments from the stack,
@@ -1545,7 +1545,7 @@
                     int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
-                        (PyFunctionObject *)PyStackRef_AsPyObjectDeferredToSteal(func_st), locals,
+                        (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
                         nargs, callargs, kwargs);
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
@@ -1693,7 +1693,7 @@
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectDeferredToSteal(callable), locals,
+                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                     args, positional_args, kwnames_o
                 );
                 PyStackRef_CLOSE(kwnames);
@@ -2251,7 +2251,7 @@
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyInterpreterFrame *new_frame_o = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectDeferredToSteal(callable), locals,
+                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                     args, total_args, NULL
                 );
                 // The frame has stolen all the arguments from the stack,
@@ -3937,7 +3937,7 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return PyStackRef_AsPyObjectDeferredToSteal(retval);
+            return PyStackRef_AsPyObjectSteal(retval);
         }
 
         TARGET(IS_OP) {
@@ -4029,7 +4029,7 @@
             v = stack_pointer[-1];
             list = stack_pointer[-2 - (oparg-1)];
             if (_PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
-                         PyStackRef_AsPyObjectDeferredToSteal(v)) < 0) goto pop_1_error;
+                         PyStackRef_AsPyObjectSteal(v)) < 0) goto pop_1_error;
             stack_pointer += -1;
             DISPATCH();
         }
@@ -5228,7 +5228,7 @@
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
-            if (_PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectDeferredToSteal(key), PyStackRef_AsPyObjectDeferredToSteal(value)) != 0) goto pop_2_error;
+            if (_PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectSteal(key), PyStackRef_AsPyObjectSteal(value)) != 0) goto pop_2_error;
             stack_pointer += -2;
             DISPATCH();
         }
@@ -5331,7 +5331,7 @@
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
                        PyStackRef_AsPyObjectBorrow(exc_value) == Py_None
-                       ? NULL : PyStackRef_AsPyObjectDeferredToSteal(exc_value));
+                       ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer += -1;
             DISPATCH();
         }
@@ -5494,10 +5494,10 @@
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
                 case 2:
-                cause = PyStackRef_AsPyObjectDeferredToSteal(args[1]);
+                cause = PyStackRef_AsPyObjectSteal(args[1]);
                 /* fall through */
                 case 1:
-                exc = PyStackRef_AsPyObjectDeferredToSteal(args[0]);
+                exc = PyStackRef_AsPyObjectSteal(args[0]);
                 /* fall through */
                 case 0:
                 if (do_raise(tstate, exc, cause)) {
@@ -5830,7 +5830,7 @@
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectDeferredToSteal(v));
+                                PyStackRef_AsPyObjectSteal(v));
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
@@ -5923,7 +5923,7 @@
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
-                                       name, PyStackRef_AsPyObjectDeferredToSteal(v));
+                                       name, PyStackRef_AsPyObjectSteal(v));
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(owner);
                 if (err) goto pop_2_error;
@@ -5965,7 +5965,7 @@
                 assert(_PyObject_GetManagedDict(owner_o) == NULL);
                 PyDictValues *values = _PyObject_InlineValues(owner_o);
                 PyObject *old_value = values->values[index];
-                values->values[index] = PyStackRef_AsPyObjectDeferredToSteal(value);
+                values->values[index] = PyStackRef_AsPyObjectSteal(value);
                 if (old_value == NULL) {
                     _PyDictValues_AddToInsertionOrder(values, index);
                 }
@@ -6002,7 +6002,7 @@
                 char *addr = (char *)owner_o + index;
                 STAT_INC(STORE_ATTR, hit);
                 PyObject *old_value = *(PyObject **)addr;
-                *(PyObject **)addr = PyStackRef_AsPyObjectDeferredToSteal(value);
+                *(PyObject **)addr = PyStackRef_AsPyObjectSteal(value);
                 Py_XDECREF(old_value);
                 PyStackRef_CLOSE(owner);
             }
@@ -6045,7 +6045,7 @@
                     old_value = ep->me_value;
                     DEOPT_IF(old_value == NULL, STORE_ATTR);
                     new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                    ep->me_value = PyStackRef_AsPyObjectDeferredToSteal(value);
+                    ep->me_value = PyStackRef_AsPyObjectSteal(value);
                 }
                 else {
                     PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
@@ -6053,7 +6053,7 @@
                     old_value = ep->me_value;
                     DEOPT_IF(old_value == NULL, STORE_ATTR);
                     new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
-                    ep->me_value = PyStackRef_AsPyObjectDeferredToSteal(value);
+                    ep->me_value = PyStackRef_AsPyObjectSteal(value);
                 }
                 Py_DECREF(old_value);
                 STAT_INC(STORE_ATTR, hit);
@@ -6076,7 +6076,7 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectDeferredToSteal(v));
+            PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
             stack_pointer += -1;
             DISPATCH();
         }
@@ -6130,7 +6130,7 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectDeferredToSteal(v));
+            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectSteal(v));
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
@@ -6153,9 +6153,9 @@
                 if (true) goto pop_1_error;
             }
             if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectDeferredToSteal(v));
+            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
             else
-            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectDeferredToSteal(v));
+            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
@@ -6174,14 +6174,14 @@
             start = stack_pointer[-2];
             container = stack_pointer[-3];
             v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectDeferredToSteal(start),
-                PyStackRef_AsPyObjectDeferredToSteal(stop));
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
+                PyStackRef_AsPyObjectSteal(stop));
             int err;
             if (slice == NULL) {
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectDeferredToSteal(v));
+                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectSteal(v));
                 Py_DECREF(slice);
             }
             PyStackRef_CLOSE(v);
@@ -6221,7 +6221,7 @@
             v = stack_pointer[-3];
             {
                 /* container[sub] = v */
-                int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectDeferredToSteal(sub), PyStackRef_AsPyObjectDeferredToSteal(v));
+                int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectSteal(sub), PyStackRef_AsPyObjectSteal(v));
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
@@ -6247,7 +6247,7 @@
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, PyStackRef_AsPyObjectDeferredToSteal(value));
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, PyStackRef_AsPyObjectSteal(value));
             PyStackRef_CLOSE(dict_st);
             if (err) goto pop_3_error;
             stack_pointer += -3;
@@ -6277,7 +6277,7 @@
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, PyStackRef_AsPyObjectDeferredToSteal(value));
+            PyList_SET_ITEM(list, index, PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
