@@ -3382,7 +3382,14 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
     }
 
     /* Compare the final item again using the proper operator */
-    return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    PyObject *vitem = vl->ob_item[i];
+    PyObject *witem = wl->ob_item[i];
+    Py_INCREF(vitem);
+    Py_INCREF(witem);
+    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    Py_DECREF(vitem);
+    Py_DECREF(witem);
+    return result;
 }
 
 static PyObject *

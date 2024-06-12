@@ -150,6 +150,8 @@ class UnixConsole(Console):
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
+        self.input_buffer = b""
+        self.input_buffer_pos = 0
         curses.setupterm(term or None, self.output_fd)
         self.term = term
 
@@ -196,6 +198,18 @@ class UnixConsole(Console):
 
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
+
+    def __read(self, n: int) -> bytes:
+        if not self.input_buffer or self.input_buffer_pos >= len(self.input_buffer):
+            self.input_buffer = os.read(self.input_fd, 10000)
+
+        ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
+        self.input_buffer_pos += len(ret)
+        if self.input_buffer_pos >= len(self.input_buffer):
+            self.input_buffer = b""
+            self.input_buffer_pos = 0
+        return ret
+
 
     def change_encoding(self, encoding: str) -> None:
         """
@@ -310,13 +324,13 @@ class UnixConsole(Console):
         """
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
-        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
+        raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
         raw.cflag |= termios.CS8
-        raw.lflag &= ~(
-            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
-        )
+        raw.iflag |= termios.BRKINT
+        raw.lflag &= ~(termios.ICANON | termios.ECHO | termios.IEXTEN)
+        raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
@@ -373,7 +387,7 @@ class UnixConsole(Console):
         while self.event_queue.empty():
             while True:
                 try:
-                    self.push_char(os.read(self.input_fd, 1))
+                    self.push_char(self.__read(1))
                 except OSError as err:
                     if err.errno == errno.EINTR:
                         if not self.event_queue.empty():
@@ -491,7 +505,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
-            raw = os.read(self.input_fd, amount)
+            raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data
             e.raw += raw
@@ -514,7 +528,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = 10000
-            raw = os.read(self.input_fd, amount)
+            raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data
             e.raw += raw
