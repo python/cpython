@@ -118,6 +118,21 @@ PyStackRef_AsPyObjectSteal(_PyStackRef tagged)
 #   define PyStackRef_AsPyObjectSteal(tagged) ((PyObject *)(tagged).bits)
 #endif
 
+#ifdef Py_GIL_DISABLED
+// Converts a PyStackRef back to a PyObject *, converting deferred references
+// to new references.
+static inline PyObject *
+PyStackRef_AsPyObjectDeferredToSteal(_PyStackRef tagged)
+{
+    if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
+        return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
+    }
+    return PyStackRef_AsPyObjectBorrow(tagged);
+}
+#else
+#   define PyStackRef_AsPyObjectDeferredToSteal(tagged) PyStackRef_AsPyObjectBorrow(tagged)
+#endif
+
 static inline PyTypeObject *
 PyStackRef_TYPE(_PyStackRef stackref)
 {
@@ -162,23 +177,6 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 #else
 #   define PyStackRef_FromPyObjectNew(obj) ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) })
 #endif
-
-#ifdef Py_GIL_DISABLED
-// Converts a PyStackRef back to a PyObject *, converting deferred references
-// to new references.
-static inline PyObject *
-PyStackRef_AsPyObjectDeferredToNew(_PyStackRef tagged)
-{
-    if (!PyStackRef_IsNull(tagged) && PyStackRef_IsDeferred(tagged)) {
-        assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(tagged)));
-        return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
-    }
-    return PyStackRef_AsPyObjectBorrow(tagged);
-}
-#else
-#   define PyStackRef_AsPyObjectDeferredToNew(tagged) PyStackRef_AsPyObjectBorrow(tagged)
-#endif
-
 
 #define PyStackRef_XSET(dst, src) \
     do { \

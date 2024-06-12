@@ -1594,7 +1594,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
 
-            if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectDeferredToNew(value_stackref)) == -1) {
+            if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectDeferredToSteal(value_stackref)) == -1) {
                 goto kw_fail;
             }
             PyStackRef_CLOSE(value_stackref);
