@@ -2,6 +2,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 
 #include "clinic/_operator.c.h"
@@ -1662,7 +1663,8 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     Py_INCREF(name);
-    PyUnicode_InternInPlace(&name);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternMortal(interp, &name);
     mc->name = name;
 
     mc->xargs = Py_XNewRef(args); // allows us to use borrowed references
