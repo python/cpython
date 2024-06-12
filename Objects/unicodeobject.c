@@ -15163,6 +15163,12 @@ _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
     }
 #endif
 
+#if Py_GIL_DISABLED
+    /* In the free-threaded build, all interned strings are immortal */
+    _PyUnicode_InternImmortal(interp, p);
+    return;
+#endif
+
     /* If it's immortal, intern it that way. */
     if (_Py_IsImmortal(s)) {
         _PyUnicode_InternImmortal(interp, p);
