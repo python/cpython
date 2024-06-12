@@ -6681,3 +6681,84 @@ Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
     return _PyLong_CompactValue(op);
 }
+
+PyObject* PyLong_FromInt32(int32_t value)
+{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromUInt32(uint32_t value)
+{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromInt64(int64_t value)
+{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+
+PyObject* PyLong_FromUInt64(uint64_t value)
+{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+
+int PyLong_ToInt32(PyObject *obj, int32_t *value)
+{
+#if SIZEOF_INT == 4
+    int res = PyLong_AsInt(obj);
+#elif SIZEOF_LONG == 4
+    long res = PyLong_AsLong(obj);
+#else
+#  error "unknown int type"
+#endif
+    if (res == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    *value = res;
+    return 0;
+}
+
+int PyLong_ToInt64(PyObject *obj, int64_t *value)
+{
+#if SIZEOF_LONG == 8
+    long res = PyLong_AsLong(obj);
+#elif SIZEOF_LONG_LONG == 8
+    long long res = PyLong_AsLongLong(obj);
+#else
+#  error "unknown long type"
+#endif
+    if (res == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    *value = res;
+    return 0;
+}
+
+int PyLong_ToUInt32(PyObject *obj, uint32_t *value)
+{
+    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(uint32_t));
+    unsigned long res = PyLong_AsUnsignedLong(obj);
+    if (res == (unsigned long)-1 && PyErr_Occurred()) {
+        return -1;
+    }
+#if SIZEOF_LONG > 4
+    if (res > (unsigned long)UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C uint32_t");
+        return -1;
+    }
+#endif
+    *value = res;
+    return 0;
+}
+
+int PyLong_ToUInt64(PyObject *obj, uint64_t *value)
+{
+#if SIZEOF_LONG == 8
+    unsigned long res = PyLong_AsUnsignedLong(obj);
+    if (res == (unsigned long)-1 && PyErr_Occurred()) {
+        return -1;
+    }
+#elif SIZEOF_LONG_LONG == 8
+    unsigned long long res = PyLong_AsUnsignedLongLong(obj);
+    if (res == (unsigned long long)-1 && PyErr_Occurred()) {
+        return -1;
+    }
+#else
+#  error "unknown long type"
+#endif
+    *value = res;
+    return 0;
+}

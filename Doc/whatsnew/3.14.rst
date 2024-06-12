@@ -298,6 +298,20 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
+* Add new functions to convert C ``<stdint.h>`` numbers from/to Python
+  :class:`int`:
+
+  * :c:func:`PyLong_FromInt32`
+  * :c:func:`PyLong_FromUInt32`
+  * :c:func:`PyLong_FromInt64`
+  * :c:func:`PyLong_FromUInt64`
+  * :c:func:`PyLong_ToInt32`
+  * :c:func:`PyLong_ToUInt32`
+  * :c:func:`PyLong_ToInt64`
+  * :c:func:`PyLong_ToUInt64`
+
+  (Contributed by Victor Stinner in :gh:`120389`.)
+
 Porting to Python 3.14
 ----------------------
 

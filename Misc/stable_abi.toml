@@ -2510,3 +2510,19 @@
 
 [function.Py_TYPE]
     added = '3.14'
+[function.PyLong_FromInt32]
+    added = '3.14'
+[function.PyLong_FromUInt32]
+    added = '3.14'
+[function.PyLong_ToInt32]
+    added = '3.14'
+[function.PyLong_ToUInt32]
+    added = '3.14'
+[function.PyLong_FromInt64]
+    added = '3.14'
+[function.PyLong_FromUInt64]
+    added = '3.14'
+[function.PyLong_ToInt64]
+    added = '3.14'
+[function.PyLong_ToUInt64]
+    added = '3.14'
