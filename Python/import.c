@@ -1968,9 +1968,10 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
                 // XXX There's a refleak somewhere with the filename.
-                // Until we can track it down, we intern it.
+                // Until we can track it down, we immortalize it.
                 PyObject *filename = Py_NewRef(info->filename);
-                PyUnicode_InternInPlace(&filename);
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &filename);
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }
