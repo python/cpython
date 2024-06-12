@@ -783,7 +783,7 @@ class _Pickler:
     dispatch[float] = save_float
 
     def __save_bytes_aux(self, obj):
-        # helper for writing bytearray objects for protocol >= 3
+        # helper for writing bytes objects for protocol >= 3
         assert self.proto >= 3
         n = len(obj)
         if n <= 0xff:
