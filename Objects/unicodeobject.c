@@ -14979,6 +14979,12 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
         */
         _PyUnicode_InitStaticStrings(interp);
 
+#ifdef Py_GIL_DISABLED
+    // In the free-threaded build, intern the 1-byte strings as well
+        for (int i = 0; i < 256; i++) {
+            assert(_PyUnicode_InternStatic(interp, LATIN1(i)));
+        }
+#endif
 #ifdef Py_DEBUG
         assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -15039,6 +15045,10 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
      * Except "short string" singletons: those are special-cased. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned == NULL || unicode_is_singleton(s));
+#ifdef Py_GIL_DISABLED
+    // In the free-threaded build, modifying INTERNED_STRINGS is dangerous
+    assert(interned == NULL);
+#endif
 #endif
 
     /* Look in the global cache first. */

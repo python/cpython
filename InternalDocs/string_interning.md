@@ -29,10 +29,9 @@ Python uses three different mechanisms to intern strings:
   runtime-global arrays, `_PyRuntime.static_objects.strings.ascii` and
   `_PyRuntime.static_objects.strings.latin1`.
 
-  These are NOT interned; they're only *intended* to behave as if they were:
-  whenever a single-byte string would be created, CPython should use
-  the singleton. However, this is not guaranteed. (If nothing else, public
-  C API allows allocating a new string and filling it up later).
+  These are NOT interned at startup in the normal build.
+  In the free-threaded build, they are; this avoids modifying the
+  global lookup table after threads are started.
 
   Interning a one-byte string will always intern the corresponding singleton.
   (This is the reason to mention these here: they complicate the interning
