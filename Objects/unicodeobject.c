@@ -239,6 +239,22 @@ _PyUnicode_InternedSize(void)
     return _Py_hashtable_len(INTERNED_STRINGS) + PyDict_GET_SIZE(dict);
 }
 
+Py_ssize_t
+_PyUnicode_InternedSize_Immortal(void)
+{
+    PyObject *dict = get_interned_dict(_PyInterpreterState_GET());
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    Py_ssize_t count = 0;
+
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+       if (_Py_IsImmortal(key)) {
+           count++;
+       }
+    }
+    return _Py_hashtable_len(INTERNED_STRINGS) + count;
+}
+
 static Py_hash_t unicode_hash(PyObject *);
 static int unicode_compare_eq(PyObject *, PyObject *);
 

@@ -772,6 +772,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_lock_unlock_module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_needs_com_addref_));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_only_immortal));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_pack_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_restype_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_showwarnmsg));

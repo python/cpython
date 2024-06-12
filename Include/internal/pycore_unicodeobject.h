@@ -33,6 +33,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
 PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
+extern Py_ssize_t _PyUnicode_InternedSize_Immortal(void);
 
 // Get a copy of a Unicode string.
 // Export for '_datetime' shared extension.

@@ -261,6 +261,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_lock_unlock_module)
         STRUCT_FOR_ID(_loop)
         STRUCT_FOR_ID(_needs_com_addref_)
+        STRUCT_FOR_ID(_only_immortal)
         STRUCT_FOR_ID(_pack_)
         STRUCT_FOR_ID(_restype_)
         STRUCT_FOR_ID(_showwarnmsg)

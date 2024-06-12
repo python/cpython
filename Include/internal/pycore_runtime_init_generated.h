@@ -770,6 +770,7 @@ extern "C" {
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
     INIT_ID(_needs_com_addref_), \
+    INIT_ID(_only_immortal), \
     INIT_ID(_pack_), \
     INIT_ID(_restype_), \
     INIT_ID(_showwarnmsg), \

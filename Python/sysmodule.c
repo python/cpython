@@ -2007,14 +2007,22 @@ sys_getallocatedblocks_impl(PyObject *module)
 /*[clinic input]
 sys.getunicodeinternedsize -> Py_ssize_t
 
+    *
+    _only_immortal: bool = False
+
 Return the number of elements of the unicode interned dictionary
 [clinic start generated code]*/
 
 static Py_ssize_t
-sys_getunicodeinternedsize_impl(PyObject *module)
-/*[clinic end generated code: output=ad0e4c9738ed4129 input=726298eaa063347a]*/
+sys_getunicodeinternedsize_impl(PyObject *module, int _only_immortal)
+/*[clinic end generated code: output=29a6377a94a14f70 input=0330b3408dd5bcc6]*/
 {
-    return _PyUnicode_InternedSize();
+    if (_only_immortal) {
+        return _PyUnicode_InternedSize_Immortal();
+    }
+    else {
+        return _PyUnicode_InternedSize();
+    }
 }
 
 /*[clinic input]
