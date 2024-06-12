@@ -49,6 +49,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
             ('FOR_ITER', exit_lbl := self.Label(), 1),
+            ('NOP', None, 1, 1),
             ('STORE_NAME', 1, 1),
             ('LOAD_NAME', 2, 2),
             ('PUSH_NULL', None, 2),
