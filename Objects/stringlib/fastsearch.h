@@ -755,7 +755,7 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 
 static inline Py_ssize_t
 STRINGLIB(count_char_no_maximum)(const STRINGLIB_CHAR *s, Py_ssize_t n,
-                      const STRINGLIB_CHAR p0)
+                                 const STRINGLIB_CHAR p0)
 /* By removing the maximum out of the loop, the compiler can optimize using
    vectors */
 {
