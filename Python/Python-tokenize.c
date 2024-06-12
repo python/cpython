@@ -254,6 +254,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         byte_offset = token.start - line_start;
         if (line_changed) {
             col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
+            it->byte_col_offset_diff = byte_offset - col_offset;
         }
         else {
             col_offset = byte_offset - it->byte_col_offset_diff;
