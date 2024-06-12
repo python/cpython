@@ -787,7 +787,7 @@ Invocation from super
 ---------------------
 
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
-object returned by :class:`super()`.
+object returned by :func:`super`.
 
 A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
 for the base class ``B`` immediately following ``A`` and then returns
