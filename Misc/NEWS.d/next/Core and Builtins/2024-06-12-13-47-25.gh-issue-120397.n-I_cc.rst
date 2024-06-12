@@ -1,3 +1,2 @@
-Significantly improve the speed of the str.count, bytes.count and
-bytearray.count method when the argument is a single character and the
-target architecture and compiler support vectorization.
+Improve the :meth:`str.count`, :meth:`bytes.count` and :meth:`bytearray.count`
+methods for counting single characters.
