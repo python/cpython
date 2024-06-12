@@ -6785,25 +6785,38 @@ class ExtensionModuleTests(unittest.TestCase):
             self.skipTest('Not relevant in pure Python')
 
     def test_gh_120161(self):
-        script = textwrap.dedent("""
-            import asyncio
-            import datetime
-            from typing import Type
+        with self.subTest('simple'):
+            script = textwrap.dedent("""
+                import datetime
+                from _ast import Tuple
+                f = lambda: None
+                Tuple.dims = property(f, f)
 
-            class tzutc(datetime.tzinfo):
-                pass
-            _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+                class tzutc(datetime.tzinfo):
+                    pass
+                """)
+            script_helper.assert_python_ok('-c', script)
 
-            class FakeDateMeta(type):
-                def __instancecheck__(self, obj):
-                    return True
-            class FakeDate(datetime.date, metaclass=FakeDateMeta):
-                pass
-            def pickle_fake_date(datetime_) -> Type[FakeDate]:
-                # A pickle function for FakeDate
-                return FakeDate
-            """)
-        script_helper.assert_python_ok('-c', script)
+        with self.subTest('complex'):
+            script = textwrap.dedent("""
+                import asyncio
+                import datetime
+                from typing import Type
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+
+                class FakeDateMeta(type):
+                    def __instancecheck__(self, obj):
+                        return True
+                class FakeDate(datetime.date, metaclass=FakeDateMeta):
+                    pass
+                def pickle_fake_date(datetime_) -> Type[FakeDate]:
+                    # A pickle function for FakeDate
+                    return FakeDate
+                """)
+            script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):
