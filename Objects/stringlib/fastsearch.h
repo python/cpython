@@ -740,34 +740,32 @@ static inline Py_ssize_t
 STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
                       const STRINGLIB_CHAR p0, Py_ssize_t maxcount)
 {
-    Py_ssize_t count = 0;
-    const STRINGLIB_CHAR *restrict cursor = s;
-    const STRINGLIB_CHAR *end_ptr = s + n;
-    const STRINGLIB_CHAR *unroll_end_ptr = end_ptr - 31;
+    Py_ssize_t i, count = 0;
+    Py_ssize_t unroll_length = n - 31;
     /* By unrolling in chunks of 32, the compiler can auto vectorize, resulting
        in much better performance. */
-    while (cursor < unroll_end_ptr) {
-        for(size_t i=0; i<32; i++) {
-            if (cursor[i] == p0) {
+    for (i = 0; i < unroll_length; i+=32) {
+        const STRINGLIB_CHAR *restrict cursor = s + i;
+        for(size_t j = 0; j < 32; j++) {
+            if (cursor[j] == p0) {
                 count += 1;
             }
         }
         if (count >= maxcount) {
             return maxcount;
         }
-        cursor += 32;
     }
-    while (cursor < end_ptr) {
-        if (*cursor == p0) {
+    for (; i < n; i++) {
+        if (s[i] == p0) {
             count += 1;
         }
-        cursor += 1;
     }
     if (count >= maxcount) {
         return maxcount;
     }
     return count;
 }
+
 
 
 Py_LOCAL_INLINE(Py_ssize_t)
