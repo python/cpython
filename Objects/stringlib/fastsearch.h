@@ -757,11 +757,11 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     }
     for (; i < n; i++) {
         if (s[i] == p0) {
-            count += 1;
+            count++;
+            if (count == maxcount) {
+                return maxcount;
+            }
         }
-    }
-    if (count >= maxcount) {
-        return maxcount;
     }
     return count;
 }
