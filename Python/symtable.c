@@ -2026,8 +2026,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
 
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
-                                        s->v.AsyncFunctionDef.returns, new_ste))
+                                        s->v.AsyncFunctionDef.returns, new_ste)) {
+            Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_enter_existing_block(st, new_ste)) {
             Py_DECREF(new_ste);
             VISIT_QUIT(st, 0);
