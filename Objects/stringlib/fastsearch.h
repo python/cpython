@@ -753,6 +753,22 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 }
 
 
+static inline Py_ssize_t
+STRINGLIB(count_char_no_maximum)(const STRINGLIB_CHAR *s, Py_ssize_t n,
+                      const STRINGLIB_CHAR p0)
+/* By removing the maximum out of the loop, the compiler can optimize using
+   vectors */
+{
+    Py_ssize_t i, count = 0;
+    for (i = 0; i < n; i++) {
+        if (s[i] == p0) {
+            count++;
+        }
+    }
+    return count;
+}
+
+
 Py_LOCAL_INLINE(Py_ssize_t)
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
@@ -773,6 +789,9 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         else if (mode == FAST_RSEARCH)
             return STRINGLIB(rfind_char)(s, n, p[0]);
         else {
+            if (maxcount == PY_SSIZE_T_MAX) {
+                return STRINGLIB(count_char_no_maximum)(s, n, p[0]);
+            }
             return STRINGLIB(count_char)(s, n, p[0], maxcount);
         }
     }
