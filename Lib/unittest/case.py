@@ -607,14 +607,16 @@ class TestCase(object):
             import inspect
             from unittest.async_case import IsolatedAsyncioTestCase
             msg = (
-                'It is deprecated to return a value that is not None, '
+                'It is deprecated to return a value that is not None '
                 f'from a test case ({method} returned {type(result).__name__!r})'
             )
             if (
                 inspect.iscoroutine(result)
                 and not isinstance(self, IsolatedAsyncioTestCase)
             ):
-                msg += '; maybe you forgot to use IsolatedAsyncioTestCase base class?'
+                msg += (
+                    '. Maybe you forgot to use IsolatedAsyncioTestCase as the base class?'
+                )
             warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
     def _callTearDown(self):

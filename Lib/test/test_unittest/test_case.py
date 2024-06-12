@@ -353,7 +353,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertEqual(w.filename, __file__)
         self.assertIn("returned 'coroutine'", str(w.warning))
         self.assertIn(
-            'maybe you forgot to use IsolatedAsyncioTestCase base class?',
+            'Maybe you forgot to use IsolatedAsyncioTestCase as the base class?',
             str(w.warning),
         )
 
