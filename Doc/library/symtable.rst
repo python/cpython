@@ -134,7 +134,7 @@ Examining Symbol Tables
       body via :keyword:`def` or :keyword:`async def`.
 
       Functions defined in a deeper scope (e.g., in an inner class) are not
-      picked by :meth:`get_methods`.
+      picked up by :meth:`get_methods`.
 
       For example:
 
