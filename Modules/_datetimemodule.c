@@ -1020,6 +1020,9 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             continue;
         }
         else if (c == '.' || c == ',') {
+            if (i < 2) {
+                return -3; // Decimal mark on hour or minute
+            }
             break;
         } else if (!has_separator) {
             --p;
