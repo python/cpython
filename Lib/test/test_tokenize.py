@@ -1215,6 +1215,20 @@ a = f'''
     FSTRING_END "\'\'\'"         (2, 68) (2, 71)
     """)
 
+    def test_multiline_non_ascii_fstring_with_expr(self):
+        self.check_tokenize("""\
+f'''
+    🔗 This is a test {test_arg1}🔗
+🔗'''""", """\
+    FSTRING_START "f\'\'\'"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '\\n    🔗 This is a test ' (1, 4) (2, 21)
+    OP         '{'           (2, 21) (2, 22)
+    NAME       'test_arg1'   (2, 22) (2, 31)
+    OP         '}'           (2, 31) (2, 32)
+    FSTRING_MIDDLE '🔗\\n🔗'        (2, 32) (3, 1)
+    FSTRING_END "\'\'\'"         (3, 1) (3, 4)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
