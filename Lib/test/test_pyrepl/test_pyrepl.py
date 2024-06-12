@@ -8,6 +8,7 @@ import sys
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
+from test.support import SHORT_TIMEOUT
 
 from .support import (
     FakeConsole,
@@ -885,5 +886,9 @@ class TestMain(TestCase):
 
         os.close(master_fd)
         os.close(slave_fd)
-        exit_code = process.wait()
+        try:
+            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            exit_code = process.returncode
         return "\n".join(output), exit_code
