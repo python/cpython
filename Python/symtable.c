@@ -327,7 +327,6 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         if (flags & DEF_PARAM) printf(" DEF_PARAM");
         if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
         if (flags & USE) printf(" USE");
-        if (flags & DEF_FREE) printf(" DEF_FREE");
         if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
         if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
         if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
