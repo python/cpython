@@ -1,0 +1,3 @@
+Significantly improve the speed of the str.count, bytes.count and
+bytearray.count method when the argument is a single character and the
+target architecture and compiler support vectorization.
