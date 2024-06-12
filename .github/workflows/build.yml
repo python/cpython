@@ -37,7 +37,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
-          if [ -z "$GITHUB_BASE_REFF" ]; then
+          if [ -z "$GITHUB_BASE_REF" ]; then
             echo "run_tests=true" >> $GITHUB_OUTPUT
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
@@ -54,7 +54,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|\.ini$)' && echo "run_tests=false" >> $GITHUB_OUTPUT || true
           fi
 
           # Check if we should run hypothesis tests
