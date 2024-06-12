@@ -214,6 +214,7 @@ tokenizeriter_next(tokenizeriterobject *it)
 
     const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
     PyObject* line = NULL;
+    int line_changed = 1;
     if (it->tok->tok_extra_tokens && is_trailing_token) {
         line = PyUnicode_FromString("");
     } else {
@@ -228,12 +229,11 @@ tokenizeriter_next(tokenizeriterobject *it)
             Py_XDECREF(it->last_line);
             line = PyUnicode_DecodeUTF8(line_start, size, "replace");
             it->last_line = line;
-            if (it->tok->lineno != it->last_end_lineno) {
-                it->byte_col_offset_diff = 0;
-            }
+            it->byte_col_offset_diff = 0;
         } else {
             // Line hasn't changed so we reuse the cached one.
             line = it->last_line;
+            line_changed = 0;
         }
     }
     if (line == NULL) {
@@ -251,7 +251,13 @@ tokenizeriter_next(tokenizeriterobject *it)
     Py_ssize_t byte_offset = -1;
     if (token.start != NULL && token.start >= line_start) {
         byte_offset = token.start - line_start;
-        col_offset = byte_offset - it->byte_col_offset_diff;
+        if (line_changed) {
+            col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
+            it->byte_col_offset_diff = byte_offset - col_offset;
+        }
+        else {
+            col_offset = byte_offset - it->byte_col_offset_diff;
+        }
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
         Py_ssize_t end_byte_offset = token.end - it->tok->line_start;
