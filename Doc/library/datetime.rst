@@ -2106,7 +2106,7 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
 
 .. method:: tzinfo.fromutc(dt)
 
-   This is called from the default :class:`datetime.astimezone()`
+   This is called from the default :meth:`datetime.astimezone`
    implementation. When called from that, ``dt.tzinfo`` is *self*, and *dt*'s
    date and time data are to be viewed as expressing a UTC time. The purpose
    of :meth:`fromutc` is to adjust the date and time data, returning an
