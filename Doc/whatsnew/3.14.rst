@@ -102,9 +102,21 @@ os
 
 string
 ------
+
 * Add :const:`~string.visible` to :mod:`string`, containing all non-whitespace
   printable ASCII characters.
   (Contributed by James Murray in :gh:`119067`.)
+
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
 
 
 Optimizations
