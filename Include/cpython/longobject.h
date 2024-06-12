@@ -55,9 +55,13 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnsignedNativeBytes(const void* buffer,
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
-// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
-// v must not be NULL, and must be a normalized long.
-// There are no error cases.
+/* PyLong_GetSign.  Get the sign of an integer object:
+   0, -1 or +1 for zero, negative or positive integer, respectively.
+
+   - On success, set '*sign' to the integer sign, and return 0.
+   - On failure, set an exception, and return -1. */
+PyAPI_FUNC(int) PyLong_GetSign(PyObject *v, int *sign);
+
 PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 
 /* _PyLong_NumBits.  Return the number of bits needed to represent the

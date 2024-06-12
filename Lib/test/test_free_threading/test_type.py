@@ -1,3 +1,4 @@
+import threading
 import unittest
 
 from concurrent.futures import ThreadPoolExecutor
@@ -94,6 +95,32 @@ class TestType(TestCase):
                     break
 
         self.run_one(writer_func, reader_func)
+
+    def test___class___modification(self):
+        class Foo:
+            pass
+
+        class Bar:
+            pass
+
+        thing = Foo()
+        def work():
+            foo = thing
+            for _ in range(10000):
+                foo.__class__ = Bar
+                type(foo)
+                foo.__class__ = Foo
+                type(foo)
+
+
+        threads = []
+        for i in range(NTHREADS):
+            thread = threading.Thread(target=work)
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
 
     def run_one(self, writer_func, reader_func):
         writer = Thread(target=writer_func)

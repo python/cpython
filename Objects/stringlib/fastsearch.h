@@ -256,7 +256,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 
        The local period of the cut is the minimal length of a string w
        such that (left endswith w or w endswith left)
-       and (right startswith w or w startswith left).
+       and (right startswith w or w startswith right).
 
        The Critical Factorization Theorem says that this maximal local
        period is the global period of the string.
@@ -337,21 +337,20 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     if (p->is_periodic) {
         assert(p->cut <= len_needle/2);
         assert(p->cut < p->period);
-        p->gap = 0; // unused
     }
     else {
         // A lower bound on the period
         p->period = Py_MAX(p->cut, len_needle - p->cut) + 1;
-        // The gap between the last character and the previous
-        // occurrence of an equivalent character (modulo TABLE_SIZE)
-        p->gap = len_needle;
-        STRINGLIB_CHAR last = needle[len_needle - 1] & TABLE_MASK;
-        for (Py_ssize_t i = len_needle - 2; i >= 0; i--) {
-            STRINGLIB_CHAR x = needle[i] & TABLE_MASK;
-            if (x == last) {
-                p->gap = len_needle - 1 - i;
-                break;
-            }
+    }
+    // The gap between the last character and the previous
+    // occurrence of an equivalent character (modulo TABLE_SIZE)
+    p->gap = len_needle;
+    STRINGLIB_CHAR last = needle[len_needle - 1] & TABLE_MASK;
+    for (Py_ssize_t i = len_needle - 2; i >= 0; i--) {
+        STRINGLIB_CHAR x = needle[i] & TABLE_MASK;
+        if (x == last) {
+            p->gap = len_needle - 1 - i;
+            break;
         }
     }
     // Fill up a compressed Boyer-Moore "Bad Character" table
@@ -383,6 +382,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     const STRINGLIB_CHAR *window;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
 
+    Py_ssize_t gap = p->gap;
+    Py_ssize_t gap_jump_end = Py_MIN(len_needle, cut + gap);
     if (p->is_periodic) {
         LOG("Needle is periodic.\n");
         Py_ssize_t memory = 0;
@@ -408,8 +409,16 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             Py_ssize_t i = Py_MAX(cut, memory);
             for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Right half does not match.\n");
-                    window_last += i - cut + 1;
+                    if (i < gap_jump_end) {
+                        LOG("Early right half mismatch: jump by gap.\n");
+                        assert(gap >= i - cut + 1);
+                        window_last += gap;
+                    }
+                    else {
+                        LOG("Late right half mismatch: jump by n (>gap)\n");
+                        assert(i - cut + 1 > gap);
+                        window_last += i - cut + 1;
+                    }
                     memory = 0;
                     goto periodicwindowloop;
                 }
@@ -442,10 +451,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         }
     }
     else {
-        Py_ssize_t gap = p->gap;
         period = Py_MAX(gap, period);
         LOG("Needle is not periodic.\n");
-        Py_ssize_t gap_jump_end = Py_MIN(len_needle, cut + gap);
       windowloop:
         while (window_last < haystack_end) {
             for (;;) {
@@ -463,19 +470,19 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
-            for (Py_ssize_t i = cut; i < gap_jump_end; i++) {
+            Py_ssize_t i = cut;
+            for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Early right half mismatch: jump by gap.\n");
-                    assert(gap >= i - cut + 1);
-                    window_last += gap;
-                    goto windowloop;
-                }
-            }
-            for (Py_ssize_t i = gap_jump_end; i < len_needle; i++) {
-                if (needle[i] != window[i]) {
-                    LOG("Late right half mismatch.\n");
-                    assert(i - cut + 1 > gap);
-                    window_last += i - cut + 1;
+                    if (i < gap_jump_end) {
+                        LOG("Early right half mismatch: jump by gap.\n");
+                        assert(gap >= i - cut + 1);
+                        window_last += gap;
+                    }
+                    else {
+                        LOG("Late right half mismatch: jump by n (>gap)\n");
+                        assert(i - cut + 1 > gap);
+                        window_last += i - cut + 1;
+                    }
                     goto windowloop;
                 }
             }
