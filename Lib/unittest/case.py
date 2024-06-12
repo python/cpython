@@ -607,7 +607,7 @@ class TestCase(object):
         if result is not None:
             import inspect
             msg = (
-                'It is deprecated to return a value that is not None '
+                f'It is deprecated to return a value that is not None '
                 f'from a test case ({method} returned {type(result).__name__!r})'
             )
             if inspect.iscoroutine(result):
