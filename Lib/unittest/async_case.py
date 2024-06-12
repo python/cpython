@@ -90,7 +90,8 @@ class IsolatedAsyncioTestCase(TestCase):
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
-        if (result := self._callMaybeAsync(method)) is not None:
+        result = self._callMaybeAsync(method)
+        if result is not None:
             msg = (
                 'It is deprecated to return a value that is not None '
                 f'from a test case ({method} returned {type(result).__name__!r})',

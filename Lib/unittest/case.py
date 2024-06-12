@@ -603,17 +603,14 @@ class TestCase(object):
         self.setUp()
 
     def _callTestMethod(self, method):
-        if (result := method()) is not None:
+        result = method()
+        if result is not None:
             import inspect
-            from unittest.async_case import IsolatedAsyncioTestCase
             msg = (
                 'It is deprecated to return a value that is not None '
                 f'from a test case ({method} returned {type(result).__name__!r})'
             )
-            if (
-                inspect.iscoroutine(result)
-                and not isinstance(self, IsolatedAsyncioTestCase)
-            ):
+            if inspect.iscoroutine(result):
                 msg += (
                     '. Maybe you forgot to use IsolatedAsyncioTestCase as the base class?'
                 )
