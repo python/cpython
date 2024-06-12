@@ -2389,19 +2389,24 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
                               Py_ssize_t width, Py_ssize_t precision, int flags)
 {
     /* UTF-8 */
+    Py_ssize_t *pconsumed = NULL;
     Py_ssize_t length;
-    Py_ssize_t consumed;
-    Py_ssize_t *pconsumed;
     if (precision == -1) {
         length = strlen(str);
-        pconsumed = NULL;
     }
     else {
         length = 0;
         while (length < precision && str[length]) {
             length++;
         }
-        pconsumed = (length < precision) ? NULL : &consumed;
+        if (length == precision) {
+            /* The input string is not NUL-terminated.  If it ends with an
+             * incomplete UTF-8 sequence, truncate the string just before it.
+             * Incomplete sequences in the middle and sequences which cannot
+             * be valid prefixes are still treated as errors and replaced
+             * with \xfffd. */
+            pconsumed = &length;
+        }
     }
 
     if (width < 0) {
