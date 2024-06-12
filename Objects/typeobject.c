@@ -897,7 +897,8 @@ PyType_AddWatcher(PyType_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+    // start at 1, 0 is reserved for cpython optimizer
+    for (int i = 1; i < TYPE_MAX_WATCHERS; i++) {
         if (!interp->type_watchers[i]) {
             interp->type_watchers[i] = callback;
             return i;
@@ -1004,7 +1005,7 @@ type_modification_starting_unlocked(PyTypeObject *type)
     }
 
     /* 0 is not a valid version tag */
-    _Py_atomic_store_uint32_release(&type->tp_version_tag, 0);
+    _PyType_SetVersion(type, 0);
 }
 
 #endif
@@ -1068,7 +1069,7 @@ type_modified_unlocked(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
+    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1145,13 +1146,71 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag, 0); /* 0 is not a valid version tag */
+    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
         ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
     }
 }
+
+/*
+The Tier 2 interpreter requires looking up the type object by the type version, so it can install
+watchers to understand when they change.
+
+So we add a global cache from type version to borrowed references of type objects.
+
+This is similar to func_version_cache.
+*/
+
+void
+_PyType_SetVersion(PyTypeObject *tp, unsigned int version)
+{
+#ifndef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // lookup the old version and set to null
+    if (tp->tp_version_tag != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
+        *slot = NULL;
+    }
+#endif
+    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
+#ifndef Py_GIL_DISABLED
+    if (version != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (version % TYPE_VERSION_CACHE_SIZE);
+        *slot = tp;
+    }
+#endif
+}
+
+PyTypeObject *
+_PyType_LookupByVersion(unsigned int version)
+{
+#ifdef Py_GIL_DISABLED
+    return NULL;
+#else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyTypeObject **slot =
+        interp->types.type_version_cache
+        + (version % TYPE_VERSION_CACHE_SIZE);
+    if (*slot && (*slot)->tp_version_tag == version) {
+        return *slot;
+    }
+    return NULL;
+#endif
+}
+
+unsigned int
+_PyType_GetVersionForCurrentState(PyTypeObject *tp)
+{
+    return tp->tp_version_tag;
+}
+
+
 
 #define MAX_VERSIONS_PER_CLASS 1000
 
@@ -1181,8 +1240,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-                                       NEXT_GLOBAL_VERSION_TAG++);
+        _PyType_SetVersion(type, NEXT_GLOBAL_VERSION_TAG++);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -1191,8 +1249,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        FT_ATOMIC_STORE_UINT32_RELAXED(type->tp_version_tag,
-                                       NEXT_VERSION_TAG(interp)++);
+        _PyType_SetVersion(type, NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
 
@@ -5812,7 +5869,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     if (final) {
         type->tp_flags &= ~Py_TPFLAGS_READY;
         type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-        type->tp_version_tag = 0;
+        _PyType_SetVersion(type, 0);
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
@@ -5853,7 +5910,6 @@ type_dealloc(PyObject *self)
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
     _PyObject_GC_UNTRACK(type);
-
     type_dealloc_common(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
@@ -6521,7 +6577,6 @@ differs:
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-    PyTypeObject *oldto = Py_TYPE(self);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -6540,6 +6595,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                     self, "__class__", value) < 0) {
         return -1;
     }
+
+    PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
        compatible_for_assignment was not set up to correctly check for memory
@@ -6631,9 +6688,15 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
         }
+        Py_BEGIN_CRITICAL_SECTION(self);
+        // The real Py_TYPE(self) (`oldto`) may have changed from
+        // underneath us in another thread, so we re-fetch it here.
+        oldto = Py_TYPE(self);
         Py_SET_TYPE(self, newto);
-        if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        Py_END_CRITICAL_SECTION();
+        if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
+        }
 
         RARE_EVENT_INC(set_class);
         return 0;
@@ -8422,7 +8485,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
         self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     }
     else {

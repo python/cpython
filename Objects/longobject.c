@@ -6045,7 +6045,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 /*[clinic input]
 int.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Rounding an Integral returns itself.
@@ -6055,7 +6055,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=30c2aec788263144]*/
 {
     PyObject *temp, *result, *ndigits;
 
@@ -6073,7 +6073,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == NULL)
+    if (o_ndigits == Py_None)
         return long_long(self);
 
     ndigits = _PyNumber_Index(o_ndigits);

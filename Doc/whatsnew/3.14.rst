@@ -92,6 +92,24 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+os
+--
+
+* Added the :data:`os.environ.refresh() <os.environ>` method to update
+  :data:`os.environ` with changes to the environment made by :func:`os.putenv`,
+  by :func:`os.unsetenv`, or made outside Python in the same process.
+  (Contributed by Victor Stinner in :gh:`120057`.)
+
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
 
 
 Optimizations
