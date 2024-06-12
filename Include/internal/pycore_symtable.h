@@ -175,7 +175,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
 /* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
-   table.  GLOBAL is returned from PyST_GetScope() for either of them.
+   table.  GLOBAL is returned from _PyST_GetScope() for either of them.
    It is stored in ste_symbols at bits 13-16.
 */
 #define SCOPE_OFFSET 12
