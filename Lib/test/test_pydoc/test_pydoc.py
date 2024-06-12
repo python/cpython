@@ -77,6 +77,11 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
+     |  Methods defined here:
+     |
+     |  __annotate__(...)
+     |
+     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -87,8 +92,6 @@ CLASSES
      |  Data and other attributes defined here:
      |
      |  NO_MEANING = 'eggs'
-     |
-     |  __annotations__ = {'NO_MEANING': <class 'str'>}
 
     class C(builtins.object)
      |  Methods defined here:
@@ -176,6 +179,9 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
+    Methods defined here:
+        __annotate__(...)
+    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -184,7 +190,6 @@ class B(builtins.object)
     ----------------------------------------------------------------------
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
-        __annotations__ = {'NO_MEANING': <class 'str'>}
 
 
 class C(builtins.object)
