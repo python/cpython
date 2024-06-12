@@ -108,7 +108,7 @@ from urllib.response import addinfourl, addclosehook
 
 # check for SSL
 try:
-    import ssl
+    import ssl  # noqa
 except ImportError:
     _have_ssl = False
 else:
