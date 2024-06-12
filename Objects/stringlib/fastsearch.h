@@ -744,13 +744,17 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
     Py_ssize_t unroll_length = n - 31;
     /* By unrolling in chunks of 32, the compiler can auto vectorize, resulting
        in much better performance. */
-    for (i = 0; i < unroll_length; i+=32) {
+    for (i = 0; i < unroll_length; i += 32) {
         const STRINGLIB_CHAR *restrict cursor = s + i;
         for(size_t j = 0; j < 32; j++) {
             if (cursor[j] == p0) {
                 count += 1;
             }
         }
+        /* By performing the check outside of the read/compare loop the
+           compiler is guaranteed that 32 bytes can be read and counted.
+           As a result it can vectorize.
+        */
         if (count >= maxcount) {
             return maxcount;
         }
