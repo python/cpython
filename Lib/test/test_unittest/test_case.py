@@ -325,21 +325,21 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("(<class 'int'>)", str(w.warning))
+        self.assertIn("('int')", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("(<class 'generator'>)", str(w.warning))
+        self.assertIn("('generator')", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn(f'({Nothing})', str(w.warning))
+        self.assertIn(f'({Nothing.__name__!r})', str(w.warning))
 
     def test_deprecation_of_return_val_from_test_async_method(self):
         class Foo(unittest.TestCase):
@@ -351,7 +351,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("(<class 'coroutine'>)", str(w.warning))
+        self.assertIn("('coroutine')", str(w.warning))
         self.assertIn(
             (
                 "a coroutine is returned, "
