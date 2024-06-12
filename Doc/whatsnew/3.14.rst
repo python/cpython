@@ -100,6 +100,17 @@ os
   by :func:`os.unsetenv`, or made outside Python in the same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
+
 
 Optimizations
 =============
