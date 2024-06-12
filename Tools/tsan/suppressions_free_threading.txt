@@ -37,7 +37,6 @@ race_top:set_contains_key
 # https://gist.github.com/colesbury/d13d033f413b4ad07929d044bed86c35
 race_top:set_discard_entry
 race_top:set_inheritable
-race_top:Py_SET_TYPE
 race_top:_PyDict_CheckConsistency
 race_top:_Py_dict_lookup_threadsafe
 race_top:_multiprocessing_SemLock_acquire_impl
@@ -58,7 +57,6 @@ race_top:_PyFrame_Initialize
 race_top:PyInterpreterState_ThreadHead
 race_top:_PyObject_TryGetInstanceAttribute
 race_top:PyThreadState_Next
-race_top:Py_TYPE
 race_top:PyUnstable_InterpreterFrame_GetLine
 race_top:sock_close
 race_top:tstate_delete_common
