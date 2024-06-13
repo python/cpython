@@ -1238,6 +1238,84 @@ Reading directories
    .. versionadded:: 3.12
 
 
+Creating files and directories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.touch(mode=0o666, exist_ok=True)
+
+   Create a file at this given path.  If *mode* is given, it is combined
+   with the process's ``umask`` value to determine the file mode and access
+   flags.  If the file already exists, the function succeeds when *exist_ok*
+   is true (and its modification time is updated to the current time),
+   otherwise :exc:`FileExistsError` is raised.
+
+   .. seealso::
+      The :meth:`~Path.open`, :meth:`~Path.write_text` and
+      :meth:`~Path.write_bytes` methods are often used to create files.
+
+
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+
+   Create a new directory at this given path.  If *mode* is given, it is
+   combined with the process's ``umask`` value to determine the file mode
+   and access flags.  If the path already exists, :exc:`FileExistsError`
+   is raised.
+
+   If *parents* is true, any missing parents of this path are created
+   as needed; they are created with the default permissions without taking
+   *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parents* is false (the default), a missing parent raises
+   :exc:`FileNotFoundError`.
+
+   If *exist_ok* is false (the default), :exc:`FileExistsError` is
+   raised if the target directory already exists.
+
+   If *exist_ok* is true, :exc:`FileExistsError` will not be raised unless the given
+   path already exists in the file system and is not a directory (same
+   behavior as the POSIX ``mkdir -p`` command).
+
+   .. versionchanged:: 3.5
+      The *exist_ok* parameter was added.
+
+
+.. method:: Path.symlink_to(target, target_is_directory=False)
+
+   Make this path a symbolic link pointing to *target*.
+
+   On Windows, a symlink represents either a file or a directory, and does not
+   morph to the target dynamically.  If the target is present, the type of the
+   symlink will be created to match. Otherwise, the symlink will be created
+   as a directory if *target_is_directory* is true or a file symlink (the
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
+
+   ::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.resolve()
+      PosixPath('/home/antoine/pathlib/setup.py')
+      >>> p.stat().st_size
+      956
+      >>> p.lstat().st_size
+      8
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.symlink`'s.
+
+
+.. method:: Path.hardlink_to(target)
+
+   Make this path a hard link to the same file as *target*.
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.link`'s.
+
+   .. versionadded:: 3.10
+
+
 Other methods
 ^^^^^^^^^^^^^
 
@@ -1310,31 +1388,6 @@ Other methods
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
-
-
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
-
-   Create a new directory at this given path.  If *mode* is given, it is
-   combined with the process' ``umask`` value to determine the file mode
-   and access flags.  If the path already exists, :exc:`FileExistsError`
-   is raised.
-
-   If *parents* is true, any missing parents of this path are created
-   as needed; they are created with the default permissions without taking
-   *mode* into account (mimicking the POSIX ``mkdir -p`` command).
-
-   If *parents* is false (the default), a missing parent raises
-   :exc:`FileNotFoundError`.
-
-   If *exist_ok* is false (the default), :exc:`FileExistsError` is
-   raised if the target directory already exists.
-
-   If *exist_ok* is true, :exc:`FileExistsError` will not be raised unless the given
-   path already exists in the file system and is not a directory (same
-   behavior as the POSIX ``mkdir -p`` command).
-
-   .. versionchanged:: 3.5
-      The *exist_ok* parameter was added.
 
 
 .. method:: Path.owner()
@@ -1439,51 +1492,6 @@ Other methods
 .. method:: Path.rmdir()
 
    Remove this directory.  The directory must be empty.
-
-
-.. method:: Path.symlink_to(target, target_is_directory=False)
-
-   Make this path a symbolic link pointing to *target*.
-
-   On Windows, a symlink represents either a file or a directory, and does not
-   morph to the target dynamically.  If the target is present, the type of the
-   symlink will be created to match. Otherwise, the symlink will be created
-   as a directory if *target_is_directory* is ``True`` or a file symlink (the
-   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
-
-   ::
-
-      >>> p = Path('mylink')
-      >>> p.symlink_to('setup.py')
-      >>> p.resolve()
-      PosixPath('/home/antoine/pathlib/setup.py')
-      >>> p.stat().st_size
-      956
-      >>> p.lstat().st_size
-      8
-
-   .. note::
-      The order of arguments (link, target) is the reverse
-      of :func:`os.symlink`'s.
-
-.. method:: Path.hardlink_to(target)
-
-   Make this path a hard link to the same file as *target*.
-
-   .. note::
-      The order of arguments (link, target) is the reverse
-      of :func:`os.link`'s.
-
-   .. versionadded:: 3.10
-
-
-.. method:: Path.touch(mode=0o666, exist_ok=True)
-
-   Create a file at this given path.  If *mode* is given, it is combined
-   with the process' ``umask`` value to determine the file mode and access
-   flags.  If the file already exists, the function succeeds if *exist_ok*
-   is true (and its modification time is updated to the current time),
-   otherwise :exc:`FileExistsError` is raised.
 
 
 .. method:: Path.unlink(missing_ok=False)
