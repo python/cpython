@@ -61,8 +61,10 @@ FROZEN = [
         '_collections_abc',
         '_sitebuiltins',
         'genericpath',
-        'ntpath',
-        'posixpath',
+        '<ntpath>',
+        'ntpath.pure',
+        '<posixpath>',
+        'posixpath.pure',
         # We must explicitly mark os.path as a frozen module
         # even though it will never be imported.
         f'{OS_PATH} : os.path',

@@ -523,6 +523,18 @@
     <None Include="..\Lib\genericpath.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\ntpath\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\ntpath\pure.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\posixpath\__init__.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\posixpath\pure.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\os.py">
       <Filter>Python Files</Filter>
     </None>

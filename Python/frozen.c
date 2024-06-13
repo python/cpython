@@ -50,6 +50,10 @@
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
 #include "frozen_modules/genericpath.h"
+#include "frozen_modules/ntpath.h"
+#include "frozen_modules/ntpath.pure.h"
+#include "frozen_modules/posixpath.h"
+#include "frozen_modules/posixpath.pure.h"
 #include "frozen_modules/os.h"
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
@@ -80,6 +84,11 @@ static const struct _frozen stdlib_modules[] = {
     {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), false},
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), false},
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), false},
+    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), true},
+    {"ntpath.pure", _Py_M__ntpath_pure, (int)sizeof(_Py_M__ntpath_pure), false},
+    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), true},
+    {"posixpath.pure", _Py_M__posixpath_pure, (int)sizeof(_Py_M__posixpath_pure), false},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
@@ -111,7 +120,7 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
-    {"os.path", "posixpath"},
+    {"os.path", "<posixpath"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},
