@@ -2727,7 +2727,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_IsTrue(cond);
+            int flag = PyStackRef_Is(cond, PyStackRef_True());
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -4555,7 +4555,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_IsTrue(cond);
+            int flag = PyStackRef_Is(cond, PyStackRef_True());
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
@@ -4630,8 +4630,8 @@ dummy_func(
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             SYNC_SP();
-            EXIT_IF(!PyStackRef_IsTrue(flag));
-            assert(PyStackRef_IsTrue(flag));
+            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_True()));
+            assert(PyStackRef_Is(flag, PyStackRef_True()));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
