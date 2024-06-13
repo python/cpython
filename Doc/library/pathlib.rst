@@ -1316,6 +1316,70 @@ Creating files and directories
    .. versionadded:: 3.10
 
 
+Renaming and deleting
+^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.rename(target)
+
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  On Unix, if *target* exists
+   and is a file, it will be replaced silently if the user has permission.
+   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
+   *target* can be either a string or another path object::
+
+      >>> p = Path('foo')
+      >>> p.open('w').write('some text')
+      9
+      >>> target = Path('bar')
+      >>> p.rename(target)
+      PosixPath('bar')
+      >>> target.open().read()
+      'some text'
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
+
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new :class:`!Path` instance.
+
+
+.. method:: Path.replace(target)
+
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  If *target* points to an
+   existing file or empty directory, it will be unconditionally replaced.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new :class:`!Path` instance.
+
+
+.. method:: Path.unlink(missing_ok=False)
+
+   Remove this file or symbolic link.  If the path points to a directory,
+   use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.rmdir()
+
+   Remove this directory.  The directory must be empty.
+
+
 Other methods
 ^^^^^^^^^^^^^
 
@@ -1409,47 +1473,6 @@ Other methods
    .. versionadded:: 3.9
 
 
-.. method:: Path.rename(target)
-
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  On Unix, if *target* exists and is a file,
-   it will be replaced silently if the user has permission.
-   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
-   *target* can be either a string or another path object::
-
-      >>> p = Path('foo')
-      >>> p.open('w').write('some text')
-      9
-      >>> target = Path('bar')
-      >>> p.rename(target)
-      PosixPath('bar')
-      >>> target.open().read()
-      'some text'
-
-   The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
-
-   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
-
-   .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
-
-
-.. method:: Path.replace(target)
-
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  If *target* points to an existing file or
-   empty directory, it will be unconditionally replaced.
-
-   The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
-
-   .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
-
-
 .. method:: Path.absolute()
 
    Make the path absolute, without normalization or resolving symlinks.
@@ -1488,25 +1511,6 @@ Other methods
    .. versionchanged:: 3.6
       The *strict* parameter was added (pre-3.6 behavior is strict).
 
-
-.. method:: Path.rmdir()
-
-   Remove this directory.  The directory must be empty.
-
-
-.. method:: Path.unlink(missing_ok=False)
-
-   Remove this file or symbolic link.  If the path points to a directory,
-   use :func:`Path.rmdir` instead.
-
-   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
-   raised if the path does not exist.
-
-   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
-   ignored (same behavior as the POSIX ``rm -f`` command).
-
-   .. versionchanged:: 3.8
-      The *missing_ok* parameter was added.
 
 
 Correspondence to tools in the :mod:`os` module
