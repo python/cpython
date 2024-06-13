@@ -415,7 +415,7 @@ try:
 except ImportError:
     pass
 else:
-    from _operator import __doc__
+    from _operator import __doc__  # noqa: F401
 
 # All of these "__func__ = func" assignments have to happen after importing
 # from _operator to make sure they're set to the right function

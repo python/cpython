@@ -100,9 +100,9 @@ NaN
 
 try:
     from _decimal import *
-    from _decimal import __version__
-    from _decimal import __libmpdec_version__
+    from _decimal import __version__  # noqa: F401
+    from _decimal import __libmpdec_version__  # noqa: F401
 except ImportError:
     from _pydecimal import *
-    from _pydecimal import __version__
-    from _pydecimal import __libmpdec_version__
+    from _pydecimal import __version__  # noqa: F401
+    from _pydecimal import __libmpdec_version__  # noqa: F401

@@ -57,9 +57,9 @@ from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    skipIf, skipUnless, expectedFailure, doModuleCleanups,
                    enterModuleContext)
-from .suite import BaseTestSuite, TestSuite
+from .suite import BaseTestSuite, TestSuite  # noqa: F401
 from .loader import TestLoader, defaultTestLoader
-from .main import TestProgram, main
+from .main import TestProgram, main  # noqa: F401
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.

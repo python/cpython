@@ -611,7 +611,7 @@ def f8(x):
 if __name__ == '__main__':
     import cmd
     try:
-        import readline
+        import readline  # noqa: F401
     except ImportError:
         pass
 
