@@ -1188,14 +1188,19 @@ are always available.  They are listed here in alphabetical order.
       unchanged from previous versions.
 
 
-.. function:: map(function, iterable, *iterables)
+.. function:: map(function, iterable, *iterables, strict=False)
 
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
-   shortest iterable is exhausted.  For cases where the function inputs are
-   already arranged into argument tuples, see :func:`itertools.starmap`\.
+   shortest iterable is exhausted.  If *strict* is ``True`` and one of the
+   arguments is exhausted before the others, a :exc:`ValueError` is raised. For
+   cases where the function inputs are already arranged into argument tuples,
+   see :func:`itertools.starmap`\.
+
+   .. versionchanged:: 3.14
+      Added the ``strict`` argument.
 
 
 .. function:: max(iterable, *, key=None)
