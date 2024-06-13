@@ -759,6 +759,7 @@ STRINGLIB(count_char_no_maxcount)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 /* A specialized function of count_char that does not cut off at a maximum.
    As a result, the compiler is able to vectorize the loop. */
 {
+    Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         if (s[i] == p0) {
             count++;
@@ -789,7 +790,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             return STRINGLIB(rfind_char)(s, n, p[0]);
         else {
             if (maxcount == PY_SSIZE_T_MAX) {
-                return STRINGLIB(count_char_no_maximum)(s, n, p[0]);
+                return STRINGLIB(count_char_no_maxcount)(s, n, p[0]);
             }
             return STRINGLIB(count_char)(s, n, p[0], maxcount);
         }
