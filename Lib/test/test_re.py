@@ -19,6 +19,7 @@ except ImportError:
     multiprocessing = None
 else:
     import multiprocessing
+    import multiprocessing.util
 
 # Misc tests from Tim Peters' re.doc
 
@@ -2461,6 +2462,7 @@ class ReTests(unittest.TestCase):
         input_js = '''a(function() {
             ///////////////////////////////////////////////////////////////////
         });'''
+        self.addCleanup(multiprocessing.util._cleanup_tests)
         p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
         p.start()
         p.join(SHORT_TIMEOUT)

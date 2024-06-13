@@ -219,6 +219,7 @@ class Pool(object):
                     p.terminate()
             for p in self._pool:
                 p.join()
+            self._pool.clear()
             raise
 
         sentinels = self._get_sentinels()
@@ -257,7 +258,7 @@ class Pool(object):
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
                   self._change_notifier, self._worker_handler, self._task_handler,
                   self._result_handler, self._cache),
-            exitpriority=15
+            exitpriority=15, reentrant=False
             )
         self._state = RUN
 
@@ -665,8 +666,8 @@ class Pool(object):
         self._worker_handler.join()
         self._task_handler.join()
         self._result_handler.join()
-        for p in self._pool:
-            p.join()
+        while self._pool:
+            self._pool.pop().join()
 
     @staticmethod
     def _help_stuff_finish(inqueue, task_handler, size):

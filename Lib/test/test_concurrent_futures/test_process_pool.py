@@ -1,3 +1,4 @@
+import multiprocessing.util
 import os
 import sys
 import threading
@@ -195,6 +196,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # during Python finalization.
 
         context = self.get_context()
+        multiprocessing.util.reset_work_queue()
 
         # gh-109047: Mock the threading.start_joinable_thread() function to inject
         # RuntimeError: simulate the error raised during Python finalization.
@@ -204,7 +206,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         nthread = 0
         def mock_start_new_thread(func, *args, **kwargs):
             nonlocal nthread
-            if nthread >= 1:
+            if nthread == 2:
                 raise RuntimeError("can't create new thread at "
                                    "interpreter shutdown")
             nthread += 1
@@ -212,10 +214,11 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         with support.swap_attr(threading, '_start_joinable_thread',
                                mock_start_new_thread):
-            executor = self.executor_type(max_workers=2, mp_context=context)
+            executor = self.executor_type(max_workers=4, mp_context=context)
             with executor:
+                N = 10
                 with self.assertRaises(BrokenProcessPool):
-                    list(executor.map(mul, [(2, 3)] * 10))
+                    list(executor.map(time.sleep, (0.5,) * N))
             executor.shutdown()
 
 

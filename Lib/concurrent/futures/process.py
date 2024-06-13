@@ -552,9 +552,9 @@ class _ExecutorManagerThread(threading.Thread):
                 except queue.Full:
                     break
 
-    def join_executor_internals(self):
+    def join_executor_internals(self, broken=False):
         with self.shutdown_lock:
-            self._join_executor_internals()
+            self._join_executor_internals(broken)
 
     def _join_executor_internals(self, broken=False):
         # If broken, call_queue was closed and so can no longer be used.
@@ -750,7 +750,11 @@ class ProcessPoolExecutor(_base.Executor):
             if not self._safe_to_dynamically_spawn_children:  # ie, using fork.
                 self._launch_processes()
             self._executor_manager_thread = _ExecutorManagerThread(self)
-            self._executor_manager_thread.start()
+            try:
+                self._executor_manager_thread.start()
+            except RuntimeError:
+                self._broken = "Executor manager thread could not be started"
+                raise BrokenProcessPool(self._broken)
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
@@ -851,7 +855,10 @@ class ProcessPoolExecutor(_base.Executor):
                 self._executor_manager_thread_wakeup.wakeup()
 
         if self._executor_manager_thread is not None and wait:
-            self._executor_manager_thread.join()
+            try:
+                self._executor_manager_thread.join()
+            except RuntimeError:
+                self._executor_manager_thread.join_executor_internals(broken=True)
         # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._executor_manager_thread = None

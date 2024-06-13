@@ -142,9 +142,6 @@ class Heap(object):
         self._allocated_blocks = defaultdict(set)
         self._arenas = []
 
-        # List of pending blocks to free - see comment in free() below
-        self._pending_free_blocks = []
-
         # Statistics
         self._n_mallocs = 0
         self._n_frees = 0
@@ -255,43 +252,16 @@ class Heap(object):
             # Arena is entirely free, discard it from this process
             self._discard_arena(arena)
 
-    def _free_pending_blocks(self):
-        # Free all the blocks in the pending list - called with the lock held.
-        while True:
-            try:
-                block = self._pending_free_blocks.pop()
-            except IndexError:
-                break
-            self._add_free_block(block)
-            self._remove_allocated_block(block)
-
     def free(self, block):
         # free a block returned by malloc()
-        # Since free() can be called asynchronously by the GC, it could happen
-        # that it's called while self._lock is held: in that case,
-        # self._lock.acquire() would deadlock (issue #12352). To avoid that, a
-        # trylock is used instead, and if the lock can't be acquired
-        # immediately, the block is added to a list of blocks to be freed
-        # synchronously sometimes later from malloc() or free(), by calling
-        # _free_pending_blocks() (appending and retrieving from a list is not
-        # strictly thread-safe but under CPython it's atomic thanks to the GIL).
         if os.getpid() != self._lastpid:
             raise ValueError(
                 "My pid ({0:n}) is not last pid {1:n}".format(
                     os.getpid(),self._lastpid))
-        if not self._lock.acquire(False):
-            # can't acquire the lock right now, add the block to the list of
-            # pending blocks to free
-            self._pending_free_blocks.append(block)
-        else:
-            # we hold the lock
-            try:
-                self._n_frees += 1
-                self._free_pending_blocks()
-                self._add_free_block(block)
-                self._remove_allocated_block(block)
-            finally:
-                self._lock.release()
+        with self._lock:
+            self._n_frees += 1
+            self._add_free_block(block)
+            self._remove_allocated_block(block)
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
@@ -303,8 +273,6 @@ class Heap(object):
             self.__init__()                     # reinitialize after fork
         with self._lock:
             self._n_mallocs += 1
-            # allow pending blocks to be marked available
-            self._free_pending_blocks()
             size = self._roundup(max(size, 1), self._alignment)
             (arena, start, stop) = self._malloc(size)
             real_stop = start + size
@@ -330,7 +298,8 @@ class BufferWrapper(object):
             raise OverflowError("Size {0:n} too large".format(size))
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
-        util.Finalize(self, BufferWrapper._heap.free, args=(block,))
+        util.Finalize(self, BufferWrapper._heap.free, args=(block,),
+                      reentrant=False)
 
     def create_memoryview(self):
         (arena, start, stop), size = self._state

@@ -1,4 +1,5 @@
 import multiprocessing
+import multiprocessing.util
 import sys
 import time
 import unittest
@@ -30,10 +31,12 @@ SUCCESSFUL_FUTURE = create_future(state=FINISHED, result=42)
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        multiprocessing.util.reset_work_queue()
         self._thread_key = threading_helper.threading_setup()
 
     def tearDown(self):
         support.reap_children()
+        multiprocessing.util._cleanup_tests()
         threading_helper.threading_cleanup(*self._thread_key)
 
 

@@ -7923,6 +7923,9 @@ warn_about_fork_with_threads(const char* name)
             num_python_threads = atoi(field);  // 0 on error
         }
     }
+    // XXX This counts the number of system threads, but Python code can only
+    // call threading.Thread.join(), which can return before the system thread ended.
+    // This function could therefore print a spurious warning in unlucky cases.
 #endif
     if (num_python_threads <= 0) {
         // Fall back to just the number our threading module knows about.

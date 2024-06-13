@@ -3161,7 +3161,6 @@ class _TestManagerRestart(BaseTestCase):
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         try:
             manager.start()
-            self.addCleanup(manager.shutdown)
         except OSError as e:
             if e.errno != errno.EADDRINUSE:
                 raise
@@ -3171,8 +3170,9 @@ class _TestManagerRestart(BaseTestCase):
             manager = QueueManager(
                 address=addr, authkey=authkey, serializer=SERIALIZER,
                 shutdown_timeout=SHUTDOWN_TIMEOUT)
+        finally:
             if hasattr(manager, "shutdown"):
-                self.addCleanup(manager.shutdown)
+                manager.shutdown()
 
 
 class FakeConnection:
@@ -3879,8 +3879,8 @@ class _TestHeap(BaseTestCase):
         while blocks:
             blocks.pop()
 
+        util.ensure_finalizers_run()
         self.assertEqual(heap._n_frees, heap._n_mallocs)
-        self.assertEqual(len(heap._pending_free_blocks), 0)
         self.assertEqual(len(heap._arenas), 0)
         self.assertEqual(len(heap._allocated_blocks), 0, heap._allocated_blocks)
         self.assertEqual(len(heap._len_to_seq), 0)
@@ -6282,6 +6282,7 @@ class BaseMixin(object):
         # bpo-26762: Some multiprocessing objects like Pool create reference
         # cycles. Trigger a garbage collection to break these cycles.
         test.support.gc_collect()
+        util.ensure_finalizers_run()
 
         processes = set(multiprocessing.process._dangling) - set(cls.dangling[0])
         if processes:
@@ -6289,6 +6290,7 @@ class BaseMixin(object):
             support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
+        util.reset_work_queue()  # Avoid dangling work queue thread
         threads = set(threading._dangling) - set(cls.dangling[1])
         if threads:
             test.support.environment_altered = True
@@ -6365,7 +6367,11 @@ class ManagerMixin(BaseMixin):
                                   f"{multiprocessing.active_children()} "
                                   f"active children after {dt:.1f} seconds")
 
-        gc.collect()                       # do garbage collection
+        i = 0
+        while i < 3 and cls.manager._number_of_objects() != 0:
+            gc.collect()
+            util.ensure_finalizers_run()
+            i += 1
         if cls.manager._number_of_objects() != 0:
             # This is not really an error since some tests do not
             # ensure that all processes which hold a reference to a
@@ -6483,6 +6489,7 @@ def install_tests_in_module_dict(remote_globs, start_method,
             support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
+        util.reset_work_queue()
         threads = set(threading._dangling) - set(dangling[1])
         if threads:
             need_sleep = True
