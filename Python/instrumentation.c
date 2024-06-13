@@ -1977,7 +1977,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     }
 
     int res;
-    LOCK_CODE(code);
+    _PyEval_StopTheWorld(interp);
     if (allocate_instrumentation_data(code)) {
         res = -1;
         goto done;
@@ -1994,7 +1994,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     res = force_instrument_lock_held(code, interp);
 
 done:
-    UNLOCK_CODE();
+    _PyEval_StartTheWorld(interp);
     return res;
 }
 
