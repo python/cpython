@@ -373,7 +373,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            if (!PyStackRef_IsNone(value)) {
+            if (!PyStackRef_Is(value, PyStackRef_None())) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -2757,7 +2757,7 @@
             _PyStackRef value;
             _PyStackRef b;
             value = stack_pointer[-1];
-            if (PyStackRef_IsNone(value)) {
+            if (PyStackRef_Is(value, PyStackRef_None())) {
                 b = PyStackRef_True();
             }
             else {
@@ -4590,7 +4590,7 @@
             _PyStackRef val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (!PyStackRef_IsNone(val)) {
+            if (!PyStackRef_Is(val, PyStackRef_None())) {
                 PyStackRef_CLOSE(val);
                 if (1) {
                     UOP_STAT_INC(uopcode, miss);
@@ -4604,7 +4604,7 @@
             _PyStackRef val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (PyStackRef_IsNone(val)) {
+            if (PyStackRef_Is(val, PyStackRef_None())) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

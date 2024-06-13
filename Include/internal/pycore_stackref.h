@@ -72,11 +72,6 @@ PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
 }
 
 static inline int
-PyStackRef_IsNone(_PyStackRef stackref) {
-    return PyStackRef_Is(stackref, PyStackRef_None());
-}
-
-static inline int
 PyStackRef_IsDeferred(_PyStackRef ref)
 {
     return ((ref.bits & Py_TAG_BITS) == Py_TAG_DEFERRED);

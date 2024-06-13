@@ -3757,7 +3757,7 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_IsNone(value_stackref);
+            int flag = PyStackRef_Is(value_stackref, PyStackRef_None());
             int offset;
             if (flag) {
                 offset = oparg;
@@ -3781,7 +3781,7 @@
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
             int offset;
-            int nflag = PyStackRef_IsNone(value_stackref);
+            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None());
             if (nflag) {
                 offset = 0;
             }
@@ -5365,7 +5365,7 @@
             // _IS_NONE
             value = stack_pointer[-1];
             {
-                if (PyStackRef_IsNone(value)) {
+                if (PyStackRef_Is(value, PyStackRef_None())) {
                     b = PyStackRef_True();
                 }
                 else {
@@ -5399,7 +5399,7 @@
             // _IS_NONE
             value = stack_pointer[-1];
             {
-                if (PyStackRef_IsNone(value)) {
+                if (PyStackRef_Is(value, PyStackRef_None())) {
                     b = PyStackRef_True();
                 }
                 else {
@@ -5739,7 +5739,7 @@
                     frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
                     DISPATCH_INLINED(gen_frame);
                 }
-                if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
+                if (PyStackRef_Is(v, PyStackRef_None()) && PyIter_Check(receiver_o)) {
                     retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
                 }
                 else {
@@ -6431,7 +6431,7 @@
             /* Skip 2 cache entries */
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!PyStackRef_IsNone(value), TO_BOOL);
+            DEOPT_IF(!PyStackRef_Is(value, PyStackRef_None()), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False();
             stack_pointer[-1] = res;
