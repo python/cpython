@@ -1,0 +1,2 @@
+Deliver real signals on Ctrl-C and Ctrl-Z in the new REPL. Patch by Pablo
+Galindo
