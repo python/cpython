@@ -1513,7 +1513,7 @@ object.
 
 .. c:type:: PyUnicodeWriter
 
-   An Unicode writer instance.
+   A Unicode writer instance.
 
    The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
    success, or :c:func:`PyUnicodeWriter_Discard` on error.
@@ -1550,6 +1550,10 @@ object.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   To use a different error handler than ``strict``,
+   :c:func:`PyUnicode_DecodeUTF8` can be used with
+   :c:func:`PyUnicodeWriter_WriteStr`.
 
 .. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 
