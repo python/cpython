@@ -88,7 +88,7 @@ static const struct _frozen stdlib_modules[] = {
     {"ntpath.pure", _Py_M__ntpath_pure, (int)sizeof(_Py_M__ntpath_pure), false},
     {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), true},
     {"posixpath.pure", _Py_M__posixpath_pure, (int)sizeof(_Py_M__posixpath_pure), false},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), false},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), true},
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), false},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), false},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), false},
