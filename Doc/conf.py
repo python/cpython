@@ -203,6 +203,7 @@ nitpick_ignore = [
     ('py:mod', 'ntpath.pure'),
     ('py:mod', 'posixpath'),
     ('py:mod', 'posixpath.pure'),
+    ('py:mod', 'os.path.pure'),
 ]
 
 # Temporary undocumented names.
