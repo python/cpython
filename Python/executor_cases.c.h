@@ -4142,16 +4142,17 @@
             }
             _PyStackRef arg_stackref = args[1];
             _PyStackRef self_stackref = args[0];
-            PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-            PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) {
+            if (!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
+                                 method->d_common.d_type)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
-            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
+                PyStackRef_AsPyObjectBorrow(self_stackref),
+                PyStackRef_AsPyObjectBorrow(arg_stackref));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(self_stackref);

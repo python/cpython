@@ -2039,13 +2039,14 @@
                 DEOPT_IF(tstate->c_recursion_remaining <= 0, CALL);
                 _PyStackRef arg_stackref = args[1];
                 _PyStackRef self_stackref = args[0];
-                PyObject *self = PyStackRef_AsPyObjectBorrow(self_stackref);
-                PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
-                DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
+                DEOPT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
+                                 method->d_common.d_type), CALL);
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = meth->ml_meth;
                 _Py_EnterRecursiveCallTstateUnchecked(tstate);
-                PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, arg);
+                PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
+                    PyStackRef_AsPyObjectBorrow(self_stackref),
+                    PyStackRef_AsPyObjectBorrow(arg_stackref));
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 PyStackRef_CLOSE(self_stackref);
