@@ -1039,6 +1039,7 @@ def evaluate_forward_ref(
 
     This is similar to calling the ForwardRef.evaluate() method,
     but unlike that method, evaluate_forward_ref() also:
+
     * Recursively evaluates forward references nested within the type hint.
     * Rejects certain objects that are not valid type hints.
     * Replaces type hints that evaluate to None with types.NoneType.

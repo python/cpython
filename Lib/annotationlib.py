@@ -6,6 +6,8 @@ import functools
 import sys
 import types
 
+__all__ = ["Format", "ForwardRef", "call_annotate_function", "get_annotations"]
+
 
 class Format(enum.IntEnum):
     VALUE = 1
@@ -19,7 +21,7 @@ _sentinel = object()
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
-_slots = (
+_SLOTS = (
     "__forward_evaluated__",
     "__forward_value__",
     "__forward_is_argument__",
@@ -36,9 +38,9 @@ _slots = (
 
 
 class ForwardRef:
-    """Internal wrapper to hold a forward reference."""
+    """Wrapper that holds a forward reference."""
 
-    __slots__ = _slots
+    __slots__ = _SLOTS
 
     def __init__(
         self,
@@ -87,8 +89,8 @@ class ForwardRef:
                 return value
         if owner is None:
             owner = self.__owner__
-        if owner is None and type_params is None:
-            raise TypeError("Either 'owner' or 'type_params' must be provided")
+        if type_params is None and owner is None:
+            raise TypeError("Either 'type_params' or 'owner' must be provided")
 
         if globals is None:
             globals = self.__globals__
@@ -218,7 +220,7 @@ class ForwardRef:
 class _Stringifier:
     # Must match the slots on ForwardRef, so we can turn an instance of one into an
     # instance of the other in place.
-    __slots__ = _slots
+    __slots__ = _SLOTS
 
     def __init__(self, node, globals=None, owner=None, is_class=False, cell=None):
         assert isinstance(node, ast.AST)
@@ -250,6 +252,51 @@ class _Stringifier:
         return _Stringifier(
             node, self.__globals__, self.__owner__, self.__forward_is_class__
         )
+
+    # Must implement this since we set __eq__. We hash by identity so that
+    # stringifiers in dict keys are kept separate.
+    def __hash__(self):
+        return id(self)
+
+    def __getitem__(self, other):
+        # Special case, to avoid stringifying references to class-scoped variables
+        # as '__classdict__["x"]'.
+        if (
+            isinstance(self.__ast_node__, ast.Name)
+            and self.__ast_node__.id == "__classdict__"
+        ):
+            raise KeyError
+        if isinstance(other, tuple):
+            elts = [self.__convert(elt) for elt in other]
+            other = ast.Tuple(elts)
+        else:
+            other = self.__convert(other)
+        assert isinstance(other, ast.AST), repr(other)
+        return self.__make_new(ast.Subscript(self.__ast_node__, other))
+
+    def __getattr__(self, attr):
+        return self.__make_new(ast.Attribute(self.__ast_node__, attr))
+
+    def __call__(self, *args, **kwargs):
+        return self.__make_new(
+            ast.Call(
+                self.__ast_node__,
+                [self.__convert(arg) for arg in args],
+                [
+                    ast.keyword(key, self.__convert(value))
+                    for key, value in kwargs.items()
+                ],
+            )
+        )
+
+    def __iter__(self):
+        yield self.__make_new(ast.Starred(self.__ast_node__))
+
+    def __repr__(self):
+        return ast.unparse(self.__ast_node__)
+
+    def __format__(self, format_spec):
+        raise TypeError("Cannot stringify annotation containing string formatting")
 
     def _make_binop(op: ast.AST):
         def binop(self, other):
@@ -320,14 +367,6 @@ class _Stringifier:
 
     del _make_compare
 
-    # Doesn't work because the return type is always coerced to a bool
-    # __contains__ = _make_compare(ast.In())
-
-    # Must implement this since we set __eq__. We hash by identity so that
-    # stringifiers in dict keys are kept separate.
-    def __hash__(self):
-        return id(self)
-
     def _make_unary_op(op):
         def unary_op(self):
             return self.__make_new(ast.UnaryOp(op, self.__ast_node__))
@@ -339,46 +378,6 @@ class _Stringifier:
     __neg__ = _make_unary_op(ast.USub())
 
     del _make_unary_op
-
-    def __getitem__(self, other):
-        # Special case, to avoid stringifying references to class-scoped variables
-        # as '__classdict__["x"]'.
-        if (
-            isinstance(self.__ast_node__, ast.Name)
-            and self.__ast_node__.id == "__classdict__"
-        ):
-            raise KeyError
-        if isinstance(other, tuple):
-            elts = [self.__convert(elt) for elt in other]
-            other = ast.Tuple(elts)
-        else:
-            other = self.__convert(other)
-        assert isinstance(other, ast.AST), repr(other)
-        return self.__make_new(ast.Subscript(self.__ast_node__, other))
-
-    def __getattr__(self, attr):
-        return self.__make_new(ast.Attribute(self.__ast_node__, attr))
-
-    def __call__(self, *args, **kwargs):
-        return self.__make_new(
-            ast.Call(
-                self.__ast_node__,
-                [self.__convert(arg) for arg in args],
-                [
-                    ast.keyword(key, self.__convert(value))
-                    for key, value in kwargs.items()
-                ],
-            )
-        )
-
-    def __iter__(self):
-        yield self.__make_new(ast.Starred(self.__ast_node__))
-
-    def __repr__(self):
-        return ast.unparse(self.__ast_node__)
-
-    def __format__(self, format_spec):
-        raise TypeError("Cannot stringify annotation containing string formatting")
 
 
 class _StringifierDict(dict):
