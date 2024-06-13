@@ -1,0 +1,2 @@
+Fix an array out of bounds crash in ``list_ass_subscript``, which could be
+invoked via some specificly tailored evil input.
