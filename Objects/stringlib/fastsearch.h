@@ -754,9 +754,9 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 
 
 static inline Py_ssize_t
-STRINGLIB(count_char_no_maximum)(const STRINGLIB_CHAR *s, Py_ssize_t n,
-                                 const STRINGLIB_CHAR p0)
-/* A specialized function of count_char that does not cut off at a maximum. 
+STRINGLIB(count_char_no_maxcount)(const STRINGLIB_CHAR *s, Py_ssize_t n,
+                                  const STRINGLIB_CHAR p0)
+/* A specialized function of count_char that does not cut off at a maximum.
    As a result, the compiler is able to vectorize the loop. */
 {
     for (Py_ssize_t i = 0; i < n; i++) {
