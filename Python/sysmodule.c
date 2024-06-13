@@ -769,8 +769,7 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    _Py_DECLARE_STR(newline, "\n");
-    if (PyFile_WriteObject(&_Py_STR(newline), outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(_Py_LATIN1_CHAR_STRING('\n'), outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (PyObject_SetAttr(builtins, _Py_LATIN1_CHAR_STRING('_'), o) != 0)
         return NULL;

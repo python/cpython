@@ -372,10 +372,12 @@ def generate_static_strings_initializer(identifiers, strings):
                 printer.write(f'string = &_Py_ID({i});')
                 printer.write(f'_PyUnicode_InternStatic(interp, &string);')
                 printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
             for value, name in sorted(strings.items()):
                 printer.write(f'string = &_Py_STR({name});')
                 printer.write(f'_PyUnicode_InternStatic(interp, &string);')
                 printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
         printer.write(END)
         printer.write(after)
 
