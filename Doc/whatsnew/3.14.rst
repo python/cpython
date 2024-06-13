@@ -258,6 +258,9 @@ New Features
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
   (Contributed by Sergey B Kirpichev in :gh:`116560`.)
 
+* Add :c:func:`PyLong_FlipSign` function to revert the sign of :class:`int`
+  objects.  (Contributed by Sergey B Kirpichev in :gh:`120446`.)
+
 Porting to Python 3.14
 ----------------------
 

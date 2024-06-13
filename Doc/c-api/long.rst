@@ -507,6 +507,19 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.14
 
 
+.. c:function:: int PyLong_FlipSign(PyObject **obj)
+
+   Flip the sign of the integer object *\*obj*.
+
+   On success, revert the sign of the integer (negative will be positive and
+   vice versa) and return 0.
+
+   On failure, return -1 with an exception set.  This function always succeeds
+   if *\*obj* is a :c:type:`PyLongObject` or its subtype.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
 
    Return 1 if *op* is compact, 0 otherwise.

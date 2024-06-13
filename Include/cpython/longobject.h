@@ -59,10 +59,22 @@ PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
    0, -1 or +1 for zero, negative or positive integer, respectively.
 
    - On success, set '*sign' to the integer sign, and return 0.
-   - On failure, set an exception, and return -1. */
+   - On failure, set an exception, and return -1.  This function always
+     succeeds if v is a PyLongObject or its subtype.
+  */
 PyAPI_FUNC(int) PyLong_GetSign(PyObject *v, int *sign);
 
 PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+
+/* PyLong_FlipSign.  Flip the sign of the integer object:
+   turn negative into positive and vice versa.
+
+   On success, revert the sign of the integer and return 0.
+
+   On failure, return -1 with an exception set.  This function always succeeds
+   if *v is a PyLongObject or its subtype.
+ */
+PyAPI_FUNC(int) PyLong_FlipSign(PyObject **v);
 
 /* _PyLong_NumBits.  Return the number of bits needed to represent the
    absolute value of a long.  For example, this returns 1 for 1 and -1, 2

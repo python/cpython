@@ -737,6 +737,28 @@ class LongTests(unittest.TestCase):
 
         # CRASHES getsign(NULL)
 
+    def test_long_flipsign(self):
+        # Test PyLong_FlipSign()
+        flipsign = _testcapi.pylong_flipsign
+        getsign = _testcapi.pylong_getsign
+        a = flipsign(1)
+        self.assertEqual(getsign(a), -1)
+        a = flipsign(0)
+        self.assertEqual(getsign(a), 0)
+        a = flipsign(-1)
+        self.assertEqual(getsign(a), 1)
+        a = flipsign(123456789)
+        self.assertEqual(getsign(a), -1)
+        a = flipsign(-123456789)
+        self.assertEqual(getsign(a), 1)
+        a = flipsign(IntSubclass(-123456789))
+        self.assertEqual(getsign(a), 1)
+
+        self.assertRaises(TypeError, flipsign, 1.0)
+        self.assertRaises(TypeError, flipsign, Index(123456789))
+
+        # CRASHES flipsign(NULL)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -782,6 +782,29 @@ PyLong_GetSign(PyObject *vv, int *sign)
     return 0;
 }
 
+int
+PyLong_FlipSign(PyObject **vv)
+{
+    if (!PyLong_Check(*vv)) {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", *vv);
+        return -1;
+    }
+
+    PyLongObject *x = (PyLongObject *)*vv;
+
+    if (_PyLong_IsCompact(x)) {
+        stwodigits ival = -medium_value(x);
+        if (IS_SMALL_INT(ival)) {
+            Py_DECREF(x);
+            *vv = get_small_int((sdigit)ival);
+            return 0;
+        }
+    }
+
+    _PyLong_FlipSign(x);
+    return 0;
+}
+
 static int
 bit_length_digit(digit x)
 {
