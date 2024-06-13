@@ -3711,7 +3711,9 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
                                                           step);
 
             if (step == 1) {
-                return list_ass_slice(self, start, stop, seq);
+                int res = list_ass_slice(self, start, stop, seq);
+                Py_DECREF(seq);
+                return res;
             }
 
             if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
