@@ -837,7 +837,7 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is empty, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
-      May raise an :exc:`OSError` on closed queues.
+      May raise an :exc:`OSError` on closed queues. (not guaranteed)
 
    .. method:: full()
 
@@ -942,8 +942,7 @@ For an example of the usage of queues for interprocess communication see
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
 
-      Unlike :meth:`Queue.empty`, if the queue is closed and this
-      method is called, this raises an :exc:`OSError`.
+      Always raises an :exc:`OSError` if the SimpleQueue is closed.
 
    .. method:: get()
 
