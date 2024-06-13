@@ -35,6 +35,9 @@ extern "C" {
     _Py_atomic_load_uintptr_acquire(&value)
 #define FT_ATOMIC_LOAD_PTR_RELAXED(value) \
     _Py_atomic_load_ptr_relaxed(&value)
+#define FT_ATOMIC_LOAD_INT(value) _Py_atomic_load_int(&value)
+#define FT_ATOMIC_STORE_INT(value, new_value) \
+    _Py_atomic_store_int(&value, new_value)
 #define FT_ATOMIC_LOAD_UINT8(value) \
     _Py_atomic_load_uint8(&value)
 #define FT_ATOMIC_STORE_UINT8(value, new_value) \
@@ -70,6 +73,8 @@ extern "C" {
 #define FT_ATOMIC_LOAD_PTR_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_PTR_RELAXED(value) value
+#define FT_ATOMIC_LOAD_INT(value) value
+#define FT_ATOMIC_STORE_INT(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_UINT8(value) value
 #define FT_ATOMIC_STORE_UINT8(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_UINT8_RELAXED(value) value
