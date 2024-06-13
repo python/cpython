@@ -23,14 +23,14 @@ import ntpath.pure
 from ntpath.pure import *
 from ntpath.pure import _get_bothseps
 
-__all__ = ["abspath", "altsep", "basename", "commonpath", "commonprefix",
-           "curdir", "defpath", "devnull", "dirname", "exists", "expanduser",
-           "expandvars", "extsep", "getatime", "getctime", "getmtime",
-           "getsize", "isabs", "isdevdrive", "isdir", "isfile", "isjunction",
-           "islink", "ismount", "isreserved", "join", "lexists", "normcase",
-           "normpath", "pardir", "pathsep", "realpath", "relpath", "samefile",
-           "sameopenfile", "samestat", "sep", "split", "splitdrive",
-           "splitext", "splitroot", "supports_unicode_filenames"]
+__all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
+           "basename","dirname","commonprefix","getsize","getmtime",
+           "getatime","getctime", "islink","exists","lexists","isdir","isfile",
+           "ismount","isreserved","expanduser","expandvars","normpath",
+           "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
+           "extsep","devnull","realpath","supports_unicode_filenames","relpath",
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
+           "isdevdrive"]
 
 
 # Is a path a mount point?

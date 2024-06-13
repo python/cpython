@@ -27,14 +27,14 @@ from genericpath import *
 import posixpath.pure
 from posixpath.pure import *
 
-__all__ = ["abspath", "altsep", "basename", "commonpath", "commonprefix",
-           "curdir", "defpath", "devnull", "dirname", "exists", "expanduser",
-           "expandvars", "extsep", "getatime", "getctime", "getmtime",
-           "getsize", "isabs", "isdevdrive", "isdir", "isfile", "isjunction",
-           "islink", "ismount", "join", "lexists", "normcase", "normpath",
-           "pardir", "pathsep", "realpath", "relpath", "samefile",
-           "sameopenfile", "samestat", "sep", "split", "splitdrive",
-           "splitext", "splitroot", "supports_unicode_filenames"]
+__all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
+           "basename","dirname","commonprefix","getsize","getmtime",
+           "getatime","getctime","islink","exists","lexists","isdir","isfile",
+           "ismount", "expanduser","expandvars","normpath","abspath",
+           "samefile","sameopenfile","samestat",
+           "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
+           "devnull","realpath","supports_unicode_filenames","relpath",
+           "commonpath", "isjunction","isdevdrive"]
 
 
 # Is a path a mount point?
@@ -84,13 +84,12 @@ def expanduser(path):
     do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        sep = b'/'
         tilde = b'~'
     else:
-        sep = '/'
         tilde = '~'
     if not path.startswith(tilde):
         return path
+    sep = _get_sep(path)
     i = path.find(sep, 1)
     if i < 0:
         i = len(path)
