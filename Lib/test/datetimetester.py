@@ -6785,7 +6785,7 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(dt_orig, dt_rt)
 
-    def test_type_check_per_interp(self):
+    def test_type_check_in_subinterp(self):
         script = textwrap.dedent(f"""
             if {_interpreters is None}:
                 import _testcapi as module
