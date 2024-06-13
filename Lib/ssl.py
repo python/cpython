@@ -99,26 +99,26 @@ from enum import _simple_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
-from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, MemoryBIO, SSLSession
+from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION  # noqa: F401
+from _ssl import _SSLContext, MemoryBIO, SSLSession  # noqa: F401
 from _ssl import (
-    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
-    SSLSyscallError, SSLEOFError, SSLCertVerificationError
+    SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,  # noqa: F401
+    SSLSyscallError, SSLEOFError, SSLCertVerificationError  # noqa: F401
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
-from _ssl import RAND_status, RAND_add, RAND_bytes
+from _ssl import RAND_status, RAND_add, RAND_bytes  # noqa: F401
 try:
-    from _ssl import RAND_egd
+    from _ssl import RAND_egd  # noqa: F401
 except ImportError:
     # RAND_egd is not supported on some platforms
     pass
 
 
 from _ssl import (
-    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
+    HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,  # noqa: F401
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK  # noqa: F401
 )
-from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
+from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION  # noqa: F401
 
 _IntEnum._convert_(
     '_SSLMethod', __name__,
@@ -255,7 +255,7 @@ class _TLSMessageType:
 
 
 if sys.platform == "win32":
-    from _ssl import enum_certificates, enum_crls
+    from _ssl import enum_certificates, enum_crls  # noqa: F401
 
 from socket import socket, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
