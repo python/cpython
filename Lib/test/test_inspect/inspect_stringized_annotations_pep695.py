@@ -1,5 +1,4 @@
 from __future__ import annotations
-from inspect import get_annotations
 from typing import Callable, Unpack
 
 
