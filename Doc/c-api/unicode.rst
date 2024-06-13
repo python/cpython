@@ -1520,7 +1520,7 @@ object.
 
 .. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
 
-   Create an Unicode writer instance.
+   Create a Unicode writer instance.
 
    Set an exception and return ``NULL`` on error.
 
