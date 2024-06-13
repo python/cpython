@@ -1248,21 +1248,21 @@ class BuiltinTest(unittest.TestCase):
             self.check_iter_pickle(m1, list(m2), proto)
 
     # def test_map_pickle_strict(self):
-    #     f = lambda x, y: (x, y)
+    #     f2 = lambda x, y: (x, y)
     #     a = (1, 2, 3)
     #     b = (4, 5, 6)
     #     t = [(1, 4), (2, 5), (3, 6)]
     #     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    #         m1 = map(f, a, b, strict=True)
+    #         m1 = map(f2, a, b, strict=True)
     #         self.check_iter_pickle(m1, t, proto)
 
     # def test_map_pickle_strict_fail(self):
-    #     f = lambda x, y: (x, y)
+    #     f2 = lambda x, y: (x, y)
     #     a = (1, 2, 3)
     #     b = (4, 5, 6, 7)
     #     t = [(1, 4), (2, 5), (3, 6)]
     #     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    #         m1 = map(f, a, b, strict=True)
+    #         m1 = map(f2, a, b, strict=True)
     #         m2 = pickle.loads(pickle.dumps(m1, proto))
     #         self.assertEqual(self.iter_error(m1, ValueError), t)
     #         self.assertEqual(self.iter_error(m2, ValueError), t)
