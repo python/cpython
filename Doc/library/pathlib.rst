@@ -1349,8 +1349,8 @@ Creating files and directories
 .. method:: Path.touch(mode=0o666, exist_ok=True)
 
    Create a file at this given path.  If *mode* is given, it is combined
-   with the process' ``umask`` value to determine the file mode and access
-   flags.  If the file already exists, the function succeeds if *exist_ok*
+   with the process's ``umask`` value to determine the file mode and access
+   flags.  If the file already exists, the function succeeds when *exist_ok*
    is true (and its modification time is updated to the current time),
    otherwise :exc:`FileExistsError` is raised.
 
@@ -1362,7 +1362,7 @@ Creating files and directories
 .. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
 
    Create a new directory at this given path.  If *mode* is given, it is
-   combined with the process' ``umask`` value to determine the file mode
+   combined with the process's ``umask`` value to determine the file mode
    and access flags.  If the path already exists, :exc:`FileExistsError`
    is raised.
 
@@ -1391,7 +1391,7 @@ Creating files and directories
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created
-   as a directory if *target_is_directory* is ``True`` or a file symlink (the
+   as a directory if *target_is_directory* is true or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    ::
