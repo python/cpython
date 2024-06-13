@@ -5209,19 +5209,19 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
-    PyObject *string, *format;
+    PyObject *string, *format, *result;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
+    PyObject *module = PyImport_ImportModule("_strptime");
     if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
-            return NULL;
+        return NULL;
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
-                                         cls, string, format, NULL);
+    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+                                        cls, string, format, NULL);
+    Py_DECREF(module);
+    return result;
 }
 
 /* Return new datetime from date/datetime and time arguments. */
