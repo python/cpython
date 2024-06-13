@@ -193,10 +193,10 @@ class CommonTest(seq_tests.CommonTest):
 
     def test_slice_assign_iterator(self):
         x = self.type2test(range(5))
-        x[0:3] = iter(self.type2test(reversed(range(3))))
+        x[0:3] = reversed(range(3))
         self.assertEqual(x, self.type2test([2, 1, 0, 3, 4]))
 
-        x[:] = iter(self.type2test(reversed(range(3))))
+        x[:] = reversed(range(3))
         self.assertEqual(x, self.type2test([2, 1, 0]))
 
     def test_delslice(self):
