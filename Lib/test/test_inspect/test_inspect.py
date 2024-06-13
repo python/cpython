@@ -22,6 +22,7 @@ import time
 import types
 import tempfile
 import textwrap
+from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -1693,33 +1694,106 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
 
-    def test_get_annotations_with_stringized_pep695_annotations(self):
-        from typing import Unpack
+    def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
-
         A_annotations = inspect.get_annotations(ann_module695.A, eval_str=True)
         A_type_params = ann_module695.A.__type_params__
         self.assertIs(A_annotations["x"], A_type_params[0])
         self.assertEqual(A_annotations["y"].__args__[0], Unpack[A_type_params[1]])
         self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
 
-        B_annotations = inspect.get_annotations(ann_module695.B, eval_str=True)
+    def test_pep695_generic_class_with_future_annotations_and_local_shadowing(self):
+        B_annotations = inspect.get_annotations(
+            inspect_stringized_annotations_pep695.B, eval_str=True
+        )
         self.assertEqual(B_annotations, {"x": int, "y": str, "z": bytes})
 
-        generic_function_annotations = inspect.get_annotations(
+    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        C_annotations = inspect.get_annotations(ann_module695.C, eval_str=True)
+        self.assertEqual(
+            set(C_annotations.values()),
+            set(ann_module695.C.__type_params__)
+        )
+
+    def test_pep_695_generic_function_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_func_annotations = inspect.get_annotations(
             ann_module695.generic_function, eval_str=True
         )
         func_t_params = ann_module695.generic_function.__type_params__
         self.assertEqual(
-            generic_function_annotations.keys(), {"x", "y", "z", "zz", "return"}
+            generic_func_annotations.keys(), {"x", "y", "z", "zz", "return"}
         )
-        self.assertIs(generic_function_annotations["x"], func_t_params[0])
+        self.assertIs(generic_func_annotations["x"], func_t_params[0])
+        self.assertEqual(generic_func_annotations["y"], Unpack[func_t_params[1]])
+        self.assertIs(generic_func_annotations["z"].__origin__, func_t_params[2])
+        self.assertIs(generic_func_annotations["zz"].__origin__, func_t_params[2])
+
+    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
         self.assertEqual(
-            generic_function_annotations["y"],
-            Unpack[func_t_params[1]]
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.generic_function_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.generic_function_2.__type_params__
+            )
         )
-        self.assertIs(generic_function_annotations["z"].__origin__, func_t_params[2])
-        self.assertIs(generic_function_annotations["zz"].__origin__, func_t_params[2])
+
+    def test_pep_695_generic_method_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_method_annotations = inspect.get_annotations(
+            ann_module695.D.generic_method, eval_str=True
+        )
+        params = {
+            param.__name__: param
+            for param in ann_module695.D.generic_method.__type_params__
+        }
+        self.assertEqual(
+            generic_method_annotations,
+            {"x": params["Foo"], "y": params["Bar"], "return": None}
+        )
+
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.D.generic_method_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.D.generic_method_2.__type_params__
+            )
+        )
+
+    def test_pep_695_generics_with_future_annotations_nested_in_function(self):
+        results = inspect_stringized_annotations_pep695.nested()
+
+        self.assertEqual(
+            set(results.E_annotations.values()),
+            set(results.E.__type_params__)
+        )
+        self.assertEqual(
+            set(results.E_meth_annotations.values()),
+            set(results.E.generic_method.__type_params__)
+        )
+        self.assertNotEqual(
+            set(results.E_meth_annotations.values()),
+            set(results.E.__type_params__)
+        )
+        self.assertEqual(
+            set(results.E_meth_annotations.values()).intersection(results.E.__type_params__),
+            set()
+        )
+
+        self.assertEqual(
+            set(results.generic_func_annotations.values()),
+            set(results.generic_func.__type_params__)
+        )
 
 
 class TestFormatAnnotation(unittest.TestCase):
