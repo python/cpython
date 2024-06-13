@@ -1891,11 +1891,14 @@ class AbstractPickleTests:
                     self.assertIs(b1, b2)
 
                     b1a, b2a = array_type(s), array_type(s)
+                    # Unlike bytes, equal but independent bytearray objects are
+                    # never identical.
+                    self.assertIsNot(b1a, b2a)
+
                     p = self.dumps((b1a, b2a), proto)
                     b1b, b2b = self.loads(p)
+                    self.assertIsNot(b1b, b2b)
 
-                    # Unlike bytes, bytearray objects are never identical,
-                    # even if they have an empty data or a short data.
                     self.assertIsNot(b1a, b1b)
                     self.assert_is_copy(b1a, b1b)
 
