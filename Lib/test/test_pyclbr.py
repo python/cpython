@@ -78,7 +78,8 @@ class PyclbrTest(TestCase):
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (oclass.__name__.lstrip('_'), objname)
+                if stripped_typename := oclass.__name__.lstrip('_'):
+                    objname = f"_{stripped_typename}{objname}"
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
@@ -113,12 +114,16 @@ class PyclbrTest(TestCase):
                         continue
                     if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
-                foundMethods = []
-                for m in value.methods.keys():
-                    if m.startswith('__') and not m.endswith('__'):
-                        foundMethods.append(f"_{name.lstrip('_')}{m}")
-                    else:
-                        foundMethods.append(m)
+
+                if stripped_typename := name.lstrip('_'):
+                    foundMethods = []
+                    for m in value.methods.keys():
+                        if m.startswith('__') and not m.endswith('__'):
+                            foundMethods.append(f"_{stripped_typename}{m}")
+                        else:
+                            foundMethods.append(m)
+                else:
+                    foundMethods = list(value.methods.keys())
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
