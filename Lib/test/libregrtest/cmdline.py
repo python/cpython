@@ -157,7 +157,7 @@ class Namespace(argparse.Namespace):
         self.verbose3 = False
         self.print_slow = False
         self.random_seed = None
-        self.use_mp = None
+        self.use_mp = 0
         self.forever = False
         self.header = False
         self.failfast = False

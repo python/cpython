@@ -1,0 +1,3 @@
+The Python test runner (regrtest) now runs tests in parallel by default. Use
+the ``--single-process`` option to run tests sequentially in a single process.
+Patch by Victor Stinner.
