@@ -571,6 +571,18 @@ def get_annotations(
             return dict(ann)
 
     ann = getattr(obj, "__annotations__", None)
+    if ann is None:
+        return {}
+
+    if not isinstance(ann, dict):
+        raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
+
+    if not ann:
+        return {}
+
+    if not eval_str:
+        return dict(ann)
+
     if isinstance(obj, type):
         # class
         obj_globals = None
@@ -597,18 +609,6 @@ def get_annotations(
         obj_globals = obj_locals = unwrap = None
     else:
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
-
-    if ann is None:
-        return {}
-
-    if not isinstance(ann, dict):
-        raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
-
-    if not ann:
-        return {}
-
-    if not eval_str:
-        return dict(ann)
 
     if unwrap is not None:
         while True:

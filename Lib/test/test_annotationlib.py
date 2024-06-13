@@ -252,6 +252,34 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(annotationlib.get_annotations(int), {})
         self.assertEqual(annotationlib.get_annotations(object), {})
 
+    def test_custom_metaclass(self):
+        class Meta(type):
+            pass
+
+        class C(metaclass=Meta):
+            x: int
+
+        self.assertEqual(annotationlib.get_annotations(C), {"x": int})
+
+    def test_missing_dunder_dict(self):
+        class NoDict(type):
+            @property
+            def __dict__(cls):
+                raise AttributeError
+
+        class C1(metaclass=NoDict):
+            a: int
+
+        self.assertEqual(annotationlib.get_annotations(C1), {"a": int})
+        self.assertEqual(
+            annotationlib.get_annotations(C1, format=annotationlib.Format.FORWARDREF),
+            {"a": int},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(C1, format=annotationlib.Format.SOURCE),
+            {"a": "int"},
+        )
+
     def test_format(self):
         def f1(a: int):
             pass
