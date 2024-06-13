@@ -345,7 +345,7 @@ _PyGen_yf(PyGenObject *gen)
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         assert(is_resume(frame->instr_ptr));
         assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
-        return PyStackRef_AsPyObjectBorrow(PyStackRef_DUP(_PyFrame_StackPeek(frame)));
+        return PyStackRef_AsPyObjectNew(_PyFrame_StackPeek(frame));
     }
     return NULL;
 }

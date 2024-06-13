@@ -1446,7 +1446,7 @@
             oparg = CURRENT_OPARG();
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectSteal(v));
+            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1471,13 +1471,13 @@
 
         case _LOAD_LOCALS: {
             _PyStackRef locals;
-            _PyStackRef locals_s = PyStackRef_FromPyObjectSteal(LOCALS());
-            if (PyStackRef_IsNull(locals_s)) {
+            PyObject *l = LOCALS();
+            if (l == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 if (true) JUMP_TO_ERROR();
             }
-            locals = PyStackRef_DUP(locals_s);
+            locals = PyStackRef_FromPyObjectNew(l);;
             stack_pointer[0] = locals;
             stack_pointer += 1;
             break;
@@ -2546,7 +2546,7 @@
             int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left_o, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
-            res = PyStackRef_FromPyObjectSteal((sign_ish & oparg) ? Py_True : Py_False);
+            res = (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2579,7 +2579,7 @@
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left_o, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right_o, (destructor)PyObject_Free);
-            res = PyStackRef_FromPyObjectSteal((sign_ish & oparg) ? Py_True : Py_False);
+            res =  (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2603,7 +2603,7 @@
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            res = PyStackRef_FromPyObjectSteal(((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False);
+            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2622,7 +2622,7 @@
             int res = Py_Is(left_o, right_o) ^ oparg;
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
-            b = PyStackRef_FromPyObjectSteal(res ? Py_True : Py_False);
+            b = res ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-2] = b;
             stack_pointer += -1;
             break;
@@ -2641,7 +2641,7 @@
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
             if (res < 0) JUMP_TO_ERROR();
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-2] = b;
             stack_pointer += -1;
             break;
@@ -2666,7 +2666,7 @@
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
             if (res < 0) JUMP_TO_ERROR();
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-2] = b;
             stack_pointer += -1;
             break;
@@ -2690,7 +2690,7 @@
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
             if (res < 0) JUMP_TO_ERROR();
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-2] = b;
             stack_pointer += -1;
             break;
@@ -2744,7 +2744,7 @@
             }
             int res = PyErr_GivenExceptionMatches(left_o, right_o);
             PyStackRef_CLOSE(right);
-            b = PyStackRef_FromPyObjectSteal(res ? Py_True : Py_False);
+            b = res ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-1] = b;
             break;
         }

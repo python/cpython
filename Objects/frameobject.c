@@ -171,7 +171,8 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
                     PyStackRef_XCLOSE(oldvalue);
                 }
             } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-                PyStackRef_XSET(fast[i], PyStackRef_FromPyObjectNew(value));
+                PyStackRef_XCLOSE(fast[i]);
+                fast[i] = PyStackRef_FromPyObjectNew(value);
             }
             return 0;
         }

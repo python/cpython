@@ -85,7 +85,7 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(PyStackRef_AsPyObjectBorrow(f->localsplus[f->stacktop-1]) != NULL);
+    assert(!PyStackRef_IsNull(f->localsplus[f->stacktop-1]));
     return f->localsplus[f->stacktop-1];
 }
 

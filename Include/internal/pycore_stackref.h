@@ -120,6 +120,18 @@ PyStackRef_AsPyObjectSteal(_PyStackRef tagged)
 #   define PyStackRef_AsPyObjectSteal(tagged) PyStackRef_AsPyObjectBorrow(tagged)
 #endif
 
+#ifdef Py_GIL_DISABLED
+// Converts a PyStackRef back to a PyObject *, converting the
+// stackref to a new reference.
+static inline PyObject *
+PyStackRef_AsPyObjectNew(_PyStackRef tagged)
+{
+    return Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged));
+}
+#else
+#   define PyStackRef_AsPyObjectNew(tagged) Py_NewRef(PyStackRef_AsPyObjectBorrow(tagged))
+#endif
+
 static inline PyTypeObject *
 PyStackRef_TYPE(_PyStackRef stackref)
 {
@@ -164,14 +176,6 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 #else
 #   define PyStackRef_FromPyObjectNew(obj) ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) })
 #endif
-
-#define PyStackRef_XSET(dst, src) \
-    do { \
-        _PyStackRef *_tmp_dst_ptr = &(dst); \
-        _PyStackRef _tmp_old_dst = (*_tmp_dst_ptr); \
-        *_tmp_dst_ptr = (src); \
-        PyStackRef_XCLOSE(_tmp_old_dst); \
-    } while (0)
 
 #define PyStackRef_CLEAR(op) \
     do { \
@@ -220,6 +224,7 @@ PyStackRef_DUP(_PyStackRef tagged)
     return tagged;
 }
 #else
+// Needs to be macro to not overflow on WASI debug.
 #   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 #endif
 

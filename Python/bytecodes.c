@@ -1470,7 +1470,7 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectSteal(v));
+            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1490,13 +1490,13 @@ dummy_func(
         }
 
         inst(LOAD_LOCALS, ( -- locals)) {
-            _PyStackRef locals_s = PyStackRef_FromPyObjectSteal(LOCALS());
-            if (PyStackRef_IsNull(locals_s)) {
+            PyObject *l = LOCALS();
+            if (l == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 ERROR_IF(true, error);
             }
-            locals = PyStackRef_DUP(locals_s);
+            locals = PyStackRef_FromPyObjectNew(l);;
         }
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
@@ -2479,7 +2479,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left_o, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
-            res = PyStackRef_FromPyObjectSteal((sign_ish & oparg) ? Py_True : Py_False);
+            res = (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2499,7 +2499,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left_o, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right_o, (destructor)PyObject_Free);
-            res = PyStackRef_FromPyObjectSteal((sign_ish & oparg) ? Py_True : Py_False);
+            res =  (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2516,7 +2516,7 @@ dummy_func(
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            res = PyStackRef_FromPyObjectSteal(((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False);
+            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True() : PyStackRef_False();
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2526,7 +2526,7 @@ dummy_func(
 
             int res = Py_Is(left_o, right_o) ^ oparg;
             DECREF_INPUTS();
-            b = PyStackRef_FromPyObjectSteal(res ? Py_True : Py_False);
+            b = res ? PyStackRef_True() : PyStackRef_False();
         }
 
         family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
@@ -2541,7 +2541,7 @@ dummy_func(
             int res = PySequence_Contains(right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
         }
 
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
@@ -2568,7 +2568,7 @@ dummy_func(
             int res = _PySet_Contains((PySetObject *)right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
         }
 
         inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
@@ -2580,7 +2580,7 @@ dummy_func(
             int res = PyDict_Contains(right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = PyStackRef_FromPyObjectSteal((res ^ oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
         }
 
         inst(CHECK_EG_MATCH, (exc_value_st, match_type_st -- rest, match)) {
@@ -2621,7 +2621,7 @@ dummy_func(
 
             int res = PyErr_GivenExceptionMatches(left_o, right_o);
             DECREF_INPUTS();
-            b = PyStackRef_FromPyObjectSteal(res ? Py_True : Py_False);
+            b = res ? PyStackRef_True() : PyStackRef_False();
         }
 
          tier1 inst(IMPORT_NAME, (level, fromlist -- res)) {
@@ -3503,17 +3503,17 @@ dummy_func(
             assert(Py_TYPE(callable_o) == &PyFunction_Type);
             int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
-            _PyInterpreterFrame *new_frame_o = _PyEvalFramePushAndInit(
+            _PyInterpreterFrame *_new_frame = _PyEvalFramePushAndInit(
                 tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                 args, total_args, NULL
             );
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             SYNC_SP();
-            if (new_frame_o == NULL) {
+            if (_new_frame == NULL) {
                 ERROR_NO_POP();
             }
-            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
         }
 
         op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -3647,13 +3647,13 @@ dummy_func(
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            _PyInterpreterFrame *new_frame_o = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyStackRef *first_non_self_local = new_frame_o->localsplus + has_self;
-            new_frame_o->localsplus[0] = self_or_null;
+            _PyInterpreterFrame *_new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            _PyStackRef *first_non_self_local = _new_frame->localsplus + has_self;
+            _new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = (_PyStackRef) { .bits = (uintptr_t)new_frame_o };
+            new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
         }
 
         op(_PUSH_FRAME, (new_frame -- )) {
@@ -3938,7 +3938,6 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            ERROR_IF(args_o == NULL, error);
             PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
 
