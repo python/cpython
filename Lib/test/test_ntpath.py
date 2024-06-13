@@ -839,7 +839,6 @@ class TestNtpath(NtpathTestCase):
             drive, _ = ntpath.splitdrive(cwd_dir)
             tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
-    @unittest.skipUnless(nt, "relpath requires 'nt' module")
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
         tester('ntpath.relpath(ntpath.abspath("a"))', 'a')
