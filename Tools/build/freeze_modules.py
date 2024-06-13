@@ -65,9 +65,10 @@ FROZEN = [
         'ntpath.pure',
         '<posixpath>',
         'posixpath.pure',
-        # We must explicitly mark os.path as a frozen module
-        # even though it will never be imported.
+        # We must explicitly mark os.path and os.path.pure as frozen modules
+        # even though they will never be imported.
         f'<{OS_PATH}> : os.path',
+        f'{OS_PATH}.pure : os.path.pure',
         'os',
         'site',
         'stat',
