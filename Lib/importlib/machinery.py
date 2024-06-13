@@ -19,3 +19,12 @@ from ._bootstrap_external import NamespaceLoader
 def all_suffixes():
     """Returns a list of all recognized module suffixes for this process"""
     return SOURCE_SUFFIXES + BYTECODE_SUFFIXES + EXTENSION_SUFFIXES
+
+
+__all__ = ['ModuleSpec', 'BuiltinImporter', 'FrozenImporter',
+           'SOURCE_SUFFIXES', 'DEBUG_BYTECODE_SUFFIXES',
+           'OPTIMIZED_BYTECODE_SUFFIXES', 'BYTECODE_SUFFIXES',
+           'EXTENSION_SUFFIXES', 'WindowsRegistryFinder', 'PathFinder',
+           'FileFinder', 'SourceFileLoader', 'SourcelessFileLoader',
+           'ExtensionFileLoader', 'AppleFrameworkLoader', 'NamespaceLoader',
+           'all_suffixes']
