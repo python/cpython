@@ -101,6 +101,28 @@ class ListTest(list_tests.CommonTest):
         x[:] = x
         self.assertEqual(x, [])
 
+    def test_slice_assign_iterator(self):
+        class MyIterator:
+            def __init__(self, lst):
+                self.lst = lst
+                self.index = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                try:
+                    res = self.lst[self.index]
+                except IndexError:
+                    raise StopIteration(self.index)
+                self.index += 1
+                return res
+
+        x = list(range(5))
+        x[0:3] = MyIterator(list(reversed(range(3))))
+        self.assertEqual(x, [2, 1, 0, 3, 4])
+
+        x[:] = MyIterator(list(reversed(range(3))))
+        self.assertEqual(x, [2, 1, 0])
+
     def test_list_resize_overflow(self):
         # gh-97616: test new_allocated * sizeof(PyObject*) overflow
         # check in list_resize()
