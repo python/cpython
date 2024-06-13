@@ -19,6 +19,7 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(string.octdigits, '01234567')
         self.assertEqual(string.punctuation, '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
         self.assertEqual(string.printable, string.digits + string.ascii_lowercase + string.ascii_uppercase + string.punctuation + string.whitespace)
+        self.assertEqual(string.visible, string.digits + string.ascii_lowercase + string.ascii_uppercase + string.punctuation)
 
     def test_capwords(self):
         self.assertEqual(string.capwords('abc def ghi'), 'Abc Def Ghi')

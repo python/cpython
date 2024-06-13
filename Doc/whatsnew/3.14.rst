@@ -100,6 +100,13 @@ os
   by :func:`os.unsetenv`, or made outside Python in the same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+string
+------
+
+* Add :const:`~string.visible` to :mod:`string`, containing all non-whitespace
+  printable ASCII characters.
+  (Contributed by James Murray in :gh:`119067`.)
+
 symtable
 --------
 
