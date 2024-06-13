@@ -1800,14 +1800,11 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
         assert 'gil' not in config, (own_gil, config)
         config['gil'] = 'own' if own_gil else 'shared'
     else:
+        gil_supported = {0: 'default', 1: 'shared', 2: 'own'}
         gil = config['gil']
-        if gil == 0:
-            config['gil'] = 'default'
-        elif gil == 1:
-            config['gil'] = 'shared'
-        elif gil == 2:
-            config['gil'] = 'own'
-        else:
+        if gil in gil_supported:
+            config['gil'] = gil_supported[gil]
+        elif gil not in gil_supported.values():
             raise NotImplementedError(gil)
     config = types.SimpleNamespace(**config)
     return _testinternalcapi.run_in_subinterp_with_config(code, config)

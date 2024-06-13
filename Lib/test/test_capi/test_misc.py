@@ -2263,7 +2263,7 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
-    def test_datetime_capi_type_check(self):
+    def test_type_check_per_interp(self):
         script = textwrap.dedent(f"""
             if {_interpreters is None}:
                 import _testcapi as module
@@ -2279,7 +2279,7 @@ class SubinterpreterTest(unittest.TestCase):
                 spec.loader.exec_module(module)
 
             def run(type_checker, obj):
-                if not type_checker(obj, True):  # exact check
+                if not type_checker(obj, True):
                     raise TypeError(f'{{type(obj)}} is not C API type')
 
             import _datetime
@@ -2293,11 +2293,9 @@ class SubinterpreterTest(unittest.TestCase):
             ret = support.run_in_subinterp(script)
             self.assertEqual(ret, 0)
         else:
-            configs = InterpreterConfigTests
             for name in ('isolated', 'legacy'):
                 with self.subTest(name):
-                    config = dict(configs.supported[name].__dict__)
-                    config['gil'] = configs.gil_supported.index(config['gil'])
+                    config = _interpreters.new_config(name).__dict__
                     ret = support.run_in_subinterp_with_config(script, **config)
                     self.assertEqual(ret, 0)
 
