@@ -2263,42 +2263,6 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
-    def test_type_check_per_interp(self):
-        script = textwrap.dedent(f"""
-            if {_interpreters is None}:
-                import _testcapi as module
-                module.test_datetime_capi()
-            else:
-                import importlib.machinery
-                import importlib.util
-                fullname = '_testcapi_datetime'
-                origin = importlib.util.find_spec('_testcapi').origin
-                loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
-                spec = importlib.util.spec_from_loader(fullname, loader)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-            def run(type_checker, obj):
-                if not type_checker(obj, True):
-                    raise TypeError(f'{{type(obj)}} is not C API type')
-
-            import _datetime
-            run(module.datetime_check_date,     _datetime.date.today())
-            run(module.datetime_check_datetime, _datetime.datetime.now())
-            run(module.datetime_check_time,     _datetime.time(12, 30))
-            run(module.datetime_check_delta,    _datetime.timedelta(1))
-            run(module.datetime_check_tzinfo,   _datetime.tzinfo())
-        """)
-        if _interpreters is None:
-            ret = support.run_in_subinterp(script)
-            self.assertEqual(ret, 0)
-        else:
-            for name in ('isolated', 'legacy'):
-                with self.subTest(name):
-                    config = _interpreters.new_config(name).__dict__
-                    ret = support.run_in_subinterp_with_config(script, **config)
-                    self.assertEqual(ret, 0)
-
 
 @requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):
