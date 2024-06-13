@@ -6788,6 +6788,7 @@ class ExtensionModuleTests(unittest.TestCase):
         if self.__class__.__name__.endswith('Pure'):
             self.skipTest('Not relevant in pure Python')
 
+    @support.cpython_only
     def test_gh_120161(self):
         with self.subTest('simple'):
             script = textwrap.dedent("""
