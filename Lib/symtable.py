@@ -80,7 +80,7 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values returned are one of the values in
+        The value returned is one of the values in
         the ``SymbolTableType`` enumeration.
         """
         if self._table.type == _symtable.TYPE_MODULE:

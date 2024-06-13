@@ -92,8 +92,12 @@ Examining Symbol Tables
          Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
          and ``'type parameter'`` as possible return values.
 
-      .. versionchanged:: 3.14
+      .. versionchanged:: 3.13
          Return values are members of the :class:`SymbolTableType` enumeration.
+
+         The exact values of the returned string may change in the future,
+         and thus, it is recommended to use :class:`SymbolTableType` members
+         instead of hard-coded strings.
 
    .. method:: get_id()
 
