@@ -47,7 +47,7 @@ else:
 
 try:
     # Expose _deque_iterator to support pickling deque iterators
-    from _collections import _deque_iterator  # noqa
+    from _collections import _deque_iterator  # noqa: F401
 except ImportError:
     pass
 

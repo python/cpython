@@ -1129,4 +1129,4 @@ except LookupError:
 # package
 _false = 0
 if _false:
-    import encodings  # noqa
+    import encodings  # noqa: F401

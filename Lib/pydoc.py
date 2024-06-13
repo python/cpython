@@ -79,7 +79,7 @@ from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
 
 # Expose plain() as pydoc.plain()
-from _pyrepl.pager import plain  # noqa
+from _pyrepl.pager import plain  # noqa: F401
 
 
 # --------------------------------------------------------- old names

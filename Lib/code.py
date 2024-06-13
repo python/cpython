@@ -355,7 +355,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
         console.raw_input = readfunc
     else:
         try:
-            import readline  # noqa
+            import readline  # noqa: F401
         except ImportError:
             pass
     console.interact(banner, exitmsg)

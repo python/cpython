@@ -3,7 +3,7 @@
 import _symtable
 from _symtable import (
     USE,
-    DEF_GLOBAL,  # noqa
+    DEF_GLOBAL,  # noqa: F401
     DEF_NONLOCAL, DEF_LOCAL,
     DEF_PARAM, DEF_TYPE_PARAM, DEF_FREE_CLASS,
     DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
