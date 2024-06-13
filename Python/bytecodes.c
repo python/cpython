@@ -4637,8 +4637,8 @@ dummy_func(
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             SYNC_SP();
-            EXIT_IF(!PyStackRef_Is(flag, Py_StackRef_False()));
-            assert(PyStackRef_Is(flag, Py_StackRef_False()));
+            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_False()));
+            assert(PyStackRef_Is(flag, PyStackRef_False()));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {

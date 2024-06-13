@@ -4579,11 +4579,11 @@
             _PyStackRef flag;
             flag = stack_pointer[-1];
             stack_pointer += -1;
-            if (!PyStackRef_Is(flag, Py_StackRef_False())) {
+            if (!PyStackRef_Is(flag, PyStackRef_False())) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(PyStackRef_Is(flag, Py_StackRef_False()));
+            assert(PyStackRef_Is(flag, PyStackRef_False()));
             break;
         }
 
