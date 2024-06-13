@@ -1479,7 +1479,7 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
     }
 
     if (lz->strict) {
-        Py_BuildValue("ONO", Py_TYPE(lz), args, Py_True);
+        return Py_BuildValue("ONO", Py_TYPE(lz), args, Py_True);
     }
     return Py_BuildValue("ON", Py_TYPE(lz), args);
 }

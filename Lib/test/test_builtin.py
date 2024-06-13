@@ -145,6 +145,9 @@ def filter_char(arg):
 def map_char(arg):
     return chr(ord(arg)+1)
 
+def f2(x, y): return (x, y)
+def f3(x, y, z): return (x, y, z)
+
 class BuiltinTest(unittest.TestCase):
     # Helper to check picklability
     def check_iter_pickle(self, it, seq, proto):
@@ -1247,29 +1250,25 @@ class BuiltinTest(unittest.TestCase):
             m2 = map(map_char, "Is this the real life?")
             self.check_iter_pickle(m1, list(m2), proto)
 
-    # def test_map_pickle_strict(self):
-    #     f2 = lambda x, y: (x, y)
-    #     a = (1, 2, 3)
-    #     b = (4, 5, 6)
-    #     t = [(1, 4), (2, 5), (3, 6)]
-    #     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    #         m1 = map(f2, a, b, strict=True)
-    #         self.check_iter_pickle(m1, t, proto)
+    def test_map_pickle_strict(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            m1 = map(f2, a, b, strict=True)
+            self.check_iter_pickle(m1, t, proto)
 
-    # def test_map_pickle_strict_fail(self):
-    #     f2 = lambda x, y: (x, y)
-    #     a = (1, 2, 3)
-    #     b = (4, 5, 6, 7)
-    #     t = [(1, 4), (2, 5), (3, 6)]
-    #     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-    #         m1 = map(f2, a, b, strict=True)
-    #         m2 = pickle.loads(pickle.dumps(m1, proto))
-    #         self.assertEqual(self.iter_error(m1, ValueError), t)
-    #         self.assertEqual(self.iter_error(m2, ValueError), t)
+    def test_map_pickle_strict_fail(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6, 7)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            m1 = map(f2, a, b, strict=True)
+            m2 = pickle.loads(pickle.dumps(m1, proto))
+            self.assertEqual(self.iter_error(m1, ValueError), t)
+            self.assertEqual(self.iter_error(m2, ValueError), t)
 
     def test_map_strict(self):
-        f2 = lambda x, y: (x, y)
-        f3 = lambda x, y, z: (x, y, z)
         self.assertEqual(tuple(map(f2, (1, 2, 3), 'abc', strict=True)),
                          ((1, 'a'), (2, 'b'), (3, 'c')))
         self.assertRaises(ValueError, tuple,
@@ -1280,7 +1279,6 @@ class BuiltinTest(unittest.TestCase):
                           map(f3, (1, 2), (1, 2), 'abc', strict=True))
 
     def test_map_strict_iterators(self):
-        f3 = lambda a, b, c: (a, b, c)
         x = iter(range(5))
         y = [0]
         z = iter(range(5))
@@ -1305,8 +1303,6 @@ class BuiltinTest(unittest.TestCase):
                     raise Error
                 return self.size
 
-        f2 = lambda x, y: (x, y)
-        f3 = lambda x, y, z: (x, y, z)
         l1 = self.iter_error(map(f2, "AB", Iter(1), strict=True), Error)
         self.assertEqual(l1, [("A", 0)])
         l2 = self.iter_error(map(f3, "AB", Iter(2), "A", strict=True), ValueError)
@@ -1337,8 +1333,6 @@ class BuiltinTest(unittest.TestCase):
                     raise StopIteration
                 return self.size
 
-        f2 = lambda x, y: (x, y)
-        f3 = lambda x, y, z: (x, y, z)
         l1 = self.iter_error(map(f2, "AB", Iter(1), strict=True), ValueError)
         self.assertEqual(l1, [("A", 0)])
         l2 = self.iter_error(map(f3, "AB", Iter(2), "A", strict=True), ValueError)
