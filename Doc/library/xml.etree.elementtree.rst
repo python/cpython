@@ -508,7 +508,7 @@ Functions
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
    Canonicalization is a way to normalise XML output in a way that allows
-   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   byte-by-byte comparisons and digital signatures.  It reduces the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
@@ -1058,9 +1058,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 
