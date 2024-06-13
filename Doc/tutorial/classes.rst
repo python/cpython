@@ -684,7 +684,7 @@ clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
 ``__spam`` (at least two leading underscores, at most one trailing underscore)
 is textually replaced with ``_classname__spam``, where ``classname`` is the
-current class name with leading underscore(s) stripped.  This mangling is done
+current class name with leading underscore(s) stripped. [#]_ This mangling is done
 without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class.
 
@@ -924,6 +924,8 @@ Examples::
 
 
 .. rubric:: Footnotes
+
+.. [#] See :ref:`here <private-name-mangling>` for details and special cases.
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's

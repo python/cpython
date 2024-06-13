@@ -1739,7 +1739,8 @@ Variable names with double leading underscores are "mangled" to provide a simple
 but effective way to define class private variables.  Any identifier of the form
 ``__spam`` (at least two leading underscores, at most one trailing underscore)
 is textually replaced with ``_classname__spam``, where ``classname`` is the
-current class name with any leading underscores stripped.
+current class name with any leading underscores stripped
+(see :ref:`here <private-name-mangling>` for details and special cases).
 
 This doesn't guarantee privacy: an outside user can still deliberately access
 the "_classname__spam" attribute, and private values are visible in the object's
