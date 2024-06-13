@@ -2140,10 +2140,10 @@ class SubclassWithKwargsTest(unittest.TestCase):
                     subclass(*args, newarg=3)
 
         for cls, args, result in testcases:
-            # Constructors of repeat, zip, compress accept keyword arguments.
+            # Constructors of repeat, zip, map, compress accept keyword arguments.
             # Their subclasses need overriding __new__ to support new
             # keyword arguments.
-            if cls in [repeat, zip, compress]:
+            if cls in [repeat, zip, map, compress]:
                 continue
             with self.subTest(cls):
                 class subclass_with_init(cls):
