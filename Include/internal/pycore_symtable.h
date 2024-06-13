@@ -143,7 +143,6 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_PARAM (2<<1)         /* formal parameter */
 #define DEF_NONLOCAL (2<<2)      /* nonlocal stmt */
 #define USE (2<<3)               /* name is used */
-#define DEF_FREE (2<<4)          /* name used but not defined in nested block */
 #define DEF_FREE_CLASS (2<<5)    /* free variable from class's method */
 #define DEF_IMPORT (2<<6)        /* assignment occurred via import */
 #define DEF_ANNOT (2<<7)         /* this name is annotated */
@@ -165,9 +164,6 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define GLOBAL_IMPLICIT 3
 #define FREE 4
 #define CELL 5
-
-#define GENERATOR 1
-#define GENERATOR_EXPRESSION 2
 
 // Used by symtablemodule.c
 extern struct symtable* _Py_SymtableStringObjectFlags(
