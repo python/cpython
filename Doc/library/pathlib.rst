@@ -1434,9 +1434,9 @@ Renaming and deleting
 
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  On Unix, if *target* exists and is a file,
-   it will be replaced silently if the user has permission.
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  On Unix, if *target* exists
+   and is a file, it will be replaced silently if the user has permission.
    On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
    *target* can be either a string or another path object::
 
@@ -1450,27 +1450,27 @@ Renaming and deleting
       'some text'
 
    The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
 
    It is implemented in terms of :func:`os.rename` and gives the same guarantees.
 
    .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
+      Added return value, return the new :class:`!Path` instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  If *target* points to an existing file or
-   empty directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  If *target* points to an
+   existing file or empty directory, it will be unconditionally replaced.
 
    The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
 
    .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
+      Added return value, return the new :class:`!Path` instance.
 
 
 .. method:: Path.unlink(missing_ok=False)
