@@ -6,7 +6,7 @@ from textwrap import dedent
 
 from test.support import force_not_colorized
 
-from _pyrepl.simple_interact import InteractiveColoredConsole
+from _pyrepl.console import InteractiveColoredConsole
 
 
 class TestSimpleInteract(unittest.TestCase):
@@ -105,7 +105,7 @@ class TestSimpleInteract(unittest.TestCase):
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
-        source = "x: int = 1; print(__annotations__)"
+        source = "x: int = 1; print(__annotate__(1))"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             result = console.runsource(source)
