@@ -853,7 +853,7 @@ class _Pickler:
                         if in_memo:
                             self.__save_bytearray_aux(buf)
                         else:
-                            self.save_bytearray(m.tobytes())
+                            self.save_bytearray(buf)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
