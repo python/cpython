@@ -47,12 +47,9 @@ try:
     from nt import _getvolumepathname
 except ImportError:
     _getvolumepathname = None
-
-
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
-    share, or a mounted volume)
-    """
+    share, or a mounted volume)"""
     path = os.fspath(path)
     seps = _get_bothseps(path)
     path = abspath(path)
@@ -64,9 +61,10 @@ def ismount(path):
 
     if _getvolumepathname:
         x = path.rstrip(seps)
-        y = _getvolumepathname(path).rstrip(seps)
+        y =_getvolumepathname(path).rstrip(seps)
         return x.casefold() == y.casefold()
-    return False
+    else:
+        return False
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -81,34 +79,33 @@ def ismount(path):
 def expanduser(path):
     """Expand ~ and ~user constructs.
 
-    If user or $HOME is unknown, do nothing.
-    """
+    If user or $HOME is unknown, do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        seps = b"\\/"
-        tilde = b"~"
+        seps = b'\\/'
+        tilde = b'~'
     else:
-        seps = "\\/"
-        tilde = "~"
+        seps = '\\/'
+        tilde = '~'
     if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
     while i < n and path[i] not in seps:
         i += 1
 
-    if "USERPROFILE" in os.environ:
-        userhome = os.environ["USERPROFILE"]
-    elif "HOMEPATH" not in os.environ:
+    if 'USERPROFILE' in os.environ:
+        userhome = os.environ['USERPROFILE']
+    elif 'HOMEPATH' not in os.environ:
         return path
     else:
-        drive = os.environ.get("HOMEDRIVE", "")
-        userhome = join(drive, os.environ["HOMEPATH"])
+        drive = os.environ.get('HOMEDRIVE', '')
+        userhome = join(drive, os.environ['HOMEPATH'])
 
-    if i != 1:  # ~user
+    if i != 1: #~user
         target_user = path[1:i]
         if isinstance(target_user, bytes):
             target_user = os.fsdecode(target_user)
-        current_user = os.environ.get("USERNAME")
+        current_user = os.environ.get('USERNAME')
 
         if target_user != current_user:
             # Try to guess user home directory.  By default all user
@@ -142,36 +139,35 @@ def expanduser(path):
 def expandvars(path):
     """Expand shell variables of the forms $var, ${var} and %var%.
 
-    Unknown variables are left unchanged.
-    """
+    Unknown variables are left unchanged."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        if b"$" not in path and b"%" not in path:
+        if b'$' not in path and b'%' not in path:
             return path
         import string
-        varchars = bytes(string.ascii_letters + string.digits + "_-", "ascii")
-        quote = b"'"
-        percent = b"%"
-        brace = b"{"
-        rbrace = b"}"
-        dollar = b"$"
-        environ = getattr(os, "environb", None)
+        varchars = bytes(string.ascii_letters + string.digits + '_-', 'ascii')
+        quote = b'\''
+        percent = b'%'
+        brace = b'{'
+        rbrace = b'}'
+        dollar = b'$'
+        environ = getattr(os, 'environb', None)
     else:
-        if "$" not in path and "%" not in path:
+        if '$' not in path and '%' not in path:
             return path
         import string
-        varchars = string.ascii_letters + string.digits + "_-"
-        quote = "'"
-        percent = "%"
-        brace = "{"
-        rbrace = "}"
-        dollar = "$"
+        varchars = string.ascii_letters + string.digits + '_-'
+        quote = '\''
+        percent = '%'
+        brace = '{'
+        rbrace = '}'
+        dollar = '$'
         environ = os.environ
     res = path[:0]
     index = 0
     pathlen = len(path)
     while index < pathlen:
-        c = path[index:index + 1]
+        c = path[index:index+1]
         if c == quote:   # no expansion within single quotes
             path = path[index + 1:]
             pathlen = len(path)
@@ -186,7 +182,7 @@ def expandvars(path):
                 res += c
                 index += 1
             else:
-                path = path[index + 1:]
+                path = path[index+1:]
                 pathlen = len(path)
                 try:
                     index = path.index(percent)
@@ -208,7 +204,7 @@ def expandvars(path):
                 res += c
                 index += 1
             elif path[index + 1:index + 2] == brace:
-                path = path[index + 2:]
+                path = path[index+2:]
                 pathlen = len(path)
                 try:
                     index = path.index(rbrace)
@@ -255,6 +251,7 @@ def _abspath_fallback(path):
     more.
 
     """
+
     path = os.fspath(path)
     if not isabs(path):
         if isinstance(path, bytes):
@@ -265,12 +262,10 @@ def _abspath_fallback(path):
     return normpath(path)
 
 # Return an absolute path.
-
-
 try:
     from nt import _getfullpathname
 
-except ImportError:  # not running on Windows - mock up something sensible
+except ImportError: # not running on Windows - mock up something sensible
     abspath = _abspath_fallback
 
 else:  # use native Windows method on Windows
@@ -386,23 +381,23 @@ else:
     def realpath(path, *, strict=False):
         path = normpath(path)
         if isinstance(path, bytes):
-            prefix = b"\\\\?\\"
-            unc_prefix = b"\\\\?\\UNC\\"
-            new_unc_prefix = b"\\\\"
+            prefix = b'\\\\?\\'
+            unc_prefix = b'\\\\?\\UNC\\'
+            new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
-            devnull = b"nul"
+            devnull = b'nul'
             if normcase(path) == devnull:
-                return b"\\\\.\\NUL"
+                return b'\\\\.\\NUL'
         else:
-            prefix = "\\\\?\\"
-            unc_prefix = "\\\\?\\UNC\\"
-            new_unc_prefix = "\\\\"
+            prefix = '\\\\?\\'
+            unc_prefix = '\\\\?\\UNC\\'
+            new_unc_prefix = '\\\\'
             cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
-            devnull = "nul"
+            devnull = 'nul'
             if normcase(path) == devnull:
-                return "\\\\.\\NUL"
+                return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
         if not had_prefix and not isabs(path):
             path = join(cwd, path)
@@ -436,7 +431,7 @@ else:
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
-            except ValueError:
+            except ValueError as ex:
                 # Unexpected, as an invalid path should not have gained a prefix
                 # at any point, but we ignore this error just in case.
                 pass
@@ -450,7 +445,6 @@ else:
 
 # All supported version have Unicode filename support.
 supports_unicode_filenames = True
-
 
 def relpath(path, start=None):
     """Return a relative version of a path"""
