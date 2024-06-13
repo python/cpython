@@ -13,6 +13,8 @@
 
 # Build system
 configure*                    @erlend-aasland @corona10
+Makefile.pre.in               @erlend-aasland
+Modules/Setup*                @erlend-aasland
 
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
