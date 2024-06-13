@@ -3090,14 +3090,14 @@ dummy_func(
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
-            _PyInterpreterFrame *gen_frame_o = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame_o, PyStackRef_None());
+            _PyInterpreterFrame *_gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
+            _PyFrame_StackPush(_gen_frame, PyStackRef_None());
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            gen_frame = (_PyStackRef) { .bits = (uintptr_t)gen_frame_o };
+            gen_frame = (_PyStackRef) { .bits = (uintptr_t)_gen_frame };
         }
 
         macro(FOR_ITER_GEN) =
