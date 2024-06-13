@@ -2255,7 +2255,7 @@ bininstall: commoninstall altbininstall
 		echo "Creating directory $(LIBPC)"; \
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC); \
 	fi
- 	-if test "$(ABIFLAGS)"; then \
+	-if test "$(ABIFLAGS)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE); then \
 			rm -f $(DESTDIR)$(BINDIR)/python3$(ABIFLAGS)$(EXE); \
 		fi; \
