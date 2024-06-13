@@ -83,17 +83,27 @@ exception.
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+.. rubric:: Private name mangling
+
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  The transformation rule is defined as follows:
+
+- If the class name consists only of underscores, no transformation is done,
+  e.g., the identifier ``__spam`` occurring in a class named ``_`` or ``__``
+  is left as is.
+
+- Otherwise, the transformation inserts the class name, with leading
+  underscores removed and a single underscore inserted, in front of
+  the identifier, e.g., the identifier ``__spam`` occurring in a class
+  named ``Ham``, ``_Ham`` or ``__Ham`` is transformed to ``_Ham__spam``.
+
+The transformation is independent of the syntactical context in which the
+identifier is used.  Nonetheless, if the transformed name is extremely long
+(longer than 255 characters), implementation-defined truncation may happen.
 
 
 .. _atom-literals:
