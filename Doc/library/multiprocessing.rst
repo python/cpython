@@ -837,9 +837,7 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is empty, ``False`` otherwise.  Because of
       multithreading/multiprocessing semantics, this is not reliable.
 
-      If :meth:`put` or :meth:`put_nowait` has been called previously (i.e.,
-      if the feeder thread has been started) and if the queue is closed, this
-      method raises an :exc:`OSError` instead.
+      May raise an :exc:`OSError` on closed queues.
 
    .. method:: full()
 
@@ -945,8 +943,7 @@ For an example of the usage of queues for interprocess communication see
       Return ``True`` if the queue is empty, ``False`` otherwise.
 
       Unlike :meth:`Queue.empty`, if the queue is closed and this
-      method is called, this raises an :exc:`OSError` even if the
-      queue was never used.
+      method is called, this raises an :exc:`OSError`.
 
    .. method:: get()
 
