@@ -301,8 +301,8 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
-            res = PyStackRef_FromPyObjectSteal(PyStackRef_IsFalse(value)
-                ? Py_True : Py_False);
+            res = PyStackRef_Is(value, PyStackRef_False())
+            ? PyStackRef_True() : PyStackRef_False();
             stack_pointer[-1] = res;
             break;
         }
@@ -4578,11 +4578,11 @@
             _PyStackRef flag;
             flag = stack_pointer[-1];
             stack_pointer += -1;
-            if (!PyStackRef_IsFalse(flag)) {
+            if (!PyStackRef_Is(flag, Py_StackRef_False())) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(PyStackRef_IsFalse(flag));
+            assert(PyStackRef_Is(flag, Py_StackRef_False()));
             break;
         }
 

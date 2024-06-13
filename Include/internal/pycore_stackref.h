@@ -72,11 +72,6 @@ PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
 }
 
 static inline int
-PyStackRef_IsFalse(_PyStackRef stackref) {
-    return PyStackRef_Is(stackref, PyStackRef_False());
-}
-
-static inline int
 PyStackRef_IsNone(_PyStackRef stackref) {
     return PyStackRef_Is(stackref, PyStackRef_None());
 }
