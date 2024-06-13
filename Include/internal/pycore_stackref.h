@@ -30,29 +30,23 @@ typedef union {
 
 #define PyStackRef_IsNull(stackref) ((stackref).bits == Py_STACKREF_NULL.bits)
 
-static inline _PyStackRef
-PyStackRef_True(void)
-{
-#ifdef Py_GIL_DISABLED
-    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True |
-                                                Py_TAG_DEFERRED)};
-#else
-    const _PyStackRef STACKREF_TRUE = {.bits = ((uintptr_t)Py_True)};
-#endif
-    return STACKREF_TRUE;
-}
 
-static inline _PyStackRef
-PyStackRef_False(void)
-{
 #ifdef Py_GIL_DISABLED
-    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False |
-                                                Py_TAG_DEFERRED)};
+    static const _PyStackRef PyStackRef_True = {.bits = ((uintptr_t)&_Py_TrueStruct) +
+                                         Py_TAG_DEFERRED };
 #else
-    const _PyStackRef STACKREF_FALSE = {.bits = ((uintptr_t)Py_False)};
+    static const _PyStackRef PyStackRef_True = {.bits = ((uintptr_t)Py_True)};
 #endif
-    return STACKREF_FALSE;
-}
+
+
+
+#ifdef Py_GIL_DISABLED
+    static const _PyStackRef PyStackRef_False = {.bits = ((uintptr_t)&_Py_FalseStruct) +
+                                            Py_TAG_DEFERRED };
+#else
+    static const _PyStackRef PyStackRef_False = {.bits = ((uintptr_t)Py_False)};
+#endif
+
 
 static inline _PyStackRef
 PyStackRef_None(void)

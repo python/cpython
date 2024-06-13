@@ -318,8 +318,8 @@ dummy_func(
 
         pure inst(UNARY_NOT, (value -- res)) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(value)));
-            res = PyStackRef_Is(value, PyStackRef_False())
-                ? PyStackRef_True() : PyStackRef_False();
+            res = PyStackRef_Is(value, PyStackRef_False)
+                ? PyStackRef_True : PyStackRef_False;
         }
 
         family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
@@ -347,7 +347,7 @@ dummy_func(
             int err = PyObject_IsTrue(PyStackRef_AsPyObjectBorrow(value));
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
-            res = err ? PyStackRef_True() : PyStackRef_False();
+            res = err ? PyStackRef_True : PyStackRef_False;
         }
 
         macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
@@ -363,11 +363,11 @@ dummy_func(
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value_o)) {
                 assert(_Py_IsImmortal(value_o));
-                res = PyStackRef_False();
+                res = PyStackRef_False;
             }
             else {
                 DECREF_INPUTS();
-                res = PyStackRef_True();
+                res = PyStackRef_True;
             }
         }
 
@@ -375,7 +375,7 @@ dummy_func(
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
-            res = Py_SIZE(value_o) ? PyStackRef_True() : PyStackRef_False();
+            res = Py_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             DECREF_INPUTS();
         }
 
@@ -383,7 +383,7 @@ dummy_func(
             // This one is a bit weird, because we expect *some* failures:
             EXIT_IF(!PyStackRef_Is(value, PyStackRef_None()));
             STAT_INC(TO_BOOL, hit);
-            res = PyStackRef_False();
+            res = PyStackRef_False;
         }
 
         inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
@@ -392,18 +392,18 @@ dummy_func(
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(value)));
-                res = PyStackRef_False();
+                res = PyStackRef_False;
             }
             else {
                 assert(Py_SIZE(value_o));
                 DECREF_INPUTS();
-                res = PyStackRef_True();
+                res = PyStackRef_True;
             }
         }
 
         op(_REPLACE_WITH_TRUE, (value -- res)) {
             DECREF_INPUTS();
-            res = PyStackRef_True();
+            res = PyStackRef_True;
         }
 
         macro(TO_BOOL_ALWAYS_TRUE) =
@@ -2479,7 +2479,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(dleft, dright);
             _Py_DECREF_SPECIALIZED(left_o, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
-            res = (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
+            res = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2499,7 +2499,7 @@ dummy_func(
             int sign_ish = COMPARISON_BIT(ileft, iright);
             _Py_DECREF_SPECIALIZED(left_o, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right_o, (destructor)PyObject_Free);
-            res =  (sign_ish & oparg) ? PyStackRef_True() : PyStackRef_False();
+            res =  (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2516,7 +2516,7 @@ dummy_func(
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True() : PyStackRef_False();
+            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True : PyStackRef_False;
             // It's always a bool, so we don't care about oparg & 16.
         }
 
@@ -2526,7 +2526,7 @@ dummy_func(
 
             int res = Py_Is(left_o, right_o) ^ oparg;
             DECREF_INPUTS();
-            b = res ? PyStackRef_True() : PyStackRef_False();
+            b = res ? PyStackRef_True : PyStackRef_False;
         }
 
         family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
@@ -2541,7 +2541,7 @@ dummy_func(
             int res = PySequence_Contains(right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
+            b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
         }
 
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
@@ -2568,7 +2568,7 @@ dummy_func(
             int res = _PySet_Contains((PySetObject *)right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
+            b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
         }
 
         inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
@@ -2580,7 +2580,7 @@ dummy_func(
             int res = PyDict_Contains(right_o, left_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? PyStackRef_True() : PyStackRef_False();
+            b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
         }
 
         inst(CHECK_EG_MATCH, (exc_value_st, match_type_st -- rest, match)) {
@@ -2621,7 +2621,7 @@ dummy_func(
 
             int res = PyErr_GivenExceptionMatches(left_o, right_o);
             DECREF_INPUTS();
-            b = res ? PyStackRef_True() : PyStackRef_False();
+            b = res ? PyStackRef_True : PyStackRef_False;
         }
 
          tier1 inst(IMPORT_NAME, (level, fromlist -- res)) {
@@ -2718,7 +2718,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_Is(cond, PyStackRef_False());
+            int flag = PyStackRef_Is(cond, PyStackRef_False);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -2727,7 +2727,7 @@ dummy_func(
 
         replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_Is(cond, PyStackRef_True());
+            int flag = PyStackRef_Is(cond, PyStackRef_True);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -2736,10 +2736,10 @@ dummy_func(
 
         op(_IS_NONE, (value -- b)) {
             if (PyStackRef_Is(value, PyStackRef_None())) {
-                b = PyStackRef_True();
+                b = PyStackRef_True;
             }
             else {
-                b = PyStackRef_False();
+                b = PyStackRef_False;
                 DECREF_INPUTS();
             }
         }
@@ -2791,12 +2791,12 @@ dummy_func(
 
         inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            res = match ? PyStackRef_True() : PyStackRef_False();
+            res = match ? PyStackRef_True : PyStackRef_False;
         }
 
         inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            res = match ? PyStackRef_True() : PyStackRef_False();
+            res = match ? PyStackRef_True : PyStackRef_False;
         }
 
         inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
@@ -4006,7 +4006,7 @@ dummy_func(
             if (retval < 0) {
                 ERROR_NO_POP();
             }
-            res = retval ? PyStackRef_True() : PyStackRef_False();
+            res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             PyStackRef_CLOSE(inst_stackref);
             PyStackRef_CLOSE(cls_stackref);
@@ -4556,7 +4556,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_Is(cond, PyStackRef_True());
+            int flag = PyStackRef_Is(cond, PyStackRef_True);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
@@ -4567,7 +4567,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             _PyStackRef cond = POP();
             assert(PyBool_Check(PyStackRef_AsPyObjectBorrow(cond)));
-            int flag = PyStackRef_Is(cond, PyStackRef_False());
+            int flag = PyStackRef_Is(cond, PyStackRef_False);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
@@ -4631,14 +4631,14 @@ dummy_func(
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             SYNC_SP();
-            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_True()));
-            assert(PyStackRef_Is(flag, PyStackRef_True()));
+            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_True));
+            assert(PyStackRef_Is(flag, PyStackRef_True));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             SYNC_SP();
-            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_False()));
-            assert(PyStackRef_Is(flag, PyStackRef_False()));
+            EXIT_IF(!PyStackRef_Is(flag, PyStackRef_False));
+            assert(PyStackRef_Is(flag, PyStackRef_False));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
