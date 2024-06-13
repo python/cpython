@@ -61,7 +61,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
           # Check if we should run hypothesis tests
