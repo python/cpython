@@ -745,7 +745,7 @@ class SysModuleTest(unittest.TestCase):
             import sys
 
             # set `s`, avoid parser interning & constant folding
-            s = str({s.encode()}, 'utf-8')
+            s = str({s.encode()!r}, 'utf-8')
 
             t = sys.intern(s)
 
@@ -771,7 +771,7 @@ class SysModuleTest(unittest.TestCase):
                     import sys
 
                     # set `s`, avoid parser interning & constant folding
-                    s = str({s.encode()}, 'utf-8')
+                    s = str({s.encode()!r}, 'utf-8')
 
                     t = sys.intern(s)
                     assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -789,7 +789,7 @@ class SysModuleTest(unittest.TestCase):
                     import sys
 
                     # set `s`, avoid parser interning & constant folding
-                    s = str({s.encode()}, 'utf-8')
+                    s = str({s.encode()!r}, 'utf-8')
 
                     assert id(s) == {id(s)}
                     t = sys.intern(s)
