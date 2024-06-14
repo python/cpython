@@ -1,0 +1,1 @@
+Add :func:`ilen` to :mod:`itertools` module.
