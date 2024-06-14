@@ -7,7 +7,6 @@ import keyword
 import itertools
 import abc
 from reprlib import recursive_repr
-from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -333,7 +332,7 @@ class Field:
             # it.
             func(self.default, owner, name)
 
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _DataclassParams:
