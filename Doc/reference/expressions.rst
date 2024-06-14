@@ -144,9 +144,8 @@ a subclass):
 .. rubric:: Mangled names in imports
 
 For identifiers declared using :keyword:`import` statements, the mangling
-rule is slightly different. Throughout this paragraph, assume that we have
-the following filesystem layout and, unless stated otherwise, the code snippets
-are in the ``__main__.py`` file.
+rule is slightly different. Throughout this paragraph, we consider the
+following filesystem layout with code snippets in the ``__main__.py`` file.
 
 .. code-block:: text
 
@@ -179,11 +178,6 @@ be performed via the :func:`__import__` function, in which case the usual
 transformation rule is applied:
 
 .. code-block:: python
-
-   class Bar:
-       # explicitly import '__bar' instead of '_Bar__bar'
-       __bar = __import__("__bar")
-   print(Bar._Bar__bar)  # <module '__bar' from '/__bar.py'>
 
    class Foo:
        # explicitly import '__foo' instead of '_Foo__foo'
