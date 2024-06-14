@@ -198,8 +198,8 @@ process and user.
    :func:`os.unsetenv`, or made outside Python in the same process.
 
    On Windows, :func:`get_user_default_environ` can be used to update
-   :data:`os.environ` to the latest system environment variables, such as the
-   ``PATH`` variable.
+   :data:`os.environ` to the latest user and system environment variables, such
+   as the ``PATH`` variable.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -367,8 +367,8 @@ process and user.
 
    Get the default environment of the current process user as a dictionary.
 
-   It can be used to update :data:`os.environ` to the latest system environment
-   variables, such as the ``PATH`` variable. Example::
+   It can be used to update :data:`os.environ` to the latest user and system
+   environment variables, such as the ``PATH`` variable. Example::
 
        os.environ.update(os.get_user_default_environ())
 
