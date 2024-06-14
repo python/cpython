@@ -90,20 +90,71 @@ or more underscore characters and does not end in two or more underscores, it
 is considered a :dfn:`private name` of that class.
 
 More precisely, private names are transformed to a longer form before code is
-generated for them.  The transformation rule is defined as follows:
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
 
-- If the class name consists only of underscores, no transformation is done,
-  e.g., the identifier ``__spam`` occurring in a class named ``_`` or ``__``
-  is left as is.
+The transformation is independent of the syntactical context in which the
+identifier is used and the transformation rule is defined as follows:
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 - Otherwise, the transformation inserts the class name, with leading
   underscores removed and a single underscore inserted, in front of
   the identifier, e.g., the identifier ``__spam`` occurring in a class
-  named ``Ham``, ``_Ham`` or ``__Ham`` is transformed to ``_Ham__spam``.
+  named ``Foo``, ``_Foo`` or ``__Foo`` is transformed to ``_Foo__spam``.
 
-The transformation is independent of the syntactical context in which the
-identifier is used.  Nonetheless, if the transformed name is extremely long
-(longer than 255 characters), implementation-defined truncation may happen.
+  For identifiers declared using :keyword:`import` statements, this rule is
+  slightly different. Indeed, importing a module with a private name directly
+  in a class body raises a :exc:`ModuleNotFoundError` (unless the class name
+  only consists of underscores), as illustrated by the following example:
+
+  .. code-block:: python
+
+     class Foo:
+         import __spam  # raises ModuleNotFoundError at runtime
+
+  This restriction can be lifted by using the :func:`__import__` function,
+  in which case the transformation rule is applied normally:
+
+  .. code-block:: python
+
+     class Foo:
+         __spam = __import__("__spam")
+
+     Foo._Foo__spam.do()
+
+  .. note::
+
+     This restriction does not apply to modules imported as submodules of
+     private packages, e.g.:
+
+     .. code-block:: python
+
+        class Foo:
+            import __spam.util
+
+        Foo._Foo__spam.util.do()
+
+The corresponding private member is accessed by its defining class using
+its non-transformed name. On the other hand, the transformed name must be
+used to access the private member *externally* (e.g., in a function or in
+a subclass):
+
+.. code-block:: python
+
+   class A:
+       def __one(self):
+           return 1
+       def two(self):
+           return 2 * self.__one()
+
+   class B(A):
+       def three(self):
+           return 3 * self._A__one()
+
+   four = 4 * A()._A__one()
 
 
 .. _atom-literals:

@@ -684,9 +684,14 @@ clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
 ``__spam`` (at least two leading underscores, at most one trailing underscore)
 is textually replaced with ``_classname__spam``, where ``classname`` is the
-current class name with leading underscore(s) stripped. [#]_ This mangling is done
+current class name with leading underscore(s) stripped.  This mangling is done
 without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class.
+
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
 
 Name mangling is helpful for letting subclasses override methods without
 breaking intraclass method calls.  For example::
@@ -930,5 +935,3 @@ Examples::
    namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.
-
-.. [#] See :ref:`here <private-name-mangling>` for details and special cases.
