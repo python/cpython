@@ -194,8 +194,10 @@ The module defines the following items:
    .. versionchanged:: 3.8
       Added the *mtime* parameter for reproducible output.
    .. versionchanged:: 3.11
+      Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
       :func:`zlib.compress` for better speed.
+
    .. versionchanged:: 3.14
       The OS byte is guaranteed to be set to 255 when this function is used.
 
