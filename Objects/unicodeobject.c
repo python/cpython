@@ -630,14 +630,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
-                // This state is questionable, but:
+                CHECK(_Py_IsImmortal(op));
+                // This state is for two exceptions:
                 // - strings are currently checked before they're interned
                 // - the empty string and 256 one-latin1-character strings
                 //   are static but use SSTATE_NOT_INTERNED
-                // - not all statically allocated strings are interned
-                // So we allow this.
-                // All static strings should be immortal though.
-                CHECK(_Py_IsImmortal(op));
             }
             else {
                 CHECK(!_Py_IsImmortal(op));

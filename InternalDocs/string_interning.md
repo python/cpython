@@ -1,10 +1,10 @@
 # String interning
 
 *Interned* strings are conceptually part of an interpreter-global
-*set* of interned strings, meaning that
-- no two interned strings have the same content (across an interpreter)
+*set* of interned strings, meaning that:
+- no two interned strings have the same content (across an interpreter);
 - two interned strings can be safely compared using pointer equality
-  (Python `is`)
+  (Python `is`).
 
 This is used to optimize dict and attribute lookups, among other things.
 
@@ -34,9 +34,8 @@ Python uses three different mechanisms to intern strings:
   In the free-threaded build, they are; this avoids modifying the
   global lookup table after threads are started.
 
-  Interning a one-byte string will always intern the corresponding singleton.
-  (This is the reason to mention these here: they complicate the interning
-  mechanism.)
+  Interning a one-char latin-1 string will always intern the corresponding
+  singleton.
 
 - All other strings are allocated dynamically, and have their
   `_PyUnicode_STATE(s).statically_allocated` flag set to zero.
@@ -45,21 +44,21 @@ Python uses three different mechanisms to intern strings:
 
   The key and value of each entry in this dict reference the same object.
 
-The three sets of singletons (`_Py_STR`, `_Py_ID` and one-byte strings)
+The three sets of singletons (`_Py_STR`, `_Py_ID`, `_Py_LATIN1_CHR`)
 are disjoint.
 If you have such a singleton, it (and no other copy) will be interned.
 
 
 ## Immortality and reference counting
 
-Invariant: Every immortal string is interned. (Except the one-byte singletons:
-those might but might not be interned.)
+Invariant: Every immortal string is interned, *except* the one-char latin-1
+singletons (which might but might not be interned).
 
-In practice, this means that you must not use `_Py_SetImmoral` to immortalize
+In practice, this means that you must not use `_Py_SetImmoral` on
 a string, unless you already know that it is interned.
 
 The converse is not true: interned strings can be mortal.
-For these mortal interned strings:
+For mortal interned strings:
 - the 2 references from the interned dict (key & value) are excluded from
   their refcount
 - the deallocator (`unicode_dealloc`) removes the string from the interned dict
@@ -67,21 +66,11 @@ For these mortal interned strings:
 
 As with any type, you should only immortalize strings that will live until
 interpreter shutdown.
-We currently also use in for strings contained in code objects and similar:
-(specifically in the compiler and in `marshal`).
+We currently also immortalize strings contained in code objects and similar,
+specifically in the compiler and in `marshal`.
 These are “close enough” to immortal: even in use cases like hot reloading
-or `eval`-ing user input, the number of distinct variable names and string
+or `eval`-ing user input, the number of distinct identifiers and string
 constants expected to stay low.
-
-
-## State
-
-The intern state is checked with PyUnicode_CHECK_INTERNED(s), and can be:
-
-- `SSTATE_NOT_INTERNED` (zero)
-- `SSTATE_INTERNED_MORTAL`
-- `SSTATE_INTERNED_IMMORTAL`
-- `SSTATE_INTERNED_IMMORTAL_STATIC`
 
 
 ## Internal API
@@ -101,3 +90,29 @@ and update the argument with a *new* reference.
 This means:
 - They're “reference neutral”.
 - They must not be called with a borrowed reference.
+
+
+## State
+
+The intern state is checked with PyUnicode_CHECK_INTERNED(s), and can be:
+
+- `SSTATE_NOT_INTERNED` (defined as 0, which is useful in a boolean context)
+- `SSTATE_INTERNED_MORTAL` (1)
+- `SSTATE_INTERNED_IMMORTAL` (2)
+- `SSTATE_INTERNED_IMMORTAL_STATIC` (3)
+
+The valid transitions between these states are:
+
+- For dynamically allocated strings:
+
+  - 0 -> 1 (`_PyUnicode_InternMortal`)
+  - 1 -> 2 or 0 -> 2 (`_PyUnicode_InternImmortal`)
+
+  Using `_PyUnicode_InternStatic` on these is an error; the other cases
+  don't change the state.
+
+- One-char latin-1 singletons can be interned (0 -> 3) using any interning
+  function; after that the functions don't change the state.
+
+- Other statically allocated strings are interned (0 -> 3) at runtime init;
+  after that all interning functions don't change the state.
