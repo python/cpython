@@ -31,6 +31,7 @@ struct _types_runtime_state {
     unsigned int next_version_tag;
 
     struct {
+        PyMutex mutex;
         struct {
             PyTypeObject *type;
             int64_t interp_count;

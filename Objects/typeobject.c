@@ -244,9 +244,11 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
         ? index
         : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
 
+    PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
     assert((initial == 1) ==
             (_PyRuntime.types.managed_static.types[full_index].interp_count == 0));
     _PyRuntime.types.managed_static.types[full_index].interp_count += 1;
+    PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
 
     if (initial) {
         assert(_PyRuntime.types.managed_static.types[full_index].type == NULL);
@@ -300,7 +302,9 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     state->type = NULL;
     assert(state->tp_weaklist == NULL);  // It was already cleared out.
 
+    PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
     _PyRuntime.types.managed_static.types[full_index].interp_count -= 1;
+    PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
     if (final) {
         assert(!_PyRuntime.types.managed_static.types[full_index].interp_count);
         _PyRuntime.types.managed_static.types[full_index].type = NULL;
