@@ -1587,6 +1587,149 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
                 self.assertEqual(r1, r2)
                 self.assertEqual(e1, e2)
 
+
+    def test_groupby_recipe(self):
+
+        # Begin groupby() recipe #######################################
+
+        def groupby(iterable, key=None):
+            # [k for k, g in groupby('AAAABBBCCDAABBB')] → A B C D A B
+            # [list(g) for k, g in groupby('AAAABBBCCD')] → AAAA BBB CC D
+
+            keyfunc = (lambda x: x) if key is None else key
+            iterator = iter(iterable)
+            exhausted = False
+
+            def _grouper(target_key):
+                nonlocal curr_value, curr_key, exhausted
+                yield curr_value
+                for curr_value in iterator:
+                    curr_key = keyfunc(curr_value)
+                    if curr_key != target_key:
+                        return
+                    yield curr_value
+                exhausted = True
+
+            try:
+                curr_value = next(iterator)
+            except StopIteration:
+                return
+            curr_key = keyfunc(curr_value)
+
+            while not exhausted:
+                target_key = curr_key
+                curr_group = _grouper(target_key)
+                yield curr_key, curr_group
+                if curr_key == target_key:
+                    for _ in curr_group:
+                        pass
+
+        # End groupby() recipe #########################################
+
+        # Check whether it accepts arguments correctly
+        self.assertEqual([], list(groupby([])))
+        self.assertEqual([], list(groupby([], key=id)))
+        self.assertRaises(TypeError, list, groupby('abc', []))
+        if False:
+            # Test not applicable to the recipe
+            self.assertRaises(TypeError, list, groupby('abc', None))
+        self.assertRaises(TypeError, groupby, 'abc', lambda x:x, 10)
+
+        # Check normal input
+        s = [(0, 10, 20), (0, 11,21), (0,12,21), (1,13,21), (1,14,22),
+             (2,15,22), (3,16,23), (3,17,23)]
+        dup = []
+        for k, g in groupby(s, lambda r:r[0]):
+            for elem in g:
+                self.assertEqual(k, elem[0])
+                dup.append(elem)
+        self.assertEqual(s, dup)
+
+        # Check nested case
+        dup = []
+        for k, g in groupby(s, testR):
+            for ik, ig in groupby(g, testR2):
+                for elem in ig:
+                    self.assertEqual(k, elem[0])
+                    self.assertEqual(ik, elem[2])
+                    dup.append(elem)
+        self.assertEqual(s, dup)
+
+        # Check case where inner iterator is not used
+        keys = [k for k, g in groupby(s, testR)]
+        expectedkeys = set([r[0] for r in s])
+        self.assertEqual(set(keys), expectedkeys)
+        self.assertEqual(len(keys), len(expectedkeys))
+
+        # Check case where inner iterator is used after advancing the groupby
+        # iterator
+        s = list(zip('AABBBAAAA', range(9)))
+        it = groupby(s, testR)
+        _, g1 = next(it)
+        _, g2 = next(it)
+        _, g3 = next(it)
+        self.assertEqual(list(g1), [])
+        self.assertEqual(list(g2), [])
+        self.assertEqual(next(g3), ('A', 5))
+        list(it)  # exhaust the groupby iterator
+        self.assertEqual(list(g3), [])
+
+        # Exercise pipes and filters style
+        s = 'abracadabra'
+        # sort s | uniq
+        r = [k for k, g in groupby(sorted(s))]
+        self.assertEqual(r, ['a', 'b', 'c', 'd', 'r'])
+        # sort s | uniq -d
+        r = [k for k, g in groupby(sorted(s)) if list(islice(g,1,2))]
+        self.assertEqual(r, ['a', 'b', 'r'])
+        # sort s | uniq -c
+        r = [(len(list(g)), k) for k, g in groupby(sorted(s))]
+        self.assertEqual(r, [(5, 'a'), (2, 'b'), (1, 'c'), (1, 'd'), (2, 'r')])
+        # sort s | uniq -c | sort -rn | head -3
+        r = sorted([(len(list(g)) , k) for k, g in groupby(sorted(s))], reverse=True)[:3]
+        self.assertEqual(r, [(5, 'a'), (2, 'r'), (2, 'b')])
+
+        # iter.__next__ failure
+        class ExpectedError(Exception):
+            pass
+        def delayed_raise(n=0):
+            for i in range(n):
+                yield 'yo'
+            raise ExpectedError
+        def gulp(iterable, keyp=None, func=list):
+            return [func(g) for k, g in groupby(iterable, keyp)]
+
+        # iter.__next__ failure on outer object
+        self.assertRaises(ExpectedError, gulp, delayed_raise(0))
+        # iter.__next__ failure on inner object
+        self.assertRaises(ExpectedError, gulp, delayed_raise(1))
+
+        # __eq__ failure
+        class DummyCmp:
+            def __eq__(self, dst):
+                raise ExpectedError
+        s = [DummyCmp(), DummyCmp(), None]
+
+        # __eq__ failure on outer object
+        self.assertRaises(ExpectedError, gulp, s, func=id)
+        # __eq__ failure on inner object
+        self.assertRaises(ExpectedError, gulp, s)
+
+        # keyfunc failure
+        def keyfunc(obj):
+            if keyfunc.skip > 0:
+                keyfunc.skip -= 1
+                return obj
+            else:
+                raise ExpectedError
+
+        # keyfunc failure on outer object
+        keyfunc.skip = 0
+        self.assertRaises(ExpectedError, gulp, [None], keyfunc)
+        keyfunc.skip = 1
+        self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
+
+
     @staticmethod
     def islice(iterable, *args):
         # islice('ABCDEFG', 2) → A B
