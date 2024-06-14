@@ -2406,6 +2406,13 @@ _Py_NewReferenceNoTotal(PyObject *op)
 void
 _Py_SetImmortalUntracked(PyObject *op)
 {
+#ifdef Py_DEBUG
+    // For strings, use _PyUnicode_InternImmortal instead.
+    if(PyUnicode_CheckExact(op)) {
+        assert(PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL
+            || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
+    }
+#endif
 #ifdef Py_GIL_DISABLED
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
@@ -2418,12 +2425,6 @@ _Py_SetImmortalUntracked(PyObject *op)
 void
 _Py_SetImmortal(PyObject *op)
 {
-#ifdef Py_DEBUG
-    if (PyUnicode_CheckExact(op)) {
-        // For strings, use _PyUnicode_InternImmortal instead.
-        assert(_PyASCIIObject_CAST(op)->state.interned);
-    }
-#endif
     if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }

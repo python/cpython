@@ -54,8 +54,11 @@ If you have such a singleton, it (and no other copy) will be interned.
 Invariant: Every immortal string is interned, *except* the one-char latin-1
 singletons (which might but might not be interned).
 
-In practice, this means that you must not use `_Py_SetImmoral` on
-a string, unless you already know that it is interned.
+In practice, this means that you must not use `_Py_SetImmortal` on
+a string. (If you know it's already immortal, don't immortalize it;
+if you know it's not interned you might be immortalizing a redundant copy;
+if it's interned and mortal it needs extra processing in
+`_PyUnicode_InternImmortal`.)
 
 The converse is not true: interned strings can be mortal.
 For mortal interned strings:
