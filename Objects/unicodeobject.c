@@ -282,10 +282,6 @@ clear_interned_dict(PyInterpreterState *interp)
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
-    if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
-        _Py_hashtable_destroy(INTERNED_STRINGS);
-        INTERNED_STRINGS = NULL;
-    }
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -15309,6 +15305,10 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
 #endif /* Py_DEBUG */
     clear_interned_dict(interp);
+    if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
+        _Py_hashtable_destroy(INTERNED_STRINGS);
+        INTERNED_STRINGS = NULL;
+    }
 }
 
 
