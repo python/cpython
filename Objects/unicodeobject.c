@@ -633,7 +633,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 CHECK(_Py_IsImmortal(op));
                 // This state is for two exceptions:
                 // - strings are currently checked before they're interned
-                // - the empty string and 256 one-latin1-character strings
+                // - the 256 one-latin1-character strings
                 //   are static but use SSTATE_NOT_INTERNED
             }
             else {
