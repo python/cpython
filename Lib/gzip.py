@@ -587,6 +587,7 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     mtime can be used to set the modification time. The modification time is
     set to the current time by default.
     """
+    # Wbits=31 automatically includes a gzip header and trailer.
     gzip_data = zlib.compress(data, level=compresslevel, wbits=31)
     if mtime is None:
         mtime = time.time()
