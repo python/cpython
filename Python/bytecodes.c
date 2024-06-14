@@ -3085,19 +3085,18 @@ dummy_func(
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame)) {
+        op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame: _PyInterpreterFrame*)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
-            _PyInterpreterFrame *_gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(_gen_frame, PyStackRef_None());
+            gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
+            _PyFrame_StackPush(gen_frame, PyStackRef_None());
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            gen_frame = (_PyStackRef) { .bits = (uintptr_t)_gen_frame };
         }
 
         macro(FOR_ITER_GEN) =
@@ -3490,7 +3489,7 @@ dummy_func(
 
         macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL + _CHECK_PERIODIC;
 
-        op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
+        op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyObject *self_or_null_o = PyStackRef_AsPyObjectBorrow(self_or_null);
 
@@ -3503,17 +3502,16 @@ dummy_func(
             assert(Py_TYPE(callable_o) == &PyFunction_Type);
             int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
             PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
-            _PyInterpreterFrame *_new_frame = _PyEvalFramePushAndInit(
+            new_frame = _PyEvalFramePushAndInit(
                 tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                 args, total_args, NULL
             );
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             SYNC_SP();
-            if (_new_frame == NULL) {
+            if (new_frame == NULL) {
                 ERROR_NO_POP();
             }
-            new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
         }
 
         op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
@@ -3642,30 +3640,28 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
+        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
-            _PyInterpreterFrame *_new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _PyStackRef *first_non_self_local = _new_frame->localsplus + has_self;
-            _new_frame->localsplus[0] = self_or_null;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+            _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
+            new_frame->localsplus[0] = self_or_null;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
         }
 
-        op(_PUSH_FRAME, (new_frame -- )) {
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- )) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
             assert(tstate->interp->eval_frame == NULL);
             SYNC_SP();
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame_o->previous = frame;
+            new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
-            frame = tstate->current_frame = new_frame_o;
+            frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);

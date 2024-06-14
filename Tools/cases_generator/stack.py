@@ -178,11 +178,12 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t") -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
+                bits = ".bits" if cast else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
@@ -190,7 +191,7 @@ class Stack:
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
+                        f"stack_pointer[{self.base_offset.to_c()}]{bits} = {cast}{var.name};\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():

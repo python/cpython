@@ -1067,7 +1067,7 @@
             _PyStackRef self;
             _PyStackRef self_or_null;
             _PyStackRef *args;
-            _PyStackRef new_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -1124,13 +1124,12 @@
                 int has_self = !PyStackRef_IsNull(self_or_null);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                _PyInterpreterFrame *_new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-                _PyStackRef *first_non_self_local = _new_frame->localsplus + has_self;
-                _new_frame->localsplus[0] = self_or_null;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
+                new_frame->localsplus[0] = self_or_null;
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
                 }
-                new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -1145,13 +1144,12 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
                 assert(tstate->interp->eval_frame == NULL);
                 stack_pointer += -2 - oparg;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame_o->previous = frame;
+                new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-                frame = tstate->current_frame = new_frame_o;
+                frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
@@ -1171,7 +1169,7 @@
             _PyStackRef self;
             _PyStackRef *args;
             _PyStackRef self_or_null;
-            _PyStackRef new_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -1216,17 +1214,16 @@
                 assert(Py_TYPE(callable_o) == &PyFunction_Type);
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
-                _PyInterpreterFrame *_new_frame = _PyEvalFramePushAndInit(
+                new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                     args, total_args, NULL
                 );
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer += -2 - oparg;
-                if (_new_frame == NULL) {
+                if (new_frame == NULL) {
                     goto error;
                 }
-                new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -1241,12 +1238,11 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame_o->previous = frame;
+                new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-                frame = tstate->current_frame = new_frame_o;
+                frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
@@ -2136,7 +2132,7 @@
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
-            _PyStackRef new_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -2176,13 +2172,12 @@
                 int has_self = !PyStackRef_IsNull(self_or_null);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                _PyInterpreterFrame *_new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-                _PyStackRef *first_non_self_local = _new_frame->localsplus + has_self;
-                _new_frame->localsplus[0] = self_or_null;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
+                new_frame->localsplus[0] = self_or_null;
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
                 }
-                new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2197,13 +2192,12 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
                 assert(tstate->interp->eval_frame == NULL);
                 stack_pointer += -2 - oparg;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame_o->previous = frame;
+                new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-                frame = tstate->current_frame = new_frame_o;
+                frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
@@ -2220,7 +2214,7 @@
             _PyStackRef callable;
             _PyStackRef *args;
             _PyStackRef self_or_null;
-            _PyStackRef new_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -2250,17 +2244,16 @@
                 assert(Py_TYPE(callable_o) == &PyFunction_Type);
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
-                _PyInterpreterFrame *_new_frame = _PyEvalFramePushAndInit(
+                new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable), locals,
                     args, total_args, NULL
                 );
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer += -2 - oparg;
-                if (_new_frame == NULL) {
+                if (new_frame == NULL) {
                     goto error;
                 }
-                new_frame = (_PyStackRef) { .bits = (uintptr_t)_new_frame };
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2275,12 +2268,11 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame_o->previous = frame;
+                new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-                frame = tstate->current_frame = new_frame_o;
+                frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
@@ -3153,8 +3145,8 @@
             INSTRUCTION_STATS(FOR_ITER_GEN);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _PyStackRef iter;
-            _PyStackRef gen_frame;
-            _PyStackRef new_frame;
+            _PyInterpreterFrame *gen_frame;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -3167,26 +3159,24 @@
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
-                _PyInterpreterFrame *_gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-                _PyFrame_StackPush(_gen_frame, PyStackRef_None());
+                gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
+                _PyFrame_StackPush(gen_frame, PyStackRef_None());
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 // oparg is the return offset from the next instruction.
                 frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-                gen_frame = (_PyStackRef) { .bits = (uintptr_t)_gen_frame };
             }
             // _PUSH_FRAME
             new_frame = gen_frame;
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                _PyInterpreterFrame *new_frame_o = (_PyInterpreterFrame *)new_frame.bits;
                 assert(tstate->interp->eval_frame == NULL);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                new_frame_o->previous = frame;
+                new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-                frame = tstate->current_frame = new_frame_o;
+                frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
