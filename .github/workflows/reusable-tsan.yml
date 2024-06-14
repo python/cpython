@@ -72,6 +72,10 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: ./python -m test --tsan -j4
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+    - name: Tests
+      run: ./python.exe -m test --tsan -j4
+      if: ${{ startsWith(matrix.os, 'maxos') }}
     - name: Display TSAN logs
       if: always()
       run: find ${GITHUB_WORKSPACE} -name 'tsan_log.*' | xargs head -n 1000
