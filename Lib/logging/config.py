@@ -985,6 +985,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
 
         allow_reuse_address = 1
+        allow_reuse_port = 1
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
