@@ -1,1 +1,1 @@
-Make :class:`queue.Queue` and `asyncio.Queue` iterables.
+Make :class:`queue.Queue` and :class:`asyncio.Queue` iterables.
