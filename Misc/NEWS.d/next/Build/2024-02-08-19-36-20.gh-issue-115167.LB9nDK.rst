@@ -1,1 +1,0 @@
-Avoid vendoring ``vcruntime140_threads.dll`` when building with Visual Studio 2022 version 17.8.

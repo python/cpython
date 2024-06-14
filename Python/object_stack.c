@@ -21,8 +21,8 @@ _PyObjectStackChunk_New(void)
     _PyObjectStackChunk *buf;
     struct _Py_object_stack_freelist *obj_stack_freelist = get_object_stack_freelist();
     if (obj_stack_freelist->numfree > 0) {
-        buf = obj_stack_freelist->free_list;
-        obj_stack_freelist->free_list = buf->prev;
+        buf = obj_stack_freelist->items;
+        obj_stack_freelist->items = buf->prev;
         obj_stack_freelist->numfree--;
     }
     else {
@@ -47,8 +47,8 @@ _PyObjectStackChunk_Free(_PyObjectStackChunk *buf)
     if (obj_stack_freelist->numfree >= 0 &&
         obj_stack_freelist->numfree < _PyObjectStackChunk_MAXFREELIST)
     {
-        buf->prev = obj_stack_freelist->free_list;
-        obj_stack_freelist->free_list = buf;
+        buf->prev = obj_stack_freelist->items;
+        obj_stack_freelist->items = buf;
         obj_stack_freelist->numfree++;
     }
     else {
@@ -97,12 +97,12 @@ _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is
         return;
     }
 
-    struct _Py_object_stack_freelist *state = &freelists->object_stacks;
-    while (state->numfree > 0) {
-        _PyObjectStackChunk *buf = state->free_list;
-        state->free_list = buf->prev;
-        state->numfree--;
+    struct _Py_object_stack_freelist *freelist = &freelists->object_stacks;
+    while (freelist->numfree > 0) {
+        _PyObjectStackChunk *buf = freelist->items;
+        freelist->items = buf->prev;
+        freelist->numfree--;
         PyMem_RawFree(buf);
     }
-    state->numfree = -1;
+    freelist->numfree = -1;
 }

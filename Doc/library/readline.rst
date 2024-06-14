@@ -1,5 +1,5 @@
-:mod:`readline` --- GNU readline interface
-==========================================
+:mod:`!readline` --- GNU readline interface
+===========================================
 
 .. module:: readline
    :platform: Unix
@@ -23,6 +23,8 @@ Readline keybindings may be configured via an initialization file, typically
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
+
+.. include:: ../includes/wasm-ios-notavail.rst
 
 .. note::
 

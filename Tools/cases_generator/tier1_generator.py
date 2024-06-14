@@ -87,6 +87,8 @@ def write_uop(
                 out.emit(
                     f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
                 )
+                if inst.family is None:
+                    out.emit(f"(void){cache.name};\n")
             offset += cache.size
         emit_tokens(out, uop, stack, inst)
         if uop.properties.stores_sp:
@@ -131,8 +133,10 @@ def generate_tier1(
         needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
+        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if needs_this and not inst.is_target:
             out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
         out.emit(f"next_instr += {inst.size};\n")
@@ -141,6 +145,7 @@ def generate_tier1(
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(unused_guard)
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"

@@ -17,6 +17,7 @@ import time
 import types
 import typing
 import unittest
+import unittest.mock
 import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
@@ -76,6 +77,11 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
+     |  Methods defined here:
+     |
+     |  __annotate__(...)
+     |
+     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -86,8 +92,6 @@ CLASSES
      |  Data and other attributes defined here:
      |
      |  NO_MEANING = 'eggs'
-     |
-     |  __annotations__ = {'NO_MEANING': <class 'str'>}
 
     class C(builtins.object)
      |  Methods defined here:
@@ -175,6 +179,9 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
+    Methods defined here:
+        __annotate__(...)
+    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -183,7 +190,6 @@ class B(builtins.object)
     ----------------------------------------------------------------------
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
-        __annotations__ = {'NO_MEANING': <class 'str'>}
 
 
 class C(builtins.object)
@@ -658,16 +664,13 @@ class PydocDocTest(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @unittest.mock.patch('pydoc.pager')
     @requires_docstrings
-    def test_help_output_redirect(self):
+    def test_help_output_redirect(self, pager_mock):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
-        getpager_old = pydoc.getpager
-        getpager_new = lambda: (lambda x: x)
         self.maxDiff = None
 
-        buf = StringIO()
-        helper = pydoc.Helper(output=buf)
         unused, doc_loc = get_pydoc_text(pydoc_mod)
         module = "test.test_pydoc.pydoc_mod"
         help_header = """
@@ -677,21 +680,136 @@ class PydocDocTest(unittest.TestCase):
         help_header = textwrap.dedent(help_header)
         expected_help_pattern = help_header + expected_text_pattern
 
-        pydoc.getpager = getpager_new
-        try:
+        with captured_output('stdout') as output, \
+             captured_output('stderr') as err, \
+             StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.help(module)
+            result = buf.getvalue().strip()
+            expected_text = expected_help_pattern % (
+                            (doc_loc,) +
+                            expected_text_data_docstrings +
+                            (inspect.getabsfile(pydoc_mod),))
+            self.assertEqual('', output.getvalue())
+            self.assertEqual('', err.getvalue())
+            self.assertEqual(expected_text, result)
+
+        pager_mock.assert_not_called()
+
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
+    @unittest.mock.patch('pydoc.pager')
+    def test_help_output_redirect_various_requests(self, pager_mock):
+        # issue 940286, if output is set in Helper, then all output from
+        # Helper.help should be redirected
+
+        def run_pydoc_for_request(request, expected_text_part):
+            """Helper function to run pydoc with its output redirected"""
             with captured_output('stdout') as output, \
-                 captured_output('stderr') as err:
-                helper.help(module)
+                 captured_output('stderr') as err, \
+                 StringIO() as buf:
+                helper = pydoc.Helper(output=buf)
+                helper.help(request)
                 result = buf.getvalue().strip()
-                expected_text = expected_help_pattern % (
-                                (doc_loc,) +
-                                expected_text_data_docstrings +
-                                (inspect.getabsfile(pydoc_mod),))
-                self.assertEqual('', output.getvalue())
-                self.assertEqual('', err.getvalue())
-                self.assertEqual(expected_text, result)
-        finally:
-            pydoc.getpager = getpager_old
+                self.assertEqual('', output.getvalue(), msg=f'failed on request "{request}"')
+                self.assertEqual('', err.getvalue(), msg=f'failed on request "{request}"')
+                self.assertIn(expected_text_part, result, msg=f'failed on request "{request}"')
+                pager_mock.assert_not_called()
+
+        self.maxDiff = None
+
+        # test for "keywords"
+        run_pydoc_for_request('keywords', 'Here is a list of the Python keywords.')
+        # test for "symbols"
+        run_pydoc_for_request('symbols', 'Here is a list of the punctuation symbols')
+        # test for "topics"
+        run_pydoc_for_request('topics', 'Here is a list of available topics.')
+        # test for "modules" skipped, see test_modules()
+        # test for symbol "%"
+        run_pydoc_for_request('%', 'The power operator')
+        # test for special True, False, None keywords
+        run_pydoc_for_request('True', 'class bool(int)')
+        run_pydoc_for_request('False', 'class bool(int)')
+        run_pydoc_for_request('None', 'class NoneType(object)')
+        # test for keyword "assert"
+        run_pydoc_for_request('assert', 'The "assert" statement')
+        # test for topic "TYPES"
+        run_pydoc_for_request('TYPES', 'The standard type hierarchy')
+        # test for "pydoc.Helper.help"
+        run_pydoc_for_request('pydoc.Helper.help', 'Help on function help in pydoc.Helper:')
+        # test for pydoc.Helper.help
+        run_pydoc_for_request(pydoc.Helper.help, 'Help on function help in module pydoc:')
+        # test for pydoc.Helper() instance skipped because it is always meant to be interactive
+
+    def test_showtopic(self):
+        with captured_stdout() as showtopic_io:
+            helper = pydoc.Helper()
+            helper.showtopic('with')
+        helptext = showtopic_io.getvalue()
+        self.assertIn('The "with" statement', helptext)
+
+    def test_fail_showtopic(self):
+        with captured_stdout() as showtopic_io:
+            helper = pydoc.Helper()
+            helper.showtopic('abd')
+            expected = "no documentation found for 'abd'"
+            self.assertEqual(expected, showtopic_io.getvalue().strip())
+
+    @unittest.mock.patch('pydoc.pager')
+    def test_fail_showtopic_output_redirect(self, pager_mock):
+        with StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.showtopic("abd")
+            expected = "no documentation found for 'abd'"
+            self.assertEqual(expected, buf.getvalue().strip())
+
+        pager_mock.assert_not_called()
+
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
+    @unittest.mock.patch('pydoc.pager')
+    def test_showtopic_output_redirect(self, pager_mock):
+        # issue 940286, if output is set in Helper, then all output from
+        # Helper.showtopic should be redirected
+        self.maxDiff = None
+
+        with captured_output('stdout') as output, \
+             captured_output('stderr') as err, \
+             StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.showtopic('with')
+            result = buf.getvalue().strip()
+            self.assertEqual('', output.getvalue())
+            self.assertEqual('', err.getvalue())
+            self.assertIn('The "with" statement', result)
+
+        pager_mock.assert_not_called()
+
+    def test_lambda_with_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a, b, c) -> int", helptext)
+
+    def test_lambda_without_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int)", helptext)
+
+    def test_lambda_with_return_and_params_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int, "return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int) -> int", helptext)
 
     def test_namedtuple_fields(self):
         Person = namedtuple('Person', ['nickname', 'firstname'])
@@ -1138,6 +1256,17 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
 
 
+class Rect:
+    @property
+    def area(self):
+        '''Area of the rect'''
+        return self.w * self.h
+
+
+class Square(Rect):
+    area = property(lambda self: self.side**2)
+
+
 class TestDescriptions(unittest.TestCase):
 
     def test_module(self):
@@ -1337,7 +1466,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_module_level_callable_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.func_with_unrepresentable_signature
         self.assertEqual(self._get_summary_line(builtin),
             "func_with_unrepresentable_signature(a, b=<x>)")
@@ -1347,7 +1476,7 @@ class TestDescriptions(unittest.TestCase):
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),
             "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.staticmeth),
             "staticmeth(a, b=<x>)")
@@ -1358,7 +1487,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(dict.pop),
             "pop(self, key, default=<unrepresentable>, /) "
             "unbound builtins.dict method")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.meth),
             "meth(self, /, a, b=<x>) unbound "
@@ -1370,7 +1499,7 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line({}.pop),
             "pop(key, default=<unrepresentable>, /) "
             "method of builtins.dict instance")
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         obj = _testcapi.DocStringUnrepresentableSignatureTest()
         self.assertEqual(self._get_summary_line(obj.meth),
             "meth(a, b=<x>) "
@@ -1379,7 +1508,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_unbound_builtin_classmethod_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         descr = cls.__dict__['classmeth']
         self.assertEqual(self._get_summary_line(descr),
@@ -1389,7 +1518,7 @@ class TestDescriptions(unittest.TestCase):
     @support.cpython_only
     @requires_docstrings
     def test_bound_builtin_classmethod_unrepresentable_default(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.classmeth),
             "classmeth(a, b=<x>) class method of "
@@ -1526,13 +1655,13 @@ cm(x) class method of test.test_pydoc.test_pydoc.X
 
     @requires_docstrings
     def test_property(self):
-        class Rect:
-            @property
-            def area(self):
-                '''Area of the rect'''
-                return self.w * self.h
-
         self.assertEqual(self._get_summary_lines(Rect.area), """\
+area
+    Area of the rect
+""")
+        # inherits the docstring from Rect.area
+        self.assertEqual(self._get_summary_lines(Square.area), """\
+area
     Area of the rect
 """)
         self.assertIn("""
@@ -1651,6 +1780,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' |  global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
         self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn(' |  count(self, value, /) from builtins.list', lines)
+        self.assertIn(' |  list_count = count(self, value, /)', lines)
         self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
         self.assertIn(' |  object_repr = __repr__(self, /)', lines)
 
@@ -1679,6 +1810,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn('global_func_alias = global_func(x, y)', lines)
         self.assertIn('global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn('count(self, value, /) from builtins.list', lines)
+        self.assertIn('list_count = count(self, value, /)', lines)
         self.assertIn('__repr__(self, /) from builtins.object', lines)
         self.assertIn('object_repr = __repr__(self, /)', lines)
 
@@ -1722,6 +1855,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn('    B_method(self)', lines)
         self.assertIn('    B_method2 = B_method(self)', lines)
+        self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -1747,6 +1884,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn(' B_method(self)', lines)
         self.assertIn(' B_method2 = B_method(self)', lines)
+        self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
 
 @unittest.skipIf(

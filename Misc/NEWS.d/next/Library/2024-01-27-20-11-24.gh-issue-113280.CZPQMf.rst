@@ -1,2 +1,0 @@
-Fix a leak of open socket in rare cases when error occurred in
-:class:`ssl.SSLSocket` creation.

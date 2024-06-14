@@ -1,6 +1,0 @@
-When replace() method is called on a subclass of datetime, date or time,
-properly call derived constructor. Previously, only the base class's
-constructor was called.
-
-Also, make sure to pass non-zero fold values when creating subclasses in
-various methods. Previously, fold was silently ignored.

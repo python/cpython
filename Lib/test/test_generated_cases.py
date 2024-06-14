@@ -33,7 +33,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Stack
     import tier1_generator
-    import tier2_abstract_generator
+    import optimizer_generator
 
 
 def handle_stderr():
@@ -350,12 +350,15 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
+            (void)extra;
             stack_pointer += -1;
             DISPATCH();
         }
@@ -399,6 +402,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
             _Py_CODEUNIT *this_instr = next_instr - 6;
+            (void)this_instr;
             PyObject *right;
             PyObject *left;
             PyObject *arg2;
@@ -408,6 +412,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 op1(left, right);
             }
             /* Skip 2 cache entries */
@@ -415,6 +420,7 @@ class TestGeneratedCases(unittest.TestCase):
             arg2 = stack_pointer[-3];
             {
                 uint32_t extra = read_u32(&this_instr[4].cache);
+                (void)extra;
                 res = op2(arg2, left, right);
             }
             stack_pointer[-3] = res;
@@ -424,6 +430,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         TARGET(OP1) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
             PyObject *right;
@@ -431,6 +438,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             op1(left, right);
             DISPATCH();
         }
@@ -477,7 +485,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_no_flags(self):
         input = """
-        pseudo(OP) = {
+        pseudo(OP, (in -- out1, out2)) = {
             OP1,
         };
 
@@ -496,7 +504,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_with_flags(self):
         input = """
-        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+        pseudo(OP, (in1, in2 --), (HAS_ARG, HAS_JUMP)) = {
             OP1,
         };
 
@@ -794,6 +802,17 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
 
+    def test_deopt_and_exit(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            DEOPT_IF(1);
+            EXIT_IF(1);
+        }
+        """
+        output = ""
+        with self.assertRaises(Exception):
+            self.run_cases_test(input, output)
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -830,7 +849,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             temp_input.flush()
 
         with handle_stderr():
-            tier2_abstract_generator.generate_tier2_abstract_from_files(
+            optimizer_generator.generate_tier2_abstract_from_files(
                 [self.temp_input_filename, self.temp_input2_filename],
                 self.temp_output_filename
             )
@@ -879,8 +898,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             eggs();
             stack_pointer[-1] = out;
@@ -888,9 +907,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            _Py_UOpsSymType *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            _Py_UopsSymbol *out;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
@@ -913,16 +931,15 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *out;
-            out = sym_new_unknown(ctx);
-            if (out == NULL) goto out_of_space;
+            _Py_UopsSymbol *out;
+            out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             stack_pointer[-1] = out;
             break;

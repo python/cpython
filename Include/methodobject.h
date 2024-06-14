@@ -31,7 +31,7 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 // Note that the underscore-prefixed names were documented in public docs;
 // people may be using them.
 typedef PyCFunctionFast _PyCFunctionFast;
-typedef PyCFunctionWithKeywords _PyCFunctionWithKeywords;
+typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 
 // Cast an function to the PyCFunction type to use it with PyMethodDef.
 //

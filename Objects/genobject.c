@@ -11,6 +11,7 @@
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -329,10 +330,11 @@ gen_close_iter(PyObject *yf)
 static inline bool
 is_resume(_Py_CODEUNIT *instr)
 {
+    uint8_t code = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
     return (
-        instr->op.code == RESUME ||
-        instr->op.code == RESUME_CHECK ||
-        instr->op.code == INSTRUMENTED_RESUME
+        code == RESUME ||
+        code == RESUME_CHECK ||
+        code == INSTRUMENTED_RESUME
     );
 }
 
@@ -380,6 +382,7 @@ gen_close(PyGenObject *gen, PyObject *args)
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
+            _PyFrame_ClearLocals((_PyInterpreterFrame *)gen->gi_iframe);
             Py_RETURN_NONE;
         }
     }
@@ -796,6 +799,7 @@ static PyMethodDef gen_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1148,6 +1152,7 @@ static PyMethodDef coro_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1635,6 +1640,13 @@ get_async_gen_freelist(void)
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     return &freelists->async_gens;
 }
+
+static struct _Py_async_gen_asend_freelist *
+get_async_gen_asend_freelist(void)
+{
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    return &freelists->async_gen_asends;
+}
 #endif
 
 
@@ -1659,25 +1671,27 @@ void
 _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_freelist *state = &freelist_state->async_gens;
+    struct _Py_async_gen_freelist *freelist = &freelist_state->async_gens;
 
-    while (state->value_numfree > 0) {
+    while (freelist->numfree > 0) {
         _PyAsyncGenWrappedValue *o;
-        o = state->value_freelist[--state->value_numfree];
+        o = freelist->items[--freelist->numfree];
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         PyObject_GC_Del(o);
     }
 
-    while (state->asend_numfree > 0) {
+    struct _Py_async_gen_asend_freelist *asend_freelist = &freelist_state->async_gen_asends;
+
+    while (asend_freelist->numfree > 0) {
         PyAsyncGenASend *o;
-        o = state->asend_freelist[--state->asend_numfree];
+        o = asend_freelist->items[--asend_freelist->numfree];
         assert(Py_IS_TYPE(o, &_PyAsyncGenASend_Type));
         PyObject_GC_Del(o);
     }
 
     if (is_finalization) {
-        state->value_numfree = -1;
-        state->asend_numfree = -1;
+        freelist->numfree = -1;
+        asend_freelist->numfree = -1;
     }
 #endif
 }
@@ -1726,11 +1740,11 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_freelist *async_gen_freelist = get_async_gen_freelist();
-    if (async_gen_freelist->asend_numfree >= 0 && async_gen_freelist->asend_numfree < _PyAsyncGen_MAXFREELIST) {
+    struct _Py_async_gen_asend_freelist *freelist = get_async_gen_asend_freelist();
+    if (freelist->numfree >= 0 && freelist->numfree < _PyAsyncGen_MAXFREELIST) {
         assert(PyAsyncGenASend_CheckExact(o));
         _PyGC_CLEAR_FINALIZED((PyObject *)o);
-        async_gen_freelist->asend_freelist[async_gen_freelist->asend_numfree++] = o;
+        freelist->items[freelist->numfree++] = o;
     }
     else
 #endif
@@ -1762,6 +1776,7 @@ async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
 
     if (o->ags_state == AWAITABLE_STATE_INIT) {
         if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "anext(): asynchronous generator is already running");
@@ -1805,10 +1820,24 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
         return NULL;
     }
 
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return NULL;
+        }
+
+        o->ags_state = AWAITABLE_STATE_ITER;
+        o->ags_gen->ag_running_async = 1;
+    }
+
     result = gen_throw((PyGenObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
+        o->ags_gen->ag_running_async = 0;
         o->ags_state = AWAITABLE_STATE_CLOSED;
     }
 
@@ -1819,8 +1848,25 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
 static PyObject *
 async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 {
-    o->ags_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->ags_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_asend_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 static void
@@ -1896,10 +1942,10 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_freelist *async_gen_freelist = get_async_gen_freelist();
-    if (async_gen_freelist->asend_numfree > 0) {
-        async_gen_freelist->asend_numfree--;
-        o = async_gen_freelist->asend_freelist[async_gen_freelist->asend_numfree];
+    struct _Py_async_gen_asend_freelist *freelist = get_async_gen_asend_freelist();
+    if (freelist->numfree > 0) {
+        freelist->numfree--;
+        o = freelist->items[freelist->numfree];
         _Py_NewReference((PyObject *)o);
     }
     else
@@ -1931,10 +1977,10 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_freelist *async_gen_freelist = get_async_gen_freelist();
-    if (async_gen_freelist->value_numfree >= 0 && async_gen_freelist->value_numfree < _PyAsyncGen_MAXFREELIST) {
+    struct _Py_async_gen_freelist *freelist = get_async_gen_freelist();
+    if (freelist->numfree >= 0 && freelist->numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
-        async_gen_freelist->value_freelist[async_gen_freelist->value_numfree++] = o;
+        freelist->items[freelist->numfree++] = o;
         OBJECT_STAT_INC(to_freelist);
     }
     else
@@ -2004,10 +2050,10 @@ _PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
     assert(val);
 
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_freelist *async_gen_freelist = get_async_gen_freelist();
-    if (async_gen_freelist->value_numfree > 0) {
-        async_gen_freelist->value_numfree--;
-        o = async_gen_freelist->value_freelist[async_gen_freelist->value_numfree];
+    struct _Py_async_gen_freelist *freelist = get_async_gen_freelist();
+    if (freelist->numfree > 0) {
+        freelist->numfree--;
+        o = freelist->items[freelist->numfree];
         OBJECT_STAT_INC(from_freelist);
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
@@ -2197,9 +2243,34 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         return NULL;
     }
 
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        if (o->agt_gen->ag_running_async) {
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+            if (o->agt_args == NULL) {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "aclose(): asynchronous generator is already running");
+            }
+            else {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "athrow(): asynchronous generator is already running");
+            }
+            return NULL;
+        }
+
+        o->agt_state = AWAITABLE_STATE_ITER;
+        o->agt_gen->ag_running_async = 1;
+    }
+
     retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
     if (o->agt_args) {
-        return async_gen_unwrap_value(o->agt_gen, retval);
+        retval = async_gen_unwrap_value(o->agt_gen, retval);
+        if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+        }
+        return retval;
     } else {
         /* aclose() mode */
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
@@ -2208,6 +2279,10 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
             Py_DECREF(retval);
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;
+        }
+        if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))
@@ -2235,8 +2310,25 @@ async_gen_athrow_iternext(PyAsyncGenAThrow *o)
 static PyObject *
 async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 {
-    o->agt_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->agt_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_athrow_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 

@@ -17,6 +17,7 @@ from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
     )
 from test.support.warnings_helper import check_warnings
+from test.support.import_helper import import_module
 from collections import UserList
 
 import _io  # C implementation of io
@@ -597,7 +598,7 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
     @cpython_only
     def testInvalidFd_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MIN - 1)
 

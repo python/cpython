@@ -1,3 +1,0 @@
-Fix confused traceback when floordiv, mod, or divmod operations happens
-between instances of :class:`fractions.Fraction` and :class:`complex`.
-

@@ -124,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -168,6 +174,7 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
+* 'tierN'. This instruction only used by tier N interpreter.
 
 ### Special functions/macros
 

@@ -37,7 +37,7 @@ or lacks SHA3.
 
 :func:`urllib.parse.urlsplit` now strips leading C0 control and space
 characters following the specification for URLs defined by WHATWG in
-response to CVE-2023-24329. Patch by Illia Volochii.
+response to :cve:`2023-24329`. Patch by Illia Volochii.
 
 ..
 
@@ -395,7 +395,7 @@ Fix bug in line numbers of instructions emitted for :keyword:`except*
 .. section: Core and Builtins
 
 Clarify :exc:`SyntaxWarning` with literal ``is`` comparison by specifying
-which literal is problematic, since comparisons using ``is`` with e.g. None
+which literal is problematic, since comparisons using ``is`` with e.g. ``None``
 and bool literals are idiomatic.
 
 ..
@@ -1446,7 +1446,7 @@ Adapt the :mod:`winsound` extension module to :pep:`687`.
 .. nonce: jurMzv
 .. section: Library
 
-Remove deprecation of enum ``memmber.member`` access.
+Remove deprecation of enum ``member.member`` access.
 
 ..
 
