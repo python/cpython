@@ -39,11 +39,9 @@ class AsyncQueueIterator:
 
     async def __anext__(self):
         try:
-            item = await self.queue.get()
+            return await self.queue.get()
         except QueueShutDown:
             raise StopAsyncIteration
-        else:
-            return item
 
 
 class Queue(mixins._LoopBoundMixin):
