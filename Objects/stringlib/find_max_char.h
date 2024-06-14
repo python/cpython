@@ -20,45 +20,34 @@
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
-    const unsigned char *p = (const unsigned char *) begin;
+    const unsigned char *restrict p = (const unsigned char *) begin;
     const unsigned char *_end = (const unsigned char *)end;
-    const size_t *aligned_end = (const size_t *)(_end - SIZEOF_SIZE_T);
-    const size_t *unrolled_end = aligned_end - 3;
-    unsigned char accumulator = 0;
-    /* Do not test each character individually, but use bitwise OR and test
-       all characters at once. */
-    while (p < _end && !_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+    const unsigned char *unrolled_end = _end - 4 * SIZEOF_SIZE_T;
+    while (p < unrolled_end) {
+        /* Test chunks of 32 as more granularity limits compiler optimization */
+        const size_t *restrict _p = (const size_t *)p;
+        size_t value0;
+        size_t value1;
+        size_t value2;
+        size_t value3;
+        /* Will be optimized to simple loads for architectures that support
+           unaligned loads. */
+        memcpy(&value0, _p + 0, SIZEOF_SIZE_T);
+        memcpy(&value1, _p + 1, SIZEOF_SIZE_T);
+        memcpy(&value2, _p + 2, SIZEOF_SIZE_T);
+        memcpy(&value3, _p + 3, SIZEOF_SIZE_T);
+        size_t value = value0 | value1 | value2 | value3;
+        if (value & UCS1_ASCII_CHAR_MASK) {
+            return 255;
+        }
+        p += (4 * SIZEOF_SIZE_T);
+    }
+    size_t accumulator = 0;
+    while (p < end) {
         accumulator |= *p;
         p += 1;
     }
     if (accumulator & 0x80) {
-        return 255;
-    } else if (p == end) {
-        return 127;
-    }
-
-    /* On 64-bit platforms with 128-bit vectors (x86-64, arm64) the
-       compiler can load 4 size_t values into two 16-byte vectors and do a
-       vector bitwise OR. */
-    const size_t *_p = (const size_t *)p;
-    while (_p < unrolled_end) {
-        size_t value = _p[0] | _p[1] | _p[2] | _p[3];
-        if (value & UCS1_ASCII_CHAR_MASK) {
-            return 255;
-        }
-        _p += 4;
-    }
-    size_t value = 0;
-    while (_p < aligned_end) {
-        value |= *_p;
-        _p += 1;
-    }
-    p = (const unsigned char *)_p;
-    while (p < _end) {
-        value |= *p;
-        p += 1;
-    }
-    if (value & UCS1_ASCII_CHAR_MASK) {
         return 255;
     }
     return 127;
