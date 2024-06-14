@@ -197,6 +197,10 @@ process and user.
    changes to the environment made by :func:`os.putenv`, by
    :func:`os.unsetenv`, or made outside Python in the same process.
 
+   On Windows, :func:`get_user_default_environ` can be used to update
+   :data:`os.environ` to the latest system environment variables, such as the
+   ``PATH`` variable.
+
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -326,6 +330,8 @@ process and user.
    and ``'surrogateescape'`` error handler. Use :func:`os.getenvb` if you
    would like to use a different encoding.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. availability:: Unix, Windows.
 
 
@@ -355,6 +361,22 @@ process and user.
    By default, when *env* is ``None``, :data:`environ` is used.
 
    .. versionadded:: 3.2
+
+
+.. function:: get_user_default_environ()
+
+   Get the default environment of the current process user as a dictionary.
+
+   It can be used to update :data:`os.environ` to the latest system environment
+   variables, such as the ``PATH`` variable. Example::
+
+       os.environ.update(os.get_user_default_environ())
+
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.14
 
 
 .. function:: getegid()

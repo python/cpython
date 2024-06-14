@@ -1,0 +1,4 @@
+Added the :func:`os.get_user_default_environ` function to get the user
+default environment. It can be used to update :data:`os.environ` to the
+latest system environment variables, such as the ``PATH`` variable. Patch by
+Victor Stinner.

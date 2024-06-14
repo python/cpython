@@ -1345,6 +1345,17 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
+    @unittest.skipUnless(hasattr(os, 'get_user_default_environ'),
+                         'need os.get_user_default_environ()')
+    def test_get_user_default_environ(self):
+        env = os.get_user_default_environ()
+        self.assertIsInstance(env, dict)
+        for name, value in env.items():
+            self.assertIsInstance(name, str)
+            self.assertIsInstance(value, str)
+            self.assertTrue(bool(name), name)  # must be not empty
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
     is_fwalk = False

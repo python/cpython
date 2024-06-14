@@ -12170,6 +12170,28 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os__create_environ_impl(module);
 }
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__get_user_default_environ__doc__,
+"_get_user_default_environ($module, /)\n"
+"--\n"
+"\n"
+"Get user default environment string.");
+
+#define OS__GET_USER_DEFAULT_ENVIRON_METHODDEF    \
+    {"_get_user_default_environ", (PyCFunction)os__get_user_default_environ, METH_NOARGS, os__get_user_default_environ__doc__},
+
+static PyObject *
+os__get_user_default_environ_impl(PyObject *module);
+
+static PyObject *
+os__get_user_default_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__get_user_default_environ_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12837,4 +12859,8 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=5ae2e5ffcd9c8a84 input=a9049054013a1b77]*/
+
+#ifndef OS__GET_USER_DEFAULT_ENVIRON_METHODDEF
+    #define OS__GET_USER_DEFAULT_ENVIRON_METHODDEF
+#endif /* !defined(OS__GET_USER_DEFAULT_ENVIRON_METHODDEF) */
+/*[clinic end generated code: output=66014c7643fb6634 input=a9049054013a1b77]*/

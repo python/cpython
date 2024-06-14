@@ -16823,6 +16823,70 @@ os__create_environ_impl(PyObject *module)
 }
 
 
+#ifdef MS_WINDOWS
+/*[clinic input]
+os._get_user_default_environ
+
+Get user default environment string.
+[clinic start generated code]*/
+
+static PyObject *
+os__get_user_default_environ_impl(PyObject *module)
+/*[clinic end generated code: output=6cce8c186a556ef0 input=e15b3d87fce12734]*/
+{
+    HINSTANCE hUserEnv = LoadLibraryW(L"USERENV");
+    if (!hUserEnv) {
+        goto error;
+    }
+
+    HINSTANCE (CALLBACK *pCreateEnvironmentBlock) (LPVOID, HANDLE, BOOL);
+    HINSTANCE (CALLBACK *pDestroyEnvironmentBlock) (LPVOID);
+
+    *(FARPROC*)&pCreateEnvironmentBlock = GetProcAddress(hUserEnv,
+                                                "CreateEnvironmentBlock");
+    if (!pCreateEnvironmentBlock) {
+        goto error;
+    }
+
+    *(FARPROC*)&pDestroyEnvironmentBlock = GetProcAddress(hUserEnv,
+                                                 "DestroyEnvironmentBlock");
+    if (!pDestroyEnvironmentBlock) {
+        goto error;
+    }
+
+    HANDLE htoken;
+    if (!OpenProcessToken(GetCurrentProcess(),
+                          TOKEN_DUPLICATE|TOKEN_QUERY,
+                          &htoken)) {
+        goto error;
+    }
+
+    PWCHAR env_str;
+    if (!pCreateEnvironmentBlock(&env_str, htoken, 0)) {
+        CloseHandle(htoken);
+        goto error;
+    }
+    CloseHandle(htoken);
+
+    Py_ssize_t len = wcslen(env_str);
+    while (!env_str[len+1] != 0) {
+        len++;
+        len += wcslen(env_str + len);
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(env_str, len);
+    if (!pDestroyEnvironmentBlock(env_str)) {
+        Py_XDECREF(str);
+        goto error;
+    }
+    return str;
+
+error:
+    return PyErr_SetFromWindowsErr(0);
+}
+#endif  // MS_WINDOWS
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17038,6 +17102,7 @@ static PyMethodDef posix_methods[] = {
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
     OS__CREATE_ENVIRON_METHODDEF
+    OS__GET_USER_DEFAULT_ENVIRON_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

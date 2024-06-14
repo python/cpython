@@ -96,6 +96,10 @@ elif 'nt' in _names:
         from nt import _create_environ
     except ImportError:
         pass
+    try:
+        from nt import _get_user_default_environ
+    except ImportError:
+        pass
 
 else:
     raise ImportError('no os specific module found')
@@ -824,6 +828,20 @@ def _create_environ_mapping():
 # unicode environ
 environ = _create_environ_mapping()
 del _create_environ_mapping
+
+
+if _exists("_get_user_default_environ"):
+    def get_user_default_environ():
+        env = {}
+        env_str = _get_user_default_environ()
+        for entry in env_str.split('\0'):
+            parts = entry.split('=', 1)
+            if len(parts) != 2:
+                # Skip names that begin with '='
+                continue
+            name, value = parts
+            env[name] = value
+        return env
 
 
 def getenv(key, default=None):
