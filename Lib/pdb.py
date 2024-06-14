@@ -612,7 +612,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.print_stack_entry(self.stack[self.curindex])
             self._cmdloop()
-            # If "w 1" is not used, pop it out
+            # If "w 0" is not used, pop it out
             if self.cmdqueue and self.cmdqueue[-1] == 'w 0':
                 self.cmdqueue.pop()
             self.forget()
