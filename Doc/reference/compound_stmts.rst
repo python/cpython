@@ -245,13 +245,17 @@ handler is started. This search inspects the :keyword:`!except` clauses in turn
 until one is found that matches the exception.
 An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
-For an :keyword:`!except` clause with an expression,
-that expression is evaluated, and the clause matches the exception
-if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a
-:term:`non-virtual base class <abstract base class>` of the exception object,
-or a tuple containing an item that is the class or a non-virtual base class
-of the exception object.
+
+For an :keyword:`!except` clause with an expression, the
+expression must evaluate to a type or a tuple containing types. Each type must
+be a subclass of :exc:`BaseException`, otherwise the runtime will raise a
+:exc:`TypeError` when the handler is evaluated.
+
+The clause matches the exception if the resulting object is "compatible" with
+the exception.  An object is compatible with an exception if the object is the
+class or a :term:`non-virtual base class <abstract base class>` of the exception
+object, or a tuple containing an item that is the class or a non-virtual base
+class of the exception object.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
@@ -378,8 +382,13 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-An :keyword:`!except*` clause must have a matching type,
-and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a matching
+expression; `except*:` is not valid syntax. When the handler is evaluated, the
+expression must evaluate to a type or a tuple containing types. Each type must
+be a subclass of :exc:`BaseException` and must not be a subclass of
+:exc:`BaseExceptionGroup`, otherwise the runtime will raise a :exc:`TypeError`
+when the handler is evaluated.
+
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
