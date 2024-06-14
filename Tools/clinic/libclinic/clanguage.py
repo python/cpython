@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from libclinic.app import Clinic
 
 
-def c_id(name):
+def c_id(name: str) -> str:
     if len(name) == 1 and ord(name) < 256:
         if name.isalnum():
             return f"_Py_LATIN1_CHR('{name}')"
