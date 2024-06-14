@@ -15,12 +15,19 @@ on:
         description: 'Name of the TSAN logs artifact. Must be unique for each job.'
         required: true
         type: string
+      os-matrix:
+        required: false
+        type: string
+        default: '["ubuntu-22.04"]'
 
 jobs:
   build_tsan_reusable:
-    name: 'Thread sanitizer'
-    runs-on: ubuntu-22.04
+    name: 'Thread sanitizer (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    strategy:
+      matrix:
+        os: ${{fromJson(inputs.os-matrix)}}
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
