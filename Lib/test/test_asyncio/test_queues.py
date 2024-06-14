@@ -116,6 +116,30 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
+    async def test_aiter(self):
+        q = asyncio.Queue()
+        for i in range(100):
+            q.put_nowait(i)
+
+        # All tasks have been queued
+        q.shutdown()
+
+        accumulator = 0
+
+        # Two workers get items from the queue and call task_done after each.
+        # Join the queue and assert all items have been processed.
+
+        async def worker():
+            nonlocal accumulator
+
+            async for item in q:
+                accumulator += item
+
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(worker()) for _ in range(2)]
+            await asyncio.gather(*tasks, return_exceptions=True)
+            self.assertEqual(sum(range(100)), accumulator)
+
 
 class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
