@@ -593,7 +593,6 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     # Reuse gzip header created by zlib, replace mtime and OS byte for
     # consistency.
     header = struct.pack("<4sLBB", gzip_data, int(mtime), gzip_data[8], 255)
-    print(header)
     return header + gzip_data[10:]
 
 
