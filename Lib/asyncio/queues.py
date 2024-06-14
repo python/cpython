@@ -219,7 +219,6 @@ class Queue(mixins._LoopBoundMixin):
                 raise
         return self.get_nowait()
 
-
     def get_nowait(self):
         """Remove and return an item from the queue.
 
