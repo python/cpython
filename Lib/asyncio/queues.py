@@ -5,6 +5,7 @@ __all__ = (
     'QueueFull',
     'QueueEmpty',
     'QueueShutDown',
+    'AsyncQueueIterator',
 )
 
 import collections
