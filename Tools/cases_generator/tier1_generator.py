@@ -42,34 +42,22 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
                     variables.add(var.name)
-                    type = var.type if var.type else "_PyStackRef "
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef ", "Py_STACKREF_NULL")
                     if var.condition:
-                        if type.strip() == "_PyStackRef":
-                            out.emit(f"_PyStackRef {var.name} = Py_STACKREF_NULL;\n")
-                        else:
-                            out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{var.name} = {null};\n")
                     else:
                         if var.is_array():
                             out.emit(f"{var.type}{var.name};\n")
                         else:
-                            if type.strip() == "_PyStackRef":
-                                out.emit(f"_PyStackRef {var.name};\n")
-                            else:
-                                out.emit(f"{type}{var.name};\n")
+                            out.emit(f"{type}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
-                    type = var.type if var.type else "_PyStackRef "
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef ", "Py_STACKREF_NULL")
                     if var.condition:
-                        if type.strip() == "_PyStackRef":
-                            out.emit(f"_PyStackRef {var.name} = Py_STACKREF_NULL;\n")
-                        else:
-                            out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{var.name} = {null};\n")
                     else:
-                        if type.strip() == "_PyStackRef":
-                            out.emit(f"_PyStackRef {var.name};\n")
-                        else:
-                            out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type}{var.name};\n")
 
 
 def write_uop(

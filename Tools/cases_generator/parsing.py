@@ -271,8 +271,6 @@ class Parser(PLexer):
                 type_text = self.require(lx.IDENTIFIER).text.strip()
                 if self.expect(lx.TIMES):
                     type_text += " *"
-                else:
-                    type_text += " "
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)

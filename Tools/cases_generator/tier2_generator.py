@@ -38,22 +38,16 @@ def declare_variable(
 ) -> None:
     if var.name in variables:
         return
-    type = var.type if var.type else "_PyStackRef "
     variables.add(var.name)
+    type, null = (var.type, "NULL") if var.type else ("_PyStackRef ", "Py_STACKREF_NULL")
     if var.condition:
-        if type.strip() == "_PyStackRef":
-            out.emit(f"_PyStackRef {var.name} = Py_STACKREF_NULL;\n")
-        else:
-            out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{var.name} = {null};\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        if type.strip() == "_PyStackRef":
-            out.emit(f"_PyStackRef {var.name};\n")
-        else:
-            out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:

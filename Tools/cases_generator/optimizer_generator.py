@@ -38,7 +38,7 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 def type_name(var: StackItem) -> str:
     if var.is_array():
         return f"_Py_UopsSymbol **"
-    if var.type and var.type.strip() != "PyObject *":
+    if var.type:
         return var.type
     return f"_Py_UopsSymbol *"
 
