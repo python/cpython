@@ -386,6 +386,15 @@ STRINGLIB(prepare_search)(STRINGLIB(prework) *pw,
                           int bc_table_and_gap,
                           int critical_factorization)
 {
+    /*
+       This function prepares different search algorithm methods
+
+          horspool_find:    bc_table_and_gap = 1
+                            bloom_mask_and_true_gap = 1 (optional)
+
+          two_way_find:     bc_table_and_gap = 1
+                            critical_factorization = 1
+    */
     const STRINGLIB_CHAR *p = pw->needle;
     Py_ssize_t m = pw->needle_len;
     int reversed = pw->reversed;
@@ -486,17 +495,21 @@ STRINGLIB(two_way_find)(const STRINGLIB_CHAR *haystack,
     /* Crochemore and Perrin's (1991) Two-Way algorithm.
         See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
 
-        Variable Names
-           s - haystack
-           p - needle
-           n - len(haystack)
-           m - len(needle)
+       Initialization
+          pw needs to be initialized using prepare_search with
+             bc_table_and_gap = 1 and critical_factorization = 1
 
-        Bi-Directional Conventions:
-           See docstring of horspool_find
+       Variable Names
+          s - haystack
+          p - needle
+          n - len(haystack)
+          m - len(needle)
 
-        Critical factorization reversion:
-           See docstring of _factorize
+       Bi-Directional Conventions:
+          See docstring of horspool_find
+
+       Critical factorization reversion:
+          See docstring of _factorize
     */
     LOG(find_mode ? "Two-way Find.\n" : "Two-way Count.\n");
 
@@ -634,6 +647,10 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
     /* Boyer–Moore–Horspool algorithm
        with optional dynamic fallback to Two-Way algorithm
 
+       Initialization
+          pw needs to be initialized using prepare_search with
+             bc_table_and_gap = 1 and optionally bloom_mask_and_true_gap = 1
+
        Variable Names
           s - haystack
           p - needle
@@ -696,8 +713,10 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
           hit_cost  - cost of 1 false positive character check
           avg_hit - average number of false positive hits per 1 loop
 
-          >>> m = len(needle)
-          >>> run_time = m * m + n_loops * (loop_cost + hit_cost * avg_hit)
+          m = len(needle)
+          run_time = init_cost * m + n_loops * (loop_cost + hit_cost * avg_hit)
+
+             Note, n_loops * avg_hit is what causes quadratic complexity.
 
           Calibrate:
              1. expose function to run without handling special cases first.
