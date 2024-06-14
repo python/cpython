@@ -32,17 +32,17 @@ typedef union {
 
 
 #ifdef Py_GIL_DISABLED
-    static const _PyStackRef PyStackRef_True = {.bits = (uintptr_t) (((char *)&_Py_TrueStruct) + Py_TAG_DEFERRED) };
+#   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
 #else
-    static const _PyStackRef PyStackRef_True = {.bits = (uintptr_t) (((char *)&_Py_TrueStruct)) };
+#   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) })
 #endif
 
 
 
 #ifdef Py_GIL_DISABLED
-    static const _PyStackRef PyStackRef_False = {.bits = (uintptr_t) (((char *)&_Py_FalseStruct) + Py_TAG_DEFERRED) };
+#   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
 #else
-    static const _PyStackRef PyStackRef_False = {.bits = (uintptr_t) (((char *)&_Py_FalseStruct)) };
+#   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
 #endif
 
 
