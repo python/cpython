@@ -38,6 +38,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Dependencies
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # Install clang-18
