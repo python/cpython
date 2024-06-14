@@ -527,7 +527,7 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
-    PyUnicode_InternInPlace(&id);
+    PyUnicode_InternImmortal(&id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)
     {
         Py_DECREF(id);
