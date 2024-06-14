@@ -110,7 +110,7 @@ def check(file):
         return
 
     except SyntaxError as msg:
-        errprint("%r: Token Error: %s" % (file, msg))
+        errprint("%r: Syntax Error: %s" % (file, msg))
         return
 
     except NannyNag as nag:
