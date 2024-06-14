@@ -381,7 +381,7 @@ dummy_func(
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
-            EXIT_IF(!PyStackRef_Is(value, PyStackRef_None()));
+            EXIT_IF(!PyStackRef_Is(value, PyStackRef_None));
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False;
         }
@@ -1131,7 +1131,7 @@ dummy_func(
                 frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
-            if (PyStackRef_Is(v, PyStackRef_None()) && PyIter_Check(receiver_o)) {
+            if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
                 retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
             }
             else {
@@ -1289,7 +1289,7 @@ dummy_func(
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
                 value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
-                none = PyStackRef_None();
+                none = PyStackRef_None;
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -2735,7 +2735,7 @@ dummy_func(
         }
 
         op(_IS_NONE, (value -- b)) {
-            if (PyStackRef_Is(value, PyStackRef_None())) {
+            if (PyStackRef_Is(value, PyStackRef_None)) {
                 b = PyStackRef_True;
             }
             else {
@@ -3091,7 +3091,7 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
             gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, PyStackRef_None());
+            _PyFrame_StackPush(gen_frame, PyStackRef_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -3247,7 +3247,7 @@ dummy_func(
                 prev_exc = PyStackRef_FromPyObjectSteal(exc_info->exc_value);
             }
             else {
-                prev_exc = PyStackRef_None();
+                prev_exc = PyStackRef_None;
             }
             assert(PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(new_exc)));
             exc_info->exc_value = Py_NewRef(PyStackRef_AsPyObjectBorrow(new_exc));
@@ -4578,7 +4578,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_Is(value_stackref, PyStackRef_None());
+            int flag = PyStackRef_Is(value_stackref, PyStackRef_None);
             int offset;
             if (flag) {
                 offset = oparg;
@@ -4596,7 +4596,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             _PyStackRef value_stackref = POP();
             int offset;
-            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None());
+            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None);
             if (nflag) {
                 offset = 0;
             }
@@ -4644,7 +4644,7 @@ dummy_func(
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
             SYNC_SP();
-            if (!PyStackRef_Is(val, PyStackRef_None())) {
+            if (!PyStackRef_Is(val, PyStackRef_None)) {
                 PyStackRef_CLOSE(val);
                 EXIT_IF(1);
             }
@@ -4652,7 +4652,7 @@ dummy_func(
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
             SYNC_SP();
-            EXIT_IF(PyStackRef_Is(val, PyStackRef_None()));
+            EXIT_IF(PyStackRef_Is(val, PyStackRef_None));
             PyStackRef_CLOSE(val);
         }
 

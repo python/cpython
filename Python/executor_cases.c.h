@@ -373,7 +373,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            if (!PyStackRef_Is(value, PyStackRef_None())) {
+            if (!PyStackRef_Is(value, PyStackRef_None)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -2757,7 +2757,7 @@
             _PyStackRef value;
             _PyStackRef b;
             value = stack_pointer[-1];
-            if (PyStackRef_Is(value, PyStackRef_None())) {
+            if (PyStackRef_Is(value, PyStackRef_None)) {
                 b = PyStackRef_True;
             }
             else {
@@ -3081,7 +3081,7 @@
             }
             STAT_INC(FOR_ITER, hit);
             gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, PyStackRef_None());
+            _PyFrame_StackPush(gen_frame, PyStackRef_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -3145,7 +3145,7 @@
                 prev_exc = PyStackRef_FromPyObjectSteal(exc_info->exc_value);
             }
             else {
-                prev_exc = PyStackRef_None();
+                prev_exc = PyStackRef_None;
             }
             assert(PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(new_exc)));
             exc_info->exc_value = Py_NewRef(PyStackRef_AsPyObjectBorrow(new_exc));
@@ -4587,7 +4587,7 @@
             _PyStackRef val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (!PyStackRef_Is(val, PyStackRef_None())) {
+            if (!PyStackRef_Is(val, PyStackRef_None)) {
                 PyStackRef_CLOSE(val);
                 if (1) {
                     UOP_STAT_INC(uopcode, miss);
@@ -4601,7 +4601,7 @@
             _PyStackRef val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (PyStackRef_Is(val, PyStackRef_None())) {
+            if (PyStackRef_Is(val, PyStackRef_None)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

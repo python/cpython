@@ -2458,7 +2458,7 @@
                 PyStackRef_CLOSE(sub_iter_st);
                 PyStackRef_CLOSE(last_sent_val_st);
                 PyStackRef_CLOSE(exc_value_st);
-                none = PyStackRef_None();
+                none = PyStackRef_None;
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -3160,7 +3160,7 @@
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
                 gen_frame = (_PyInterpreterFrame *)(_PyInterpreterFrame *)gen->gi_iframe;
-                _PyFrame_StackPush(gen_frame, PyStackRef_None());
+                _PyFrame_StackPush(gen_frame, PyStackRef_None);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -3748,7 +3748,7 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
-            int flag = PyStackRef_Is(value_stackref, PyStackRef_None());
+            int flag = PyStackRef_Is(value_stackref, PyStackRef_None);
             int offset;
             if (flag) {
                 offset = oparg;
@@ -3772,7 +3772,7 @@
             /* Skip 1 cache entry */
             _PyStackRef value_stackref = POP();
             int offset;
-            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None());
+            int nflag = PyStackRef_Is(value_stackref, PyStackRef_None);
             if (nflag) {
                 offset = 0;
             }
@@ -5356,7 +5356,7 @@
             // _IS_NONE
             value = stack_pointer[-1];
             {
-                if (PyStackRef_Is(value, PyStackRef_None())) {
+                if (PyStackRef_Is(value, PyStackRef_None)) {
                     b = PyStackRef_True;
                 }
                 else {
@@ -5390,7 +5390,7 @@
             // _IS_NONE
             value = stack_pointer[-1];
             {
-                if (PyStackRef_Is(value, PyStackRef_None())) {
+                if (PyStackRef_Is(value, PyStackRef_None)) {
                     b = PyStackRef_True;
                 }
                 else {
@@ -5453,7 +5453,7 @@
                 prev_exc = PyStackRef_FromPyObjectSteal(exc_info->exc_value);
             }
             else {
-                prev_exc = PyStackRef_None();
+                prev_exc = PyStackRef_None;
             }
             assert(PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(new_exc)));
             exc_info->exc_value = Py_NewRef(PyStackRef_AsPyObjectBorrow(new_exc));
@@ -5730,7 +5730,7 @@
                     frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
                     DISPATCH_INLINED(gen_frame);
                 }
-                if (PyStackRef_Is(v, PyStackRef_None()) && PyIter_Check(receiver_o)) {
+                if (PyStackRef_Is(v, PyStackRef_None) && PyIter_Check(receiver_o)) {
                     retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
                 }
                 else {
@@ -6427,7 +6427,7 @@
             /* Skip 2 cache entries */
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!PyStackRef_Is(value, PyStackRef_None()), TO_BOOL);
+            DEOPT_IF(!PyStackRef_Is(value, PyStackRef_None), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False;
             stack_pointer[-1] = res;

@@ -37,26 +37,18 @@ typedef union {
 #   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) })
 #endif
 
-
-
 #ifdef Py_GIL_DISABLED
 #   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
 #else
 #   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
 #endif
 
-
-static inline _PyStackRef
-PyStackRef_None(void)
-{
 #ifdef Py_GIL_DISABLED
-    const _PyStackRef STACKREF_NONE = {.bits = ((uintptr_t)Py_None |
-                                                 Py_TAG_DEFERRED)};
+#   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
 #else
-    const _PyStackRef STACKREF_NONE = {.bits = ((uintptr_t)Py_None)};
+#   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
 #endif
-    return STACKREF_NONE;
-}
+
 
 static inline int
 PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
