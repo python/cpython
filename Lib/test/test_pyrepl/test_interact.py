@@ -105,7 +105,7 @@ class TestSimpleInteract(unittest.TestCase):
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
-        source = "x: int = 1; print(__annotations__)"
+        source = "x: int = 1; print(__annotate__(1))"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             result = console.runsource(source)
