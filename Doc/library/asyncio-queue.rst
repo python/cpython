@@ -133,6 +133,21 @@ Queue
       items placed in the queue.
 
 
+Async Queue Iterator
+====================
+
+.. class:: AsyncQueueIterator(queue)
+
+   The :term:`asynchronous iterator` returned by calling :func:`aiter`
+   on a :class:`Queue`.
+
+.. attribute:: queue
+
+   The queue backed by the ``AsyncQueueIterator``.
+
+.. versionadded:: 3.14
+
+
 Priority Queue
 ==============
 
