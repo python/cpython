@@ -9,7 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_unicodeobject.h" // _Py_LATIN1_CHAR_STRING()
+#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -1459,7 +1459,7 @@ keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1515,7 +1515,7 @@ keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1571,7 +1571,7 @@ keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1640,7 +1640,7 @@ keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1720,7 +1720,7 @@ keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1788,7 +1788,7 @@ posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1844,7 +1844,7 @@ posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1901,7 +1901,7 @@ posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1960,7 +1960,7 @@ posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2031,7 +2031,7 @@ posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2107,7 +2107,7 @@ posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2178,7 +2178,7 @@ posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2254,7 +2254,7 @@ posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), _Py_LATIN1_CHAR_STRING('e'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2329,7 +2329,7 @@ posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssiz
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), _Py_LATIN1_CHAR_STRING('e'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2413,7 +2413,7 @@ posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('c'), _Py_LATIN1_CHAR_STRING('d'), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2492,7 +2492,7 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2547,7 +2547,7 @@ posonly_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2642,7 +2642,7 @@ vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwna
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2700,7 +2700,7 @@ vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('a'), _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2767,7 +2767,7 @@ vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize_t na
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { _Py_LATIN1_CHAR_STRING('b'), },
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3419,4 +3419,4 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40ed11553c5e5004 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f6d22f52664c16a8 input=a9049054013a1b77]*/

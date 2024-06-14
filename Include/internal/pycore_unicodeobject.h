@@ -323,7 +323,7 @@ PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **
 // Public-looking name is kept for the stable ABI; user should not call this:
 PyAPI_FUNC(void) PyUnicode_InternImmortal(PyObject **);
 
-#define _Py_LATIN1_CHAR_STRING(CH) \
+#define _Py_LATIN1_CHR(CH) \
     ((CH) < 128 \
      ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
      : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])

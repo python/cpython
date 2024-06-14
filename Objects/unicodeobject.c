@@ -177,7 +177,7 @@ NOTE: In the interpreter's initialization phase, some globals are currently
             *_to++ = (to_type) *_iter++;                \
     } while (0)
 
-#define LATIN1 _Py_LATIN1_CHAR_STRING
+#define LATIN1 _Py_LATIN1_CHR
 
 #ifdef MS_WINDOWS
    /* On Windows, overallocate by 50% is the best factor */

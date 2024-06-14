@@ -747,7 +747,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     if (o == Py_None) {
         Py_RETURN_NONE;
     }
-    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHAR_STRING('_'), Py_None) != 0)
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
         return NULL;
     outf = _PySys_GetAttr(tstate, &_Py_ID(stdout));
     if (outf == NULL || outf == Py_None) {
@@ -769,9 +769,9 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    if (PyFile_WriteObject(_Py_LATIN1_CHAR_STRING('\n'), outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0)
         return NULL;
-    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHAR_STRING('_'), o) != 0)
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0)
         return NULL;
     Py_RETURN_NONE;
 }

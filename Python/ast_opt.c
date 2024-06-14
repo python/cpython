@@ -5,7 +5,7 @@
 #include "pycore_long.h"          // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_unicodeobject.h" // _Py_LATIN1_CHAR_STRING()
+#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 
 typedef struct {
@@ -276,7 +276,7 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     if (str && has_percents) {
         _Py_DECLARE_STR(dbl_percent, "%%");
         Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
-                                         _Py_LATIN1_CHAR_STRING('%'), -1));
+                                         _Py_LATIN1_CHR('%'), -1));
     }
     if (!str) {
         return NULL;

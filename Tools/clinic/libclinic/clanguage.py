@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 def c_id(name):
     if len(name) == 1 and ord(name) < 256:
         if name.isalnum():
-            return f"_Py_LATIN1_CHAR_STRING('{name}')"
+            return f"_Py_LATIN1_CHR('{name}')"
         else:
-            return f'_Py_LATIN1_CHAR_STRING({ord(name)})'
+            return f'_Py_LATIN1_CHR({ord(name)})'
     else:
         return f'&_Py_ID({name})'
 
@@ -181,13 +181,13 @@ class CLanguage(Language):
                     containscheck = "PySequence_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
                     codegen.add_include('pycore_unicodeobject.h',
-                                        '_Py_LATIN1_CHAR_STRING()')
+                                        '_Py_LATIN1_CHR()')
                 else:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, {c_id(p.name)})")
                     containscheck = "PyDict_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
                     codegen.add_include('pycore_unicodeobject.h',
-                                        '_Py_LATIN1_CHAR_STRING()')
+                                        '_Py_LATIN1_CHR()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)

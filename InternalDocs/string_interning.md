@@ -26,8 +26,8 @@ Python uses three different mechanisms to intern strings:
   at runtime initialization.
 
 - The 256 possible one-character latin-1 strings are singletons,
-  which can be retrieved with `_Py_LATIN1_CHAR_STRING(c)`, are stored in
-  runtime-global arrays, `_PyRuntime.static_objects.strings.ascii` and
+  which can be retrieved with `_Py_LATIN1_CHR(c)`, are stored in runtime-global
+  arrays, `_PyRuntime.static_objects.strings.ascii` and
   `_PyRuntime.static_objects.strings.latin1`.
 
   These are NOT interned at startup in the normal build.

@@ -427,7 +427,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
             if len(string) == 1 and ord(string) < 256:
                 raise ValueError(
                     'don not use &_PyID or &_Py_STR for one-byte strings, '
-                    + f'use _Py_LATIN1_CHAR_STRING instead: {string!r}')
+                    + f'use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name
             elif name != strings[string]:
