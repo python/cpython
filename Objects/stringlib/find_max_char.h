@@ -22,6 +22,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *restrict p = (const unsigned char *) begin;
     const unsigned char *_end = (const unsigned char *)end;
+    const unsigned char *size_t_end = _end - SIZEOF_SIZE_T;
     const unsigned char *unrolled_end = _end - 4 * SIZEOF_SIZE_T;
     while (p < unrolled_end) {
         /* Test chunks of 32 as more granularity limits compiler optimization */
@@ -43,11 +44,17 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         p += (4 * SIZEOF_SIZE_T);
     }
     size_t accumulator = 0;
+    while (p < size_t_end) {
+        size_t value;
+        memcpy(&value, p, SIZEOF_SIZE_T);
+        accumulator |= value;
+        p += SIZEOF_SIZE_T;
+    }
     while (p < end) {
         accumulator |= *p;
         p += 1;
     }
-    if (accumulator & 0x80) {
+    if (accumulator & UCS1_ASCII_CHAR_MASK) {
         return 255;
     }
     return 127;
