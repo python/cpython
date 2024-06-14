@@ -1429,8 +1429,22 @@ Creating files and directories
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-Renaming and deleting
-^^^^^^^^^^^^^^^^^^^^^
+Copying, renaming and deleting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.copy(target)
+
+   Copy the contents of this file to the *target* file. If *target* specifies
+   a file that already exists, it will be replaced.
+
+   .. note::
+      This method uses operating system functionality to copy file content
+      efficiently. The OS might also copy some metadata, such as file
+      permissions. After the copy is complete, users may wish to call
+      :meth:`Path.chmod` to set the permissions of the target file.
+
+   .. versionadded:: 3.14
+
 
 .. method:: Path.rename(target)
 
