@@ -1648,10 +1648,14 @@ unicode_dealloc(PyObject *unicode)
             PyObject *popped;
             int r = PyDict_Pop(interned, unicode, &popped);
             if (r == -1) {
-                // We don't know what happened to the string, so we
-                // play it safe: leak it.
                 PyErr_WriteUnraisable(unicode);
+                // We don't know what happened to the string. It's probably
+                // best to leak it:
+                // - if it was popped, there are no more references to it
+                //   so it can't cause trouble (except wasted memory)
+                // - if it wasn't popped, it'll remain interned
                 _Py_SetImmortal(unicode);
+                _PyUnicode_STATE(unicode).interned = SSTATE_INTERNED_IMMORTAL;
                 return;
             }
             if (r == 0) {
