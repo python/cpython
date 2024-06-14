@@ -794,6 +794,8 @@ def test_pdb_where_command():
     ...     'u',
     ...     'w',
     ...     'w 0',
+    ...     'w 100',
+    ...     'w -100',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -801,7 +803,7 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(11)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
@@ -811,7 +813,7 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) where
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(11)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
@@ -829,7 +831,7 @@ def test_pdb_where_command():
     -> g()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(11)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
@@ -840,6 +842,26 @@ def test_pdb_where_command():
     (Pdb) w 0
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
+    (Pdb) w 100
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g()
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w -100
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g()
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
     """
 

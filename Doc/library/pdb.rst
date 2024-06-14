@@ -329,6 +329,9 @@ can be overridden by the local file.
    *count* frames.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
 
+   .. versionchanged:: 3.14
+      *count* argument is added.
+
 .. pdbcommand:: d(own) [count]
 
    Move the current frame *count* (default one) levels down in the stack trace
