@@ -471,27 +471,23 @@ class _QueueJoinTestMixin:
 
         # Two workers get items from the queue and call task_done after each.
         # Join the queue and assert all items have been processed.
-        running = True
 
         async def worker():
             nonlocal accumulator
 
-            while running:
-                item = await q.get()
+            async for item in q:
                 accumulator += item
                 q.task_done()
 
         async with asyncio.TaskGroup() as tg:
-            tasks = [tg.create_task(worker())
-                     for index in range(2)]
+            for _ in range(2):
+                tg.create_task(worker())
 
             await q.join()
             self.assertEqual(sum(range(100)), accumulator)
 
             # close running generators
-            running = False
-            for i in range(len(tasks)):
-                q.put_nowait(0)
+            q.shutdown()
 
     async def test_join_empty_queue(self):
         q = self.q_class()
