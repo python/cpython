@@ -142,7 +142,7 @@ rule is slightly different.  Throughout this paragraph, assume that we have
 the following filesystem layout and, unless stated otherwise, the code snippets
 are in the ``__main__.py`` file.
 
-.. code-block::
+.. code-block:: text
 
    .
    ├── __main__.py
