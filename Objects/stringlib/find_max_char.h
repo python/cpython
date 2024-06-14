@@ -1,6 +1,7 @@
 /* Finding the optimal width of unicode characters in a buffer */
 
-#if !STRINGLIB_IS_UNICODE
+/* find_max_char for one-byte will work for bytes objects as well. */
+#if !STRINGLIB_IS_UNICODE && STRINGLIB_SIZEOF_CHAR > 1
 # error "find_max_char.h is specific to Unicode"
 #endif
 
