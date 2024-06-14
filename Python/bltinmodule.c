@@ -1368,7 +1368,6 @@ map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     PyTypeObject *tp = _PyType_CAST(type);
-
     if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
         // Fallback to map_new()
         PyObject *tuple = _PyTuple_FromArray(args, nargs);
