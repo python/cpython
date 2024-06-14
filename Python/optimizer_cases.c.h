@@ -1485,7 +1485,7 @@
             first_valid_check_stack = NULL;
             new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-2 - oparg].bits = (_Py_UopsSymbol *)new_frame;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;
         }
@@ -1610,7 +1610,7 @@
             } else {
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            stack_pointer[-2 - oparg].bits = (_Py_UopsSymbol *)new_frame;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;
         }

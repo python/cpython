@@ -3687,7 +3687,7 @@
 
         case _PUSH_FRAME: {
             _PyInterpreterFrame *new_frame;
-            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
+            new_frame = (_PyInterpreterFrame *)stack_pointer[-1].bits;
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);

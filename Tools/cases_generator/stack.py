@@ -125,7 +125,7 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem) -> str:
+    def pop(self, var: StackItem, is_abstract: bool = False) -> str:
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
@@ -155,8 +155,9 @@ class Stack:
         else:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
+        bits = ".bits" if cast and not is_abstract else ""
         assign = (
-            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         )
         if var.condition:
             if var.condition == "1":
@@ -178,12 +179,12 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "uintptr_t") -> None:
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t", is_abstract: bool = False) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
-                bits = ".bits" if cast else ""
+                bits = ".bits" if cast and not is_abstract else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
