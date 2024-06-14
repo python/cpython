@@ -138,7 +138,7 @@ a subclass):
 .. rubric:: Mangled names in imports
 
 For identifiers declared using :keyword:`import` statements, the mangling
-rule is slightly different.  Throughout this paragraph, assume that we have
+rule is slightly different. Throughout this paragraph, assume that we have
 the following filesystem layout and, unless stated otherwise, the code snippets
 are in the ``__main__.py`` file.
 
@@ -170,8 +170,7 @@ a :exc:`ModuleNotFoundError`, as illustrated by the following example:
 
 If the ``__foo`` module is needed inside the ``Foo`` class, the import can
 be performed via the :func:`__import__` function, in which case the usual
-transformation rule is applied (a similar logic applies to :func:`getattr`,
-:func:`setattr` and :func:`delattr`, see ):
+transformation rule is applied:
 
 .. code-block:: python
 
