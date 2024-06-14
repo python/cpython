@@ -2442,7 +2442,7 @@ class TestKDE(unittest.TestCase):
         # Verify that cdf / invcdf will round trip
         xarr = [i/100 for i in range(-100, 101)]
         parr = [i/1000 + 5/10000 for i in range(1000)]
-        for kernel, spec kernel_specs.items():
+        for kernel, spec in kernel_specs.items():
             cdf = spec['cdf']
             invcdf = spec['invcdf']
             with self.subTest(kernel=kernel):
