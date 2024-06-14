@@ -506,6 +506,16 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, compress, range(6))            # too few args
         self.assertRaises(TypeError, compress, range(6), None)      # too many args
 
+    def test_ilen(self):
+        self.assertEqual(ilen(range(10)), 10)
+        it = iter(range(100))
+        self.assertEqual(ilen(it), 100)
+        self.assertEqual(ilen(it), 0)
+        self.assertEqual(ilen('abcdefghij'), 10)
+        self.assertEqual(ilen(range(100000)), 100000)
+        self.assertRaises(TypeError, ilen)      # too few args
+        self.assertRaises(TypeError, ilen, 1)   # not iterable
+
     def test_count(self):
         self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])

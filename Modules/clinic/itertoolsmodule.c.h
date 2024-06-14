@@ -928,4 +928,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6a515f765da86b5 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_ilen__doc__,
+"ilen($module, iterable, /)\n"
+"--\n"
+"\n"
+"Equivalent to len(list(iterable)).");
+
+#define ITERTOOLS_ILEN_METHODDEF    \
+    {"ilen", (PyCFunction)itertools_ilen, METH_O, itertools_ilen__doc__},
+/*[clinic end generated code: output=d0b8e3013f021edc input=a9049054013a1b77]*/

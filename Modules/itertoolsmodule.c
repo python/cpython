@@ -3802,6 +3802,75 @@ static PyType_Spec ziplongest_spec = {
 };
 
 
+/* ilen function *************************************************************/
+
+/*[clinic input]
+itertools.ilen
+
+    iterable: object
+    /
+
+Equivalent to len(list(iterable)).
+[clinic start generated code]*/
+
+static PyObject *
+itertools_ilen(PyObject *module, PyObject *iterable)
+/*[clinic end generated code: output=99a1c852a6d09dd4 input=cf51dec933b693da]*/
+{
+    PyObject *it, *item;
+    PyObject *(*iternext)(PyObject *);
+    PyObject *long_cnt = NULL;
+    PyObject *new_long_cnt, *temp;
+    Py_ssize_t cnt;
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        return NULL;
+    }
+
+    cnt = 0;
+    iternext = *Py_TYPE(it)->tp_iternext;
+    while ((item = iternext(it)) != NULL) {
+        Py_DECREF(item);
+        cnt++;
+        if (cnt == PY_SSIZE_T_MAX) {
+            if (long_cnt == NULL) {
+                long_cnt = PyLong_FromSsize_t(cnt);
+            }
+            else {
+                new_long_cnt = PyLong_FromSsize_t(cnt);
+                temp = PyNumber_Add(long_cnt, new_long_cnt);
+                Py_SETREF(long_cnt, temp);
+                Py_DECREF(new_long_cnt);
+            }
+            cnt = 0;
+        }
+    }
+
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_DECREF(it);
+            Py_XDECREF(long_cnt);
+            return NULL;
+        }
+    }
+    Py_DECREF(it);
+
+    if (long_cnt == NULL) {
+        return PyLong_FromSsize_t(cnt);
+    }
+    if (cnt != 0) {
+        new_long_cnt = PyLong_FromSsize_t(cnt);
+        temp = PyNumber_Add(long_cnt, new_long_cnt);
+        Py_SETREF(long_cnt, temp);
+        Py_DECREF(new_long_cnt);
+    }
+    return long_cnt;
+}
+
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -3951,6 +4020,7 @@ static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
 
 static PyMethodDef module_methods[] = {
     ITERTOOLS_TEE_METHODDEF
+    ITERTOOLS_ILEN_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
