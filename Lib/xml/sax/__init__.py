@@ -94,7 +94,7 @@ def _create_parser(parser_name):
     return drv_module.create_parser()
 
 
-__all__ = ['InputSource', 'ContentHandler', 'ErrorHandler', 'SAXException',
-           'SAXNotRecognizedException', 'SAXParseException',
-           'SAXNotSupportedException', 'SAXReaderNotAvailable', 'parse',
-           'parseString', 'make_parser', 'default_parser_list']
+__all__ = ['ContentHandler', 'ErrorHandler', 'InputSource', 'SAXException',
+           'SAXNotRecognizedException', 'SAXNotSupportedException',
+           'SAXParseException', 'SAXReaderNotAvailable',
+           'default_parser_list', 'make_parser', 'parse', 'parseString']

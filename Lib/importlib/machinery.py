@@ -21,10 +21,9 @@ def all_suffixes():
     return SOURCE_SUFFIXES + BYTECODE_SUFFIXES + EXTENSION_SUFFIXES
 
 
-__all__ = ['ModuleSpec', 'BuiltinImporter', 'FrozenImporter',
-           'SOURCE_SUFFIXES', 'DEBUG_BYTECODE_SUFFIXES',
-           'OPTIMIZED_BYTECODE_SUFFIXES', 'BYTECODE_SUFFIXES',
-           'EXTENSION_SUFFIXES', 'WindowsRegistryFinder', 'PathFinder',
-           'FileFinder', 'SourceFileLoader', 'SourcelessFileLoader',
-           'ExtensionFileLoader', 'AppleFrameworkLoader', 'NamespaceLoader',
-           'all_suffixes']
+__all__ = ['AppleFrameworkLoader', 'BYTECODE_SUFFIXES', 'BuiltinImporter',
+           'DEBUG_BYTECODE_SUFFIXES', 'EXTENSION_SUFFIXES',
+           'ExtensionFileLoader', 'FileFinder', 'FrozenImporter', 'ModuleSpec',
+           'NamespaceLoader', 'OPTIMIZED_BYTECODE_SUFFIXES', 'PathFinder',
+           'SOURCE_SUFFIXES', 'SourceFileLoader', 'SourcelessFileLoader',
+           'WindowsRegistryFinder', 'all_suffixes']
