@@ -55,6 +55,7 @@ Advanced development:
 * :ref:`python_2.3_mro`
 * :ref:`socket-howto`
 * :ref:`timerfd-howto`
+* :ref:`cporting-howto`
 
 Debugging and profiling:
 
