@@ -1185,7 +1185,7 @@ r_object(RFILE *p)
             if (v == NULL)
                 break;
             if (is_interned) {
-                // marshal is meant to serialization of .pyc files with code
+                // marshal is meant to serialize .pyc files with code
                 // objects, and code-related strings are currently immortal.
                 PyUnicode_InternImmortal(&v);
             }
@@ -1221,7 +1221,7 @@ r_object(RFILE *p)
         if (v == NULL)
             break;
         if (is_interned) {
-            // marshal is meant to serialization of .pyc files with code
+                // marshal is meant to serialize .pyc files with code
             // objects, and code-related strings are currently immortal.
             PyUnicode_InternImmortal(&v);
         }
