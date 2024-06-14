@@ -275,6 +275,13 @@ class Queue:
     def _get(self):
         return self.queue.popleft()
 
+    def __iter__(self):
+        while True:
+            try:
+                yield self.get_nowait()
+            except (Empty, ShutDown):
+                return
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
