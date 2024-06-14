@@ -198,7 +198,7 @@ The module defines the following items:
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
       :func:`zlib.compress` for better speed.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: 3.13
       The OS byte is guaranteed to be set to 255 when this function is used.
 
 .. function:: decompress(data)
