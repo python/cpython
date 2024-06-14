@@ -10986,8 +10986,10 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (left == right_uni)
         return 1;
 
-    if (PyUnicode_CHECK_INTERNED(left))
+    assert(PyUnicode_CHECK_INTERNED(right_uni));
+    if (PyUnicode_CHECK_INTERNED(left)) {
         return 0;
+    }
 
     Py_hash_t right_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(right_uni));
     assert(right_hash != -1);
