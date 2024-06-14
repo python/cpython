@@ -270,3 +270,9 @@ class LazyLoader(Loader):
         loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
+
+
+__all__ = ['LazyLoader', 'Loader', 'MAGIC_NUMBER',
+           'cache_from_source', 'decode_source', 'find_spec',
+           'module_from_spec', 'resolve_name', 'source_from_cache',
+           'source_hash', 'spec_from_file_location', 'spec_from_loader']
