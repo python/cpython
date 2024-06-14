@@ -278,8 +278,8 @@ class Queue:
     def __iter__(self):
         while True:
             try:
-                yield self.get_nowait()
-            except (Empty, ShutDown):
+                yield self.get()
+            except ShutDown:
                 return
 
     __class_getitem__ = classmethod(types.GenericAlias)
