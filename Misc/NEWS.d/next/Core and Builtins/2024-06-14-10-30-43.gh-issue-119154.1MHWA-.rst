@@ -1,0 +1,1 @@
+Make :class:`asyncio.Queue` an asynchronous iterable.
