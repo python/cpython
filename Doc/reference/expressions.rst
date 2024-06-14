@@ -83,11 +83,16 @@ exception.
    pair: name; mangling
    pair: private; names
 
-.. rubric:: Private name mangling
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
 When an identifier that textually occurs in a class definition begins with two
 or more underscore characters and does not end in two or more underscores, it
 is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`tutorial on classes <_tut-classdefinition>` for more details.
 
 More precisely, private names are transformed to a longer form before code is
 generated for them.  If the transformed name is longer than 255 characters,
@@ -105,37 +110,9 @@ identifier is used and the transformation rule is defined as follows:
   the identifier, e.g., the identifier ``__spam`` occurring in a class
   named ``Foo``, ``_Foo`` or ``__Foo`` is transformed to ``_Foo__spam``.
 
-  For identifiers declared using :keyword:`import` statements, this rule is
-  slightly different. Indeed, importing a module with a private name directly
-  in a class body raises a :exc:`ModuleNotFoundError` (unless the class name
-  only consists of underscores), as illustrated by the following example:
+.. _private-name-mangling-access:
 
-  .. code-block:: python
-
-     class Foo:
-         import __spam  # raises ModuleNotFoundError at runtime
-
-  This restriction can be lifted by using the :func:`__import__` function,
-  in which case the transformation rule is applied normally:
-
-  .. code-block:: python
-
-     class Foo:
-         __spam = __import__("__spam")
-
-     Foo._Foo__spam.do()
-
-  .. note::
-
-     This restriction does not apply to modules imported as submodules of
-     private packages, e.g.:
-
-     .. code-block:: python
-
-        class Foo:
-            import __spam.util
-
-        Foo._Foo__spam.util.do()
+.. rubric:: Accessing members with mangled names
 
 The corresponding private member is accessed by its defining class using
 its non-transformed name. On the other hand, the transformed name must be
@@ -156,6 +133,82 @@ a subclass):
 
    four = 4 * A()._A__one()
 
+.. _private-name-mangling-imports:
+
+.. rubric:: Mangled names in imports
+
+For identifiers declared using :keyword:`import` statements, the mangling
+rule is slightly different.  Throughout this paragraph, assume that we have
+the following filesystem layout and, unless stated otherwise, the code snippets
+are in the ``__main__.py`` file.
+
+.. code-block::
+
+   .
+   ├── __main__.py
+   ├── __pkg
+   │   ├── __init__.py
+   │   └── mod.py
+   ├── __bar.py
+   ├── __foo.py
+   └── _Bar__bar.py
+
+Importing a module with a private name directly in a class body may raise
+a :exc:`ModuleNotFoundError`, as illustrated by the following example:
+
+.. code-block:: python
+
+   class Bar:
+       # equivalent to import _Bar__bar
+       import __bar
+   print(Bar._Bar__bar)  # <module '_Bar__bar' from '/_Bar__bar.py'>
+
+   class Foo:
+       # raises a ModuleNotFoundError at runtime since the interpreter
+       # tries to import '_Foo__foo' instead of '__foo'
+       import __foo
+
+If the ``__foo`` module is needed inside the ``Foo`` class, the import can
+be performed via the :func:`__import__` function, in which case the usual
+transformation rule is applied (a similar logic applies to :func:`getattr`,
+:func:`setattr` and :func:`delattr`, see ):
+
+.. code-block:: python
+
+   class Bar:
+       # explicitly import '__bar' instead of '_Bar__bar'
+       __bar = __import__("__bar")
+   print(Bar._Bar__bar)  # <module '__bar' from '/__bar.py'>
+
+   class Foo:
+       # explicitly import '__foo' instead of '_Foo__foo'
+       __foo = __import__("__foo")
+   print(Foo._Foo__foo)  # <module '__foo' from '/__foo.py'>
+
+This restriction does not apply to modules imported as submodules of packages
+with private names, e.g.:
+
+.. code-block:: python
+
+   class Foo:
+       import __pkg.mod
+
+   print(Foo._Foo__pkg)      # <module '__pkg' from '/__pkg/__init__.py'>
+   print(Foo._Foo__pkg.mod)  # <module '__pkg.mod' from '/__pkg/mod.py'>
+
+Note that a class whose name only consists of underscores does not
+suffer from those restrictions on :keyword:`import` statements:
+
+.. code-block:: python
+
+   class _:
+       import __bar  # imports '__bar'
+       import __foo  # imports '__foo'
+       import __pkg  # imports '__pkg'
+
+   print(_.__bar)  # <module '__bar' from '/__bar.py'>
+   print(_.__foo)  # <module '__foo' from '/__foo.py'>
+   print(_.__pkg)  # <module '__pkg' from '/__pkg/__init__.py'>
 
 .. _atom-literals:
 
