@@ -217,18 +217,20 @@ static inline PyObject* unicode_get_empty(void)
     return &_Py_STR(empty);
 }
 
-/* This dictionary holds all interned unicode strings.  Note that references
-   to strings in this dictionary are *not* counted in the string's ob_refcnt.
-   When the interned string reaches a refcnt of 0 the string deallocation
-   function will delete the reference from this dictionary.
-*/
+/* This dictionary holds per-interpreter interned strings.
+ * See InternalDocs/string_interning.md for details.
+ */
 static inline PyObject *get_interned_dict(PyInterpreterState *interp)
 {
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
+/* This hashtable holds statically allocated interned strings.
+ * See InternalDocs/string_interning.md for details.
+ */
 #define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
 
+/* Get number of all interned strings */
 Py_ssize_t
 _PyUnicode_InternedSize(void)
 {
@@ -236,6 +238,7 @@ _PyUnicode_InternedSize(void)
     return _Py_hashtable_len(INTERNED_STRINGS) + PyDict_GET_SIZE(dict);
 }
 
+/* Get number of immortal interned strings */
 Py_ssize_t
 _PyUnicode_InternedSize_Immortal(void)
 {
@@ -15044,13 +15047,16 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     PyObject *interned = get_interned_dict(interp);
     assert(interned == NULL || unicode_is_singleton(s));
 #ifdef Py_GIL_DISABLED
-    // In the free-threaded build, modifying INTERNED_STRINGS is dangerous
+    // In the free-threaded build, don't allow even the short strings.
     assert(interned == NULL);
 #endif
 #endif
 
     /* Look in the global cache first. */
     PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+    /* We should only init each string once */
+    assert(r == NULL);
+    /* but just in case (for the non-debug build), handle this */
     if (r != NULL && r != s) {
         assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
         Py_SETREF(*p, Py_NewRef(r));
