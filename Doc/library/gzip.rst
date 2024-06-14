@@ -189,7 +189,6 @@ The module defines the following items:
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
    the :class:`GzipFile` constructor above.
-   :func:`zlib.compress` with *wbits* set to ``31`` is faster.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
