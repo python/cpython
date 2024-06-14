@@ -15300,20 +15300,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
-    /* TODO:
-     * Currently, the runtime is not able to guarantee that it can exit without
-     * allocations that carry over to a future initialization of Python within
-     * the same process. i.e:
-     *   ./python -X showrefcount -c 'import itertools'
-     *   [237 refs, 237 blocks]
-     *
-     * Therefore, this should remain disabled for until there is a strict guarantee
-     * that no memory will be left after `Py_Finalize`.
-     */
-#ifdef Py_DEBUG
-    /* For all non-singleton interned strings, restore the two valid references
-       to that instance from within the intern string dictionary and let the
-       normal reference counting process clean up these instances. */
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
@@ -15375,7 +15361,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     for (Py_ssize_t i=0; i < ids->size; i++) {
         Py_XINCREF(ids->array[i]);
     }
-#endif /* Py_DEBUG */
     clear_interned_dict(interp);
     if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
         _Py_hashtable_destroy(INTERNED_STRINGS);
