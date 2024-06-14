@@ -1,1 +1,1 @@
-Generate an unraisable exception if the external timer :mod:`cProfile` uses changes the profile context.
+Fixed the use-after-free issue in :mod`cProfile` when the profiler is disabled in the external timer.
