@@ -1381,7 +1381,7 @@ map_vectorcall(PyObject *type, PyObject * const*args,
             Py_DECREF(tuple);
             return NULL;
         }
-        PyObject *ret = map_new(_PyType_CAST(type), tuple, dict);
+        PyObject *ret = map_new(tp, tuple, dict);
         Py_DECREF(tuple);
         Py_DECREF(dict);
         return ret;
@@ -1439,7 +1439,7 @@ map_traverse(mapobject *lz, visitproc visit, void *arg)
 static PyObject *
 map_next(mapobject *lz)
 {
-    Py_ssize_t i;
+    Py_ssize_t i; // Needed for error reporting
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
     PyObject *result = NULL;

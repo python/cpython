@@ -1197,10 +1197,10 @@ are always available.  They are listed here in alphabetical order.
    shortest iterable is exhausted.  If *strict* is ``True`` and one of the
    arguments is exhausted before the others, a :exc:`ValueError` is raised. For
    cases where the function inputs are already arranged into argument tuples,
-   see :func:`itertools.starmap`\.
+   see :func:`itertools.starmap`.
 
    .. versionchanged:: 3.14
-      Added the ``strict`` argument.
+      Added the *strict* argument.
 
 
 .. function:: max(iterable, *, key=None)
