@@ -50,14 +50,14 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         accumulator |= value;
         p += SIZEOF_SIZE_T;
     }
-    if (size_t_end >= begin) {
+    if (size_t_end >= (const unsigned char*)begin) {
         /* Do unaligned size_t load rather than loading bytes individually. */
         size_t value;
         memcpy(&value, size_t_end, SIZEOF_SIZE_T);
         accumulator |= value;
     } else {
         /* Fallback for smaller than size_t strings. */
-        while (p < end) {
+        while (p < _end) {
             accumulator |= *p;
             p += 1;
         }
