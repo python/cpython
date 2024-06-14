@@ -134,6 +134,11 @@ a subclass):
 
    four = 4 * A()._A__one()
 
+.. seealso::
+
+   The tutorial on :ref:`private variables <tut-private>` in classes for
+   a more complete example.
+
 .. _private-name-mangling-imports:
 
 .. rubric:: Mangled names in imports
