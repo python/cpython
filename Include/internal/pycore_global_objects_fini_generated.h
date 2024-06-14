@@ -982,6 +982,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(globals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(groupindex));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(groups));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gzip_trailer));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(h));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle_seq));

@@ -980,6 +980,7 @@ extern "C" {
     INIT_ID(globals), \
     INIT_ID(groupindex), \
     INIT_ID(groups), \
+    INIT_ID(gzip_trailer), \
     INIT_ID(h), \
     INIT_ID(handle), \
     INIT_ID(handle_seq), \

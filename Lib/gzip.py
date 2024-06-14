@@ -223,7 +223,8 @@ class GzipFile(_compression.BaseStream):
                                              zlib.DEFLATED,
                                              -zlib.MAX_WBITS,
                                              zlib.DEF_MEM_LEVEL,
-                                             0)
+                                             0,
+                                             gzip_trailer=True)
             self._write_mtime = mtime
             self._buffer_size = _WRITE_BUFFER_SIZE
             self._buffer = io.BufferedWriter(_WriteBufferStream(self),
@@ -247,8 +248,6 @@ class GzipFile(_compression.BaseStream):
 
     def _init_write(self, filename):
         self.name = filename
-        self.crc = zlib.crc32(b"")
-        self.size = 0
         self.writebuf = []
         self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
@@ -312,8 +311,6 @@ class GzipFile(_compression.BaseStream):
 
         if length > 0:
             self.fileobj.write(self.compress.compress(data))
-            self.size += length
-            self.crc = zlib.crc32(data, self.crc)
             self.offset += length
 
         return length
@@ -357,9 +354,6 @@ class GzipFile(_compression.BaseStream):
             if self.mode == WRITE:
                 self._buffer.flush()
                 fileobj.write(self.compress.flush())
-                write32u(fileobj, self.crc)
-                # self.size may exceed 2 GiB, or even 4 GiB
-                write32u(fileobj, self.size & 0xffffffff)
             elif self.mode == READ:
                 self._buffer.close()
         finally:
@@ -613,10 +607,11 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
         # This is faster and with less overhead.
         return zlib.compress(data, level=compresslevel, wbits=31)
     header = _create_simple_gzip_header(compresslevel, mtime)
-    trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
-    # Wbits=-15 creates a raw deflate block.
-    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
-            trailer)
+    # Wbits=-15 creates a raw deflate block. Gzip_trailer=True computes CRC32
+    # and writes gzip trailer with zlib, which on some platforms is faster
+    # than doing it manually.
+    return (header + zlib.compress(data, level=compresslevel, wbits=-15,
+                                   gzip_trailer=True))
 
 
 def decompress(data):

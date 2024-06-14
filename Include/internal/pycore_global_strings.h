@@ -471,6 +471,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(globals)
         STRUCT_FOR_ID(groupindex)
         STRUCT_FOR_ID(groups)
+        STRUCT_FOR_ID(gzip_trailer)
         STRUCT_FOR_ID(h)
         STRUCT_FOR_ID(handle)
         STRUCT_FOR_ID(handle_seq)
