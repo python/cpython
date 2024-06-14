@@ -2031,7 +2031,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (!obj) {
         goto end;
     }
-    PyUnicode_InternInPlace(&obj);
+    _PyUnicode_InternImmortal(interp, &obj);
 
     if (index >= ids->size) {
         // Overallocate to reduce the number of realloc
@@ -15264,7 +15264,7 @@ void
 PyUnicode_InternInPlace(PyObject **p)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternInPlace(interp, p);
+    _PyUnicode_InternImmortal(interp, p);
 }
 
 // Public-looking name kept for the stable ABI; user should not call this:
@@ -15280,9 +15280,11 @@ PyObject *
 PyUnicode_InternFromString(const char *cp)
 {
     PyObject *s = PyUnicode_FromString(cp);
-    if (s == NULL)
+    if (s == NULL) {
         return NULL;
-    PyUnicode_InternInPlace(&s);
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &s);
     return s;
 }
 
