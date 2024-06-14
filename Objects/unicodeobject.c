@@ -15073,8 +15073,25 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
 }
 
-void
-_PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
+static void
+immortalize_interned(PyObject *s)
+{
+    assert(PyUnicode_CHECK_INTERNED(s) == SSTATE_INTERNED_MORTAL);
+    assert(!_Py_IsImmortal(s));
+#ifdef Py_REF_DEBUG
+    /* The reference count value should be excluded from the RefTotal.
+       The decrements to these objects will not be registered so they
+       need to be accounted for in here. */
+    for (Py_ssize_t i = 0; i < Py_REFCNT(s); i++) {
+        _Py_DecRefTotal(_PyThreadState_GET());
+    }
+#endif
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
+    _Py_SetImmortal(s);
+}
+
+static void
+intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
 {
     PyObject *s = *p;
 #ifdef Py_DEBUG
@@ -15089,10 +15106,6 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
     /* If it's a subclass, we don't really know what putting
        it in the interned dict might do. */
     if (!PyUnicode_CheckExact(s)) {
-        return;
-    }
-
-    if (PyUnicode_CHECK_INTERNED(s)) {
         return;
     }
 
@@ -15102,156 +15115,119 @@ _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
-    /* Look in the global cache first. */
-    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
-    if (r != NULL && r != s) {
-        assert(_Py_IsImmortal(r));
-        Py_SETREF(*p, Py_NewRef(r));
-        return;
+    /* Is it already interned? */
+    switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_NOT_INTERNED:
+            // no, go on
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            // yes but we might need to make it immortal
+            if (immortalize) {
+                immortalize_interned(s);
+            }
+            return;
+        default:
+            // all done
+            return;
     }
 
-    /* if it's a short string, get the singleton */
-    if (PyUnicode_GET_LENGTH(s) == 0) {
-        Py_SETREF(*p, unicode_get_empty());
-        assert(!_PyUnicode_STATE(*p).statically_allocated);
-        return;
+#if Py_GIL_DISABLED
+    /* In the free-threaded build, all interned strings are immortal */
+    immortalize = 1;
+#endif
+
+    /* If it's already immortal, intern it as such */
+    if (_Py_IsImmortal(s)) {
+        immortalize = 1;
     }
-    if (PyUnicode_GET_LENGTH(s) == 1 && PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
+
+    /* if it's a short string, get the singleton -- and intern it */
+    if (PyUnicode_GET_LENGTH(s) == 1 &&
+                PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
         Py_SETREF(*p, LATIN1(*(unsigned char*)PyUnicode_DATA(s)));
-        assert(!_PyUnicode_STATE(*p).statically_allocated);
+        if (!PyUnicode_CHECK_INTERNED(*p)) {
+            _PyUnicode_InternStatic(interp, p);
+        }
         return;
     }
     assert(!unicode_is_singleton(s));
 
-    /* Look in the per-interpreter cache. */
+    /* Look in the global cache now. */
+    {
+        PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
+        if (r != NULL && r != s) {
+            assert(_Py_IsImmortal(r));
+            Py_SETREF(*p, Py_NewRef(r));
+            return;
+        }
+    }
+
+    /* Do a setdefault on the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
     PyObject *t;
-    int res = PyDict_SetDefaultRef(interned, s, s, &t);
-    if (res < 0) {
-        PyErr_Clear();
-        return;
-    }
-    else if (res == 1) {
-        Py_SETREF(*p, t);
-        s = *p;
-        // value was already present (not inserted)
-        switch (_PyUnicode_STATE(*p).interned) {
-            case SSTATE_INTERNED_IMMORTAL:
-                assert(_Py_IsImmortal(s));
-                return;
-            case SSTATE_INTERNED_MORTAL:
-                assert(!_Py_IsImmortal(s));
-                break;
-            default:
-                Py_UNREACHABLE();
+    {
+        int res = PyDict_SetDefaultRef(interned, s, s, &t);
+        if (res < 0) {
+            PyErr_Clear();
+            return;
+        }
+        else if (res == 1) {
+            // value was already present (not inserted)
+            s = t;
+            Py_SETREF(*p, t);
+            if (immortalize &&
+                    PyUnicode_CHECK_INTERNED(s) == SSTATE_INTERNED_MORTAL) {
+                immortalize_interned(s);
+            }
+            return;
+        }
+        else {
+            // value was newly inserted
+            assert (s == t);
+            Py_DECREF(t);
         }
     }
-    else {
-        // value was newly inserted
-        Py_DECREF(t);
-    }
 
+    /* NOT_INTERNED -> INTERNED_MORTAL */
+
+    assert(_PyUnicode_STATE(s).interned == SSTATE_NOT_INTERNED);
+
+    if (!_Py_IsImmortal(s)) {
+        /* The two references in interned dict (key and value) are not counted.
+        unicode_dealloc() and _PyUnicode_ClearInterned() take care of this. */
+        Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
 #ifdef Py_REF_DEBUG
-    /* The reference count value excluding the 2 references from the
-       interned dictionary should be excluded from the RefTotal. The
-       decrements to these objects will not be registered so they
-       need to be accounted for in here. */
-    for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
+        /* let's be pedantic with the ref total */
         _Py_DecRefTotal(_PyThreadState_GET());
+        _Py_DecRefTotal(_PyThreadState_GET());
+#endif
+    }
+    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+
+    /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
+
+#ifdef Py_DEBUG
+    if (_Py_IsImmortal(s)) {
+        assert(immortalize);
     }
 #endif
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
-    _Py_SetImmortal(s);
+    if (immortalize) {
+        immortalize_interned(s);
+    }
+}
+
+void
+_PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
+{
+    intern_common(interp, p, 1);
 }
 
 void
 _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
 {
-    PyObject *s = *p;
-#ifdef Py_DEBUG
-    assert(s != NULL);
-    assert(_PyUnicode_CHECK(s));
-#else
-    if (s == NULL || !PyUnicode_Check(s)) {
-        return;
-    }
-#endif
-
-#if Py_GIL_DISABLED
-    /* In the free-threaded build, all interned strings are immortal */
-    _PyUnicode_InternImmortal(interp, p);
-    return;
-#endif
-
-    /* If it's immortal, intern it that way. */
-    if (_Py_IsImmortal(s)) {
-        _PyUnicode_InternImmortal(interp, p);
-        return;
-    }
-
-    /* statically allocated strings should be immortal already */
-    assert(!_PyUnicode_STATE(s).statically_allocated);
-
-    /* If it's a subclass, we don't really know what putting
-       it in the interned dict might do. */
-    if (!PyUnicode_CheckExact(s)) {
-        return;
-    }
-
-    if (PyUnicode_CHECK_INTERNED(s)) {
-        return;
-    }
-
-    /* Look in the global cache first. */
-    PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
-    if (r != NULL && r != s) {
-        Py_SETREF(*p, Py_NewRef(r));
-        return;
-    }
-
-    /* if it's a short string, get the singleton */
-    if (PyUnicode_GET_LENGTH(s) == 0) {
-        Py_SETREF(*p, unicode_get_empty());
-        assert(!_PyUnicode_STATE(*p).statically_allocated);
-        return;
-    }
-    if (PyUnicode_GET_LENGTH(s) == 1 && PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
-        Py_SETREF(*p, LATIN1(*(unsigned char*)PyUnicode_DATA(s)));
-        assert(!_PyUnicode_STATE(*p).statically_allocated);
-        return;
-    }
-    assert(!unicode_is_singleton(s));
-
-    /* Look in the per-interpreter cache. */
-    PyObject *interned = get_interned_dict(interp);
-    assert(interned != NULL);
-
-    PyObject *t;
-    int res = PyDict_SetDefaultRef(interned, s, s, &t);
-    if (res < 0) {
-        PyErr_Clear();
-        return;
-    }
-    else if (res == 1) {
-        // value was already present (not inserted)
-        Py_SETREF(*p, t);
-        return;
-    }
-    Py_DECREF(t);
-
-    assert(_PyUnicode_STATE(*p).interned == SSTATE_NOT_INTERNED);
-    assert(!_Py_IsImmortal(*p));
-    /* The two references in interned dict (key and value) are not counted.
-      unicode_dealloc() and _PyUnicode_ClearInterned() take care of this. */
-    Py_SET_REFCNT(*p, Py_REFCNT(*p) - 2);
-#ifdef Py_REF_DEBUG
-    /* let's be pedantic with the ref total */
-    _Py_DecRefTotal(_PyThreadState_GET());
-    _Py_DecRefTotal(_PyThreadState_GET());
-#endif
-    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_MORTAL;
+    intern_common(interp, p, 0);
 }
 
 
@@ -15317,6 +15293,11 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             // the two references (key and value) ignored
             // by PyUnicode_InternInPlace().
             _Py_SetMortal(s, 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif
