@@ -1363,6 +1363,63 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)lz;
 }
 
+static PyObject *
+map_vectorcall(PyObject *type, PyObject * const*args,
+               size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *tp = _PyType_CAST(type);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    int strict = 0;
+
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
+        // Fallback to map_new()
+        PyObject *tuple = _PyTuple_FromArray(args, nargs);
+        if (tuple == NULL) {
+            return NULL;
+        }
+        PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
+        if (dict == NULL) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyObject *ret = map_new(_PyType_CAST(type), tuple, dict);
+        Py_DECREF(tuple);
+        Py_DECREF(dict);
+        return ret;
+    }
+
+    if (nargs < 2) {
+        PyErr_SetString(PyExc_TypeError,
+           "map() must have at least two arguments.");
+        return NULL;
+    }
+
+    PyObject *iters = PyTuple_New(nargs-1);
+    if (iters == NULL) {
+        return NULL;
+    }
+
+    for (int i=1; i<nargs; i++) {
+        PyObject *it = PyObject_GetIter(args[i]);
+        if (it == NULL) {
+            Py_DECREF(iters);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(iters, i-1, it);
+    }
+
+    mapobject *lz = (mapobject *)tp->tp_alloc(tp, 0);
+    if (lz == NULL) {
+        Py_DECREF(iters);
+        return NULL;
+    }
+    lz->iters = iters;
+    lz->func = Py_NewRef(args[0]);
+    lz->strict = strict;
+
+    return (PyObject *)lz;
+}
+
 static void
 map_dealloc(mapobject *lz)
 {
@@ -1556,6 +1613,7 @@ PyTypeObject PyMap_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     map_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)map_vectorcall
 };
 
 
