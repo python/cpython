@@ -1368,6 +1368,8 @@ map_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     PyTypeObject *tp = _PyType_CAST(type);
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
         // Fallback to map_new()
         PyObject *tuple = _PyTuple_FromArray(args, nargs);
@@ -1385,7 +1387,6 @@ map_vectorcall(PyObject *type, PyObject * const*args,
         return ret;
     }
 
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs < 2) {
         PyErr_SetString(PyExc_TypeError,
            "map() must have at least two arguments.");
