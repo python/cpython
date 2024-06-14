@@ -63,6 +63,8 @@ race_top:tstate_is_freed
 race_top:type_modified_unlocked
 race_top:write_thread_id
 race_top:PyThreadState_Clear
+# Only seen on macOS, sample: https://gist.github.com/aisk/dda53f5d494a4556c35dde1fce03259c
+race_top:set_default_allocator_unlocked
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
