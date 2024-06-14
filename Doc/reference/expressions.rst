@@ -92,7 +92,8 @@ is considered a :dfn:`private name` of that class.
 
 .. seealso::
 
-   The :ref:`tutorial on classes <_tut-classdefinition>` for more details.
+   The :ref:`tutorial on classes <tut-classdefinition>` for more details
+   on classes and their declaration.
 
 More precisely, private names are transformed to a longer form before code is
 generated for them.  If the transformed name is longer than 255 characters,
