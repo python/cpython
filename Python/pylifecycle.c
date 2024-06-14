@@ -1818,6 +1818,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyTypes_FiniExtTypes(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
     _PyXI_FiniTypes(interp);
