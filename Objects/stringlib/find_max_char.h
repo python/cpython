@@ -23,7 +23,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     const unsigned char *restrict p = (const unsigned char *) begin;
     const unsigned char *_end = (const unsigned char *)end;
     const unsigned char *size_t_end = _end - SIZEOF_SIZE_T;
-    const unsigned char *unrolled_end = _end - 4 * SIZEOF_SIZE_T;
+    const unsigned char *unrolled_end = _end - (4 * SIZEOF_SIZE_T - 1);
     while (p < unrolled_end) {
         /* Test chunks of 32 as more granularity limits compiler optimization */
         const size_t *restrict _p = (const size_t *)p;
@@ -50,9 +50,17 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         accumulator |= value;
         p += SIZEOF_SIZE_T;
     }
-    while (p < end) {
-        accumulator |= *p;
-        p += 1;
+    if (size_t_end >= begin) {
+        /* Do unaligned size_t load rather than loading bytes individually. */
+        size_t value;
+        memcpy(&value, size_t_end, SIZEOF_SIZE_T);
+        accumulator |= value;
+    } else {
+        /* Fallback for smaller than size_t strings. */
+        while (p < end) {
+            accumulator |= *p;
+            p += 1;
+        }
     }
     if (accumulator & UCS1_ASCII_CHAR_MASK) {
         return 255;
