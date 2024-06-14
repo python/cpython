@@ -1,1 +1,1 @@
-Add an override of `allow_reuse_port` on classes inheriting socketserver.TCPServer where `allow_reuse_address` is also overriden
+Add an override of ``allow_reuse_port`` on classes inheriting socketserver.TCPServer where ``allow_reuse_address`` is also overriden
