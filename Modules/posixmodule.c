@@ -16869,7 +16869,7 @@ os__get_user_default_environ_impl(PyObject *module)
     CloseHandle(htoken);
 
     Py_ssize_t len = wcslen(env_str);
-    while (!env_str[len+1] != 0) {
+    while (env_str[len+1] != 0) {
         len++;
         len += wcslen(env_str + len);
     }
