@@ -6,11 +6,13 @@ from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
 from .support import handle_all_events, code_to_events
+
 try:
     from _pyrepl.console import Event
     from _pyrepl.unix_console import UnixConsole
 except ImportError:
     pass
+
 
 def unix_console(events, **kwargs):
     console = UnixConsole()
@@ -137,7 +139,6 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"\n")
         _os_write.assert_any_call(ANY, b"4")
         con.restore()
-
 
     def test_cursor_left(self, _os_write):
         code = "1"
