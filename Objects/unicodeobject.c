@@ -15152,7 +15152,9 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
         }
         return;
     }
+#ifdef Py_DEBUG
     assert(!unicode_is_singleton(s));
+#endif
 
     /* Look in the global cache now. */
     {
