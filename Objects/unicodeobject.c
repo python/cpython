@@ -1634,6 +1634,8 @@ unicode_dealloc(PyObject *unicode)
         case SSTATE_NOT_INTERNED:
             break;
         case SSTATE_INTERNED_MORTAL:
+            ; // <- this should fix the build on clang on macOS.
+              // Can't see the bug; too late in the evening.
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *interned = get_interned_dict(interp);
             assert(interned != NULL);
