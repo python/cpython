@@ -4700,85 +4700,53 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
+    Py_UCS1 *q = dest;
     const char *size_t_end  = end - SIZEOF_SIZE_T;
     const char *unrolled_end = end - (4 * SIZEOF_SIZE_T);
 
-#if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
-        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
-    {
-        /* Fast path, see in STRINGLIB(utf8_decode) for
-           an explanation. */
-        /* Help allocation */
-        const char *_p = p;
-        Py_UCS1 * q = dest;
-        while (_p <= unrolled_end) {
-            const size_t *restrict __p = (const size_t *)_p;
-            size_t value0 = __p[0];
-            size_t value1 = __p[1];
-            size_t value2 = __p[2];
-            size_t value3 = __p[3];
-            size_t value = value0 | value1 | value2 | value3;
-            if (value & ASCII_CHAR_MASK) {
-                break;
-            }
-            size_t *restrict _q = (size_t *)q;
-            _q[0] = value0;
-            _q[1] = value1;
-            _q[2] = value2;
-            _q[3] = value3;
-            _p += (4 * SIZEOF_SIZE_T);
-            q += (4 * SIZEOF_SIZE_T);
-        }
-        while (_p <= size_t_end) {
-            size_t value = *(const size_t *) _p;
-            if (value & ASCII_CHAR_MASK)
-                break;
-            *((size_t *)q) = value;
-            _p += SIZEOF_SIZE_T;
-            q += SIZEOF_SIZE_T;
-        }
-        p = _p;
-        while (p < end) {
-            if ((unsigned char)*p & 0x80)
-                break;
-            *q++ = *p++;
-        }
-        return p - start;
-    }
-#endif
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help allocation */
-            const char *_p = p;
-            while (_p <= unrolled_end) {
-                const size_t *restrict __p = (const size_t *)_p;
-                size_t value = __p[0] | __p[1] | __p[2] | __p[3];
-                if (value & ASCII_CHAR_MASK) {
-                    break;
-                }
-                _p += (4 * SIZEOF_SIZE_T);
-            }
-            while (_p <= size_t_end) {
-                size_t value = *(const size_t *) _p;
-                if (value & ASCII_CHAR_MASK)
-                    break;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (_p == end)
-                break;
-        }
-        if ((unsigned char)*p & 0x80)
+    while (p < unrolled_end) {
+        const size_t *restrict _p = (const size_t *)p;
+        size_t *restrict _q = (size_t *)q;
+        size_t value0;
+        size_t value1;
+        size_t value2;
+        size_t value3;
+        /* Memcpy optimizes to unaligned loads on supporting platforms*/
+        memcpy(&value0, _p + 0, SIZEOF_SIZE_T);
+        memcpy(&value1, _p + 1, SIZEOF_SIZE_T);
+        memcpy(&value2, _p + 2, SIZEOF_SIZE_T);
+        memcpy(&value3, _p + 3, SIZEOF_SIZE_T);
+        size_t value = value0 | value1 | value2 | value3;
+        if (value & ASCII_CHAR_MASK) {
             break;
-        ++p;
+        }
+        memcpy(_q + 0, &value0, SIZEOF_SIZE_T);
+        memcpy(_q + 1, &value1, SIZEOF_SIZE_T);
+        memcpy(_q + 2, &value2, SIZEOF_SIZE_T);
+        memcpy(_q + 3, &value3, SIZEOF_SIZE_T);
+        p += 4 * SIZEOF_SIZE_T;
+        q += 4 * SIZEOF_SIZE_T;
     }
-    memcpy(dest, start, p - start);
+    while (p < size_t_end) {
+        const size_t *restrict _p = (const size_t *)p;
+        size_t *restrict _q = (size_t *)q;
+        size_t value;
+        memcpy(&value, _p, SIZEOF_SIZE_T);
+        if (value & ASCII_CHAR_MASK) {
+            break;
+        }
+        memcpy(_q, &value, SIZEOF_SIZE_T);
+        p += SIZEOF_SIZE_T;
+        q += SIZEOF_SIZE_T;
+    }
+    while (p < end) {
+        if ((unsigned char)*p & 0x80) {
+            break;
+        }
+        *q++ = *p++;
+    }
     return p - start;
 }
-
 
 static int
 unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
