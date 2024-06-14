@@ -23,7 +23,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
+from test.support import script_helper, warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -6838,6 +6838,48 @@ class CapiTest(unittest.TestCase):
                     config = _interpreters.new_config(name).__dict__
                     ret = support.run_in_subinterp_with_config(script, **config)
                     self.assertEqual(ret, 0)
+
+
+class ExtensionModuleTests(unittest.TestCase):
+
+    def setUp(self):
+        if self.__class__.__name__.endswith('Pure'):
+            self.skipTest('Not relevant in pure Python')
+
+    @support.cpython_only
+    def test_gh_120161(self):
+        with self.subTest('simple'):
+            script = textwrap.dedent("""
+                import datetime
+                from _ast import Tuple
+                f = lambda: None
+                Tuple.dims = property(f, f)
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                """)
+            script_helper.assert_python_ok('-c', script)
+
+        with self.subTest('complex'):
+            script = textwrap.dedent("""
+                import asyncio
+                import datetime
+                from typing import Type
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+
+                class FakeDateMeta(type):
+                    def __instancecheck__(self, obj):
+                        return True
+                class FakeDate(datetime.date, metaclass=FakeDateMeta):
+                    pass
+                def pickle_fake_date(datetime_) -> Type[FakeDate]:
+                    # A pickle function for FakeDate
+                    return FakeDate
+                """)
+            script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):
