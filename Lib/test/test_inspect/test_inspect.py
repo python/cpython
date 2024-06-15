@@ -1819,9 +1819,10 @@ class TestIsMethodDescriptor(unittest.TestCase):
             def __get__(self, *_): pass
             def __delete__(self, *_): pass
         class DataDescriptorSub(DataDescriptorWithNoGet,
-                                DataDescriptorWithGetDelete,
-                                MethodDescriptor):
+                                DataDescriptorWithGetDelete):
             pass
+
+        # Custom method descriptors:
         self.assertTrue(
             inspect.ismethoddescriptor(MethodDescriptor()),
             '__get__ and no __set__/__delete__ => method descriptor')
@@ -1829,6 +1830,8 @@ class TestIsMethodDescriptor(unittest.TestCase):
             inspect.ismethoddescriptor(MethodDescriptorSub()),
             '__get__ (inherited) and no __set__/__delete__'
             ' => method descriptor')
+
+        # Custom data descriptors:
         self.assertFalse(
             inspect.ismethoddescriptor(DataDescriptorWithNoGet()),
             '__set__ (and no __get__) => not a method descriptor')
@@ -1841,9 +1844,11 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertFalse(
             inspect.ismethoddescriptor(DataDescriptorSub()),
             '__get__, __set__ and __delete__ => not a method descriptor')
-        # Note: descriptor classes themselves are *not* descriptors.
+
+        # Classes of descriptors (are *not* descriptors themselves):
         self.assertFalse(inspect.ismethoddescriptor(MethodDescriptor))
         self.assertFalse(inspect.ismethoddescriptor(MethodDescriptorSub))
+        self.assertFalse(inspect.ismethoddescriptor(DataDescriptorSub))
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__  # This one is mentioned in docs.
@@ -1855,11 +1860,11 @@ class TestIsMethodDescriptor(unittest.TestCase):
             def static_method(): pass
             @property
             def a_property(self): pass
-        def function():
-            pass
-        a_lambda = lambda: None
         class Slotted:
             __slots__ = 'foo',
+        def function():
+            pass
+
         # Example builtin method descriptors:
         self.assertTrue(
             inspect.ismethoddescriptor(builtin_slot_wrapper),
@@ -1870,21 +1875,21 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertTrue(
             inspect.ismethoddescriptor(Owner.__dict__['static_method']),
             'a staticmethod object is a method descriptor')
+
         # Example builtin data descriptors:
         self.assertFalse(
-            inspect.ismethoddescriptor(Slotted.foo),
-            'a slot is not a method descriptor')
-        self.assertFalse(
-            inspect.ismethoddescriptor(Owner.a_property),
+            inspect.ismethoddescriptor(Owner.__dict__['a_property']),
             'a property is not a method descriptor')
+        self.assertFalse(
+            inspect.ismethoddescriptor(Slotted.__dict__['foo']),
+            'a slot is not a method descriptor')
+
         # `types.MethodType`/`types.FunctionType` instances (they *are*
         # method descriptors, but `ismethoddescriptor()` explicitly
         # excludes them):
         self.assertFalse(inspect.ismethoddescriptor(Owner().instance_method))
-        self.assertFalse(inspect.ismethoddescriptor(Owner().class_method))
-        self.assertFalse(inspect.ismethoddescriptor(Owner().static_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
-        self.assertFalse(inspect.ismethoddescriptor(a_lambda))
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):
