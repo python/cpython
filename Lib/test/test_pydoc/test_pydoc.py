@@ -776,10 +776,8 @@ class PydocDocTest(unittest.TestCase):
                         'Help on getset descriptor builtins.int.numerator:')
         run_pydoc_pager(list[int], 'list',
                         'Help on GenericAlias in module builtins:')
-        run_pydoc_pager('sys', 'sys',
-                        'Help on built-in module sys:')
-        run_pydoc_pager(sys, 'sys',
-                        'Help on built-in module sys:')
+        run_pydoc_pager('sys', 'sys', 'Help on built-in module sys:')
+        run_pydoc_pager(sys, 'sys', 'Help on built-in module sys:')
 
     def test_showtopic(self):
         with captured_stdout() as showtopic_io:
