@@ -59,6 +59,23 @@ _Py_atomic_add_int64(int64_t *obj, int64_t value)
 #endif
 }
 
+static inline long
+_Py_atomic_add_long(long *obj, long value)
+{
+#if defined(_M_X64) || defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(long);
+    return (int64_t)_InterlockedExchangeAdd((volatile __int64 *)obj, (__int64)value);
+#else
+    long old_value = _Py_atomic_load_long_relaxed(obj);
+    for (;;) {
+        long new_value = old_value + value;
+        if (_Py_atomic_compare_exchange_long(obj, &old_value, new_value)) {
+            return old_value;
+        }
+    }
+#endif
+}
+
 
 static inline uint8_t
 _Py_atomic_add_uint8(uint8_t *obj, uint8_t value)
@@ -180,6 +197,21 @@ _Py_atomic_compare_exchange_int64(int64_t *obj, int64_t *expected, int64_t value
                                        (volatile __int64 *)obj,
                                        (__int64)value,
                                        (__int64)*expected);
+    if (initial == *expected) {
+        return 1;
+    }
+    *expected = initial;
+    return 0;
+}
+
+static inline int
+_Py_atomic_compare_exchange_long(long *obj, long *expected, long value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(long);
+    long initial = (long)_InterlockedCompareExchange(
+                                    (volatile long *)obj,
+                                       (long)value,
+                                       (long)*expected);
     if (initial == *expected) {
         return 1;
     }
@@ -686,6 +718,12 @@ static inline uint64_t
 _Py_atomic_load_uint64_relaxed(const uint64_t *obj)
 {
     return *(volatile uint64_t *)obj;
+}
+
+static inline long
+_Py_atomic_load_long_relaxed(const long *obj)
+{
+    return *(volatile long *)obj;
 }
 
 static inline uintptr_t

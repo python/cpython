@@ -55,6 +55,13 @@ _Py_atomic_add_int64(int64_t *obj, int64_t value)
     return atomic_fetch_add((_Atomic(int64_t)*)obj, value);
 }
 
+static inline long
+_Py_atomic_add_long(long *obj, long value)
+{
+    _Py_USING_STD;
+    return atomic_fetch_add((_Atomic(long)*)obj, value);
+}
+
 static inline intptr_t
 _Py_atomic_add_intptr(intptr_t *obj, intptr_t value)
 {
@@ -151,6 +158,14 @@ _Py_atomic_compare_exchange_int64(int64_t *obj, int64_t *expected, int64_t desir
 {
     _Py_USING_STD;
     return atomic_compare_exchange_strong((_Atomic(int64_t)*)obj,
+                                          expected, desired);
+}
+
+static inline int
+_Py_atomic_compare_exchange_long(long *obj, long *expected, long desired)
+{
+    _Py_USING_STD;
+    return atomic_compare_exchange_strong((_Atomic(long)*)obj,
                                           expected, desired);
 }
 
@@ -586,6 +601,15 @@ _Py_atomic_load_uint64_relaxed(const uint64_t *obj)
     return atomic_load_explicit((const _Atomic(uint64_t)*)obj,
                                 memory_order_relaxed);
 }
+
+static inline long
+_Py_atomic_load_long_relaxed(const long *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(long)*)obj,
+                                memory_order_relaxed);
+}
+
 
 static inline uintptr_t
 _Py_atomic_load_uintptr_relaxed(const uintptr_t *obj)

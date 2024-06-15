@@ -30,6 +30,10 @@ static inline int64_t
 _Py_atomic_add_int64(int64_t *obj, int64_t value)
 { return __atomic_fetch_add(obj, value, __ATOMIC_SEQ_CST); }
 
+static inline long
+_Py_atomic_add_long(long *obj, long value)
+{ return __atomic_fetch_add(obj, value, __ATOMIC_SEQ_CST); }
+
 static inline intptr_t
 _Py_atomic_add_intptr(intptr_t *obj, intptr_t value)
 { return __atomic_fetch_add(obj, value, __ATOMIC_SEQ_CST); }
@@ -87,6 +91,11 @@ _Py_atomic_compare_exchange_int32(int32_t *obj, int32_t *expected, int32_t desir
 
 static inline int
 _Py_atomic_compare_exchange_int64(int64_t *obj, int64_t *expected, int64_t desired)
+{ return __atomic_compare_exchange_n(obj, expected, desired, 0,
+                                     __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); }
+
+static inline int
+_Py_atomic_compare_exchange_long(long *obj, long *expected, long desired)
 { return __atomic_compare_exchange_n(obj, expected, desired, 0,
                                      __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); }
 
@@ -340,6 +349,10 @@ _Py_atomic_load_uint32_relaxed(const uint32_t *obj)
 
 static inline uint64_t
 _Py_atomic_load_uint64_relaxed(const uint64_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
+static inline long
+_Py_atomic_load_long_relaxed(const long *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
 
 static inline uintptr_t

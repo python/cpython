@@ -818,13 +818,13 @@ rangeiter_next(_PyRangeIterObject *r)
 {
 #ifdef Py_GIL_DISABLED
     // r->step is readonly attribute, so we can assume it is not changed.
-    int64_t step = (int64_t)r->step;
+    long step = r->step;
     do {
-        int64_t len = _Py_atomic_load_int64_relaxed(&r->len);
+        long len = _Py_atomic_load_long_relaxed(&r->len);
         if (len <= 0) {
             return NULL;
         }
-        int64_t result = _Py_atomic_load_int64_relaxed(&r->start);
+        long result = _Py_atomic_load_long_relaxed(&r->start);
         if (_Py_atomic_compare_exchange_int64(&r->start, &result, result + step)) {
             _Py_atomic_add_int64(&r->len, -1);
             return PyLong_FromLong(result);
