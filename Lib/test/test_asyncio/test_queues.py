@@ -138,6 +138,7 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         async with asyncio.TaskGroup() as tg:
             tg.create_task(worker())
             tg.create_task(worker())
+
         self.assertEqual(sum(range(100)), accumulator)
 
 
