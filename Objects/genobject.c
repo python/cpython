@@ -14,6 +14,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 
 #include "pystats.h"
 
@@ -119,7 +120,7 @@ _PyGen_Finalize(PyObject *self)
 }
 
 static void
-gen_dealloc(PyGenObject *gen)
+gen_dealloc_no_lock(PyGenObject *gen)
 {
     PyObject *self = (PyObject *) gen;
 
@@ -156,6 +157,15 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_qualname);
 
     PyObject_GC_Del(gen);
+}
+
+static void
+gen_dealloc(PyGenObject *gen)
+{
+    // Another generator's finalizer might race on clearing the frame.
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    gen_dealloc_no_lock(gen);
+    Py_END_CRITICAL_SECTION();
 }
 
 static PySendResult
