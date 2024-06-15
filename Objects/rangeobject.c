@@ -817,13 +817,13 @@ static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
 #ifdef Py_GIL_DISABLED
-    uint64_t step = _Py_atomic_load_int64_relaxed(&r->step);
+    int64_t step = _Py_atomic_load_int64_relaxed(&r->step);
     do {
-        uint64_t len = _Py_atomic_load_int64_relaxed(&r->len);
+        int64_t len = _Py_atomic_load_int64_relaxed(&r->len);
         if (len <= 0) {
             return NULL;
         }
-        uint64_t result = _Py_atomic_load_int64_relaxed(&r->start);
+        int64_t result = _Py_atomic_load_int64_relaxed(&r->start);
         if (_Py_atomic_compare_exchange_int64(&r->start, &result, result + step)) {
             _Py_atomic_add_int64(&r->len, -1);
             return PyLong_FromLong(result);
