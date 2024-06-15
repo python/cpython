@@ -248,8 +248,7 @@ it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
 expression must evaluate to a type or a tuple containing types. Each type must
-be :exc:`BaseException` or a subclass of :exc:`BaseException`; otherwise, the runtime will raise a
-:exc:`TypeError` when the handler is evaluated.
+be :exc:`BaseException` or a subclass of :exc:`BaseException`.
 
 The clause matches an exception if the resulting object from evaluating the
 clause is "compatible" with the exception. An object is compatible with an
@@ -387,9 +386,7 @@ Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a
 matching expression; ``except*:`` is not valid syntax. In addition to the
 requirements for matching expressions in :keyword:`except` clauses, the
 types in the matching expression of an :keyword:`!except*` clause cannot
-be :exc:`BaseExceptionGroup` or a subclass of :exc:`BaseExceptionGroup`;
-otherwise, the runtime will raise a :exc:`TypeError` when the handler is
-evaluated.
+be :exc:`BaseExceptionGroup` or a subclass of :exc:`BaseExceptionGroup`.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
