@@ -1,0 +1,26 @@
+# Creating tabulations of the results
+
+# Multiple Regression Results
+regression_results_df = pd.DataFrame({
+    'Independent Variable': ['Practice outside of class (Q3)', 'Confidence in using English (Q5)', 'Preference for inductive methods (Q8)'],
+    'Coefficient': regression_coefficients_corrected
+})
+regression_results_df['Intercept'] = regression_intercept_corrected
+
+# Pearson’s Correlation Coefficient Results
+correlation_results_df = pd.DataFrame({
+    'Variable 1': ['Preference for inductive methods (Q8)'],
+    'Variable 2': ['Confidence in using English (Q5)'],
+    'Correlation Coefficient': [correlation_Q8_Q5_corrected],
+    'P-value': [p_value_Q8_Q5_corrected]
+})
+
+# Chi-Square Test of Independence Results
+chi_square_results_df = pd.DataFrame({
+    'Statistic': ['Chi-Square', 'P-value', 'Degrees of Freedom'],
+    'Value': [chi2_corrected, p_corrected, dof_corrected]
+})
+
+# Expected Frequencies from Chi-Square Test
+expected_frequencies_df = pd.DataFrame(expected_corrected, columns=['Disagree', 'Strongly Disagree', 'Neutral', 'Agree', 'Strongly Agree'], index=['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'])
+regression_results_df, correlation_results_df, chi_square_results_df, expected_frequencies_df
