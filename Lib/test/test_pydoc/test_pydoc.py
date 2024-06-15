@@ -31,7 +31,7 @@ from test.support import os_helper
 from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
-from test.support import (reap_children, captured_output, captured_stdout,
+from test.support import (reap_children, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
@@ -680,9 +680,8 @@ class PydocDocTest(unittest.TestCase):
         help_header = textwrap.dedent(help_header)
         expected_help_pattern = help_header + expected_text_pattern
 
-        with captured_output('stdout') as output, \
-             captured_output('stderr') as err, \
-             StringIO() as buf:
+        with captured_stdout() as output, captured_stderr() as err:
+            buf = StringIO()
             helper = pydoc.Helper(output=buf)
             helper.help(module)
             result = buf.getvalue().strip()
@@ -706,9 +705,8 @@ class PydocDocTest(unittest.TestCase):
 
         def run_pydoc_for_request(request, expected_text_part):
             """Helper function to run pydoc with its output redirected"""
-            with captured_output('stdout') as output, \
-                 captured_output('stderr') as err, \
-                 StringIO() as buf:
+            with captured_stdout() as output, captured_stderr() as err:
+                buf = StringIO()
                 helper = pydoc.Helper(output=buf)
                 helper.help(request)
                 result = buf.getvalue().strip()
@@ -746,13 +744,11 @@ class PydocDocTest(unittest.TestCase):
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
     def test_help_output_pager(self):
-        self.maxDiff = None
-
         def run_pydoc_pager(request, what, expected_first_line):
-            with captured_output('stdout') as output, \
-                 captured_output('stderr') as err, \
-                 unittest.mock.patch('pydoc.pager') as pager_mock, \
-                 self.subTest(repr(request)):
+            with (captured_stdout() as output,
+                  captured_stderr() as err,
+                  unittest.mock.patch('pydoc.pager') as pager_mock,
+                  self.subTest(repr(request))):
                 helper = pydoc.Helper()
                 helper.help(request)
                 self.assertEqual('', err.getvalue())
@@ -818,9 +814,8 @@ class PydocDocTest(unittest.TestCase):
         # Helper.showtopic should be redirected
         self.maxDiff = None
 
-        with captured_output('stdout') as output, \
-             captured_output('stderr') as err, \
-             StringIO() as buf:
+        with captured_stdout() as output, captured_stderr() as err:
+            buf = StringIO()
             helper = pydoc.Helper(output=buf)
             helper.showtopic('with')
             result = buf.getvalue().strip()
@@ -833,7 +828,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_with_return_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"return": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a, b, c) -> int", helptext)
@@ -841,7 +836,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_without_return_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"a": int, "b": int, "c": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a: int, b: int, c: int)", helptext)
@@ -849,7 +844,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_with_return_and_params_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"a": int, "b": int, "c": int, "return": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a: int, b: int, c: int) -> int", helptext)
