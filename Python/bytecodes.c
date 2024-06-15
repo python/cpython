@@ -2035,12 +2035,8 @@ dummy_func(
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             unused/5;
 
-        op(_CHECK_IS_TYPE, (owner -- owner)) {
+        op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
             EXIT_IF(!PyType_Check(owner));
-        }
-
-        op(_CHECK_CLASS_TYPE_VERSION, (type_version/2, owner -- owner)) {
-            assert(PyType_Check(owner));
             assert(type_version != 0);
             EXIT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
         }
@@ -2055,8 +2051,7 @@ dummy_func(
 
         macro(LOAD_ATTR_CLASS) =
             unused/1 +
-            _CHECK_IS_TYPE +
-            _CHECK_CLASS_TYPE_VERSION +
+            _CHECK_ATTR_CLASS +
             unused/2 +
             _LOAD_ATTR_CLASS;
 

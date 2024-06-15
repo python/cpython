@@ -934,7 +934,7 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand;
             assert(type_version);
-            if (sym_is_type_subclass(owner)) {
+            if (sym_is_a_class(owner)) {
                 ctx->done = true;
                 break;
             }
@@ -1067,30 +1067,16 @@
             break;
         }
 
-        case _CHECK_IS_TYPE: {
-            _Py_UopsSymbol *owner;
-            owner = stack_pointer[-1];
-            if (sym_is_type_subclass(owner)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            else {
-                sym_set_is_type_subclass(owner);
-            }
-            break;
-        }
-
-        case _CHECK_CLASS_TYPE_VERSION: {
+        case _CHECK_ATTR_CLASS: {
             _Py_UopsSymbol *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand;
             assert(type_version);
-            if (sym_is_type_subclass(owner) &&
+            if (sym_is_a_class(owner) &&
                 sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
-                if (!sym_is_type_subclass(owner)) {
-                    ctx->done = true;
-                }
+                sym_set_is_a_class(owner);
                 PyTypeObject *type = _PyType_LookupByVersion(type_version);
                 if (type) {
                     if (sym_set_type_version(owner, type_version)) {
@@ -1109,7 +1095,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             if (sym_is_const(owner)) {
-                assert(sym_is_type_subclass(owner));
+                assert(sym_is_a_class(owner));
                 PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
                 assert(PyType_Check((PyObject *)ty));
                 // No guard previously, indicates the descr is valid.

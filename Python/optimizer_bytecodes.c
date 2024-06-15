@@ -117,7 +117,7 @@ dummy_func(void) {
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
         assert(type_version);
-        if (sym_is_type_subclass(owner)) {
+        if (sym_is_a_class(owner)) {
             ctx->done = true;
             break;
         }
@@ -142,24 +142,13 @@ dummy_func(void) {
         }
     }
 
-    op(_CHECK_IS_TYPE, (owner -- owner)) {
-        if (sym_is_type_subclass(owner)) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        else {
-            sym_set_is_type_subclass(owner);
-        }
-    }
-
-    op(_CHECK_CLASS_TYPE_VERSION, (type_version/2, owner -- owner)) {
+    op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
         assert(type_version);
-        if (sym_is_type_subclass(owner) &&
+        if (sym_is_a_class(owner) &&
             sym_matches_type_version(owner, type_version)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         } else {
-            if (!sym_is_type_subclass(owner)) {
-                ctx->done = true;
-            }
+            sym_set_is_a_class(owner);
             PyTypeObject *type = _PyType_LookupByVersion(type_version);
             if (type) {
                 if (sym_set_type_version(owner, type_version)) {
@@ -548,7 +537,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
         if (sym_is_const(owner)) {
-            assert(sym_is_type_subclass(owner));
+            assert(sym_is_a_class(owner));
             PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
             assert(PyType_Check((PyObject *)ty));
             // No guard previously, indicates the descr is valid.

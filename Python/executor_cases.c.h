@@ -2157,21 +2157,14 @@
 
         /* _LOAD_ATTR_SLOT is split on (oparg & 1) */
 
-        case _CHECK_IS_TYPE: {
+        case _CHECK_ATTR_CLASS: {
             PyObject *owner;
             owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (!PyType_Check(owner)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            break;
-        }
-
-        case _CHECK_CLASS_TYPE_VERSION: {
-            PyObject *owner;
-            owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
-            assert(PyType_Check(owner));
             assert(type_version != 0);
             if (((PyTypeObject *)owner)->tp_version_tag != type_version) {
                 UOP_STAT_INC(uopcode, miss);

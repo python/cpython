@@ -126,7 +126,7 @@ _Py_uop_sym_is_null(_Py_UopsSymbol *sym)
 }
 
 bool
-_Py_uop_sym_is_type_subclass(_Py_UopsSymbol *sym)
+_Py_uop_sym_is_a_class(_Py_UopsSymbol *sym)
 {
     int res = sym->flags & IS_TYPE_SUBCLASS;
     return res;
@@ -233,9 +233,9 @@ _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 }
 
 void
-_Py_uop_sym_set_is_type_subclass(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
+_Py_uop_sym_set_is_a_class(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 {
-    if (sym->typ != NULL) {
+    if (sym->typ != NULL && !PyType_Check(sym->typ)) {
         sym_set_bottom(ctx, sym);
     }
     sym_set_flag(sym, IS_TYPE_SUBCLASS);
