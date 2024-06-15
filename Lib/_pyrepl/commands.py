@@ -216,7 +216,15 @@ class interrupt(FinishCommand):
         import signal
 
         self.reader.console.finish()
+        self.reader.finish()
         os.kill(os.getpid(), signal.SIGINT)
+
+
+class ctrl_c(Command):
+    def do(self) -> None:
+        self.reader.console.finish()
+        self.reader.finish()
+        raise KeyboardInterrupt
 
 
 class suspend(Command):
@@ -360,8 +368,6 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
-        if len(text) == 1 and r.pos == len(r.buffer):
-            r.calc_screen = r.append_to_screen
 
 
 class insert_nl(EditCommand):

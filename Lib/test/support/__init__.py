@@ -529,11 +529,11 @@ def suppress_immortalization(suppress=True):
         yield
         return
 
-    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    _testinternalcapi.suppress_immortalization(True)
     try:
         yield
     finally:
-        _testinternalcapi.set_immortalize_deferred(*old_values)
+        _testinternalcapi.suppress_immortalization(False)
 
 def skip_if_suppress_immortalization():
     try:
@@ -1189,6 +1189,26 @@ def no_tracing(func):
     return coverage_wrapper
 
 
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        assert not isinstance(func, type), func
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
+
 def refcount_test(test):
     """Decorator for tests which involve reference counting.
 
@@ -1788,7 +1808,7 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
             config['gil'] = 'shared'
         elif gil == 2:
             config['gil'] = 'own'
-        else:
+        elif not isinstance(gil, str):
             raise NotImplementedError(gil)
     config = types.SimpleNamespace(**config)
     return _testinternalcapi.run_in_subinterp_with_config(code, config)

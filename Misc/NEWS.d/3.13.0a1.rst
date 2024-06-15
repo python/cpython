@@ -1964,7 +1964,7 @@ debugging.
 .. nonce: LCxiau
 .. section: Library
 
-Fix :func:`termios.tcsetattr` bug that was overwritting existing errors
+Fix :func:`termios.tcsetattr` bug that was overwriting existing errors
 during parsing integers from ``term`` list.
 
 ..

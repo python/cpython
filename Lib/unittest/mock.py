@@ -830,6 +830,9 @@ class NonCallableMock(Base):
             mock_name = f'{self._extract_mock_name()}.{name}'
             raise AttributeError(f'Cannot set {mock_name}')
 
+        if isinstance(value, PropertyMock):
+            self.__dict__[name] = value
+            return
         return object.__setattr__(self, name, value)
 
 
@@ -1508,13 +1511,12 @@ class _patch(object):
                 if isinstance(original, type):
                     # If we're patching out a class and there is a spec
                     inherit = True
-            if spec is None and _is_async_obj(original):
-                Klass = AsyncMock
-            else:
-                Klass = MagicMock
-            _kwargs = {}
+
+            # Determine the Klass to use
             if new_callable is not None:
                 Klass = new_callable
+            elif spec is None and _is_async_obj(original):
+                Klass = AsyncMock
             elif spec is not None or spec_set is not None:
                 this_spec = spec
                 if spec_set is not None:
@@ -1527,7 +1529,12 @@ class _patch(object):
                     Klass = AsyncMock
                 elif not_callable:
                     Klass = NonCallableMagicMock
+                else:
+                    Klass = MagicMock
+            else:
+                Klass = MagicMock
 
+            _kwargs = {}
             if spec is not None:
                 _kwargs['spec'] = spec
             if spec_set is not None:
@@ -1748,7 +1755,7 @@ def patch(
     the patch is undone.
 
     If `new` is omitted, then the target is replaced with an
-    `AsyncMock if the patched object is an async function or a
+    `AsyncMock` if the patched object is an async function or a
     `MagicMock` otherwise. If `patch` is used as a decorator and `new` is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If `patch` is used as a context manager the created

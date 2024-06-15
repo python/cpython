@@ -352,32 +352,21 @@ lst[fun(0)]: int = 1
 dis_annot_stmt_str = """\
   0           RESUME                   0
 
-  2           SETUP_ANNOTATIONS
-              LOAD_CONST               0 (1)
+  2           LOAD_CONST               0 (1)
               STORE_NAME               0 (x)
-              LOAD_NAME                1 (int)
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               1 ('x')
-              STORE_SUBSCR
-
-  3           LOAD_NAME                3 (fun)
-              PUSH_NULL
-              LOAD_CONST               0 (1)
-              CALL                     1
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               2 ('y')
-              STORE_SUBSCR
 
   4           LOAD_CONST               0 (1)
-              LOAD_NAME                4 (lst)
-              LOAD_NAME                3 (fun)
+              LOAD_NAME                1 (lst)
+              LOAD_NAME                2 (fun)
               PUSH_NULL
-              LOAD_CONST               3 (0)
+              LOAD_CONST               1 (0)
               CALL                     1
               STORE_SUBSCR
-              LOAD_NAME                1 (int)
-              POP_TOP
-              RETURN_CONST             4 (None)
+
+  2           LOAD_CONST               2 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              STORE_NAME               3 (__annotate__)
+              RETURN_CONST             3 (None)
 """
 
 compound_stmt_str = """\
@@ -1206,6 +1195,36 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
         self.do_disassembly_compare(got, expected)
+
+    @cpython_only
+    @requires_specialization
+    def test_loop_with_conditional_at_end_is_quickened(self):
+        def for_loop_true(x):
+            for i in range(10):
+                if x:
+                    pass
+
+        for_loop_true(True)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_true, adaptive=True))
+
+        def for_loop_false(x):
+            for i in range(10):
+                if x:
+                    pass
+
+        for_loop_false(False)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_false, adaptive=True))
+
+        def while_loop():
+            i = 0
+            while i < 10:
+                i += 1
+
+        while_loop()
+        self.assertIn('COMPARE_OP_INT',
+                      self.get_disassembly(while_loop, adaptive=True))
 
     @cpython_only
     def test_extended_arg_quick(self):

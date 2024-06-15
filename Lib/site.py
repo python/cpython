@@ -185,7 +185,9 @@ def addpackage(sitedir, name, known_paths):
         return
 
     try:
-        pth_content = pth_content.decode()
+        # Accept BOM markers in .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
+        pth_content = pth_content.decode("utf-8-sig")
     except UnicodeDecodeError:
         # Fallback to locale encoding for backward compatibility.
         # We will deprecate this fallback in the future.
@@ -484,7 +486,7 @@ def register_readline():
     import atexit
     try:
         import readline
-        import rlcompleter
+        import rlcompleter  # noqa: F401
         import _pyrepl.readline
         import _pyrepl.unix_console
     except ImportError:
@@ -601,7 +603,7 @@ def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
         try:
-            import sitecustomize
+            import sitecustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'sitecustomize':
                 pass
@@ -621,7 +623,7 @@ def execusercustomize():
     """Run custom user specific code, if available."""
     try:
         try:
-            import usercustomize
+            import usercustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'usercustomize':
                 pass

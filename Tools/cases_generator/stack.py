@@ -1,7 +1,8 @@
 import re
-from analyzer import StackItem, Instruction, Uop
+from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
 from dataclasses import dataclass
 from cwriter import CWriter
+from typing import Iterator
 
 UNUSED = {"unused"}
 
@@ -208,13 +209,20 @@ class Stack:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
 
-def get_stack_effect(inst: Instruction) -> Stack:
+def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
-    for uop in inst.parts:
-        if not isinstance(uop, Uop):
-            continue
-        for var in reversed(uop.stack.inputs):
+    def stacks(inst : Instruction | PseudoInstruction) -> Iterator[StackEffect]:
+        if isinstance(inst, Instruction):
+            for uop in inst.parts:
+                if isinstance(uop, Uop):
+                    yield uop.stack
+        else:
+            assert isinstance(inst, PseudoInstruction)
+            yield inst.stack
+
+    for s in stacks(inst):
+        for var in reversed(s.inputs):
             stack.pop(var)
-        for i, var in enumerate(uop.stack.outputs):
+        for var in s.outputs:
             stack.push(var)
     return stack

@@ -1521,7 +1521,6 @@ PyNumber_Long(PyObject *o)
 {
     PyObject *result;
     PyNumberMethods *m;
-    PyObject *trunc_func;
     Py_buffer view;
 
     if (o == NULL) {
@@ -1563,37 +1562,6 @@ PyNumber_Long(PyObject *o)
     if (m && m->nb_index) {
         return PyNumber_Index(o);
     }
-    trunc_func = _PyObject_LookupSpecial(o, &_Py_ID(__trunc__));
-    if (trunc_func) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "The delegation of int() to __trunc__ is deprecated.", 1)) {
-            Py_DECREF(trunc_func);
-            return NULL;
-        }
-        result = _PyObject_CallNoArgs(trunc_func);
-        Py_DECREF(trunc_func);
-        if (result == NULL || PyLong_CheckExact(result)) {
-            return result;
-        }
-        if (PyLong_Check(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-            return result;
-        }
-        /* __trunc__ is specified to return an Integral type,
-           but int() needs to return an int. */
-        if (!PyIndex_Check(result)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "__trunc__ returned non-Integral (type %.200s)",
-                Py_TYPE(result)->tp_name);
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_SETREF(result, PyNumber_Index(result));
-        return result;
-    }
-    if (PyErr_Occurred())
-        return NULL;
 
     if (PyUnicode_Check(o))
         /* The below check is done in PyLong_FromUnicodeObject(). */

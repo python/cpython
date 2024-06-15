@@ -580,7 +580,7 @@ class StackSummary(list):
                 show_carets = False
                 with suppress(Exception):
                     anchors = _extract_caret_anchors_from_line_segment(segment)
-                show_carets = self.should_show_carets(start_offset, end_offset, all_lines, anchors)
+                show_carets = self._should_show_carets(start_offset, end_offset, all_lines, anchors)
 
                 result = []
 
@@ -694,7 +694,7 @@ class StackSummary(list):
 
         return ''.join(row)
 
-    def should_show_carets(self, start_offset, end_offset, all_lines, anchors):
+    def _should_show_carets(self, start_offset, end_offset, all_lines, anchors):
         with suppress(SyntaxError, ImportError):
             import ast
             tree = ast.parse('\n'.join(all_lines))
