@@ -92,15 +92,29 @@ is considered a :dfn:`private name` of that class.
 
 .. seealso::
 
-   The :ref:`tutorial on classes <tut-classdefinition>` for more details
-   on classes and their declaration.
+   The :ref:`class specifications <class>`.
 
 More precisely, private names are transformed to a longer form before code is
 generated for them.  If the transformed name is longer than 255 characters,
 implementation-defined truncation may happen.
 
 The transformation is independent of the syntactical context in which the
-identifier is used and the transformation rule is defined as follows:
+identifier is used but only the following private identifiers are mangled:
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
+The transformation rule is defined as follows:
 
 - If the class name consists only of underscores, the transformation is the
   identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
@@ -110,90 +124,6 @@ identifier is used and the transformation rule is defined as follows:
   underscores removed and a single leading underscore inserted, in front
   of the identifier, e.g., the identifier ``__spam`` occurring in a class
   named ``Foo``, ``_Foo`` or ``__Foo`` is transformed to ``_Foo__spam``.
-
-.. _private-name-mangling-access:
-
-.. rubric:: Accessing members with mangled names
-
-The corresponding private member is accessed by its defining class using
-its non-transformed name. On the other hand, the transformed name must be
-used to access the private member *externally* (e.g., in a function or in
-a subclass):
-
-.. code-block:: python
-
-   class A:
-       def __one(self):
-           return 1
-       def two(self):
-           return 2 * self.__one()
-
-   class B(A):
-       def three(self):
-           return 3 * self._A__one()
-
-   four = 4 * A()._A__one()
-
-.. seealso::
-
-   The tutorial on :ref:`private variables <tut-private>` in classes for
-   a more complete example.
-
-.. _private-name-mangling-imports:
-
-.. rubric:: Mangled names in imports
-
-For identifiers declared using :keyword:`import` statements, the mangling
-rule is slightly different. Throughout this paragraph, we consider the
-following filesystem layout with code snippets in the ``__main__.py`` file.
-
-.. code-block:: text
-
-   .
-   ├── __main__.py
-   ├── __pkg
-   │   ├── __init__.py
-   │   └── mod.py
-   ├── __bar.py
-   ├── __foo.py
-   └── _Bar__bar.py
-
-Importing a module with a private name directly in a class body may raise
-a :exc:`ModuleNotFoundError`, as illustrated by the following example:
-
-.. code-block:: python
-
-   class Bar:
-       # equivalent to import _Bar__bar
-       import __bar
-   print(Bar._Bar__bar)  # <module '_Bar__bar' from '/_Bar__bar.py'>
-
-   class Foo:
-       # raises a ModuleNotFoundError at runtime since the interpreter
-       # tries to import '_Foo__foo' instead of '__foo'
-       import __foo
-
-If the ``__foo`` module is needed inside the ``Foo`` class, the import can
-be performed via the :func:`__import__` function, in which case the usual
-transformation rule is applied:
-
-.. code-block:: python
-
-   class Foo:
-       # explicitly import '__foo' instead of '_Foo__foo'
-       __foo = __import__("__foo")
-   print(Foo._Foo__foo)  # <module '__foo' from '/__foo.py'>
-
-This restriction does not apply to modules imported as submodules of packages
-with private names, e.g.:
-
-.. code-block:: python
-
-   class Foo:
-       import __pkg.mod
-
-   print(Foo._Foo__pkg)      # <module '__pkg' from '/__pkg/__init__.py'>
-   print(Foo._Foo__pkg.mod)  # <module '__pkg.mod' from '/__pkg/mod.py'>
 
 .. _atom-literals:
 
