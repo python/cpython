@@ -476,7 +476,12 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def ilen(iterable):
-          return sum(1 for _ in iterable)
+          # ilen([]) → 0
+          # ilen('ABCDE') → 5
+          length = 0
+          for _ in iterable:
+              length += 1
+          return length
 
    .. versionadded:: 3.14
 
