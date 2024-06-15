@@ -248,7 +248,7 @@ it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
 expression must evaluate to a type or a tuple containing types. Each type must
-be a subclass of :exc:`BaseException`, otherwise the runtime will raise a
+be a subclass of :exc:`BaseException`; otherwise, the runtime will raise a
 :exc:`TypeError` when the handler is evaluated.
 
 The clause matches the exception if the resulting object is "compatible" with
