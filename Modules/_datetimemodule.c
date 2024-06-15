@@ -3471,10 +3471,15 @@ date_repr(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_isoformat(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 {
-    return PyUnicode_FromFormat("%04d-%02d-%02d",
-                                GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
+    int basic = 0;
+    static char *keywords[] = {"basic", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|p:isoformat", keywords, &basic)) {
+        return NULL;
+    }
+    const char *format = basic ? "%04d%02d%02d" : "%04d-%02d-%02d";
+    return PyUnicode_FromFormat(format, GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 /* str() calls the appropriate isoformat() method. */
@@ -3868,8 +3873,9 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
-    {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,
-     PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.")},
+    {"isoformat",   (PyCFunction)date_isoformat,        METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.\n"
+               "If basic is true, uses the basic format, YYYYMMDD.")},
 
     {"isoweekday",  (PyCFunction)date_isoweekday,   METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
@@ -4654,20 +4660,33 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
     char buf[100];
     const char *timespec = NULL;
-    static char *keywords[] = {"timespec", NULL};
+    int basic = 0;
+    static char *keywords[] = {"timespec", "basic", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
-    static const char *specs[][2] = {
+    static const char *specs_extended[][2] = {
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
         {"milliseconds", "%02d:%02d:%02d.%03d"},
         {"microseconds", "%02d:%02d:%02d.%06d"},
     };
-    size_t given_spec;
+    static const char *specs_basic[][2] = {
+        {"hours", "%02d"},
+        {"minutes", "%02d%02d"},
+        {"seconds", "%02d%02d%02d"},
+        {"milliseconds", "%02d%02d%02d.%03d"},
+        {"microseconds", "%02d%02d%02d.%06d"},
+    };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|sp:isoformat", keywords, &timespec, &basic)) {
         return NULL;
+    }
+
+    const char *(*specs)[2] = basic ? specs_basic : specs_extended;
+    // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
+    size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
+    size_t given_spec;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
         if (us == 0) {
@@ -4680,7 +4699,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         }
     }
     else {
-        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+        for (given_spec = 0; given_spec < specs_count; given_spec++) {
             if (strcmp(timespec, specs[given_spec][0]) == 0) {
                 if (given_spec == 3) {
                     /* milliseconds */
@@ -4691,7 +4710,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         }
     }
 
-    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+    if (given_spec == specs_count) {
         PyErr_Format(PyExc_ValueError, "Unknown timespec value");
         return NULL;
     }
@@ -4705,8 +4724,8 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buf, sizeof(buf), ":", self->tzinfo,
-                         Py_None) < 0) {
+    const char *offset_sep = basic ? "" : ":";
+    if (format_utcoffset(buf, sizeof(buf), offset_sep, self->tzinfo, Py_None) < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -5006,6 +5025,8 @@ static PyMethodDef time_methods[] = {
     {"isoformat",   _PyCFunction_CAST(time_isoformat),        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
                "[+HH:MM].\n\n"
+               "If basic is true, separators ':' are removed "
+               "from the output (e.g., HHMMSS).\n"
                "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
@@ -6045,21 +6066,34 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     int sep = 'T';
     char *timespec = NULL;
-    static char *keywords[] = {"sep", "timespec", NULL};
+    int basic = 0;
+    static char *keywords[] = {"sep", "timespec", "basic", NULL};
     char buffer[100];
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
-    static const char *specs[][2] = {
+    static const char *specs_extended[][2] = {
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
         {"milliseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%03d"},
         {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
     };
-    size_t given_spec;
+    static const char *specs_basic[][2] = {
+        {"hours", "%04d%02d%02d%c%02d"},
+        {"minutes", "%04d%02d%02d%c%02d%02d"},
+        {"seconds", "%04d%02d%02d%c%02d%02d%02d"},
+        {"milliseconds", "%04d%02d%02d%c%02d%02d%02d.%03d"},
+        {"microseconds", "%04d%02d%02d%c%02d%02d%02d.%06d"},
+    };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Csp:isoformat", keywords, &sep, &timespec, &basic)) {
         return NULL;
+    }
+
+    const char *(*specs)[2] = basic ? specs_basic : specs_extended;
+    // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
+    size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
+    size_t given_spec;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
         if (us == 0) {
@@ -6072,7 +6106,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         }
     }
     else {
-        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+        for (given_spec = 0; given_spec < specs_count; given_spec++) {
             if (strcmp(timespec, specs[given_spec][0]) == 0) {
                 if (given_spec == 3) {
                     us = us / 1000;
@@ -6082,7 +6116,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         }
     }
 
-    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+    if (given_spec == specs_count) {
         PyErr_Format(PyExc_ValueError, "Unknown timespec value");
         return NULL;
     }
@@ -6098,8 +6132,8 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         return result;
 
     /* We need to append the UTC offset. */
-    if (format_utcoffset(buffer, sizeof(buffer), ":", self->tzinfo,
-                         (PyObject *)self) < 0) {
+    const char *offset_sep = basic ? "" : ":";
+    if (format_utcoffset(buffer, sizeof(buffer), offset_sep, self->tzinfo, (PyObject *)self) < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -6863,9 +6897,11 @@ static PyMethodDef datetime_methods[] = {
 
     {"isoformat",   _PyCFunction_CAST(datetime_isoformat), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("[sep] -> string in ISO 8601 format, "
-               "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
+               "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n\n"
                "sep is used to separate the year from the time, and "
                "defaults to 'T'.\n"
+               "If basic is true, separators ':' and '-' are removed "
+               "from the output (e.g., YYYYMMDDTHHMMSS).\n"
                "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
