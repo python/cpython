@@ -333,7 +333,9 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
-For simple names as assignment targets, if in class or module scope,
+The assignment target is considered "simple" if it consists of a single
+name that is not enclosed in parentheses.
+For simple assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
 attribute :attr:`__annotations__`
 that is a dictionary mapping from variable names (mangled if private) to
@@ -341,7 +343,8 @@ evaluated annotations. This attribute is writable and is automatically
 created at the start of class or module body execution, if annotations
 are found statically.
 
-For expressions as assignment targets, the annotations are evaluated if
+If the assignment target is not simple (an attribute, subscript node, or
+parenthesized name), the annotation is evaluated if
 in class or module scope, but not stored.
 
 If a name is annotated in a function scope, then this name is local for
