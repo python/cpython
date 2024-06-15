@@ -1741,6 +1741,25 @@ but effective way to define class private variables.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with any leading underscores stripped.
 
+More generally, the corresponding private member is accessed by its defining
+class using its non-transformed name. On the other hand, the transformed name
+must be used to access the private member *externally* (e.g., in a function or
+in a subclass):
+
+.. code-block:: python
+
+   class A:
+       def __one(self):
+           return 1
+       def two(self):
+           return 2 * self.__one()
+
+   class B(A):
+       def three(self):
+           return 3 * self._A__one()
+
+   four = 4 * A()._A__one()
+
 This doesn't guarantee privacy: an outside user can still deliberately access
 the "_classname__spam" attribute, and private values are visible in the object's
 ``__dict__``.  Many Python programmers never bother to use private variable
