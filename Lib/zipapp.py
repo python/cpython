@@ -1,6 +1,7 @@
 import contextlib
 import os
 import pathlib
+import re
 import shutil
 import stat
 import sys
@@ -74,7 +75,8 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False, include=None, exclude=None):
+                   filter=None, compressed=False, include_regex=None, 
+                   exclude_regex=None):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -131,12 +133,20 @@ def create_archive(source, target=None, interpreter=None, main=None,
     elif not hasattr(target, 'write'):
         target = pathlib.Path(target)
 
+    include_pattern = re.compile(include_regex) if include_regex else None
+    exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
+
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
             for child in sorted(source.rglob('*')):
+                child_path = str(child)
+                if include_pattern and not include_pattern.search(child_path):
+                    continue
+                if exclude_pattern and exclude_pattern.search(child_path):
+                    continue
                 arcname = child.relative_to(source)
                 if filter is None or filter(arcname) and child.resolve() != arcname.resolve():
                     z.write(child, arcname.as_posix())
@@ -211,7 +221,8 @@ def main(args=None):
 
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress)
+                   compressed=args.compress, include_regex=args.include,
+                   exclude_regex=args.exclude)
 
 
 if __name__ == '__main__':
