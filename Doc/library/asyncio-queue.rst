@@ -229,14 +229,11 @@ concurrent tasks::
        queue.shutdown()
 
        # Create three worker tasks to process the queue concurrently.
-       tasks = []
-       for i in range(3):
-           task = asyncio.create_task(worker(f'worker-{i}', queue))
-           tasks.append(task)
-
-       # Wait until the queue is fully processed.
        started_at = time.monotonic()
-       await asyncio.gather(*tasks, return_exceptions=True)
+       async with asyncio.TaskGroup() as tg:
+           for i in range(3):
+               tg.create_task(worker(f'worker-{i}', queue))
+
        total_slept_for = time.monotonic() - started_at
 
        print('====')
