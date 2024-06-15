@@ -1583,25 +1583,35 @@ class TestClassesAndFunctions(unittest.TestCase):
             )
         )
 
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(self):
+        self.assertEqual(
+            inspect.get_annotations(
+                inspect_stringized_annotations_pep695.E, eval_str=True
+            ),
+            {"x": str},
+        )
+
     def test_pep_695_generics_with_future_annotations_nested_in_function(self):
         results = inspect_stringized_annotations_pep695.nested()
 
         self.assertEqual(
-            set(results.E_annotations.values()),
-            set(results.E.__type_params__)
+            set(results.F_annotations.values()),
+            set(results.F.__type_params__)
         )
         self.assertEqual(
-            set(results.E_meth_annotations.values()),
-            set(results.E.generic_method.__type_params__)
+            set(results.F_meth_annotations.values()),
+            set(results.F.generic_method.__type_params__)
         )
         self.assertNotEqual(
-            set(results.E_meth_annotations.values()),
-            set(results.E.__type_params__)
+            set(results.F_meth_annotations.values()),
+            set(results.F.__type_params__)
         )
         self.assertEqual(
-            set(results.E_meth_annotations.values()).intersection(results.E.__type_params__),
+            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
             set()
         )
+
+        self.assertEqual(results.G_annotations, {"x": str})
 
         self.assertEqual(
             set(results.generic_func_annotations.values()),
