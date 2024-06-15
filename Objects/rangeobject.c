@@ -813,16 +813,21 @@ PyTypeObject PyRange_Type = {
    in the normal case, but possible for any numeric value.
 */
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+
 static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
+    PyObject *ret = NULL;
+    Py_BEGIN_CRITICAL_SECTION(r);
     if (r->len > 0) {
         long result = r->start;
         r->start = result + r->step;
         r->len--;
-        return PyLong_FromLong(result);
+        ret = PyLong_FromLong(result);
     }
-    return NULL;
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static PyObject *
