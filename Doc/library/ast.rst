@@ -891,9 +891,13 @@ Statements
    An assignment with a type annotation. ``target`` is a single node and can
    be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
-   node. ``value`` is a single optional node. ``simple`` is a boolean integer
-   set to True for a :class:`Name` node in ``target`` that do not appear in
-   between parenthesis and are hence pure names and not expressions.
+   node. ``value`` is a single optional node.
+
+   ``simple`` is always either 0 or 1 and represents whether the assignment
+   target is a pure name, and hence simple, or an expression. A target is
+   considered simple if it is a :class:`Name` node that does not appear
+   between parentheses. Only simple targets appear in the :attr:`__annotations__`
+   dictionary of modules and classes.
 
    .. doctest::
 
