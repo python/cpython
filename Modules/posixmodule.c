@@ -10969,10 +10969,6 @@ os_tcsetpgrp_impl(PyObject *module, int fd, pid_t pgid)
 
 /* Functions acting on file descriptors */
 
-#ifdef O_CLOEXEC
-extern int _Py_open_cloexec_works;
-#endif
-
 
 /*[clinic input]
 os.open -> int
@@ -11003,7 +10999,8 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 #endif
 
 #ifdef O_CLOEXEC
-    int *atomic_flag_works = &_Py_open_cloexec_works;
+    PyThreadState *tstate = PyThreadState_Get();
+    int *atomic_flag_works = &tstate->fileutils__Py_open_cloexec_works;
 #elif !defined(MS_WINDOWS)
     int *atomic_flag_works = NULL;
 #endif

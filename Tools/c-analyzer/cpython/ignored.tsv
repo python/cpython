@@ -16,8 +16,6 @@ filename	funcname	name	reason
 ## indicators for resource availability/capability
 # (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
 # XXX Is this thread-safe?
 Modules/posixmodule.c	os_dup2_impl	dup3_works	-
@@ -628,7 +626,6 @@ Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
 Modules/_blake2/blake2module.c	-	blake2s_type_spec	-
-Modules/_io/fileio.c	-	_Py_open_cloexec_works	-
 Modules/_io/_iomodule.h	-	PyIOBase_Type	-
 Modules/_io/_iomodule.h	-	PyRawIOBase_Type	-
 Modules/_io/_iomodule.h	-	PyBufferedIOBase_Type	-
@@ -677,7 +674,6 @@ Modules/_sqlite/module.c	-	_pysqlite_enable_callback_tracebacks	-
 Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
 Modules/_sqlite/module.h	-	pysqlite_global_state	-
 Modules/_testcapimodule.c	-	_PyBytesIOBuffer_Type	-
-Modules/posixmodule.c	-	_Py_open_cloexec_works	-
 Modules/posixmodule.c	-	environ	-
 Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
