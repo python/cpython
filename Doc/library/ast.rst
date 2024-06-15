@@ -893,11 +893,11 @@ Statements
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
    node. ``value`` is a single optional node.
 
-   ``simple`` is always either 0 or 1 and represents whether the assignment
-   target is a pure name, and hence simple, or an expression. A target is
-   considered simple if it is a :class:`Name` node that does not appear
-   between parentheses. Only simple targets appear in the :attr:`__annotations__`
-   dictionary of modules and classes.
+   ``simple`` is always either 0 (indicating a "complex" target) or 1
+   (indicating a "simple" target). A "simple" target consists solely of a
+   :class:`Name` node that does not appear between parentheses; all other
+   targets are considered complex. Only simple targets appear in
+   the :attr:`__annotations__` dictionary of modules and classes.
 
    .. doctest::
 

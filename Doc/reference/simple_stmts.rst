@@ -333,7 +333,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
-The assignment target is considered simple if it consists of a single
+The assignment target is considered "simple" if it consists of a single
 name that is not enclosed in parentheses.
 For simple assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
