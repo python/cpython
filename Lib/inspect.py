@@ -320,9 +320,9 @@ def ismethoddescriptor(object):
         # mutual exclusion
         return False
     tp = type(object)
-    if hasattr(tp, "__set__") or hasattr(tp, "__delete__"):
-        return False
-    return hasattr(tp, "__get__")
+    return (hasattr(tp, "__get__")
+            and not hasattr(tp, "__set__")
+            and not hasattr(tp, "__delete__"))
 
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
