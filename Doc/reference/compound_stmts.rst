@@ -251,7 +251,7 @@ expression must evaluate to a type or a tuple containing types. Each type must
 be a subclass of :exc:`BaseException`; otherwise, the runtime will raise a
 :exc:`TypeError` when the handler is evaluated.
 
-The clause matches the exception if the resulting object is "compatible" with
+The clause matches an exception if the resulting object is "compatible" with
 the exception.  An object is compatible with an exception if the object is the
 class or a :term:`non-virtual base class <abstract base class>` of the exception
 object, or a tuple containing an item that is the class or a non-virtual base
