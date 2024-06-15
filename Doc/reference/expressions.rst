@@ -107,8 +107,8 @@ identifier is used and the transformation rule is defined as follows:
   or ``__`` is left as is.
 
 - Otherwise, the transformation inserts the class name, with leading
-  underscores removed and a single underscore inserted, in front of
-  the identifier, e.g., the identifier ``__spam`` occurring in a class
+  underscores removed and a single leading underscore inserted, in front
+  of the identifier, e.g., the identifier ``__spam`` occurring in a class
   named ``Foo``, ``_Foo`` or ``__Foo`` is transformed to ``_Foo__spam``.
 
 .. _private-name-mangling-access:
@@ -194,20 +194,6 @@ with private names, e.g.:
 
    print(Foo._Foo__pkg)      # <module '__pkg' from '/__pkg/__init__.py'>
    print(Foo._Foo__pkg.mod)  # <module '__pkg.mod' from '/__pkg/mod.py'>
-
-Note that a class whose name only consists of underscores does not
-suffer from those restrictions on :keyword:`import` statements:
-
-.. code-block:: python
-
-   class _:
-       import __bar  # imports '__bar'
-       import __foo  # imports '__foo'
-       import __pkg  # imports '__pkg'
-
-   print(_.__bar)  # <module '__bar' from '/__bar.py'>
-   print(_.__foo)  # <module '__foo' from '/__foo.py'>
-   print(_.__pkg)  # <module '__pkg' from '/__pkg/__init__.py'>
 
 .. _atom-literals:
 
