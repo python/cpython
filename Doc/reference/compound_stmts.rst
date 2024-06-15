@@ -248,12 +248,13 @@ it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
 expression must evaluate to a type or a tuple containing types. Each type must
-be a subclass of :exc:`BaseException`; otherwise, the runtime will raise a
+be :exc:`BaseException` or a subclass of :exc:`BaseException`; otherwise, the runtime will raise a
 :exc:`TypeError` when the handler is evaluated.
 
-The clause matches an exception if the resulting object is "compatible" with
-the exception.  An object is compatible with an exception if the object is the
-class or a :term:`non-virtual base class <abstract base class>` of the exception
+The clause matches an exception if the resulting object from evaluating the
+clause is "compatible" with the exception. An object is compatible with an
+exception if the object is the class or a
+:term:`non-virtual base class <abstract base class>` of the exception
 object, or a tuple containing an item that is the class or a non-virtual base
 class of the exception object.
 
@@ -382,12 +383,13 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a matching
-expression; ``except*:`` is not valid syntax. When the handler is evaluated, the
-expression must evaluate to a type or a tuple containing types. Each type must
-be a subclass of :exc:`BaseException` and must not be a subclass of
-:exc:`BaseExceptionGroup`; otherwise, the runtime will raise a :exc:`TypeError`
-when the handler is evaluated.
+Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a
+matching expression; ``except*:`` is not valid syntax. In addition to the
+requirements for matching expressions in :keyword:`except` clauses, the
+types in the matching expression of an :keyword:`!except*` clause cannot
+be :exc:`BaseExceptionGroup` or a subclass of :exc:`BaseExceptionGroup`;
+otherwise, the runtime will raise a :exc:`TypeError` when the handler is
+evaluated.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
