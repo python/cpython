@@ -141,11 +141,11 @@ Async Queue Iterator
    The :term:`asynchronous iterator` returned by calling :func:`aiter`
    on a :class:`Queue`.
 
-.. attribute:: queue
+   .. versionadded:: 3.14
 
-   The queue which backs this ``AsyncQueueIterator``.
+   .. attribute:: queue
 
-.. versionadded:: 3.14
+      The queue which backs this ``AsyncQueueIterator``.
 
 
 Priority Queue
