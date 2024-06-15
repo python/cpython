@@ -386,7 +386,7 @@ Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a matchi
 expression; ``except*:`` is not valid syntax. When the handler is evaluated, the
 expression must evaluate to a type or a tuple containing types. Each type must
 be a subclass of :exc:`BaseException` and must not be a subclass of
-:exc:`BaseExceptionGroup`, otherwise the runtime will raise a :exc:`TypeError`
+:exc:`BaseExceptionGroup`; otherwise, the runtime will raise a :exc:`TypeError`
 when the handler is evaluated.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
