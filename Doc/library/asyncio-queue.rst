@@ -46,6 +46,18 @@ Queue
 
       Number of items allowed in the queue.
 
+   .. method:: __aiter__()
+      Return an :class:`AsyncQueueIterator` which iterates asynchronously
+      over the items in this queue until :meth:`shutdown` is called and
+      the queue is empty::
+
+         ... # add items to the queue
+         queue.shutdown()
+         async for item in queue:
+            ... # process item
+
+      .. versionadded:: 3.14
+
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
