@@ -196,6 +196,7 @@ struct _ts {
     int fileutils_ioctl_works;
     int fileutils_skiproot_initialized;
     int fileutils_combineex_initialized;
+    int fileutils__Py_open_cloexec_works;
 };
 
 #ifdef Py_DEBUG
