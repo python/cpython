@@ -321,16 +321,10 @@ can be overridden by the local file.
    argument must be an identifier, ``help exec`` must be entered to get help on
    the ``!`` command.
 
-.. pdbcommand:: w(here) [count]
+.. pdbcommand:: w(here)
 
-   Print a stack trace, with the most recent frame at the bottom.  if *count*
-   is 0, print the current frame entry. If *count* is negative, print the least
-   recent - *count* frames. If *count* is positive, print the most recent
-   *count* frames.  An arrow (``>``)
+   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
-
-   .. versionchanged:: 3.14
-      *count* argument is added.
 
 .. pdbcommand:: d(own) [count]
 
