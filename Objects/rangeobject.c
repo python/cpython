@@ -7,7 +7,6 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
