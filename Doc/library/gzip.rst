@@ -199,7 +199,8 @@ The module defines the following items:
       :func:`zlib.compress` for better speed.
 
    .. versionchanged:: 3.13
-      The OS byte is guaranteed to be set to 255 when this function is used.
+      The gzip header OS byte is guaranteed to be set to 255 when this function
+      is used as was the case in 3.10 and earlier.
 
 .. function:: decompress(data)
 
