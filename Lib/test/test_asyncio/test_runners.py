@@ -94,7 +94,7 @@ class RunTests(BaseTest):
         for o in {1, lambda: None}:
             with self.subTest(obj=o), \
                     self.assertRaisesRegex(ValueError,
-                                           'a coroutine was expected'):
+                                           'coroutine was expected'):
                 asyncio.run(o)
 
     def test_asyncio_run_debug(self):
@@ -320,18 +320,27 @@ class RunnerTests(BaseTest):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
                 ValueError,
-                "a coroutine was expected"
+                "coroutine was expected"
             ):
                 runner.run(123)
 
     def test_run_future(self):
         with asyncio.Runner() as runner:
-            with self.assertRaisesRegex(
-                ValueError,
-                "a coroutine was expected"
-            ):
-                fut = runner.get_loop().create_future()
-                runner.run(fut)
+            fut = runner.get_loop().create_future()
+            fut.set_result('done')
+            self.assertEqual('done', runner.run(fut))
+
+    def test_run_awaitable(self):
+        class MyAwaitable:
+            def __await__(self):
+                return self.run().__await__()
+
+            @staticmethod
+            async def run():
+                return 'done'
+
+        with asyncio.Runner() as runner:
+            self.assertEqual('done', runner.run(MyAwaitable()))
 
     def test_explicit_close(self):
         runner = asyncio.Runner()
