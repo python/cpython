@@ -7,6 +7,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
@@ -813,24 +814,31 @@ PyTypeObject PyRange_Type = {
    in the normal case, but possible for any numeric value.
 */
 
-
-#include "pycore_pyatomic_ft_wrappers.h"
-
 static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
+#ifdef Py_GIL_DISABLED
+    uint64_t step = _Py_atomic_load_int64_relaxed(&r->step);
     do {
-        long len = _Py_atomic_load_int64_relaxed(&r->len);
+        uint64_t len = _Py_atomic_load_int64_relaxed(&r->len);
         if (len <= 0) {
             return NULL;
         }
-        long result = _Py_atomic_load_int64_relaxed(&r->start);
-        long step = _Py_atomic_load_int64_relaxed(&r->step);
+        uint64_t result = _Py_atomic_load_int64_relaxed(&r->start);
         if (_Py_atomic_compare_exchange_int64(&r->start, &result, result + step)) {
             _Py_atomic_add_int64(&r->len, -1);
             return PyLong_FromLong(result);
         }
     } while (1);
+#else
+    if (r->len > 0) {
+        long result = r->start;
+        r->start = result + r->step;
+        r->len--;
+        return PyLong_FromLong(result);
+    }
+    return NULL;
+#endif
 }
 
 static PyObject *
