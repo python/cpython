@@ -817,7 +817,8 @@ static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
 #ifdef Py_GIL_DISABLED
-    int64_t step = _Py_atomic_load_int64_relaxed(&r->step);
+    // r->step is readonly attribute, so we can assume it is not changed.
+    int64_t step = (int64_t)r->step;
     do {
         int64_t len = _Py_atomic_load_int64_relaxed(&r->len);
         if (len <= 0) {
