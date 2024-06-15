@@ -1756,6 +1756,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     if output is None:
         try:
             what = thing if isinstance(thing, str) else type(thing).__name__
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
             pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:

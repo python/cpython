@@ -742,6 +742,49 @@ class PydocDocTest(unittest.TestCase):
         run_pydoc_for_request(pydoc.Helper.help, 'Help on function help in module pydoc:')
         # test for pydoc.Helper() instance skipped because it is always meant to be interactive
 
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
+    def test_help_output_pager(self):
+        self.maxDiff = None
+
+        def run_pydoc_pager(request, what, expected_first_line):
+            with captured_output('stdout') as output, \
+                 captured_output('stderr') as err, \
+                 unittest.mock.patch('pydoc.pager') as pager_mock, \
+                 self.subTest(repr(request)):
+                helper = pydoc.Helper()
+                helper.help(request)
+                self.assertEqual('', err.getvalue())
+                self.assertEqual('\n', output.getvalue())
+                pager_mock.assert_called_once()
+                result = clean_text(pager_mock.call_args.args[0])
+                self.assertEqual(result.splitlines()[0], expected_first_line)
+                self.assertEqual(pager_mock.call_args.args[1], f'Help on {what}')
+
+        run_pydoc_pager('%', 'EXPRESSIONS', 'Operator precedence')
+        run_pydoc_pager('True', 'bool object', 'Help on bool object:')
+        run_pydoc_pager(True, 'bool object', 'Help on bool object:')
+        run_pydoc_pager('assert', 'assert', 'The "assert" statement')
+        run_pydoc_pager('TYPES', 'TYPES', 'The standard type hierarchy')
+        run_pydoc_pager('pydoc.Helper.help', 'pydoc.Helper.help',
+                        'Help on function help in pydoc.Helper:')
+        run_pydoc_pager(pydoc.Helper.help, 'Helper.help',
+                        'Help on function help in module pydoc:')
+        run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
+        run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
+        run_pydoc_pager('str.upper', 'str.upper', 'Help on method_descriptor in str:')
+        run_pydoc_pager(str.upper, 'str.upper', 'Help on method_descriptor:')
+        run_pydoc_pager(str.__add__, 'str.__add__', 'Help on wrapper_descriptor:')
+        run_pydoc_pager(int.numerator, 'int.numerator',
+                        'Help on getset descriptor builtins.int.numerator:')
+        run_pydoc_pager(list[int], 'list',
+                        'Help on GenericAlias in module builtins:')
+        run_pydoc_pager('sys', 'sys',
+                        'Help on built-in module sys:')
+        run_pydoc_pager(sys, 'sys',
+                        'Help on built-in module sys:')
+
     def test_showtopic(self):
         with captured_stdout() as showtopic_io:
             helper = pydoc.Helper()
