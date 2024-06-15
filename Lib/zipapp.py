@@ -75,7 +75,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False, include_regex=None, 
+                   filter=None, compressed=False, include_regex=None,
                    exclude_regex=None):
     """Create an application archive from SOURCE.
 
