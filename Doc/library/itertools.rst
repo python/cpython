@@ -467,19 +467,16 @@ loops that truncate the stream.
 
 .. function:: ilen(iterable)
 
-   Return the length of an *iterable* by counting iterations.
+   Return the length of the input *iterable*.
 
-   If *iterable* is an iterator, it is consumed.
+   Length is calculated by iterating over the input *iterable*.
 
-   Returns ``0`` for exhausted iterator.
+   If the input *iterable* is an iterator, it is consumed.
 
    Roughly equivalent to::
 
       def ilen(iterable):
-         length = 0
-         for _ in iterable:
-             length += 1
-         return length
+          return sum(1 for _ in iterable)
 
    .. versionadded:: 3.14
 
