@@ -825,8 +825,8 @@ rangeiter_next(_PyRangeIterObject *r)
             return NULL;
         }
         long result = _Py_atomic_load_long_relaxed(&r->start);
-        if (_Py_atomic_compare_exchange_int64(&r->start, &result, result + step)) {
-            _Py_atomic_add_int64(&r->len, -1);
+        if (_Py_atomic_compare_exchange_long(&r->start, &result, result + step)) {
+            _Py_atomic_add_long(&r->len, -1);
             return PyLong_FromLong(result);
         }
     } while (1);
