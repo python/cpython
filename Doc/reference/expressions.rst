@@ -101,18 +101,18 @@ implementation-defined truncation may happen.
 The transformation is independent of the syntactical context in which the
 identifier is used but only the following private identifiers are mangled:
 
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The ``__name__`` attribute of nested functions, classes, and type aliases
+  is however not mangled.
+
 - The name of imported modules, e.g., ``__spam`` in ``import __spam``.
   If the module is part of a package (i.e., its name contains a dot),
   the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
   is not mangled.
 
 - The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
-
-- Any name used as the name of a variable that is assigned or read or any
-  name of an attribute being accessed.
-
-  The ``__name__`` attribute of nested functions, classes, and type aliases
-  is however not mangled.
 
 The transformation rule is defined as follows:
 
