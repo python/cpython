@@ -13133,6 +13133,8 @@ case $PLATFORM_TRIPLET in #(
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
+  riscv64-linux-gnu) :
+    perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
  ;;

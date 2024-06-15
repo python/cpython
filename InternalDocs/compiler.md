@@ -625,7 +625,7 @@ Objects
 
 * [Objects/locations.md](https://github.com/python/cpython/blob/main/Objects/locations.md): Describes the location table
 * [Objects/frame_layout.md](https://github.com/python/cpython/blob/main/Objects/frame_layout.md): Describes the frame stack
-* [Objects/object_layout.md](https://github.com/python/cpython/blob/main/Objects/object_layout.md): Descibes object layout for 3.11 and later
+* [Objects/object_layout.md](https://github.com/python/cpython/blob/main/Objects/object_layout.md): Describes object layout for 3.11 and later
 * [Exception Handling](exception_handling.md): Describes the exception table
 
 

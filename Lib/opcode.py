@@ -12,8 +12,8 @@ __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
 import _opcode
 from _opcode import stack_effect
 
-from _opcode_metadata import (_specializations, _specialized_opmap, opmap,
-                              HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)
+from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # noqa: F401
+                              HAVE_ARGUMENT, MIN_INSTRUMENTED_OPCODE)  # noqa: F401
 EXTENDED_ARG = opmap['EXTENDED_ARG']
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
