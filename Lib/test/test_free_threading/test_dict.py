@@ -10,9 +10,10 @@ from unittest import TestCase
 
 from _testcapi import dict_version
 
-from test.support import threading_helper
+from test.support import requires_resource, threading_helper
 
 
+@requires_resource('cpu')
 @threading_helper.requires_working_threading()
 class TestDict(TestCase):
     def test_racing_creation_shared_keys(self):
