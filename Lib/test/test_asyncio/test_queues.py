@@ -507,9 +507,8 @@ class _QueueJoinTestMixin:
                 q.task_done()
 
         async with asyncio.TaskGroup() as tg:
-            for _ in range(2):
-                tg.create_task(worker())
-
+            tg.create_task(worker())
+            tg.create_task(worker())
             await q.join()
             self.assertEqual(sum(range(100)), accumulator)
 
