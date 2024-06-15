@@ -37,6 +37,16 @@ extern int winerror_to_errno(int);
 #  include <fcntl.h>              // fcntl(F_GETFD)
 #endif
 
+#ifdef O_CLOEXEC
+/* Does open() support the O_CLOEXEC flag? Possible values:
+   -1: unknown
+    0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
+    1: open() supports O_CLOEXEC flag, close-on-exec is set
+   The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
+   and os.open(). */
+int _Py_open_cloexec_works = -1;
+#endif
+
 // The value must be the same in unicodeobject.c.
 #define MAX_UNICODE 0x10ffff
 
@@ -1614,16 +1624,7 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #ifdef MS_WINDOWS
     flags |= O_NOINHERIT;
 #elif defined(O_CLOEXEC)
-    PyThreadState *tstate = PyThreadState_Get();
-    /* Does open() support the O_CLOEXEC flag? Possible values:
-
-       -1: unknown
-        0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
-        1: open() supports O_CLOEXEC flag, close-on-exec is set
-
-       The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
-       and os.open(). */
-    atomic_flag_works = &tstate->fileutils__Py_open_cloexec_works;
+    atomic_flag_works = &_Py_open_cloexec_works;
     flags |= O_CLOEXEC;
 #else
     atomic_flag_works = NULL;

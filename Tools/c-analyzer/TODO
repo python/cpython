@@ -36,6 +36,10 @@ Objects/bytesobject.c:_Py_onel_strings                           Py_ssize_t _Py_
 Objects/dictobject.c:empty_keys_struct                           static PyDictKeysObject empty_keys_struct
 
 
+# "initialized"
+Python/fileutils.c:_Py_open_cloexec_works                        int _Py_open_cloexec_works
+
+
 # other non-object (40)
 Modules/_tracemalloc.c:allocators                                static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } allocators
 Modules/_tracemalloc.c:tables_lock                               static PyThread_type_lock tables_lock
