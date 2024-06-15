@@ -143,7 +143,7 @@ Async Queue Iterator
 
 .. attribute:: queue
 
-   The queue backed by the ``AsyncQueueIterator``.
+   The queue which backs this ``AsyncQueueIterator``.
 
 .. versionadded:: 3.14
 
