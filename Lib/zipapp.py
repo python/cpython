@@ -74,7 +74,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False):
+                   filter=None, compressed=False, include=None, exclude=None):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -177,6 +177,18 @@ def main(args=None):
                  "Files are stored uncompressed by default.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
+    parser.add_argument('--include', default=None,
+            help=(
+                    "A regex of filenames to be included in archive."
+                    " This will run first if --exclude is also used."
+                    " Only applicable to directories."
+                ))
+    parser.add_argument('--exclude', default=None,
+            help=(
+                    "A regex of filenames to be excluded from archive."
+                    " This will run second if --include is also used."
+                    " Only applicable to directories."
+                ))
     parser.add_argument('source',
             help="Source directory (or existing archive).")
 
