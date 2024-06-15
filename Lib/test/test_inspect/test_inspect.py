@@ -1864,6 +1864,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
             __slots__ = 'foo',
         def function():
             pass
+        a_lambda = lambda: None
 
         # Example builtin method descriptors:
         self.assertTrue(
@@ -1888,8 +1889,12 @@ class TestIsMethodDescriptor(unittest.TestCase):
         # method descriptors, but `ismethoddescriptor()` explicitly
         # excludes them):
         self.assertFalse(inspect.ismethoddescriptor(Owner().instance_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner().class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner().static_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
+        self.assertFalse(inspect.ismethoddescriptor(a_lambda))
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):
