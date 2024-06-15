@@ -3873,7 +3873,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
-    {"isoformat",   (PyCFunction)date_isoformat,        METH_VARARGS | METH_KEYWORDS,
+    {"isoformat",   _PyCFunction_CAST(date_isoformat),        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.\n"
                "If basic is true, uses the basic format, YYYYMMDD.")},
 
