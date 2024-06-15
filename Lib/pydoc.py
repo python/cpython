@@ -1755,7 +1755,6 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            what = thing if isinstance(thing, str) else type(thing).__name__
             if isinstance(thing, str):
                 what = thing
             else:
