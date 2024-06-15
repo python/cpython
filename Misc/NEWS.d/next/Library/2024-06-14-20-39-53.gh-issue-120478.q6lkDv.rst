@@ -1,1 +1,1 @@
-Add :func:`ilen` to :mod:`itertools` module.
+Add :func:`~itertools.ilen` to :mod:`itertools` module.
