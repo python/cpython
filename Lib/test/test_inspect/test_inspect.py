@@ -1890,8 +1890,9 @@ class TestIsMethodDescriptor(unittest.TestCase):
         # excludes them):
         self.assertFalse(inspect.ismethoddescriptor(Owner().instance_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().class_method))
-        self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().static_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner.instance_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
         self.assertFalse(inspect.ismethoddescriptor(a_lambda))
