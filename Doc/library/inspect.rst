@@ -515,6 +515,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    :attr:`~method.__func__` attribute (etc) when an object passes
    :func:`ismethod`.
 
+   .. versionchanged:: 3.13
+      For objects with :meth:`~object.__get__` and :meth:`~object.__delete__`
+      but without :meth:`~object.__set__`, ``False`` is now returned
+      (previously, ``True`` was returned for such objects, which was
+      incorrect).
+
 
 .. function:: isdatadescriptor(object)
 
