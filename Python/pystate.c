@@ -1498,6 +1498,10 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
+    tstate->fileutils_ioctl_works = -1;
+    tstate->fileutils_skiproot_initialized = 0;
+    tstate->fileutils_combineex_initialized = 0;
+    tstate->fileutils__Py_open_cloexec_works = -1;
 
     tstate->delete_later = NULL;
 

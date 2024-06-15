@@ -37,18 +37,6 @@ extern int winerror_to_errno(int);
 #  include <fcntl.h>              // fcntl(F_GETFD)
 #endif
 
-#ifdef O_CLOEXEC
-/* Does open() support the O_CLOEXEC flag? Possible values:
-
-   -1: unknown
-    0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
-    1: open() supports O_CLOEXEC flag, close-on-exec is set
-
-   The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
-   and os.open(). */
-int _Py_open_cloexec_works = -1;
-#endif
-
 // The value must be the same in unicodeobject.c.
 #define MAX_UNICODE 0x10ffff
 
@@ -1455,7 +1443,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     DWORD flags;
 #else
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    static int ioctl_works = -1;
+    PyThreadState *tstate = PyThreadState_Get();
     int request;
     int err;
 #endif
@@ -1502,7 +1490,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #else
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (ioctl_works != 0 && raise != 0) {
+    if (tstate->fileutils_ioctl_works != 0 && raise != 0) {
         /* fast-path: ioctl() only requires one syscall */
         /* caveat: raise=0 is an indicator that we must be async-signal-safe
          * thus avoid using ioctl() so we skip the fast-path. */
@@ -1512,7 +1500,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             request = FIOCLEX;
         err = ioctl(fd, request, NULL);
         if (!err) {
-            ioctl_works = 1;
+            tstate->fileutils_ioctl_works = 1;
             return 0;
         }
 
@@ -1539,7 +1527,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
                with EACCES. While FIOCLEX is safe operation it may be
                unavailable because ioctl was denied altogether.
                This can be the case on Android. */
-            ioctl_works = 0;
+            tstate->fileutils_ioctl_works = 0;
         }
         /* fallback to fcntl() if ioctl() does not work */
     }
@@ -1626,7 +1614,16 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #ifdef MS_WINDOWS
     flags |= O_NOINHERIT;
 #elif defined(O_CLOEXEC)
-    atomic_flag_works = &_Py_open_cloexec_works;
+    PyThreadState *tstate = PyThreadState_Get();
+    /* Does open() support the O_CLOEXEC flag? Possible values:
+
+       -1: unknown
+        0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
+        1: open() supports O_CLOEXEC flag, close-on-exec is set
+
+       The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
+       and os.open(). */
+    atomic_flag_works = &tstate->fileutils__Py_open_cloexec_works;
     flags |= O_CLOEXEC;
 #else
     atomic_flag_works = NULL;
@@ -2236,12 +2233,12 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 HRESULT
 PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
 {
-    static int initialized = 0;
+    PyThreadState *tstate = PyThreadState_Get();
     typedef HRESULT(__stdcall *PPathCchSkipRoot) (PCWSTR pszPath,
                                                   PCWSTR *ppszRootEnd);
     static PPathCchSkipRoot _PathCchSkipRoot;
 
-    if (initialized == 0) {
+    if (tstate->fileutils_skiproot_initialized == 0) {
         HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
                                          LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (pathapi) {
@@ -2251,7 +2248,7 @@ PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
         else {
             _PathCchSkipRoot = NULL;
         }
-        initialized = 1;
+        tstate->fileutils_skiproot_initialized = 1;
     }
 
     if (!_PathCchSkipRoot) {
@@ -2265,7 +2262,7 @@ static HRESULT
 PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
                  const wchar_t *relfile, unsigned long flags)
 {
-    static int initialized = 0;
+    PyThreadState *tstate = PyThreadState_Get();
     typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut,
                                                    size_t cchPathOut,
                                                    PCWSTR pszPathIn,
@@ -2273,7 +2270,7 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
                                                    unsigned long dwFlags);
     static PPathCchCombineEx _PathCchCombineEx;
 
-    if (initialized == 0) {
+    if (tstate->fileutils_combineex_initialized == 0) {
         HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
                                          LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (pathapi) {
@@ -2283,7 +2280,7 @@ PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
         else {
             _PathCchCombineEx = NULL;
         }
-        initialized = 1;
+        tstate->fileutils_combineex_initialized = 1;
     }
 
     if (!_PathCchCombineEx) {
