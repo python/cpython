@@ -516,7 +516,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    :func:`ismethod`.
 
    .. versionchanged:: 3.13
-      This function no longer incorrectly reports objects with :meth:`~object.__get__
+      This function no longer incorrectly reports objects with :meth:`~object.__get__`
       and :meth:`~object.__delete__`, but not :meth:`~object.__set__`, as being method
       descriptors (such objects are data descriptors, not method descriptors).
 
