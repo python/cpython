@@ -2515,12 +2515,12 @@ PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
             return ret;
         }
     }
-    char buf[4096];
-    PyThread_acquire_lock(perf_map_state.map_lock, 1);
     FILE* from = fopen(parent_filename, "r");
     if (!from) {
         return -1;
     }
+    char buf[4096];
+    PyThread_acquire_lock(perf_map_state.map_lock, 1);
     int fflush_result = 0, result = 0;
     while (1) {
         size_t bytes_read = fread(buf, 1, sizeof(buf), from);
