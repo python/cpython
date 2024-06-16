@@ -98,6 +98,8 @@ extern "C" {
 # define Py_END_CRITICAL_SECTION()                                      \
         _PyCriticalSection_End(&_cs);                                   \
     }
+# define Py_EXIT_CRITICAL_SECTION()                                     \
+        _PyCriticalSection_End(&_cs);
 
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
     {                                                                   \
@@ -156,6 +158,7 @@ extern "C" {
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
+# define Py_EXIT_CRITICAL_SECTION()
 # define Py_END_CRITICAL_SECTION2()
 # define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()
