@@ -1,0 +1,5 @@
+This change does the following:
+- Fixes an issue w/ Hovertip foreground color causing tooltip text not to render on Mac OS due to the foreground color being unspecified
+- Adds params for 'foreground' and 'background' color to Hovertip.init()
+
+The default foreground color is '#000000' (black), and the default background color remains '#ffffe0' (pale yellow)
