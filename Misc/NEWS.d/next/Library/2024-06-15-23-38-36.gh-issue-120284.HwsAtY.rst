@@ -1,1 +1,4 @@
-Make asyncio.Runner's run() method accept the same object types as asyncio.run_until_complete(). Instead of accepting only a coroutine, run() will now accept an awaitable, coroutine, asyncio.Future, or asyncio.Task.
+Enhance :meth:`asyncio.Runner.run` to accept the same object types as
+:func:`asyncio.run_until_complete`. Instead of accepting only a coroutine,
+it now accepts an awaitable, coroutine, :class:`asyncio.Future`, or
+:class:`asyncio.Task`.
