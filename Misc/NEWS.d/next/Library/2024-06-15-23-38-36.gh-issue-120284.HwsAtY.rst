@@ -1,4 +1,4 @@
 Enhance :meth:`asyncio.Runner.run` to accept the same object types as
-:func:`asyncio.run_until_complete`. Instead of accepting only a coroutine,
-it now accepts an awaitable, coroutine, :class:`asyncio.Future`, or
-:class:`asyncio.Task`.
+:meth:`asyncio.BaseEventLoop.run_until_complete`. Instead of accepting
+only a coroutine, it now accepts an awaitable, coroutine,
+:class:`asyncio.Future`, or :class:`asyncio.Task`.
