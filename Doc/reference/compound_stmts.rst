@@ -1362,12 +1362,15 @@ access the local variables of the function containing the def.  See section
 
    :pep:`526` - Syntax for Variable Annotations
       Ability to type hint variable declarations, including class
-      variables and instance variables
+      variables and instance variables.
 
    :pep:`563` - Postponed Evaluation of Annotations
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
+   :pep:`318` - Decorators for Functions and Methods
+      Function and method decorators were introduced.
+      Class decorators were introduced in :pep:`3129`.
 
 .. _class:
 
@@ -1617,15 +1620,18 @@ Type parameter lists
 
 .. versionadded:: 3.12
 
+.. versionchanged:: 3.13
+   Support for default values was added (see :pep:`696`).
+
 .. index::
    single: type parameters
 
 .. productionlist:: python-grammar
    type_params: "[" `type_param` ("," `type_param`)* "]"
    type_param: `typevar` | `typevartuple` | `paramspec`
-   typevar: `identifier` (":" `expression`)?
-   typevartuple: "*" `identifier`
-   paramspec: "**" `identifier`
+   typevar: `identifier` (":" `expression`)? ("=" `expression`)?
+   typevartuple: "*" `identifier` ("=" `expression`)?
+   paramspec: "**" `identifier` ("=" `expression`)?
 
 :ref:`Functions <def>` (including :ref:`coroutines <async def>`),
 :ref:`classes <class>` and :ref:`type aliases <type>` may
@@ -1691,19 +1697,31 @@ evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
 :data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
 or constraints.
 
+All three flavors of type parameters can also have a *default value*, which is used
+when the type parameter is not explicitly provided. This is added by appending
+a single equals sign (``=``) followed by an expression. Like the bounds and
+constraints of type variables, the default value is not evaluated when the
+object is created, but only when the type parameter's ``__default__`` attribute
+is accessed. To this end, the default value is evaluated in a separate
+:ref:`annotation scope <annotation-scopes>`. If no default value is specified
+for a type parameter, the ``__default__`` attribute is set to the special
+sentinel object :data:`typing.NoDefault`.
+
 The following example indicates the full set of allowed type parameter declarations::
 
    def overly_generic[
       SimpleTypeVar,
+      TypeVarWithDefault = int,
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
-      *SimpleTypeVarTuple,
-      **SimpleParamSpec,
+      *SimpleTypeVarTuple = (int, float),
+      **SimpleParamSpec = (str, bytearray),
    ](
       a: SimpleTypeVar,
-      b: TypeVarWithBound,
-      c: Callable[SimpleParamSpec, TypeVarWithConstraints],
-      *d: SimpleTypeVarTuple,
+      b: TypeVarWithDefault,
+      c: TypeVarWithBound,
+      d: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      *e: SimpleTypeVarTuple,
    ): ...
 
 .. _generic-functions:

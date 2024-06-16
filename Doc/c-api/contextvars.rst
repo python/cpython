@@ -6,6 +6,8 @@ Context Variables Objects
 -------------------------
 
 .. _contextvarsobjects_pointertype_change:
+.. versionadded:: 3.7
+
 .. versionchanged:: 3.7.1
 
    .. note::
@@ -23,8 +25,6 @@ Context Variables Objects
 
       See :issue:`34762` for more details.
 
-
-.. versionadded:: 3.7
 
 This section details the public C API for the :mod:`contextvars` module.
 

@@ -1,5 +1,5 @@
-:mod:`dis` --- Disassembler for Python bytecode
-===============================================
+:mod:`!dis` --- Disassembler for Python bytecode
+================================================
 
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.
@@ -104,7 +104,7 @@ The following options are accepted:
    Show offsets of instructions.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
-Otherwise, disassembly is performed on compiled source code recieved from stdin.
+Otherwise, disassembly is performed on compiled source code received from stdin.
 
 Bytecode analysis
 -----------------
@@ -336,23 +336,25 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
    .. versionchanged:: 3.13
-      The *show_caches* parameter is deprecated and has no effect. The *cache_info*
-      field of each instruction is populated regardless of its value.
-
+      The *show_caches* parameter is deprecated and has no effect. The iterator
+      generates the :class:`Instruction` instances with the *cache_info*
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_lines`` method
-   of the code object *code* to find the offsets which are starts of
+   This generator function uses the :meth:`~codeobject.co_lines` method
+   of the :ref:`code object <code-objects>` *code* to find the offsets which
+   are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
 
    .. versionchanged:: 3.10
-      The :pep:`626` ``co_lines`` method is used instead of the
+      The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
       :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
-      attributes of the code object.
+      attributes of the :ref:`code object <code-objects>`.
 
    .. versionchanged:: 3.13
       Line numbers can be ``None`` for bytecode that does not map to source lines.
@@ -545,8 +547,8 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_FOR
 
-   Removes the top two values from the stack.
-   Equivalent to ``POP_TOP``; ``POP_TOP``.
+   Removes the top-of-stack item.
+   Equivalent to ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
 
    .. versionadded:: 3.12
@@ -575,7 +577,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Swap the top of the stack with the i-th element::
 
-      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+      STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
@@ -928,12 +930,13 @@ iterations of the loop.
       Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: LOAD_ASSERTION_ERROR
+.. opcode:: LOAD_COMMON_CONSTANT
 
-   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
-   statement.
+   Pushes a common constant onto the stack. The interpreter contains a hardcoded
+   list of constants supported by this instruction.  Used by the :keyword:`assert`
+   statement to load :exc:`AssertionError`.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1223,7 +1226,7 @@ iterations of the loop.
    except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
    When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
@@ -1605,7 +1608,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = func(value)
-      STACK.push(result)
+      STACK.append(result)
 
    * ``oparg == 1``: call :func:`str` on *value*
    * ``oparg == 2``: call :func:`repr` on *value*
@@ -1622,7 +1625,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = value.__format__("")
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1635,7 +1638,7 @@ iterations of the loop.
       spec = STACK.pop()
       value = STACK.pop()
       result = value.__format__(spec)
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1664,7 +1667,7 @@ iterations of the loop.
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``context`` oparand consists of two parts. The lowest two bits
+   The ``context`` operand consists of two parts. The lowest two bits
    indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
@@ -1782,7 +1785,7 @@ iterations of the loop.
       arg2 = STACK.pop()
       arg1 = STACK.pop()
       result = intrinsic2(arg1, arg2)
-      STACK.push(result)
+      STACK.append(result)
 
    The operand determines which intrinsic function is called:
 

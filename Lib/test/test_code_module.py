@@ -160,6 +160,7 @@ class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
         self.console = code.InteractiveConsole(local_exit=True)
         self.mock_sys()
 
+    @unittest.skipIf(sys.flags.no_site, "exit() isn't defined unless there's a site module")
     def test_exit(self):
         # default exit message
         self.infunc.side_effect = ["exit()"]

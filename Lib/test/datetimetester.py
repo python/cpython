@@ -22,6 +22,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -300,6 +301,10 @@ class TestTimeZone(unittest.TestCase):
     def test_inheritance(self):
         self.assertIsInstance(timezone.utc, tzinfo)
         self.assertIsInstance(self.EST, tzinfo)
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class MyTimezone(timezone): pass
 
     def test_utcoffset(self):
         dummy = self.DT
@@ -1331,6 +1336,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
 
+    def test_fromtimestamp_with_none_arg(self):
+        # See gh-120268 for more details
+        with self.assertRaises(TypeError):
+            self.theclass.fromtimestamp(None)
+
     def test_today(self):
         import time
 
@@ -1719,11 +1729,24 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_subclass_replace(self):
         class DateSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         dt = DateSubclass(2012, 1, 1)
-        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
-        self.assertIs(type(copy.replace(dt, year=2013)), DateSubclass)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013)),
+            ('copy.replace', copy.replace(dt, year=2013)),
+        ]
+
+        for name, res in test_cases:
+            with self.subTest(name):
+                self.assertIs(type(res), DateSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.month, 1)
+                self.assertEqual(res.extra, 7)
 
     def test_subclass_date(self):
 
@@ -1910,6 +1933,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-02-29',       # Invalid leap day
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
+            '0000-W25-1',       # Invalid year
+            '10000-W25-1',      # Invalid year
+            '2020-W25-0',       # Invalid day-of-week
+            '2020-W25-8',       # Invalid day-of-week
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -2776,6 +2803,20 @@ class TestDateTime(TestDate):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            # The existing behavior that GH-70647 seeks to change.
+            self.theclass.strptime('02-29', '%m-%d')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%d,%Y')
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
@@ -3020,6 +3061,26 @@ class TestDateTime(TestDate):
 
                 self.assertIsInstance(dt, DateTimeSubclass)
                 self.assertEqual(dt.extra, 7)
+
+    def test_subclass_replace_fold(self):
+        class DateTimeSubclass(self.theclass):
+            pass
+
+        dt = DateTimeSubclass(2012, 1, 1)
+        dt2 = DateTimeSubclass(2012, 1, 1, fold=1)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013), 0),
+            ('self.replace', dt2.replace(year=2013), 1),
+            ('copy.replace', copy.replace(dt, year=2013), 0),
+            ('copy.replace', copy.replace(dt2, year=2013), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), DateTimeSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.fold, fold)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -3701,11 +3762,28 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_subclass_replace(self):
         class TimeSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         ctime = TimeSubclass(12, 30)
-        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
-        self.assertIs(type(copy.replace(ctime, hour=10)), TimeSubclass)
+        ctime2 = TimeSubclass(12, 30, fold=1)
+
+        test_cases = [
+            ('self.replace', ctime.replace(hour=10), 0),
+            ('self.replace', ctime2.replace(hour=10), 1),
+            ('copy.replace', copy.replace(ctime, hour=10), 0),
+            ('copy.replace', copy.replace(ctime2, hour=10), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), TimeSubclass)
+                self.assertEqual(res.hour, 10)
+                self.assertEqual(res.minute, 30)
+                self.assertEqual(res.extra, 7)
+                self.assertEqual(res.fold, fold)
 
     def test_subclass_time(self):
 
@@ -4339,6 +4417,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-',         # Extra at end of microsecond time
             '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
+            '12.5',                     # Decimal mark at end of hour
+            '12:30,5',                  # Decimal mark at end of minute
         ]
 
         for bad_str in bad_strs:
@@ -5431,42 +5511,50 @@ class TestTimezoneConversions(unittest.TestCase):
 
 class Oddballs(unittest.TestCase):
 
-    def test_bug_1028306(self):
+    def test_date_datetime_comparison(self):
+        # bpo-1028306, bpo-5516 (gh-49766)
         # Trying to compare a date to a datetime should act like a mixed-
         # type comparison, despite that datetime is a subclass of date.
         as_date = date.today()
         as_datetime = datetime.combine(as_date, time())
-        self.assertTrue(as_date != as_datetime)
-        self.assertTrue(as_datetime != as_date)
-        self.assertFalse(as_date == as_datetime)
-        self.assertFalse(as_datetime == as_date)
-        self.assertRaises(TypeError, lambda: as_date < as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime < as_date)
-        self.assertRaises(TypeError, lambda: as_date <= as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime <= as_date)
-        self.assertRaises(TypeError, lambda: as_date > as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime > as_date)
-        self.assertRaises(TypeError, lambda: as_date >= as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime >= as_date)
-
-        # Nevertheless, comparison should work with the base-class (date)
-        # projection if use of a date method is forced.
-        self.assertEqual(as_date.__eq__(as_datetime), True)
-        different_day = (as_date.day + 1) % 20 + 1
-        as_different = as_datetime.replace(day= different_day)
-        self.assertEqual(as_date.__eq__(as_different), False)
+        date_sc = SubclassDate(as_date.year, as_date.month, as_date.day)
+        datetime_sc = SubclassDatetime(as_date.year, as_date.month,
+                                       as_date.day, 0, 0, 0)
+        for d in (as_date, date_sc):
+            for dt in (as_datetime, datetime_sc):
+                for x, y in (d, dt), (dt, d):
+                    self.assertTrue(x != y)
+                    self.assertFalse(x == y)
+                    self.assertRaises(TypeError, lambda: x < y)
+                    self.assertRaises(TypeError, lambda: x <= y)
+                    self.assertRaises(TypeError, lambda: x > y)
+                    self.assertRaises(TypeError, lambda: x >= y)
 
         # And date should compare with other subclasses of date.  If a
         # subclass wants to stop this, it's up to the subclass to do so.
-        date_sc = SubclassDate(as_date.year, as_date.month, as_date.day)
-        self.assertEqual(as_date, date_sc)
-        self.assertEqual(date_sc, as_date)
-
         # Ditto for datetimes.
-        datetime_sc = SubclassDatetime(as_datetime.year, as_datetime.month,
-                                       as_date.day, 0, 0, 0)
-        self.assertEqual(as_datetime, datetime_sc)
-        self.assertEqual(datetime_sc, as_datetime)
+        for x, y in ((as_date, date_sc),
+                     (date_sc, as_date),
+                     (as_datetime, datetime_sc),
+                     (datetime_sc, as_datetime)):
+            self.assertTrue(x == y)
+            self.assertFalse(x != y)
+            self.assertFalse(x < y)
+            self.assertFalse(x > y)
+            self.assertTrue(x <= y)
+            self.assertTrue(x >= y)
+
+        # Nevertheless, comparison should work if other object is an instance
+        # of date or datetime class with overridden comparison operators.
+        # So special methods should return NotImplemented, as if
+        # date and datetime were independent classes.
+        for x, y in (as_date, as_datetime), (as_datetime, as_date):
+            self.assertEqual(x.__eq__(y), NotImplemented)
+            self.assertEqual(x.__ne__(y), NotImplemented)
+            self.assertEqual(x.__lt__(y), NotImplemented)
+            self.assertEqual(x.__gt__(y), NotImplemented)
+            self.assertEqual(x.__gt__(y), NotImplemented)
+            self.assertEqual(x.__ge__(y), NotImplemented)
 
     def test_extra_attributes(self):
         with self.assertWarns(DeprecationWarning):

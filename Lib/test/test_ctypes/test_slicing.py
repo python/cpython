@@ -1,7 +1,8 @@
-import _ctypes_test
 import unittest
 from ctypes import (CDLL, POINTER, sizeof,
                     c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class SlicesTestCase(unittest.TestCase):

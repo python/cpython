@@ -3,11 +3,10 @@
  * using the SystemConfiguration framework.
  */
 
+// Need limited C API version 3.13 for Py_mod_gil
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-#define Py_LIMITED_API 0x030c0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include <Python.h>
@@ -240,6 +239,7 @@ static PyMethodDef mod_methods[] = {
 
 static PyModuleDef_Slot _scproxy_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

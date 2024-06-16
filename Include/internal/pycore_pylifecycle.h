@@ -42,7 +42,6 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
-extern int _Py_Deepfreeze_Init(void);
 
 /* Various internal finalizers */
 
@@ -58,7 +57,6 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
 extern void _PyThread_FiniType(PyInterpreterState *interp);
-extern void _Py_Deepfreeze_Fini(void);
 extern void _PyArg_Fini(void);
 extern void _Py_FinalizeAllocatedBlocks(_PyRuntimeState *);
 
@@ -115,6 +113,22 @@ PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
 
 // Export for special main.c string compiling with source tracebacks
 int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
+
+
+/* interpreter config */
+
+// Export for _testinternalcapi shared extension
+PyAPI_FUNC(int) _PyInterpreterConfig_InitFromState(
+    PyInterpreterConfig *,
+    PyInterpreterState *);
+PyAPI_FUNC(PyObject *) _PyInterpreterConfig_AsDict(PyInterpreterConfig *);
+PyAPI_FUNC(int) _PyInterpreterConfig_InitFromDict(
+    PyInterpreterConfig *,
+    PyObject *);
+PyAPI_FUNC(int) _PyInterpreterConfig_UpdateFromDict(
+    PyInterpreterConfig *,
+    PyObject *);
+
 
 #ifdef __cplusplus
 }

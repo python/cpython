@@ -1,8 +1,10 @@
 """Unit tests for zero-argument super() & related machinery."""
 
+import textwrap
+import threading
 import unittest
 from unittest.mock import patch
-from test import shadowed_super
+from test.support import import_helper, threading_helper
 
 
 ADAPTIVE_WARMUP_DELAY = 2
@@ -342,7 +344,20 @@ class TestSuper(unittest.TestCase):
             super(1, int)
 
     def test_shadowed_global(self):
+        source = textwrap.dedent(
+            """
+            class super:
+                msg = "truly super"
+
+            class C:
+                def method(self):
+                    return super().msg
+            """,
+        )
+        with import_helper.ready_to_import(name="shadowed_super", source=source):
+            import shadowed_super
         self.assertEqual(shadowed_super.C().method(), "truly super")
+        import_helper.unload("shadowed_super")
 
     def test_shadowed_local(self):
         class super:
@@ -490,6 +505,38 @@ class TestSuper(unittest.TestCase):
 
         for _ in range(ADAPTIVE_WARMUP_DELAY):
             C.some(C)
+
+    @threading_helper.requires_working_threading()
+    def test___class___modification_multithreaded(self):
+        """ Note: this test isn't actually testing anything on its own.
+        It requires a sys audithook to be set to crash on older Python.
+        This should be the case anyways as our test suite sets
+        an audit hook.
+        """
+        class Foo:
+            pass
+
+        class Bar:
+            pass
+
+        thing = Foo()
+        def work():
+            foo = thing
+            for _ in range(5000):
+                foo.__class__ = Bar
+                type(foo)
+                foo.__class__ = Foo
+                type(foo)
+
+
+        threads = []
+        for _ in range(6):
+            thread = threading.Thread(target=work)
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == "__main__":
