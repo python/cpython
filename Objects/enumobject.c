@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -431,16 +432,20 @@ reversed_next(reversedobject *ro)
     PyObject *item;
     Py_ssize_t index = ro->index;
 
+    Py_BEGIN_CRITICAL_SECTION(ro);
     if (index >= 0) {
         item = PySequence_GetItem(ro->seq, index);
         if (item != NULL) {
             ro->index--;
+            Py_EXIT_CRITICAL_SECTION();
             return item;
         }
         if (PyErr_ExceptionMatches(PyExc_IndexError) ||
             PyErr_ExceptionMatches(PyExc_StopIteration))
             PyErr_Clear();
     }
+    Py_END_CRITICAL_SECTION();
+
     ro->index = -1;
     Py_CLEAR(ro->seq);
     return NULL;
