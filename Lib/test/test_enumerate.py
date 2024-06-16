@@ -3,7 +3,7 @@ import operator
 import sys
 import pickle
 import gc
-import threading
+from threading import Thread
 
 from test import support
 
@@ -295,7 +295,7 @@ class TestLongStart(EnumerateStartTestCase):
 
 class EnumerateThreading(unittest.TestCase):
     @staticmethod
-    def work(index, enum, start):
+    def work(enum, start):
         while True:
             try:
                 value = next(enum)
@@ -309,8 +309,10 @@ class EnumerateThreading(unittest.TestCase):
         number_of_threads = 4
         n = 100
         start = sys.maxsize-10
-        enum = enumerate(range(start, start+n))
-        worker_threads = [threading.Thread(target=self.work, args=[ii, enum, start]) for ii in range(number_of_threads)]
+        enum = enumerate(range(start, start + n))
+        worker_threads = []
+        for ii in range(number_of_threads):
+            worker_threads.append(Thread(target=self.work, args=[enum, start]))
         _ = [t.start() for t in worker_threads]
         _ = [t.join() for t in worker_threads]
 
