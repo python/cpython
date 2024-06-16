@@ -1454,8 +1454,8 @@ These can be used as types in annotations. They all support subscription using
    to write such functions in a type-safe manner.
 
    If a ``TypeIs`` function is a class or instance method, then the type in
-   ``TypeIs`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeIs`` maps to the type of the second parameter (after ``cls`` or
+   ``self``).
 
    In short, the form ``def foo(arg: TypeA) -> TypeIs[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` is an instance
