@@ -627,6 +627,14 @@ def get_annotations(
     if locals is None:
         locals = obj_locals
 
+    # "Inject" type parameters into the local namespace
+    # (unless they are shadowed by assignments *in* the local namespace),
+    # as a way of emulating annotation scopes when calling `eval()`
+    if type_params := getattr(obj, "__type_params__", ()):
+        if locals is None:
+            locals = {}
+        locals = {param.__name__: param for param in type_params} | locals
+
     return_value = {
         key: value if not isinstance(value, str) else eval(value, globals, locals)
         for key, value in ann.items()

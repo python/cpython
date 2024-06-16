@@ -4,6 +4,7 @@ import annotationlib
 import functools
 import pickle
 import unittest
+from typing import Unpack
 
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
