@@ -130,6 +130,7 @@ test_critical_sections_suspend(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#ifdef Py_CAN_START_THREADS
 struct test_data {
     PyObject *obj1;
     PyObject *obj2;
@@ -170,7 +171,6 @@ thread_critical_sections(void *arg)
     }
 }
 
-#ifdef Py_CAN_START_THREADS
 static PyObject *
 test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
 {
