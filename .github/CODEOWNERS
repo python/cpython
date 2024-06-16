@@ -212,6 +212,7 @@ Doc/c-api/stable.rst          @encukou
 **/*ensurepip*                @pfmoore @pradyunsg
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
 
