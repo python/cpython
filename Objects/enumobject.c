@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -228,23 +229,38 @@ enum_next(enumobject *en)
     PyObject *it = en->en_sit;
     PyObject *old_index;
     PyObject *old_item;
+    int reuse_result = 0;
+
+    Py_BEGIN_CRITICAL_SECTION(en);
 
     next_item = (*Py_TYPE(it)->tp_iternext)(it);
-    if (next_item == NULL)
+    if (next_item == NULL) {
+        Py_EXIT_CRITICAL_SECTION();
         return NULL;
-
-    if (en->en_index == PY_SSIZE_T_MAX)
-        return enum_next_long(en, next_item);
+    }
+    if (en->en_index == PY_SSIZE_T_MAX) {
+        // we hold on to the lock for the entire call to enum_next_long
+        result = enum_next_long(en, next_item);
+        Py_EXIT_CRITICAL_SECTION();
+        return result;
+    }
 
     next_index = PyLong_FromSsize_t(en->en_index);
     if (next_index == NULL) {
         Py_DECREF(next_item);
+        Py_EXIT_CRITICAL_SECTION();
         return NULL;
     }
     en->en_index++;
 
-    if (Py_REFCNT(result) == 1) {
+    reuse_result = Py_REFCNT(result) == 1;
+    if (reuse_result) {
+        // increment within the critical section
         Py_INCREF(result);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (reuse_result) {
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
         PyTuple_SET_ITEM(result, 0, next_index);

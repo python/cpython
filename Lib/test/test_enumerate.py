@@ -3,6 +3,7 @@ import operator
 import sys
 import pickle
 import gc
+import threading
 
 from test import support
 
@@ -290,6 +291,28 @@ class TestLongStart(EnumerateStartTestCase):
 
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]
+
+
+class EnumerateThreading(unittest.TestCase):
+    @staticmethod
+    def work(index, enum, start):
+        while True:
+            try:
+                value = next(enum)
+            except StopIteration:
+                break
+            else:
+                if value[0] + start != value[1]:
+                    raise ValueError(f'enumerate returned pair {value}')
+
+    def test_threading(self):
+        number_of_threads = 4
+        n = 100
+        start = sys.maxsize-10
+        enum = enumerate(range(start, start+n))
+        worker_threads = [threading.Thread(target=self.work, args=[ii, enum, start]) for ii in range(number_of_threads)]
+        _ = [t.start() for t in worker_threads]
+        _ = [t.join() for t in worker_threads]
 
 
 if __name__ == "__main__":
