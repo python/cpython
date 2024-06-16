@@ -46,8 +46,6 @@ from test import support
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
-from test.test_inspect import inspect_stringized_annotations_2
-from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 # Functions tested in this suite:
