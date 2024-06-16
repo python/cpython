@@ -1860,8 +1860,8 @@ class TestIsMethodDescriptor(unittest.TestCase):
             def static_method(): pass
             @property
             def a_property(self): pass
-        class Slotted:
-            __slots__ = 'foo',
+        class Slotermeyer:
+            __slots__ = 'a_slot',
         def function():
             pass
         a_lambda = lambda: None
@@ -1882,7 +1882,7 @@ class TestIsMethodDescriptor(unittest.TestCase):
             inspect.ismethoddescriptor(Owner.__dict__['a_property']),
             'a property is not a method descriptor')
         self.assertFalse(
-            inspect.ismethoddescriptor(Slotted.__dict__['foo']),
+            inspect.ismethoddescriptor(Slotermeyer.__dict__['a_slot']),
             'a slot is not a method descriptor')
 
         # `types.MethodType`/`types.FunctionType` instances (they *are*
