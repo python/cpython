@@ -1224,14 +1224,15 @@ char *
 _Py_float_to_hex(double x, int precision, int always_add_sign,
                  int use_alt_formatting, int upper, int float_hex)
 {
+    /* DBL_MANT_DIG rounded up to the next integer of the form 4k+1 */
+    const int tohex_nbits = DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4;
+    const int full_prec = (int) (tohex_nbits - 1)/4;
     int e;
     double m = frexp(fabs(x), &e);
 
     int autoprec = precision < 0;
     if (autoprec) {
-        /* DBL_MANT_DIG rounded up to the next integer of the form 4k+1 */
-        const double tohex_nbits = DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4;
-        precision = (int) (tohex_nbits - 1)/4;
+        precision = full_prec;
         if (!x && float_hex) {
             /* for compatibility with float.hex(), we keep just one
                digit of zero */
@@ -1248,14 +1249,15 @@ _Py_float_to_hex(double x, int precision, int always_add_sign,
 
     /* round to precision digits */
     if (!autoprec) {
+        int round_prec_x4 = 4*Py_MIN(precision, full_prec);
         do {
-            double frac = ldexp(m, 4*precision);
-            double ipart = floor(frac);
+            double frac = ldexp(m, round_prec_x4);
+            long ipart = (long)floor(frac);
             frac -= ipart;
             frac *= 16.0;
             if (frac >= 8.0) {
-                if (frac != 8.0 || (long)(ipart) & 0x1) {
-                    m += ldexp(1.0, -4*precision);
+                if (frac != 8.0 || ipart & 0x1) {
+                    m += ldexp(1.0, -round_prec_x4);
                 }
             }
             if ((int)(m) & 0x2) {
