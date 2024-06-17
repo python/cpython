@@ -1,5 +1,5 @@
-:mod:`inspect` --- Inspect live objects
-=======================================
+:mod:`!inspect` --- Inspect live objects
+========================================
 
 .. testsetup:: *
 

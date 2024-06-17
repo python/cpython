@@ -1284,7 +1284,7 @@ Add function :func:`sys.is_finalizing` to know about interpreter shutdown.
 .. section: Library
 
 Add a default limit for the amount of data xmlrpclib.gzip_decode will
-return. This resolves CVE-2013-1753.
+return. This resolves :cve:`2013-1753`.
 
 ..
 
@@ -1345,7 +1345,7 @@ newer worked.
 .. section: Library
 
 The "ip" command is now used on Linux to determine MAC address in
-uuid.getnode().  Pach by Bruno Cauet.
+uuid.getnode().  Patch by Bruno Cauet.
 
 ..
 
@@ -3930,7 +3930,7 @@ has been called.
 .. nonce: 5CDoox
 .. section: Library
 
-New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` incase of
+New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` in case of
 an attribute startswith assert or assret.
 
 ..
@@ -4030,7 +4030,7 @@ unittest.mock.MagicMock now supports division. Patch by Johannes Baiter.
 .. section: Library
 
 Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
-parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
+parameter. Bug reported by Guido Vranken. (See also: :cve:`2014-4616`)
 
 ..
 
@@ -4339,7 +4339,7 @@ these modules are not used.
 .. nonce: V1-XhC
 .. section: Library
 
-Include the broadcast address in the usuable hosts for IPv6 in ipaddress.
+Include the broadcast address in the usable hosts for IPv6 in ipaddress.
 
 ..
 

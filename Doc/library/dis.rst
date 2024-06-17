@@ -1,5 +1,5 @@
-:mod:`dis` --- Disassembler for Python bytecode
-===============================================
+:mod:`!dis` --- Disassembler for Python bytecode
+================================================
 
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.
@@ -104,7 +104,7 @@ The following options are accepted:
    Show offsets of instructions.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
-Otherwise, disassembly is performed on compiled source code recieved from stdin.
+Otherwise, disassembly is performed on compiled source code received from stdin.
 
 Bytecode analysis
 -----------------
@@ -336,9 +336,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
    .. versionchanged:: 3.13
-      The *show_caches* parameter is deprecated and has no effect. The *cache_info*
-      field of each instruction is populated regardless of its value.
-
+      The *show_caches* parameter is deprecated and has no effect. The iterator
+      generates the :class:`Instruction` instances with the *cache_info*
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
@@ -929,12 +930,13 @@ iterations of the loop.
       Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: LOAD_ASSERTION_ERROR
+.. opcode:: LOAD_COMMON_CONSTANT
 
-   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
-   statement.
+   Pushes a common constant onto the stack. The interpreter contains a hardcoded
+   list of constants supported by this instruction.  Used by the :keyword:`assert`
+   statement to load :exc:`AssertionError`.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1224,7 +1226,7 @@ iterations of the loop.
    except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
    When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
@@ -1665,7 +1667,7 @@ iterations of the loop.
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``context`` oparand consists of two parts. The lowest two bits
+   The ``context`` operand consists of two parts. The lowest two bits
    indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine

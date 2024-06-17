@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.
@@ -449,6 +449,10 @@ Constants
       Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
       same way that ``SO_BINDTODEVICE`` is used, but with the index of a
       network interface instead of its name.
+
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
 
 .. data:: AF_CAN
           PF_CAN
@@ -1213,7 +1217,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1236,7 +1240,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       most Unix platforms.
 
@@ -1276,7 +1280,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1303,7 +1307,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1320,7 +1324,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1337,7 +1341,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1351,7 +1355,7 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1589,7 +1593,8 @@ to sockets.
    Return a :term:`file object` associated with the socket.  The exact returned
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function, except
-   the only supported *mode* values are ``'r'`` (default), ``'w'`` and ``'b'``.
+   the only supported *mode* values are ``'r'`` (default), ``'w'``, ``'b'``, or
+   a combination of those.
 
    The socket must be in blocking mode; it can have a timeout, but the file
    object's internal buffer may end up in an inconsistent state if a timeout

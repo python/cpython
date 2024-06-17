@@ -817,10 +817,10 @@ static int devpoll_flush(devpollObject *self)
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
-        ** See http://bugs.python.org/issue6397.
+        ** See https://github.com/python/cpython/issues/50646.
         */
         PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
-                "Please, report at http://bugs.python.org/. "
+                "Please, report at https://github.com/python/cpython/issues/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
         return -1;
@@ -2802,6 +2802,7 @@ _select_exec(PyObject *m)
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

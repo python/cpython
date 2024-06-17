@@ -1,5 +1,5 @@
-:mod:`ipaddress` --- IPv4/IPv6 manipulation library
-===================================================
+:mod:`!ipaddress` --- IPv4/IPv6 manipulation library
+====================================================
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
@@ -192,6 +192,18 @@ write code that handles both IP versions correctly.  Address objects are
       ``is_private`` has value opposite to :attr:`is_global`, except for the shared address space
       (``100.64.0.0/10`` range) where they are both ``False``.
 
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives.
+
+         * ``192.0.0.0/24`` is considered private with the exception of ``192.0.0.9/32`` and
+           ``192.0.0.10/32`` (previously: only the ``192.0.0.0/29`` sub-range was considered private).
+         * ``64:ff9b:1::/48`` is considered private.
+         * ``2002::/16`` is considered private.
+         * There are exceptions within ``2001::/23`` (otherwise considered private): ``2001:1::1/128``,
+           ``2001:1::2/128``, ``2001:3::/32``, ``2001:4:112::/48``, ``2001:20::/28``, ``2001:30::/28``.
+           The exceptions are not considered private.
+
    .. attribute:: is_global
 
       ``True`` if the address is defined as globally reachable by
@@ -208,6 +220,10 @@ write code that handles both IP versions correctly.  Address objects are
       (``100.64.0.0/10`` range) where they are both ``False``.
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives, see :attr:`is_private` for details.
 
    .. attribute:: is_unspecified
 
@@ -318,13 +334,13 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_multicast
    .. attribute:: is_private
    .. attribute:: is_global
+
+      .. versionadded:: 3.4
+
    .. attribute:: is_unspecified
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-
-      .. versionadded:: 3.4
-         is_global
 
    .. attribute:: is_site_local
 
@@ -488,7 +504,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is either
+      integer, or an existing :class:`IPv4Address` object; and the netmask is either
       an integer representing the prefix length (e.g. ``24``) or a string
       representing the prefix mask (e.g. ``255.255.255.0``).
 
@@ -709,7 +725,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv6Address object; and the netmask is an
+      integer, or an existing :class:`IPv6Address` object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
@@ -765,7 +781,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
 
@@ -974,7 +990,7 @@ The module also provides the following module level functions:
 .. function:: collapse_addresses(addresses)
 
    Return an iterator of the collapsed :class:`IPv4Network` or
-   :class:`IPv6Network` objects.  *addresses* is an iterator of
+   :class:`IPv6Network` objects.  *addresses* is an :term:`iterable` of
    :class:`IPv4Network` or :class:`IPv6Network` objects.  A :exc:`TypeError` is
    raised if *addresses* contains mixed version objects.
 

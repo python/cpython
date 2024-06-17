@@ -13,6 +13,7 @@ import random
 import re
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -22,6 +23,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import script_helper, warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -37,6 +39,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 # Needed by test_datetime
 import _strptime
@@ -1335,6 +1341,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
 
+    def test_fromtimestamp_with_none_arg(self):
+        # See gh-120268 for more details
+        with self.assertRaises(TypeError):
+            self.theclass.fromtimestamp(None)
+
     def test_today(self):
         import time
 
@@ -1927,6 +1938,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2009-02-29',       # Invalid leap day
             '2019-W53-1',       # No week 53 in 2019
             '2020-W54-1',       # No week 54
+            '0000-W25-1',       # Invalid year
+            '10000-W25-1',      # Invalid year
+            '2020-W25-0',       # Invalid day-of-week
+            '2020-W25-8',       # Invalid day-of-week
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
@@ -2792,6 +2807,20 @@ class TestDateTime(TestDate):
                               target=target):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            # The existing behavior that GH-70647 seeks to change.
+            self.theclass.strptime('02-29', '%m-%d')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            self.theclass.strptime('03-14.159265', '%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('20-03-14.159265', '%y-%m-%d.%f')
+        with self._assertNotWarns(DeprecationWarning):
+            self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
@@ -4393,6 +4422,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-',         # Extra at end of microsecond time
             '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
+            '12.5',                     # Decimal mark at end of hour
+            '12:30,5',                  # Decimal mark at end of minute
         ]
 
         for bad_str in bad_strs:
@@ -6753,6 +6784,91 @@ class CapiTest(unittest.TestCase):
                     dt_rt = from_timestamp(ts, tzinfo, usetz, macro)
 
                     self.assertEqual(dt_orig, dt_rt)
+
+    def test_type_check_in_subinterp(self):
+        # iOS requires the use of the custom framework loader,
+        # not the ExtensionFileLoader.
+        if sys.platform == "ios":
+            extension_loader = "AppleFrameworkLoader"
+        else:
+            extension_loader = "ExtensionFileLoader"
+
+        script = textwrap.dedent(f"""
+            if {_interpreters is None}:
+                import _testcapi as module
+                module.test_datetime_capi()
+            else:
+                import importlib.machinery
+                import importlib.util
+                fullname = '_testcapi_datetime'
+                origin = importlib.util.find_spec('_testcapi').origin
+                loader = importlib.machinery.{extension_loader}(fullname, origin)
+                spec = importlib.util.spec_from_loader(fullname, loader)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+            def run(type_checker, obj):
+                if not type_checker(obj, True):
+                    raise TypeError(f'{{type(obj)}} is not C API type')
+
+            import _datetime
+            run(module.datetime_check_date,     _datetime.date.today())
+            run(module.datetime_check_datetime, _datetime.datetime.now())
+            run(module.datetime_check_time,     _datetime.time(12, 30))
+            run(module.datetime_check_delta,    _datetime.timedelta(1))
+            run(module.datetime_check_tzinfo,   _datetime.tzinfo())
+        """)
+        if _interpreters is None:
+            ret = support.run_in_subinterp(script)
+            self.assertEqual(ret, 0)
+        else:
+            for name in ('isolated', 'legacy'):
+                with self.subTest(name):
+                    config = _interpreters.new_config(name).__dict__
+                    ret = support.run_in_subinterp_with_config(script, **config)
+                    self.assertEqual(ret, 0)
+
+
+class ExtensionModuleTests(unittest.TestCase):
+
+    def setUp(self):
+        if self.__class__.__name__.endswith('Pure'):
+            self.skipTest('Not relevant in pure Python')
+
+    @support.cpython_only
+    def test_gh_120161(self):
+        with self.subTest('simple'):
+            script = textwrap.dedent("""
+                import datetime
+                from _ast import Tuple
+                f = lambda: None
+                Tuple.dims = property(f, f)
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                """)
+            script_helper.assert_python_ok('-c', script)
+
+        with self.subTest('complex'):
+            script = textwrap.dedent("""
+                import asyncio
+                import datetime
+                from typing import Type
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+
+                class FakeDateMeta(type):
+                    def __instancecheck__(self, obj):
+                        return True
+                class FakeDate(datetime.date, metaclass=FakeDateMeta):
+                    pass
+                def pickle_fake_date(datetime_) -> Type[FakeDate]:
+                    # A pickle function for FakeDate
+                    return FakeDate
+                """)
+            script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):

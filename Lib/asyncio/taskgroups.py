@@ -77,12 +77,6 @@ class TaskGroup:
             propagate_cancellation_error = exc
         else:
             propagate_cancellation_error = None
-        if self._parent_cancel_requested:
-            # If this flag is set we *must* call uncancel().
-            if self._parent_task.uncancel() == 0:
-                # If there are no pending cancellations left,
-                # don't propagate CancelledError.
-                propagate_cancellation_error = None
 
         if et is not None:
             if not self._aborting:
@@ -130,6 +124,13 @@ class TaskGroup:
         if self._base_error is not None:
             raise self._base_error
 
+        if self._parent_cancel_requested:
+            # If this flag is set we *must* call uncancel().
+            if self._parent_task.uncancel() == 0:
+                # If there are no pending cancellations left,
+                # don't propagate CancelledError.
+                propagate_cancellation_error = None
+
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
         if propagate_cancellation_error is not None and not self._errors:
@@ -139,6 +140,12 @@ class TaskGroup:
             self._errors.append(exc)
 
         if self._errors:
+            # If the parent task is being cancelled from the outside
+            # of the taskgroup, un-cancel and re-cancel the parent task,
+            # which will keep the cancel count stable.
+            if self._parent_task.cancelling():
+                self._parent_task.uncancel()
+                self._parent_task.cancel()
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.

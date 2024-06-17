@@ -45,6 +45,15 @@
 #  endif
 #endif
 
+// gh-111506: The free-threaded build is not compatible with the limited API
+// or the stable ABI.
+#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
+#  error "The limited API is not currently supported in the free-threaded build"
+#endif
+
+#if defined(Py_GIL_DISABLED) && defined(_MSC_VER)
+#  include <intrin.h>             // __readgsqword()
+#endif
 
 // Include Python header files
 #include "pyport.h"
@@ -56,6 +65,7 @@
 #include "pystats.h"
 #include "pyatomic.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
@@ -63,6 +73,7 @@
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
+#include "pyerrors.h"
 #include "longobject.h"
 #include "cpython/longintrepr.h"
 #include "boolobject.h"
@@ -78,6 +89,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
+#include "monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -99,7 +111,6 @@
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
 #include "codecs.h"
-#include "pyerrors.h"
 #include "pythread.h"
 #include "cpython/context.h"
 #include "modsupport.h"

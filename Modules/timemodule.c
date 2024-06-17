@@ -462,7 +462,18 @@ tmtotuple(time_module_state *state, struct tm *p
     if (v == NULL)
         return NULL;
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
+#define SET_ITEM(INDEX, CALL)                       \
+    do {                                            \
+        PyObject *obj = (CALL);                     \
+        if (obj == NULL) {                          \
+            Py_DECREF(v);                           \
+            return NULL;                            \
+        }                                           \
+        PyStructSequence_SET_ITEM(v, (INDEX), obj); \
+    } while (0)
+
+#define SET(INDEX, VAL) \
+    SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
     SET(0, p->tm_year + 1900);
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
@@ -474,19 +485,15 @@ tmtotuple(time_module_state *state, struct tm *p
     SET(7, p->tm_yday + 1);        /* Want January, 1 == 1 */
     SET(8, p->tm_isdst);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+    SET_ITEM(9, PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(zone, "surrogateescape"));
-    PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
+    SET_ITEM(9, PyUnicode_DecodeLocale(zone, "surrogateescape"));
+    SET_ITEM(10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
+
 #undef SET
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
-        return NULL;
-    }
+#undef SET_ITEM
 
     return v;
 }
@@ -1896,8 +1903,8 @@ PyDoc_STRVAR(module_doc,
 There are two standard representations of time.  One is the number\n\
 of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
 or a floating point number (to represent fractions of seconds).\n\
-The Epoch is system-defined; on Unix, it is generally January 1st, 1970.\n\
-The actual value can be retrieved by calling gmtime(0).\n\
+The epoch is the point where the time starts, the return value of time.gmtime(0).\n\
+It is January 1, 1970, 00:00:00 (UTC) on all platforms.\n\
 \n\
 The other representation is a tuple of 9 integers giving local time.\n\
 The tuple items are:\n\
@@ -2128,6 +2135,7 @@ time_module_free(void *module)
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

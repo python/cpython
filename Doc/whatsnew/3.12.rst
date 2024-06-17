@@ -726,7 +726,7 @@ inspect
 
 * Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
   a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
-  (Contributed Carlton Gibson in :gh:`99247`.)
+  (Contributed by Carlton Gibson in :gh:`99247`.)
 
 * Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
   for determining the current state of asynchronous generators.
@@ -734,13 +734,12 @@ inspect
 
 * The performance of :func:`inspect.getattr_static` has been considerably
   improved. Most calls to the function should be at least 2x faster than they
-  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
-  Waygood in :gh:`103193`.)
+  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
 
 itertools
 ---------
 
-* Add :class:`itertools.batched()` for collecting into even-sized
+* Add :func:`itertools.batched` for collecting into even-sized
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
@@ -751,8 +750,8 @@ math
   (Contributed by Raymond Hettinger in :gh:`100485`.)
 
 * Extend :func:`math.nextafter` to include a *steps* argument
-  for moving up or down multiple steps at a time.
-  (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
+  for moving up or down multiple steps at a time. (Contributed by
+  Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
 os
 --
@@ -927,8 +926,6 @@ tempfile
 * :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
   argument provided to the *dir* parameter is a relative path.
 
-.. _whatsnew-typing-py312:
-
 threading
 ---------
 
@@ -962,6 +959,8 @@ types
 * Add :func:`types.get_original_bases` to allow for further introspection of
   :ref:`user-defined-generics` when subclassed. (Contributed by
   James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
+
+.. _whatsnew-typing-py312:
 
 typing
 ------
@@ -1006,8 +1005,8 @@ typing
   :func:`runtime-checkable protocols <typing.runtime_checkable>` has changed
   significantly. Most ``isinstance()`` checks against protocols with only a few
   members should be at least 2x faster than in 3.11, and some may be 20x
-  faster or more. However, ``isinstance()`` checks against protocols with fourteen
-  or more members may be slower than in Python 3.11. (Contributed by Alex
+  faster or more. However, ``isinstance()`` checks against protocols with many
+  members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
 
 * All :data:`typing.TypedDict` and :data:`typing.NamedTuple` classes now have the
@@ -1184,7 +1183,7 @@ Deprecated
   replaced by :data:`calendar.JANUARY` and :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
-* :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+* :mod:`collections.abc`: Deprecated :class:`!collections.abc.ByteString`.
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
@@ -1252,7 +1251,7 @@ Deprecated
     :exc:`DeprecationWarning` when it can detect being called from a
     multithreaded process. There has always been a fundamental incompatibility
     with the POSIX platform when doing so. Even if such code *appeared* to work.
-    We added the warning to to raise awareness as issues encounted by code doing
+    We added the warning to raise awareness as issues encountered by code doing
     this are becoming more frequent. See the :func:`os.fork` documentation for
     more details along with `this discussion on fork being incompatible with threads
     <https://discuss.python.org/t/33555>`_ for *why* we're now surfacing this
@@ -1294,7 +1293,7 @@ Deprecated
     :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
     deprecated. (:gh:`94309`.)
 
-  * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  * :class:`!typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
     (Contributed by Alex Waygood in :gh:`91896`.)
 
@@ -1441,8 +1440,6 @@ and will be removed in Python 3.14.
 
 * :mod:`typing`: :class:`!typing.ByteString`
 
-* :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`.
-
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
 * The :attr:`~codeobject.co_lnotab` attribute of code objects.
@@ -1467,6 +1464,11 @@ although there is currently no date scheduled for their removal.
 * :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
 * :class:`typing.Text` (:gh:`92332`)
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an
+  :class:`xml.etree.ElementTree.Element` is deprecated. In a future release it
+  will always return True. Prefer explicit ``len(elem)`` or
+  ``elem is not None`` tests instead.
 
 * Currently Python accepts numeric literals immediately followed by keywords,
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
@@ -1659,11 +1661,9 @@ smtpd
 
 * The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
-  Use aiosmtpd_ PyPI module or any other
+  Use the :pypi:`aiosmtpd` PyPI module or any other
   :mod:`asyncio`-based server instead.
   (Contributed by Oleg Iarygin in :gh:`93243`.)
-
-.. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
 sqlite3
 -------
@@ -1701,9 +1701,8 @@ ssl
   instead, create a :class:`ssl.SSLContext` object and call its
   :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
   :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-  Validation.
+  SNI TLS extension nor validates the server hostname. Code is subject to :cwe:`295`
+  (Improper Certificate Validation).
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 unittest
@@ -1743,7 +1742,7 @@ unittest
 
   * Undocumented :meth:`TestLoader.loadTestsFromModule
     <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
-    (deprecated and ignored since Python 3.2).
+    (deprecated and ignored since Python 3.5).
 
   * An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
@@ -1832,7 +1831,7 @@ Changes in the Python API
 
 * Remove the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
-  :mod:`asyncio`-based aiosmtpd_ PyPI module.
+  :mod:`asyncio`-based :pypi:`aiosmtpd` PyPI module.
 
 * :func:`shlex.split`: Passing ``None`` for *s* argument now raises an
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
