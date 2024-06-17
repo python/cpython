@@ -129,13 +129,11 @@ type_from_ref(PyObject *ref)
 
 /* helpers for for managed static types */
 
-#ifndef NDEBUG
 static inline int
 managed_static_type_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
-#endif
 
 static inline size_t
 managed_static_type_index_get(PyTypeObject *self)
