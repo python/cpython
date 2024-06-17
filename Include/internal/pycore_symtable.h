@@ -15,11 +15,23 @@ typedef enum _block_type {
     // Used for annotations if 'from __future__ import annotations' is active.
     // Annotation blocks cannot bind names and are not evaluated.
     AnnotationBlock,
-    // Used for generics and type aliases. These work mostly like functions
-    // (see PEP 695 for details). The three different blocks function identically;
-    // they are different enum entries only so that error messages can be more
-    // precise.
-    TypeVarBoundBlock, TypeAliasBlock, TypeParamBlock
+
+    // The following blocks are used for generics and type aliases. These work
+    // mostly like functions (see PEP 695 for details). The three different
+    // blocks function identically; they are different enum entries only so
+    // that error messages can be more precise.
+
+    // The block to enter when processing a "type" (PEP 695) construction,
+    // e.g., "type MyGeneric[T] = list[T]".
+    TypeAliasBlock,
+    // The block to enter when processing a "generic" (PEP 695) object,
+    // e.g., "def foo[T](): pass" or "class A[T]: pass".
+    TypeParametersBlock,
+    // The block to enter when processing the bound, the constraint tuple
+    // or the default value of a single "type variable" in the formal sense,
+    // i.e., a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two
+    // do not support a bound or a constraint tuple).
+    TypeVariableBlock,
 } _Py_block_ty;
 
 typedef enum _comprehension_type {
@@ -82,7 +94,16 @@ typedef struct _symtable_entry {
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
     PyObject *ste_mangled_names; /* set of names for which mangling should be applied */
+
     _Py_block_ty ste_type;
+    // Optional string set by symtable.c and used when reporting errors.
+    // The content of that string is a description of the current "context".
+    //
+    // For instance, if we are processing the default value of the type
+    // variable "T" in "def foo[T = int](): pass", `ste_scope_info` is
+    // set to "a TypeVar default".
+    const char *ste_scope_info;
+
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
