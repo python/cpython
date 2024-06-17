@@ -1370,6 +1370,17 @@
 
         /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 */
 
+        case _LOAD_SPECIAL: {
+            _Py_UopsSymbol *attr;
+            _Py_UopsSymbol *self_or_null;
+            attr = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = self_or_null;
+            stack_pointer += 1;
+            break;
+        }
+
         /* _BEFORE_WITH is not a viable micro-op for tier 2 */
 
         case _WITH_EXCEPT_START: {
