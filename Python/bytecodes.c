@@ -827,7 +827,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval --)) {
+        inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -839,14 +839,11 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
+            res = retval;
             LLTRACE_RESUME_FRAME();
         }
-
-        macro(RETURN_VALUE) =
-            _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
@@ -869,7 +866,7 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            _POP_FRAME;
+            RETURN_VALUE;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);

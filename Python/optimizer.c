@@ -537,7 +537,7 @@ add_to_trace(
 // Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
 
-// Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
+// Trace stack operations (used by _PUSH_FRAME, _RETURN_VALUE)
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
@@ -748,10 +748,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     int nuops = expansion->nuops;
                     RESERVE(nuops + 1); /* One extra for exit */
                     int16_t last_op = expansion->uops[nuops-1].uop;
-                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
+                    if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
-                        // LOAD_CONST + _POP_FRAME.
+                        // LOAD_CONST + _RETURN_VALUE.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
                             OPT_STAT_INC(trace_stack_underflow);
@@ -810,7 +810,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                        if (uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)

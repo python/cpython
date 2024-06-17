@@ -971,8 +971,9 @@
             break;
         }
 
-        case _POP_FRAME: {
+        case _RETURN_VALUE: {
             PyObject *retval;
+            PyObject *res;
             retval = stack_pointer[-1];
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -985,10 +986,12 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
+            res = retval;
             LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
