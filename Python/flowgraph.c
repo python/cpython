@@ -1829,6 +1829,22 @@ error:
 
 static int resolve_line_numbers(cfg_builder *g, int firstlineno);
 
+static int
+remove_redundant_nops_and_jumps(cfg_builder *g)
+{
+    int removed_nops, removed_jumps;
+    do {
+        /* Convergence is guaranteed because the number of
+         * redundant jumps and nops only decreases.
+         */
+        removed_nops = remove_redundant_nops(g);
+        RETURN_IF_ERROR(removed_nops);
+        removed_jumps = remove_redundant_jumps(g);
+        RETURN_IF_ERROR(removed_jumps);
+    } while(removed_nops + removed_jumps > 0);
+    return SUCCESS;
+}
+
 /* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -1850,17 +1866,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
-
-    int removed_nops, removed_jumps;
-    do {
-        /* Convergence is guaranteed because the number of
-         * redundant jumps and nops only decreases.
-         */
-        removed_nops = remove_redundant_nops(g);
-        RETURN_IF_ERROR(removed_nops);
-        removed_jumps = remove_redundant_jumps(g);
-        RETURN_IF_ERROR(removed_jumps);
-    } while(removed_nops + removed_jumps > 0);
+    RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     assert(no_redundant_jumps(g));
     return SUCCESS;
 }
@@ -2330,7 +2336,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
     b->b_next = cold_blocks;
 
     if (cold_blocks != NULL) {
-        RETURN_IF_ERROR(remove_redundant_jumps(g));
+        RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     }
     return SUCCESS;
 }
