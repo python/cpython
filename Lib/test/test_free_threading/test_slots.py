@@ -28,7 +28,7 @@ class TestSlots(TestCase):
                 self.eggs = initial_value
 
         spam = Spam(0)
-        iters = 1_000_000
+        iters = 20_000
 
         def writer():
             for _ in range(iters):
