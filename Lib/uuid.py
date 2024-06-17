@@ -757,7 +757,7 @@ def uuid6(node=None, clock_seq=None):
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
     time_hi_and_mid = (timestamp >> 12) & 0xffffffffffff
-    time_ver_and_lo = timestamp & 0xffff
+    time_ver_and_lo = timestamp & 0x0fff
     var_and_clock_s = clock_seq & 0x3fff
     if node is None:
         node = getnode()
