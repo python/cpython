@@ -49,7 +49,7 @@ type GenericAlias[T] = list[T]
 def generic_spam[T](a):
     pass
 
-class GenericMine[T: int]:
+class GenericMine[T: int, U: (int, str) = int]:
     pass
 """
 
@@ -78,6 +78,7 @@ class SymtableTest(unittest.TestCase):
     GenericMine = find_block(top, "GenericMine")
     GenericMine_inner = find_block(GenericMine, "GenericMine")
     T = find_block(GenericMine, "T")
+    U = find_block(GenericMine, "U")
 
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
@@ -87,13 +88,14 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.internal.get_type(), "function")
         self.assertEqual(self.foo.get_type(), "function")
         self.assertEqual(self.Alias.get_type(), "type alias")
-        self.assertEqual(self.GenericAlias.get_type(), "type parameter")
+        self.assertEqual(self.GenericAlias.get_type(), "type parameters")
         self.assertEqual(self.GenericAlias_inner.get_type(), "type alias")
-        self.assertEqual(self.generic_spam.get_type(), "type parameter")
+        self.assertEqual(self.generic_spam.get_type(), "type parameters")
         self.assertEqual(self.generic_spam_inner.get_type(), "function")
-        self.assertEqual(self.GenericMine.get_type(), "type parameter")
+        self.assertEqual(self.GenericMine.get_type(), "type parameters")
         self.assertEqual(self.GenericMine_inner.get_type(), "class")
-        self.assertEqual(self.T.get_type(), "TypeVar bound")
+        self.assertEqual(self.T.get_type(), "type variable")
+        self.assertEqual(self.U.get_type(), "type variable")
 
     def test_id(self):
         self.assertGreater(self.top.get_id(), 0)
