@@ -6,8 +6,9 @@ from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
      LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
 
 import weakref
+from enum import StrEnum
 
-__all__ = ["symtable", "SymbolTable", "Class", "Function", "Symbol"]
+__all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
 def symtable(code, filename, compile_type):
     """ Return the toplevel *SymbolTable* for the source code.
@@ -39,6 +40,16 @@ class SymbolTableFactory:
 _newSymbolTable = SymbolTableFactory()
 
 
+class SymbolTableType(StrEnum):
+    MODULE = "module"
+    FUNCTION = "function"
+    CLASS = "class"
+    ANNOTATION = "annotation"
+    TYPE_ALIAS = "type alias"
+    TYPE_PARAMETERS = "type parameters"
+    TYPE_VARIABLE = "type variable"
+
+
 class SymbolTable:
 
     def __init__(self, raw_table, filename):
@@ -62,23 +73,23 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values returned are 'class', 'module', 'function',
-        'annotation', 'TypeVar bound', 'type alias', and 'type parameter'.
+        The value returned is one of the values in
+        the ``SymbolTableType`` enumeration.
         """
         if self._table.type == _symtable.TYPE_MODULE:
-            return "module"
+            return SymbolTableType.MODULE
         if self._table.type == _symtable.TYPE_FUNCTION:
-            return "function"
+            return SymbolTableType.FUNCTION
         if self._table.type == _symtable.TYPE_CLASS:
-            return "class"
+            return SymbolTableType.CLASS
         if self._table.type == _symtable.TYPE_ANNOTATION:
-            return "annotation"
-        if self._table.type == _symtable.TYPE_TYPE_VAR_BOUND:
-            return "TypeVar bound"
+            return SymbolTableType.ANNOTATION
         if self._table.type == _symtable.TYPE_TYPE_ALIAS:
-            return "type alias"
-        if self._table.type == _symtable.TYPE_TYPE_PARAM:
-            return "type parameter"
+            return SymbolTableType.TYPE_ALIAS
+        if self._table.type == _symtable.TYPE_TYPE_PARAMETERS:
+            return SymbolTableType.TYPE_PARAMETERS
+        if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
+            return SymbolTableType.TYPE_VARIABLE
         assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
