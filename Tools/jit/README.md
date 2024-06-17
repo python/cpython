@@ -41,6 +41,12 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 Install LLVM 18 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=18), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
+Alternatively, you can use [chocolatey](https://chocolatey.org):
+
+```sh
+choco install llvm --version=18.1.6
+```
+
 ### Dev Containers
 
 If you are working CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no need to install LLVM as the Fedora 40 base image includes LLVM 18 out of the box.
