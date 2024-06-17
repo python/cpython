@@ -606,7 +606,7 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_POP_FRAME, (retval -- res)) {
+    op(_RETURN_VALUE, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);

@@ -18,6 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from ._os import copyfile
 
 
 __all__ = [
@@ -779,6 +780,21 @@ class Path(PathBase, PurePath):
             # could give priority to other errors like EACCES or EROFS
             if not exist_ok or not self.is_dir():
                 raise
+
+    if copyfile:
+        def copy(self, target):
+            """
+            Copy the contents of this file to the given target.
+            """
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if isinstance(target, PathBase):
+                    # Target is an instance of PathBase but not os.PathLike.
+                    # Use generic implementation from PathBase.
+                    return PathBase.copy(self, target)
+                raise
+            copyfile(os.fspath(self), target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

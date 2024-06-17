@@ -558,7 +558,7 @@
             break;
         }
 
-        case _POP_FRAME: {
+        case _RETURN_VALUE: {
             _Py_UopsSymbol *retval;
             _Py_UopsSymbol *res;
             retval = stack_pointer[-1];
