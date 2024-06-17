@@ -2886,15 +2886,14 @@
             PyObject *self_or_null;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            assert(oparg <= SPECIAL_MAX);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
             attr = _PyObject_LookupSpecialMethod(owner, name, &self_or_null);
             if (attr == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed %U method)",
-                                  Py_TYPE(owner)->tp_name, name);
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner)->tp_name);
                 }
             }
             if (attr == NULL) JUMP_TO_ERROR();

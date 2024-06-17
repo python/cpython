@@ -5955,10 +5955,10 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
     loc = LOC(item->context_expr);
     ADDOP_I(c, loc, COPY, 1);
-    ADDOP_NAME(c, loc, LOAD_SPECIAL, &_Py_ID(__aexit__), names);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
-    ADDOP_NAME(c, loc, LOAD_SPECIAL, &_Py_ID(__aenter__), names);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -6058,10 +6058,10 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Will push bound __exit__ */
     location loc = LOC(item->context_expr);
     ADDOP_I(c, loc, COPY, 1);
-    ADDOP_NAME(c, loc, LOAD_SPECIAL, &_Py_ID(__exit__), names);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___EXIT__);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
-    ADDOP_NAME(c, loc, LOAD_SPECIAL, &_Py_ID(__enter__), names);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
