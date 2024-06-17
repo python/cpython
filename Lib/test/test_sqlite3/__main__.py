@@ -1,4 +1,4 @@
-from test.test_sqlite3 import load_tests  # Needed for the "load tests" protocol.
+from test.test_sqlite3 import load_tests  # noqa: F401
 import unittest
 
 unittest.main()
