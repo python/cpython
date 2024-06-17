@@ -1553,7 +1553,7 @@ object.
 
    See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
-.. c:function:: PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, wchar_t *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, wchar_t *str, Py_ssize_t size)
 
    Writer the wide string *str* into *writer*.
 
