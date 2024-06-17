@@ -1255,7 +1255,7 @@ _Py_float_to_hex(double x, int precision, int always_add_sign,
             frac -= ipart;
             frac *= 16.0;
             if (frac >= 8.0) {
-                if (frac != 8.0 || (int)(ipart) & 0x1) {
+                if (frac != 8.0 || (long)(ipart) & 0x1) {
                     m += ldexp(1.0, -4*precision);
                 }
             }
