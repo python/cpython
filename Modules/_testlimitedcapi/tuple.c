@@ -76,7 +76,7 @@ tuple_getslice(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 tuple_setitem(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    PyObject *obj, *value, *newtuple;
+    PyObject *obj, *value, *newtuple = NULL;
     Py_ssize_t i;
     if (!PyArg_ParseTuple(args, "OnO", &obj, &i, &value)) {
         return NULL;
@@ -97,6 +97,9 @@ tuple_setitem(PyObject *Py_UNUSED(module), PyObject *args)
         newtuple = obj;
     }
     if (PyTuple_SetItem(newtuple, i, Py_XNewRef(value)) == -1) {
+        if (PyTuple_CheckExact(obj)) {
+            Py_XDECREF(newtuple);
+        }
         return NULL;
     }
     return newtuple;

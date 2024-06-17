@@ -37,7 +37,7 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
             return NULL;
         }
         for (Py_ssize_t n = 0; n < size; n++) {
-            PyTuple_SetItem(newtuple, n, Py_XNewRef(PyTuple_GetItem(obj, n)));
+            PyTuple_SET_ITEM(newtuple, n, Py_XNewRef(PyTuple_GET_ITEM(obj, n)));
         }
     }
     else {
@@ -54,14 +54,14 @@ tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
     PyObject *tup;
     Py_ssize_t newsize;
     int new = 1;
-    if (!PyArg_ParseTuple(args, "nO|p", &newsize, &tup, &new)) {
+    if (!PyArg_ParseTuple(args, "On|p", &tup, &newsize, &new)) {
         return NULL;
     }
     if (new) {
         Py_ssize_t size = PyTuple_Size(tup);
         PyObject *newtup = PyTuple_New(size);
         for (Py_ssize_t n = 0; n < size; n++) {
-            PyTuple_SetItem(newtup, n, Py_XNewRef(PyTuple_GetItem(tup, n)));
+            PyTuple_SET_ITEM(newtup, n, Py_XNewRef(PyTuple_GET_ITEM(tup, n)));
         }
         tup = newtup;
     }
@@ -70,6 +70,7 @@ tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
     }
     int r = _PyTuple_Resize(&tup, newsize);
     if (r == -1) {
+        assert(tup == NULL);
         return NULL;
     }
     return tup;

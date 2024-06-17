@@ -199,27 +199,27 @@ class CAPITest(unittest.TestCase):
         resize = _testcapi.tuple_resize
 
         a = ()
-        b = resize(0, a)
+        b = resize(a, 0)
         self.assertEqual(b, a)
-        b = resize(2, a)
+        b = resize(a, 2)
         self.assertEqual(len(b), 2)
 
         a = (1, 2, 3)
-        b = resize(3, a)
+        b = resize(a, 3)
         self.assertEqual(b, a)
-        b = resize(2, a)
+        b = resize(a, 2)
         self.assertEqual(b, a[:2])
-        b = resize(5, a)
+        b = resize(a, 5)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
 
         a = ()
-        self.assertRaises(MemoryError, resize, PY_SSIZE_T_MAX, a)
-        self.assertRaises(SystemError, resize, -1, a)
-        self.assertRaises(SystemError, resize, PY_SSIZE_T_MIN, a)
+        self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, resize, a, -1)
+        self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
         # refcount > 1
         a = (1, 2, 3)
-        self.assertRaises(SystemError, resize, 2, a, False)
+        self.assertRaises(SystemError, resize, a, 2, False)
         # non-tuple
         a = [1, 2, 3]
-        self.assertRaises(SystemError, resize, 2, a)
+        self.assertRaises(SystemError, resize, a, 2)
