@@ -15268,7 +15268,7 @@ PyUnicode_InternFromString(const char *cp)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyUnicode_InternImmortal(interp, &s);
+    _PyUnicode_InternMortal(interp, &s);
     return s;
 }
 

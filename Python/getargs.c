@@ -1935,7 +1935,7 @@ new_kwtuple(const char * const *keywords, int total, int pos)
             return NULL;
         }
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyUnicode_InternMortal(interp, &str);
+        _PyUnicode_InternImmortal(interp, &str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
     return kwtuple;
