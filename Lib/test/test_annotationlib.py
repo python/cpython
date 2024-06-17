@@ -269,6 +269,8 @@ class TestGetAnnotations(unittest.TestCase):
             def __dict__(cls):
                 raise AttributeError
 
+            b: str
+
         class C1(metaclass=NoDict):
             a: int
 
@@ -280,6 +282,15 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(
             annotationlib.get_annotations(C1, format=annotationlib.Format.SOURCE),
             {"a": "int"},
+        )
+        self.assertEqual(annotationlib.get_annotations(NoDict), {"b": str})
+        self.assertEqual(
+            annotationlib.get_annotations(NoDict, format=annotationlib.Format.FORWARDREF),
+            {"b": str},
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(NoDict, format=annotationlib.Format.SOURCE),
+            {"b": "str"},
         )
 
     def test_format(self):

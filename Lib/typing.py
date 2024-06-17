@@ -2422,7 +2422,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
             return {k: _strip_annotations(t) for k, t in hints.items()}
 
     hints = annotationlib.get_annotations(obj, format=format)
-    hints = dict(hints)
+    if (
+        not hints
+        and not isinstance(obj, types.ModuleType)
+        and not callable(obj)
+        and not hasattr(obj, '__annotations__')
+        and not hasattr(obj, '__annotate__')
+    ):
+        raise TypeError(f"{obj!r} is not a module, class, or callable.")
     if format is annotationlib.Format.SOURCE:
         return hints
 
