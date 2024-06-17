@@ -127,7 +127,7 @@ type_from_ref(PyObject *ref)
 }
 
 
-/* helpers for for static builtin types */
+/* helpers for for managed static types */
 
 #ifndef NDEBUG
 static inline int
@@ -386,6 +386,24 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         _PyRuntime.types.managed_static.types[index].type = NULL;
         _PyRuntime.types.managed_static.types[index].isbuiltin = 0;
         managed_static_type_index_clear(self);
+    }
+}
+
+static void
+managed_static_types_fini(PyInterpreterState *interp)
+{
+    assert(interp->types.managed_static.num_types == 0);
+    // All the managed static types should have been finalized already.
+    for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
+        assert(interp->types.managed_static.types[i].type == NULL);
+    }
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(_PyRuntime.types.managed_static.num_types == 0);
+        // All the managed static types should have been finalized already.
+        for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
+            assert(_PyRuntime.types.managed_static.types[i].type == NULL);
+            assert(_PyRuntime.types.managed_static.types[i].interp_count == 0);
+        }
     }
 }
 
@@ -946,19 +964,7 @@ _PyTypes_Fini(PyInterpreterState *interp)
     struct type_cache *cache = &interp->types.type_cache;
     type_cache_clear(cache, NULL);
 
-    assert(interp->types.managed_static.num_types == 0);
-    // All the managed static types should have been finalized already.
-    for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
-        assert(interp->types.managed_static.types[i].type == NULL);
-    }
-    if (_Py_IsMainInterpreter(interp)) {
-        assert(_PyRuntime.types.managed_static.num_types == 0);
-        // All the managed static types should have been finalized already.
-        for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
-            assert(_PyRuntime.types.managed_static.types[i].type == NULL);
-            assert(_PyRuntime.types.managed_static.types[i].interp_count == 0);
-        }
-    }
+    managed_static_types_fini(interp);
 }
 
 
