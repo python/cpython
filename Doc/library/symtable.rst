@@ -77,7 +77,7 @@ Examining Symbol Tables
       a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two do
       not support a bound or a constraint tuple).
 
-   .. versionadded:: 3.14
+   .. versionadded:: 3.13
 
 .. class:: SymbolTable
 
