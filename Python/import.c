@@ -1972,7 +1972,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                 PyObject *filename = NULL;
                 if (switched) {
                     // The original filename may be allocated by subinterpreter's
-                    // obmaloc, so we create a copy here.
+                    // obmalloc, so we create a copy here.
                     filename = PyUnicode_FromString(PyUnicode_AsUTF8(info->filename));
                     if (filename == NULL) {
                         return NULL;
