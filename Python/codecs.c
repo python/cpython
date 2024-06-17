@@ -148,10 +148,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         return NULL;
     }
 
-    /* Intern the string.
-       A successful lookup will insert `v` in the codecs search cache,
-       effectively immortalizing it. We don't want to immortalize the key
-       when lookup fails. */
+    /* Intern the string. We'll make it immortal later if lookup succeeds. */
     _PyUnicode_InternMortal(interp, &v);
 
     /* First, try to lookup the name in the registry dictionary */
@@ -204,6 +201,8 @@ PyObject *_PyCodec_Lookup(const char *encoding)
                      "unknown encoding: %s", encoding);
         goto onError;
     }
+
+    _PyUnicode_InternImmortal(interp, &v);
 
     /* Cache and return the result */
     if (PyDict_SetItem(interp->codecs.search_cache, v, result) < 0) {
