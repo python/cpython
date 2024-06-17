@@ -44,7 +44,7 @@ Install LLVM 18 [by searching for it on LLVM's GitHub releases page](https://git
 Alternatively, you can use [chocolatey](https://chocolatey.org):
 
 ```sh
-choco install llvm --version=18.1.0
+choco install llvm --version=18.1.6
 ```
 
 ### Dev Containers
