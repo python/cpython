@@ -11342,6 +11342,14 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     length = Py_MIN(length, _PY_READ_MAX);
 
+    struct stat statbuffer;
+    fstat(fd, &statbuffer);
+    if (S_ISFIFO(statbuffer.st_mode)) {
+	int ps = fcntl(fd, F_GETPIPE_SZ);
+	length = Py_MIN(ps, length);
+	//printf("length size: %ld\n", length);
+    }
+
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
         return NULL;
