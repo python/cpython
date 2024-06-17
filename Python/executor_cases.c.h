@@ -2880,8 +2880,6 @@
             break;
         }
 
-        /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
-
         case _LOAD_SPECIAL: {
             PyObject *owner;
             PyObject *attr;
@@ -2905,8 +2903,6 @@
             stack_pointer += 1;
             break;
         }
-
-        /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _WITH_EXCEPT_START: {
             PyObject *val;

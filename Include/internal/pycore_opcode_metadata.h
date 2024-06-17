@@ -33,10 +33,6 @@ extern int _PyOpcode_num_popped(int opcode, int oparg);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_popped(int opcode, int oparg)  {
     switch(opcode) {
-        case BEFORE_ASYNC_WITH:
-            return 1;
-        case BEFORE_WITH:
-            return 1;
         case BINARY_OP:
             return 2;
         case BINARY_OP_ADD_FLOAT:
@@ -484,10 +480,6 @@ extern int _PyOpcode_num_pushed(int opcode, int oparg);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_pushed(int opcode, int oparg)  {
     switch(opcode) {
-        case BEFORE_ASYNC_WITH:
-            return 2;
-        case BEFORE_WITH:
-            return 2;
         case BINARY_OP:
             return 1;
         case BINARY_OP_ADD_FLOAT:
@@ -996,8 +988,6 @@ struct opcode_metadata {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[264];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
-    [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
-    [BEFORE_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
@@ -1397,8 +1387,6 @@ _PyOpcode_macro_expansion[256] = {
 extern const char *_PyOpcode_OpName[264];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[264] = {
-    [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
-    [BEFORE_WITH] = "BEFORE_WITH",
     [BINARY_OP] = "BINARY_OP",
     [BINARY_OP_ADD_FLOAT] = "BINARY_OP_ADD_FLOAT",
     [BINARY_OP_ADD_INT] = "BINARY_OP_ADD_INT",
@@ -1649,8 +1637,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [BEFORE_ASYNC_WITH] = BEFORE_ASYNC_WITH,
-    [BEFORE_WITH] = BEFORE_WITH,
     [BINARY_OP] = BINARY_OP,
     [BINARY_OP_ADD_FLOAT] = BINARY_OP,
     [BINARY_OP_ADD_INT] = BINARY_OP,
@@ -1867,6 +1853,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 118: \
+    case 119: \
     case 120: \
     case 121: \
     case 122: \

@@ -11,8 +11,6 @@ extern "C" {
 
 #define _EXIT_TRACE 300
 #define _SET_IP 301
-#define _BEFORE_ASYNC_WITH BEFORE_ASYNC_WITH
-#define _BEFORE_WITH BEFORE_WITH
 #define _BINARY_OP 302
 #define _BINARY_OP_ADD_FLOAT 303
 #define _BINARY_OP_ADD_INT 304
