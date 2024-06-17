@@ -199,7 +199,7 @@ process and user.
 
    On Windows, :func:`get_user_default_environ` can be used to update
    :data:`os.environ` to the latest user and system environment variables, such
-   as the ``PATH`` variable.
+   as the ``Path`` variable.
 
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
@@ -368,7 +368,7 @@ process and user.
    Get the default environment of the current process user as a dictionary.
 
    It can be used to update :data:`os.environ` to the latest user and system
-   environment variables, such as the ``PATH`` variable. Example::
+   environment variables, such as the ``Path`` variable. Example::
 
        os.environ.update(os.get_user_default_environ())
 

@@ -102,7 +102,7 @@ os
 
 * Added the :func:`os.get_user_default_environ` function to get the user
   default environment. It can be used to update :data:`os.environ` to the
-  latest user and system environment variables, such as the ``PATH`` variable.
+  latest user and system environment variables, such as the ``Path`` variable.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
 symtable
