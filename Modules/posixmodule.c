@@ -7873,6 +7873,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+#if defined(HAVE_FORK1) || defined(HAVE_FORKPTY) || defined(HAVE_FORK)
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
@@ -7976,6 +7977,7 @@ warn_about_fork_with_threads(const char* name)
         PyErr_Clear();
     }
 }
+#endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -12541,6 +12543,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+#ifdef HAVE_DEVICE_MACROS
 static PyObject *
 major_minor_conv(unsigned int value)
 {
@@ -12563,7 +12566,6 @@ major_minor_check(dev_t value)
     return (dev_t)(unsigned int)value == value;
 }
 
-#ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
 os.major
 
