@@ -807,10 +807,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, test_src)}
         self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
+    @support.requires_resource('cpu')
     def testZip64(self):
         files = self.getZip64Files()
         self.doTest(".py", files, "f6")
 
+    @support.requires_resource('cpu')
     def testZip64CruftAndComment(self):
         files = self.getZip64Files()
         self.doTest(".py", files, "f65536", comment=b"c" * ((1 << 16) - 1))
