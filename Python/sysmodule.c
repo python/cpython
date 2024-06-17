@@ -35,7 +35,6 @@ Data members:
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
-#include "frameobject.h"          // PyFrame_FastToLocalsWithError()
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -1399,12 +1398,6 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
-            return NULL;
-        }
-    }
-    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
-        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1414,15 +1407,33 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
-        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+    }
+
+    PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
+
+    if (finalizer && finalizer != Py_None) {
+        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
             return NULL;
         }
     }
-    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
         return NULL;
     }
 
+    if (firstiter && firstiter != Py_None) {
+        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+            goto error;
+        }
+    }
+    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+        goto error;
+    }
+
     Py_RETURN_NONE;
+
+error:
+    _PyEval_SetAsyncGenFinalizer(cur_finalizer);
+    return NULL;
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
@@ -2282,7 +2293,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-        else if (strcmp(backend, "perfjit") == 0) {
+        else if (strcmp(backend, "perf_jit") == 0) {
             _PyPerf_Callbacks cur_cb;
             _PyPerfTrampoline_GetCallbacks(&cur_cb);
             if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
@@ -2421,8 +2432,7 @@ sys__is_gil_enabled_impl(PyObject *module)
 /*[clinic end generated code: output=57732cf53f5b9120 input=7e9c47f15a00e809]*/
 {
 #ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return interp->ceval.gil->enabled;
+    return _PyEval_IsGILEnabled(_PyThreadState_GET());
 #else
     return 1;
 #endif
@@ -3775,7 +3785,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return _PyStatus_ERR("failed to create a module object");
     }
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(sysmod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
 #endif
 
     PyObject *sysdict = PyModule_GetDict(sysmod);

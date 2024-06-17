@@ -2,7 +2,7 @@
 
 .. _monitoring:
 
-Monitorong C API
+Monitoring C API
 ================
 
 Added in version 3.13.
@@ -121,10 +121,10 @@ See :mod:`sys.monitoring` for descriptions of the events.
    :c:func:`PyErr_GetRaisedException`).
 
 
-.. c:function:: int PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset)
+.. c:function:: int PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *value)
 
-   Fire a ``STOP_ITERATION`` event with the current exception (as returned by
-   :c:func:`PyErr_GetRaisedException`).
+   Fire a ``STOP_ITERATION`` event. If ``value`` is an instance of :exc:`StopIteration`, it is used. Otherwise,
+   a new :exc:`StopIteration` instance is created with ``value`` as its argument.
 
 
 Managing the Monitoring State

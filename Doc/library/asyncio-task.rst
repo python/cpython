@@ -538,7 +538,7 @@ Running Tasks Concurrently
       #     [2, 6, 24]
 
    .. note::
-      If *return_exceptions* is False, cancelling gather() after it
+      If *return_exceptions* is false, cancelling gather() after it
       has been marked done won't cancel any submitted awaitables.
       For instance, gather can be marked done after propagating an
       exception to the caller, therefore, calling ``gather.cancel()``
@@ -1386,7 +1386,7 @@ Task Object
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
 
-      If end-user code is, for some reason, suppresing cancellation by
+      If end-user code is, for some reason, suppressing cancellation by
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
 

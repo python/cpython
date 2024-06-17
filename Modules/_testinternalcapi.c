@@ -18,6 +18,7 @@
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
+#include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -1965,23 +1966,28 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyObject *
-set_immortalize_deferred(PyObject *self, PyObject *value)
+suppress_immortalization(PyObject *self, PyObject *value)
+{
+#ifdef Py_GIL_DISABLED
+    int suppress = PyObject_IsTrue(value);
+    if (suppress < 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
+#endif
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = PyInterpreterState_Get();
-    int old_enabled = interp->gc.immortalize.enabled;
-    int old_enabled_on_thread = interp->gc.immortalize.enable_on_thread_created;
-    int enabled_on_thread = 0;
-    if (!PyArg_ParseTuple(value, "i|i",
-                          &interp->gc.immortalize.enabled,
-                          &enabled_on_thread))
-    {
-        return NULL;
-    }
-    interp->gc.immortalize.enable_on_thread_created = enabled_on_thread;
-    return Py_BuildValue("ii", old_enabled, old_enabled_on_thread);
+    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
 #else
-    return Py_BuildValue("OO", Py_False, Py_False);
+    Py_RETURN_FALSE;
 #endif
 }
 
@@ -1994,6 +2000,41 @@ has_inline_values(PyObject *self, PyObject *obj)
     }
     Py_RETURN_FALSE;
 }
+
+
+// Circumvents standard version assignment machinery - use with caution and only on
+// short-lived heap types
+static PyObject *
+type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    unsigned int version;
+    if (!PyArg_ParseTuple(args, "Oi:type_assign_specific_version_unsafe", &type, &version)) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
+    _PyType_SetVersion(type, version);
+    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+gh_119213_getargs
+
+    spam: object = None
+
+Test _PyArg_Parser.kwtuple
+[clinic start generated code]*/
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam)
+/*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
+{
+    // It must never have been called in the main interprer
+    assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
+    return Py_NewRef(spam);
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2077,13 +2118,18 @@ static PyMethodDef module_functions[] = {
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
     {"has_inline_values", has_inline_values, METH_O},
+    {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
+     PyDoc_STR("forcefully assign type->tp_version_tag")},
+
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
-    {"set_immortalize_deferred", set_immortalize_deferred, METH_VARARGS},
+    {"suppress_immortalization", suppress_immortalization, METH_O},
+    {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
 #endif
+    GH_119213_GETARGS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 

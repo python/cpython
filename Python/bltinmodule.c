@@ -866,7 +866,20 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
+#ifdef Py_GIL_DISABLED
+    // gh-118527: Disable immortalization of code constants for explicit
+    // compile() calls to get consistent frozen outputs between the default
+    // and free-threaded builds.
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_atomic_add_int(&interp->gc.immortalize, -2);
+#endif
+
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_int(&interp->gc.immortalize, 2);
+#endif
 
     Py_XDECREF(source_copy);
     goto finally;
@@ -2627,7 +2640,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 /* Avoid losing the sign on a negative result,
                    and don't let adding the compensation convert
                    an infinite or overflowed sum to a NaN. */
-                if (c && Py_IS_FINITE(c)) {
+                if (c && isfinite(c)) {
                     f_result += c;
                 }
                 return PyFloat_FromDouble(f_result);
@@ -2659,7 +2672,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
             }
-            if (c && Py_IS_FINITE(c)) {
+            if (c && isfinite(c)) {
                 f_result += c;
             }
             result = PyFloat_FromDouble(f_result);
@@ -3125,7 +3138,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     if (mod == NULL)
         return NULL;
 #ifdef Py_GIL_DISABLED
-    PyModule_ExperimentalSetGIL(mod, Py_MOD_GIL_NOT_USED);
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
 #endif
     dict = PyModule_GetDict(mod);
 

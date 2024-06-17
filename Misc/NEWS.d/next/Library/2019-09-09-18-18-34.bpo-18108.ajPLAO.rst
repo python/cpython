@@ -1,1 +1,0 @@
-:func:`shutil.chown` now supports *dir_fd* and *follow_symlinks* keyword arguments.

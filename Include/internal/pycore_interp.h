@@ -245,6 +245,7 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
+    struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
@@ -400,7 +401,10 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        if (val < UINT8_MAX) { \
+            FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
+        } \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 

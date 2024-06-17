@@ -799,6 +799,7 @@ static PyMethodDef gen_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1151,6 +1152,7 @@ static PyMethodDef coro_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1846,8 +1848,25 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
 static PyObject *
 async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 {
-    o->ags_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->ags_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_asend_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 static void
@@ -2291,8 +2310,25 @@ async_gen_athrow_iternext(PyAsyncGenAThrow *o)
 static PyObject *
 async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 {
-    o->agt_state = AWAITABLE_STATE_CLOSED;
-    Py_RETURN_NONE;
+    PyObject *result;
+    if (o->agt_state == AWAITABLE_STATE_CLOSED) {
+        Py_RETURN_NONE;
+    }
+    result = async_gen_athrow_throw(o, &PyExc_GeneratorExit, 1);
+    if (result == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+            PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return result;
+    } else {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_RuntimeError, "coroutine ignored GeneratorExit");
+        return NULL;
+    }
 }
 
 

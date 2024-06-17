@@ -1,6 +1,0 @@
-We've exposed the low-level :mod:`!_interpreters` module for the sake of the
-PyPI implementation of :pep:`734`.  It was sometimes available as the
-:mod:`!_xxsubinterpreters` module and was formerly used only for testing. For
-the most part, it should be considered an internal module, like :mod:`!_thread`
-and :mod:`!_imp`. See
-https://discuss.python.org/t/pep-734-multiple-interpreters-in-the-stdlib/41147/26.

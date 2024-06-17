@@ -1,4 +1,0 @@
-Add ``sys._is_gil_enabled()`` function that returns whether the GIL is
-currently enabled.  In the default build it always returns ``True`` because
-the GIL is always enabled.  In the free-threaded build, it may return
-``True`` or ``False``.

@@ -168,7 +168,7 @@ static inline int
 _PyObject_HasDeferredRefcount(PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
-    return (op->ob_gc_bits & _PyGC_BITS_DEFERRED) != 0;
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_DEFERRED);
 #else
     return 0;
 #endif
@@ -262,7 +262,7 @@ extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((type->tp_flags & feature) != 0);
+    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -320,7 +320,7 @@ static inline void _PyObject_GC_TRACK(
                           "object already tracked by the garbage collector",
                           filename, lineno, __func__);
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_TRACKED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyObject_ASSERT_FROM(op,
@@ -361,7 +361,7 @@ static inline void _PyObject_GC_UNTRACK(
                           filename, lineno, __func__);
 
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits &= ~_PyGC_BITS_TRACKED;
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_TRACKED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     PyGC_Head *prev = _PyGCHead_PREV(gc);
@@ -497,6 +497,9 @@ _Py_NewRefWithLock(PyObject *op)
     if (_Py_TryIncrefFast(op)) {
         return op;
     }
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
     _Py_INCREF_STAT_INC();
     for (;;) {
         Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
@@ -586,7 +589,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(
+        managed_static_type_state *state = _PyStaticType_GetState(
                                                 interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
@@ -658,6 +661,7 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
+extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj,

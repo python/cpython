@@ -101,7 +101,7 @@ struct PyModuleDef_Slot {
 #endif
 
 #if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
-PyAPI_FUNC(int) PyModule_ExperimentalSetGIL(PyObject *module, void *gil);
+PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
 #endif
 
 struct PyModuleDef {

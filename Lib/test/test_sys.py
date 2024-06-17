@@ -394,10 +394,15 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.refcount_test
     def test_refcount(self):
-        # n here must be a global in order for this test to pass while
-        # tracing with a python function.  Tracing calls PyFrame_FastToLocals
-        # which will add a copy of any locals to the frame object, causing
-        # the reference count to increase by 2 instead of 1.
+        # n here originally had to be a global in order for this test to pass
+        # while tracing with a python function. Tracing used to call
+        # PyFrame_FastToLocals, which would add a copy of any locals to the
+        # frame object, causing the ref count to increase by 2 instead of 1.
+        # While that no longer happens (due to PEP 667), this test case retains
+        # its original global-based implementation
+        # PEP 683's immortal objects also made this point moot, since the
+        # refcount for None doesn't change anyway. Maybe this test should be
+        # using a different constant value? (e.g. an integer)
         global n
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
@@ -1564,7 +1569,7 @@ class SizeofTest(unittest.TestCase):
         check(x, size('3Pi2cP7P2ic??2P'))
         # function
         def func(): pass
-        check(func, size('15Pi'))
+        check(func, size('16Pi'))
         class c():
             @staticmethod
             def foo():
@@ -1788,6 +1793,21 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(old.finalizer)
 
         firstiter = lambda *a: None
+        finalizer = lambda *a: None
+
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(firstiter=firstiter, finalizer="invalid")
+        cur = sys.get_asyncgen_hooks()
+        self.assertIsNone(cur.firstiter)
+        self.assertIsNone(cur.finalizer)
+
+        # gh-118473
+        with self.assertRaises(TypeError):
+            sys.set_asyncgen_hooks(firstiter="invalid", finalizer=finalizer)
+        cur = sys.get_asyncgen_hooks()
+        self.assertIsNone(cur.firstiter)
+        self.assertIsNone(cur.finalizer)
+
         sys.set_asyncgen_hooks(firstiter=firstiter)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
@@ -1795,7 +1815,6 @@ class SizeofTest(unittest.TestCase):
         self.assertIs(hooks.finalizer, None)
         self.assertIs(hooks[1], None)
 
-        finalizer = lambda *a: None
         sys.set_asyncgen_hooks(finalizer=finalizer)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)

@@ -275,6 +275,7 @@ typedef struct _heaptypeobject {
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyType_LookupRef(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
@@ -312,7 +313,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * Temporary variables are used to only evalutate macro arguments once and so
+ * Temporary variables are used to only evaluate macro arguments once and so
  * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
  * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
  * implementation details about type punning.

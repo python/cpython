@@ -1,3 +1,0 @@
-:ref:`Annotation scopes <annotation-scopes>` within classes can now contain
-comprehensions. However, such comprehensions are not inlined into their
-parent scope at runtime. Patch by Jelle Zijlstra.

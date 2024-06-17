@@ -224,7 +224,6 @@ create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
-create_converter('LPCTSTR', 's')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
 class LPCWSTR_converter(Py_UNICODE_converter):
@@ -259,7 +258,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ef52a757a1830d92]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=da0a4db751936ee7]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -530,7 +529,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+    if (PySys_Audit("_winapi.CreateFile", "ukkkk",
                     file_name, desired_access, share_mode,
                     creation_disposition, flags_and_attributes) < 0) {
         return INVALID_HANDLE_VALUE;
@@ -777,7 +776,7 @@ _winapi_CreateMutexW_impl(PyObject *module,
 /*[clinic input]
 _winapi.CreateNamedPipe -> HANDLE
 
-    name: LPCTSTR
+    name: LPCWSTR
     open_mode: DWORD
     pipe_mode: DWORD
     max_instances: DWORD
@@ -789,25 +788,25 @@ _winapi.CreateNamedPipe -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes)
-/*[clinic end generated code: output=80f8c07346a94fbc input=5a73530b84d8bc37]*/
+/*[clinic end generated code: output=7d6fde93227680ba input=5bd4e4a55639ee02]*/
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+    if (PySys_Audit("_winapi.CreateNamedPipe", "ukk",
                     name, open_mode, pipe_mode) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateNamedPipe(name, open_mode, pipe_mode,
-                             max_instances, out_buffer_size,
-                             in_buffer_size, default_timeout,
-                             security_attributes);
+    handle = CreateNamedPipeW(name, open_mode, pipe_mode,
+                              max_instances, out_buffer_size,
+                              in_buffer_size, default_timeout,
+                              security_attributes);
     Py_END_ALLOW_THREADS
 
     if (handle == INVALID_HANDLE_VALUE)
@@ -1790,7 +1789,7 @@ _winapi_OpenEventW_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenEventW", "Iu", desired_access, name) < 0) {
+    if (PySys_Audit("_winapi.OpenEventW", "ku", desired_access, name) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1821,7 +1820,7 @@ _winapi_OpenMutexW_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenMutexW", "Iu", desired_access, name) < 0) {
+    if (PySys_Audit("_winapi.OpenMutexW", "ku", desired_access, name) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1882,7 +1881,7 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenProcess", "II",
+    if (PySys_Audit("_winapi.OpenProcess", "kk",
                     process_id, desired_access) < 0) {
         return INVALID_HANDLE_VALUE;
     }
@@ -2236,19 +2235,19 @@ _winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address)
 /*[clinic input]
 _winapi.WaitNamedPipe
 
-    name: LPCTSTR
+    name: LPCWSTR
     timeout: DWORD
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout)
-/*[clinic end generated code: output=c2866f4439b1fe38 input=36fc781291b1862c]*/
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout)
+/*[clinic end generated code: output=e161e2e630b3e9c2 input=099a4746544488fa]*/
 {
     BOOL success;
 
     Py_BEGIN_ALLOW_THREADS
-    success = WaitNamedPipe(name, timeout);
+    success = WaitNamedPipeW(name, timeout);
     Py_END_ALLOW_THREADS
 
     if (!success)
@@ -2917,7 +2916,7 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     HRESULT hr;
     COPYFILE2_EXTENDED_PARAMETERS params = { sizeof(COPYFILE2_EXTENDED_PARAMETERS) };
 
-    if (PySys_Audit("_winapi.CopyFile2", "uuI",
+    if (PySys_Audit("_winapi.CopyFile2", "uuk",
                     existing_file_name, new_file_name, flags) < 0) {
         return NULL;
     }

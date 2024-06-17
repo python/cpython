@@ -365,7 +365,10 @@ class EnumDict(dict):
                     '_generate_next_value_', '_numeric_repr_', '_missing_', '_ignore_',
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     '_add_alias_', '_add_value_alias_',
-                    ):
+                    # While not in use internally, those are common for pretty
+                    # printing and thus excluded from Enum's reservation of
+                    # _sunder_ names
+                    ) and not key.startswith('_repr_'):
                 raise ValueError(
                         '_sunder_ names, such as %r, are reserved for future Enum use'
                         % (key, )

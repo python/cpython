@@ -8,7 +8,7 @@ import sys
 
 # types
 if False:
-    from typing import Protocol, Any
+    from typing import Protocol
     class Pager(Protocol):
         def __call__(self, text: str, title: str = "") -> None:
             ...
@@ -23,7 +23,7 @@ def get_pager() -> Pager:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plain_pager
     if sys.platform == "emscripten":
-        return plainpager
+        return plain_pager
     use_pager = os.environ.get('MANPAGER') or os.environ.get('PAGER')
     if use_pager:
         if sys.platform == 'win32': # pipes completely broken in Windows
@@ -35,7 +35,7 @@ def get_pager() -> Pager:
     if os.environ.get('TERM') in ('dumb', 'emacs'):
         return plain_pager
     if sys.platform == 'win32':
-        return lambda text, title='': tempfilepager(plain(text), 'more <')
+        return lambda text, title='': tempfile_pager(plain(text), 'more <')
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
         return lambda text, title='': pipe_pager(text, 'less', title)
 
@@ -76,10 +76,14 @@ def tty_pager(text: str, title: str = '') -> None:
         fd = sys.stdin.fileno()
         old = termios.tcgetattr(fd)
         tty.setcbreak(fd)
-        getchar = lambda: sys.stdin.read(1)
         has_tty = True
+
+        def getchar() -> str:
+            return sys.stdin.read(1)
+
     except (ImportError, AttributeError, io.UnsupportedOperation):
-        getchar = lambda: sys.stdin.readline()[:-1][:1]
+        def getchar() -> str:
+            return sys.stdin.readline()[:-1][:1]
 
     try:
         try:

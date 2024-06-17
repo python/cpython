@@ -485,6 +485,9 @@ static inline int
 _Py_atomic_load_int_acquire(const int *obj);
 
 static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value);
+
+static inline void
 _Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value);
 
 static inline uint64_t

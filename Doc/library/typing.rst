@@ -1780,7 +1780,7 @@ without the dedicated syntax, as documented below.
 
 .. _typevartuple:
 
-.. class:: TypeVarTuple(name, default=typing.NoDefault)
+.. class:: TypeVarTuple(name, *, default=typing.NoDefault)
 
    Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
@@ -2498,7 +2498,7 @@ types.
 
       This attribute reflects *only* the value of the ``total`` argument
       to the current ``TypedDict`` class, not whether the class is semantically
-      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      total. For example, a ``TypedDict`` with ``__total__`` set to ``True`` may
       have keys marked with :data:`NotRequired`, or it may inherit from another
       ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
       :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
@@ -2546,7 +2546,7 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support for :data:`ReadOnly` is reflected in the following attributes::
+   Support for :data:`ReadOnly` is reflected in the following attributes:
 
    .. attribute:: __readonly_keys__
 
@@ -3080,35 +3080,37 @@ Introspection helpers
    Return a dictionary containing type hints for a function, method, module
    or class object.
 
-   This is often the same as ``obj.__annotations__``. In addition,
-   forward references encoded as string literals are handled by evaluating
-   them in ``globals``, ``locals`` and (where applicable)
-   :ref:`type parameter <type-params>` namespaces.
-   For a class ``C``, return
-   a dictionary constructed by merging all the ``__annotations__`` along
-   ``C.__mro__`` in reverse order.
+   This is often the same as ``obj.__annotations__``, but this function makes
+   the following changes to the annotations dictionary:
 
-   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
-   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example:
+   * Forward references encoded as string literals or :class:`ForwardRef`
+     objects are handled by evaluating them in *globalns*, *localns*, and
+     (where applicable) *obj*'s :ref:`type parameter <type-params>` namespace.
+     If *globalns* or *localns* is not given, appropriate namespace
+     dictionaries are inferred from *obj*.
+   * ``None`` is replaced with :class:`types.NoneType`.
+   * If :func:`@no_type_check <no_type_check>` has been applied to *obj*, an
+     empty dictionary is returned.
+   * If *obj* is a class ``C``, the function returns a dictionary that merges
+     annotations from ``C``'s base classes with those on ``C`` directly. This
+     is done by traversing ``C.__mro__`` and iteratively combining
+     ``__annotations__`` dictionaries. Annotations on classes appearing
+     earlier in the :term:`method resolution order` always take precedence over
+     annotations on classes appearing later in the method resolution order.
+   * The function recursively replaces all occurrences of ``Annotated[T, ...]``
+     with ``T``, unless *include_extras* is set to ``True`` (see
+     :class:`Annotated` for more information).
 
-   .. testcode::
-
-       class Student(NamedTuple):
-           name: Annotated[str, 'some marker']
-
-       assert get_type_hints(Student) == {'name': str}
-       assert get_type_hints(Student, include_extras=False) == {'name': str}
-       assert get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, 'some marker']
-       }
+   See also :func:`inspect.get_annotations`, a lower-level function that
+   returns annotations more directly.
 
    .. note::
 
-      :func:`get_type_hints` does not work with imported
-      :ref:`type aliases <type-aliases>` that include forward references.
-      Enabling postponed evaluation of annotations (:pep:`563`) may remove
-      the need for most forward references.
+      If any forward references in the annotations of *obj* are not resolvable
+      or are not valid Python code, this function will raise an exception
+      such as :exc:`NameError`. For example, this can happen with imported
+      :ref:`type aliases <type-aliases>` that include forward references,
+      or with names imported under :data:`if TYPE_CHECKING <TYPE_CHECKING>`.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
@@ -3502,14 +3504,6 @@ Aliases to container ABCs in :mod:`collections.abc`
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ByteString(Sequence[int])
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   .. deprecated-removed:: 3.9 3.14
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
-
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    Deprecated alias to :class:`collections.abc.Collection`.
@@ -3648,8 +3642,14 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
    is no ``ReturnType`` type parameter. As with :class:`Generator`, the
    ``SendType`` behaves contravariantly.
 
-   If your generator will only yield values, set the ``SendType`` to
-   ``None``::
+   The ``SendType`` defaults to :const:`!None`::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   It is also possible to set this type explicitly::
 
       async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
           while True:
@@ -3670,6 +3670,9 @@ Aliases to asynchronous ABCs in :mod:`collections.abc`
       :class:`collections.abc.AsyncGenerator`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      The ``SendType`` parameter now has a default.
 
 .. class:: AsyncIterable(Generic[T_co])
 
@@ -3754,8 +3757,14 @@ Aliases to other ABCs in :mod:`collections.abc`
    of :class:`Generator` behaves contravariantly, not covariantly or
    invariantly.
 
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
+   The ``SendType`` and ``ReturnType`` parameters default to :const:`!None`::
+
+      def infinite_stream(start: int) -> Generator[int]:
+          while True:
+              yield start
+              start += 1
+
+   It is also possible to set these types explicitly::
 
       def infinite_stream(start: int) -> Generator[int, None, None]:
           while True:
@@ -3773,6 +3782,9 @@ Aliases to other ABCs in :mod:`collections.abc`
    .. deprecated:: 3.9
       :class:`collections.abc.Generator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      Default values for the send and return types were added.
 
 .. class:: Hashable
 
@@ -3801,9 +3813,14 @@ Aliases to other ABCs in :mod:`collections.abc`
 Aliases to :mod:`contextlib` ABCs
 """""""""""""""""""""""""""""""""
 
-.. class:: ContextManager(Generic[T_co])
+.. class:: ContextManager(Generic[T_co, ExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
+
+   The first type parameter, ``T_co``, represents the type returned by
+   the :meth:`~object.__enter__` method. The optional second type parameter, ``ExitT_co``,
+   which defaults to ``bool | None``, represents the type returned by the
+   :meth:`~object.__exit__` method.
 
    .. versionadded:: 3.5.4
 
@@ -3812,9 +3829,17 @@ Aliases to :mod:`contextlib` ABCs
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncContextManager(Generic[T_co])
+   .. versionchanged:: 3.13
+      Added the optional second type parameter, ``ExitT_co``.
+
+.. class:: AsyncContextManager(Generic[T_co, AExitT_co])
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
+
+   The first type parameter, ``T_co``, represents the type returned by
+   the :meth:`~object.__aenter__` method. The optional second type parameter, ``AExitT_co``,
+   which defaults to ``bool | None``, represents the type returned by the
+   :meth:`~object.__aexit__` method.
 
    .. versionadded:: 3.6.2
 
@@ -3822,6 +3847,9 @@ Aliases to :mod:`contextlib` ABCs
       :class:`contextlib.AbstractAsyncContextManager`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.13
+      Added the optional second type parameter, ``AExitT_co``.
 
 Deprecation Timeline of Major Features
 ======================================
@@ -3841,10 +3869,6 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
-   * - :class:`typing.ByteString`
-     - 3.9
-     - 3.14
-     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided
