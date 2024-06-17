@@ -15295,6 +15295,19 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         int shared = 0;
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
+            /* Make immortal interned strings mortal again.
+             *
+             * Currently, the runtime is not able to guarantee that it can exit
+             * without allocations that carry over to a future initialization
+             * of Python within the same process. i.e:
+             *   ./python -X showrefcount -c 'import itertools'
+             *   [237 refs, 237 blocks]
+             *
+             * This should remain disabled (`Py_DEBUG` only) until there is a
+             * strict guarantee that no memory will be left after
+             * `Py_Finalize`.
+             */
+#ifdef Py_DEBUG
             // Skip the Immortal Instance check and restore
             // the two references (key and value) ignored
             // by PyUnicode_InternInPlace().
@@ -15307,6 +15320,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif
+#endif // Py_DEBUG
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             /* It is shared between interpreters, so we should unmark it
