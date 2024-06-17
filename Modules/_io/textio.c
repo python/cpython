@@ -1701,34 +1701,56 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
+    // We should avoid concatinating huge data.
+    // Flush the buffer before adding b to the buffer if b is not small.
+    // https://github.com/python/cpython/issues/87426
+    if (bytes_len >= self->chunk_size) {
+        // _textiowrapper_writeflush() calls buffer.write().
+        // self->pending_bytes can be appended during buffer->write()
+        // or other thread.
+        // We need to loop until buffer becomes empty.
+        // https://github.com/python/cpython/issues/118138
+        // https://github.com/python/cpython/issues/119506
+        while (self->pending_bytes != NULL) {
+            if (_textiowrapper_writeflush(self) < 0) {
+                Py_DECREF(b);
+                return NULL;
+            }
+        }
+    }
+
     if (self->pending_bytes == NULL) {
-        self->pending_bytes_count = 0;
+        assert(self->pending_bytes_count == 0);
         self->pending_bytes = b;
-    }
-    else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
-        // Prevent to concatenate more than chunk_size data.
-        if (_textiowrapper_writeflush(self) < 0) {
-            Py_DECREF(b);
-            return NULL;
-        }
-        self->pending_bytes = b;
-    }
-    else if (!PyList_CheckExact(self->pending_bytes)) {
-        PyObject *list = PyList_New(2);
-        if (list == NULL) {
-            Py_DECREF(b);
-            return NULL;
-        }
-        PyList_SET_ITEM(list, 0, self->pending_bytes);
-        PyList_SET_ITEM(list, 1, b);
-        self->pending_bytes = list;
     }
     else {
-        if (PyList_Append(self->pending_bytes, b) < 0) {
-            Py_DECREF(b);
+        if (!PyList_CheckExact(self->pending_bytes)) {
+            PyObject *list = PyList_New(0);
+            if (list == NULL) {
+                Py_DECREF(b);
+                return NULL;
+            }
+            // PyList_New() may trigger GC and other thread may call write().
+            // So, we need to check the self->pending_bytes is a list again.
+            if (PyList_CheckExact(self->pending_bytes)) {
+                // Releasing empty list won't trigger GC and/or __del__.
+                Py_DECREF(list);
+            }
+            else {
+                if (PyList_Append(list, self->pending_bytes) < 0) {
+                    Py_DECREF(list);
+                    Py_DECREF(b);
+                    return NULL;
+                }
+                Py_SETREF(self->pending_bytes, list);
+            }
+        }
+
+        int ret = PyList_Append(self->pending_bytes, b);
+        Py_DECREF(b);
+        if (ret < 0) {
             return NULL;
         }
-        Py_DECREF(b);
     }
 
     self->pending_bytes_count += bytes_len;
