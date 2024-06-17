@@ -18,13 +18,12 @@ from generators_common import (
     ROOT,
     write_header,
     emit_tokens,
-    emit_to,
     replace_sync_sp,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch, UNUSED
+from stack import Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
