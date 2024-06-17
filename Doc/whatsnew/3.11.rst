@@ -768,6 +768,21 @@ functools
   (Contributed by Yurii Karabas in :issue:`46014`.)
 
 
+.. _whatsnew311-gzip:
+
+gzip
+----
+
+* The :func:`gzip.compress` function is now faster when used with the
+  **mtime=0** argument as it delegates the compression entirely to a single
+  :func:`zlib.compress` operation. There is one side effect of this change: The
+  gzip file header contains an "OS" byte in its header. That was traditionally
+  always set to a value of 255 representing "unknown" by the :mod:`gzip`
+  module. Now, when using :func:`~gzip.compress` with **mtime=0**, it may be
+  set to a different value by the underlying zlib C library Python was linked
+  against.
+  (See :gh:`112346` for details on the side effect.)
+
 .. _whatsnew311-hashlib:
 
 hashlib
