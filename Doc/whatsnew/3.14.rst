@@ -118,6 +118,17 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+uuid
+----
+
+* Add support for UUID versions 6, 7, and 8 as specified by
+  :rfc:`9562` to the :mod:`uuid` module:
+
+  * :meth:`~uuid.uuid6`
+  * :meth:`~uuid.uuid7`
+  * :meth:`~uuid.uuid8`
+
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
 
 Optimizations
 =============
