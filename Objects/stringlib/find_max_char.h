@@ -25,7 +25,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     const unsigned char *size_t_end = _end - SIZEOF_SIZE_T;
     const unsigned char *unrolled_end = _end - (4 * SIZEOF_SIZE_T - 1);
     while (p < unrolled_end) {
-        /* Test chunks of 32 as more granularity limits compiler optimization */
+        /* Chunks of 4 size_t values allow for compiler optimizations using vectors */
         const size_t *restrict _p = (const size_t *)p;
         size_t value0;
         size_t value1;
@@ -50,8 +50,11 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         accumulator |= value;
         p += SIZEOF_SIZE_T;
     }
+    /* In the end there will be up to SIZEOF_SIZE_T leftover characters. It is
+       faster to do an unaligned load of a size_t integer at an offset from
+       the end rather than breaking it up into single bytes. However, if the
+       string is smaller than SIZEOF_SIZE_T this strategy is illegal. */
     if (size_t_end >= (const unsigned char*)begin) {
-        /* Do unaligned size_t load rather than loading bytes individually. */
         size_t value;
         memcpy(&value, size_t_end, SIZEOF_SIZE_T);
         accumulator |= value;
