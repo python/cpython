@@ -1682,8 +1682,12 @@ convertenviron(void)
 #else
         const char *p = strchr(*e, '=');
 #endif
-        if (p == NULL)
+        if (p == NULL) {
+            // Silently skip variable with no name
             continue;
+        }
+
+        // Note: Allow empty variable name
 #ifdef MS_WINDOWS
         k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
 #else
@@ -1703,6 +1707,8 @@ convertenviron(void)
             Py_DECREF(d);
             return NULL;
         }
+
+        // If a variable is set twice, use the first value
         if (PyDict_SetDefaultRef(d, k, v, NULL) < 0) {
             Py_DECREF(v);
             Py_DECREF(k);

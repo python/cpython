@@ -835,15 +835,19 @@ if _exists("_get_user_default_environ"):
         """
         Get the default environment of the current process user as a dictionary.
         """
-        env = {}
         env_str = _get_user_default_environ()
+        env = {}
         for entry in env_str.split('\0'):
             parts = entry.split('=', 1)
             if len(parts) != 2:
-                # Skip names that begin with '='
+                # Silently skip variable with no name
                 continue
+
+            # Note: Allow empty variable name
             name, value = parts
-            env[name] = value
+
+            # If a variable is set twice, use the first value
+            env.setdefault(name, value)
         return env
 
 
