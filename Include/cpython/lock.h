@@ -30,11 +30,11 @@ typedef struct PyMutex {
     uint8_t _bits;  // (private)
 } PyMutex;
 
-// (private) slow path for locking the mutex
-PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
+// exported function for locking the mutex
+PyAPI_FUNC(void) PyMutex_Lock(PyMutex *m);
 
-// (private) slow path for unlocking the mutex
-PyAPI_FUNC(void) _PyMutex_UnlockSlow(PyMutex *m);
+// exported function for unlocking the mutex
+PyAPI_FUNC(void) PyMutex_Unlock(PyMutex *m);
 
 // Locks the mutex.
 //
@@ -42,20 +42,22 @@ PyAPI_FUNC(void) _PyMutex_UnlockSlow(PyMutex *m);
 // the mutex is unlocked. If the current thread holds the GIL, then the GIL
 // will be released while the thread is parked.
 static inline void
-PyMutex_Lock(PyMutex *m)
+_PyMutex_Lock(PyMutex *m)
 {
     uint8_t expected = _Py_UNLOCKED;
     if (!_Py_atomic_compare_exchange_uint8(&m->_bits, &expected, _Py_LOCKED)) {
-        _PyMutex_LockSlow(m);
+        PyMutex_Lock(m);
     }
 }
+#define PyMutex_Lock _PyMutex_Lock
 
 // Unlocks the mutex.
 static inline void
-PyMutex_Unlock(PyMutex *m)
+_PyMutex_Unlock(PyMutex *m)
 {
     uint8_t expected = _Py_LOCKED;
     if (!_Py_atomic_compare_exchange_uint8(&m->_bits, &expected, _Py_UNLOCKED)) {
-        _PyMutex_UnlockSlow(m);
+        PyMutex_Unlock(m);
     }
 }
+#define PyMutex_Unlock _PyMutex_Unlock

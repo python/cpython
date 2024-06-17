@@ -47,8 +47,9 @@ _Py_yield(void)
 #endif
 }
 
+#undef PyMutex_Lock
 void
-_PyMutex_LockSlow(PyMutex *m)
+PyMutex_Lock(PyMutex *m)
 {
     _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
 }
@@ -182,8 +183,9 @@ _PyMutex_TryUnlock(PyMutex *m)
     }
 }
 
+#undef PyMutex_Unlock
 void
-_PyMutex_UnlockSlow(PyMutex *m)
+PyMutex_Unlock(PyMutex *m)
 {
     if (_PyMutex_TryUnlock(m) < 0) {
         Py_FatalError("unlocking mutex that is not locked");
