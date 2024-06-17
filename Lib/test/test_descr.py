@@ -1314,7 +1314,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # Inherit from object on purpose to check some backwards compatibility paths
         class X(object):
             __slots__ = "a"
-        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+        with self.assertRaisesRegex(AttributeError, "'test.test_descr.ClassPropertiesAndMethods.test_slots.<locals>.X' object has no attribute 'a'"):
             X().a
 
         # Test string subclass in `__slots__`, see gh-98783
