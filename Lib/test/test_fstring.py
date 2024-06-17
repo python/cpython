@@ -14,7 +14,6 @@ import re
 import types
 import decimal
 import unittest
-import warnings
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
