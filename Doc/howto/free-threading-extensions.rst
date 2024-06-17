@@ -228,7 +228,7 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build on Linux and Windows if you set
+  free-threaded build if you set
   `CIBW_FREE_THREADED_SUPPORT <https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support>`_.
 
 Limited C API and Stable ABI
@@ -252,10 +252,3 @@ Windows
 
 Due to a limitation of the official Windows installer, you will need to
 manually define ``Py_GIL_DISABLED=1`` when building extensions from source.
-
-
-macOS
-.....
-
-The offical macOS binaries do not currently support the free-threaded build
-as of 3.13b1.  You will need to build Python from source.
