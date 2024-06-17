@@ -518,6 +518,8 @@ class TestSpecifics(unittest.TestCase):
             """)
 
         tree = ast.parse(code)
+
+        # make all instructions locations the same to create redundancies
         for node in ast.walk(tree):
             if hasattr(node,"lineno"):
                  del node.lineno
