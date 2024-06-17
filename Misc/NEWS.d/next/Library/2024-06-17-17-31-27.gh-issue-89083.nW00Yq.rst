@@ -1,0 +1,2 @@
+Add :func:`~uuid.uuid6`, :func:`~uuid.uuid7` and :func:`~uuid.uuid8` to the
+:mod:`uuid` module as specified by :rfc:`9562`. Patch by Bénédikt Tran.
