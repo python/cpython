@@ -49,7 +49,7 @@ type GenericAlias[T] = list[T]
 def generic_spam[T](a):
     pass
 
-class GenericMine[T: int]:
+class GenericMine[T: int, U: (int, str) = int]:
     pass
 """
 
@@ -78,6 +78,7 @@ class SymtableTest(unittest.TestCase):
     GenericMine = find_block(top, "GenericMine")
     GenericMine_inner = find_block(GenericMine, "GenericMine")
     T = find_block(GenericMine, "T")
+    U = find_block(GenericMine, "U")
 
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
@@ -87,13 +88,14 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.internal.get_type(), "function")
         self.assertEqual(self.foo.get_type(), "function")
         self.assertEqual(self.Alias.get_type(), "type alias")
-        self.assertEqual(self.GenericAlias.get_type(), "type parameter")
+        self.assertEqual(self.GenericAlias.get_type(), "type parameters")
         self.assertEqual(self.GenericAlias_inner.get_type(), "type alias")
-        self.assertEqual(self.generic_spam.get_type(), "type parameter")
+        self.assertEqual(self.generic_spam.get_type(), "type parameters")
         self.assertEqual(self.generic_spam_inner.get_type(), "function")
-        self.assertEqual(self.GenericMine.get_type(), "type parameter")
+        self.assertEqual(self.GenericMine.get_type(), "type parameters")
         self.assertEqual(self.GenericMine_inner.get_type(), "class")
-        self.assertEqual(self.T.get_type(), "TypeVar bound")
+        self.assertEqual(self.T.get_type(), "type variable")
+        self.assertEqual(self.U.get_type(), "type variable")
 
     def test_id(self):
         self.assertGreater(self.top.get_id(), 0)
@@ -205,12 +207,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_annotated(self):
         st1 = symtable.symtable('def f():\n    x: int\n', 'test', 'exec')
-        st2 = st1.get_children()[0]
+        st2 = st1.get_children()[1]
+        self.assertEqual(st2.get_type(), "function")
         self.assertTrue(st2.lookup('x').is_local())
         self.assertTrue(st2.lookup('x').is_annotated())
         self.assertFalse(st2.lookup('x').is_global())
         st3 = symtable.symtable('def f():\n    x = 1\n', 'test', 'exec')
-        st4 = st3.get_children()[0]
+        st4 = st3.get_children()[1]
+        self.assertEqual(st4.get_type(), "function")
         self.assertTrue(st4.lookup('x').is_local())
         self.assertFalse(st4.lookup('x').is_annotated())
 
@@ -301,6 +305,27 @@ class SymtableTest(unittest.TestCase):
                          "<symbol 'some_var': FREE, USE|DEF_NONLOCAL|DEF_LOCAL>")
         self.assertEqual(repr(self.GenericMine.lookup("T")),
                          "<symbol 'T': LOCAL, DEF_LOCAL|DEF_TYPE_PARAM>")
+
+        st1 = symtable.symtable("[x for x in [1]]", "?", "exec")
+        self.assertEqual(repr(st1.lookup("x")),
+                         "<symbol 'x': LOCAL, USE|DEF_LOCAL|DEF_COMP_ITER>")
+
+        st2 = symtable.symtable("[(lambda: x) for x in [1]]", "?", "exec")
+        self.assertEqual(repr(st2.lookup("x")),
+                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER|DEF_COMP_CELL>")
+
+        st3 = symtable.symtable("def f():\n"
+                                "   x = 1\n"
+                                "   class A:\n"
+                                "       x = 2\n"
+                                "       def method():\n"
+                                "           return x\n",
+                                "?", "exec")
+        # child 0 is for __annotate__
+        func_f = st3.get_children()[1]
+        class_A = func_f.get_children()[0]
+        self.assertEqual(repr(class_A.lookup('x')),
+                         "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
 
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"

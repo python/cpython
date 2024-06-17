@@ -594,7 +594,7 @@ Glossary
       therefore it is never deallocated.
 
       Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
+      :const:`True` and :const:`None` singletons are immortal.
 
       See `PEP 683 – Immortal Objects, Using a Fixed Refcount
       <https://peps.python.org/pep-0683/>`_ for more information.

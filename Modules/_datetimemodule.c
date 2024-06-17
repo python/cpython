@@ -3090,7 +3090,7 @@ static PyDateTime_Delta *
 look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
 {
     if (days == 0 && seconds == 0 && microseconds == 0
-            && type == zero_delta.ob_base.ob_type)
+            && type == Py_TYPE(&zero_delta))
     {
         return &zero_delta;
     }
@@ -5514,19 +5514,19 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
-    PyObject *string, *format;
+    PyObject *string, *format, *result;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
     if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
-            return NULL;
+        return NULL;
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
-                                         cls, string, format, NULL);
+    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+                                        cls, string, format, NULL);
+    Py_DECREF(module);
+    return result;
 }
 
 /* Return new datetime from date/datetime and time arguments. */
@@ -7129,37 +7129,6 @@ clear_state(datetime_state *st)
 }
 
 
-/* ---------------------------------------------------------------------------
- * Global module state.
- */
-
-// If we make _PyStaticType_*ForExtension() public
-// then all this should be managed by the runtime.
-
-static struct {
-    PyMutex mutex;
-    int64_t interp_count;
-} _globals = {0};
-
-static void
-callback_for_interp_exit(void *Py_UNUSED(data))
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-
-    assert(_globals.interp_count > 0);
-    PyMutex_Lock(&_globals.mutex);
-    _globals.interp_count -= 1;
-    int final = !_globals.interp_count;
-    PyMutex_Unlock(&_globals.mutex);
-
-    /* They must be done in reverse order so subclasses are finalized
-     * before base classes. */
-    for (size_t i = Py_ARRAY_LENGTH(capi_types); i > 0; i--) {
-        PyTypeObject *type = capi_types[i-1];
-        _PyStaticType_FiniForExtension(interp, type, final);
-    }
-}
-
 static int
 init_static_types(PyInterpreterState *interp, int reloading)
 {
@@ -7180,19 +7149,6 @@ init_static_types(PyInterpreterState *interp, int reloading)
         if (_PyStaticType_InitForExtension(interp, type) < 0) {
             return -1;
         }
-    }
-
-    PyMutex_Lock(&_globals.mutex);
-    assert(_globals.interp_count >= 0);
-    _globals.interp_count += 1;
-    PyMutex_Unlock(&_globals.mutex);
-
-    /* It could make sense to add a separate callback
-     * for each of the types.  However, for now we can take the simpler
-     * approach of a single callback. */
-    if (PyUnstable_AtExit(interp, callback_for_interp_exit, NULL) < 0) {
-        callback_for_interp_exit(NULL);
-        return -1;
     }
 
     return 0;
@@ -7379,8 +7335,8 @@ module_clear(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     clear_current_module(interp, mod);
 
-    // We take care of the static types via an interpreter atexit hook.
-    // See callback_for_interp_exit() above.
+    // The runtime takes care of the static types for us.
+    // See _PyTypes_FiniExtTypes()..
 
     return 0;
 }

@@ -17,11 +17,25 @@ extern "C" {
 #define _Py_TYPE_BASE_VERSION_TAG (2<<16)
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
+/* For now we hard-code this to a value for which we are confident
+   all the static builtin types will fit (for all builds). */
+#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
+#define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
+#define _Py_MAX_MANAGED_STATIC_TYPES \
+    (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
+
 struct _types_runtime_state {
     /* Used to set PyTypeObject.tp_version_tag for core static types. */
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
+
+    struct {
+        struct {
+            PyTypeObject *type;
+            int64_t interp_count;
+        } types[_Py_MAX_MANAGED_STATIC_TYPES];
+    } managed_static;
 };
 
 
@@ -42,11 +56,6 @@ struct type_cache {
     struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
 };
 
-/* For now we hard-code this to a value for which we are confident
-   all the static builtin types will fit (for all builds). */
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES 200
-#define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
-
 typedef struct {
     PyTypeObject *type;
     int isbuiltin;
@@ -62,6 +71,8 @@ typedef struct {
        so we still keep it. */
     PyObject *tp_weaklist;
 } managed_static_type_state;
+
+#define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
 
 struct types_state {
     /* Used to set PyTypeObject.tp_version_tag.
@@ -118,6 +129,12 @@ struct types_state {
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
+
+    // Borrowed references to type objects whose
+    // tp_version_tag % TYPE_VERSION_CACHE_SIZE
+    // once was equal to the index in the table.
+    // They are cleared when the type object is deallocated.
+    PyTypeObject *type_version_cache[TYPE_VERSION_CACHE_SIZE];
 };
 
 
@@ -125,6 +142,7 @@ struct types_state {
 
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
+extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
 extern void _PyTypes_AfterFork(void);
 
@@ -163,10 +181,6 @@ extern managed_static_type_state * _PyStaticType_GetState(
 PyAPI_FUNC(int) _PyStaticType_InitForExtension(
     PyInterpreterState *interp,
      PyTypeObject *self);
-PyAPI_FUNC(void) _PyStaticType_FiniForExtension(
-    PyInterpreterState *interp,
-     PyTypeObject *self,
-     int final);
 
 
 /* Like PyType_GetModuleState, but skips verification
@@ -230,6 +244,9 @@ extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
+extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
+PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
+PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
 #ifdef __cplusplus
 }

@@ -12,9 +12,11 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
+import operator
 import posixpath
-from glob import _Globber, _no_recurse_symlinks
+from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from ._os import copyfileobj
 
 
 __all__ = ["UnsupportedOperation"]
@@ -84,6 +86,33 @@ class ParserBase:
         raise UnsupportedOperation(self._unsupported_msg('isabs()'))
 
 
+class PathGlobber(_GlobberBase):
+    """
+    Class providing shell-style globbing for path objects.
+    """
+
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        """Emulates os.scandir(), which returns an object that can be used as
+        a context manager. This method is called by walk() and glob().
+        """
+        import contextlib
+        return contextlib.nullcontext(path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        """Appends text to the given path."""
+        return path.with_segments(path._raw_path + text)
+
+    @staticmethod
+    def parse_entry(entry):
+        """Returns the path of an entry yielded from scandir()."""
+        return entry
+
+
 class PurePathBase:
     """Base class for pure path objects.
 
@@ -104,7 +133,7 @@ class PurePathBase:
         '_resolving',
     )
     parser = ParserBase()
-    _globber = _Globber
+    _globber = PathGlobber
 
     def __init__(self, path, *paths):
         self._raw_path = self.parser.join(path, *paths) if paths else path
@@ -535,6 +564,15 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def _samefile_safe(self, other_path):
+        """
+        Like samefile(), but returns False rather than raising OSError.
+        """
+        try:
+            return self.samefile(other_path)
+        except (OSError, ValueError):
+            return False
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -751,6 +789,26 @@ class PathBase(PurePathBase):
         Create a new directory at this given path.
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+
+    def copy(self, target):
+        """
+        Copy the contents of this file to the given target.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
+        with self.open('rb') as source_f:
+            try:
+                with target.open('wb') as target_f:
+                    copyfileobj(source_f, target_f)
+            except IsADirectoryError as e:
+                if not target.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {target}') from e
+                else:
+                    raise
 
     def rename(self, target):
         """

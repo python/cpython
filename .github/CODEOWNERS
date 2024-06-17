@@ -13,6 +13,8 @@
 
 # Build system
 configure*                    @erlend-aasland @corona10
+Makefile.pre.in               @erlend-aasland
+Modules/Setup*                @erlend-aasland
 
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
@@ -210,6 +212,7 @@ Doc/c-api/stable.rst          @encukou
 **/*ensurepip*                @pfmoore @pradyunsg
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
 
@@ -245,7 +248,7 @@ Doc/howto/clinic.rst          @erlend-aasland
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
 Lib/test/support/interpreters/  @ericsnowcurrently
-Modules/_xx*interp*module.c   @ericsnowcurrently
+Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
