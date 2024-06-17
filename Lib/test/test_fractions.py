@@ -1,6 +1,5 @@
 """Tests for Lib/fractions.py."""
 
-import cmath
 from decimal import Decimal
 from test.support import requires_IEEE_754
 import math

@@ -3,9 +3,7 @@ from email import utils
 import test.support
 import time
 import unittest
-import sys
-import os.path
-import zoneinfo
+
 
 class DateTimeTests(unittest.TestCase):
 

@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
 
-from test.support import threading_helper, import_helper
+from test.support import threading_helper
 
 
 
