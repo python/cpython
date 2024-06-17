@@ -6,7 +6,6 @@ import locale
 import re
 import string
 import sys
-import time
 import unittest
 import warnings
 from re import Scanner

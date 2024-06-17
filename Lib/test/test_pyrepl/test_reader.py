@@ -2,10 +2,9 @@ import itertools
 import functools
 import rlcompleter
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
-from test.support import import_helper
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 

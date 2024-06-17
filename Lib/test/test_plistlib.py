@@ -13,7 +13,6 @@ import codecs
 import subprocess
 import binascii
 import collections
-import time
 import zoneinfo
 from test import support
 from test.support import os_helper
