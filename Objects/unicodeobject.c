@@ -1634,11 +1634,6 @@ unicode_dealloc(PyObject *unicode)
         case SSTATE_NOT_INTERNED:
             break;
         case SSTATE_INTERNED_MORTAL:
-            ; // <- this should fix the build on clang on macOS.
-              // Can't see the bug; too late in the evening.
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            PyObject *interned = get_interned_dict(interp);
-            assert(interned != NULL);
             /* Remove the object from the intern dict.
              * Before doing so, we set the refcount to 2: the key and value
              * in the interned_dict.
@@ -1650,6 +1645,9 @@ unicode_dealloc(PyObject *unicode)
             _Py_IncRefTotal(_PyThreadState_GET());
             _Py_IncRefTotal(_PyThreadState_GET());
 #endif
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyObject *interned = get_interned_dict(interp);
+            assert(interned != NULL);
             PyObject *popped;
             int r = PyDict_Pop(interned, unicode, &popped);
             if (r == -1) {
