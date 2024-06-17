@@ -307,6 +307,7 @@ Python/crossinterp_exceptions.h	-	PyExc_InterpreterNotFoundError	-
 Modules/_datetimemodule.c	-	zero_delta	-
 Modules/_datetimemodule.c	-	utc_timezone	-
 Modules/_datetimemodule.c	-	capi	-
+Modules/_datetimemodule.c	-	_globals	-
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
 Objects/dictobject.c	-	empty_keys_struct	-
@@ -392,7 +393,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 ## initialized once
 Modules/_cursesmodule.c	-	ModDict	-
-Modules/_datetimemodule.c	datetime_strptime	module	-
 
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
