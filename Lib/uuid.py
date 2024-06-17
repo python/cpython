@@ -782,9 +782,9 @@ def uuid7():
     # Ideally, we would have 'rand_a' = first 12 bits of 'rand'
     # and 'rand_b' = lowest 62 bits, but it is easier to test
     # when we pick 'rand_a' from the lowest bits of 'rand' and
-    # 'rand_b' from the next 62 bits, ignoring the first bits
+    # 'rand_b' from the next 62 bits, ignoring the 6 first bits
     # of 'rand'.
-    rand = int.from_bytes(os.urandom(19))  # 76 random bits (ignore 2 first)
+    rand = int.from_bytes(os.urandom(10))  # 80 random bits (ignore 6 first)
     int_uuid_7 |= (rand & 0x0fff) << 64  # rand_a
     int_uuid_7 |= (rand >> 12) & 0x3fffffffffffffff  # rand_b
     return UUID(int=int_uuid_7, version=7)
