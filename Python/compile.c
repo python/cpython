@@ -316,8 +316,7 @@ static int compiler_call_simple_kw_helper(struct compiler *c,
                                           asdl_keyword_seq *keywords,
                                           Py_ssize_t nkwelts);
 static int compiler_call_helper(struct compiler *c, location loc,
-                                int n, int end_lineno,
-                                asdl_expr_seq *args,
+                                int n, asdl_expr_seq *args,
                                 asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
 static int compiler_try_star_except(struct compiler *, stmt_ty);
@@ -2614,7 +2613,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         asdl_seq_SET(bases, original_len, name_node);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_call_helper(c, loc, 2,
-                                                         s->end_lineno, bases,
+                                                         bases,
                                                          s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
@@ -2631,7 +2630,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         ADDOP(c, loc, PUSH_NULL);
         ADDOP_I(c, loc, CALL, 0);
     } else {
-        RETURN_IF_ERROR(compiler_call_helper(c, loc, 2, s->end_lineno,
+        RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
                                             s->v.ClassDef.keywords));
     }
@@ -4921,12 +4920,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         VISIT_SEQ(c, keyword, kwds);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
-        loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
+        ADDOP_I(c, LOC(e), CALL_KW, argsl + kwdsl);
     }
     else {
-        loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL, argsl);
+        ADDOP_I(c, LOC(e), CALL, argsl);
     }
     return 1;
 }
@@ -4971,7 +4968,7 @@ compiler_call(struct compiler *c, expr_ty e)
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
-    return compiler_call_helper(c, loc, 0, e->v.Call.func->end_lineno,
+    return compiler_call_helper(c, loc, 0,
                                 e->v.Call.args,
                                 e->v.Call.keywords);
 }
@@ -5121,12 +5118,10 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
 static int
 compiler_call_helper(struct compiler *c, location loc,
                      int n, /* Args already pushed */
-                     int end_lineno,
                      asdl_expr_seq *args,
                      asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
-    int old_lineno = c->u->u_lineno;
 
     RETURN_IF_ERROR(validate_keywords(c, keywords));
 
@@ -5157,7 +5152,6 @@ compiler_call_helper(struct compiler *c, location loc,
     }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
-        // todo: ?
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
         ADDOP_I(c, loc, CALL_KW, n + nelts + nkwelts);
@@ -5172,8 +5166,6 @@ ex_call:
     /* Do positional arguments. */
     if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
         VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
-        old_lineno = c->u->u_lineno;
-        c->u->u_lineno = end_lineno;
     }
     else {
         RETURN_IF_ERROR(starunpack_helper(c, loc, args, n, BUILD_LIST,
@@ -5219,7 +5211,6 @@ ex_call:
         assert(have_dict);
     }
     ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
-    // c->u->u_lineno = old_lineno; ?
     return SUCCESS;
 }
 
