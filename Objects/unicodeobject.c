@@ -13500,6 +13500,52 @@ PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer,
     return res;
 }
 
+
+int
+PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer,
+                                   const char *string,
+                                   Py_ssize_t length,
+                                   const char *errors,
+                                   Py_ssize_t *consumed)
+{
+    if (length < 0) {
+        length = strlen(string);
+    }
+
+    _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
+    Py_ssize_t old_pos = _writer->pos;
+    int res = unicode_decode_utf8_writer(_writer, string, length,
+                                         _Py_ERROR_UNKNOWN, errors, consumed);
+    if (res < 0) {
+        _writer->pos = old_pos;
+        if (consumed) {
+            *consumed = 0;
+        }
+    }
+    return res;
+}
+
+
+int
+PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer,
+                              wchar_t *str,
+                              Py_ssize_t size)
+{
+    if (size < 0) {
+        size = wcslen(str);
+    }
+    PyObject *obj = PyUnicode_FromWideChar(str, size);
+    if (obj == NULL) {
+        return -1;
+    }
+
+    _PyUnicodeWriter *_writer = (_PyUnicodeWriter *)writer;
+    int res = _PyUnicodeWriter_WriteStr(_writer, obj);
+    Py_DECREF(obj);
+    return res;
+}
+
+
 int
 _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
                                    const char *str, Py_ssize_t len)

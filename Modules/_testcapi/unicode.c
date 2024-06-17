@@ -375,6 +375,88 @@ test_unicodewriter_recover_error(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
+test_unicodewriter_decode_utf8(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // test PyUnicodeWriter_DecodeUTF8Stateful()
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "ign\xFFore", -1, "ignore", NULL) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "replace\xFF", -1, "replace", NULL) < 0) {
+        goto error;
+    }
+
+    PyObject *result = PyUnicodeWriter_Finish(writer);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(result, "ignore-replace\xef\xbf\xbd"));
+    Py_DECREF(result);
+
+    Py_RETURN_NONE;
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+
+static PyObject *
+test_unicodewriter_decode_utf8_consumed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // test PyUnicodeWriter_DecodeUTF8Stateful()
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    Py_ssize_t consumed;
+
+    // valid string
+    consumed = 12345;
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "text", -1, NULL, &consumed) < 0) {
+        goto error;
+    }
+    assert(consumed == 4);
+
+    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
+        goto error;
+    }
+
+    // consumed is 0 if write fails
+    consumed = 12345;
+    assert(PyUnicodeWriter_DecodeUTF8Stateful(writer, "invalid\xFF", -1, NULL, &consumed) < 0);
+    PyErr_Clear();
+    assert(consumed == 0);
+
+    // ignore error handler
+    consumed = 12345;
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "more\xFF", -1, "ignore", &consumed) < 0) {
+        goto error;
+    }
+    assert(consumed == 5);
+
+    PyObject *result = PyUnicodeWriter_Finish(writer);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(result, "text-more"));
+    Py_DECREF(result);
+
+    Py_RETURN_NONE;
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+
+static PyObject *
 test_unicodewriter_format(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
@@ -436,6 +518,42 @@ test_unicodewriter_format_recover_error(PyObject *self, PyObject *Py_UNUSED(args
 }
 
 
+static PyObject *
+test_unicodewriter_widechar(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteWideChar(writer, L"latin1=\xE9 IGNORED", 8) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteWideChar(writer, L"-", 1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteWideChar(writer, L"euro=\u20AC", -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '.') < 0) {
+        goto error;
+    }
+
+    PyObject *result = PyUnicodeWriter_Finish(writer);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_EqualToUTF8(result,
+                                 "latin1=\xC3\xA9-euro=\xE2\x82\xAC."));
+    Py_DECREF(result);
+
+    Py_RETURN_NONE;
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"unicode_new",              unicode_new,                    METH_VARARGS},
     {"unicode_fill",             unicode_fill,                   METH_VARARGS},
@@ -448,8 +566,11 @@ static PyMethodDef TestMethods[] = {
     {"test_unicodewriter_utf8",  test_unicodewriter_utf8,        METH_NOARGS},
     {"test_unicodewriter_invalid_utf8", test_unicodewriter_invalid_utf8, METH_NOARGS},
     {"test_unicodewriter_recover_error", test_unicodewriter_recover_error, METH_NOARGS},
+    {"test_unicodewriter_decode_utf8", test_unicodewriter_decode_utf8, METH_NOARGS},
+    {"test_unicodewriter_decode_utf8_consumed", test_unicodewriter_decode_utf8_consumed, METH_NOARGS},
     {"test_unicodewriter_format", test_unicodewriter_format,     METH_NOARGS},
     {"test_unicodewriter_format_recover_error", test_unicodewriter_format_recover_error, METH_NOARGS},
+    {"test_unicodewriter_widechar", test_unicodewriter_widechar, METH_NOARGS},
     {NULL},
 };
 
