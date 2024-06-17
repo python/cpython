@@ -79,6 +79,7 @@ increment_mutations(PyObject* dict) {
  * so we don't need to check that they haven't been used */
 #define BUILTINS_WATCHER_ID 0
 #define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
 
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
@@ -89,6 +90,14 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict, 1);
     increment_mutations(dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
+    return 0;
+}
+
+static int
+type_watcher_callback(PyTypeObject* type)
+{
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
+    PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
     return 0;
 }
 
@@ -166,6 +175,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
+    }
+    if (interp->type_watchers[TYPE_WATCHER_ID] == NULL) {
+        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
@@ -253,7 +265,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             }
-            case _POP_FRAME:
+            case _RETURN_VALUE:
             {
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
@@ -297,20 +309,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->oparg = ARG;            \
     INST->operand = OPERAND;
 
-#define OUT_OF_SPACE_IF_NULL(EXPR)     \
-    do {                               \
-        if ((EXPR) == NULL) {          \
-            goto out_of_space;         \
-        }                              \
-    } while (0);
-
-#define _LOAD_ATTR_NOT_NULL \
-    do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx)); \
-    OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx)); \
-    } while (0);
-
-
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
@@ -324,10 +322,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
-#define sym_set_null _Py_uop_sym_set_null
-#define sym_set_non_null _Py_uop_sym_set_non_null
-#define sym_set_type _Py_uop_sym_set_type
-#define sym_set_const _Py_uop_sym_set_const
+#define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
+#define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
+#define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
+#define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -365,13 +365,13 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
-/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
+/* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _RETURN_VALUE || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
     if (operand == 0) {
@@ -408,18 +408,20 @@ optimize_uops(
     _PyUOpInstruction *first_valid_check_stack = NULL;
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
-    if (_Py_uop_abstractcontext_init(ctx) < 0) {
-        goto out_of_space;
-    }
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    _Py_uop_abstractcontext_init(ctx);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
 
     _PyUOpInstruction *this_instr = NULL;
-    for (int i = 0; i < trace_len; i++) {
+    for (int i = 0; !ctx->done; i++) {
+        assert(i < trace_len);
         this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
@@ -447,32 +449,22 @@ optimize_uops(
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
     }
-    Py_UNREACHABLE();
-
-out_of_space:
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Out of space in abstract interpreter\n");
-    goto done;
-error:
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Encountered error in abstract interpreter\n");
-    if (opcode <= MAX_UOP_ID) {
-        OPT_ERROR_IN_OPCODE(opcode);
+    if (ctx->out_of_space) {
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Out of space in abstract interpreter\n");
     }
-    _Py_uop_abstractcontext_fini(ctx);
-    return -1;
+    if (ctx->contradiction) {
+        // Attempted to push a "bottom" (contradiction) symbol onto the stack.
+        // This means that the abstract interpreter has hit unreachable code.
+        // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+        // bottom indicates type instability, so we are probably better off
+        // retrying later.
+        DPRINTF(3, "\n");
+        DPRINTF(1, "Hit bottom in abstract interpreter\n");
+        _Py_uop_abstractcontext_fini(ctx);
+        return 0;
+    }
 
-hit_bottom:
-    // Attempted to push a "bottom" (contradition) symbol onto the stack.
-    // This means that the abstract interpreter has hit unreachable code.
-    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
-    // bottom indicates type instability, so we are probably better off
-    // retrying later.
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Hit bottom in abstract interpreter\n");
-    _Py_uop_abstractcontext_fini(ctx);
-    return 0;
-done:
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
@@ -485,6 +477,16 @@ done:
         first_valid_check_stack->operand = max_space;
     }
     return trace_len;
+
+error:
+    DPRINTF(3, "\n");
+    DPRINTF(1, "Encountered error in abstract interpreter\n");
+    if (opcode <= MAX_UOP_ID) {
+        OPT_ERROR_IN_OPCODE(opcode);
+    }
+    _Py_uop_abstractcontext_fini(ctx);
+    return -1;
+
 }
 
 

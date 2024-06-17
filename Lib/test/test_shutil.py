@@ -741,6 +741,16 @@ class TestRmTree(BaseTest, unittest.TestCase):
             shutil.rmtree(TESTFN)
             raise
 
+    def test_rmtree_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = os.path.join(TESTFN, *(['d'] * directory_depth))
+        os.makedirs(base)
+
+        with support.infinite_recursion(recursion_limit):
+            shutil.rmtree(TESTFN)
+
 
 class TestCopyTree(BaseTest, unittest.TestCase):
 
@@ -914,7 +924,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
                                     'test.txt')))
 
         dst_dir = join(self.mkdtemp(), 'destination')
-        shutil.copytree(pathlib.Path(src_dir), dst_dir, ignore=_ignore)
+        shutil.copytree(FakePath(src_dir), dst_dir, ignore=_ignore)
         self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
                                     'test.txt')))
 
@@ -2107,7 +2117,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive_with_converter(
             format, lambda path: path, **kwargs)
         self.check_unpack_archive_with_converter(
-            format, pathlib.Path, **kwargs)
+            format, FakePath, **kwargs)
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
@@ -2672,12 +2682,12 @@ class TestMove(BaseTest, unittest.TestCase):
 
     def test_move_file_to_dir_pathlike_src(self):
         # Move a pathlike file to another location on the same filesystem.
-        src = pathlib.Path(self.src_file)
+        src = FakePath(self.src_file)
         self._check_move_file(src, self.dst_dir, self.dst_file)
 
     def test_move_file_to_dir_pathlike_dst(self):
         # Move a file to another pathlike location on the same filesystem.
-        dst = pathlib.Path(self.dst_dir)
+        dst = FakePath(self.dst_dir)
         self._check_move_file(self.src_file, dst, self.dst_file)
 
     @mock_rename

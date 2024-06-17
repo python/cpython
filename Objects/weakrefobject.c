@@ -1074,7 +1074,7 @@ PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *obj)
 void
 _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(interp, type);
+    managed_static_type_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     // This is safe to do without holding the lock in free-threaded builds;
     // there is only one thread running and no new threads can be created.

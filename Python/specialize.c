@@ -637,7 +637,7 @@ specialize_module_load_attr(
 ) {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyModuleObject *m = (PyModuleObject *)owner;
-    assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+    assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);

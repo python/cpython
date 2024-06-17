@@ -1,2 +1,2 @@
 Using :data:`NotImplemented` in a boolean context now raises
-:exc:`TypeError`. Contributed by Jelle Zijlstra in :gh:`118767`.
+:exc:`TypeError`. Contributed by Jelle Zijlstra.

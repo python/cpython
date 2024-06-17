@@ -192,6 +192,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
     items = array->ob_item;
+    memset(items, 0, size * sizeof(PyObject *));
 #else
     items = PyMem_New(PyObject*, size);
     if (items == NULL) {
@@ -199,7 +200,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         return -1;
     }
 #endif
-    self->ob_item = items;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, items);
     self->allocated = size;
     return 0;
 }
@@ -350,7 +351,11 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
+#ifdef Py_GIL_DISABLED
+    item = _Py_NewRefWithLock(self->ob_item[idx]);
+#else
     item = Py_NewRef(self->ob_item[idx]);
+#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -655,14 +660,15 @@ list_item(PyObject *aa, Py_ssize_t i)
         return NULL;
     }
     PyObject *item;
-    Py_BEGIN_CRITICAL_SECTION(a);
 #ifdef Py_GIL_DISABLED
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
-        _PyObject_GC_SET_SHARED(a);
+    item = list_get_item_ref(a, i);
+    if (item == NULL) {
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
     }
-#endif
+#else
     item = Py_NewRef(a->ob_item[i]);
-    Py_END_CRITICAL_SECTION();
+#endif
     return item;
 }
 
@@ -3376,7 +3382,14 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
     }
 
     /* Compare the final item again using the proper operator */
-    return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    PyObject *vitem = vl->ob_item[i];
+    PyObject *witem = wl->ob_item[i];
+    Py_INCREF(vitem);
+    Py_INCREF(witem);
+    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    Py_DECREF(vitem);
+    Py_DECREF(witem);
+    return result;
 }
 
 static PyObject *

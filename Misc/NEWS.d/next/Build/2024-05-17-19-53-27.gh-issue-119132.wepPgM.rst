@@ -1,0 +1,2 @@
+Update :data:`sys.version` to identify whether the build is default build or
+free-threading build. Patch By Donghee Na.

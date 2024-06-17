@@ -502,6 +502,33 @@ class TestSpecifics(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
 
+    def test_compile_redundant_jumps_and_nops_after_moving_cold_blocks(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                match name_2:
+                    case b'':
+                        pass
+            finally:
+                something
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instructions locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -1409,6 +1436,16 @@ class TestSpecifics(unittest.TestCase):
         for kw in ("except", "except*"):
             exec(code % kw, g, l);
 
+    def test_regression_gh_120225(self):
+        async def name_4():
+            match b'':
+                case True:
+                    pass
+                case name_5 if f'e':
+                    {name_3: name_4 async for name_2 in name_5}
+                case []:
+                    pass
+            [[]]
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1538,7 +1575,7 @@ class TestSourcePositions(unittest.TestCase):
                     ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_COMMON_CONSTANT',
             line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',

@@ -22,6 +22,7 @@ import time
 import types
 import tempfile
 import textwrap
+from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -34,7 +35,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper
+from test.support import cpython_only, import_helper, suppress_immortalization
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -47,6 +48,7 @@ from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
+from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 # Functions tested in this suite:
@@ -235,6 +237,7 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
         self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
+        self.assertFalse(inspect.iscoroutinefunction(inspect))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -768,6 +771,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(list.append)
         self.assertIn('expected, got', str(e_append.exception))
 
+    @suppress_immortalization()
     def test_getfile_class_without_module(self):
         class CM(type):
             @property
@@ -1690,6 +1694,117 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
 
+    def test_pep695_generic_class_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        A_annotations = inspect.get_annotations(ann_module695.A, eval_str=True)
+        A_type_params = ann_module695.A.__type_params__
+        self.assertIs(A_annotations["x"], A_type_params[0])
+        self.assertEqual(A_annotations["y"].__args__[0], Unpack[A_type_params[1]])
+        self.assertIs(A_annotations["z"].__args__[0], A_type_params[2])
+
+    def test_pep695_generic_class_with_future_annotations_and_local_shadowing(self):
+        B_annotations = inspect.get_annotations(
+            inspect_stringized_annotations_pep695.B, eval_str=True
+        )
+        self.assertEqual(B_annotations, {"x": int, "y": str, "z": bytes})
+
+    def test_pep695_generic_class_with_future_annotations_name_clash_with_global_vars(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        C_annotations = inspect.get_annotations(ann_module695.C, eval_str=True)
+        self.assertEqual(
+            set(C_annotations.values()),
+            set(ann_module695.C.__type_params__)
+        )
+
+    def test_pep_695_generic_function_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_func_annotations = inspect.get_annotations(
+            ann_module695.generic_function, eval_str=True
+        )
+        func_t_params = ann_module695.generic_function.__type_params__
+        self.assertEqual(
+            generic_func_annotations.keys(), {"x", "y", "z", "zz", "return"}
+        )
+        self.assertIs(generic_func_annotations["x"], func_t_params[0])
+        self.assertEqual(generic_func_annotations["y"], Unpack[func_t_params[1]])
+        self.assertIs(generic_func_annotations["z"].__origin__, func_t_params[2])
+        self.assertIs(generic_func_annotations["zz"].__origin__, func_t_params[2])
+
+    def test_pep_695_generic_function_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.generic_function_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.generic_function_2.__type_params__
+            )
+        )
+
+    def test_pep_695_generic_method_with_future_annotations(self):
+        ann_module695 = inspect_stringized_annotations_pep695
+        generic_method_annotations = inspect.get_annotations(
+            ann_module695.D.generic_method, eval_str=True
+        )
+        params = {
+            param.__name__: param
+            for param in ann_module695.D.generic_method.__type_params__
+        }
+        self.assertEqual(
+            generic_method_annotations,
+            {"x": params["Foo"], "y": params["Bar"], "return": None}
+        )
+
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_vars(self):
+        self.assertEqual(
+            set(
+                inspect.get_annotations(
+                    inspect_stringized_annotations_pep695.D.generic_method_2,
+                    eval_str=True
+                ).values()
+            ),
+            set(
+                inspect_stringized_annotations_pep695.D.generic_method_2.__type_params__
+            )
+        )
+
+    def test_pep_695_generic_method_with_future_annotations_name_clash_with_global_and_local_vars(self):
+        self.assertEqual(
+            inspect.get_annotations(
+                inspect_stringized_annotations_pep695.E, eval_str=True
+            ),
+            {"x": str},
+        )
+
+    def test_pep_695_generics_with_future_annotations_nested_in_function(self):
+        results = inspect_stringized_annotations_pep695.nested()
+
+        self.assertEqual(
+            set(results.F_annotations.values()),
+            set(results.F.__type_params__)
+        )
+        self.assertEqual(
+            set(results.F_meth_annotations.values()),
+            set(results.F.generic_method.__type_params__)
+        )
+        self.assertNotEqual(
+            set(results.F_meth_annotations.values()),
+            set(results.F.__type_params__)
+        )
+        self.assertEqual(
+            set(results.F_meth_annotations.values()).intersection(results.F.__type_params__),
+            set()
+        )
+
+        self.assertEqual(results.G_annotations, {"x": str})
+
+        self.assertEqual(
+            set(results.generic_func_annotations.values()),
+            set(results.generic_func.__type_params__)
+        )
+
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
@@ -2430,6 +2545,7 @@ class TestGetattrStatic(unittest.TestCase):
 
         self.assertFalse(test.called)
 
+    @suppress_immortalization()
     def test_cache_does_not_cause_classes_to_persist(self):
         # regression test for gh-118013:
         # check that the internal _shadowed_dict cache does not cause
@@ -5087,14 +5203,29 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, 30, c_po=31, foo=4, bar=5),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        self.assertEqual(self.call(test, 1, 2, 30, foo=4, bar=5, c_po=31),
+                         (1, 2, 30, 4, 5, {'c_po': 31}))
+
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
+
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def without_var_kwargs(c_po=3, d_po=4, /):
+            return c_po, d_po
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "positional-only arguments passed as keyword arguments: 'c_po, d_po'",
+        ):
+            self.call(without_var_kwargs, c_po=33, d_po=44)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
@@ -5395,7 +5526,6 @@ class TestSignatureDefinitions(unittest.TestCase):
             'bytearray': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'bytes': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
             'dict': {'pop'},
-            'int': {'__round__'},
             'memoryview': {'cast', 'hex'},
             'str': {'count', 'endswith', 'find', 'index', 'maketrans', 'rfind', 'rindex', 'startswith'},
         }

@@ -12,6 +12,11 @@ try:
 except ImportError:
     _pylong = None
 
+try:
+    import _decimal
+except ImportError:
+    _decimal = None
+
 L = [
         ('0', 0),
         ('1', 1),
@@ -397,68 +402,8 @@ class IntTestCases(unittest.TestCase):
             class JustTrunc(base):
                 def __trunc__(self):
                     return 42
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(int(JustTrunc()), 42)
-
-            class ExceptionalTrunc(base):
-                def __trunc__(self):
-                    1 / 0
-            with self.assertRaises(ZeroDivisionError), \
-                 self.assertWarns(DeprecationWarning):
-                int(ExceptionalTrunc())
-
-            for trunc_result_base in (object, Classic):
-                class Index(trunc_result_base):
-                    def __index__(self):
-                        return 42
-
-                class TruncReturnsNonInt(base):
-                    def __trunc__(self):
-                        return Index()
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(int(TruncReturnsNonInt()), 42)
-
-                class Intable(trunc_result_base):
-                    def __int__(self):
-                        return 42
-
-                class TruncReturnsNonIndex(base):
-                    def __trunc__(self):
-                        return Intable()
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(int(TruncReturnsNonInt()), 42)
-
-                class NonIntegral(trunc_result_base):
-                    def __trunc__(self):
-                        # Check that we avoid infinite recursion.
-                        return NonIntegral()
-
-                class TruncReturnsNonIntegral(base):
-                    def __trunc__(self):
-                        return NonIntegral()
-                try:
-                    with self.assertWarns(DeprecationWarning):
-                        int(TruncReturnsNonIntegral())
-                except TypeError as e:
-                    self.assertEqual(str(e),
-                                      "__trunc__ returned non-Integral"
-                                      " (type NonIntegral)")
-                else:
-                    self.fail("Failed to raise TypeError with %s" %
-                              ((base, trunc_result_base),))
-
-                # Regression test for bugs.python.org/issue16060.
-                class BadInt(trunc_result_base):
-                    def __int__(self):
-                        return 42.0
-
-                class TruncReturnsBadInt(base):
-                    def __trunc__(self):
-                        return BadInt()
-
-                with self.assertRaises(TypeError), \
-                     self.assertWarns(DeprecationWarning):
-                    int(TruncReturnsBadInt())
+            with self.assertRaises(TypeError):
+                int(JustTrunc())
 
     def test_int_subclass_with_index(self):
         class MyIndex(int):
@@ -509,18 +454,6 @@ class IntTestCases(unittest.TestCase):
             def __int__(self):
                 return True
 
-        class TruncReturnsBadIndex:
-            def __trunc__(self):
-                return BadIndex()
-
-        class TruncReturnsBadInt:
-            def __trunc__(self):
-                return BadInt()
-
-        class TruncReturnsIntSubclass:
-            def __trunc__(self):
-                return True
-
         bad_int = BadIndex()
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
@@ -543,26 +476,6 @@ class IntTestCases(unittest.TestCase):
             n = int(bad_int)
         self.assertEqual(n, 1)
         self.assertIs(type(n), int)
-
-        bad_int = TruncReturnsBadIndex()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
-
-        bad_int = TruncReturnsBadInt()
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, int, bad_int)
-
-        good_int = TruncReturnsIntSubclass()
-        with self.assertWarns(DeprecationWarning):
-            n = int(good_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), int)
-        with self.assertWarns(DeprecationWarning):
-            n = IntSubclass(good_int)
-        self.assertEqual(n, 1)
-        self.assertIs(type(n), IntSubclass)
 
     def test_error_message(self):
         def check(s, base=None):
@@ -604,6 +517,13 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
+    @support.cpython_only
+    def test_round_with_none_arg_direct_call(self):
+        for val in [(1).__round__(None),
+                    round(1),
+                    round(1, None)]:
+            self.assertEqual(val, 1)
+            self.assertIs(type(val), int)
 
 class IntStrDigitLimitsTests(unittest.TestCase):
 
@@ -918,6 +838,88 @@ class PyLongModuleTests(unittest.TestCase):
             self.assertFalse(sn.startswith('0'))
             self.assertEqual(n, int(sn))
             bits <<= 1
+
+    @support.requires_resource('cpu')
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_pylong_roundtrip_huge(self):
+        # k blocks of 1234567890
+        k = 1_000_000 # so 10 million digits in all
+        tentoten = 10**10
+        n = 1234567890 * ((tentoten**k - 1) // (tentoten - 1))
+        sn = "1234567890" * k
+        self.assertEqual(n, int(sn))
+        self.assertEqual(sn, str(n))
+
+    @support.requires_resource('cpu')
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_whitebox_dec_str_to_int_inner_failsafe(self):
+        # While I believe the number of GUARD digits in this function is
+        # always enough so that no more than one correction step is ever
+        # needed, the code has a "failsafe" path that takes over if I'm
+        # wrong about that. We have no input that reaches that block.
+        # Here we test a contrived input that _does_ reach that block,
+        # provided the number of guard digits is reduced to 1.
+        sn = "9" * 2000156
+        n = 10**len(sn) - 1
+        orig_spread = _pylong._spread.copy()
+        _pylong._spread.clear()
+        try:
+            self.assertEqual(n, _pylong._dec_str_to_int_inner(sn, GUARD=1))
+            self.assertIn(999, _pylong._spread)
+        finally:
+            _pylong._spread.clear()
+            _pylong._spread.update(orig_spread)
+
+    @unittest.skipUnless(_pylong, "pylong module required")
+    @unittest.skipUnless(_decimal, "C _decimal module required")
+    def test_whitebox_dec_str_to_int_inner_monster(self):
+        # I don't think anyone has enough RAM to build a string long enough
+        # for this function to complain. So lie about the string length.
+
+        class LyingStr(str):
+            def __len__(self):
+                return int((1 << 47) / _pylong._LOG_10_BASE_256)
+
+        liar = LyingStr("42")
+        # We have to pass the liar directly to the complaining function. If we
+        # just try `int(liar)`, earlier layers will replace it with plain old
+        # "43".
+        # Embedding `len(liar)` into the f-string failed on the WASI testbot
+        # (don't know what that is):
+        # OverflowError: cannot fit 'int' into an index-sized integer
+        # So a random stab at worming around that.
+        self.assertRaisesRegex(ValueError,
+            f"^cannot convert string of len {liar.__len__()} to int$",
+            _pylong._dec_str_to_int_inner,
+            liar)
+
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    def test_pylong_compute_powers(self):
+        # Basic sanity tests. See end of _pylong.py for manual heavy tests.
+        def consumer(w, base, limit, need_hi):
+            seen = set()
+            need = set()
+            def inner(w):
+                if w <= limit or w in seen:
+                    return
+                seen.add(w)
+                lo = w >> 1
+                hi = w - lo
+                need.add(hi if need_hi else lo)
+                inner(lo)
+                inner(hi)
+            inner(w)
+            d = _pylong.compute_powers(w, base, limit, need_hi=need_hi)
+            self.assertEqual(d.keys(), need)
+            for k, v in d.items():
+                self.assertEqual(v, base ** k)
+
+        for base in 2, 5:
+            for need_hi in False, True:
+                for limit in 1, 11:
+                    for w in range(250, 550):
+                        consumer(w, base, limit, need_hi)
 
 if __name__ == "__main__":
     unittest.main()

@@ -220,13 +220,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     """
     if isinstance(obj, type):
         # class
-        obj_dict = getattr(obj, '__dict__', None)
-        if obj_dict and hasattr(obj_dict, 'get'):
-            ann = obj_dict.get('__annotations__', None)
-            if isinstance(ann, types.GetSetDescriptorType):
-                ann = None
-        else:
-            ann = None
+        ann = obj.__annotations__
 
         obj_globals = None
         module_name = getattr(obj, '__module__', None)
@@ -280,7 +274,13 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     if globals is None:
         globals = obj_globals
     if locals is None:
-        locals = obj_locals
+        locals = obj_locals or {}
+
+    # "Inject" type parameters into the local namespace
+    # (unless they are shadowed by assignments *in* the local namespace),
+    # as a way of emulating annotation scopes when calling `eval()`
+    if type_params := getattr(obj, "__type_params__", ()):
+        locals = {param.__name__: param for param in type_params} | locals
 
     return_value = {key:
         value if not isinstance(value, str) else eval(value, globals, locals)
@@ -403,13 +403,13 @@ def isgeneratorfunction(obj):
     return _has_code_flag(obj, CO_GENERATOR)
 
 # A marker for markcoroutinefunction and iscoroutinefunction.
-_is_coroutine_marker = object()
+_is_coroutine_mark = object()
 
 def _has_coroutine_mark(f):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark
 
 def markcoroutinefunction(func):
     """
@@ -417,7 +417,7 @@ def markcoroutinefunction(func):
     """
     if hasattr(func, '__func__'):
         func = func.__func__
-    func._is_coroutine_marker = _is_coroutine_marker
+    func._is_coroutine_marker = _is_coroutine_mark
     return func
 
 def iscoroutinefunction(obj):
@@ -3106,6 +3106,8 @@ class Signature:
         parameters_ex = ()
         arg_vals = iter(args)
 
+        pos_only_param_in_kwargs = []
+
         while True:
             # Let's iterate through the positional arguments and corresponding
             # parameters
@@ -3126,10 +3128,10 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
-                            msg = '{arg!r} parameter is positional only, ' \
-                                  'but was passed as a keyword'
-                            msg = msg.format(arg=param.name)
-                            raise TypeError(msg) from None
+                            # Raise a TypeError once we are sure there is no
+                            # **kwargs param later.
+                            pos_only_param_in_kwargs.append(param)
+                            continue
                         parameters_ex = (param,)
                         break
                     elif (param.kind == _VAR_KEYWORD or
@@ -3211,20 +3213,22 @@ class Signature:
                                     format(arg=param_name)) from None
 
             else:
-                if param.kind == _POSITIONAL_ONLY:
-                    # This should never happen in case of a properly built
-                    # Signature object (but let's have this check here
-                    # to ensure correct behaviour just in case)
-                    raise TypeError('{arg!r} parameter is positional only, '
-                                    'but was passed as a keyword'. \
-                                    format(arg=param.name))
-
                 arguments[param_name] = arg_val
 
         if kwargs:
             if kwargs_param is not None:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
+            elif pos_only_param_in_kwargs:
+                raise TypeError(
+                    'got some positional-only arguments passed as '
+                    'keyword arguments: {arg!r}'.format(
+                        arg=', '.join(
+                            param.name
+                            for param in pos_only_param_in_kwargs
+                        ),
+                    ),
+                )
             else:
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(

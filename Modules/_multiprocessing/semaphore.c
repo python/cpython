@@ -682,6 +682,7 @@ _multiprocessing_SemLock__after_fork_impl(SemLockObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _multiprocessing.SemLock.__enter__
 
 Enter the semaphore/lock.
@@ -689,12 +690,13 @@ Enter the semaphore/lock.
 
 static PyObject *
 _multiprocessing_SemLock___enter___impl(SemLockObject *self)
-/*[clinic end generated code: output=beeb2f07c858511f input=c5e27d594284690b]*/
+/*[clinic end generated code: output=beeb2f07c858511f input=d35c9860992ee790]*/
 {
     return _multiprocessing_SemLock_acquire_impl(self, 1, Py_None);
 }
 
 /*[clinic input]
+@critical_section
 _multiprocessing.SemLock.__exit__
 
     exc_type: object = None
@@ -709,7 +711,7 @@ static PyObject *
 _multiprocessing_SemLock___exit___impl(SemLockObject *self,
                                        PyObject *exc_type,
                                        PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=3b37c1a9f8b91a03 input=7d644b64a89903f8]*/
+/*[clinic end generated code: output=3b37c1a9f8b91a03 input=1610c8cc3e0e337e]*/
 {
     return _multiprocessing_SemLock_release_impl(self);
 }
