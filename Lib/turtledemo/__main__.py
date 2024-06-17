@@ -292,7 +292,7 @@ class DemoWindow(object):
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):
-        menu = Menu(master, tearoff=0)
+        menu = Menu(master, tearoff=1)  # TJR: leave this one.
 
         for entry in getExampleEntries():
             def load(entry=entry):
