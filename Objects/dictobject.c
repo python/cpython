@@ -2389,7 +2389,7 @@ PyObject *
 _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
 {
     assert(PyUnicode_CheckExact(kv));
-    Py_hash_t hash = kv->ob_type->tp_hash(kv);
+    Py_hash_t hash = Py_TYPE(kv)->tp_hash(kv);
     if (hash == -1) {
         return NULL;
     }

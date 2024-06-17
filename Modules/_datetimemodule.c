@@ -3090,7 +3090,7 @@ static PyDateTime_Delta *
 look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
 {
     if (days == 0 && seconds == 0 && microseconds == 0
-            && type == zero_delta.ob_base.ob_type)
+            && type == Py_TYPE(&zero_delta))
     {
         return &zero_delta;
     }
