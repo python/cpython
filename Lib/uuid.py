@@ -1,9 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1 to 8 UUIDs as
-specified in RFC 4122 (superseeded by RFC 9562 but will still be referred
-to as RFC 4122 in the future for compatibility purposes).
+uuid1(), uuid3(), uuid4(), uuid5(), uuid6(), uuid7(), and uuid8() for
+generating version 1 to 8 UUIDs as specified in RFC 4122 (superseeded
+by RFC 9562 but still referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -217,7 +217,7 @@ class UUID:
         if version is not None:
             if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
-            # Set the variant to RFC 9562.
+            # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
             int |= 0x8000 << 48
             # Set the version number.
