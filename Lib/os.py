@@ -843,8 +843,10 @@ if _exists("_get_user_default_environ"):
                 # Silently skip variable with no name
                 continue
 
-            # Note: Allow empty variable name
             name, value = parts
+            if not name:
+                # Silently skip variable with empty name
+                continue
 
             # If a variable is set twice, use the first value
             env.setdefault(name, value)

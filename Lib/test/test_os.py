@@ -31,6 +31,7 @@ import types
 import unittest
 import uuid
 import warnings
+from unittest import mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -1354,6 +1355,24 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertIsInstance(name, str)
             self.assertIsInstance(value, str)
             self.assertTrue(bool(name), name)  # must be not empty
+
+        # test variable defined twice
+        env_str = 'A=1\0B=2\0A=3\0'
+        with mock.patch('os._get_user_default_environ', return_value=env_str):
+            env = os.get_user_default_environ()
+            self.assertEqual(env, {'A': '1', 'B': '2'})
+
+        # variable name with empty names are silently ignored
+        env_str = '=1\0A=2\0'
+        with mock.patch('os._get_user_default_environ', return_value=env_str):
+            env = os.get_user_default_environ()
+            self.assertEqual(env, {'A': '2'})
+
+        # variable with no name
+        env_str = 'ABC\0A=2\0'
+        with mock.patch('os._get_user_default_environ', return_value=env_str):
+            env = os.get_user_default_environ()
+            self.assertEqual(env, {'A': '2'})
 
 
 class WalkTests(unittest.TestCase):
