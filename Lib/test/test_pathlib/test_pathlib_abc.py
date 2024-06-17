@@ -1696,6 +1696,68 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual((p / 'fileA').read_bytes(),
                           b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
 
+    def test_copy_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    def test_copy_directory(self):
+        base = self.cls(self.base)
+        source = base / 'dirA'
+        target = base / 'copyA'
+        with self.assertRaises(OSError):
+            source.copy(target)
+
+    @needs_symlinks
+    def test_copy_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        target = base / 'copyA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    def test_copy_to_existing_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirB' / 'fileB'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(source.read_text(), target.read_text())
+
+    def test_copy_to_existing_directory(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirA'
+        with self.assertRaises(OSError):
+            source.copy(target)
+
+    @needs_symlinks
+    def test_copy_to_existing_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'dirB' / 'fileB'
+        target = base / 'linkA'
+        real_target = base / 'fileA'
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertTrue(real_target.exists())
+        self.assertFalse(real_target.is_symlink())
+        self.assertEqual(source.read_text(), real_target.read_text())
+
+    def test_copy_empty(self):
+        base = self.cls(self.base)
+        source = base / 'empty'
+        target = base / 'copyA'
+        source.write_bytes(b'')
+        source.copy(target)
+        self.assertTrue(target.exists())
+        self.assertEqual(target.read_bytes(), b'')
+
     def test_iterdir(self):
         P = self.cls
         p = P(self.base)
