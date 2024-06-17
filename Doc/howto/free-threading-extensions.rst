@@ -235,7 +235,7 @@ Limited C API and Stable ABI
 ............................
 
 The free-threaded build does not currently support the
-:ref:`limited C API <limited-c-api>` or the stable ABI.  If you use
+:ref:`Limited C API <limited-c-api>` or the stable ABI.  If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
 your extension and currently set ``py_limited_api=True`` you can use
 ``py_limited_api=not sysconfig.get_config_var("Py_GIL_DISABLED")`` to opt out
