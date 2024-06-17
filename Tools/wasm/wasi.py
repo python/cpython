@@ -280,8 +280,7 @@ def main():
     default_host_runner = (f"{shutil.which('wasmtime')} run "
                         # Make sure the stack size will work for a pydebug
                         # build.
-                        # The 8388608 value comes from double of `ulimit -s` under Linux
-                        # which equates to 8291*2 KiB.
+                        # Use 16 MiB stack.
                         "--wasm max-wasm-stack=16777216 "
                         # Use WASI 0.2 primitives.
                         "--wasi preview2 "
