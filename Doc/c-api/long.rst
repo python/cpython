@@ -390,7 +390,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Usage example::
 
       int32_t value;
-      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, &value, sizeof(value), -1);
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, &value, sizeof(value), -1);
       if (bytes < 0) {
           // Failed. A Python exception was set with the reason.
           return NULL;
@@ -418,7 +418,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    called twice: first to determine the buffer size, then to fill it::
 
       // Ask how much space we need.
-      Py_ssize_t expected = PyLong_AsNativeBits(pylong, NULL, 0, -1);
+      Py_ssize_t expected = PyLong_AsNativeBytes(pylong, NULL, 0, -1);
       if (expected < 0) {
           // Failed. A Python exception was set with the reason.
           return NULL;
@@ -430,7 +430,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
           return NULL;
       }
       // Safely get the entire value.
-      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, bignum, expected, -1);
+      Py_ssize_t bytes = PyLong_AsNativeBytes(pylong, bignum, expected, -1);
       if (bytes < 0) {  // Exception has been set.
           free(bignum);
           return NULL;
@@ -492,6 +492,19 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       This matches typical C cast behavior.
 
    .. versionadded:: 3.13
+
+
+.. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
+
+   Get the sign of the integer object *obj*.
+
+   On success, set *\*sign* to the integer sign  (0, -1 or +1 for zero, negative or
+   positive integer, respectively) and return 0.
+
+   On failure, return -1 with an exception set.  This function always succeeds
+   if *obj* is a :c:type:`PyLongObject` or its subtype.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)

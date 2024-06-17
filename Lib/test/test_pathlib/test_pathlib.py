@@ -311,19 +311,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
-    def test_relative_to_several_args(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.relative_to('a', 'b')
-            p.relative_to('a', 'b', walk_up=True)
-
-    def test_is_relative_to_several_args(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_relative_to('a', 'b')
-
     def test_is_reserved_deprecated(self):
         P = self.cls
         p = P('a/b')
@@ -1121,8 +1108,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(R.is_mount())
         self.assertFalse((R / '\udfff').is_mount())
 
-    def test_passing_kwargs_deprecated(self):
-        with self.assertWarns(DeprecationWarning):
+    def test_passing_kwargs_errors(self):
+        with self.assertRaises(TypeError):
             self.cls(foo="bar")
 
     def setUpWalk(self):
@@ -1262,6 +1249,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 set(P('.').glob('**/*')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD")})
             self.assertEqual(
                 set(P('.').glob('**/*/*')), {P("dirD/fileD")})
+
+    def test_glob_inaccessible(self):
+        P = self.cls
+        p = P(self.base, "mydir1", "mydir2")
+        p.mkdir(parents=True)
+        p.parent.chmod(0)
+        self.assertEqual(set(p.glob('*')), set())
 
     def test_rglob_pathlike(self):
         P = self.cls

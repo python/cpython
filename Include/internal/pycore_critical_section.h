@@ -99,15 +99,6 @@ extern "C" {
         _PyCriticalSection_End(&_cs);                                   \
     }
 
-# define Py_XBEGIN_CRITICAL_SECTION(op)                                 \
-    {                                                                   \
-        _PyCriticalSection _cs_opt = {0};                               \
-        _PyCriticalSection_XBegin(&_cs_opt, _PyObject_CAST(op))
-
-# define Py_XEND_CRITICAL_SECTION()                                     \
-        _PyCriticalSection_XEnd(&_cs_opt);                              \
-    }
-
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
     {                                                                   \
         _PyCriticalSection2 _cs2;                                       \
@@ -115,6 +106,26 @@ extern "C" {
 
 # define Py_END_CRITICAL_SECTION2()                                     \
         _PyCriticalSection2_End(&_cs2);                                 \
+    }
+
+// Specialized version of critical section locking to safely use
+// PySequence_Fast APIs without the GIL. For performance, the argument *to*
+// PySequence_Fast() is provided to the macro, not the *result* of
+// PySequence_Fast(), which would require an extra test to determine if the
+// lock must be acquired.
+# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)              \
+    {                                                                   \
+        PyObject *_orig_seq = _PyObject_CAST(original);                 \
+        const bool _should_lock_cs = PyList_CheckExact(_orig_seq);      \
+        _PyCriticalSection _cs;                                         \
+        if (_should_lock_cs) {                                          \
+            _PyCriticalSection_Begin(&_cs, &_orig_seq->ob_mutex);       \
+        }
+
+# define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()                        \
+        if (_should_lock_cs) {                                          \
+            _PyCriticalSection_End(&_cs);                               \
+        }                                                               \
     }
 
 // Asserts that the mutex is locked.  The mutex must be held by the
@@ -144,10 +155,10 @@ extern "C" {
 # define Py_BEGIN_CRITICAL_SECTION_MUT(mut)
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
-# define Py_XBEGIN_CRITICAL_SECTION(op)
-# define Py_XEND_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
+# define Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(original)
+# define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
 #endif  /* !Py_GIL_DISABLED */
@@ -202,16 +213,6 @@ _PyCriticalSection_Begin(_PyCriticalSection *c, PyMutex *m)
     }
 }
 
-static inline void
-_PyCriticalSection_XBegin(_PyCriticalSection *c, PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    if (op != NULL) {
-        _PyCriticalSection_Begin(c, &_PyObject_CAST(op)->ob_mutex);
-    }
-#endif
-}
-
 // Removes the top-most critical section from the thread's stack of critical
 // sections. If the new top-most critical section is inactive, then it is
 // resumed.
@@ -232,14 +233,6 @@ _PyCriticalSection_End(_PyCriticalSection *c)
 {
     PyMutex_Unlock(c->mutex);
     _PyCriticalSection_Pop(c);
-}
-
-static inline void
-_PyCriticalSection_XEnd(_PyCriticalSection *c)
-{
-    if (c->mutex) {
-        _PyCriticalSection_End(c);
-    }
 }
 
 static inline void

@@ -6,9 +6,10 @@ import gc
 import os
 
 import _opcode
-import _testinternalcapi
 
-from test.support import script_helper, requires_specialization
+from test.support import script_helper, requires_specialization, import_helper
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 from _testinternalcapi import TIER2_THRESHOLD
 
@@ -33,6 +34,8 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -131,10 +134,12 @@ def iter_opnames(ex):
 
 
 def get_opnames(ex):
-    return set(iter_opnames(ex))
+    return list(iter_opnames(ex))
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -214,6 +219,8 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
@@ -230,7 +237,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_SET_IP", uops)
+        self.assertIn("_JUMP_TO_TOP", uops)
         self.assertIn("_LOAD_FAST_0", uops)
 
     def test_extended_arg(self):
@@ -578,6 +585,8 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
+                     "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
@@ -902,9 +911,49 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
-        self.assertLessEqual(len(guard_both_float_count), 1)
+        guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_both_int_count), 1)
         self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_int_partial(self):
+        def testfunc(n):
+            a = 1
+            for _ in range(n):
+                if a > 2:
+                    x = 0
+                if a < 2:
+                    x = 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        guard_left_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_INT"]
+        guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_left_int_count), 1)
+        self.assertEqual(len(guard_both_int_count), 0)
+        self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_float_partial(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                if a > 2.0:
+                    x = 0
+                if a < 2.0:
+                    x = 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        guard_left_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_NOS_FLOAT"]
+        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_left_float_count), 1)
+        self.assertEqual(len(guard_both_float_count), 0)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
 
     def test_compare_op_type_propagation_unicode(self):
         def testfunc(n):
@@ -975,7 +1024,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
         # sequential calls: max(12, 13) == 13
@@ -1002,7 +1051,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
         # nested calls: 15 + 12 == 27
@@ -1037,7 +1086,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
         # max(12, 18 + max(12, 13)) == 31
@@ -1073,7 +1122,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 4)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
         # max(18 + max(12, 13), 12) == 31
@@ -1117,7 +1166,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 15)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 15)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 15)
 
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
@@ -1211,7 +1260,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
-        self.assertEqual(uop_names.count("_POP_FRAME"), 0)
+        self.assertEqual(uop_names.count("_RETURN_VALUE"), 0)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 1)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
         largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
@@ -1244,6 +1293,193 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 32 * 32)
         self.assertIsNone(ex)
+
+    def test_return_generator(self):
+        def gen():
+            yield None
+        def testfunc(n):
+            for i in range(n):
+                gen()
+            return i
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 19)
+        self.assertIsNotNone(ex)
+        self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
+
+    def test_for_iter_gen(self):
+        def gen(n):
+            for i in range(n):
+                yield i
+        def testfunc(n):
+            g = gen(n)
+            s = 0
+            for i in g:
+                s += i
+            return s
+        res, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(res, 190)
+        self.assertIsNotNone(ex)
+        self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
+
+    def test_modified_local_is_seen_by_optimized_code(self):
+        l = sys._getframe().f_locals
+        a = 1
+        s = 0
+        for j in range(1 << 10):
+            a + a
+            l["xa"[j >> 9]] = 1.0
+            s += a
+        self.assertIs(type(a), float)
+        self.assertIs(type(s), float)
+        self.assertEqual(s, 1024.0)
+
+    def test_guard_type_version_removed(self):
+        def thing(a):
+            x = 0
+            for _ in range(100):
+                x += a.attr
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 1)
+
+    def test_guard_type_version_removed_inlined(self):
+        """
+        Verify that the guard type version if we have an inlined function
+        """
+
+        def fn():
+            pass
+
+        def thing(a):
+            x = 0
+            for _ in range(100):
+                x += a.attr
+                fn()
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 1)
+
+    def test_guard_type_version_not_removed(self):
+        """
+        Verify that the guard type version is not removed if we modify the class
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                # for the first 90 iterations we set the attribute on this dummy function which shouldn't
+                # trigger the type watcher
+                # then after 90  it should trigger it and stop optimizing
+                # Note that the code needs to be in this weird form so it's optimized inline without any control flow
+                setattr((Foo, Bar)[i < 90], "attr", 2)
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        class Bar:
+            pass
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 219)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        self.assertEqual(guard_type_version_count, 2)
+
+
+    @unittest.expectedFailure
+    def test_guard_type_version_not_removed_escaping(self):
+        """
+        Verify that the guard type version is not removed if have an escaping function
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                # eval should be escaping and so should cause optimization to stop and preserve both type versions
+                eval("None")
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+        res, ex = self._run_with_optimizer(thing, Foo())
+        opnames = list(iter_opnames(ex))
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 200)
+        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
+        # Note: This will actually be 1 for noe
+        # https://github.com/python/cpython/pull/119365#discussion_r1626220129
+        self.assertEqual(guard_type_version_count, 2)
+
+
+    def test_guard_type_version_executor_invalidated(self):
+        """
+        Verify that the executor is invalided on a type change.
+        """
+
+        def thing(a):
+            x = 0
+            for i in range(100):
+                x += a.attr
+                x += a.attr
+            return x
+
+        class Foo:
+            attr = 1
+
+        res, ex = self._run_with_optimizer(thing, Foo())
+        self.assertEqual(res, 200)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(iter_opnames(ex)).count("_GUARD_TYPE_VERSION"), 1)
+        self.assertTrue(ex.is_valid())
+        Foo.attr = 0
+        self.assertFalse(ex.is_valid())
+
+    def test_type_version_doesnt_segfault(self):
+        """
+        Tests that setting a type version doesn't cause a segfault when later looking at the stack.
+        """
+
+        # Minimized from mdp.py benchmark
+
+        class A:
+            def __init__(self):
+                self.attr = {}
+
+            def method(self, arg):
+                self.attr[arg] = None
+
+        def fn(a):
+            for _ in range(100):
+                (_ for _ in [])
+                (_ for _ in [a.method(None)])
+
+        fn(A())
+
 
 if __name__ == "__main__":
     unittest.main()

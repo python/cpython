@@ -323,8 +323,20 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_settrace__doc__,
+"settrace($module, function, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function.\n"
+"\n"
+"It will be called on each function call.  See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)sys_settrace, METH_O, sys_settrace__doc__},
+
 PyDoc_STRVAR(sys__settraceallthreads__doc__,
-"_settraceallthreads($module, arg, /)\n"
+"_settraceallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
@@ -355,14 +367,26 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_gettrace_impl(module);
 }
 
+PyDoc_STRVAR(sys_setprofile__doc__,
+"setprofile($module, function, /)\n"
+"--\n"
+"\n"
+"Set the profiling function.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
+
+#define SYS_SETPROFILE_METHODDEF    \
+    {"setprofile", (PyCFunction)sys_setprofile, METH_O, sys_setprofile__doc__},
+
 PyDoc_STRVAR(sys__setprofileallthreads__doc__,
-"_setprofileallthreads($module, arg, /)\n"
+"_setprofileallthreads($module, function, /)\n"
 "--\n"
 "\n"
 "Set the profiling function in all running threads belonging to the current interpreter.\n"
 "\n"
-"It will be called on each function call and return.  See the profiler chapter\n"
-"in the library manual.");
+"It will be called on each function call and return.  See the profiler\n"
+"chapter in the library manual.");
 
 #define SYS__SETPROFILEALLTHREADS_METHODDEF    \
     {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
@@ -1461,6 +1485,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
+PyDoc_STRVAR(sys__is_gil_enabled__doc__,
+"_is_gil_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if the GIL is currently enabled and False otherwise.");
+
+#define SYS__IS_GIL_ENABLED_METHODDEF    \
+    {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
+
+static int
+sys__is_gil_enabled_impl(PyObject *module);
+
+static PyObject *
+sys__is_gil_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_gil_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1504,4 +1574,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=b8b1c53e04c3b20c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef7c35945443d300 input=a9049054013a1b77]*/

@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.
@@ -449,6 +449,10 @@ Constants
       Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
       same way that ``SO_BINDTODEVICE`` is used, but with the index of a
       network interface instead of its name.
+
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
 
 .. data:: AF_CAN
           PF_CAN
@@ -1589,7 +1593,8 @@ to sockets.
    Return a :term:`file object` associated with the socket.  The exact returned
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function, except
-   the only supported *mode* values are ``'r'`` (default), ``'w'`` and ``'b'``.
+   the only supported *mode* values are ``'r'`` (default), ``'w'``, ``'b'``, or
+   a combination of those.
 
    The socket must be in blocking mode; it can have a timeout, but the file
    object's internal buffer may end up in an inconsistent state if a timeout

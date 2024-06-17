@@ -303,8 +303,8 @@ modules in your app, some additional steps will be required:
 * You need to ensure that any folders containing third-party binaries are
   either associated with the app target, or copied in as part of step 8. Step 8
   should also purge any binaries that are not appropriate for the platform a
-  specific build is targetting (i.e., delete any device binaries if you're
-  building app app targeting the simulator).
+  specific build is targeting (i.e., delete any device binaries if you're
+  building an app targeting the simulator).
 
 * Any folders that contain third-party binaries must be processed into
   framework form by step 9. The invocation of ``install_dylib`` that processes

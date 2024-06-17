@@ -77,7 +77,7 @@ future_parse(_PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
          *  are another future statement and a doc string.
          */
 
-        if (s->kind == ImportFrom_kind) {
+        if (s->kind == ImportFrom_kind && s->v.ImportFrom.level == 0) {
             identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {

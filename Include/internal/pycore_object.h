@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Check if an object is consistent. For example, ensure that the reference
@@ -158,6 +159,21 @@ static inline void _Py_ClearImmortal(PyObject *op)
         op = NULL; \
     } while (0)
 
+// Mark an object as supporting deferred reference counting. This is a no-op
+// in the default (with GIL) build. Objects that use deferred reference
+// counting should be tracked by the GC so that they are eventually collected.
+extern void _PyObject_SetDeferredRefcount(PyObject *op);
+
+static inline int
+_PyObject_HasDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_DEFERRED);
+#else
+    return 0;
+#endif
+}
+
 #if !defined(Py_GIL_DISABLED)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -241,12 +257,12 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
    when a memory block is reused from a free list.
 
    Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_NewReference(PyObject *op);
+extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((type->tp_flags & feature) != 0);
+    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -304,7 +320,7 @@ static inline void _PyObject_GC_TRACK(
                           "object already tracked by the garbage collector",
                           filename, lineno, __func__);
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_TRACKED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyObject_ASSERT_FROM(op,
@@ -345,7 +361,7 @@ static inline void _PyObject_GC_UNTRACK(
                           filename, lineno, __func__);
 
 #ifdef Py_GIL_DISABLED
-    op->ob_gc_bits &= ~_PyGC_BITS_TRACKED;
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_TRACKED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
     PyGC_Head *prev = _PyGCHead_PREV(gc);
@@ -481,6 +497,9 @@ _Py_NewRefWithLock(PyObject *op)
     if (_Py_TryIncrefFast(op)) {
         return op;
     }
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
     _Py_INCREF_STAT_INC();
     for (;;) {
         Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
@@ -570,7 +589,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(
+        managed_static_type_state *state = _PyStaticType_GetState(
                                                 interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
@@ -599,7 +618,6 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyWeakReference **)((char *)op + offset);
 }
-
 
 // Fast inlined version of PyObject_IS_GC()
 static inline int
@@ -643,12 +661,13 @@ extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
+extern int _PyObject_SetAttributeErrorContext(PyObject *v, PyObject* name);
 
 void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
-extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                          PyObject *name, PyObject *value);
-PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                        PyObject *name);
+extern int _PyObject_StoreInstanceAttribute(PyObject *obj,
+                                            PyObject *name, PyObject *value);
+extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
+                                              PyObject **attr);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
@@ -667,6 +686,13 @@ _PyObject_ManagedDictPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
+}
+
+static inline PyDictObject *
+_PyObject_GetManagedDict(PyObject *obj)
+{
+    PyManagedDictPointer *dorv = _PyObject_ManagedDictPointer(obj);
+    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(dorv->dict);
 }
 
 static inline PyDictValues *

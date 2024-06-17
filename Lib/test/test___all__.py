@@ -3,7 +3,6 @@ from test import support
 from test.support import warnings_helper
 import os
 import sys
-import types
 
 
 if support.check_sanitizer(address=True, memory=True):

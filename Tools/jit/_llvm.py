@@ -1,4 +1,5 @@
 """Utilities for invoking LLVM tools."""
+
 import asyncio
 import functools
 import os
@@ -7,7 +8,7 @@ import shlex
 import subprocess
 import typing
 
-_LLVM_VERSION = 16
+_LLVM_VERSION = 18
 _LLVM_VERSION_PATTERN = re.compile(rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\s+")
 
 _P = typing.ParamSpec("_P")

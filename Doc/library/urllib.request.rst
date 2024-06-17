@@ -1,5 +1,5 @@
-:mod:`urllib.request` --- Extensible library for opening URLs
-=============================================================
+:mod:`!urllib.request` --- Extensible library for opening URLs
+==============================================================
 
 .. module:: urllib.request
    :synopsis: Extensible library for opening URLs.
@@ -113,9 +113,9 @@ The :mod:`urllib.request` module defines the following functions:
       ``http/1.1`` when no *context* is given. Custom *context* should set
       ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocols`.
 
-    .. versionchanged:: 3.13
-       Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
-       parameter instead.
+   .. versionchanged:: 3.13
+      Remove *cafile*, *capath* and *cadefault* parameters: use the *context*
+      parameter instead.
 
 
 .. function:: install_opener(opener)
@@ -218,7 +218,7 @@ The following classes are provided:
 
    An appropriate ``Content-Type`` header should be included if the *data*
    argument is present.  If this header has not been provided and *data*
-   is not None, ``Content-Type: application/x-www-form-urlencoded`` will
+   is not ``None``, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
    The next two arguments are only of interest for correct handling

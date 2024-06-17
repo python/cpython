@@ -260,7 +260,7 @@ StreamReader
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
 
-      The *separator* may also be an :term:`iterable` of separators. In this
+      The *separator* may also be a tuple of separators. In this
       case the return value will be the shortest possible that has any
       separator as the suffix. For the purposes of :exc:`LimitOverrunError`,
       the shortest possible separator is considered to be the one that
@@ -270,7 +270,7 @@ StreamReader
 
       .. versionchanged:: 3.13
 
-         The *separator* parameter may now be an :term:`iterable` of
+         The *separator* parameter may now be a :class:`tuple` of
          separators.
 
    .. method:: at_eof()

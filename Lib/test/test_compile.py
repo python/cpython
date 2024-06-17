@@ -2,6 +2,7 @@ import contextlib
 import dis
 import io
 import math
+import opcode
 import os
 import unittest
 import sys
@@ -11,6 +12,8 @@ import tempfile
 import types
 import textwrap
 import warnings
+import _testinternalcapi
+
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
                           requires_specialization, get_c_recursion_limit)
@@ -498,6 +501,33 @@ class TestSpecifics(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
+
+    def test_compile_redundant_jumps_and_nops_after_moving_cold_blocks(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                match name_2:
+                    case b'':
+                        pass
+            finally:
+                something
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instructions locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
 
     def test_compile_ast(self):
         fname = __file__
@@ -1406,6 +1436,16 @@ class TestSpecifics(unittest.TestCase):
         for kw in ("except", "except*"):
             exec(code % kw, g, l);
 
+    def test_regression_gh_120225(self):
+        async def name_4():
+            match b'':
+                case True:
+                    pass
+                case name_5 if f'e':
+                    {name_3: name_4 async for name_2 in name_5}
+                case []:
+                    pass
+            [[]]
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1535,7 +1575,7 @@ class TestSourcePositions(unittest.TestCase):
                     ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_COMMON_CONSTANT',
             line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
@@ -1955,7 +1995,10 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_load_super_attr(self):
         source = "class C:\n  def __init__(self):\n    super().__init__()"
-        code = compile(source, "<test>", "exec").co_consts[0].co_consts[1]
+        for const in compile(source, "<test>", "exec").co_consts[0].co_consts:
+            if isinstance(const, types.CodeType):
+                code = const
+                break
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
@@ -2418,6 +2461,49 @@ class TestStackSizeStability(unittest.TestCase):
                     a
             """
         self.check_stack_size(snippet, async_=True)
+
+class TestInstructionSequence(unittest.TestCase):
+    def compare_instructions(self, seq, expected):
+        self.assertEqual([(opcode.opname[i[0]],) + i[1:] for i in seq.get_instructions()],
+                         expected)
+
+    def test_basics(self):
+        seq = _testinternalcapi.new_instruction_sequence()
+
+        def add_op(seq, opname, oparg, bl, bc=0, el=0, ec=0):
+            seq.addop(opcode.opmap[opname], oparg, bl, bc, el, el)
+
+        add_op(seq, 'LOAD_CONST', 1, 1)
+        add_op(seq, 'JUMP', lbl1 := seq.new_label(), 2)
+        add_op(seq, 'LOAD_CONST', 1, 3)
+        add_op(seq, 'JUMP', lbl2 := seq.new_label(), 4)
+        seq.use_label(lbl1)
+        add_op(seq, 'LOAD_CONST', 2, 4)
+        seq.use_label(lbl2)
+        add_op(seq, 'RETURN_VALUE', 0, 3)
+
+        expected = [('LOAD_CONST', 1, 1),
+                    ('JUMP', 4, 2),
+                    ('LOAD_CONST', 1, 3),
+                    ('JUMP', 5, 4),
+                    ('LOAD_CONST', 2, 4),
+                    ('RETURN_VALUE', None, 3),
+                   ]
+
+        self.compare_instructions(seq, [ex + (0,0,0) for ex in expected])
+
+    def test_nested(self):
+        seq = _testinternalcapi.new_instruction_sequence()
+        seq.addop(opcode.opmap['LOAD_CONST'], 1, 1, 0, 0, 0)
+        nested = _testinternalcapi.new_instruction_sequence()
+        nested.addop(opcode.opmap['LOAD_CONST'], 2, 2, 0, 0, 0)
+
+        self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
+        self.compare_instructions(nested, [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+        seq.add_nested(nested)
+        self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
+        self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
 
 
 if __name__ == "__main__":

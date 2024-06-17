@@ -988,7 +988,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
 
     list = GET_WEAKREFS_LISTPTR(object);
-    if (FT_ATOMIC_LOAD_PTR(list) == NULL) {
+    if (FT_ATOMIC_LOAD_PTR(*list) == NULL) {
         // Fast path for the common case
         return;
     }
@@ -1016,7 +1016,9 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *exc = PyErr_GetRaisedException();
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
-        _PyErr_ChainExceptions1(exc);
+        _PyWeakref_ClearWeakRefsExceptCallbacks(object);
+        PyErr_WriteUnraisable(NULL);
+        PyErr_SetRaisedException(exc);
         return;
     }
 
@@ -1064,7 +1066,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 void
 _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(interp, type);
+    managed_static_type_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     // This is safe to do without holding the lock in free-threaded builds;
     // there is only one thread running and no new threads can be created.
