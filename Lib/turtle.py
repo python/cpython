@@ -21,7 +21,6 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-
 """
 Turtle graphics is a popular way for introducing programming to
 kids. It was part of the original Logo programming language developed
@@ -97,12 +96,7 @@ Roughly it has the following features added:
 
 Behind the scenes there are some features included with possible
 extensions in mind. These will be commented and documented elsewhere.
-
 """
-
-_ver = "turtle 1.1b- - for Python 3.1   -  4. 5. 2009"
-
-# print(_ver)
 
 import tkinter as TK
 import types
@@ -110,7 +104,6 @@ import math
 import time
 import inspect
 import sys
-import warnings
 
 from os.path import isfile, split, join
 from copy import deepcopy
@@ -133,15 +126,15 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
         'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
         'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
-        'seth', 'setheading', 'setpos', 'setposition', 'settiltangle',
+        'seth', 'setheading', 'setpos', 'setposition',
         'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
-        'speed', 'st', 'stamp', 'tilt', 'tiltangle', 'towards',
+        'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
         'turtlesize', 'undo', 'undobufferentries', 'up', 'width',
         'write', 'xcor', 'ycor']
 _tg_utilities = ['write_docstringdict', 'done']
 
 __all__ = (_tg_classes + _tg_screen_functions + _tg_turtle_functions +
-           _tg_utilities + ['Terminator']) # + _math_functions)
+           _tg_utilities + ['Terminator'])
 
 _alias_list = ['addshape', 'backward', 'bk', 'fd', 'ht', 'lt', 'pd', 'pos',
                'pu', 'rt', 'seth', 'setpos', 'setposition', 'st',
@@ -598,9 +591,6 @@ class TurtleScreenBase(object):
         x0, y0, x1, y1 = self.cv.bbox(item)
         return item, x1-1
 
-##    def _dot(self, pos, size, color):
-##        """may be implemented for some other graphics toolkit"""
-
     def _onclick(self, item, fun, num=1, add=None):
         """Bind fun to mouse-click event on turtle.
         fun must be a function with two arguments, the coordinates
@@ -884,7 +874,7 @@ class Shape(object):
             if isinstance(data, str):
                 if data.lower().endswith(".gif") and isfile(data):
                     data = TurtleScreen._image(data)
-                # else data assumed to be Photoimage
+                # else data assumed to be PhotoImage
         elif type_ == "compound":
             data = []
         else:
@@ -954,7 +944,7 @@ class Tbuffer(object):
 
 
 class TurtleScreen(TurtleScreenBase):
-    """Provides screen oriented methods like setbg etc.
+    """Provides screen oriented methods like bgcolor etc.
 
     Only relies upon the methods of TurtleScreenBase and NOT
     upon components of the underlying graphics toolkit -
@@ -1613,6 +1603,13 @@ class TNavigator(object):
     def _goto(self, end):
         """move turtle to position end."""
         self._position = end
+
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
+        """To be overwritten by child class RawTurtle.
+        Includes no TPen references."""
+        new_x = x if x is not None else self._position[0]
+        new_y = y if y is not None else self._position[1]
+        self._position = Vec2D(new_x, new_y)
 
     def forward(self, distance):
         """Move the turtle forward by the specified distance.
@@ -2293,6 +2290,15 @@ class TPen(object):
         else:
             return self._color(self._fillcolor)
 
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
+        """To be overwritten by child class RawTurtle.
+        Includes no TNavigator references.
+        """
+        pendown = self.isdown()
+        if pendown:
+            self.pen(pendown=False)
+        self.pen(pendown=pendown)
+
     def showturtle(self):
         """Makes the turtle visible.
 
@@ -2711,6 +2717,54 @@ class RawTurtle(TPen, TNavigator):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
 
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
+        """Instantly move turtle to an absolute position.
+
+        Arguments:
+        x -- a number      or     None
+        y -- a number             None
+        fill_gap -- a boolean     This argument must be specified by name.
+
+        call: teleport(x, y)         # two coordinates
+        --or: teleport(x)            # teleport to x position, keeping y as is
+        --or: teleport(y=y)          # teleport to y position, keeping x as is
+        --or: teleport(x, y, fill_gap=True)
+                                     # teleport but fill the gap in between
+
+        Move turtle to an absolute position. Unlike goto(x, y), a line will not
+        be drawn. The turtle's orientation does not change. If currently
+        filling, the polygon(s) teleported from will be filled after leaving,
+        and filling will begin again after teleporting. This can be disabled
+        with fill_gap=True, which makes the imaginary line traveled during
+        teleporting act as a fill barrier like in goto(x, y).
+
+        Example (for a Turtle instance named turtle):
+        >>> tp = turtle.pos()
+        >>> tp
+        (0.00,0.00)
+        >>> turtle.teleport(60)
+        >>> turtle.pos()
+        (60.00,0.00)
+        >>> turtle.teleport(y=10)
+        >>> turtle.pos()
+        (60.00,10.00)
+        >>> turtle.teleport(20, 30)
+        >>> turtle.pos()
+        (20.00,30.00)
+        """
+        pendown = self.isdown()
+        was_filling = self.filling()
+        if pendown:
+            self.pen(pendown=False)
+        if was_filling and not fill_gap:
+            self.end_fill()
+        new_x = x if x is not None else self._position[0]
+        new_y = y if y is not None else self._position[1]
+        self._position = Vec2D(new_x, new_y)
+        self.pen(pendown=pendown)
+        if was_filling and not fill_gap:
+            self.begin_fill()
+
     def clone(self):
         """Create and return a clone of the turtle.
 
@@ -2841,33 +2895,6 @@ class RawTurtle(TPen, TNavigator):
             return self._shearfactor
         self.pen(resizemode="user", shearfactor=shear)
 
-    def settiltangle(self, angle):
-        """Rotate the turtleshape to point in the specified direction
-
-        Argument: angle -- number
-
-        Rotate the turtleshape to point in the direction specified by angle,
-        regardless of its current tilt-angle. DO NOT change the turtle's
-        heading (direction of movement).
-
-        Deprecated since Python 3.1
-
-        Examples (for a Turtle instance named turtle):
-        >>> turtle.shape("circle")
-        >>> turtle.shapesize(5,2)
-        >>> turtle.settiltangle(45)
-        >>> turtle.stamp()
-        >>> turtle.fd(50)
-        >>> turtle.settiltangle(-45)
-        >>> turtle.stamp()
-        >>> turtle.fd(50)
-        """
-        warnings._deprecated("turtle.RawTurtle.settiltangle()",
-                             "{name!r} is deprecated since Python 3.1 and scheduled "
-                             "for removal in Python {remove}. Use tiltangle() instead.",
-                             remove=(3, 13))
-        self.tiltangle(angle)
-
     def tiltangle(self, angle=None):
         """Set or return the current tilt-angle.
 
@@ -2879,9 +2906,6 @@ class RawTurtle(TPen, TNavigator):
         If angle is not given: return the current tilt-angle, i. e. the angle
         between the orientation of the turtleshape and the heading of the
         turtle (its direction of movement).
-
-        (Incorrectly marked as deprecated since Python 3.1, it is really
-        settiltangle that is deprecated.)
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
@@ -3391,27 +3415,22 @@ class RawTurtle(TPen, TNavigator):
             if size is None:
                 size = self._pensize + max(self._pensize, 4)
             color = self._colorstr(color)
-        if hasattr(self.screen, "_dot"):
-            item = self.screen._dot(self._position, size, color)
-            self.items.append(item)
-            if self.undobuffer:
-                self.undobuffer.push(("dot", item))
-        else:
-            pen = self.pen()
-            if self.undobuffer:
-                self.undobuffer.push(["seq"])
-                self.undobuffer.cumulate = True
-            try:
-                if self.resizemode() == 'auto':
-                    self.ht()
-                self.pendown()
-                self.pensize(size)
-                self.pencolor(color)
-                self.forward(0)
-            finally:
-                self.pen(pen)
-            if self.undobuffer:
-                self.undobuffer.cumulate = False
+        # If screen were to gain a dot function, see GH #104218.
+        pen = self.pen()
+        if self.undobuffer:
+            self.undobuffer.push(["seq"])
+            self.undobuffer.cumulate = True
+        try:
+            if self.resizemode() == 'auto':
+                self.ht()
+            self.pendown()
+            self.pensize(size)
+            self.pencolor(color)
+            self.forward(0)
+        finally:
+            self.pen(pen)
+        if self.undobuffer:
+            self.undobuffer.cumulate = False
 
     def _write(self, txt, align, font):
         """Performs the writing for write()
@@ -3687,11 +3706,6 @@ class _Screen(TurtleScreen):
     _title = _CFG["title"]
 
     def __init__(self):
-        # XXX there is no need for this code to be conditional,
-        # as there will be only a single _Screen instance, anyway
-        # XXX actually, the turtle demo is injecting root window,
-        # so perhaps the conditional creation of a root should be
-        # preserved (perhaps by passing it as an optional parameter)
         if _Screen._root is None:
             _Screen._root = self._root = _Root()
             self._root.title(_Screen._title)
@@ -3906,28 +3920,33 @@ def getmethparlist(ob):
     function definition and the second is suitable for use in function
     call.  The "self" parameter is not included.
     """
-    defText = callText = ""
+    orig_sig = inspect.signature(ob)
     # bit of a hack for methods - turn it into a function
     # but we drop the "self" param.
     # Try and build one for Python defined functions
-    args, varargs, varkw = inspect.getargs(ob.__code__)
-    items2 = args[1:]
-    realArgs = args[1:]
-    defaults = ob.__defaults__ or []
-    defaults = ["=%r" % (value,) for value in defaults]
-    defaults = [""] * (len(realArgs)-len(defaults)) + defaults
-    items1 = [arg + dflt for arg, dflt in zip(realArgs, defaults)]
-    if varargs is not None:
-        items1.append("*" + varargs)
-        items2.append("*" + varargs)
-    if varkw is not None:
-        items1.append("**" + varkw)
-        items2.append("**" + varkw)
-    defText = ", ".join(items1)
-    defText = "(%s)" % defText
-    callText = ", ".join(items2)
-    callText = "(%s)" % callText
-    return defText, callText
+    func_sig = orig_sig.replace(
+        parameters=list(orig_sig.parameters.values())[1:],
+    )
+
+    call_args = []
+    for param in func_sig.parameters.values():
+        match param.kind:
+            case (
+                inspect.Parameter.POSITIONAL_ONLY
+                | inspect.Parameter.POSITIONAL_OR_KEYWORD
+            ):
+                call_args.append(param.name)
+            case inspect.Parameter.VAR_POSITIONAL:
+                call_args.append(f'*{param.name}')
+            case inspect.Parameter.KEYWORD_ONLY:
+                call_args.append(f'{param.name}={param.name}')
+            case inspect.Parameter.VAR_KEYWORD:
+                call_args.append(f'**{param.name}')
+            case _:
+                raise RuntimeError('Unsupported parameter kind', param.kind)
+    call_text = f'({', '.join(call_args)})'
+
+    return str(func_sig), call_text
 
 def _turtle_docrevise(docstr):
     """To reduce docstrings from RawTurtle class for functions

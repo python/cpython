@@ -1,3 +1,0 @@
-Fix a shell code injection vulnerability in the ``get-remote-certificate.py``
-example script. The script no longer uses a shell to run ``openssl`` commands.
-Issue reported and initial fix by Caleb Shortt. Patch by Victor Stinner.

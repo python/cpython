@@ -1,1 +1,0 @@
-Add AttrDict to JSON module for use with object_hook.

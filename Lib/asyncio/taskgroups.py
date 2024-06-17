@@ -2,7 +2,7 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
@@ -10,7 +10,21 @@ from . import tasks
 
 
 class TaskGroup:
+    """Asynchronous context manager for managing groups of tasks.
 
+    Example use:
+
+        async with asyncio.TaskGroup() as group:
+            task1 = group.create_task(some_coroutine(...))
+            task2 = group.create_task(other_coroutine(...))
+        print("Both tasks have completed now.")
+
+    All tasks are awaited when the context manager exits.
+
+    Any exceptions other than `asyncio.CancelledError` raised within
+    a task will cancel all remaining tasks and wait for them to exit.
+    The exceptions are then combined and raised as an `ExceptionGroup`.
+    """
     def __init__(self):
         self._entered = False
         self._exiting = False
@@ -40,16 +54,14 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
@@ -61,14 +73,10 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        propagate_cancellation_error = \
-            exc if et is exceptions.CancelledError else None
-        if self._parent_cancel_requested:
-            # If this flag is set we *must* call uncancel().
-            if self._parent_task.uncancel() == 0:
-                # If there are no pending cancellations left,
-                # don't propagate CancelledError.
-                propagate_cancellation_error = None
+        if et is not None and issubclass(et, exceptions.CancelledError):
+            propagate_cancellation_error = exc
+        else:
+            propagate_cancellation_error = None
 
         if et is not None:
             if not self._aborting:
@@ -116,38 +124,64 @@ class TaskGroup:
         if self._base_error is not None:
             raise self._base_error
 
+        if self._parent_cancel_requested:
+            # If this flag is set we *must* call uncancel().
+            if self._parent_task.uncancel() == 0:
+                # If there are no pending cancellations left,
+                # don't propagate CancelledError.
+                propagate_cancellation_error = None
+
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error is not None and not self._errors:
             raise propagate_cancellation_error
 
-        if et is not None and et is not exceptions.CancelledError:
+        if et is not None and not issubclass(et, exceptions.CancelledError):
             self._errors.append(exc)
 
         if self._errors:
+            # If the parent task is being cancelled from the outside
+            # of the taskgroup, un-cancel and re-cancel the parent task,
+            # which will keep the cancel count stable.
+            if self._parent_task.cancelling():
+                self._parent_task.uncancel()
+                self._parent_task.cancel()
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
-            errors = self._errors
-            self._errors = None
-
-            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
-            raise me from None
+            try:
+                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
+                raise me from None
+            finally:
+                self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
+        """Create a new task in this group and return it.
+
+        Similar to `asyncio.create_task`.
+        """
         if not self._entered:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and not self._tasks:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         if self._aborting:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro)
+            task = self._loop.create_task(coro, name=name)
         else:
-            task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
-        task.add_done_callback(self._on_task_done)
-        self._tasks.add(task)
+            task = self._loop.create_task(coro, name=name, context=context)
+
+        # optimization: Immediately call the done callback if the task is
+        # already done (e.g. if the coro was able to complete eagerly),
+        # and skip scheduling a done callback
+        if task.done():
+            self._on_task_done(task)
+        else:
+            self._tasks.add(task)
+            task.add_done_callback(self._on_task_done)
         return task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,

@@ -53,7 +53,7 @@
 #endif
 #endif
 
-#ifdef HAVE_SSE41
+#ifdef HAVE_SSE4_1
 #ifndef HAVE_SSSE3
 #define HAVE_SSSE3
 #endif

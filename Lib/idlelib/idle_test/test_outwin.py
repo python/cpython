@@ -159,7 +159,7 @@ class ModuleFunctionTest(unittest.TestCase):
         for line, expected_output in test_lines:
             self.assertEqual(flh(line), expected_output)
             if expected_output:
-                mock_open.assert_called_with(expected_output[0], 'r')
+                mock_open.assert_called_with(expected_output[0])
 
 
 if __name__ == '__main__':

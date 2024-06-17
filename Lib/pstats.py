@@ -223,8 +223,6 @@ class Stats:
             for word, tup in self.sort_arg_dict_default.items():
                 fragment = word
                 while fragment:
-                    if not fragment:
-                        break
                     if fragment in dict:
                         bad_list[fragment] = 0
                         break
@@ -331,7 +329,7 @@ class Stats:
         if isinstance(sel, str):
             try:
                 rex = re.compile(sel)
-            except re.error:
+            except re.PatternError:
                 msg += "   <Invalid regular expression %r>\n" % sel
                 return new_list, msg
             new_list = []
@@ -613,7 +611,7 @@ def f8(x):
 if __name__ == '__main__':
     import cmd
     try:
-        import readline
+        import readline  # noqa: F401
     except ImportError:
         pass
 

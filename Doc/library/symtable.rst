@@ -1,5 +1,5 @@
-:mod:`symtable` --- Access to the compiler's symbol tables
-==========================================================
+:mod:`!symtable` --- Access to the compiler's symbol tables
+===========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
@@ -38,7 +38,13 @@ Examining Symbol Tables
    .. method:: get_type()
 
       Return the type of the symbol table.  Possible values are ``'class'``,
-      ``'module'``, and ``'function'``.
+      ``'module'``, ``'function'``, ``'annotation'``, ``'TypeVar bound'``,
+      ``'type alias'``, and ``'type parameter'``. The latter four refer to
+      different flavors of :ref:`annotation scopes <annotation-scopes>`.
+
+      .. versionchanged:: 3.12
+         Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
+         and ``'type parameter'`` as possible return values.
 
    .. method:: get_id()
 
@@ -49,6 +55,10 @@ Examining Symbol Tables
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
       ``'top'`` if the table is global (:meth:`get_type` returns ``'module'``).
+      For type parameter scopes (which are used for generic classes, functions,
+      and type aliases), it is the name of the underlying class, function, or
+      type alias. For type alias scopes, it is the name of the type alias.
+      For :class:`~typing.TypeVar` bound scopes, it is the name of the ``TypeVar``.
 
    .. method:: get_lineno()
 
@@ -87,7 +97,7 @@ Examining Symbol Tables
 
 .. class:: Function
 
-   A namespace for a function or method.  This class inherits
+   A namespace for a function or method.  This class inherits from
    :class:`SymbolTable`.
 
    .. method:: get_parameters()
@@ -113,7 +123,7 @@ Examining Symbol Tables
 
 .. class:: Class
 
-   A namespace of a class.  This class inherits :class:`SymbolTable`.
+   A namespace of a class.  This class inherits from :class:`SymbolTable`.
 
    .. method:: get_methods()
 
@@ -140,6 +150,12 @@ Examining Symbol Tables
    .. method:: is_parameter()
 
       Return ``True`` if the symbol is a parameter.
+
+   .. method:: is_type_parameter()
+
+      Return ``True`` if the symbol is a type parameter.
+
+      .. versionadded:: 3.14
 
    .. method:: is_global()
 
@@ -168,9 +184,41 @@ Examining Symbol Tables
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
 
+   .. method:: is_free_class()
+
+      Return *True* if a class-scoped symbol is free from
+      the perspective of a method.
+
+      Consider the following example::
+
+         def f():
+             x = 1  # function-scoped
+             class C:
+                 x = 2  # class-scoped
+                 def method(self):
+                     return x
+
+      In this example, the class-scoped symbol ``x`` is considered to
+      be free from the perspective of ``C.method``, thereby allowing
+      the latter to return *1* at runtime and not *2*.
+
+      .. versionadded:: 3.14
+
    .. method:: is_assigned()
 
       Return ``True`` if the symbol is assigned to in its block.
+
+   .. method:: is_comp_iter()
+
+      Return ``True`` if the symbol is a comprehension iteration variable.
+
+      .. versionadded:: 3.14
+
+   .. method:: is_comp_cell()
+
+      Return ``True`` if the symbol is a cell in an inlined comprehension.
+
+      .. versionadded:: 3.14
 
    .. method:: is_namespace()
 
@@ -197,3 +245,21 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
+
+
+.. _symtable-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`symtable` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m symtable [infile...]
+
+Symbol tables are generated for the specified Python source files and
+dumped to stdout.
+If no input file is specified, the content is read from stdin.

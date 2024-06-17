@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
@@ -432,7 +428,7 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ss
         goto exit;
     }
     file = args[0];
-    mask = _PyLong_AsInt(args[1]);
+    mask = PyLong_AsInt(args[1]);
     if (mask == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -496,7 +492,7 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_s
     if (!_PyArg_CheckPositional("createtimerhandler", nargs, 2, 2)) {
         goto exit;
     }
-    milliseconds = _PyLong_AsInt(args[0]);
+    milliseconds = PyLong_AsInt(args[0]);
     if (milliseconds == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -530,7 +526,7 @@ _tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nar
     if (nargs < 1) {
         goto skip_optional;
     }
-    threshold = _PyLong_AsInt(args[0]);
+    threshold = PyLong_AsInt(args[0]);
     if (threshold == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -564,7 +560,7 @@ _tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t n
     if (nargs < 1) {
         goto skip_optional;
     }
-    flags = _PyLong_AsInt(args[0]);
+    flags = PyLong_AsInt(args[0]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -626,6 +622,33 @@ _tkinter_tkapp_loadtk(TkappObject *self, PyObject *Py_UNUSED(ignored))
     return _tkinter_tkapp_loadtk_impl(self);
 }
 
+PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
+"settrace($self, func, /)\n"
+"--\n"
+"\n"
+"Set the tracing function.");
+
+#define _TKINTER_TKAPP_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)_tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
+
+PyDoc_STRVAR(_tkinter_tkapp_gettrace__doc__,
+"gettrace($self, /)\n"
+"--\n"
+"\n"
+"Get the tracing function.");
+
+#define _TKINTER_TKAPP_GETTRACE_METHODDEF    \
+    {"gettrace", (PyCFunction)_tkinter_tkapp_gettrace, METH_NOARGS, _tkinter_tkapp_gettrace__doc__},
+
+static PyObject *
+_tkinter_tkapp_gettrace_impl(TkappObject *self);
+
+static PyObject *
+_tkinter_tkapp_gettrace(TkappObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter_tkapp_gettrace_impl(self);
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
 "willdispatch($self, /)\n"
 "--\n"
@@ -653,7 +676,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
 
 PyDoc_STRVAR(_tkinter_create__doc__,
 "create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
-"       interactive=False, wantobjects=False, wantTk=True, sync=False,\n"
+"       interactive=False, wantobjects=0, wantTk=True, sync=False,\n"
 "       use=None, /)\n"
 "--\n"
 "\n"
@@ -747,29 +770,29 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    interactive = _PyLong_AsInt(args[3]);
-    if (interactive == -1 && PyErr_Occurred()) {
+    interactive = PyObject_IsTrue(args[3]);
+    if (interactive < 0) {
         goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
     }
-    wantobjects = _PyLong_AsInt(args[4]);
+    wantobjects = PyLong_AsInt(args[4]);
     if (wantobjects == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 6) {
         goto skip_optional;
     }
-    wantTk = _PyLong_AsInt(args[5]);
-    if (wantTk == -1 && PyErr_Occurred()) {
+    wantTk = PyObject_IsTrue(args[5]);
+    if (wantTk < 0) {
         goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
     }
-    sync = _PyLong_AsInt(args[6]);
-    if (sync == -1 && PyErr_Occurred()) {
+    sync = PyObject_IsTrue(args[6]);
+    if (sync < 0) {
         goto exit;
     }
     if (nargs < 8) {
@@ -820,7 +843,7 @@ _tkinter_setbusywaitinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -865,4 +888,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=d022835d05fc8608 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d90c1a9850c63249 input=a9049054013a1b77]*/

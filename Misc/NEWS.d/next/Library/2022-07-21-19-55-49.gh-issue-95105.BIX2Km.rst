@@ -1,1 +1,0 @@
-:meth:`wsgiref.types.InputStream.__iter__` should return ``Iterator[bytes]``, not ``Iterable[bytes]``. Patch by Shantanu Jain.

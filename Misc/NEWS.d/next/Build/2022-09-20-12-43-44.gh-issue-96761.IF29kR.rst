@@ -1,2 +1,0 @@
-Fix the build process of clang compiler for :program:`_bootstrap_python` if
-LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.

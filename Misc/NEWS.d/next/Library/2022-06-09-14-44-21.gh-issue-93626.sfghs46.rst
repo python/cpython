@@ -1,1 +1,0 @@
-Set ``__future__.annotations`` to have a ``None`` mandatoryRelease to indicate that it is currently 'TBD'.

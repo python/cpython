@@ -52,6 +52,17 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
+typedef struct {
+    PyObject_VAR_HEAD
+    Py_ssize_t chunks;  /* the number of group references and non-NULL literals
+                         * self->chunks <= 2*Py_SIZE(self) + 1 */
+    PyObject *literal;
+    struct {
+        Py_ssize_t index;
+        PyObject *literal;  /* NULL if empty */
+    } items[0];
+} TemplateObject;
+
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */
@@ -73,6 +84,7 @@ typedef struct {
     int charsize; /* character size */
     int match_all;
     int must_advance;
+    int debug;
     /* marks */
     int lastmark;
     int lastindex;
@@ -83,6 +95,7 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    unsigned int sigcount;
 } SRE_STATE;
 
 typedef struct {

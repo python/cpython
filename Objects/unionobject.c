@@ -1,8 +1,9 @@
 // types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_typevarobject.h"  // _PyTypeAlias_Type
 #include "pycore_unionobject.h"
-#include "structmember.h"
+
 
 
 static PyObject *make_union(PyObject *);
@@ -114,12 +115,10 @@ merge(PyObject **items1, Py_ssize_t size1,
             }
             for (; pos < size1; pos++) {
                 PyObject *a = items1[pos];
-                Py_INCREF(a);
-                PyTuple_SET_ITEM(tuple, pos, a);
+                PyTuple_SET_ITEM(tuple, pos, Py_NewRef(a));
             }
         }
-        Py_INCREF(arg);
-        PyTuple_SET_ITEM(tuple, pos, arg);
+        PyTuple_SET_ITEM(tuple, pos, Py_NewRef(arg));
         pos++;
     }
 
@@ -149,10 +148,14 @@ get_types(PyObject **obj, Py_ssize_t *size)
 static int
 is_unionable(PyObject *obj)
 {
-    return (obj == Py_None ||
+    if (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj));
+        _PyUnion_Check(obj) ||
+        Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {
+        return 1;
+    }
+    return 0;
 }
 
 PyObject *
@@ -170,8 +173,7 @@ _Py_union_type_or(PyObject* self, PyObject* other)
         if (PyErr_Occurred()) {
             return NULL;
         }
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
 
     PyObject *new_union = make_union(tuple);
@@ -184,37 +186,30 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = NULL;
     PyObject *module = NULL;
-    PyObject *tmp;
     PyObject *r = NULL;
-    int err;
+    int rc;
 
     if (p == (PyObject *)&_PyNone_Type) {
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
+    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
+        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
+    {
+        // It looks like a GenericAlias
+        goto use_repr;
+    }
+    if (rc < 0) {
         goto exit;
     }
 
-    if (tmp) {
-        Py_DECREF(tmp);
-        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
-            goto exit;
-        }
-        if (tmp) {
-            // It looks like a GenericAlias
-            Py_DECREF(tmp);
-            goto use_repr;
-        }
-    }
-
-    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {
@@ -242,9 +237,9 @@ exit:
     if (r == NULL) {
         return -1;
     }
-    err = _PyUnicodeWriter_WriteStr(writer, r);
+    rc = _PyUnicodeWriter_WriteStr(writer, r);
     Py_DECREF(r);
-    return err;
+    return rc;
 }
 
 static PyObject *
@@ -271,7 +266,7 @@ error:
 }
 
 static PyMemberDef union_members[] = {
-        {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
+        {"__args__", _Py_T_OBJECT, offsetof(unionobject, args), Py_READONLY},
         {0}
 };
 
@@ -298,8 +293,7 @@ union_getitem(PyObject *self, PyObject *item)
         res = make_union(newargs);
     }
     else {
-        res = PyTuple_GET_ITEM(newargs, 0);
-        Py_INCREF(res);
+        res = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
         for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
             PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
             Py_SETREF(res, PyNumber_Or(res, arg));
@@ -326,12 +320,12 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
             return NULL;
         }
     }
-    Py_INCREF(alias->parameters);
-    return alias->parameters;
+    return Py_NewRef(alias->parameters);
 }
 
 static PyGetSetDef union_properties[] = {
-    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.UnionType.", NULL},
+    {"__parameters__", union_parameters, (setter)NULL,
+     PyDoc_STR("Type variables in the types.UnionType."), NULL},
     {0}
 };
 
@@ -400,9 +394,8 @@ make_union(PyObject *args)
         return NULL;
     }
 
-    Py_INCREF(args);
     result->parameters = NULL;
-    result->args = args;
+    result->args = Py_NewRef(args);
     _PyObject_GC_TRACK(result);
     return (PyObject*)result;
 }

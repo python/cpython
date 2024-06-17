@@ -5,11 +5,10 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from test.test_tkinter.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from test.test_tkinter.support import (AbstractTkTest, tk_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -20,7 +19,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget = self.create()
         self.assertEqual(widget['class'], '')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
         widget2 = self.create(class_='Foo')
@@ -28,13 +27,20 @@ class StandardTtkOptionsTests(StandardOptionsTests):
 
     def test_configure_padding(self):
         widget = self.create()
-        self.checkParam(widget, 'padding', 0, expected=('0',))
-        self.checkParam(widget, 'padding', 5, expected=('5',))
-        self.checkParam(widget, 'padding', (5, 6), expected=('5', '6'))
+        if get_tk_patchlevel(self.root) < (8, 6, 14):
+            def padding_conv(value):
+                self.assertIsInstance(value, tuple)
+                return tuple(map(str, value))
+        else:
+            padding_conv = None
+        self.checkParam(widget, 'padding', 0, expected=(0,), conv=padding_conv)
+        self.checkParam(widget, 'padding', 5, expected=(5,), conv=padding_conv)
+        self.checkParam(widget, 'padding', (5, 6),
+                        expected=(5, 6), conv=padding_conv)
         self.checkParam(widget, 'padding', (5, 6, 7),
-                        expected=('5', '6', '7'))
+                        expected=(5, 6, 7), conv=padding_conv)
         self.checkParam(widget, 'padding', (5, 6, 7, 8),
-                        expected=('5', '6', '7', '8'))
+                        expected=(5, 6, 7, 8), conv=padding_conv)
         self.checkParam(widget, 'padding', ('5p', '6p', '7p', '8p'))
         self.checkParam(widget, 'padding', (), expected='')
 
@@ -50,7 +56,6 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
-        pass
 
 
 class WidgetTest(AbstractTkTest, unittest.TestCase):
@@ -287,8 +292,28 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b.pack()
                 buttons.append(b)
         variables = [str(b['variable']) for b in buttons]
-        print(variables)
         self.assertEqual(len(set(variables)), 4, variables)
+
+    def test_unique_variables2(self):
+        buttons = []
+        f = ttk.Frame(self.root)
+        f.pack()
+        f = ttk.Frame(self.root)
+        f.pack()
+        for j in 'AB':
+            b = tkinter.Checkbutton(f, text=j)
+            b.pack()
+            buttons.append(b)
+        # Should be larger than the number of all previously created
+        # tkinter.Checkbutton widgets:
+        for j in range(100):
+            b = ttk.Checkbutton(f, text=str(j))
+            b.pack()
+            buttons.append(b)
+        names = [str(b) for b in buttons]
+        self.assertEqual(len(set(names)), len(buttons), names)
+        variables = [str(b['variable']) for b in buttons]
+        self.assertEqual(len(set(variables)), len(buttons), variables)
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
@@ -562,7 +587,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
@@ -1528,7 +1553,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
-            if tcl_version >= (8, 6):
+            if tk_version >= (8, 6):
                 self.assertEqual(self.tv.identify_column(x), '#0')
                 self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)
@@ -1860,14 +1885,6 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
     def test_label(self):
         self._test_widget(ttk.Label)
 
-
-tests_gui = (
-        ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
-        FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
-        NotebookTest, PanedWindowTest, ProgressbarTest,
-        RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
-        )
 
 if __name__ == "__main__":
     unittest.main()

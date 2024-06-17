@@ -1,5 +1,5 @@
-:mod:`email.headerregistry`: Custom Header Objects
---------------------------------------------------
+:mod:`!email.headerregistry`: Custom Header Objects
+---------------------------------------------------
 
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
@@ -153,7 +153,7 @@ headers.
       specified as ``-0000`` (indicating it is in UTC but contains no
       information about the source timezone), then :attr:`.datetime` will be a
       naive :class:`~datetime.datetime`.  If a specific timezone offset is
-      found (including `+0000`), then :attr:`.datetime` will contain an aware
+      found (including ``+0000``), then :attr:`.datetime` will contain an aware
       ``datetime`` that uses :class:`datetime.timezone` to record the timezone
       offset.
 

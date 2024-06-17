@@ -36,15 +36,15 @@ Creating Virtual Environments
 =============================
 
 The module used to create and manage virtual environments is called
-:mod:`venv`.  :mod:`venv` will usually install the most recent version of
-Python that you have available. If you have multiple versions of Python on your
-system, you can select a specific Python version by running ``python3`` or
-whichever version you want.
+:mod:`venv`.  :mod:`venv` will install the Python version from which
+the command was run (as reported by the :option:`--version` option).
+For instance, executing the command with ``python3.12`` will install
+version 3.12.
 
 To create a virtual environment, decide upon a directory where you want to
 place it, and run the :mod:`venv` module as a script with the directory path::
 
-   python3 -m venv tutorial-env
+   python -m venv tutorial-env
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
@@ -98,8 +98,8 @@ Managing Packages with pip
 ==========================
 
 You can install, upgrade, and remove packages using a program called
-:program:`pip`.  By default ``pip`` will install packages from the Python
-Package Index, <https://pypi.org>.  You can browse the Python
+:program:`pip`.  By default ``pip`` will install packages from the `Python
+Package Index <https://pypi.org>`_.  You can browse the Python
 Package Index by going to it in your web browser.
 
 ``pip`` has a number of subcommands: "install", "uninstall",
@@ -207,4 +207,6 @@ necessary packages with ``install -r``:
 ``pip`` has many more options.  Consult the :ref:`installing-index`
 guide for complete documentation for ``pip``.  When you've written
 a package and want to make it available on the Python Package Index,
-consult the :ref:`distributing-index` guide.
+consult the `Python packaging user guide`_.
+
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/packaging-projects/

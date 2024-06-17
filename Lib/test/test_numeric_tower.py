@@ -145,7 +145,7 @@ class HashTest(unittest.TestCase):
         # The numbers ABC doesn't enforce that the "true" division
         # of integers produces a float.  This tests that the
         # Rational.__float__() method has required type conversions.
-        x = F(DummyIntegral(1), DummyIntegral(2), _normalize=False)
+        x = F._from_coprime_ints(DummyIntegral(1), DummyIntegral(2))
         self.assertRaises(TypeError, lambda: x.numerator/x.denominator)
         self.assertEqual(float(x), 0.5)
 

@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase);
@@ -88,7 +89,8 @@ int___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(int___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
-"\n");
+"\n"
+"Convert to a string according to format_spec.");
 
 #define INT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)int___format__, METH_O, int___format____doc__},
@@ -106,9 +108,6 @@ int___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = int___format___impl(self, format_spec);
 
@@ -117,7 +116,7 @@ exit:
 }
 
 PyDoc_STRVAR(int___round____doc__,
-"__round__($self, ndigits=<unrepresentable>, /)\n"
+"__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
 "Rounding an Integral returns itself.\n"
@@ -134,7 +133,7 @@ static PyObject *
 int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -230,10 +229,9 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is equal to the original int.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original int\n"
-"and with a positive denominator.\n"
+"The ratio is in lowest terms and has a positive denominator.\n"
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -269,7 +267,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -346,9 +344,6 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
             _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -385,7 +380,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -444,9 +439,6 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
             _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -466,4 +458,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b29b4afc65e3290e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(int_is_integer__doc__,
+"is_integer($self, /)\n"
+"--\n"
+"\n"
+"Returns True. Exists for duck type compatibility with float.is_integer.");
+
+#define INT_IS_INTEGER_METHODDEF    \
+    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
+
+static PyObject *
+int_is_integer_impl(PyObject *self);
+
+static PyObject *
+int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_is_integer_impl(self);
+}
+/*[clinic end generated code: output=a53f5ba9a6c16737 input=a9049054013a1b77]*/

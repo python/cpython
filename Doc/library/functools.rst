@@ -1,5 +1,5 @@
-:mod:`functools` --- Higher-order functions and operations on callable objects
-==============================================================================
+:mod:`!functools` --- Higher-order functions and operations on callable objects
+===============================================================================
 
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
@@ -49,8 +49,13 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    .. versionadded:: 3.9
 
@@ -86,6 +91,14 @@ The :mod:`functools` module defines the following functions:
    The cached value can be cleared by deleting the attribute.  This
    allows the *cached_property* method to run again.
 
+   The *cached_property* does not prevent a possible race condition in
+   multi-threaded usage. The getter function could run more than once on the
+   same instance, with the latest run setting the cached value. If the cached
+   property is idempotent or otherwise not harmful to run more than once on an
+   instance, this is fine. If synchronization is needed, implement the necessary
+   locking inside the decorated getter function or around the cached property
+   access.
+
    Note, this decorator interferes with the operation of :pep:`412`
    key-sharing dictionaries.  This means that instance dictionaries
    can take more space than usual.
@@ -97,20 +110,19 @@ The :mod:`functools` module defines the following functions:
    ``__slots__`` without including ``__dict__`` as one of the defined slots
    (as such classes don't provide a ``__dict__`` attribute at all).
 
-   If a mutable mapping is not available or if space-efficient key sharing
-   is desired, an effect similar to :func:`cached_property` can be achieved
-   by a stacking :func:`property` on top of :func:`cache`::
-
-       class DataSet:
-           def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
-
-           @property
-           @cache
-           def stdev(self):
-               return statistics.stdev(self._data)
+   If a mutable mapping is not available or if space-efficient key sharing is
+   desired, an effect similar to :func:`cached_property` can also be achieved by
+   stacking :func:`property` on top of :func:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      ensure that in multi-threaded usage the getter function was guaranteed to
+      run only once per instance. However, the lock was per-property, not
+      per-instance, which could result in unacceptably high lock contention. In
+      Python 3.12+ this locking is removed.
 
 
 .. function:: cmp_to_key(func)
@@ -143,14 +155,19 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    Since a dictionary is used to cache results, the positional and keyword
-   arguments to the function must be hashable.
+   arguments to the function must be :term:`hashable`.
 
    Distinct argument patterns may be considered to be distinct calls with
-   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   separate cache entries.  For example, ``f(a=1, b=2)`` and ``f(b=2, a=1)``
    differ in their keyword argument order and may have two separate cache
    entries.
 
@@ -177,7 +194,7 @@ The :mod:`functools` module defines the following functions:
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
-   The wrapped function is instrumented with a :func:`cache_parameters`
+   The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
@@ -197,7 +214,7 @@ The :mod:`functools` module defines the following functions:
    The cache keeps references to the arguments and return values until they age
    out of the cache or until the cache is cleared.
 
-   If a method is cached, the `self` instance argument is included in the
+   If a method is cached, the ``self`` instance argument is included in the
    cache.  See :ref:`faq-cache-method-calls`
 
    An `LRU (least recently used) cache
@@ -209,15 +226,16 @@ The :mod:`functools` module defines the following functions:
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
-   functions with side-effects, functions that need to create distinct mutable
-   objects on each call, or impure functions such as time() or random().
+   functions with side-effects, functions that need to create
+   distinct mutable objects on each call (such as generators and async functions),
+   or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()
@@ -257,8 +275,8 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
-   .. versionadded:: 3.9
-      Added the function :func:`cache_parameters`
+   .. versionchanged:: 3.9
+      Added the function :func:`!cache_parameters`
 
 .. decorator:: total_ordering
 
@@ -307,7 +325,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Returning NotImplemented from the underlying comparison function for
+      Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
 .. function:: partial(func, /, *args, **keywords)
@@ -385,25 +403,27 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initializer])
+.. function:: reduce(function, iterable[, initial], /)
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *iterable*.  If the optional *initializer* is present,
+   the update value from the *iterable*.  If the optional *initial* is present,
    it is placed before the items of the iterable in the calculation, and serves as
-   a default when the iterable is empty.  If *initializer* is not given and
+   a default when the iterable is empty.  If *initial* is not given and
    *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
-      def reduce(function, iterable, initializer=None):
+      initial_missing = object()
+
+      def reduce(function, iterable, initial=initial_missing, /):
           it = iter(iterable)
-          if initializer is None:
+          if initial is initial_missing:
               value = next(it)
           else:
-              value = initializer
+              value = initial
           for element in it:
               value = function(value, element)
           return value
@@ -626,8 +646,9 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``
-   and ``__doc__``, the documentation string) and ``WRAPPER_UPDATES`` (which
+   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
+   ``__type_params__``, and ``__doc__``, the documentation string)
+   and ``WRAPPER_UPDATES`` (which
    updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
@@ -647,19 +668,18 @@ The :mod:`functools` module defines the following functions:
    on the wrapper function). :exc:`AttributeError` is still raised if the
    wrapper function itself is missing any attributes named in *updated*.
 
-   .. versionadded:: 3.2
-      Automatic addition of the ``__wrapped__`` attribute.
-
-   .. versionadded:: 3.2
-      Copying of the ``__annotations__`` attribute by default.
-
    .. versionchanged:: 3.2
+      The ``__wrapped__`` attribute is now automatically added.
+      The ``__annotations__`` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
       The ``__wrapped__`` attribute now always refers to the wrapped
       function, even if that function defined a ``__wrapped__`` attribute.
       (see :issue:`17482`)
+
+   .. versionchanged:: 3.12
+      The ``__type_params__`` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -722,7 +742,7 @@ have three read-only attributes:
    called.
 
 :class:`partial` objects are like :class:`function` objects in that they are
-callable, weak referencable, and can have attributes.  There are some important
+callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods

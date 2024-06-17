@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from test import support
 from test.support import os_helper
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
@@ -66,7 +66,7 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.xbm', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.xbm', subdir='tkinterdata')
 
     def test_create_from_file(self):
         image = tkinter.BitmapImage('::img::test', master=self.root,
@@ -144,13 +144,21 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['foreground'],
                          '-foreground {} {} #000000 yellow')
 
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.BitmapImage('::img::test', master=self.root, spam=print)
+        image = tkinter.BitmapImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
+
 
 class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.gif', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.gif', subdir='tkinterdata')
 
     def create(self):
         return tkinter.PhotoImage('::img::test', master=self.root,
@@ -163,7 +171,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
             return tkinter._join(args)
 
     def check_create_from_file(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         image = tkinter.PhotoImage('::img::test', master=self.root,
                                    file=testfile)
         self.assertEqual(str(image), '::img::test')
@@ -178,7 +186,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn('::img::test', self.root.image_names())
 
     def check_create_from_data(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         with open(testfile, 'rb') as f:
             data = f.read()
         image = tkinter.PhotoImage('::img::test', master=self.root,
@@ -213,11 +221,11 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
     def test_create_from_gif_data(self):
         self.check_create_from_data('gif')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_file(self):
         self.check_create_from_file('png')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_data(self):
         self.check_create_from_data('png')
 
@@ -274,6 +282,14 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         image.configure(palette='3/4/2')
         self.assertEqual(image['palette'], '3/4/2')
 
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.PhotoImage('::img::test', master=self.root, spam=print)
+        image = tkinter.PhotoImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
+
     def test_blank(self):
         image = self.create()
         image.blank()
@@ -286,7 +302,37 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         image2 = image.copy()
         self.assertEqual(image2.width(), 16)
         self.assertEqual(image2.height(), 16)
-        self.assertEqual(image.get(4, 6), image.get(4, 6))
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
+
+        image2 = image.copy(from_coords=(2, 3, 14, 11))
+        self.assertEqual(image2.width(), 12)
+        self.assertEqual(image2.height(), 8)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+
+        image2 = image.copy(from_coords=(2, 3, 14, 11), zoom=2)
+        self.assertEqual(image2.width(), 24)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(23, 15), image.get(13, 10))
+        self.assertEqual(image2.get(2*2, 4*2), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2*2+1, 4*2+1), image.get(6+2, 2+3))
+
+        image2 = image.copy(from_coords=(2, 3, 14, 11), subsample=2)
+        self.assertEqual(image2.width(), 6)
+        self.assertEqual(image2.height(), 4)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(5, 3), image.get(12, 9))
+        self.assertEqual(image2.get(3, 2), image.get(3*2+2, 2*2+3))
+
+        image2 = image.copy(from_coords=(2, 3, 14, 11), subsample=2, zoom=3)
+        self.assertEqual(image2.width(), 18)
+        self.assertEqual(image2.height(), 12)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(17, 11), image.get(12, 9))
+        self.assertEqual(image2.get(1*3, 2*3), image.get(1*2+2, 2*2+3))
+        self.assertEqual(image2.get(1*3+2, 2*3+2), image.get(1*2+2, 2*2+3))
 
     def test_subsample(self):
         image = self.create()
@@ -299,6 +345,13 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.width(), 8)
         self.assertEqual(image2.height(), 8)
         self.assertEqual(image2.get(2, 3), image.get(4, 6))
+
+        image2 = image.subsample(2, from_coords=(2, 3, 14, 11))
+        self.assertEqual(image2.width(), 6)
+        self.assertEqual(image2.height(), 4)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(5, 3), image.get(12, 9))
+        self.assertEqual(image2.get(1, 2), image.get(1*2+2, 2*2+3))
 
     def test_zoom(self):
         image = self.create()
@@ -313,6 +366,118 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.height(), 32)
         self.assertEqual(image2.get(8, 12), image.get(4, 6))
         self.assertEqual(image2.get(9, 13), image.get(4, 6))
+
+        image2 = image.zoom(2, from_coords=(2, 3, 14, 11))
+        self.assertEqual(image2.width(), 24)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(23, 15), image.get(13, 10))
+        self.assertEqual(image2.get(2*2, 4*2), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2*2+1, 4*2+1), image.get(6+2, 2+3))
+
+    def test_copy_replace(self):
+        image = self.create()
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image)
+        self.assertEqual(image2.width(), 16)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11))
+        self.assertEqual(image2.width(), 12)
+        self.assertEqual(image2.height(), 8)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), shrink=True)
+        self.assertEqual(image2.width(), 12)
+        self.assertEqual(image2.height(), 8)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), to=(3, 6))
+        self.assertEqual(image2.width(), 15)
+        self.assertEqual(image2.height(), 14)
+        self.assertEqual(image2.get(0+3, 0+6), image.get(2, 3))
+        self.assertEqual(image2.get(11+3, 7+6), image.get(13, 10))
+        self.assertEqual(image2.get(2+3, 4+6), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), to=(0, 0, 100, 50))
+        self.assertEqual(image2.width(), 100)
+        self.assertEqual(image2.height(), 50)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2+12, 4+8), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2+12*2, 4), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2, 4+8*3), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), zoom=2)
+        self.assertEqual(image2.width(), 24)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(23, 15), image.get(13, 10))
+        self.assertEqual(image2.get(2*2, 4*2), image.get(2+2, 4+3))
+        self.assertEqual(image2.get(2*2+1, 4*2+1), image.get(6+2, 2+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), subsample=2)
+        self.assertEqual(image2.width(), 6)
+        self.assertEqual(image2.height(), 4)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(5, 3), image.get(12, 9))
+        self.assertEqual(image2.get(1, 2), image.get(1*2+2, 2*2+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.copy_replace(image, from_coords=(2, 3, 14, 11), subsample=2, zoom=3)
+        self.assertEqual(image2.width(), 18)
+        self.assertEqual(image2.height(), 12)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(17, 11), image.get(12, 9))
+        self.assertEqual(image2.get(3*3, 2*3), image.get(3*2+2, 2*2+3))
+        self.assertEqual(image2.get(3*3+2, 2*3+2), image.get(3*2+2, 2*2+3))
+        self.assertEqual(image2.get(1*3, 2*3), image.get(1*2+2, 2*2+3))
+        self.assertEqual(image2.get(1*3+2, 2*3+2), image.get(1*2+2, 2*2+3))
+
+    def checkImgTrans(self, image, expected):
+        actual = {(x, y)
+                  for x in range(image.width())
+                  for y in range(image.height())
+                  if image.transparency_get(x, y)}
+        self.assertEqual(actual, expected)
+
+    def test_copy_replace_compositingrule(self):
+        image1 = tkinter.PhotoImage(master=self.root, width=2, height=2)
+        image1.blank()
+        image1.put('black', to=(0, 0, 2, 2))
+        image1.transparency_set(0, 0, True)
+
+        # default compositingrule
+        image2 = tkinter.PhotoImage(master=self.root, width=3, height=3)
+        image2.blank()
+        image2.put('white', to=(0, 0, 2, 2))
+        image2.copy_replace(image1, to=(1, 1))
+        self.checkImgTrans(image2, {(0, 2), (2, 0)})
+
+        image3 = tkinter.PhotoImage(master=self.root, width=3, height=3)
+        image3.blank()
+        image3.put('white', to=(0, 0, 2, 2))
+        image3.copy_replace(image1, to=(1, 1), compositingrule='overlay')
+        self.checkImgTrans(image3, {(0, 2), (2, 0)})
+
+        image4 = tkinter.PhotoImage(master=self.root, width=3, height=3)
+        image4.blank()
+        image4.put('white', to=(0, 0, 2, 2))
+        image4.copy_replace(image1, to=(1, 1), compositingrule='set')
+        self.checkImgTrans(image4, {(0, 2), (1, 1), (2, 0)})
 
     def test_put(self):
         image = self.create()
@@ -340,31 +505,139 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, image.get, 16, 15)
         self.assertRaises(tkinter.TclError, image.get, 15, 16)
 
-    def test_write(self):
-        image = self.create()
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+    def test_read(self):
+        # Due to the Tk bug https://core.tcl-lang.org/tk/tktview/1576528
+        # the -from option does not work correctly for GIF and PNG files.
+        # Use the PPM file for this test.
+        testfile = support.findfile('python.ppm', subdir='tkinterdata')
+        image = tkinter.PhotoImage(master=self.root, file=testfile)
 
-        image.write(os_helper.TESTFN)
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.read(testfile)
+        self.assertEqual(image2.type(), 'photo')
+        self.assertEqual(image2.width(), 16)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(0, 0), image.get(0, 0))
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
+
+        self.assertRaises(tkinter.TclError, image2.read, self.testfile, 'ppm')
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.read(testfile, from_coords=(2, 3, 14, 11))
+        self.assertEqual(image2.width(), 12)
+        self.assertEqual(image2.height(), 8)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root, file=testfile)
+        self.assertEqual(image2.width(), 16)
+        self.assertEqual(image2.height(), 16)
+        image2.read(testfile, from_coords=(2, 3, 14, 11), shrink=True)
+        self.assertEqual(image2.width(), 12)
+        self.assertEqual(image2.height(), 8)
+        self.assertEqual(image2.get(0, 0), image.get(2, 3))
+        self.assertEqual(image2.get(11, 7), image.get(13, 10))
+        self.assertEqual(image2.get(2, 4), image.get(2+2, 4+3))
+
+        image2 = tkinter.PhotoImage(master=self.root)
+        image2.read(testfile, from_coords=(2, 3, 14, 11), to=(3, 6))
+        self.assertEqual(image2.type(), 'photo')
+        self.assertEqual(image2.width(), 15)
+        self.assertEqual(image2.height(), 14)
+        self.assertEqual(image2.get(0+3, 0+6), image.get(2, 3))
+        self.assertEqual(image2.get(11+3, 7+6), image.get(13, 10))
+        self.assertEqual(image2.get(2+3, 4+6), image.get(2+2, 4+3))
+
+    def test_write(self):
+        filename = os_helper.TESTFN
+        import locale
+        if locale.getlocale()[0] is None:
+            # Tcl uses Latin1 in the C locale
+            filename = os_helper.TESTFN_ASCII
+        image = self.create()
+        self.addCleanup(os_helper.unlink, filename)
+
+        image.write(filename)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
-                                    format='ppm',
-                                    file=os_helper.TESTFN)
+                                    format='ppm', file=filename)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
         self.assertEqual(image2.height(), 16)
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
-        self.assertEqual(image2.get(15, 8), image.get(15, 8))
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
 
-        image.write(os_helper.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(filename, format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
-                                    format='gif',
-                                    file=os_helper.TESTFN)
+                                    format='gif', file=filename)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)
         self.assertEqual(image3.height(), 3)
         self.assertEqual(image3.get(0, 0), image.get(4, 6))
         self.assertEqual(image3.get(1, 2), image.get(5, 8))
+
+        image.write(filename, background='#ff0000')
+        image4 = tkinter.PhotoImage('::img::test4', master=self.root,
+                                    format='ppm', file=filename)
+        self.assertEqual(image4.get(0, 0), (255, 0, 0) if self.wantobjects else '255 0 0')
+        self.assertEqual(image4.get(4, 6), image.get(4, 6))
+
+        image.write(filename, grayscale=True)
+        image5 = tkinter.PhotoImage('::img::test5', master=self.root,
+                                    format='ppm', file=filename)
+        c = image5.get(4, 6)
+        if not self.wantobjects:
+            c = c.split()
+        self.assertTrue(c[0] == c[1] == c[2], c)
+
+    def test_data(self):
+        image = self.create()
+
+        data = image.data()
+        self.assertIsInstance(data, tuple)
+        for row in data:
+            self.assertIsInstance(row, str)
+        c = image.get(4, 6)
+        if not self.wantobjects:
+            c = tuple(map(int, c.split()))
+        self.assertEqual(data[6].split()[4], '#%02x%02x%02x' % c)
+
+        data = image.data('ppm')
+        image2 = tkinter.PhotoImage('::img::test2', master=self.root,
+                                    format='ppm', data=data)
+        self.assertEqual(str(image2), '::img::test2')
+        self.assertEqual(image2.type(), 'photo')
+        self.assertEqual(image2.width(), 16)
+        self.assertEqual(image2.height(), 16)
+        self.assertEqual(image2.get(0, 0), image.get(0, 0))
+        self.assertEqual(image2.get(4, 6), image.get(4, 6))
+
+        data = image.data(format='gif', from_coords=(4, 6, 6, 9))
+        image3 = tkinter.PhotoImage('::img::test3', master=self.root,
+                                    format='gif', data=data)
+        self.assertEqual(str(image3), '::img::test3')
+        self.assertEqual(image3.type(), 'photo')
+        self.assertEqual(image3.width(), 2)
+        self.assertEqual(image3.height(), 3)
+        self.assertEqual(image3.get(0, 0), image.get(4, 6))
+        self.assertEqual(image3.get(1, 2), image.get(5, 8))
+
+        data = image.data('ppm', background='#ff0000')
+        image4 = tkinter.PhotoImage('::img::test4', master=self.root,
+                                    format='ppm', data=data)
+        self.assertEqual(image4.get(0, 0), (255, 0, 0) if self.wantobjects else '255 0 0')
+        self.assertEqual(image4.get(4, 6), image.get(4, 6))
+
+        data = image.data('ppm', grayscale=True)
+        image5 = tkinter.PhotoImage('::img::test5', master=self.root,
+                                    format='ppm', data=data)
+        c = image5.get(4, 6)
+        if not self.wantobjects:
+            c = c.split()
+        self.assertTrue(c[0] == c[1] == c[2], c)
+
 
     def test_transparency(self):
         image = self.create()

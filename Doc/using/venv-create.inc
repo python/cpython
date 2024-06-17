@@ -1,7 +1,7 @@
 Creation of :ref:`virtual environments <venv-def>` is done by executing the
 command ``venv``::
 
-    python3 -m venv /path/to/new/virtual/environment
+    python -m venv /path/to/new/virtual/environment
 
 Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it
@@ -14,13 +14,13 @@ used at environment creation time). It also creates an (initially empty)
 ``Lib\site-packages``). If an existing directory is specified, it will be
 re-used.
 
-.. deprecated:: 3.6
-   ``pyvenv`` was the recommended tool for creating virtual environments for
-   Python 3.3 and 3.4, and is `deprecated in Python 3.6
-   <https://docs.python.org/dev/whatsnew/3.6.html#id8>`_.
-
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
+
+.. deprecated:: 3.6
+   ``pyvenv`` was the recommended tool for creating virtual environments for
+   Python 3.3 and 3.4, and is
+   :ref:`deprecated in Python 3.6 <whatsnew36-venv>`.
 
 .. highlight:: none
 
@@ -35,37 +35,52 @@ your :ref:`Python installation <using-on-windows>`::
 
 The command, if run with ``-h``, will show the available options::
 
-    usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
-                [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
-                ENV_DIR [ENV_DIR ...]
+   usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
+               [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
+               [--without-scm-ignore-file]
+               ENV_DIR [ENV_DIR ...]
 
-    Creates virtual Python environments in one or more target directories.
+   Creates virtual Python environments in one or more target directories.
 
-    positional arguments:
-      ENV_DIR               A directory to create the environment in.
+   positional arguments:
+   ENV_DIR               A directory to create the environment in.
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      --system-site-packages
-                            Give the virtual environment access to the system
-                            site-packages dir.
-      --symlinks            Try to use symlinks rather than copies, when symlinks
-                            are not the default for the platform.
-      --copies              Try to use copies rather than symlinks, even when
-                            symlinks are the default for the platform.
-      --clear               Delete the contents of the environment directory if it
-                            already exists, before environment creation.
-      --upgrade             Upgrade the environment directory to use this version
-                            of Python, assuming Python has been upgraded in-place.
-      --without-pip         Skips installing or upgrading pip in the virtual
-                            environment (pip is bootstrapped by default)
-      --prompt PROMPT       Provides an alternative prompt prefix for this
-                            environment.
-      --upgrade-deps        Upgrade core dependencies: pip setuptools to the
-                            latest version in PyPI
+   options:
+   -h, --help            show this help message and exit
+   --system-site-packages
+                           Give the virtual environment access to the system
+                           site-packages dir.
+   --symlinks            Try to use symlinks rather than copies, when
+                           symlinks are not the default for the platform.
+   --copies              Try to use copies rather than symlinks, even when
+                           symlinks are the default for the platform.
+   --clear               Delete the contents of the environment directory if
+                           it already exists, before environment creation.
+   --upgrade             Upgrade the environment directory to use this
+                           version of Python, assuming Python has been upgraded
+                           in-place.
+   --without-pip         Skips installing or upgrading pip in the virtual
+                           environment (pip is bootstrapped by default)
+   --prompt PROMPT       Provides an alternative prompt prefix for this
+                           environment.
+   --upgrade-deps        Upgrade core dependencies (pip) to the latest
+                           version in PyPI
+   --without-scm-ignore-file
+                           Skips adding the default SCM ignore file to the
+                           environment directory (the default is a .gitignore
+                           file).
 
-    Once an environment has been created, you may wish to activate it, e.g. by
-    sourcing an activate script in its bin directory.
+   Once an environment has been created, you may wish to activate it, e.g. by
+   sourcing an activate script in its bin directory.
+
+.. versionchanged:: 3.13
+
+   ``--without-scm-ignore-file`` was added along with creating an ignore file
+   for ``git`` by default.
+
+.. versionchanged:: 3.12
+
+   ``setuptools`` is no longer a core venv dependency.
 
 .. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
@@ -104,46 +119,3 @@ invoked to bootstrap ``pip`` into the virtual environment.
 Multiple paths can be given to ``venv``, in which case an identical virtual
 environment will be created, according to the given options, at each provided
 path.
-
-Once a virtual environment has been created, it can be "activated" using a
-script in the virtual environment's binary directory. The invocation of the
-script is platform-specific (`<venv>` must be replaced by the path of the
-directory containing the virtual environment):
-
-+-------------+-----------------+-----------------------------------------+
-| Platform    | Shell           | Command to activate virtual environment |
-+=============+=================+=========================================+
-| POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
-+-------------+-----------------+-----------------------------------------+
-|             | fish            | $ source <venv>/bin/activate.fish       |
-+-------------+-----------------+-----------------------------------------+
-|             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell Core | $ <venv>/bin/Activate.ps1               |
-+-------------+-----------------+-----------------------------------------+
-| Windows     | cmd.exe         | C:\\> <venv>\\Scripts\\activate.bat     |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
-+-------------+-----------------+-----------------------------------------+
-
-When a virtual environment is active, the :envvar:`VIRTUAL_ENV` environment
-variable is set to the path of the virtual environment. This can be used to
-check if one is running inside a virtual environment.
-
-You don't specifically *need* to activate an environment; activation just
-prepends the virtual environment's binary directory to your path, so that
-"python" invokes the virtual environment's Python interpreter and you can run
-installed scripts without having to use their full path. However, all scripts
-installed in a virtual environment should be runnable without activating it,
-and run with the virtual environment's Python automatically.
-
-You can deactivate a virtual environment by typing "deactivate" in your shell.
-The exact mechanism is platform-specific and is an internal implementation
-detail (typically a script or shell function will be used).
-
-.. versionadded:: 3.4
-   ``fish`` and ``csh`` activation scripts.
-
-.. versionadded:: 3.8
-   PowerShell activation scripts installed under POSIX for PowerShell Core
-   support.

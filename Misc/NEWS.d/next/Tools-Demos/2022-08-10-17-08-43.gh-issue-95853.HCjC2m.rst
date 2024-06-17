@@ -1,2 +1,0 @@
-The new tool ``Tools/wasm/wasm_builder.py`` automates configure, compile, and
-test steps for building CPython on WebAssembly platforms.

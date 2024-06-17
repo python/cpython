@@ -1,4 +1,0 @@
-Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
-3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
-also a static method. Patch by Victor Stinner.

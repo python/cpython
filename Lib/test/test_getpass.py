@@ -26,7 +26,7 @@ class GetpassGetuserTest(unittest.TestCase):
         environ.get.return_value = None
         try:
             getpass.getuser()
-        except ImportError: # in case there's no pwd module
+        except OSError:  # in case there's no pwd module
             pass
         except KeyError:
             # current user has no pwd entry
@@ -47,7 +47,7 @@ class GetpassGetuserTest(unittest.TestCase):
                                  getpass.getuser())
                 getpw.assert_called_once_with(42)
         else:
-            self.assertRaises(ImportError, getpass.getuser)
+            self.assertRaises(OSError, getpass.getuser)
 
 
 class GetpassRawinputTest(unittest.TestCase):

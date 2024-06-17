@@ -1,5 +1,9 @@
 #ifndef Py_INTERNAL_PYMEM_H
 #define Py_INTERNAL_PYMEM_H
+
+#include "pycore_llist.h"           // struct llist_node
+#include "pycore_lock.h"            // PyMutex
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -8,13 +12,53 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pymem.h"      // PyMemAllocatorName
+// Try to get the allocators name set by _PyMem_SetupAllocators().
+// Return NULL if unknown.
+// Export for '_testinternalcapi' shared extension.
+PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
+// strdup() using PyMem_RawMalloc()
+extern char* _PyMem_RawStrdup(const char *str);
+
+// strdup() using PyMem_Malloc().
+// Export for '_pickle ' shared extension.
+PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
+
+// wcsdup() using PyMem_RawMalloc()
+extern wchar_t* _PyMem_RawWcsdup(const wchar_t *str);
+
+typedef struct {
+    /* We tag each block with an API ID in order to tag API violations */
+    char api_id;
+    PyMemAllocatorEx alloc;
+} debug_alloc_api_t;
+
+struct _pymem_allocators {
+    PyMutex mutex;
+    struct {
+        PyMemAllocatorEx raw;
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx obj;
+    } standard;
+    struct {
+        debug_alloc_api_t raw;
+        debug_alloc_api_t mem;
+        debug_alloc_api_t obj;
+    } debug;
+    int is_debug_enabled;
+    PyObjectArenaAllocator obj_arena;
+};
+
+struct _Py_mem_interp_free_queue {
+    int has_work;   // true if the queue is not empty
+    PyMutex mutex;  // protects the queue
+    struct llist_node head;  // queue of _mem_work_chunk items
+};
 
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */
-PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+extern int _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
@@ -27,7 +71,7 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
    - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
 
    Byte patterns 0xCB, 0xDB and 0xFB have been replaced with 0xCD, 0xDD and
-   0xFD to use the same values than Windows CRT debug malloc() and free().
+   0xFD to use the same values as Windows CRT debug malloc() and free().
    If modified, _PyMem_IsPtrFreed() should be updated as well. */
 #define PYMEM_CLEANBYTE      0xCD
 #define PYMEM_DEADBYTE       0xDD
@@ -60,53 +104,33 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 #endif
 }
 
-PyAPI_FUNC(int) _PyMem_GetAllocatorName(
+extern int _PyMem_GetAllocatorName(
     const char *name,
     PyMemAllocatorName *allocator);
 
 /* Configure the Python memory allocators.
    Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
-PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
-struct _PyTraceMalloc_Config {
-    /* Module initialized?
-       Variable protected by the GIL */
-    enum {
-        TRACEMALLOC_NOT_INITIALIZED,
-        TRACEMALLOC_INITIALIZED,
-        TRACEMALLOC_FINALIZED
-    } initialized;
+/* Is the debug allocator enabled? */
+extern int _PyMem_DebugEnabled(void);
 
-    /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
-    int tracing;
+// Enqueue a pointer to be freed possibly after some delay.
+extern void _PyMem_FreeDelayed(void *ptr);
 
-    /* limit of the number of frames in a traceback, 1 by default.
-       Variable protected by the GIL. */
-    int max_nframe;
-};
+// Enqueue an object to be freed possibly after some delay
+extern void _PyObject_FreeDelayed(void *ptr);
 
-#define _PyTraceMalloc_Config_INIT \
-    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
-     .tracing = 0, \
-     .max_nframe = 1}
+// Periodically process delayed free requests.
+extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 
-PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
+// Abandon all thread-local delayed free requests and push them to the
+// interpreter's queue.
+extern void _PyMem_AbandonDelayed(PyThreadState *tstate);
 
-/* Allocate memory directly from the O/S virtual memory system,
- * where supported. Otherwise fallback on malloc */
-void *_PyObject_VirtualAlloc(size_t size);
-void _PyObject_VirtualFree(void *, size_t size);
-
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
-/* Macros */
-#ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
+// On interpreter shutdown, frees all delayed free requests.
+extern void _PyMem_FiniDelayed(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

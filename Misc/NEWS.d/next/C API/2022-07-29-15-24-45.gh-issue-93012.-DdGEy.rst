@@ -1,6 +1,0 @@
-The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
-when the class's :py:meth:`~object.__call__` method is reassigned. This
-makes vectorcall safe to use with mutable types (i.e. heap types without the
-:const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag). Mutable types that do
-not override :c:member:`~PyTypeObject.tp_call` now inherit the
-:const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.

@@ -9,7 +9,6 @@ from ._common import (
     set_capture_groups,
 )
 from ._compound_decl_body import DECL_BODY_PARSERS
-#from ._func_body import parse_function_body
 from ._func_body import parse_function_statics as parse_function_body
 
 

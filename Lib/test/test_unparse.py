@@ -1,4 +1,4 @@
-"""Tests for the unparse.py script in the Tools/parser directory."""
+"""Tests for ast.unparse."""
 
 import unittest
 import test.support
@@ -6,6 +6,7 @@ import pathlib
 import random
 import tokenize
 import ast
+from test.support.ast_helper import ASTTestMixin
 
 
 def read_pyfile(filename):
@@ -128,46 +129,7 @@ docstring_prefixes = (
     "async def foo():\n    ",
 )
 
-class ASTTestCase(unittest.TestCase):
-    def assertASTEqual(self, ast1, ast2):
-        # Ensure the comparisons start at an AST node
-        self.assertIsInstance(ast1, ast.AST)
-        self.assertIsInstance(ast2, ast.AST)
-
-        # An AST comparison routine modeled after ast.dump(), but
-        # instead of string building, it traverses the two trees
-        # in lock-step.
-        def traverse_compare(a, b, missing=object()):
-            if type(a) is not type(b):
-                self.fail(f"{type(a)!r} is not {type(b)!r}")
-            if isinstance(a, ast.AST):
-                for field in a._fields:
-                    value1 = getattr(a, field, missing)
-                    value2 = getattr(b, field, missing)
-                    # Singletons are equal by definition, so further
-                    # testing can be skipped.
-                    if value1 is not value2:
-                        traverse_compare(value1, value2)
-            elif isinstance(a, list):
-                try:
-                    for node1, node2 in zip(a, b, strict=True):
-                        traverse_compare(node1, node2)
-                except ValueError:
-                    # Attempt a "pretty" error ala assertSequenceEqual()
-                    len1 = len(a)
-                    len2 = len(b)
-                    if len1 > len2:
-                        what = "First"
-                        diff = len1 - len2
-                    else:
-                        what = "Second"
-                        diff = len2 - len1
-                    msg = f"{what} list contains {diff} additional elements."
-                    raise self.failureException(msg) from None
-            elif a != b:
-                self.fail(f"{a!r} != {b!r}")
-        traverse_compare(ast1, ast2)
-
+class ASTTestCase(ASTTestMixin, unittest.TestCase):
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
             ast1 = ast.parse(code1, **kwargs)
@@ -234,6 +196,10 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
         self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
+
+    def test_fstrings_pep701(self):
+        self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
+        self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
@@ -404,20 +370,27 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i:j, k]")
 
     def test_invalid_raise(self):
-        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
+        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X", ctx=ast.Load())))
 
     def test_invalid_fstring_value(self):
         self.check_invalid(
             ast.JoinedStr(
                 values=[
-                    ast.Name(id="test"),
+                    ast.Name(id="test", ctx=ast.Load()),
                     ast.Constant(value="test")
                 ]
             )
         )
 
-    def test_invalid_fstring_backslash(self):
-        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
+    def test_fstring_backslash(self):
+        # valid since Python 3.12
+        self.assertEqual(ast.unparse(
+                            ast.FormattedValue(
+                                value=ast.Constant(value="\\\\"),
+                                conversion=-1,
+                                format_spec=None,
+                            )
+                        ), "{'\\\\\\\\'}")
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -540,11 +513,11 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_fstrings(self):
-        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
-        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
+        self.check_src_roundtrip("f'-{f'*{f'+{f'.{x}.'}+'}*'}-'")
+        self.check_src_roundtrip("f'\\u2028{'x'}'")
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
-        self.check_src_roundtrip('''f''\'{f"""{x}\n"""}\\n''\'''')
+        self.check_src_roundtrip("f'{'\\n'}\\n'")
+        self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
 
     def test_docstrings(self):
         docstrings = (
@@ -662,6 +635,158 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
+    def test_multiquote_joined_string(self):
+        self.check_ast_roundtrip("f\"'''{1}\\\"\\\"\\\"\" ")
+        self.check_ast_roundtrip("""f"'''{1}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{1}''' """)
+        self.check_ast_roundtrip("""f'""\"{1}""\\"' """)
+
+        self.check_ast_roundtrip("""f"'''{"\\n"}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}""\\"' """)
+
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n\\"'"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
+
+    def test_backslash_in_format_spec(self):
+        import re
+        msg = re.escape("invalid escape sequence '\\ '")
+        with self.assertWarnsRegex(SyntaxWarning, msg):
+            self.check_ast_roundtrip("""f"{x:\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\n}" """)
+
+        self.check_ast_roundtrip("""f"{x:\\\\ }" """)
+
+        with self.assertWarnsRegex(SyntaxWarning, msg):
+            self.check_ast_roundtrip("""f"{x:\\\\\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\\\\\n}" """)
+
+        self.check_ast_roundtrip("""f"{x:\\\\\\\\ }" """)
+
+    def test_quote_in_format_spec(self):
+        self.check_ast_roundtrip("""f"{x:'}" """)
+        self.check_ast_roundtrip("""f"{x:\\'}" """)
+        self.check_ast_roundtrip("""f"{x:\\\\'}" """)
+
+        self.check_ast_roundtrip("""f'\\'{x:"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\\\"}' """)
+
+    def test_type_params(self):
+        self.check_ast_roundtrip("type A = int")
+        self.check_ast_roundtrip("type A[T] = int")
+        self.check_ast_roundtrip("type A[T: int] = int")
+        self.check_ast_roundtrip("type A[T = int] = int")
+        self.check_ast_roundtrip("type A[T: int = int] = int")
+        self.check_ast_roundtrip("type A[**P] = int")
+        self.check_ast_roundtrip("type A[**P = int] = int")
+        self.check_ast_roundtrip("type A[*Ts] = int")
+        self.check_ast_roundtrip("type A[*Ts = int] = int")
+        self.check_ast_roundtrip("type A[*Ts = *int] = int")
+        self.check_ast_roundtrip("def f[T: int = int, **P = int, *Ts = *int]():\n    pass")
+        self.check_ast_roundtrip("class C[T: int = int, **P = int, *Ts = *int]():\n    pass")
+
+
+class ManualASTCreationTestCase(unittest.TestCase):
+    """Test that AST nodes created without a type_params field unparse correctly."""
+
+    def test_class(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X:\n    pass")
+
+    def test_class_with_type_params(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[],
+                             type_params=[ast.TypeVar("T")])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X[T]:\n    pass")
+
+    def test_function(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f():\n    pass")
+
+    def test_function_with_type_params(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T]():\n    pass")
+
+    def test_function_with_type_params_and_bound(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T", bound=ast.Name("int", ctx=ast.Load()))],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
+
+    def test_function_with_type_params_and_default(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
+
+    def test_async_function(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f():\n    pass")
+
+    def test_async_function_with_type_params(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
+
+    def test_async_function_with_type_params_and_default(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
 
 
 class DirectoryTestCase(ASTTestCase):
@@ -671,7 +796,8 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
-                        "test_patma.py"}
+                        "test_patma.py", "test_type_alias.py", "test_type_params.py",
+                        "test_tokenize.py"}
 
     _files_to_test = None
 

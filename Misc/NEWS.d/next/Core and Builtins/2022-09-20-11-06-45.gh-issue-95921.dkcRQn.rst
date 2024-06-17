@@ -1,2 +1,0 @@
-Fix overly-broad source position information for chained comparisons used as
-branching conditions.
