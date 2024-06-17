@@ -832,6 +832,9 @@ del _create_environ_mapping
 
 if _exists("_get_user_default_environ"):
     def get_user_default_environ():
+        """
+        Get the default environment of the current process user as a dictionary.
+        """
         env = {}
         env_str = _get_user_default_environ()
         for entry in env_str.split('\0'):
