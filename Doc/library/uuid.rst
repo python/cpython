@@ -149,8 +149,11 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.version
 
-   The UUID version number (1 through 5, meaningful only when the variant is
+   The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
+
+   .. versionadded:: 3.14
+      Added UUID versions 6, 7, and 8.
 
 .. attribute:: UUID.is_safe
 
@@ -215,6 +218,34 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 .. index:: single: uuid5
+
+
+.. function:: uuid6(node=None, clock_seq=None)
+
+   TODO
+
+   .. versionadded:: 3.14
+
+.. index:: single: uuid6
+
+
+.. function:: uuid7()
+
+   TODO
+
+   .. versionadded:: 3.14
+
+.. index:: single: uuid7
+
+
+.. function:: uuid8(a=None, b=None, c=None)
+
+   TODO
+
+   .. versionadded:: 3.14
+
+.. index:: single: uuid8
+
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
