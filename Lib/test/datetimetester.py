@@ -2079,18 +2079,21 @@ class TestDateTime(TestDate):
     def test_isoformat(self):
         t = self.theclass(1, 2, 3, 4, 5, 1, 123)
         self.assertEqual(t.isoformat(),    "0001-02-03T04:05:01.000123")
-        self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
-        self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
-        self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
-
         self.assertEqual(t.isoformat(basic=True), "00010203T040501.000123")
+
+        self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
         self.assertEqual(t.isoformat('T', basic=True), "00010203T040501.000123")
+
+        self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
         self.assertEqual(t.isoformat(' ', basic=True), "00010203 040501.000123")
+
+        self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
         self.assertEqual(t.isoformat('\x00', basic=True), "00010203\x00040501.000123")
 
         # bpo-34482: Check that surrogates are handled properly.
-        self.assertEqual(t.isoformat('\ud800'),
-                         "0001-02-03\ud80004:05:01.000123")
+        self.assertEqual(t.isoformat('\ud800'), "0001-02-03\ud80004:05:01.000123")
+        self.assertEqual(t.isoformat('\ud800', basic=True), "00010203\ud800040501.000123")
+
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
         self.assertEqual(t.isoformat(timespec='hours', basic=True), "00010203T04")
 
@@ -2113,8 +2116,10 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes', basic=True), "00010203 0405")
 
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        self.assertRaises(ValueError, t.isoformat, timespec='foo', basic=True)
         # bpo-34482: Check that surrogates are handled properly.
         self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800', basic=True)
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
