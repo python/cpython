@@ -9,9 +9,10 @@ import unittest
 from test import support
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-_interpreters = import_helper.import_module('_xxsubinterpreters')
+_interpreters = import_helper.import_module('_interpreters')
 from test.support import Py_GIL_DISABLED
 from test.support import interpreters
+from test.support import force_not_colorized
 from test.support.interpreters import (
     InterpreterError, InterpreterNotFoundError, ExecutionFailed,
 )
@@ -385,7 +386,7 @@ class TestInterpreterIsRunning(TestBase):
     def test_from_subinterpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
+            import _interpreters
             if _interpreters.is_running({interp.id}):
                 print(True)
             else:
@@ -735,6 +736,7 @@ class TestInterpreterExec(TestBase):
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
 
+    @force_not_colorized
     def test_display_preserved_exception(self):
         tempdir = self.temp_dir()
         modfile = self.make_module('spam', tempdir, text="""
@@ -876,7 +878,7 @@ class TestInterpreterExec(TestBase):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                 interp.exec('raise Exception("it worked!")')
 
-    # test_xxsubinterpreters covers the remaining
+    # test__interpreters covers the remaining
     # Interpreter.exec() behavior.
 
 
@@ -1290,7 +1292,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
 
         script = f"""
-            import {_interpreters.__name__} as _interpreters
+            import _interpreters
             interpid, whence = _interpreters.get_current()
             print((interpid, whence))
             """
@@ -1333,7 +1335,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('via interp from _interpreters'):
             text = self.run_and_capture(interpid2, f"""
-                import {_interpreters.__name__} as _interpreters
+                import _interpreters
                 print(
                     _interpreters.list_all())
                 """)
@@ -1352,7 +1354,7 @@ class LowLevelTests(TestBase):
                 (interpid5, _interpreters.WHENCE_STDLIB),
             ]
             text = self.run_temp_from_capi(f"""
-                import {_interpreters.__name__} as _interpreters
+                import _interpreters
                 _interpreters.create()
                 print(
                     _interpreters.list_all())
@@ -1507,7 +1509,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API, running'):
             text = self.run_temp_from_capi(dedent(f"""
-                import {_interpreters.__name__} as _interpreters
+                import _interpreters
                 interpid, *_ = _interpreters.get_current()
                 print(_interpreters.whence(interpid))
                 """),
@@ -1518,7 +1520,7 @@ class LowLevelTests(TestBase):
         with self.subTest('from legacy C-API, running'):
             ...
             text = self.run_temp_from_capi(dedent(f"""
-                import {_interpreters.__name__} as _interpreters
+                import _interpreters
                 interpid, *_ = _interpreters.get_current()
                 print(_interpreters.whence(interpid))
                 """),

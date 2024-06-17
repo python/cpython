@@ -710,6 +710,14 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertTrue(wrapper.__doc__.startswith('max('))
         self.assertEqual(wrapper.__annotations__, {})
 
+    def test_update_type_wrapper(self):
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, type)
+        self.assertEqual(wrapper.__name__, 'type')
+        self.assertEqual(wrapper.__annotations__, {})
+        self.assertEqual(wrapper.__type_params__, ())
+
 
 class TestWraps(TestUpdateWrapper):
 
@@ -947,8 +955,13 @@ class TestCmpToKey:
     @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
-        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
-                         '(mycmp)')
+        sig = Signature.from_callable(self.cmp_to_key)
+        self.assertEqual(str(sig), '(mycmp)')
+        def mycmp(x, y):
+            return y - x
+        sig = Signature.from_callable(self.cmp_to_key(mycmp))
+        self.assertEqual(str(sig), '(obj)')
+
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1833,6 +1846,7 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
+    @support.suppress_immortalization()
     def test_lru_cache_weakrefable(self):
         @self.module.lru_cache
         def test_function(x):
@@ -1863,9 +1877,10 @@ class TestLRU:
             self.assertIsNone(ref())
 
     def test_common_signatures(self):
-        def orig(): ...
+        def orig(a, /, b, c=True): ...
         lru = self.module.lru_cache(1)(orig)
 
+        self.assertEqual(str(Signature.from_callable(lru)), '(a, /, b, c=True)')
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 

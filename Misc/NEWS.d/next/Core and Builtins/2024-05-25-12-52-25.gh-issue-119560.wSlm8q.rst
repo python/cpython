@@ -1,0 +1,3 @@
+An invalid assert in beta 1 has been removed.  The assert would fail if
+``PyState_FindModule()`` was used in an extension module's init function
+before the module def had been initialized.

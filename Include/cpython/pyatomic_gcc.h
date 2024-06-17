@@ -517,6 +517,10 @@ _Py_atomic_load_int_acquire(const int *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
 static inline void
+_Py_atomic_store_uint32_release(uint32_t *obj, uint32_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
 _Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 

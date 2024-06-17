@@ -10,7 +10,7 @@ dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define([PYTHON_VERSION], [3.13])
+m4_define([PYTHON_VERSION], [3.14])
 
 AC_PREREQ([2.71])
 
@@ -1148,6 +1148,9 @@ AS_CASE([$host/$ac_cv_cc_name],
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [aarch64-apple-ios*-simulator/clang],   [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
   [aarch64-apple-ios*/clang],             [PY_SUPPORT_TIER=3], dnl iOS on ARM64
+  [aarch64-*-linux-android/clang],   [PY_SUPPORT_TIER=3], dnl Android on ARM64
+  [x86_64-*-linux-android/clang],    [PY_SUPPORT_TIER=3], dnl Android on AMD64
+
   [PY_SUPPORT_TIER=0]
 )
 
@@ -1191,6 +1194,9 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   fi
   AC_DEFINE_UNQUOTED([ANDROID_API_LEVEL], [$ANDROID_API_LEVEL],
                      [The Android API level.])
+
+  # For __android_log_write() in Python/pylifecycle.c.
+  LIBS="$LIBS -llog"
 
   AC_MSG_CHECKING([for the Android arm ABI])
   AC_MSG_RESULT([$_arm_arch])
@@ -1765,14 +1771,27 @@ fi
 # Check for --enable-experimental-jit:
 AC_MSG_CHECKING([for --enable-experimental-jit])
 AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit@<:@=no|yes|yes-off|interpreter@:>@],
                               [build the experimental just-in-time compiler (default is no)])],
               [],
               [enable_experimental_jit=no])
-AS_VAR_IF([enable_experimental_jit],
-          [no],
+case $enable_experimental_jit in
+  no)              jit_flags="";          tier2_flags="" ;;
+  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
+  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
+  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
+  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
+  *) AC_MSG_ERROR(
+      [invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter]) ;;
+esac
+AS_VAR_IF([tier2_flags],
           [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $tier2_flags"])])
+AS_VAR_IF([jit_flags],
+          [],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
@@ -1782,7 +1801,7 @@ AS_VAR_IF([enable_experimental_jit],
                      [])])
 AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
-AC_MSG_RESULT([$enable_experimental_jit])
+AC_MSG_RESULT([$tier2_flags $jit_flags])
 
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
@@ -3398,7 +3417,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -3622,6 +3641,7 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [riscv64-linux-gnu], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -3955,29 +3975,57 @@ AC_ARG_WITH(
   [system_libmpdec],
   [AS_HELP_STRING(
     [--with-system-libmpdec],
-    [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]
+    [build _decimal module using an installed mpdecimal library, see Doc/library/decimal.rst (default is yes)]
   )],
   [],
-  [with_system_libmpdec="no"])
+  [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
-AS_VAR_IF([with_system_libmpdec], [yes], [
-  LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-  LIBMPDEC_LDFLAGS=${LIBMPDEC_LDFLAGS-"-lmpdec"}
-  LIBMPDEC_INTERNAL=
-], [
-  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-  LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+AC_DEFUN([USE_BUNDLED_LIBMPDEC],
+         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no])
 
-  dnl Disable forced inlining in debug builds, see GH-94847
-  AS_VAR_IF([with_pydebug], [yes], [
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])
-  ])
-])
+AS_VAR_IF(
+  [with_system_libmpdec], [yes],
+  [PKG_CHECK_MODULES(
+    [LIBMPDEC], [libmpdec >= 2.5.0], [],
+    [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+     LIBMPDEC_INTERNAL=])],
+  [USE_BUNDLED_LIBMPDEC()])
 
-AC_SUBST([LIBMPDEC_CFLAGS])
-AC_SUBST([LIBMPDEC_INTERNAL])
+AS_VAR_IF([with_system_libmpdec], [yes],
+  [WITH_SAVE_ENV([
+    CPPFLAGS="$LIBMPDEC_CFLAGS $CPPFLAGS"
+    LIBS="$LIBMPDEC_LIBS $LIBS"
+
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([
+        #include <mpdecimal.h>
+        #if MPD_VERSION_HEX < 0x02050000
+        #  error "mpdecimal 2.5.0 or higher required"
+        #endif
+      ], [const char *x = mpd_version();])],
+      [have_mpdec=yes],
+      [have_mpdec=no])
+  ])],
+  [AC_MSG_WARN([m4_normalize([
+     the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
+     consider using a system installed mpdecimal library.])])])
+
+AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
+      [AC_MSG_WARN([m4_normalize([
+         no system libmpdecimal found; falling back to bundled libmpdecimal
+         (deprecated and scheduled for removal in Python 3.15)])])
+       USE_BUNDLED_LIBMPDEC()])
+
+# Disable forced inlining in debug builds, see GH-94847
+AS_VAR_IF(
+  [with_pydebug], [yes],
+  [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -3998,50 +4046,52 @@ fi
 
 AC_MSG_RESULT([$with_decimal_contextvar])
 
-# Check for libmpdec machine flavor
-AC_MSG_CHECKING([for decimal libmpdec machine])
-AS_CASE([$ac_sys_system],
-  [Darwin*], [libmpdec_system=Darwin],
-  [SunOS*], [libmpdec_system=sunos],
-  [libmpdec_system=other]
-)
+AS_VAR_IF(
+  [with_system_libmpdec], [no],
+  [# Check for libmpdec machine flavor
+   AC_MSG_CHECKING([for decimal libmpdec machine])
+   AS_CASE([$ac_sys_system],
+     [Darwin*], [libmpdec_system=Darwin],
+     [SunOS*], [libmpdec_system=sunos],
+     [libmpdec_system=other]
+   )
 
-libmpdec_machine=unknown
-if test "$libmpdec_system" = Darwin; then
-    # universal here means: build libmpdec with the same arch options
-    # the python interpreter was built with
-    libmpdec_machine=universal
-elif test $ac_cv_sizeof_size_t -eq 8; then
-    if test "$ac_cv_gcc_asm_for_x64" = yes; then
-        libmpdec_machine=x64
-    elif test "$ac_cv_type___uint128_t" = yes; then
-        libmpdec_machine=uint128
-    else
-        libmpdec_machine=ansi64
-    fi
-elif test $ac_cv_sizeof_size_t -eq 4; then
-    if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-        AS_CASE([$CC],
-            [*gcc*],   [libmpdec_machine=ppro],
-            [*clang*], [libmpdec_machine=ppro],
-            [libmpdec_machine=ansi32]
-        )
-    else
-        libmpdec_machine=ansi32
-    fi
-fi
-AC_MSG_RESULT([$libmpdec_machine])
+   libmpdec_machine=unknown
+   if test "$libmpdec_system" = Darwin; then
+       # universal here means: build libmpdec with the same arch options
+       # the python interpreter was built with
+       libmpdec_machine=universal
+   elif test $ac_cv_sizeof_size_t -eq 8; then
+       if test "$ac_cv_gcc_asm_for_x64" = yes; then
+           libmpdec_machine=x64
+       elif test "$ac_cv_type___uint128_t" = yes; then
+           libmpdec_machine=uint128
+       else
+           libmpdec_machine=ansi64
+       fi
+   elif test $ac_cv_sizeof_size_t -eq 4; then
+       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
+           AS_CASE([$CC],
+               [*gcc*],   [libmpdec_machine=ppro],
+               [*clang*], [libmpdec_machine=ppro],
+               [libmpdec_machine=ansi32]
+           )
+       else
+           libmpdec_machine=ansi32
+       fi
+   fi
+   AC_MSG_RESULT([$libmpdec_machine])
 
-AS_CASE([$libmpdec_machine],
-  [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
-  [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
-  [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
-  [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
-  [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
-  [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
-  [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
-  [AC_MSG_ERROR([_decimal: unsupported architecture])]
-)
+   AS_CASE([$libmpdec_machine],
+     [x64],         [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DASM=1"])],
+     [uint128],     [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1"])],
+     [ansi64],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_64=1 -DANSI=1"])],
+     [ppro],        [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas"])],
+     [ansi32],      [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1"])],
+     [ansi-legacy], [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1"])],
+     [universal],   [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DUNIVERSAL=1"])],
+     [AC_MSG_ERROR([_decimal: unsupported architecture])]
+   )])
 
 if test "$have_ipa_pure_const_bug" = yes; then
     # Some versions of gcc miscompile inline asm:
@@ -4055,6 +4105,9 @@ if test "$have_glibc_memmove_bug" = yes; then
     # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
+
+AC_SUBST([LIBMPDEC_CFLAGS])
+AC_SUBST([LIBMPDEC_INTERNAL])
 
 
 dnl detect sqlite3 from Emscripten emport
@@ -6691,7 +6744,10 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [py_var],
     [AC_COMPILE_IFELSE(
       [AC_LANG_PROGRAM(
-        [@%:@include <curses.h>], [
+        [
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+        ], [
         #ifndef $1
         void *x=$1
         #endif
@@ -7433,9 +7489,9 @@ AS_CASE([$ac_sys_system],
       [_posixsubprocess],
       [_scproxy],
       [_tkinter],
-      [_xxsubinterpreters],
-      [_xxinterpchannels],
-      [_xxinterpqueues],
+      [_interpreters],
+      [_interpchannels],
+      [_interpqueues],
       [grp],
       [pwd],
       [resource],
@@ -7558,9 +7614,9 @@ PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
-PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
-PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
-PY_STDLIB_MOD_SIMPLE([_xxinterpqueues])
+PY_STDLIB_MOD_SIMPLE([_interpreters])
+PY_STDLIB_MOD_SIMPLE([_interpchannels])
+PY_STDLIB_MOD_SIMPLE([_interpqueues])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
@@ -7643,7 +7699,9 @@ PY_STDLIB_MOD([_curses_panel],
   [], [test "$have_panel" != "no"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
-PY_STDLIB_MOD([_decimal], [], [], [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LDFLAGS])
+PY_STDLIB_MOD([_decimal],
+  [], [test "$have_mpdec" = "yes"],
+  [$LIBMPDEC_CFLAGS], [$LIBMPDEC_LIBS])
 PY_STDLIB_MOD([_dbm],
   [test -n "$with_dbmliborder"], [test "$have_dbm" != "no"],
   [$DBM_CFLAGS], [$DBM_LIBS])

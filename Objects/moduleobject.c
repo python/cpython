@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_AllocNoTrack
@@ -183,6 +184,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
         if (func == NULL) {
             return -1;
         }
+        _PyObject_SetDeferredRefcount(func);
         if (PyObject_SetAttrString(module, fdef->ml_name, func) != 0) {
             Py_DECREF(func);
             return -1;
@@ -249,6 +251,9 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
         }
     }
     m->md_def = module;
+#ifdef Py_GIL_DISABLE
+    m->md_gil = Py_MOD_GIL_USED;
+#endif
     return (PyObject*)m;
 }
 
@@ -261,6 +266,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
+    int has_gil_slot = 0;
+    void *gil_slot = Py_MOD_GIL_USED;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -314,6 +321,17 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 }
                 multiple_interpreters = cur_slot->value;
                 has_multiple_interpreters_slot = 1;
+                break;
+            case Py_mod_gil:
+                if (has_gil_slot) {
+                    PyErr_Format(
+                       PyExc_SystemError,
+                       "module %s has more than one 'gil' slot",
+                       name);
+                    goto error;
+                }
+                gil_slot = cur_slot->value;
+                has_gil_slot = 1;
                 break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
@@ -374,6 +392,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     if (PyModule_Check(m)) {
         ((PyModuleObject*)m)->md_state = NULL;
         ((PyModuleObject*)m)->md_def = def;
+#ifdef Py_GIL_DISABLED
+        ((PyModuleObject*)m)->md_gil = gil_slot;
+#else
+        (void)gil_slot;
+#endif
     } else {
         if (def->m_size > 0 || def->m_traverse || def->m_clear || def->m_free) {
             PyErr_Format(
@@ -414,6 +437,19 @@ error:
     Py_XDECREF(m);
     return NULL;
 }
+
+#ifdef Py_GIL_DISABLED
+int
+PyUnstable_Module_SetGIL(PyObject *module, void *gil)
+{
+    if (!PyModule_Check(module)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    ((PyModuleObject *)module)->md_gil = gil;
+    return 0;
+}
+#endif
 
 int
 PyModule_ExecDef(PyObject *module, PyModuleDef *def)
@@ -470,6 +506,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 }
                 break;
             case Py_mod_multiple_interpreters:
+            case Py_mod_gil:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
@@ -1097,7 +1134,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyObject *
-module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
+module_get_dict(PyModuleObject *m)
 {
     PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
     if (dict == NULL) {
@@ -1108,10 +1145,97 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
         Py_DECREF(dict);
         return NULL;
     }
+    return dict;
+}
+
+static PyObject *
+module_get_annotate(PyModuleObject *m, void *Py_UNUSED(ignored))
+{
+    PyObject *dict = module_get_dict(m);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *annotate;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) == 0) {
+        annotate = Py_None;
+        if (PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate) == -1) {
+            Py_CLEAR(annotate);
+        }
+    }
+    Py_DECREF(dict);
+    return annotate;
+}
+
+static int
+module_set_annotate(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot delete __annotate__ attribute");
+        return -1;
+    }
+    PyObject *dict = module_get_dict(m);
+    if (dict == NULL) {
+        return -1;
+    }
+
+    if (!Py_IsNone(value) && !PyCallable_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "__annotate__ must be callable or None");
+        Py_DECREF(dict);
+        return -1;
+    }
+
+    if (PyDict_SetItem(dict, &_Py_ID(__annotate__), value) == -1) {
+        Py_DECREF(dict);
+        return -1;
+    }
+    if (!Py_IsNone(value)) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
+            Py_DECREF(dict);
+            return -1;
+        }
+    }
+    Py_DECREF(dict);
+    return 0;
+}
+
+static PyObject *
+module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
+{
+    PyObject *dict = module_get_dict(m);
+    if (dict == NULL) {
+        return NULL;
+    }
 
     PyObject *annotations;
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) == 0) {
-        annotations = PyDict_New();
+        PyObject *annotate;
+        int annotate_result = PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate);
+        if (annotate_result < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (annotate_result == 1 && PyCallable_Check(annotate)) {
+            PyObject *one = _PyLong_GetOne();
+            annotations = _PyObject_CallOneArg(annotate, one);
+            if (annotations == NULL) {
+                Py_DECREF(annotate);
+                Py_DECREF(dict);
+                return NULL;
+            }
+            if (!PyDict_Check(annotations)) {
+                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                             Py_TYPE(annotations)->tp_name);
+                Py_DECREF(annotate);
+                Py_DECREF(annotations);
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+        else {
+            annotations = PyDict_New();
+        }
+        Py_XDECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);
@@ -1128,13 +1252,9 @@ static int
 module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
 {
     int ret = -1;
-    PyObject *dict = PyObject_GetAttr((PyObject *)m, &_Py_ID(__dict__));
+    PyObject *dict = module_get_dict(m);
     if (dict == NULL) {
         return -1;
-    }
-    if (!PyDict_Check(dict)) {
-        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
-        goto exit;
     }
 
     if (value != NULL) {
@@ -1152,8 +1272,10 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
             ret = 0;
         }
     }
+    if (ret == 0 && PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
+        ret = -1;
+    }
 
-exit:
     Py_DECREF(dict);
     return ret;
 }
@@ -1161,6 +1283,7 @@ exit:
 
 static PyGetSetDef module_getsets[] = {
     {"__annotations__", (getter)module_get_annotations, (setter)module_set_annotations},
+    {"__annotate__", (getter)module_get_annotate, (setter)module_set_annotate},
     {NULL}
 };
 

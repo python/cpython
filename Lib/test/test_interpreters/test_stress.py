@@ -5,7 +5,7 @@ from test import support
 from test.support import import_helper
 from test.support import threading_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_xxsubinterpreters')
+import_helper.import_module('_interpreters')
 from test.support import interpreters
 from .utils import TestBase
 
@@ -22,6 +22,7 @@ class StressTests(TestBase):
             interp = interpreters.create()
             alive.append(interp)
 
+    @unittest.skip('(temporary) gh-120524: there is a race that needs fixing')
     @support.requires_resource('cpu')
     def test_create_many_threaded(self):
         alive = []

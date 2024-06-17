@@ -46,11 +46,16 @@ class FunctionCalls(unittest.TestCase):
         # recovering from failed calls:
         def f():
             pass
-        for _ in range(1000):
-            try:
-                f(None)
-            except TypeError:
+        class C:
+            def m(self):
                 pass
+        callables = [f, C.m, [].__len__]
+        for c in callables:
+            for _ in range(1000):
+                try:
+                    c(None)
+                except TypeError:
+                    pass
         # BOOM!
 
 

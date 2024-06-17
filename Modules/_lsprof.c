@@ -121,7 +121,9 @@ call_timer(ProfilerObject *pObj)
         return CallExternalTimer(pObj);
     }
     else {
-        return _PyTime_PerfCounterUnchecked();
+        PyTime_t t;
+        (void)PyTime_PerfCounterRaw(&t);
+        return t;
     }
 }
 
@@ -175,8 +177,7 @@ normalizeUserObj(PyObject *obj)
         PyObject *modname = fn->m_module;
 
         if (name != NULL) {
-            PyObject *mo = _PyType_Lookup(Py_TYPE(self), name);
-            Py_XINCREF(mo);
+            PyObject *mo = _PyType_LookupRef(Py_TYPE(self), name);
             Py_DECREF(name);
             if (mo != NULL) {
                 PyObject *res = PyObject_Repr(mo);
@@ -1006,6 +1007,7 @@ _lsprof_exec(PyObject *module)
 static PyModuleDef_Slot _lsprofslots[] = {
     {Py_mod_exec, _lsprof_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -171,26 +171,6 @@ class FutureTest(unittest.TestCase):
         }
         self.assertCountEqual(set(flags.values()), flags.values())
 
-    def test_parserhack(self):
-        # test that the parser.c::future_hack function works as expected
-        # Note: although this test must pass, it's not testing the original
-        #       bug as of 2.6 since the with statement is not optional and
-        #       the parser hack disabled. If a new keyword is introduced in
-        #       2.6, change this to refer to the new future import.
-        try:
-            exec("from __future__ import print_function; print 0")
-        except SyntaxError:
-            pass
-        else:
-            self.fail("syntax error didn't occur")
-
-        try:
-            exec("from __future__ import (print_function); print 0")
-        except SyntaxError:
-            pass
-        else:
-            self.fail("syntax error didn't occur")
-
     def test_unicode_literals_exec(self):
         scope = {}
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
@@ -202,6 +182,25 @@ class FutureTest(unittest.TestCase):
         p.stdin.write(b"2 <> 3\n")
         out = kill_python(p)
         self.assertNotIn(b'SyntaxError: invalid syntax', out)
+
+    def test_future_dotted_import(self):
+        with self.assertRaises(ImportError):
+            exec("from .__future__ import spam")
+
+        code = dedent(
+            """
+            from __future__ import print_function
+            from ...__future__ import ham
+            """
+        )
+        with self.assertRaises(ImportError):
+            exec(code)
+
+        code = """
+            from .__future__ import nested_scopes
+            from __future__ import barry_as_FLUFL
+        """
+        self.assertSyntaxError(code, lineno=2)
 
 class AnnotationsFutureTestCase(unittest.TestCase):
     template = dedent(

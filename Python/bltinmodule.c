@@ -866,7 +866,20 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
+#ifdef Py_GIL_DISABLED
+    // gh-118527: Disable immortalization of code constants for explicit
+    // compile() calls to get consistent frozen outputs between the default
+    // and free-threaded builds.
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_atomic_add_int(&interp->gc.immortalize, -2);
+#endif
+
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_int(&interp->gc.immortalize, 2);
+#endif
 
     Py_XDECREF(source_copy);
     goto finally;
@@ -925,9 +938,9 @@ builtin_divmod_impl(PyObject *module, PyObject *x, PyObject *y)
 eval as builtin_eval
 
     source: object
+    /
     globals: object = None
     locals: object = None
-    /
 
 Evaluate the given source in the context of globals and locals.
 
@@ -941,7 +954,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=0a0824aa70093116 input=11ee718a8640e527]*/
+/*[clinic end generated code: output=0a0824aa70093116 input=7c7bce5299a89062]*/
 {
     PyObject *result = NULL, *source_copy;
     const char *str;
@@ -1024,9 +1037,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
 exec as builtin_exec
 
     source: object
+    /
     globals: object = None
     locals: object = None
-    /
     *
     closure: object(c_default="NULL") = None
 
@@ -1044,7 +1057,7 @@ when source is a code object requiring exactly that many cellvars.
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=f13a7e2b503d1d9a]*/
+/*[clinic end generated code: output=7579eb4e7646743d input=25e989b6d87a3a21]*/
 {
     PyObject *v;
 
@@ -1462,7 +1475,7 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(function, /, *iterables)\n\
+"map(function, iterable, /, *iterables)\n\
 --\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
@@ -2627,7 +2640,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 /* Avoid losing the sign on a negative result,
                    and don't let adding the compensation convert
                    an infinite or overflowed sum to a NaN. */
-                if (c && Py_IS_FINITE(c)) {
+                if (c && isfinite(c)) {
                     f_result += c;
                 }
                 return PyFloat_FromDouble(f_result);
@@ -2659,7 +2672,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
             }
-            if (c && Py_IS_FINITE(c)) {
+            if (c && isfinite(c)) {
                 f_result += c;
             }
             result = PyFloat_FromDouble(f_result);
@@ -3124,6 +3137,9 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     dict = PyModule_GetDict(mod);
 
 #ifdef Py_TRACE_REFS

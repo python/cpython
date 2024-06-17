@@ -1,10 +1,10 @@
 """Cross-interpreter Channels High Level Module."""
 
 import time
-import _xxinterpchannels as _channels
+import _interpchannels as _channels
 
 # aliases:
-from _xxinterpchannels import (
+from _interpchannels import (
     ChannelError, ChannelNotFoundError, ChannelClosedError,
     ChannelEmptyError, ChannelNotEmptyError,
 )

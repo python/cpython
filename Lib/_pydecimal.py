@@ -2131,10 +2131,16 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            # An exact power of 10 is representable, but can convert to a
+            # string of any length. But an exact power of 10 shouldn't be
+            # possible at this point.
+            assert xc > 1, self
+            assert xc % 10 != 0, self
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2184,13 +2190,18 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))

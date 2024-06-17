@@ -1,5 +1,5 @@
-:mod:`tomllib` --- Parse TOML files
-===================================
+:mod:`!tomllib` --- Parse TOML files
+====================================
 
 .. module:: tomllib
    :synopsis: Parse TOML files.

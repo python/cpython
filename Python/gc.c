@@ -1,5 +1,5 @@
 //  This implements the reference cycle garbage collector.
-//  The Python module inteface to the collector is in gcmodule.c.
+//  The Python module interface to the collector is in gcmodule.c.
 //  See https://devguide.python.org/internals/garbage-collector/
 
 #include "Python.h"
@@ -12,7 +12,6 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -1261,7 +1260,7 @@ gc_list_set_space(PyGC_Head *list, int space)
  * the incremental collector must progress through the old
  * space faster than objects are added to the old space.
  *
- * Each young or incremental collection adds a numebr of
+ * Each young or incremental collection adds a number of
  * objects, S (for survivors) to the old space, and
  * incremental collectors scan I objects from the old space.
  * I > S must be true. We also want I > S * N to be where

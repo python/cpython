@@ -1485,6 +1485,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
+PyDoc_STRVAR(sys__is_gil_enabled__doc__,
+"_is_gil_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if the GIL is currently enabled and False otherwise.");
+
+#define SYS__IS_GIL_ENABLED_METHODDEF    \
+    {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
+
+static int
+sys__is_gil_enabled_impl(PyObject *module);
+
+static PyObject *
+sys__is_gil_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_gil_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1528,4 +1574,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=518424ee03e353b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef7c35945443d300 input=a9049054013a1b77]*/

@@ -1,5 +1,5 @@
-:mod:`getpass` --- Portable password input
-==========================================
+:mod:`!getpass` --- Portable password input
+===========================================
 
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
