@@ -247,8 +247,7 @@ An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
-expression must evaluate to a type or a tuple containing types. Each type must
-be :exc:`BaseException` or a subclass of :exc:`BaseException`.
+expression must evaluate to an exception type or a tuple of exception types.
 
 The clause matches an exception if the resulting object from evaluating the
 clause is "compatible" with the exception. An object is compatible with an
