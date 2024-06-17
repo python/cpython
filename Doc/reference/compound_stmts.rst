@@ -381,11 +381,9 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-Unlike :keyword:`except` clauses, :keyword:`!except*` clauses must have a
-matching expression; ``except*:`` is not valid syntax. In addition to the
-requirements for matching expressions in :keyword:`except` clauses, the
-types in the matching expression of an :keyword:`!except*` clause cannot
-be :exc:`BaseExceptionGroup` or a subclass of :exc:`BaseExceptionGroup`.
+An :keyword:`!except*` clause must have a matching expression; it cannot be ``except*:``.
+Furthermore, this expression cannot contain exception group types, because that would
+have ambiguous semantics.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
