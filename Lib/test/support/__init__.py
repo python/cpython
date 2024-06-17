@@ -4,7 +4,6 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
-import dataclasses
 import functools
 import _opcode
 import os

@@ -2,7 +2,7 @@ from platform import architecture as _architecture
 import struct
 import sys
 import unittest
-from ctypes import (CDLL, Array, Structure, Union, POINTER, sizeof, byref, alignment,
+from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
                     c_void_p, c_char, c_wchar, c_byte, c_ubyte,
                     c_uint8, c_uint16, c_uint32,
                     c_short, c_ushort, c_int, c_uint,
