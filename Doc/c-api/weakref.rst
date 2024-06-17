@@ -102,4 +102,13 @@ as much as it can.
 
    Clears the weakrefs for *object* without calling the callbacks.
 
+   This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
+   for types with finalizers (i.e., :meth:`~object.__del__`).  The handler for
+   those objects first calls :c:func:`PyObject_ClearWeakRefs` to clear weakrefs
+   and call their callbacks, then the finalizer, and finally this function to
+   clear any weakrefs that may have been created by the finalizer.
+
+   In most circumstances, it's more appropriate to use
+   :c:func:`PyObject_ClearWeakRefs` to clear weakrefs instead of this function.
+
    .. versionadded:: 3.13
