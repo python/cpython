@@ -39,6 +39,7 @@
 #  include "osdefs.h"             // SEP
 #  include <aclapi.h>             // SetEntriesInAcl
 #  include <sddl.h>               // SDDL_REVISION_1
+#  include <userenv.h>            // CreateEnvironmentBlock()
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
@@ -16840,26 +16841,6 @@ static PyObject *
 os__get_user_default_environ_impl(PyObject *module)
 /*[clinic end generated code: output=6cce8c186a556ef0 input=e15b3d87fce12734]*/
 {
-    HINSTANCE hUserEnv = LoadLibraryW(L"USERENV");
-    if (!hUserEnv) {
-        goto error;
-    }
-
-    HINSTANCE (CALLBACK *pCreateEnvironmentBlock) (LPVOID, HANDLE, BOOL);
-    HINSTANCE (CALLBACK *pDestroyEnvironmentBlock) (LPVOID);
-
-    *(FARPROC*)&pCreateEnvironmentBlock = GetProcAddress(hUserEnv,
-                                                "CreateEnvironmentBlock");
-    if (!pCreateEnvironmentBlock) {
-        goto error;
-    }
-
-    *(FARPROC*)&pDestroyEnvironmentBlock = GetProcAddress(hUserEnv,
-                                                 "DestroyEnvironmentBlock");
-    if (!pDestroyEnvironmentBlock) {
-        goto error;
-    }
-
     HANDLE htoken;
     if (!OpenProcessToken(GetCurrentProcess(),
                           TOKEN_DUPLICATE|TOKEN_QUERY,
@@ -16868,7 +16849,7 @@ os__get_user_default_environ_impl(PyObject *module)
     }
 
     PWCHAR env_str;
-    if (!pCreateEnvironmentBlock(&env_str, htoken, 0)) {
+    if (!CreateEnvironmentBlock(&env_str, htoken, 0)) {
         CloseHandle(htoken);
         goto error;
     }
@@ -16881,7 +16862,7 @@ os__get_user_default_environ_impl(PyObject *module)
     }
 
     PyObject *str = PyUnicode_FromWideChar(env_str, len);
-    if (!pDestroyEnvironmentBlock(env_str)) {
+    if (!DestroyEnvironmentBlock(env_str)) {
         Py_XDECREF(str);
         goto error;
     }
