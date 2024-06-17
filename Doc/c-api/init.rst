@@ -2164,13 +2164,20 @@ The C-API provides a basic mutual exclusion lock.
 
 .. c:type:: PyMutex
 
-   A mutual exclusion lock.  The :c:type:`!PyMutex` should be initialized to zero to
-   represent the unlocked state.  For example::
+   A mutual exclusion lock.  The :c:type:`!PyMutex` should be initialized to
+   zero to represent the unlocked state.  For example::
 
       PyMutex mutex = {0};
 
    Instances of :c:type:`!PyMutex` should not be copied or moved.  Both the
-   contents and address of a :c:type:`!PyMutex` are meaningful.
+   contents and address of a :c:type:`!PyMutex` are meaningful, and it must
+   remain at a fixed, writable location in memory.
+
+   .. note::
+
+      A :c:type:`!PyMutex` currently occupies one byte, but the size should be
+      considered unstable.  The size may change in future Python releases
+      without a deprecation period.
 
    .. versionadded:: 3.13
 
