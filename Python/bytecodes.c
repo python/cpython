@@ -391,7 +391,7 @@ dummy_func(
             EXIT_IF(!PyUnicode_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(value)));
+                assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;
             }
             else {
@@ -1769,7 +1769,7 @@ dummy_func(
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
             STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
-            if (pieces_o == NULL) {
+            if (CONVERSION_FAILED(pieces_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -1782,7 +1782,7 @@ dummy_func(
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -1794,7 +1794,7 @@ dummy_func(
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -1854,7 +1854,7 @@ dummy_func(
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
             STACKREFS_TO_PYOBJECTS(values, oparg*2, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -1897,7 +1897,7 @@ dummy_func(
             assert(PyTuple_CheckExact(keys_o));
             assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -3445,7 +3445,7 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -3577,7 +3577,7 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -3813,7 +3813,7 @@ dummy_func(
             DEOPT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -3883,7 +3883,7 @@ dummy_func(
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -3927,7 +3927,7 @@ dummy_func(
                 PyCFunction_GET_FUNCTION(callable_o);
 
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -4091,7 +4091,7 @@ dummy_func(
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
 
             STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -4172,7 +4172,7 @@ dummy_func(
             int nargs = total_args - 1;
 
             STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
@@ -4256,7 +4256,7 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }

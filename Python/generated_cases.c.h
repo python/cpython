@@ -686,7 +686,7 @@
             assert(PyTuple_CheckExact(keys_o));
             assert(PyTuple_GET_SIZE(keys_o) == (Py_ssize_t)oparg);
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
@@ -716,7 +716,7 @@
             _PyStackRef list;
             values = &stack_pointer[-oparg];
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
@@ -739,7 +739,7 @@
             _PyStackRef map;
             values = &stack_pointer[-oparg*2];
             STACKREFS_TO_PYOBJECTS(values, oparg*2, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 for (int _i = oparg*2; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
@@ -822,7 +822,7 @@
             _PyStackRef str;
             pieces = &stack_pointer[-oparg];
             STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
-            if (pieces_o == NULL) {
+            if (CONVERSION_FAILED(pieces_o)) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(pieces[_i]);
                 }
@@ -848,7 +848,7 @@
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
             STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (values_o == NULL) {
+            if (CONVERSION_FAILED(values_o)) {
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
@@ -945,7 +945,7 @@
                 }
                 /* Callable is not a normal Python function */
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -1278,7 +1278,7 @@
                 DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
                 STAT_INC(CALL, hit);
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -1334,7 +1334,7 @@
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
                 /* res = func(self, args, nargs) */
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -1396,7 +1396,7 @@
                 (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable_o);
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -1705,7 +1705,7 @@
             }
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-            if (args_o == NULL) {
+            if (CONVERSION_FAILED(args_o)) {
                 PyStackRef_CLOSE(callable);
                 PyStackRef_CLOSE(self_or_null);
                 for (int _i = oparg; --_i >= 0;) {
@@ -1861,7 +1861,7 @@
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
                 int nargs = total_args - 1;
                 STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -1923,7 +1923,7 @@
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
                 STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -2094,7 +2094,7 @@
                 }
                 /* Callable is not a normal Python function */
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
-                if (args_o == NULL) {
+                if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
                     PyStackRef_CLOSE(self_or_null);
                     for (int _i = oparg; --_i >= 0;) {
@@ -6454,7 +6454,7 @@
             DEOPT_IF(!PyUnicode_CheckExact(value_o), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(value)));
+                assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;
             }
             else {

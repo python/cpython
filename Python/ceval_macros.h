@@ -471,3 +471,9 @@ do { \
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     (void)(NAME);
 #endif
+
+#ifdef Py_GIL_DISABLED
+#define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+#else
+#define CONVERSION_FAILED(NAME) (0)
+#endif
