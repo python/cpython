@@ -1,1 +1,1 @@
-Remove tear-off menu feature in turtledemo
+Move scrollbar and remove tear-off menus in turtledemo.
