@@ -248,13 +248,9 @@ it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
 expression must evaluate to an exception type or a tuple of exception types.
-
-The clause matches an exception if the resulting object from evaluating the
-clause is "compatible" with the exception. An object is compatible with an
-exception if the object is the class or a
-:term:`non-virtual base class <abstract base class>` of the exception
-object, or a tuple containing an item that is the class or a non-virtual base
-class of the exception object.
+The raised exception matches an :keyword:`!except` clause whose expression evaluates
+to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
+or it evaluates to a tuple that contains such a class.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
