@@ -144,11 +144,12 @@ Example of how to wait for enqueued tasks to be completed::
 
     import concurrent.futures
     import queue
+    import time
 
-    def worker():
+    def worker(name, q):
         for item in q:
-            print(f'Working on {item}')
-            print(f'Finished {item}')
+            time.sleep(.01)
+            print(f'{name} finished {item}')
 
     q = queue.Queue()
 
@@ -159,10 +160,10 @@ Example of how to wait for enqueued tasks to be completed::
     # All tasks have been queued
     q.shutdown()
 
-    # Create 2 worker threads.
+    # Create 3 worker threads.
     with concurrent.futures.ThreadPoolExecutor() as tp:
-        tp.submit(worker)
-        tp.submit(worker)
+        for i in range(3):
+            tp.submit(worker, f'worker-{i}', q)
 
     print('All work completed')
 
