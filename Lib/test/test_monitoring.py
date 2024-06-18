@@ -832,18 +832,23 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
-    # gh-116090: This test doesn't really require specialization, but running
-    # it without specialization exposes a monitoring bug.
-    @requires_specialization
     def test_implicit_stop_iteration(self):
 
         def gen():
             yield 1
             return 2
 
-        def implicit_stop_iteration():
-            for _ in gen():
+        def implicit_stop_iteration(iterator=None):
+            if iterator is None:
+                iterator = gen()
+            for _ in iterator:
                 pass
+
+        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+
+        # Make specialization fail, so that we can test the unspecialized
+        # version of the loop.
+        implicit_stop_iteration(set(range(100)))
 
         self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
 
