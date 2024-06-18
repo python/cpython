@@ -137,35 +137,29 @@ provide the public methods described below.
    Return an :term:`iterator` which iterates over the items in this queue
    until :meth:`Queue.shutdown` is called and the queue is empty.
 
+   Example::
+
+      import concurrent.futures
+      import queue
+      import time
+
+      def worker(name, q):
+          for item in q:
+              time.sleep(.01)
+              print(f'{name} finished {item}')
+
+      q = queue.Queue()
+      for item in range(30):
+          q.put(item)
+
+      q.shutdown()
+      with concurrent.futures.ThreadPoolExecutor() as tp:
+          for i in range(3):
+              tp.submit(worker, f'worker-{i}', q)
+
+      print('All work completed')
+
    .. versionadded:: 3.14
-
-
-Example of how to wait for enqueued tasks to be completed::
-
-    import concurrent.futures
-    import queue
-    import time
-
-    def worker(name, q):
-        for item in q:
-            time.sleep(.01)
-            print(f'{name} finished {item}')
-
-    q = queue.Queue()
-
-    # Queue thirty tasks.
-    for item in range(30):
-        q.put(item)
-
-    # All tasks have been queued
-    q.shutdown()
-
-    # Create 3 worker threads.
-    with concurrent.futures.ThreadPoolExecutor() as tp:
-        for i in range(3):
-            tp.submit(worker, f'worker-{i}', q)
-
-    print('All work completed')
 
 
 .. method:: Queue.put(item, block=True, timeout=None)
