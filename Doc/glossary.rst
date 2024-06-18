@@ -694,10 +694,8 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
-
-      .. _free-threading-build::
-
-         Free-threading CPython does not guarantee the thread-safe.
+         And also please note that, the free-threading CPython does not guarantee
+         the thread-safe of iterator operations.
 
 
    key function
