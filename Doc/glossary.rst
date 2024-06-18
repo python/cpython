@@ -695,6 +695,11 @@ Glossary
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
 
+      .. _free-threading-build::
+
+         Free-threading CPython does not guarantee the thread-safe.
+
+
    key function
       A key function or collation function is a callable that returns a value
       used for sorting or ordering.  For example, :func:`locale.strxfrm` is
