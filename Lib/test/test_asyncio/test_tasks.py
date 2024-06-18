@@ -3103,14 +3103,14 @@ class GenericTaskTests(test_utils.TestCase):
         # fail on systems where C modules were successfully compiled
         # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
-            import _functools
-            import _json
-            import _pickle
+            import _functools  # noqa: F401
+            import _json       # noqa: F401
+            import _pickle     # noqa: F401
         except ImportError:
             self.skipTest('C modules are not available')
         else:
             try:
-                import _asyncio
+                import _asyncio  # noqa: F401
             except ImportError:
                 self.fail('_asyncio module is missing')
 

@@ -737,7 +737,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testinternalcapi
+            import _testinternalcapi  # noqa: F401
         except ImportError:
             pass
         else:
@@ -754,7 +754,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Faulthandler
         try:
-            import faulthandler
+            import faulthandler  # noqa: F401
         except ImportError:
             pass
         else:
