@@ -142,40 +142,29 @@ provide the public methods described below.
 
 Example of how to wait for enqueued tasks to be completed::
 
-    import concurrent.futures, queue, random, time
+    import concurrent.futures
+    import queue
 
-    def worker(name, queue):
-        # Get a "work item" out of the queue.
-        for sleep_for in queue:
-            # Sleep for the "sleep_for" seconds.
-            time.sleep(sleep_for)
-
-            print(f'{name} has slept for {sleep_for:.2f} seconds')
-
-    # Create a queue that we will use to store our "workload".
     q = queue.Queue()
 
-    # Generate random timings and put them into the queue.
-    total_sleep_time = 0
-    for _ in range(20):
-        sleep_for = random.uniform(0.05, 1.0)
-        total_sleep_time += sleep_for
-        q.put_nowait(sleep_for)
+    # Queue thirty tasks.
+    for item in range(30):
+        q.put(item)
 
     # All tasks have been queued
     q.shutdown()
 
-    # Create three worker tasks to process the queue concurrently.
-    started_at = time.monotonic()
+    def worker():
+        for item in q:
+            print(f'Working on {item}')
+            print(f'Finished {item}')
+
+    # Create 2 worker threads.
     with concurrent.futures.ThreadPoolExecutor() as tp:
-        for i in range(3):
-            tp.submit(worker, f'worker-{i}', q)
+        tp.submit(worker)
+        tp.submit(worker)
 
-    total_slept_for = time.monotonic() - started_at
-
-    print('====')
-    print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')
-    print(f'total expected sleep time: {total_sleep_time:.2f} seconds')
+    print('All work completed')
 
 
 .. method:: Queue.put(item, block=True, timeout=None)
