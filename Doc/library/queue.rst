@@ -239,6 +239,31 @@ fully processed by daemon consumer threads.
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
 
 
+Example of how to wait for enqueued tasks to be completed::
+
+    import threading
+    import queue
+
+    q = queue.Queue()
+
+    def worker():
+        for item in q:
+            print(f'Working on {item}')
+            print(f'Finished {item}')
+            q.task_done()
+
+    # Turn-on the worker thread.
+    threading.Thread(target=worker, daemon=True).start()
+
+    # Send thirty task requests to the worker.
+    for item in range(30):
+        q.put(item)
+
+    # Block until all tasks are done.
+    q.join()
+    print('All work completed')
+
+
 Terminating queues
 ^^^^^^^^^^^^^^^^^^
 
