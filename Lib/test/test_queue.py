@@ -164,7 +164,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 with self.cumlock:
                     self.cum += x
 
-        with concurrent.futures.ThreadPoolExecutor as tp:
+        with concurrent.futures.ThreadPoolExecutor() as tp:
             tp.submit(worker)
             tp.submit(worker)
 
@@ -179,7 +179,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
                 q.task_done()
 
-        with concurrent.futures.ThreadPoolExecutor as tp:
+        with concurrent.futures.ThreadPoolExecutor() as tp:
             tp.submit(worker)
             tp.submit(worker)
             for i in range(100):
