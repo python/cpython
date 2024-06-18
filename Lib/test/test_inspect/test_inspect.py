@@ -5720,7 +5720,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_io_module_has_signatures(self):
         methods_no_signature = {
-            'BufferedRWPair': {'read', 'peek', 'read1', 'readinto', 'readinto1', 'write'},
+            'BufferedRWPair': {
+                'read', 'peek', 'read1', 'readinto', 'readinto1', 'write',
+                'backread', 'backreadinto',
+            },
         }
         self._test_module_has_signatures(io,
                 methods_no_signature=methods_no_signature)
