@@ -81,8 +81,11 @@ static PyObject*
 test_config(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
 #define CHECK_SIZEOF(FATNAME, TYPE) \
-            if (FATNAME != sizeof(TYPE)) \
-                return sizeof_error(self, #FATNAME, #TYPE, FATNAME, sizeof(TYPE))
+    do { \
+        if (FATNAME != sizeof(TYPE)) { \
+            return sizeof_error(self, #FATNAME, #TYPE, FATNAME, sizeof(TYPE)); \
+        } \
+    } while (0)
 
     CHECK_SIZEOF(SIZEOF_SHORT, short);
     CHECK_SIZEOF(SIZEOF_INT, int);
@@ -103,21 +106,25 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
-#define CHECK_SIZEOF(TYPE, EXPECTED)         \
-    if (EXPECTED != sizeof(TYPE))  {         \
-        PyErr_Format(get_testerror(self),    \
-            "sizeof(%s) = %u instead of %u", \
-            #TYPE, sizeof(TYPE), EXPECTED);  \
-        return (PyObject*)NULL;              \
-    }
+#define CHECK_SIZEOF(TYPE, EXPECTED) \
+    do { \
+        if (EXPECTED != sizeof(TYPE)) { \
+            PyErr_Format(get_testerror(self),               \
+                         "sizeof(%s) = %u instead of %u",   \
+                         #TYPE, sizeof(TYPE), EXPECTED);    \
+            return (PyObject*)NULL; \
+        } \
+    } while (0)
 #define IS_SIGNED(TYPE) (((TYPE)-1) < (TYPE)0)
-#define CHECK_SIGNNESS(TYPE, SIGNED)            \
-    if (IS_SIGNED(TYPE) != SIGNED) {            \
-        PyErr_Format(get_testerror(self),       \
-            "%s signness is %i, instead of %i", \
-            #TYPE, IS_SIGNED(TYPE), SIGNED);    \
-        return (PyObject*)NULL;                 \
-    }
+#define CHECK_SIGNNESS(TYPE, SIGNED) \
+    do { \
+        if (IS_SIGNED(TYPE) != SIGNED) { \
+            PyErr_Format(get_testerror(self),                   \
+                         "%s signness is %i, instead of %i",    \
+                         #TYPE, IS_SIGNED(TYPE), SIGNED);       \
+            return (PyObject*)NULL; \
+        } \
+    } while (0)
 
     /* integer types */
     CHECK_SIZEOF(Py_UCS1, 1);
@@ -884,27 +891,34 @@ test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     double result;
     const char *msg;
 
-#define CHECK_STRING(STR, expected)                             \
-    result = PyOS_string_to_double(STR, NULL, NULL);            \
-    if (result == -1.0 && PyErr_Occurred())                     \
-        return NULL;                                            \
-    if (result != (double)expected) {                           \
-        msg = "conversion of " STR " to float failed";          \
-        goto fail;                                              \
-    }
+#define CHECK_STRING(STR, expected) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        if (result != (double)expected) { \
+            msg = "conversion of " STR " to float failed"; \
+            goto fail; \
+        } \
+    } while (0)
 
-#define CHECK_INVALID(STR)                                              \
-    result = PyOS_string_to_double(STR, NULL, NULL);                    \
-    if (result == -1.0 && PyErr_Occurred()) {                           \
-        if (PyErr_ExceptionMatches(PyExc_ValueError))                   \
-            PyErr_Clear();                                              \
-        else                                                            \
-            return NULL;                                                \
-    }                                                                   \
-    else {                                                              \
-        msg = "conversion of " STR " didn't raise ValueError";          \
-        goto fail;                                                      \
-    }
+#define CHECK_INVALID(STR) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
+                PyErr_Clear(); \
+            } \
+            else { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            msg = "conversion of " STR " didn't raise ValueError"; \
+            goto fail; \
+        } \
+    } while (0)
 
     CHECK_STRING("0.1", 0.1);
     CHECK_STRING("1.234", 1.234);
@@ -971,16 +985,22 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
     };
     known_capsule *known = &known_capsules[0];
 
-#define FAIL(x) { error = (x); goto exit; }
+#define FAIL(x) \
+    do { \
+        error = (x); \
+        goto exit; \
+    } while (0)
 
 #define CHECK_DESTRUCTOR \
-    if (capsule_error) { \
-        FAIL(capsule_error); \
-    } \
-    else if (!capsule_destructor_call_count) {          \
-        FAIL("destructor not called!"); \
-    } \
-    capsule_destructor_call_count = 0; \
+    do { \
+        if (capsule_error) { \
+            FAIL(capsule_error); \
+        } \
+        else if (!capsule_destructor_call_count) { \
+            FAIL("destructor not called!"); \
+        } \
+        capsule_destructor_call_count = 0; \
+    } while (0)
 
     object = PyCapsule_New(capsule_pointer, capsule_name, capsule_destructor);
     PyCapsule_SetContext(object, capsule_context);
@@ -1024,12 +1044,12 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
         static char buffer[256];
 #undef FAIL
 #define FAIL(x) \
-        { \
-        sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
-            x, known->module, known->attribute); \
-        error = buffer; \
-        goto exit; \
-        } \
+        do { \
+            sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
+                    x, known->module, known->attribute);           \
+            error = buffer; \
+            goto exit; \
+        } while (0)
 
         PyObject *module = PyImport_ImportModule(known->module);
         if (module) {
@@ -1978,11 +1998,15 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
                               "an already initialized key");
     }
 #define CHECK_TSS_API(expr) \
+    do { \
         (void)(expr); \
         if (!PyThread_tss_is_created(&tss_key)) { \
             return raiseTestError(self, "test_pythread_tss_key_state", \
                                   "TSS key initialization state was not " \
-                                  "preserved after calling " #expr); }
+                                  "preserved after calling " #expr); \
+        } \
+    } while (0)
+
     CHECK_TSS_API(PyThread_tss_set(&tss_key, NULL));
     CHECK_TSS_API(PyThread_tss_get(&tss_key));
 #undef CHECK_TSS_API
@@ -2304,7 +2328,7 @@ test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
         \
         Py_DECREF(obj); \
         Py_RETURN_NONE; \
-    } while (0) \
+    } while (0)
 
 
 // Test Py_NewRef() and Py_XNewRef() macros
