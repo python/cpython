@@ -492,9 +492,6 @@ class _QueueJoinTestMixin:
         for i in range(100):
             q.put_nowait(i)
 
-        # All tasks have been queued
-        q.shutdown()
-
         accumulator = 0
 
         # Two workers get items from the queue and call task_done after each.
@@ -512,6 +509,9 @@ class _QueueJoinTestMixin:
             tg.create_task(worker())
             await q.join()
             self.assertEqual(sum(range(100)), accumulator)
+
+            # close running generators
+            q.shutdown()
 
     async def test_join_empty_queue(self):
         q = self.q_class()
