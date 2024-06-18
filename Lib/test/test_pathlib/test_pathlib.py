@@ -834,11 +834,11 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         file1 = tmp / 'file1'
         file1.write_text('foo')
         link1 = dir1 / 'link1'
-        _winapi.CreateJunction(dir2, link1)
+        _winapi.CreateJunction(str(dir2), str(link1))
         link2 = dir1 / 'link2'
-        _winapi.CreateJunction(dir3, link2)
+        _winapi.CreateJunction(str(dir3), str(link2))
         link3 = dir1 / 'link3'
-        _winapi.CreateJunction(file1, link3)
+        _winapi.CreateJunction(str(file1), str(link3))
         # make sure junctions are removed but not followed
         dir1.rmtree()
         self.assertFalse(dir1.exists())
@@ -849,13 +849,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_rmtree_outer_junction(self):
         import _winapi
         tmp = self.cls(self.base, 'rmtree')
+        tmp.mkdir()
         try:
             src = tmp / 'cheese'
             dst = tmp / 'shop'
             src.mkdir()
             spam = src / 'spam'
             spam.write_text('')
-            _winapi.CreateJunction(src, dst)
+            _winapi.CreateJunction(str(src), str(dst))
             self.assertRaises(OSError, dst.rmtree)
             dst.rmtree(ignore_errors=True)
         finally:
@@ -869,7 +870,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         dir_ = tmp / 'dir'
         dir_.mkdir()
         link = tmp / 'link'
-        _winapi.CreateJunction(dir_, link)
+        _winapi.CreateJunction(str(dir_), str(link))
         self.addCleanup(os_helper.unlink, link)
         self.assertRaises(OSError, link.rmtree)
         self.assertTrue(dir_.exists())

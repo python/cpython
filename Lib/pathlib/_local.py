@@ -834,6 +834,7 @@ class Path(PathBase, PurePath):
                 pass
         elif on_error:
             def onexc(func, filename, err):
+                err.filename = filename
                 on_error(err)
         else:
             def onexc(func, filename, err):
