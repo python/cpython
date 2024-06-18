@@ -1350,7 +1350,6 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
-    @unittest.skipIf(Py_DEBUG and Py_GIL_DISABLED, "free-threaded builds take up slightly more stack")
     @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
