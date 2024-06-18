@@ -558,25 +558,23 @@ class TestRmTree(BaseTest, unittest.TestCase):
                              os.listdir in os.supports_fd and
                              os.stat in os.supports_follow_symlinks)
         if _use_fd_functions:
-            self.assertTrue(shutil._use_fd_functions)
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
             os.mkdir(d)
             try:
-                real_rmtree = shutil._rmtree_safe_fd
+                real_open = os.open
                 class Called(Exception): pass
                 def _raiser(*args, **kwargs):
                     raise Called
-                shutil._rmtree_safe_fd = _raiser
+                os.open = _raiser
                 self.assertRaises(Called, shutil.rmtree, d)
             finally:
-                shutil._rmtree_safe_fd = real_rmtree
+                os.open = real_open
         else:
-            self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
-    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, "requires safe rmtree")
     def test_rmtree_fails_on_close(self):
         # Test that the error handler is called for failed os.close() and that
         # os.close() is only called once for a file descriptor.
@@ -611,7 +609,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertEqual(errors[1][1], dir1)
         self.assertEqual(close_count, 2)
 
-    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
         victim = 'killme'
@@ -625,7 +623,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         shutil.rmtree(victim, dir_fd=dir_fd)
         self.assertFalse(os.path.exists(fullname))
 
-    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    @unittest.skipIf(shutil.rmtree.avoids_symlink_attacks, "dir_fd is supported")
     def test_rmtree_with_dir_fd_unsupported(self):
         tmp_dir = self.mkdtemp()
         with self.assertRaises(NotImplementedError):
