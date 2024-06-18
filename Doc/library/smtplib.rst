@@ -577,7 +577,7 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
        else:
            lines.append(line)
 
-   msg = "\r\n'.join(lines)
+   msg = "\r\n".join(lines)
    print("Message length is", len(msg))
 
    server = smtplib.SMTP("localhost")
