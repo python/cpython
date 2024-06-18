@@ -231,6 +231,7 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 
 #define ASSERT_DICT_LOCKED(op)
 #define ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(op)
+#define ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(op)
 #define LOCK_KEYS(keys)
 #define UNLOCK_KEYS(keys)
 #define ASSERT_KEYS_LOCKED(keys)
