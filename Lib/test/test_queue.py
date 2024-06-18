@@ -163,7 +163,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q = self.type2test()
         self.cum = 0
         threads = []
-        for i in range(2):
+        for i in (0,1):
             thread = threading.Thread(target=self.worker, args=(q, False))
             thread.start()
             threads.append(thread)
@@ -178,7 +178,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q = self.type2test()
         self.cum = 0
         threads = []
-        for i in range(2):
+        for i in (0,1):
             thread = threading.Thread(target=self.worker, args=(q, True))
             thread.start()
             threads.append(thread)
