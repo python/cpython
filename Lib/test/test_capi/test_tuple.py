@@ -206,6 +206,7 @@ class CAPITest(unittest.TestCase):
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()
         resize = _testcapi._tuple_resize
+        checknull = _testcapi._check_item_is_NULL
 
         a = ()
         b = resize(a, 0)
@@ -221,6 +222,7 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 5)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
+        self.assertTrue(all(checknull(b, i) for i in range(3, 5)))
 
         a = ()
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
