@@ -570,12 +570,12 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
    # Add the From: and To: headers at the start!
    lines = [f"From: {from_addr}", f"To: {', '.join(to_addrs)}", ""]
    while True:
-      try:
-          line = input()
-      except EOFError:
-          break
-      else:
-          lines.append(line)
+       try:
+           line = input()
+       except EOFError:
+           break
+       else:
+           lines.append(line)
 
    msg = '\r\n'.join(lines)
    print("Message length is", len(msg))
