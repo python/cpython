@@ -3095,23 +3095,46 @@
             break;
         }
 
-        /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
-
-        /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _LOAD_SPECIAL: {
+            _PyStackRef owner;
+            _PyStackRef attr;
+            _PyStackRef self_or_null;
+            oparg = CURRENT_OPARG();
+            owner = stack_pointer[-1];
+            assert(oparg <= SPECIAL_MAX);
+            PyGenObject *owner_o = (PyGenObject *)PyStackRef_AsPyObjectSteal(owner_o);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            attr = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null);
+            if (attr == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner_o)->tp_name);
+                }
+            }
+            if (attr == NULL) JUMP_TO_ERROR();
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = self_or_null;
+            stack_pointer += 1;
+            break;
+        }
 
         case _WITH_EXCEPT_START: {
             _PyStackRef val;
             _PyStackRef lasti;
+            _PyStackRef exit_self;
             _PyStackRef exit_func;
             _PyStackRef res;
             val = stack_pointer[-1];
             lasti = stack_pointer[-3];
-            exit_func = stack_pointer[-4];
+            exit_self = stack_pointer[-4];
+            exit_func = stack_pointer[-5];
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
                - lasti: THIRD = lasti of exception in exc_info()
-               - exit_func: FOURTH = the context.__exit__ bound method
+               - exit_self: FOURTH = the context or NULL
+               - exit_func: FIFTH = the context.__exit__ function or context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
              */
@@ -3129,11 +3152,11 @@
             }
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject * stack[4] = {NULL, exc, val_o, tb};
-            res = PyStackRef_FromPyObjectSteal(
-                PyObject_Vectorcall(exit_func_o, stack + 1,
-                                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
-            if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val, tb};
+            int has_self = !PyStackRef_IsNull(exit_self);
+            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+                                      (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;

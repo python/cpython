@@ -9,105 +9,6 @@
 #define TIER_ONE 1
 
 
-        TARGET(BEFORE_ASYNC_WITH) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(BEFORE_ASYNC_WITH);
-            _PyStackRef mgr;
-            _PyStackRef exit;
-            _PyStackRef res;
-            mgr = stack_pointer[-1];
-            PyObject *exit_o;
-            PyObject *mgr_o = PyStackRef_AsPyObjectBorrow(mgr);
-            PyObject *res_o;
-            PyObject *enter = _PyObject_LookupSpecial(mgr_o, &_Py_ID(__aenter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
-                                  Py_TYPE(mgr_o)->tp_name);
-                }
-                goto error;
-            }
-            exit_o = _PyObject_LookupSpecial(mgr_o, &_Py_ID(__aexit__));
-            if (exit_o == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol "
-                                  "(missed __aexit__ method)",
-                                  Py_TYPE(mgr_o)->tp_name);
-                }
-                Py_DECREF(enter);
-                goto error;
-            }
-            PyStackRef_CLOSE(mgr);
-            res_o = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res_o == NULL) {
-                Py_DECREF(exit_o);
-                if (true) goto pop_1_error;
-            }
-            exit = PyStackRef_FromPyObjectSteal(exit_o);
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            DISPATCH();
-        }
-
-        TARGET(BEFORE_WITH) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(BEFORE_WITH);
-            _PyStackRef mgr;
-            _PyStackRef exit;
-            _PyStackRef res;
-            mgr = stack_pointer[-1];
-            PyObject *exit_o;
-            PyObject *mgr_o = PyStackRef_AsPyObjectBorrow(mgr);
-            PyObject *res_o;
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
-            PyObject *enter = _PyObject_LookupSpecial(mgr_o, &_Py_ID(__enter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol",
-                                  Py_TYPE(mgr_o)->tp_name);
-                }
-                goto error;
-            }
-            exit_o = _PyObject_LookupSpecial(mgr_o, &_Py_ID(__exit__));
-            if (exit_o == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed __exit__ method)",
-                                  Py_TYPE(mgr_o)->tp_name);
-                }
-                Py_DECREF(enter);
-                goto error;
-            }
-            PyStackRef_CLOSE(mgr);
-            res_o = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res_o == NULL) {
-                Py_DECREF(exit_o);
-                if (true) goto pop_1_error;
-            }
-            exit = PyStackRef_FromPyObjectSteal(exit_o);
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            DISPATCH();
-        }
-
         TARGET(BINARY_OP) {
             frame->instr_ptr = next_instr;
             next_instr += 2;
@@ -5013,6 +4914,32 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_SPECIAL) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_SPECIAL);
+            _PyStackRef owner;
+            _PyStackRef attr;
+            _PyStackRef self_or_null;
+            owner = stack_pointer[-1];
+            assert(oparg <= SPECIAL_MAX);
+            PyGenObject *owner_o = (PyGenObject *)PyStackRef_AsPyObjectSteal(owner_o);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            attr = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null);
+            if (attr == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner_o)->tp_name);
+                }
+            }
+            if (attr == NULL) goto pop_1_error;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = self_or_null;
+            stack_pointer += 1;
+            DISPATCH();
+        }
+
         TARGET(LOAD_SUPER_ATTR) {
             frame->instr_ptr = next_instr;
             next_instr += 2;
@@ -6637,16 +6564,19 @@
             INSTRUCTION_STATS(WITH_EXCEPT_START);
             _PyStackRef val;
             _PyStackRef lasti;
+            _PyStackRef exit_self;
             _PyStackRef exit_func;
             _PyStackRef res;
             val = stack_pointer[-1];
             lasti = stack_pointer[-3];
-            exit_func = stack_pointer[-4];
+            exit_self = stack_pointer[-4];
+            exit_func = stack_pointer[-5];
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
                - lasti: THIRD = lasti of exception in exc_info()
-               - exit_func: FOURTH = the context.__exit__ bound method
+               - exit_self: FOURTH = the context or NULL
+               - exit_func: FIFTH = the context.__exit__ function or context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
              */
@@ -6664,11 +6594,11 @@
             }
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject * stack[4] = {NULL, exc, val_o, tb};
-            res = PyStackRef_FromPyObjectSteal(
-                PyObject_Vectorcall(exit_func_o, stack + 1,
-                                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
-            if (PyStackRef_IsNull(res)) goto error;
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val, tb};
+            int has_self = !PyStackRef_IsNull(exit_self);
+            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+                                      (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            if (res == NULL) goto error;
             stack_pointer[0] = res;
             stack_pointer += 1;
             DISPATCH();
