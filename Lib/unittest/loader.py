@@ -187,7 +187,7 @@ class TestLoader(object):
               issubclass(parent, case.TestCase)):
             if inspect.isabstract(parent):
                 raise TypeError(
-                    "Cannot instantiate abstract base class %s" % parent.__name__)
+                    "Cannot instantiate abstract test case %s" % parent.__name__)
             name = parts[-1]
             inst = parent(name)
             # static methods follow a different path

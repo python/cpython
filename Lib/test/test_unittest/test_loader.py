@@ -1098,8 +1098,16 @@ class Test_TestLoader(unittest.TestCase):
         m.Foo = Foo
 
         loader = unittest.TestLoader()
-        with self.assertRaises(TypeError):
-            loader.loadTestsFromNames(['Foo.test_1', 'Foo.test_2'], m)
+        for name in 'Foo.test_1', 'Foo.test_2':
+            with self.subTest(name=name):
+                try:
+                    loader.loadTestsFromNames([name], m)
+                except TypeError as e:
+                    self.assertEqual(str(e),
+                                    "Cannot instantiate abstract test case Foo")
+                else:
+                    self.fail(
+                        "TestLoader.loadTestsFromNames failed to raise TypeError")
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromNames()
