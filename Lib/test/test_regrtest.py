@@ -22,7 +22,8 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper, without_optimizer
+from test.support import import_helper
+from test.support import os_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
@@ -1178,7 +1179,7 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    @without_optimizer
+    @support.without_optimizer
     def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
@@ -1746,10 +1747,9 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
-        try:
-            import _testcapi
-        except ImportError:
-            raise unittest.SkipTest("requires _testcapi")
+        # Skip test if _testcapi is missing
+        import_helper.import_module('_testcapi')
+
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -2132,10 +2132,10 @@ class ArgsTestCase(BaseTestCase):
 
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
-        try:
-            import _testinternalcapi
-        except ImportError:
-            raise unittest.SkipTest("requires _testinternalcapi")
+
+        # Skip test if _testinternalcapi is missing
+        import_helper.import_module('_testinternalcapi')
+
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2198,10 +2198,8 @@ class ArgsTestCase(BaseTestCase):
     @unittest.skipIf(support.is_android,
                      'raising SIGSEGV on Android is unreliable')
     def test_worker_output_on_failure(self):
-        try:
-            from faulthandler import _sigsegv
-        except ImportError:
-            self.skipTest("need faulthandler._sigsegv")
+        # Skip test if faulthandler is missing
+        import_helper.import_module('faulthandler')
 
         code = textwrap.dedent(r"""
             import faulthandler
