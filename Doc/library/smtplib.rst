@@ -556,35 +556,32 @@ This example prompts the user for addresses needed in the message envelope ('To'
 and 'From' addresses), and the message to be delivered.  Note that the headers
 to be included with the message must be included in the message as entered; this
 example doesn't do any processing of the :rfc:`822` headers.  In particular, the
-'To' and 'From' addresses must be included in the message headers explicitly. ::
+'To' and 'From' addresses must be included in the message headers explicitly::
 
-   import smtplib
+    import smtplib
 
-   def prompt(prompt):
+    def prompt(prompt):
        return input(prompt).strip()
 
-   fromaddr = prompt("From: ")
-   toaddrs  = prompt("To: ").split()
-   print("Enter message, end with ^D (Unix) or ^Z (Windows):")
+    from_addr = prompt("From: ")
+    to_addrs  = prompt("To: ").split()
+    print("Enter message, end with ^D (Unix) or ^Z (Windows):")
 
-   # Add the From: and To: headers at the start!
-   msg = ("From: %s\r\nTo: %s\r\n\r\n"
-          % (fromaddr, ", ".join(toaddrs)))
-   while True:
+    # Add the From: and To: headers at the start!
+    lines = [f"From: {from_addr}", f"To: {', '.join(to_addrs)}", ""]
+    while True:
        try:
-           line = input()
+           lines.append(input())
        except EOFError:
            break
-       if not line:
-           break
-       msg = msg + line
 
-   print("Message length is", len(msg))
+    msg = '\r\n'.join(lines)
+    print("Message length is", len(msg))
 
-   server = smtplib.SMTP('localhost')
-   server.set_debuglevel(1)
-   server.sendmail(fromaddr, toaddrs, msg)
-   server.quit()
+    server = smtplib.SMTP('localhost')
+    server.set_debuglevel(1)
+    server.sendmail(from_addr, to_addrs, msg)
+    server.quit()
 
 .. note::
 
