@@ -44,7 +44,9 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
         NULLABLE(obj);
         newtuple = obj;
     }
+    PyObject *val = PyTuple_GET_ITEM(newtuple, i);
     PyTuple_SET_ITEM(newtuple, i, Py_XNewRef(value));
+    Py_DECREF(val);
     return newtuple;
 }
 
