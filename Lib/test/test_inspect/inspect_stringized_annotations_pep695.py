@@ -45,6 +45,13 @@ class D:
     def generic_method_2[Eggs, **Spam](self, x: Eggs, y: Spam): pass
 
 
+# Eggs is `int` in globals, a TypeVar in type_params, and `str` in locals:
+class E[Eggs]:
+    Eggs = str
+    x: Eggs
+
+
+
 def nested():
     from types import SimpleNamespace
     from inspect import get_annotations
@@ -53,7 +60,7 @@ def nested():
     Spam = memoryview
 
 
-    class E[Eggs, **Spam]:
+    class F[Eggs, **Spam]:
         x: Eggs
         y: Spam
 
@@ -63,10 +70,18 @@ def nested():
     def generic_function[Eggs, **Spam](x: Eggs, y: Spam): pass
 
 
+    # Eggs is `int` in globals, `bytes` in the function scope,
+    # a TypeVar in the type_params, and `str` in locals:
+    class G[Eggs]:
+        Eggs = str
+        x: Eggs
+
+
     return SimpleNamespace(
-        E=E,
-        E_annotations=get_annotations(E, eval_str=True),
-        E_meth_annotations=get_annotations(E.generic_method, eval_str=True),
+        F=F,
+        F_annotations=get_annotations(F, eval_str=True),
+        F_meth_annotations=get_annotations(F.generic_method, eval_str=True),
+        G_annotations=get_annotations(G, eval_str=True),
         generic_func=generic_function,
         generic_func_annotations=get_annotations(generic_function, eval_str=True)
     )
