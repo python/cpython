@@ -152,21 +152,34 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.do_blocking_test(q.get, (True, 10), q.put, ('empty',))
 
 
-    def worker(self, q):
-        while True:
-            x = q.get()
-            if x < 0:
-                q.task_done()
-                return
+    def worker(self, q, task_done):
+        for x in q:
             with self.cumlock:
                 self.cum += x
-            q.task_done()
+            if task_done:
+                q.task_done()
 
-    def queue_join_test(self, q):
+    def queue_iter_test(self, _):
+        q = self.type2test()
         self.cum = 0
         threads = []
-        for i in (0,1):
-            thread = threading.Thread(target=self.worker, args=(q,))
+        for i in range(2):
+            thread = threading.Thread(target=self.worker, args=(q, False))
+            thread.start()
+            threads.append(thread)
+        for i in range(100):
+            q.put(i)
+        q.shutdown()
+        for thread in threads:
+            thread.join()
+        self.assertEqual(self.cum, sum(range(100)))
+
+    def queue_join_test(self, _):
+        q = self.type2test()
+        self.cum = 0
+        threads = []
+        for i in range(2):
+            thread = threading.Thread(target=self.worker, args=(q, True))
             thread.start()
             threads.append(thread)
         for i in range(100):
@@ -174,9 +187,12 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.join()
         self.assertEqual(self.cum, sum(range(100)),
                          "q.join() did not block until all tasks were done")
-        for i in (0,1):
-            q.put(-1)         # instruct the threads to close
-        q.join()                # verify that you can join twice
+        for i in range(100, 200):
+            q.put(i)
+        q.shutdown()
+        q.join() # verify that you can join twice
+        self.assertEqual(self.cum, sum(range(200)),
+                         "q.join() did not block until all tasks were done")
         for thread in threads:
             thread.join()
 
