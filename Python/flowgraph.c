@@ -2389,7 +2389,7 @@ convert_pseudo_ops(cfg_builder *g)
             }
         }
     }
-    return remove_redundant_nops(g);
+    return remove_redundant_nops_and_jumps(g);
 }
 
 static inline bool
