@@ -833,6 +833,13 @@ class ExceptionMonitoringTest(CheckEvents):
         self.check_events(func1, [("raise", KeyError)])
 
     def test_implicit_stop_iteration(self):
+        """Generators are documented as raising a StopIteration
+           when they terminate.
+           However, we don't do that if we can avoid it, for speed.
+           sys.monitoring handles that by injecting a STOP_ITERATION
+           event when we would otherwise have skip the RAISE event.
+           This test checks that both paths record an equivalent event.
+           """
 
         def gen():
             yield 1
@@ -844,13 +851,22 @@ class ExceptionMonitoringTest(CheckEvents):
             for _ in iterator:
                 pass
 
-        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+        recorders=(ExceptionRecorder, StopiterationRecorder,)
+        expected = [("raise", StopIteration)]
 
         # Make specialization fail, so that we can test the unspecialized
-        # version of the loop.
+        # version of the loop first.
         implicit_stop_iteration(set(range(100)))
 
-        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+        # This will record a RAISE event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
+
+        # Now specialize, so that we see a STOP_ITERATION event.
+        for _ in range(100):
+            implicit_stop_iteration()
+
+        # This will record a STOP_ITERATION event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
     initial = [
         ("raise", ZeroDivisionError),
