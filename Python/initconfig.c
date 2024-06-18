@@ -266,9 +266,6 @@ static const char usage_envvars[] =
 "PYTHONDUMPREFS  : dump objects and reference counts still alive after shutdown\n"
 "PYTHONDUMPREFSFILE: dump objects and reference counts to the specified file\n"
 #endif
-#ifdef __APPLE__
-"PYTHONEXECUTABLE: set sys.argv[0] to this value (macOS only)\n"
-#endif
 #ifdef MS_WINDOWS
 "PYTHONLEGACYWINDOWSFSENCODING: use legacy \"mbcs\" encoding for file system\n"
 "PYTHONLEGACYWINDOWSSTDIO: use legacy Windows stdio\n"
