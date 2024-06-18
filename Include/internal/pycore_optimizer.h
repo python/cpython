@@ -107,9 +107,9 @@ extern void _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx);
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     _Py_UOpsContext *ctx,
     PyCodeObject *co,
-    _Py_UopsSymbol **localsplus_start,
-    int n_locals_already_filled,
-    int curr_stackentries);
+    int curr_stackentries,
+    _Py_UopsSymbol **args,
+    int arg_len);
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
