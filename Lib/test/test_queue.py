@@ -159,7 +159,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             if task_done:
                 q.task_done()
 
-    def queue_iter_test(self, _):
+    def test_iter(self):
         q = self.type2test()
         self.cum = 0
         threads = []
@@ -174,8 +174,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             thread.join()
         self.assertEqual(self.cum, sum(range(100)))
 
-    def queue_join_test(self, _):
-        q = self.type2test()
+    def queue_join_test(self, q):
         self.cum = 0
         threads = []
         for i in (0,1):
@@ -209,15 +208,15 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def test_queue_join(self):
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
-        q = self.type2test()
-        self.queue_join_test(q)
-        self.queue_join_test(q)
-        try:
-            q.task_done()
-        except ValueError:
-            pass
-        else:
-            self.fail("Did not detect task count going negative")
+        for _ in range(2):
+            q = self.type2test()
+            self.queue_join_test(q)
+            try:
+                q.task_done()
+            except ValueError:
+                pass
+            else:
+                self.fail("Did not detect task count going negative")
 
     def test_basic(self):
         # Do it a couple of times on the same queue.
