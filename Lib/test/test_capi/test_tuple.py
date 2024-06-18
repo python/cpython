@@ -47,6 +47,7 @@ class CAPITest(unittest.TestCase):
         # Test PyTuple_New()
         tuple_new = _testlimitedcapi.tuple_new
         size = _testlimitedcapi.tuple_size
+        checknull = _testcapi._check_item_is_NULL
 
         tup1 = tuple_new(0)
         self.assertEqual(tup1, ())
@@ -56,6 +57,7 @@ class CAPITest(unittest.TestCase):
         self.assertIs(type(tup2), tuple)
         self.assertEqual(size(tup2), 1)
         self.assertIsNot(tup2, tup1)
+        self.assertTrue(checknull(tup2, 0))
 
         self.assertRaises(SystemError, tuple_new, -1)
         self.assertRaises(SystemError, tuple_new, PY_SSIZE_T_MIN)
