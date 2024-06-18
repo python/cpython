@@ -174,19 +174,14 @@ class CAPITest(unittest.TestCase):
 
     def test_tuple_setitem(self):
         # Test PyTuple_SetItem()
-
-        import_helper.import_module('ctypes')
-        from ctypes import pythonapi, py_object, c_ssize_t
-
         setitem = _testlimitedcapi.tuple_setitem
+        checknull = _testcapi._check_item_is_NULL
 
         tup = (0, [0])
         self.assertEqual(setitem(tup, 0, [1]), ([1], [0]))
         self.assertEqual(setitem(tup, 1, [1]), (0, [1]))
         tup = setitem(tup, 1, NULL)
-        func = getattr(pythonapi, "PyTuple_GetItem")
-        func.argtypes = (py_object, c_ssize_t)
-        self.assertEqual(func(tup, 1), 0)
+        self.assertTrue(checknull(tup, 1))
 
         self.assertRaises(IndexError, setitem, tup, PY_SSIZE_T_MIN, 1)
         self.assertRaises(IndexError, setitem, tup, -1, 1)
@@ -199,19 +194,14 @@ class CAPITest(unittest.TestCase):
 
     def test_tuple_set_item(self):
         # Test PyTuple_SET_ITEM()
-
-        import_helper.import_module('ctypes')
-        from ctypes import pythonapi, py_object, c_ssize_t
-
         set_item = _testcapi.tuple_set_item
+        checknull = _testcapi._check_item_is_NULL
 
         tup = (0, [0])
         self.assertEqual(set_item(tup, 0, [1]), ([1], [0]))
         self.assertEqual(set_item(tup, 1, [1]), (0, [1]))
         tup = set_item(tup, 1, NULL)
-        func = getattr(pythonapi, "PyTuple_GetItem")
-        func.argtypes = (py_object, c_ssize_t)
-        self.assertEqual(func(tup, 1), 0)
+        self.assertTrue(checknull(tup, 1))
 
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()

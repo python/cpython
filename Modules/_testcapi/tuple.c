@@ -78,12 +78,24 @@ _tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
     return tup;
 }
 
+static PyObject *
+_check_item_is_NULL(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t i;
+    if (!PyArg_ParseTuple(args, "On", &obj, &i)) {
+        return NULL;
+    }
+    return PyLong_FromLong(PyTuple_GET_ITEM(obj, i) == NULL);
+}
+
 
 static PyMethodDef test_methods[] = {
     {"tuple_get_size", tuple_get_size, METH_O},
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
     {"tuple_set_item", tuple_set_item, METH_VARARGS},
     {"_tuple_resize", _tuple_resize, METH_VARARGS},
+    {"_check_item_is_NULL", _check_item_is_NULL, METH_VARARGS},
     {NULL},
 };
 
