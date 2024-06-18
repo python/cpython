@@ -276,11 +276,11 @@ class Queue:
         return self.queue.popleft()
 
     def __iter__(self):
-        while True:
-            try:
+        try:
+            while True:
                 yield self.get()
-            except ShutDown:
-                return
+        except ShutDown:
+            return
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
