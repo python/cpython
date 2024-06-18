@@ -561,7 +561,7 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
    import smtplib
 
    def prompt(prompt):
-      return input(prompt).strip()
+       return input(prompt).strip()
 
    from_addr = prompt("From: ")
    to_addrs  = prompt("To: ").split()
