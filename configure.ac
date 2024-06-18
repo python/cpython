@@ -2289,6 +2289,11 @@ PYDEBUG_CFLAGS="-O0"
 AS_VAR_IF([ac_cv_cc_supports_og], [yes],
           [PYDEBUG_CFLAGS="-Og"])
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST([OPT])
