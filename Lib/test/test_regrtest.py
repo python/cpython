@@ -22,7 +22,8 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper, import_helper
+from test.support import import_helper
+from test.support import os_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
