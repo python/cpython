@@ -68,6 +68,7 @@ class _NamedIntConstant(int):
     __reduce__ = None
 
 MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
+MAXGROUPS = _NamedIntConstant(MAXGROUPS, 'MAXGROUPS')
 
 def _makecodes(*names):
     items = [_NamedIntConstant(i, name) for i, name in enumerate(names)]
