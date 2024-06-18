@@ -51,7 +51,7 @@ tuple_set_item(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
-tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
+_tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *tup;
     Py_ssize_t newsize;
@@ -83,7 +83,7 @@ static PyMethodDef test_methods[] = {
     {"tuple_get_size", tuple_get_size, METH_O},
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
     {"tuple_set_item", tuple_set_item, METH_VARARGS},
-    {"tuple_resize", tuple_resize, METH_VARARGS},
+    {"_tuple_resize", _tuple_resize, METH_VARARGS},
     {NULL},
 };
 

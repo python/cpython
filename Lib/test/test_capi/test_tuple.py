@@ -213,9 +213,9 @@ class CAPITest(unittest.TestCase):
         func.argtypes = (py_object, c_ssize_t)
         self.assertEqual(func(tup, 1), 0)
 
-    def test_tuple_resize(self):
-        # Test PyTuple_Resize()
-        resize = _testcapi.tuple_resize
+    def test__tuple_resize(self):
+        # Test _PyTuple_Resize()
+        resize = _testcapi._tuple_resize
 
         a = ()
         b = resize(a, 0)
