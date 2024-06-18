@@ -388,10 +388,14 @@ class Connection(_ConnectionBase):
             buf = buf[n:]
 
     def _recv(self, size, read=_read):
+        # Here all data is stored, using write syscalls to write from os.read buffer into here
         buf = io.BytesIO()
+        # File descriptor
         handle = self._handle
+        # Size is sizeof(entire numpy array) + 231 Bytes
         remaining = size
         while remaining > 0:
+            # This calls Modules/posixmodule.c:os_read_impl
             chunk = read(handle, remaining)
             n = len(chunk)
             if n == 0:
@@ -399,6 +403,7 @@ class Connection(_ConnectionBase):
                     raise EOFError
                 else:
                     raise OSError("got end of file during message")
+            # This calls Modules/posixmodule.c:os_write_impl
             buf.write(chunk)
             remaining -= n
         return buf

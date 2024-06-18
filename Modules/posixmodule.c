@@ -11342,26 +11342,32 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     length = Py_MIN(length, _PY_READ_MAX);
 
+
+#ifndef MS_WINDOWS
     struct stat statbuffer;
     fstat(fd, &statbuffer);
     if (S_ISFIFO(statbuffer.st_mode)) {
 	int ps = fcntl(fd, F_GETPIPE_SZ);
 	length = Py_MIN(ps, length);
-	//printf("length size: %ld\n", length);
     }
+#endif
 
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
         return NULL;
 
     n = _Py_read(fd, PyBytes_AS_STRING(buffer), length);
+
+//    printf("%ld:%p\n", (long)getpid(),(void*)buffer);
+
     if (n == -1) {
         Py_DECREF(buffer);
         return NULL;
-    }
-
-    if (n != length)
+    }	
+    
+    if (n != length) 
         _PyBytes_Resize(&buffer, n);
+    
 
     return buffer;
 }
