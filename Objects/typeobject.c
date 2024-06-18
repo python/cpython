@@ -6599,6 +6599,12 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     }
 
     PyTypeObject *oldto = Py_TYPE(self);
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // The real Py_TYPE(self) (`oldto`) may have changed from
+    // underneath us in another thread, so we re-fetch it here.
+    _PyEval_StopTheWorld(interp);
+#endif
 
     /* In versions of CPython prior to 3.5, the code in
        compatible_for_assignment was not set up to correctly check for memory
@@ -6656,7 +6662,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         PyErr_Format(PyExc_TypeError,
                      "__class__ assignment only supported for mutable types "
                      "or ModuleType subclasses");
-        return -1;
+        goto err;
     }
 
     if (compatible_for_assignment(oldto, newto, "__class__")) {
@@ -6665,47 +6671,48 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
             PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
             if (dict == NULL) {
-                return -1;
+                goto err;
             }
-
-            bool error = false;
-
-            Py_BEGIN_CRITICAL_SECTION2(self, dict);
 
             // If we raced after materialization and replaced the dict
             // then the materialized dict should no longer have the
             // inline values in which case detach is a nop.
+            // Note: we don't need to lock here because the world should be stopped.
+
             assert(_PyObject_GetManagedDict(self) == dict ||
                    dict->ma_values != _PyObject_InlineValues(self));
 
             if (_PyDict_DetachFromObject(dict, self) < 0) {
-                error = true;
+                goto err;
             }
 
-            Py_END_CRITICAL_SECTION2();
-            if (error) {
-                return -1;
-            }
         }
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
         }
-        Py_BEGIN_CRITICAL_SECTION(self);
-        // The real Py_TYPE(self) (`oldto`) may have changed from
-        // underneath us in another thread, so we re-fetch it here.
+
         oldto = Py_TYPE(self);
         Py_SET_TYPE(self, newto);
-        Py_END_CRITICAL_SECTION();
+
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
         }
 
         RARE_EVENT_INC(set_class);
+
+#ifdef Py_GIL_DISABLED
+        _PyEval_StartTheWorld(interp);
+#endif
         return 0;
     }
     else {
-        return -1;
+        goto err;
     }
+err:
+#ifdef Py_GIL_DISABLED
+    _PyEval_StartTheWorld(interp);
+#endif
+    return -1;
 }
 
 static PyGetSetDef object_getsets[] = {
