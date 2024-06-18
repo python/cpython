@@ -212,24 +212,43 @@ A detailed description of timsort follows.
 
 Runs
 ----
-count_run() returns the # of elements in the next run.  A run is either
-"ascending", which means non-decreasing:
+count_run() returns the # of elements in the next run, and, if it's a
+descending run, reverses it in-place. A run is either "ascending", which
+means non-decreasing:
 
     a0 <= a1 <= a2 <= ...
 
-or "descending", which means strictly decreasing:
+or "descending", which means non-increasing:
 
-    a0 > a1 > a2 > ...
+    a0 >= a1 >= a2 >= ...
 
 Note that a run is always at least 2 long, unless we start at the array's
-last element.
+last element. If all elements in the array are equal, it can be viewed as
+both ascending and descending. Upon return, the run count_run() identifies
+is always ascending.
 
-The definition of descending is strict, because the main routine reverses
-a descending run in-place, transforming a descending run into an ascending
-run.  Reversal is done via the obvious fast "swap elements starting at each
-end, and converge at the middle" method, and that can violate stability if
-the slice contains any equal elements.  Using a strict definition of
-descending ensures that a descending run contains distinct elements.
+Reversal is done via the obvious fast "swap elements starting at each
+end, and converge at the middle" method. That can violate stability if
+the slice contains any equal elements. For that reason, for a long time
+the code used strict inequality (">" rather than ">=") in its definition
+of descending.
+
+Removing that restriction required some complication: when processing a
+descending run, all-equal sub-runs of elements are reversed in-place, on the
+fly. Their original relative order is restored "by magic" via the final
+"reverse the entire run" step.
+
+This makes processing descending runs a little more costly. We only use
+`__lt__` comparisons, so that `x == y` has to be deduced from
+`not x < y and not y < x`. But so long as a run remains strictly decreasing,
+only one of those compares needs to be done per loop iteration. So the primsry
+extra cost is paid only when there are equal elements, and they get some
+compensating benefit by not needing to end the descending run.
+
+There's one more trick added since the original: after reversing a descending
+run, it's possible that it can be extended by an adjacent ascending run. For
+example, given [3, 2, 1, 3, 4, 5, 0], the 3-element descending prefix is
+reversed in-place, and then extended by [3, 4, 5].
 
 If an array is random, it's very unlikely we'll see long runs.  If a natural
 run contains less than minrun elements (see next section), the main loop
@@ -251,9 +270,9 @@ result.  This has two primary good effects:
 
 Computing minrun
 ----------------
-If N < 64, minrun is N.  IOW, binary insertion sort is used for the whole
-array then; it's hard to beat that given the overheads of trying something
-fancier (see note BINSORT).
+If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the 
+whole array then; it's hard to beat that given the overheads of trying 
+something fancier (see note BINSORT).
 
 When N is a power of 2, testing on random data showed that minrun values of
 16, 32, 64 and 128 worked about equally well.  At 256 the data-movement cost
@@ -291,12 +310,13 @@ place, and r < minrun is small compared to N), or q a little larger than a
 power of 2 regardless of r (then we've got a case similar to "2112", again
 leaving too little work for the last merge to do).
 
-Instead we pick a minrun in range(32, 65) such that N/minrun is exactly a
-power of 2, or if that isn't possible, is close to, but strictly less than,
-a power of 2.  This is easier to do than it may sound:  take the first 6
-bits of N, and add 1 if any of the remaining bits are set.  In fact, that
-rule covers every case in this section, including small N and exact powers
-of 2; merge_compute_minrun() is a deceptively simple function.
+Instead we pick a minrun in range(MAX_MINRUN / 2, MAX_MINRUN + 1) such that 
+N/minrun is exactly a power of 2, or if that isn't possible, is close to, but 
+strictly less than, a power of 2.  This is easier to do than it may sound: 
+take the first log2(MAX_MINRUN) bits of N, and add 1 if any of the remaining 
+bits are set. In fact, that rule covers every case in this section, including 
+small N and exact powers of 2; merge_compute_minrun() is a deceptively simple 
+function.
 
 
 The Merge Pattern

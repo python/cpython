@@ -7,6 +7,7 @@ from . import common as _common
 FILES_WITHOUT_INTERNAL_CAPI = frozenset((
     # Modules/
     '_testcapimodule.c',
+    '_testlimitedcapi.c',
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',
@@ -15,8 +16,8 @@ FILES_WITHOUT_INTERNAL_CAPI = frozenset((
 # C files in the fhe following directories must not be built with
 # Py_BUILD_CORE.
 DIRS_WITHOUT_INTERNAL_CAPI = frozenset((
-    # Modules/_testcapi/
-    '_testcapi',
+    '_testcapi',            # Modules/_testcapi/
+    '_testlimitedcapi',     # Modules/_testlimitedcapi/
 ))
 
 TOOL = 'gcc'

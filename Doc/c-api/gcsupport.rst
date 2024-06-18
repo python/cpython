@@ -83,10 +83,15 @@ rules:
    .. versionadded:: 3.12
 
 
-.. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
+.. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
 
-   Resize an object allocated by :c:macro:`PyObject_NewVar`.  Returns the
-   resized object or ``NULL`` on failure.  *op* must not be tracked by the collector yet.
+   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Returns the resized object of type ``TYPE*`` (refers to any C type)
+   or ``NULL`` on failure.
+
+   *op* must be of type :c:expr:`PyVarObject *`
+   and must not be tracked by the collector yet.
+   *newsize* must be of type :c:type:`Py_ssize_t`.
 
 
 .. c:function:: void PyObject_GC_Track(PyObject *op)

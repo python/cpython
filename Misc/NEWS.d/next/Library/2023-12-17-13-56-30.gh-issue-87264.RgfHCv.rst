@@ -1,1 +1,0 @@
-Fixed tarfile list() method to show file type.

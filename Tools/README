@@ -10,8 +10,6 @@ c-analyzer      Tools to check no new global variables have been added.
 
 cases_generator Tooling to generate interpreters.
 
-ccbench         A Python threads-based concurrency benchmark. (*)
-
 clinic          A preprocessor for CPython C files in order to automate
                 the boilerplate involved with writing argument parsing
                 code for "builtins".
@@ -28,8 +26,6 @@ i18n            Tools for internationalization. pygettext.py
 
 importbench     A set of micro-benchmarks for various import scenarios.
 
-iobench         Benchmark for the new Python I/O system. (*)
-
 msi             Support for packaging Python as an MSI package on Windows.
 
 nuget           Files for the NuGet package manager for .NET.
@@ -45,9 +41,6 @@ scripts         A number of useful single-file programs, e.g. run_tests.py
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
 
-stringbench     A suite of micro-benchmarks for various operations on
-                strings (both 8-bit and unicode). (*)
-
 tz              A script to dump timezone from /usr/share/zoneinfo.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
@@ -59,7 +52,5 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
 
 wasm            Config and helpers to facilitate cross compilation of CPython
                 to WebAssembly (WASM).
-
-(*) A generic benchmark suite is maintained separately at https://github.com/python/performance
 
 Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche

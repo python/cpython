@@ -371,7 +371,7 @@ def _sanitize_filename(filename):
     return filename
 
 
-class ZipInfo (object):
+class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
 
     __slots__ = (
@@ -379,7 +379,7 @@ class ZipInfo (object):
         'filename',
         'date_time',
         'compress_type',
-        '_compresslevel',
+        'compress_level',
         'comment',
         'extra',
         'create_system',
@@ -395,6 +395,7 @@ class ZipInfo (object):
         'compress_size',
         'file_size',
         '_raw_time',
+        '_end_offset',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -412,7 +413,7 @@ class ZipInfo (object):
 
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
-        self._compresslevel = None      # Level for the compressor
+        self.compress_level = None      # Level for the compressor
         self.comment = b""              # Comment for each file
         self.extra = b""                # ZIP extra data
         if sys.platform == 'win32':
@@ -429,9 +430,19 @@ class ZipInfo (object):
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
+        self._end_offset = None         # Start of the next local header or central directory
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
+
+    # Maintain backward compatibility with the old protected attribute name.
+    @property
+    def _compresslevel(self):
+        return self.compress_level
+
+    @_compresslevel.setter
+    def _compresslevel(self, value):
+        self.compress_level = value
 
     def __repr__(self):
         result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
@@ -594,7 +605,15 @@ class ZipInfo (object):
 
     def is_dir(self):
         """Return True if this archive member is a directory."""
-        return self.filename.endswith('/')
+        if self.filename.endswith('/'):
+            return True
+        # The ZIP format specification requires to use forward slashes
+        # as the directory separator, but in practice some ZIP files
+        # created on Windows can use backward slashes.  For compatibility
+        # with the extraction code which already handles this:
+        if os.path.altsep:
+            return self.filename.endswith((os.path.sep, os.path.altsep))
+        return False
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
@@ -921,7 +940,7 @@ class ZipExtFile(io.BufferedIOBase):
         result = ['<%s.%s' % (self.__class__.__module__,
                               self.__class__.__qualname__)]
         if not self.closed:
-            result.append(' name=%r mode=%r' % (self.name, self.mode))
+            result.append(' name=%r' % (self.name,))
             if self._compress_type != ZIP_STORED:
                 result.append(' compress_type=%s' %
                               compressor_names.get(self._compress_type,
@@ -1189,7 +1208,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._zip64 = zip64
         self._zipfile = zf
         self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compresslevel)
+                                           zinfo.compress_level)
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1197,6 +1216,14 @@ class _ZipWriteFile(io.BufferedIOBase):
     @property
     def _fileobj(self):
         return self._zipfile.fp
+
+    @property
+    def name(self):
+        return self._zinfo.filename
+
+    @property
+    def mode(self):
+        return 'wb'
 
     def writable(self):
         return True
@@ -1488,6 +1515,12 @@ class ZipFile:
             if self.debug > 2:
                 print("total", total)
 
+        end_offset = self.start_dir
+        for zinfo in sorted(self.filelist,
+                            key=lambda zinfo: zinfo.header_offset,
+                            reverse=True):
+            zinfo._end_offset = end_offset
+            end_offset = zinfo.header_offset
 
     def namelist(self):
         """Return a list of file names in the archive."""
@@ -1560,7 +1593,8 @@ class ZipFile:
         self._didModify = True
 
     def read(self, name, pwd=None):
-        """Return file bytes for name."""
+        """Return file bytes for name. 'pwd' is the password to decrypt
+        encrypted files."""
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
@@ -1595,7 +1629,7 @@ class ZipFile:
         elif mode == 'w':
             zinfo = ZipInfo(name)
             zinfo.compress_type = self.compression
-            zinfo._compresslevel = self.compresslevel
+            zinfo.compress_level = self.compresslevel
         else:
             # Get info object for name
             zinfo = self.getinfo(name)
@@ -1644,6 +1678,10 @@ class ZipFile:
                     'File name in directory %r and header %r differ.'
                     % (zinfo.orig_filename, fname))
 
+            if (zinfo._end_offset is not None and
+                zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
+                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r} (possible zip bomb)")
+
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED
             if is_encrypted:
@@ -1657,7 +1695,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode, zinfo, pwd, True)
+            return ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
         except:
             zef_file.close()
             raise
@@ -1707,8 +1745,9 @@ class ZipFile:
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
-           as possible. `member' may be a filename or a ZipInfo object. You can
-           specify a different directory using `path'.
+           as possible. 'member' may be a filename or a ZipInfo object. You can
+           specify a different directory using 'path'. You can specify the
+           password to decrypt the file using 'pwd'.
         """
         if path is None:
             path = os.getcwd()
@@ -1719,9 +1758,10 @@ class ZipFile:
 
     def extractall(self, path=None, members=None, pwd=None):
         """Extract all members from the archive to the current working
-           directory. `path' specifies a different directory to extract to.
-           `members' is optional and must be a subset of the list returned
-           by namelist().
+           directory. 'path' specifies a different directory to extract to.
+           'members' is optional and must be a subset of the list returned
+           by namelist(). You can specify the password to decrypt all files
+           using 'pwd'.
         """
         if members is None:
             members = self.namelist()
@@ -1772,7 +1812,7 @@ class ZipFile:
             # filter illegal characters on Windows
             arcname = self._sanitize_windows_name(arcname, os.path.sep)
 
-        if not arcname:
+        if not arcname and not member.is_dir():
             raise ValueError("Empty filename.")
 
         targetpath = os.path.join(targetpath, arcname)
@@ -1781,11 +1821,15 @@ class ZipFile:
         # Create all upper directories if necessary.
         upperdirs = os.path.dirname(targetpath)
         if upperdirs and not os.path.exists(upperdirs):
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if member.is_dir():
             if not os.path.isdir(targetpath):
-                os.mkdir(targetpath)
+                try:
+                    os.mkdir(targetpath)
+                except FileExistsError:
+                    if not os.path.isdir(targetpath):
+                        raise
             return targetpath
 
         with self.open(member, pwd=pwd) as source, \
@@ -1843,9 +1887,9 @@ class ZipFile:
                 zinfo.compress_type = self.compression
 
             if compresslevel is not None:
-                zinfo._compresslevel = compresslevel
+                zinfo.compress_level = compresslevel
             else:
-                zinfo._compresslevel = self.compresslevel
+                zinfo.compress_level = self.compresslevel
 
             with open(filename, "rb") as src, self.open(zinfo, 'w') as dest:
                 shutil.copyfileobj(src, dest, 1024*8)
@@ -1863,7 +1907,7 @@ class ZipFile:
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
-            zinfo._compresslevel = self.compresslevel
+            zinfo.compress_level = self.compresslevel
             if zinfo.filename.endswith('/'):
                 zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
                 zinfo.external_attr |= 0x10           # MS-DOS directory flag
@@ -1884,7 +1928,7 @@ class ZipFile:
             zinfo.compress_type = compress_type
 
         if compresslevel is not None:
-            zinfo._compresslevel = compresslevel
+            zinfo.compress_level = compresslevel
 
         zinfo.file_size = len(data)            # Uncompressed size
         with self._lock:

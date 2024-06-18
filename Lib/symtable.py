@@ -1,9 +1,16 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
-     DEF_IMPORT, DEF_BOUND, DEF_ANNOT, SCOPE_OFF, SCOPE_MASK, FREE,
-     LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
+from _symtable import (
+    USE,
+    DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL,
+    DEF_PARAM, DEF_TYPE_PARAM,
+    DEF_FREE_CLASS,
+    DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
+    DEF_COMP_ITER, DEF_COMP_CELL,
+    SCOPE_OFF, SCOPE_MASK,
+    FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
+)
 
 import weakref
 
@@ -154,6 +161,10 @@ class SymbolTable:
                 for st in self._table.children]
 
 
+def _get_scope(flags):  # like _PyST_GetScope()
+    return (flags >> SCOPE_OFF) & SCOPE_MASK
+
+
 class Function(SymbolTable):
 
     # Default values for instance variables
@@ -179,7 +190,7 @@ class Function(SymbolTable):
         """
         if self.__locals is None:
             locs = (LOCAL, CELL)
-            test = lambda x: ((x >> SCOPE_OFF) & SCOPE_MASK) in locs
+            test = lambda x: _get_scope(x) in locs
             self.__locals = self.__idents_matching(test)
         return self.__locals
 
@@ -188,7 +199,7 @@ class Function(SymbolTable):
         """
         if self.__globals is None:
             glob = (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
-            test = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) in glob
+            test = lambda x: _get_scope(x) in glob
             self.__globals = self.__idents_matching(test)
         return self.__globals
 
@@ -203,7 +214,7 @@ class Function(SymbolTable):
         """Return a tuple of free variables in the function.
         """
         if self.__frees is None:
-            is_free = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) == FREE
+            is_free = lambda x: _get_scope(x) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
 
@@ -218,6 +229,8 @@ class Class(SymbolTable):
         if self.__methods is None:
             d = {}
             for st in self._table.children:
+                if st.type == _symtable.TYPE_ANNOTATION:
+                    continue
                 d[st.name] = 1
             self.__methods = tuple(d)
         return self.__methods
@@ -228,7 +241,7 @@ class Symbol:
     def __init__(self, name, flags, namespaces=None, *, module_scope=False):
         self.__name = name
         self.__flags = flags
-        self.__scope = (flags >> SCOPE_OFF) & SCOPE_MASK # like PyST_GetScope()
+        self.__scope = _get_scope(flags)
         self.__namespaces = namespaces or ()
         self.__module_scope = module_scope
 
@@ -253,12 +266,17 @@ class Symbol:
         """Return *True* if the symbol is used in
         its block.
         """
-        return bool(self.__flags & _symtable.USE)
+        return bool(self.__flags & USE)
 
     def is_parameter(self):
         """Return *True* if the symbol is a parameter.
         """
         return bool(self.__flags & DEF_PARAM)
+
+    def is_type_parameter(self):
+        """Return *True* if the symbol is a type parameter.
+        """
+        return bool(self.__flags & DEF_TYPE_PARAM)
 
     def is_global(self):
         """Return *True* if the symbol is global.
@@ -292,6 +310,11 @@ class Symbol:
         """
         return bool(self.__scope == FREE)
 
+    def is_free_class(self):
+        """Return *True* if a class-scoped symbol is free from
+        the perspective of a method."""
+        return bool(self.__flags & DEF_FREE_CLASS)
+
     def is_imported(self):
         """Return *True* if the symbol is created from
         an import statement.
@@ -301,6 +324,16 @@ class Symbol:
     def is_assigned(self):
         """Return *True* if a symbol is assigned to."""
         return bool(self.__flags & DEF_LOCAL)
+
+    def is_comp_iter(self):
+        """Return *True* if the symbol is a comprehension iteration variable.
+        """
+        return bool(self.__flags & DEF_COMP_ITER)
+
+    def is_comp_cell(self):
+        """Return *True* if the symbol is a cell in an inlined comprehension.
+        """
+        return bool(self.__flags & DEF_COMP_CELL)
 
     def is_namespace(self):
         """Returns *True* if name binding introduces new namespace.

@@ -19,7 +19,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\launcher.c">
+    <ClCompile Include="..\PC\venvlauncher.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

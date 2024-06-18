@@ -2,6 +2,8 @@
 Configure Python
 ****************
 
+.. highlight:: sh
+
 Build Requirements
 ==================
 
@@ -30,31 +32,31 @@ Features and minimum versions required to build CPython:
 * Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
   :file:`configure` script.
 
-.. versionchanged:: 3.13:
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
-.. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required.
-   Require SQLite 3.7.15.
-
-.. versionchanged:: 3.7
-   Thread support and OpenSSL 1.0.2 are now required.
-
-.. versionchanged:: 3.6
-   Selected C99 features are now required, like ``<stdint.h>`` and ``static
-   inline`` functions.
-
-.. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is now required.
-   Tcl/Tk version 8.4 is now required.
-
-.. versionchanged:: 3.1
-   Tcl/Tk version 8.3.1 is now required.
+.. versionchanged:: 3.13
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -275,7 +277,7 @@ General Options
      * to/from free lists;
      * dictionary materialized/dematerialized;
      * type cache;
-     * optimization attemps;
+     * optimization attempts;
      * optimization traces created/executed;
      * uops executed.
 
@@ -297,7 +299,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+   See :ref:`free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
@@ -386,6 +388,17 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
    overriding ``pkg-config``.
+
+.. option:: LIBMPDEC_CFLAGS
+.. option:: LIBMPDEC_LIBS
+
+   C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
+   overriding ``pkg-config``.
+
+   .. note::
+
+      These environment variables have no effect unless
+      :option:`--with-system-libmpdec` is specified.
 
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
@@ -515,6 +528,15 @@ also be used to improve performance.
    Disable also semantic interposition in libpython if ``--enable-shared`` and
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
+
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
 
    .. versionadded:: 3.6
 
@@ -694,11 +716,11 @@ Debug options
 
    :ref:`Statically allocated objects <static-types>` are not traced.
 
+   .. versionadded:: 3.8
+
    .. versionchanged:: 3.13
       This build is now ABI compatible with release build and :ref:`debug build
       <debug-build>`.
-
-   .. versionadded:: 3.8
 
 .. option:: --with-assertions
 
@@ -782,10 +804,19 @@ Libraries options
 
 .. option:: --with-system-libmpdec
 
-   Build the ``_decimal`` extension module using an installed ``mpdec``
-   library, see the :mod:`decimal` module (default is no).
+   Build the ``_decimal`` extension module using an installed ``mpdecimal``
+   library, see the :mod:`decimal` module (default is yes).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.13
+      Default to using the installed ``mpdecimal`` library.
+
+   .. deprecated-removed:: 3.13 3.15
+      A copy of the ``mpdecimal`` library sources will no longer be distributed
+      with Python 3.15.
+
+   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
@@ -879,7 +910,7 @@ Security Options
 macOS Options
 -------------
 
-See ``Mac/README.rst``.
+See :source:`Mac/README.rst`.
 
 .. option:: --enable-universalsdk
 .. option:: --enable-universalsdk=SDKDIR
@@ -914,6 +945,20 @@ See ``Mac/README.rst``.
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
 
+iOS Options
+-----------
+
+See :source:`iOS/README.rst`.
+
+.. option:: --enable-framework=INSTALLDIR
+
+   Create a Python.framework. Unlike macOS, the *INSTALLDIR* argument
+   specifying the installation path is mandatory.
+
+.. option:: --with-framework-name=FRAMEWORK
+
+   Specify the name for the framework (default: ``Python``).
+
 
 Cross Compiling Options
 -----------------------
@@ -941,7 +986,9 @@ the version of the cross compiled host Python.
 
    An environment variable that points to a file with configure overrides.
 
-   Example *config.site* file::
+   Example *config.site* file:
+
+   .. code-block:: ini
 
       # config.site-aarch64
       ac_cv_buggy_getaddrinfo=no
@@ -987,39 +1034,108 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-* ``make``: Build Python with the standard library.
-* ``make platform:``: build the ``python`` program, but don't build the
-  standard library extension modules.
-* ``make profile-opt``: build Python using Profile Guided Optimization (PGO).
-  You can use the configure :option:`--enable-optimizations` option to make
-  this the default target of the ``make`` command (``make all`` or just
-  ``make``).
+make
+^^^^
 
-* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
-  option. Variables:
+For the most part, when rebuilding after editing some code or
+refreshing your checkout from upstream, all you need to do is execute
+``make``, which (per Make's semantics) builds the default target, the
+first one defined in the Makefile.  By tradition (including in the
+CPython project) this is usually the ``all`` target. The
+``configure`` script expands an ``autoconf`` variable,
+``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
+all`` will build. The three choices are:
 
-  * ``TESTOPTS``: additional regrtest command line options.
-  * ``TESTPYTHONOPTS``: additional Python command line options.
-  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+* ``profile-opt`` (configured with ``--enable-optimizations``)
+* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_all`` (configured without explicitly using either of the others)
 
-* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
-  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
-  and a default timeout of 10 minutes.
+Depending on the most recent source file changes, Make will rebuild
+any targets (object files and executables) deemed out-of-date,
+including running ``configure`` again if necessary. Source/target
+dependencies are many and maintained manually however, so Make
+sometimes doesn't have all the information necessary to correctly
+detect all targets which need to be rebuilt.  Depending on which
+targets aren't rebuilt, you might experience a number of problems. If
+you have build or test problems which you can't otherwise explain,
+``make clean && make`` should work around most dependency problems, at
+the expense of longer build times.
 
-* ``make install``: Build and install Python.
-* ``make regen-all``: Regenerate (almost) all generated files;
-  ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
-  for the remaining generated files.
-* ``make clean``: Remove built files.
-* ``make distclean``: Same than ``make clean``, but remove also files created
-  by the configure script.
+
+make platform
+^^^^^^^^^^^^^
+
+Build the ``python`` program, but don't build the standard library
+extension modules. This generates a file named ``platform`` which
+contains a single line describing the details of the build platform,
+e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+
+
+make profile-opt
+^^^^^^^^^^^^^^^^
+
+Build Python using profile-guided optimization (PGO).  You can use the
+configure :option:`--enable-optimizations` option to make this the
+default target of the ``make`` command (``make all`` or just
+``make``).
+
+
+
+make clean
+^^^^^^^^^^
+
+Remove built files.
+
+
+make distclean
+^^^^^^^^^^^^^^
+
+In addition to the the work done by ``make clean``, remove files
+created by the configure script.  ``configure`` will have to be run
+before building again. [#]_
+
+
+make install
+^^^^^^^^^^^^
+
+Build the ``all`` target and install Python.
+
+
+make test
+^^^^^^^^^
+
+Build the ``all`` target and run the Python test suite with the
+``--fast-ci`` option. Variables:
+
+* ``TESTOPTS``: additional regrtest command-line options.
+* ``TESTPYTHONOPTS``: additional Python command-line options.
+* ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make buildbottest
+^^^^^^^^^^^^^^^^^
+
+This is similar to ``make test``, but uses the ``--slow-ci``
+option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
+
+
+make regen-all
+^^^^^^^^^^^^^^
+
+Regenerate (almost) all generated files. These include (but are not
+limited to) bytecode cases, and parser generator file.
+``make regen-stdlib-module-names`` and ``autoconf`` must be run
+separately for the remaining `generated files <#generated-files>`_.
+
 
 C extensions
 ------------
 
 Some C extensions are built as built-in modules, like the ``sys`` module.
 They are built with the ``Py_BUILD_CORE_BUILTIN`` macro defined.
-Built-in modules have no ``__file__`` attribute::
+Built-in modules have no ``__file__`` attribute:
+
+.. code-block:: pycon
 
     >>> import sys
     >>> sys
@@ -1031,7 +1147,9 @@ Built-in modules have no ``__file__`` attribute::
 
 Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64::
+Example on Linux x86-64:
+
+.. code-block:: pycon
 
     >>> import _asyncio
     >>> _asyncio
@@ -1303,3 +1421,14 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+
+.. rubric:: Footnotes
+
+.. [#] ``git clean -fdx`` is an even more extreme way to "clean" your
+   checkout. It removes all files not known to Git.
+   When bug hunting using ``git bisect``, this is
+   `recommended between probes <https://github.com/python/cpython/issues/114505#issuecomment-1907021718>`_
+   to guarantee a completely clean build. **Use with care**, as it
+   will delete all files not checked into Git, including your
+   new, uncommitted work.

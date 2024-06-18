@@ -90,11 +90,11 @@ _Py_HashDouble(PyObject *inst, double v)
     double m;
     Py_uhash_t x, y;
 
-    if (!Py_IS_FINITE(v)) {
-        if (Py_IS_INFINITY(v))
+    if (!isfinite(v)) {
+        if (isinf(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return _Py_HashPointer(inst);
+            return PyObject_GenericHash(inst);
     }
 
     m = frexp(v, &e);
@@ -137,6 +137,12 @@ Py_HashPointer(const void *ptr)
         hash = -2;
     }
     return hash;
+}
+
+Py_hash_t
+PyObject_GenericHash(PyObject *obj)
+{
+    return Py_HashPointer(obj);
 }
 
 Py_hash_t
@@ -257,12 +263,12 @@ fnv(const void *src, Py_ssize_t len)
     x ^= (Py_uhash_t) *p << 7;
     while (blocks--) {
         PY_UHASH_CPY(block.bytes, p);
-        x = (_PyHASH_MULTIPLIER * x) ^ block.value;
+        x = (PyHASH_MULTIPLIER * x) ^ block.value;
         p += SIZEOF_PY_UHASH_T;
     }
     /* add remainder */
     for (; remainder > 0; remainder--)
-        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
+        x = (PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
     x ^= (Py_uhash_t) len;
     x ^= (Py_uhash_t) _Py_HashSecret.fnv.suffix;
     if (x == (Py_uhash_t) -1) {

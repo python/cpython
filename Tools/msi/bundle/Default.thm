@@ -83,6 +83,7 @@
         <Checkbox Name="CompileAll" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrecompileLabel)</Checkbox>
         <Checkbox Name="Include_symbols" X="185" Y="176" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_symbolsLabel)</Checkbox>
         <Checkbox Name="Include_debug" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_debugLabel)</Checkbox>
+        <Checkbox Name="Include_freethreaded" X="185" Y="226" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_freethreadedLabel)</Checkbox>
 
         <Text X="185" Y="256" Width="-11" Height="17" FontId="3">#(loc.CustomLocationLabel)</Text>
         <Editbox Name="TargetDir" X="185" Y="277" Width="-101" Height="27" TabStop="yes" FontId="3" FileSystemAutoComplete="yes" />

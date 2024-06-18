@@ -1,5 +1,5 @@
-:mod:`configparser` --- Configuration file parser
-=================================================
+:mod:`!configparser` --- Configuration file parser
+==================================================
 
 .. module:: configparser
    :synopsis: Configuration file parser.
@@ -274,6 +274,11 @@ may be treated as parts of multiline values or ignored.
 By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
+The first section name may be omitted if the parser is configured to allow an
+unnamed top level section with ``allow_unnamed_section=True``. In this case,
+the keys/values may be retrieved by :const:`UNNAMED_SECTION` as in
+``config[UNNAMED_SECTION]``.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
@@ -324,6 +329,27 @@ For example:
                of a value
            # Did I mention we can indent comments, too?
 
+
+.. _unnamed-sections:
+
+Unnamed Sections
+----------------
+
+The name of the first section (or unique) may be omitted and values
+retrieved by the :const:`UNNAMED_SECTION` attribute.
+
+.. doctest::
+
+   >>> config = """
+   ... option = value
+   ...
+   ... [  Section 2  ]
+   ... another = val
+   ... """
+   >>> unnamed = configparser.ConfigParser(allow_unnamed_section=True)
+   >>> unnamed.read_string(config)
+   >>> unnamed.get(configparser.UNNAMED_SECTION, 'option')
+   'value'
 
 Interpolation of values
 -----------------------
@@ -978,6 +1004,10 @@ ConfigParser Objects
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
+   .. versionchanged:: 3.13
+      Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
+      ``True``, and a key without a value is continued with an indented line.
+
    .. method:: defaults()
 
       Return a dictionary containing the instance-wide defaults.
@@ -1045,14 +1075,14 @@ ConfigParser Objects
          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')],
                      encoding='cp1250')
 
-      .. versionadded:: 3.2
-         The *encoding* parameter.  Previously, all files were read using the
-         default encoding for :func:`open`.
+      .. versionchanged:: 3.2
+         Added the *encoding* parameter.
+         Previously, all files were read using the default encoding for :func:`open`.
 
-      .. versionadded:: 3.6.1
+      .. versionchanged:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
 
-      .. versionadded:: 3.7
+      .. versionchanged:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
 
@@ -1212,6 +1242,11 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
+.. data:: UNNAMED_SECTION
+
+   A special object representing a section name used to reference the unnamed section (see :ref:`unnamed-sections`).
+
+
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`~configparser.ConfigParser.get` when the *raw*
@@ -1291,9 +1326,9 @@ Exceptions
    that is already present or in strict parsers when a section if found more
    than once in a single input file, string or dictionary.
 
-   .. versionadded:: 3.2
-      Optional ``source`` and ``lineno`` attributes and arguments to
-      :meth:`!__init__` were added.
+   .. versionchanged:: 3.2
+      Added the optional *source* and *lineno* attributes and parameters to
+      :meth:`!__init__`.
 
 
 .. exception:: DuplicateOptionError
@@ -1348,6 +1383,13 @@ Exceptions
    .. versionchanged:: 3.12
       The ``filename`` attribute and :meth:`!__init__` constructor argument were
       removed.  They have been available using the name ``source`` since 3.2.
+
+.. exception:: MultilineContinuationError
+
+   Exception raised when a key without a corresponding value is continued with
+   an indented line.
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 

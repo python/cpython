@@ -1,5 +1,5 @@
-:mod:`codeop` --- Compile Python code
-=====================================
+:mod:`!codeop` --- Compile Python code
+======================================
 
 .. module:: codeop
    :synopsis: Compile (possibly incomplete) Python code.
