@@ -1,5 +1,6 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
+import concurrent.futures
 import itertools
 import random
 import sys
@@ -151,49 +152,49 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.do_blocking_test(q.get, (), q.put, ('empty',))
         self.do_blocking_test(q.get, (True, 10), q.put, ('empty',))
 
-
-    def worker(self, q, task_done):
-        for x in q:
-            with self.cumlock:
-                self.cum += x
-            if task_done:
-                q.task_done()
-
     def test_iter(self):
         q = self.type2test()
-        self.cum = 0
-        threads = []
-        for i in (0,1):
-            thread = threading.Thread(target=self.worker, args=(q, False))
-            thread.start()
-            threads.append(thread)
         for i in range(100):
             q.put(i)
+
         q.shutdown()
-        for thread in threads:
-            thread.join()
+        self.cum = 0
+        def worker():
+            for x in q:
+                with self.cumlock:
+                    self.cum += x
+
+        with concurrent.futures.ThreadPoolExecutor as tp:
+            tp.submit(worker)
+            tp.submit(worker)
+
         self.assertEqual(self.cum, sum(range(100)))
 
     def queue_join_test(self, q):
         self.cum = 0
-        threads = []
-        for i in (0,1):
-            thread = threading.Thread(target=self.worker, args=(q, True))
-            thread.start()
-            threads.append(thread)
-        for i in range(100):
-            q.put(i)
-        q.join()
-        self.assertEqual(self.cum, sum(range(100)),
-                         "q.join() did not block until all tasks were done")
-        for i in range(100, 200):
-            q.put(i)
-        q.shutdown()
-        q.join()                # verify that you can join twice
-        self.assertEqual(self.cum, sum(range(200)),
-                         "q.join() did not block until all tasks were done")
-        for thread in threads:
-            thread.join()
+        def worker():
+            for x in q:
+                with self.cumlock:
+                    self.cum += x
+
+                q.task_done()
+
+        with concurrent.futures.ThreadPoolExecutor as tp:
+            tp.submit(worker)
+            tp.submit(worker)
+            for i in range(100):
+                q.put(i)
+
+            q.join()
+            self.assertEqual(self.cum, sum(range(100)),
+                             "q.join() didn't block until all tasks were done")
+            for i in range(100, 200):
+                q.put(i)
+
+            q.join() # verify that you can join twice
+            self.assertEqual(self.cum, sum(range(200)),
+                             "q.join() didn't block until all tasks were done")
+            q.shutdown()
 
     def test_queue_task_done(self):
         # Test to make sure a queue task completed successfully.
