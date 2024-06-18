@@ -90,6 +90,27 @@ _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+_io._TextIOBase.backread
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards at most size characters from stream.
+
+Read from underlying buffer until we have size characters or we hit BOF.
+If size is negative or omitted, read until BOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=e7adf2f428a3cfa4 input=bef66883366ebb29]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backread");
+}
+
+/*[clinic input]
 _io._TextIOBase.readline
     cls: defining_class
     size: int(unused=True) = -1
@@ -108,6 +129,27 @@ _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "readline");
+}
+
+/*[clinic input]
+_io._TextIOBase.backreadline
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards until newline or BOF.
+
+Return an empty string if BOF is hit immediately.
+If size is specified, at most size characters will be read.
+[clinic start generated code]*/
+
+static PyObject *
+_io__TextIOBase_backreadline_impl(PyObject *self, PyTypeObject *cls,
+                                  int Py_UNUSED(size))
+/*[clinic end generated code: output=92c399ecfbede452 input=bcd50720c6e354ac]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backreadline");
 }
 
 /*[clinic input]
@@ -185,7 +227,9 @@ _io__TextIOBase_errors_get_impl(PyObject *self)
 static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
     _IO__TEXTIOBASE_READ_METHODDEF
+    _IO__TEXTIOBASE_BACKREAD_METHODDEF
     _IO__TEXTIOBASE_READLINE_METHODDEF
+    _IO__TEXTIOBASE_BACKREADLINE_METHODDEF
     _IO__TEXTIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
@@ -2073,6 +2117,20 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.backread
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_backread_impl(textio *self, Py_ssize_t n)
+/*[clinic end generated code: output=daaf4d3642b851dd input=023e4b369b276cb4]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
+    return _unsupported(state, "backread");
+}
 
 /* NOTE: `end` must point to the real end of the Py_UCS4 storage,
    that is to the NUL character. Otherwise the function will produce

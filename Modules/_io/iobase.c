@@ -666,6 +666,28 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
     return NULL;
 }
 
+/*[clinic input]
+_io._IOBase.backreadline
+    size as limit: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Read backwards and return a line from the stream.
+
+If size is specified, at most size bytes will be read.
+
+The line terminator is always b'\n' for binary files; for text
+files, the newlines argument to open can be used to select the line
+terminator(s) recognized.
+[clinic start generated code]*/
+
+static PyObject *
+_io__IOBase_backreadline_impl(PyObject *self, Py_ssize_t limit)
+/*[clinic end generated code: output=e7f4fedf9af5e2ce input=f14db7ae8bf2fe0c]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
 static PyObject *
 iobase_iter(PyObject *self)
 {
@@ -673,6 +695,16 @@ iobase_iter(PyObject *self)
         return NULL;
 
     return Py_NewRef(self);
+}
+
+static PyObject *
+iobase_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (iobase_check_closed(self)) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 static PyObject *
@@ -842,8 +874,10 @@ static PyMethodDef iobase_methods[] = {
 
     {"__enter__", iobase_enter, METH_NOARGS},
     {"__exit__", iobase_exit, METH_VARARGS},
+    {"__reversed__", iobase_reversed, METH_NOARGS},
 
     _IO__IOBASE_READLINE_METHODDEF
+    _IO__IOBASE_BACKREADLINE_METHODDEF
     _IO__IOBASE_READLINES_METHODDEF
     _IO__IOBASE_WRITELINES_METHODDEF
 
@@ -943,6 +977,19 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     return res;
 }
 
+/*[clinic input]
+_io._RawIOBase.backread
+    size as n: Py_ssize_t = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__RawIOBase_backread_impl(PyObject *self, Py_ssize_t n)
+/*[clinic end generated code: output=c47b4c53dbfea14e input=7b90f6f82ce66ee9]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
 
 /*[clinic input]
 _io._RawIOBase.readall
@@ -1004,8 +1051,29 @@ _io__RawIOBase_readall_impl(PyObject *self)
     return result;
 }
 
+/*[clinic input]
+_io._RawIOBase.backreadall
+
+Read until EOF, using multiple read() call.
+[clinic start generated code]*/
+
+static PyObject *
+_io__RawIOBase_backreadall_impl(PyObject *self)
+/*[clinic end generated code: output=2aa443d65fa96664 input=942dc26ae3e60be6]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
 static PyObject *
 rawiobase_readinto(PyObject *self, PyObject *args)
+{
+    PyErr_SetNone(PyExc_NotImplementedError);
+    return NULL;
+}
+
+static PyObject *
+rawiobase_backreadinto(PyObject *self, PyObject *args)
 {
     PyErr_SetNone(PyExc_NotImplementedError);
     return NULL;
@@ -1020,8 +1088,11 @@ rawiobase_write(PyObject *self, PyObject *args)
 
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
+    _IO__RAWIOBASE_BACKREAD_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
+    _IO__RAWIOBASE_BACKREADALL_METHODDEF
     {"readinto", rawiobase_readinto, METH_VARARGS},
+    {"backreadinto", rawiobase_backreadinto, METH_VARARGS},
     {"write", rawiobase_write, METH_VARARGS},
     {NULL, NULL}
 };

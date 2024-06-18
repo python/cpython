@@ -461,6 +461,25 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 }
 
 /*[clinic input]
+_io.BytesIO.backread
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Read backwards at most size bytes, returned as a bytes object.
+
+If the size argument is negative, read until EOF is reached.
+Return an empty bytes object at EOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=d3bccd201010ec0a input=3277833a962d0635]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
 _io.BytesIO.readline
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
@@ -483,6 +502,26 @@ _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size)
     n = scan_eol(self, size);
 
     return read_bytes(self, n);
+}
+
+/*[clinic input]
+_io.BytesIO.backreadline
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Next line from the end of the file, as a bytes object.
+
+Retain newline.  A non-negative size argument limits the maximum
+number of bytes to return (an incomplete line may be returned then).
+Return an empty bytes object at BOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=cf53cd21c22e0a4d input=c11ce93b188a03d9]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
@@ -584,6 +623,25 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     self->pos += len;
 
     return PyLong_FromSsize_t(len);
+}
+
+/*[clinic input]
+_io.BytesIO.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+
+Read backwards bytes into buffer.
+
+Returns number of bytes read (0 for BOF), or None if the object
+is set not to block and has no data to read.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
+/*[clinic end generated code: output=42f2ca676ab55937 input=6ac72ceee21684f3]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
@@ -1016,9 +1074,12 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_WRITELINES_METHODDEF
     _IO_BYTESIO_READ1_METHODDEF
     _IO_BYTESIO_READINTO_METHODDEF
+    _IO_BYTESIO_BACKREADINTO_METHODDEF
     _IO_BYTESIO_READLINE_METHODDEF
+    _IO_BYTESIO_BACKREADLINE_METHODDEF
     _IO_BYTESIO_READLINES_METHODDEF
     _IO_BYTESIO_READ_METHODDEF
+    _IO_BYTESIO_BACKREAD_METHODDEF
     _IO_BYTESIO_GETBUFFER_METHODDEF
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF

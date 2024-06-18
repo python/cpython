@@ -809,6 +809,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(authorizer_callback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(autocommit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(b));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(backread));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(backreadinto));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(backtick));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(base));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(before));
