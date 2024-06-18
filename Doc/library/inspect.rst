@@ -504,9 +504,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    are true.
 
    This, for example, is true of ``int.__add__``.  An object passing this test
-   has a :meth:`~object.__get__` method but not a :meth:`~object.__set__`
-   method, but beyond that the set of attributes varies.  A
-   :attr:`~definition.__name__` attribute is usually
+   has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
+   method or a :meth:`~object.__delete__` method.  Beyond that, the set of
+   attributes varies.  A :attr:`~definition.__name__` attribute is usually
    sensible, and :attr:`!__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
@@ -514,6 +514,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    other tests promise more -- you can, e.g., count on having the
    :attr:`~method.__func__` attribute (etc) when an object passes
    :func:`ismethod`.
+
+   .. versionchanged:: 3.13
+      This function no longer incorrectly reports objects with :meth:`~object.__get__`
+      and :meth:`~object.__delete__`, but not :meth:`~object.__set__`, as being method
+      descriptors (such objects are data descriptors, not method descriptors).
 
 
 .. function:: isdatadescriptor(object)
