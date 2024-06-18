@@ -34,4 +34,5 @@ Currently, the HOWTOs are:
    isolating-extensions.rst
    timerfd.rst
    mro.rst
+   free-threading-extensions.rst
 
