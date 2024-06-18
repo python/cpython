@@ -72,6 +72,7 @@ typedef struct {
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
+    Py_off_t size_estimated;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -196,6 +197,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->appending = 0;
         self->seekable = -1;
         self->blksize = 0;
+        self->size_estimated = -1;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
@@ -482,6 +484,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (fdfstat.st_blksize > 1)
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+        if (fdfstat.st_size < PY_SSIZE_T_MAX) {
+            self->size_estimated = (Py_off_t)fdfstat.st_size;
+        }
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -707,41 +712,48 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
 {
-    struct _Py_stat_struct status;
     Py_off_t pos, end;
     PyObject *result;
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
-    int fstat_result;
 
-    if (self->fd < 0)
+    if (self->fd < 0) {
         return err_closed();
+    }
 
-    Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-#ifdef MS_WINDOWS
-    pos = _lseeki64(self->fd, 0L, SEEK_CUR);
-#else
-    pos = lseek(self->fd, 0L, SEEK_CUR);
-#endif
-    _Py_END_SUPPRESS_IPH
-    fstat_result = _Py_fstat_noraise(self->fd, &status);
-    Py_END_ALLOW_THREADS
-
-    if (fstat_result == 0)
-        end = status.st_size;
-    else
-        end = (Py_off_t)-1;
-
-    if (end > 0 && end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
-        /* This is probably a real file, so we try to allocate a
-           buffer one byte larger than the rest of the file.  If the
-           calculation is right then we should get EOF without having
-           to enlarge the buffer. */
-        bufsize = (size_t)(end - pos + 1);
-    } else {
+    end = self->size_estimated;
+    if (end <= 0) {
+        /* Use a default size and resize as needed. */
         bufsize = SMALLCHUNK;
+    }
+    else {
+        /* This is probably a real file, so we try to allocate a
+        buffer one byte larger than the rest of the file.  If the
+        calculation is right then we should get EOF without having
+        to enlarge the buffer. */
+        bufsize = (size_t)(end) + 1;
+
+        /* While a lot of code does open().read() to get the whole contents
+        of a file it is possible a caller seeks/reads a ways into the file
+        then calls readall() to get the rest, which would result in allocating
+        more than required. Guard against that for larger files where we expect
+        the I/O time to dominate anyways while keeping small files fast. */
+        if (bufsize > 65536) {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+#ifdef MS_WINDOWS
+            pos = _lseeki64(self->fd, 0L, SEEK_CUR);
+#else
+            pos = lseek(self->fd, 0L, SEEK_CUR);
+#endif
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+
+            if (end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
+                bufsize = bufsize - pos;
+            }
+        }
     }
 
     result = PyBytes_FromStringAndSize(NULL, bufsize);
@@ -783,7 +795,6 @@ _io_FileIO_readall_impl(fileio *self)
             return NULL;
         }
         bytes_read += n;
-        pos += n;
     }
 
     if (PyBytes_GET_SIZE(result) > bytes_read) {
