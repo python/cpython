@@ -519,7 +519,32 @@ class TestSpecifics(unittest.TestCase):
 
         tree = ast.parse(code)
 
-        # make all instructions locations the same to create redundancies
+        # make all instruction locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
+
+    def test_compile_redundant_jump_after_convert_pseudo_ops(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            if name_2:
+                pass
+            else:
+                try:
+                    pass
+                except:
+                    pass
+            ~name_5
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instruction locations the same to create redundancies
         for node in ast.walk(tree):
             if hasattr(node,"lineno"):
                  del node.lineno
