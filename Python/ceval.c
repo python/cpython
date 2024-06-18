@@ -343,6 +343,29 @@ const conversion_func _PyEval_ConversionFuncs[4] = {
     [FVC_ASCII] = PyObject_ASCII
 };
 
+const _Py_SpecialMethod _Py_SpecialMethods[] = {
+    [SPECIAL___ENTER__] = {
+        .name = &_Py_ID(__enter__),
+        .error = "'%.200s' object does not support the "
+                 "context manager protocol (missed __enter__ method)",
+    },
+    [SPECIAL___EXIT__] = {
+        .name = &_Py_ID(__exit__),
+        .error = "'%.200s' object does not support the "
+                 "context manager protocol (missed __exit__ method)",
+    },
+    [SPECIAL___AENTER__] = {
+        .name = &_Py_ID(__aenter__),
+        .error = "'%.200s' object does not support the asynchronous "
+                 "context manager protocol (missed __aenter__ method)",
+    },
+    [SPECIAL___AEXIT__] = {
+        .name = &_Py_ID(__aexit__),
+        .error = "'%.200s' object does not support the asynchronous "
+                 "context manager protocol (missed __aexit__ method)",
+    }
+};
+
 
 // PEP 634: Structural Pattern Matching
 

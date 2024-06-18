@@ -245,6 +245,13 @@ typedef PyObject *(*conversion_func)(PyObject *);
 PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
 PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
 
+typedef struct _special_method {
+    PyObject *name;
+    const char *error;
+} _Py_SpecialMethod;
+
+PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
+
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);

@@ -1,0 +1,3 @@
+Remove the ``BEFORE_WITH`` and ``BEFORE_ASYNC_WITH``
+instructions. Add the new :opcode:`LOAD_SPECIAL` instruction. Generate code
+for ``with`` and ``async with`` statements using the new instruction.
