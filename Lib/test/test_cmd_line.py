@@ -941,14 +941,14 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code, PYTHONEXECUTABLE=expected)
         self.assertIn(expected.encode(), out)
 
-    @unittest.skipUnless(sys.platform == 'win32', 'Test only applicable on Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_fs_encoding(self):
         code = "import sys; print(sys.getfilesystemencoding())"
         expected = 'mbcs'
         rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSFSENCODING='1')
         self.assertIn(expected.encode(), out)
 
-    @unittest.skipUnless(sys.platform == 'win32', 'Test only applicable on Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
         code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
         expected = 'cp'
