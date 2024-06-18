@@ -2369,7 +2369,7 @@ subtype_dealloc(PyObject *self)
            finalizers since they might rely on part of the object
            being finalized that has already been destroyed. */
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
-            _PyWeakref_ClearWeakRefsExceptCallbacks(self);
+            _PyWeakref_ClearWeakRefsNoCallbacks(self);
         }
     }
 
