@@ -1287,7 +1287,7 @@ class TestClassesAndFunctions(unittest.TestCase):
             (dict.__class_getitem__, meth_type_o),
         ]
         try:
-            import _stat
+            import _stat  # noqa: F401
         except ImportError:
             # if the _stat extension is not available, stat.S_IMODE() is
             # implemented in Python, not in C
@@ -3303,7 +3303,7 @@ class TestSignatureObject(unittest.TestCase):
             (dict.__class_getitem__, meth_o),
         ]
         try:
-            import _stat
+            import _stat  # noqa: F401
         except ImportError:
             # if the _stat extension is not available, stat.S_IMODE() is
             # implemented in Python, not in C
