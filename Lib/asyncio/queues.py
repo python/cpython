@@ -5,7 +5,6 @@ __all__ = (
     'QueueFull',
     'QueueEmpty',
     'QueueShutDown',
-    'AsyncQueueIterator',
 )
 
 import collections
@@ -31,7 +30,7 @@ class QueueShutDown(Exception):
     pass
 
 
-class AsyncQueueIterator:
+class _AsyncQueueIterator:
     def __init__(self, queue):
         self.queue = queue
 
@@ -92,7 +91,7 @@ class Queue(mixins._LoopBoundMixin):
                 break
 
     def __aiter__(self):
-        return AsyncQueueIterator(self)
+        return _AsyncQueueIterator(self)
 
     def __repr__(self):
         return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'

@@ -48,14 +48,9 @@ Queue
 
    .. method:: __aiter__()
 
-      Return an :class:`AsyncQueueIterator` which iterates asynchronously
-      over the items in this queue until :meth:`shutdown` is called and
-      the queue is empty::
-
-         ... # add items to the queue
-         queue.shutdown()
-         async for item in queue:
-            ... # process item
+      Return an iterator which iterates asynchronously over the items
+      in this queue until :meth:`shutdown` is called and the queue is
+      empty.
 
       .. versionadded:: 3.14
 
@@ -144,21 +139,6 @@ Queue
 
       Raises :exc:`ValueError` if called more times than there were
       items placed in the queue.
-
-
-Async Queue Iterator
-====================
-
-.. class:: AsyncQueueIterator(queue)
-
-   The :term:`asynchronous iterator` returned by calling :func:`aiter`
-   on a :class:`Queue`.
-
-   .. versionadded:: 3.14
-
-   .. attribute:: queue
-
-      The queue which backs this ``AsyncQueueIterator``.
 
 
 Priority Queue
