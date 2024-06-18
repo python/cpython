@@ -6600,7 +6600,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 
     PyTypeObject *oldto = Py_TYPE(self);
 #ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     // The real Py_TYPE(self) (`oldto`) may have changed from
     // underneath us in another thread, so we re-fetch it here.
     _PyEval_StopTheWorld(interp);
