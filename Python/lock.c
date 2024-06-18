@@ -47,13 +47,6 @@ _Py_yield(void)
 #endif
 }
 
-#undef PyMutex_Lock
-void
-PyMutex_Lock(PyMutex *m)
-{
-    _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
-}
-
 PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 {
@@ -180,15 +173,6 @@ _PyMutex_TryUnlock(PyMutex *m)
             // fast-path: no waiters
             return 0;
         }
-    }
-}
-
-#undef PyMutex_Unlock
-void
-PyMutex_Unlock(PyMutex *m)
-{
-    if (_PyMutex_TryUnlock(m) < 0) {
-        Py_FatalError("unlocking mutex that is not locked");
     }
 }
 
@@ -585,4 +569,20 @@ uint32_t _PySeqLock_AfterFork(_PySeqLock *seqlock)
      }
 
      return 0;
+}
+
+#undef PyMutex_Lock
+void
+PyMutex_Lock(PyMutex *m)
+{
+    _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
+}
+
+#undef PyMutex_Unlock
+void
+PyMutex_Unlock(PyMutex *m)
+{
+    if (_PyMutex_TryUnlock(m) < 0) {
+        Py_FatalError("unlocking mutex that is not locked");
+    }
 }
