@@ -380,6 +380,11 @@ def html2text(html):
 
 
 class PydocBaseTest(unittest.TestCase):
+    def tearDown(self):
+        # Self-testing. Mocking only works if sys.modules['pydoc'] and pydoc
+        # are the same. But some pydoc functions reload the module and change
+        # sys.modules, so check that it was restored.
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def _restricted_walk_packages(self, walk_packages, path=None):
         """
@@ -411,6 +416,8 @@ class PydocBaseTest(unittest.TestCase):
 
 class PydocDocTest(unittest.TestCase):
     maxDiff = None
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
@@ -1279,12 +1286,15 @@ class PydocImportTest(PydocBaseTest):
         self.assertTrue(result.startswith(expected))
 
     def test_importfile(self):
-        loaded_pydoc = pydoc.importfile(pydoc.__file__)
+        try:
+            loaded_pydoc = pydoc.importfile(pydoc.__file__)
 
-        self.assertIsNot(loaded_pydoc, pydoc)
-        self.assertEqual(loaded_pydoc.__name__, 'pydoc')
-        self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
-        self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
+            self.assertIsNot(loaded_pydoc, pydoc)
+            self.assertEqual(loaded_pydoc.__name__, 'pydoc')
+            self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
+            self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
+        finally:
+            sys.modules['pydoc'] = pydoc
 
 
 class Rect:
@@ -1299,6 +1309,8 @@ class Square(Rect):
 
 
 class TestDescriptions(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def test_module(self):
         # Check that pydocfodder module can be described
@@ -1788,6 +1800,8 @@ foo
 
 
 class PydocFodderTest(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def getsection(self, text, beginline, endline):
         lines = text.splitlines()
@@ -1927,6 +1941,8 @@ class PydocFodderTest(unittest.TestCase):
 )
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def test_server(self):
         # Minimal test that starts the server, checks that it works, then stops
@@ -1989,9 +2005,14 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("foobar", "Pydoc: Error - foobar"),
             ]
 
-        with self.restrict_walk_packages():
-            for url, title in requests:
-                self.call_url_handler(url, title)
+        self.assertIs(sys.modules['pydoc'], pydoc)
+        try:
+            with self.restrict_walk_packages():
+                for url, title in requests:
+                    self.call_url_handler(url, title)
+        finally:
+            # Some requests reload the module and change sys.modules.
+            sys.modules['pydoc'] = pydoc
 
 
 class TestHelper(unittest.TestCase):
@@ -2001,6 +2022,9 @@ class TestHelper(unittest.TestCase):
 
 
 class PydocWithMetaClasses(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
