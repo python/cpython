@@ -934,14 +934,21 @@ class CmdLineTest(unittest.TestCase):
                 contents = file.read()
                 self.assertIn('Remaining objects', contents)
 
-    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    @unittest.skipUnless(sys.platform == 'darwin', 'PYTHONEXECUTABLE only works on macOS')
+    def test_python_executable(self):
+        code = 'import sys; print(sys.executable)'
+        expected = "/busr/bbin/bpython"
+        rc, out, err = assert_python_ok('-c', code, PYTHONEXECUTABLE=expected)
+        self.assertIn(expected.encode(), out)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Test only applicable on Windows')
     def test_python_legacy_windows_fs_encoding(self):
         code = "import sys; print(sys.getfilesystemencoding())"
         expected = 'mbcs'
         rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSFSENCODING='1')
         self.assertIn(expected.encode(), out)
 
-    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    @unittest.skipUnless(sys.platform == 'win32', 'Test only applicable on Windows')
     def test_python_legacy_windows_stdio(self):
         code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
         expected = 'cp'
