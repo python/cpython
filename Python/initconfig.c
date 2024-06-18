@@ -262,7 +262,7 @@ static const char usage_envvars[] =
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
 "PYTHONASYNCIODEBUG: enable asyncio debug mode\n"
-#ifdef Py_DEBUG
+#ifdef Py_TRACE_REFS
 "PYTHONDUMPREFS  : dump objects and reference counts still alive after shutdown\n"
 "PYTHONDUMPREFSFILE: dump objects and reference counts to the specified file\n"
 #endif
