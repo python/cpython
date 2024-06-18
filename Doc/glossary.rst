@@ -438,6 +438,12 @@ Glossary
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
 
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more :term:`arguments <argument>` which may be used in
@@ -588,7 +594,7 @@ Glossary
       therefore it is never deallocated.
 
       Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
+      :const:`True` and :const:`None` singletons are immortal.
 
       See `PEP 683 – Immortal Objects, Using a Fixed Refcount
       <https://peps.python.org/pep-0683/>`_ for more information.

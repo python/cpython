@@ -48,6 +48,12 @@
             <Component Id="freethreaded_python.dll" Directory="InstallDirectory" Guid="*">
                 <File Id="freethreaded_python.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.dll" KeyPath="yes" />
             </Component>
+            <Component Id="freethreaded_python_stable.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_stable.lib" Name="python$(var.MajorVersionNumber)t.lib" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.lib" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
@@ -69,8 +75,14 @@
                 <File Id="freethreaded_python_stable_d.dll" Name="python$(var.MajorVersionNumber)t_d.dll" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python_d.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="freethreaded_python_d.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)_d.dll" KeyPath="yes" />
-                <File Id="freethreaded_python_d.pdb" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)_d.pdb" KeyPath="no" />
+                <File Id="freethreaded_python_d.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.dll" KeyPath="yes" />
+                <File Id="freethreaded_python_d.pdb" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.pdb" KeyPath="no" />
+            </Component>
+            <Component Id="freethreaded_python_stable_d.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_stable_d.lib" Name="python$(var.MajorVersionNumber)t_d.lib" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python_d.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_d.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.lib" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -147,12 +159,6 @@
             
             <?endforeach ?>
             
-            <Component Id="venvlauncher_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="python_d.exe" Source="venvlauncher_d.exe" KeyPath="yes" />
-            </Component>
-            <Component Id="venvwlauncher_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="pythonw_d.exe" Source="venvwlauncher_d.exe" KeyPath="yes" />
-            </Component>
             <Component Id="venvlaunchert_d.pdb" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
                 <File Name="venvlaunchert_d.pdb" KeyPath="yes" />
             </Component>

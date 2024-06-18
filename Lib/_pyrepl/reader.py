@@ -28,22 +28,20 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 
 from . import commands, console, input
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
 from .trace import trace
 
 
 # types
 Command = commands.Command
 if False:
-    from typing import Callable
     from .types import Callback, SimpleContextManager, KeySpec, CommandName
-    CalcScreen = Callable[[], list[str]]
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:
     """disp_str(buffer:string) -> (string, [int])
 
-    Return the string that should be the printed represenation of
+    Return the string that should be the printed representation of
     |buffer| and a list detailing where the characters of |buffer|
     get used up.  E.g.:
 
@@ -54,11 +52,17 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
     b: list[int] = []
     s: list[str] = []
     for c in buffer:
-        if ord(c) > 128 and unicodedata.category(c).startswith("C"):
+        if ord(c) < 128:
+            s.append(c)
+            b.append(1)
+        elif unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
-        s.append(c)
-        b.append(wlen(c))
-        b.extend([0] * (len(c) - 1))
+            s.append(c)
+            b.append(str_width(c))
+            b.extend([0] * (len(c) - 1))
+        else:
+            s.append(c)
+            b.append(str_width(c))
     return "".join(s), b
 
 
@@ -131,6 +135,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         ("\\\\", "self-insert"),
         (r"\x1b[200~", "enable_bracketed_paste"),
         (r"\x1b[201~", "disable_bracketed_paste"),
+        (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
     + [(c, "self-insert") for c in map(chr, range(128, 256)) if c.isalpha()]
@@ -229,7 +234,6 @@ class Reader:
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
-    msg_at_bottom: bool = True
     keymap: tuple[tuple[str, str], ...] = ()
     input_trans: input.KeymapTranslator = field(init=False)
     input_trans_stack: list[input.KeymapTranslator] = field(default_factory=list)
@@ -237,8 +241,52 @@ class Reader:
     screeninfo: list[tuple[int, list[int]]] = field(init=False)
     cxy: tuple[int, int] = field(init=False)
     lxy: tuple[int, int] = field(init=False)
-    calc_screen: CalcScreen = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
+    can_colorize: bool = False
+
+    ## cached metadata to speed up screen refreshes
+    @dataclass
+    class RefreshCache:
+        in_bracketed_paste: bool = False
+        screen: list[str] = field(default_factory=list)
+        screeninfo: list[tuple[int, list[int]]] = field(init=False)
+        line_end_offsets: list[int] = field(default_factory=list)
+        pos: int = field(init=False)
+        cxy: tuple[int, int] = field(init=False)
+        dimensions: tuple[int, int] = field(init=False)
+
+        def update_cache(self,
+                         reader: Reader,
+                         screen: list[str],
+                         screeninfo: list[tuple[int, list[int]]],
+            ) -> None:
+            self.in_bracketed_paste = reader.in_bracketed_paste
+            self.screen = screen.copy()
+            self.screeninfo = screeninfo.copy()
+            self.pos = reader.pos
+            self.cxy = reader.cxy
+            self.dimensions = reader.console.width, reader.console.height
+
+        def valid(self, reader: Reader) -> bool:
+            dimensions = reader.console.width, reader.console.height
+            dimensions_changed = dimensions != self.dimensions
+            paste_changed = reader.in_bracketed_paste != self.in_bracketed_paste
+            return not (dimensions_changed or paste_changed)
+
+        def get_cached_location(self, reader: Reader) -> tuple[int, int]:
+            offset = 0
+            earliest_common_pos = min(reader.pos, self.pos)
+            num_common_lines = len(self.line_end_offsets)
+            while num_common_lines > 0:
+                offset = self.line_end_offsets[num_common_lines - 1]
+                if earliest_common_pos > offset:
+                    break
+                num_common_lines -= 1
+            else:
+                offset = 0
+            return offset, num_common_lines
+
+    last_refresh_cache: RefreshCache = field(default_factory=RefreshCache)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -251,53 +299,60 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
-        self.calc_screen = self.calc_complete_screen
+        self.can_colorize = can_colorize()
+
+        self.last_refresh_cache.screeninfo = self.screeninfo
+        self.last_refresh_cache.pos = self.pos
+        self.last_refresh_cache.cxy = self.cxy
+        self.last_refresh_cache.dimensions = (0, 0)
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         return default_keymap
 
-    def append_to_screen(self) -> list[str]:
-        new_screen = self.screen.copy() or ['']
+    def calc_screen(self) -> list[str]:
+        """Translate changes in self.buffer into changes in self.console.screen."""
+        # Since the last call to calc_screen:
+        # screen and screeninfo may differ due to a completion menu being shown
+        # pos and cxy may differ due to edits, cursor movements, or completion menus
 
-        new_character = self.buffer[-1]
-        new_character_len = wlen(new_character)
+        # Lines that are above both the old and new cursor position can't have changed,
+        # unless the terminal has been resized (which might cause reflowing) or we've
+        # entered or left paste mode (which changes prompts, causing reflowing).
+        num_common_lines = 0
+        offset = 0
+        if self.last_refresh_cache.valid(self):
+            offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-        last_line_len = wlen(new_screen[-1])
-        if last_line_len + new_character_len >= self.console.width:  # We need to wrap here
-            new_screen[-1] += '\\'
-            self.screeninfo[-1][1].append(1)
-            new_screen.append(self.buffer[-1])
-            self.screeninfo.append((0, [new_character_len]))
-        else:
-            new_screen[-1] += self.buffer[-1]
-            self.screeninfo[-1][1].append(new_character_len)
-        self.cxy = self.pos2xy()
+        screen = self.last_refresh_cache.screen
+        del screen[num_common_lines:]
 
-        # Reset the function that is used for completing the screen
-        self.calc_screen = self.calc_complete_screen
-        return new_screen
+        screeninfo = self.last_refresh_cache.screeninfo
+        del screeninfo[num_common_lines:]
 
-    def calc_complete_screen(self) -> list[str]:
-        """The purpose of this method is to translate changes in
-        self.buffer into changes in self.screen.  Currently it rips
-        everything down and starts from scratch, which whilst not
-        especially efficient is certainly simple(r).
-        """
-        lines = self.get_unicode().split("\n")
-        screen: list[str] = []
-        screeninfo: list[tuple[int, list[int]]] = []
+        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets
+        del last_refresh_line_end_offsets[num_common_lines:]
+
         pos = self.pos
-        for ln, line in enumerate(lines):
+        pos -= offset
+
+        lines = "".join(self.buffer[offset:]).split("\n")
+        cursor_found = False
+        lines_beyond_cursor = 0
+        for ln, line in enumerate(lines, num_common_lines):
             ll = len(line)
             if 0 <= pos <= ll:
-                if self.msg and not self.msg_at_bottom:
-                    for mline in self.msg.split("\n"):
-                        screen.append(mline)
-                        screeninfo.append((0, []))
                 self.lxy = pos, ln
+                cursor_found = True
+            elif cursor_found:
+                lines_beyond_cursor += 1
+                if lines_beyond_cursor > self.console.height:
+                    # No need to keep formatting lines.
+                    # The console can't show them.
+                    break
             prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
+                last_refresh_line_end_offsets.append(offset)
                 screen.append(pre_prompt)
                 screeninfo.append((0, []))
             pos -= ll + 1
@@ -305,6 +360,8 @@ class Reader:
             l, l2 = disp_str(line)
             wrapcount = (wlen(l) + lp) // self.console.width
             if wrapcount == 0:
+                offset += ll + 1  # Takes all of the line plus the newline
+                last_refresh_line_end_offsets.append(offset)
                 screen.append(prompt + l)
                 screeninfo.append((lp, l2))
             else:
@@ -320,11 +377,14 @@ class Reader:
                         column += character_width
                     pre = prompt if i == 0 else ""
                     if len(l) > index_to_wrap_before:
+                        offset += index_to_wrap_before
                         post = "\\"
                         after = [1]
                     else:
+                        offset += index_to_wrap_before + 1  # Takes the newline
                         post = ""
                         after = []
+                    last_refresh_line_end_offsets.append(offset)
                     screen.append(pre + l[:index_to_wrap_before] + post)
                     screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
                     l = l[index_to_wrap_before:]
@@ -332,13 +392,16 @@ class Reader:
                     i += 1
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
-        if self.msg and self.msg_at_bottom:
+        if self.msg:
             for mline in self.msg.split("\n"):
                 screen.append(mline)
                 screeninfo.append((0, []))
+
+        self.last_refresh_cache.update_cache(self, screen, screeninfo)
         return screen
 
-    def process_prompt(self, prompt: str) -> tuple[str, int]:
+    @staticmethod
+    def process_prompt(prompt: str) -> tuple[str, int]:
         """Process the prompt.
 
         This means calculate the length of the prompt. The character \x01
@@ -349,6 +412,11 @@ class Reader:
         # The logic below also ignores the length of common escape
         # sequences if they were not explicitly within \x01...\x02.
         # They are CSI (or ANSI) sequences  ( ESC [ ... LETTER )
+
+        # wlen from utils already excludes ANSI_ESCAPE_SEQUENCE chars,
+        # which breaks the logic below so we redefine it here.
+        def wlen(s: str) -> int:
+            return sum(str_width(i) for i in s)
 
         out_prompt = ""
         l = wlen(prompt)
@@ -442,15 +510,14 @@ class Reader:
         """
         if self.arg is None:
             return default
-        else:
-            return self.arg
+        return self.arg
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
         'lineno'."""
         if self.arg is not None and cursor_on_line:
-            prompt = "(arg: %s) " % self.arg
-        elif self.paste_mode:
+            prompt = f"(arg: {self.arg}) "
+        elif self.paste_mode and not self.in_bracketed_paste:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
@@ -462,7 +529,7 @@ class Reader:
         else:
             prompt = self.ps1
 
-        if can_colorize():
+        if self.can_colorize:
             prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
         return prompt
 
@@ -515,12 +582,12 @@ class Reader:
             offset = l - 1 if in_wrapped_line else l  # need to remove backslash
             if offset >= pos:
                 break
+
+            if p + sum(l2) >= self.console.width:
+                pos -= l - 1  # -1 cause backslash is not in buffer
             else:
-                if p + sum(l2) >= self.console.width:
-                    pos -= l - 1  # -1 cause backslash is not in buffer
-                else:
-                    pos -= l + 1  # +1 cause newline is in buffer
-                y += 1
+                pos -= l + 1  # +1 cause newline is in buffer
+            y += 1
         return p + sum(l2[:pos]), y
 
     def insert(self, text: str | list[str]) -> None:
@@ -582,7 +649,6 @@ class Reader:
             for arg in ("msg", "ps1", "ps2", "ps3", "ps4", "paste_mode"):
                 setattr(self, arg, prev_state[arg])
             self.prepare()
-            pass
 
     def finish(self) -> None:
         """Called when a command signals that we're finished."""
@@ -599,6 +665,9 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
+        if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
+            return
+
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
         self.console.refresh(self.screen, self.cxy)
@@ -622,7 +691,7 @@ class Reader:
 
         self.after_command(command)
 
-        if self.dirty and not self.in_bracketed_paste:
+        if self.dirty:
             self.refresh()
         else:
             self.update_cursor()
@@ -645,7 +714,15 @@ class Reader:
             self.dirty = True
 
         while True:
-            event = self.console.get_event(block)
+            input_hook = self.console.input_hook
+            if input_hook:
+                input_hook()
+                # We use the same timeout as in readline.c: 100ms
+                while not self.console.wait(100):
+                    input_hook()
+                event = self.console.get_event(block=False)
+            else:
+                event = self.console.get_event(block)
             if not event:  # can only happen if we're not blocking
                 return False
 

@@ -35,7 +35,6 @@ Data members:
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
-#include "frameobject.h"          // PyFrame_FastToLocalsWithError()
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -2510,15 +2509,15 @@ PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
 
 PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
 #ifndef MS_WINDOWS
-    FILE* from = fopen(parent_filename, "r");
-    if (!from) {
-        return -1;
-    }
     if (perf_map_state.perf_map == NULL) {
         int ret = PyUnstable_PerfMapState_Init();
         if (ret != 0) {
             return ret;
         }
+    }
+    FILE* from = fopen(parent_filename, "r");
+    if (!from) {
+        return -1;
     }
     char buf[4096];
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
