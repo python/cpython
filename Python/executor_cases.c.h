@@ -3102,17 +3102,19 @@
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             assert(oparg <= SPECIAL_MAX);
-            PyGenObject *owner_o = (PyGenObject *)PyStackRef_AsPyObjectSteal(owner_o);
+            PyObject* *owner_o = PyStackRef_AsPyObjectSteal(owner);
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            attr = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null);
-            if (attr == NULL) {
+            PyObject *self_or_null_o;
+            attr = PyStackRef_FromPyObjectSteal(_PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o));
+            if (PyStackRef_IsNull(attr)) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
                                   Py_TYPE(owner_o)->tp_name);
                 }
             }
-            if (attr == NULL) JUMP_TO_ERROR();
+            if (PyStackRef_IsNull(attr)) JUMP_TO_ERROR();
+            self_or_null = PyStackRef_FromPyObjectSteal(self_or_null_o);
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
@@ -3152,11 +3154,11 @@
             }
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val, tb};
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
-            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
-                                      (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
+            if (PyStackRef_IsNull(res)) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;

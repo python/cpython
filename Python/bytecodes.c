@@ -3104,9 +3104,10 @@ dummy_func(
 
         inst(LOAD_SPECIAL, (owner -- attr, self_or_null)) {
             assert(oparg <= SPECIAL_MAX);
-            PyGenObject *owner_o = (PyGenObject *)PyStackRef_AsPyObjectSteal(owner_o);
+            PyObject* *owner_o = PyStackRef_AsPyObjectSteal(owner);
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            attr = PyStackRef_FromPyObjectSteal(_PyObject_LookupSpecialMethod(owner_o, name, &self_or_null));
+            PyObject *self_or_null_o;
+            attr = PyStackRef_FromPyObjectSteal(_PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o));
             if (PyStackRef_IsNull(attr)) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -3115,6 +3116,7 @@ dummy_func(
                 }
             }
             ERROR_IF(PyStackRef_IsNull(attr), error);
+            self_or_null = PyStackRef_FromPyObjectSteal(self_or_null_o);
         }
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
@@ -3143,9 +3145,9 @@ dummy_func(
             }
             assert(PyLong_Check(PyStackRef_AsPyObjectBorrow(lasti)));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val, tb};
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+            res = PyStackRef_FromPyObjectSteal(PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
