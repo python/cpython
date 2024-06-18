@@ -1,0 +1,32 @@
+ImageFont.truetype("arial.ttf", 80)
+    font_subtitle = ImageFont.truetype("arial.ttf", 40)
+    font_text = ImageFont.truetype("arial.ttf", 30)
+except IOError:
+    font_title = ImageFont.load_default()
+    font_subtitle = ImageFont.load_default()
+    font_text = ImageFont.load_default()
+
+# Titel
+title_text = "ORN Bot"
+title_size = draw.textsize(title_text, font=font_title)
+draw.text(((width - title_size[0]) / 2, 50), title_text, fill="yellow", font=font_title)
+
+# Undertext
+subtitle_text = "Just Scalping Trading"
+subtitle_size = draw.textsize(subtitle_text, font=font_subtitle)
+draw.text(((width - subtitle_size[0]) / 2, 150), subtitle_text, fill="white", font=font_subtitle)
+
+# Produktbeskrivning
+description_text = "Makes 40-60% Month\nWorks on all Prop Firms"
+description_lines = description_text.split('\n')
+y_text = 250
+for line in description_lines:
+    line_size = draw.textsize(line, font=font_text)
+    draw.text(((width - line_size[0]) / 2, y_text), line, fill="white", font=font_text)
+    y_text += line_size[1] + 10
+
+# Spara bilden
+image_path = "/mnt/data/product_image.png"
+image.save(image_path)
+
+image.show()
