@@ -1,11 +1,9 @@
 import copy
-import gc
 import operator
 import re
 import sys
 import textwrap
 import threading
-import types
 import unittest
 import weakref
 try:
@@ -14,7 +12,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
-from test.support import import_helper, threading_helper, Py_GIL_DISABLED
+from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
 
 

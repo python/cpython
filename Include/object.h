@@ -244,12 +244,26 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
-// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* Py_TYPE(PyObject *ob) {
-    return ob->ob_type;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
+// Py_TYPE() implementation for the stable ABI
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+    // Stable ABI implements Py_TYPE() as a function call
+    // on limited C API version 3.14 and newer.
+#else
+    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
+    {
+    #if defined(Py_GIL_DISABLED)
+        return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
+    #else
+        return ob->ob_type;
+    #endif
+    }
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
+    #else
+    #   define Py_TYPE(ob) _Py_TYPE(ob)
+    #endif
 #endif
 
 PyAPI_DATA(PyTypeObject) PyLong_Type;
@@ -257,8 +271,8 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
-    assert(ob->ob_type != &PyLong_Type);
-    assert(ob->ob_type != &PyBool_Type);
+    assert(Py_TYPE(ob) != &PyLong_Type);
+    assert(Py_TYPE(ob) != &PyBool_Type);
     return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -274,15 +288,19 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ptr(&ob->ob_type, type);
+#else
     ob->ob_type = type;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
 #endif
 
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
-    assert(ob->ob_base.ob_type != &PyLong_Type);
-    assert(ob->ob_base.ob_type != &PyBool_Type);
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyLong_Type);
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyBool_Type);
 #ifdef Py_GIL_DISABLED
     _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
 #else
@@ -748,7 +766,11 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-    flags = type->tp_flags;
+#   ifdef Py_GIL_DISABLED
+        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
+#   else
+        flags = type->tp_flags;
+#   endif
 #endif
     return ((flags & feature) != 0);
 }

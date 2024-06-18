@@ -7758,7 +7758,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -9414,6 +9414,11 @@ then :
   PYDEBUG_CFLAGS="-Og"
 fi
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -9560,7 +9565,7 @@ then :
 
 fi
 
-                as_fn_append LDFLAGS_NODIST " -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"
+                as_fn_append LDFLAGS_NODIST " -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"
 
  ;; #(
   *) :
@@ -12892,7 +12897,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -13132,6 +13137,8 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  riscv64-linux-gnu) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no

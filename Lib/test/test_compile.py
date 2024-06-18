@@ -441,8 +441,8 @@ class TestSpecifics(unittest.TestCase):
             def f():
                 __mangled = 1
                 __not_mangled__ = 2
-                import __mangled_mod
-                import __package__.module
+                import __mangled_mod       # noqa: F401
+                import __package__.module  # noqa: F401
 
         self.assertIn("_A__mangled", A.f.__code__.co_varnames)
         self.assertIn("__not_mangled__", A.f.__code__.co_varnames)
@@ -501,6 +501,33 @@ class TestSpecifics(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
+
+    def test_compile_redundant_jumps_and_nops_after_moving_cold_blocks(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                match name_2:
+                    case b'':
+                        pass
+            finally:
+                something
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instructions locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
 
     def test_compile_ast(self):
         fname = __file__
@@ -1409,6 +1436,16 @@ class TestSpecifics(unittest.TestCase):
         for kw in ("except", "except*"):
             exec(code % kw, g, l);
 
+    def test_regression_gh_120225(self):
+        async def name_4():
+            match b'':
+                case True:
+                    pass
+                case name_5 if f'e':
+                    {name_3: name_4 async for name_2 in name_5}
+                case []:
+                    pass
+            [[]]
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

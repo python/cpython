@@ -1857,6 +1857,22 @@ error:
 
 static int resolve_line_numbers(cfg_builder *g, int firstlineno);
 
+static int
+remove_redundant_nops_and_jumps(cfg_builder *g)
+{
+    int removed_nops, removed_jumps;
+    do {
+        /* Convergence is guaranteed because the number of
+         * redundant jumps and nops only decreases.
+         */
+        removed_nops = remove_redundant_nops(g);
+        RETURN_IF_ERROR(removed_nops);
+        removed_jumps = remove_redundant_jumps(g);
+        RETURN_IF_ERROR(removed_jumps);
+    } while(removed_nops + removed_jumps > 0);
+    return SUCCESS;
+}
+
 /* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -1878,17 +1894,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
-
-    int removed_nops, removed_jumps;
-    do {
-        /* Convergence is guaranteed because the number of
-         * redundant jumps and nops only decreases.
-         */
-        removed_nops = remove_redundant_nops(g);
-        RETURN_IF_ERROR(removed_nops);
-        removed_jumps = remove_redundant_jumps(g);
-        RETURN_IF_ERROR(removed_jumps);
-    } while(removed_nops + removed_jumps > 0);
+    RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     assert(no_redundant_jumps(g));
     return SUCCESS;
 }
@@ -2304,15 +2310,11 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            cfg_instr *prev_instr = basicblock_last_instr(b);
-            // b cannot be empty because at the end of an exception handler
-            // there is always a POP_EXCEPT + RERAISE/RETURN
-            assert(prev_instr);
-
             basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             prev_instr->i_loc);
+                             NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
+            explicit_jump->b_predecessors = 1;
             b->b_next = explicit_jump;
 
             /* set target */
@@ -2362,7 +2364,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
     b->b_next = cold_blocks;
 
     if (cold_blocks != NULL) {
-        RETURN_IF_ERROR(remove_redundant_jumps(g));
+        RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
     }
     return SUCCESS;
 }
@@ -2861,7 +2863,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 }
 
 /* This is used by _PyCompile_Assemble to fill in the jump and exception
- * targets in a synthetic CFG (which is not the ouptut of the builtin compiler).
+ * targets in a synthetic CFG (which is not the output of the builtin compiler).
  */
 int
 _PyCfg_JumpLabelsToTargets(cfg_builder *g)

@@ -13,6 +13,7 @@ import random
 import re
 import struct
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -22,7 +23,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper, no_rerun
+from test.support import script_helper, warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -38,6 +39,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 # Needed by test_datetime
 import _strptime
@@ -1335,6 +1340,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for insane in -1e200, 1e200:
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
+
+    def test_fromtimestamp_with_none_arg(self):
+        # See gh-120268 for more details
+        with self.assertRaises(TypeError):
+            self.theclass.fromtimestamp(None)
 
     def test_today(self):
         import time
@@ -4412,6 +4422,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456-',         # Extra at end of microsecond time
             '12:30:45.123456+',         # Extra at end of microsecond time
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
+            '12.5',                     # Decimal mark at end of hour
+            '12:30,5',                  # Decimal mark at end of minute
         ]
 
         for bad_str in bad_strs:
@@ -6383,7 +6395,6 @@ class IranTest(ZoneInfoTest):
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-@no_rerun("the encapsulated datetime C API does not support reloading")
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests
@@ -6773,6 +6784,91 @@ class CapiTest(unittest.TestCase):
                     dt_rt = from_timestamp(ts, tzinfo, usetz, macro)
 
                     self.assertEqual(dt_orig, dt_rt)
+
+    def test_type_check_in_subinterp(self):
+        # iOS requires the use of the custom framework loader,
+        # not the ExtensionFileLoader.
+        if sys.platform == "ios":
+            extension_loader = "AppleFrameworkLoader"
+        else:
+            extension_loader = "ExtensionFileLoader"
+
+        script = textwrap.dedent(f"""
+            if {_interpreters is None}:
+                import _testcapi as module
+                module.test_datetime_capi()
+            else:
+                import importlib.machinery
+                import importlib.util
+                fullname = '_testcapi_datetime'
+                origin = importlib.util.find_spec('_testcapi').origin
+                loader = importlib.machinery.{extension_loader}(fullname, origin)
+                spec = importlib.util.spec_from_loader(fullname, loader)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+            def run(type_checker, obj):
+                if not type_checker(obj, True):
+                    raise TypeError(f'{{type(obj)}} is not C API type')
+
+            import _datetime
+            run(module.datetime_check_date,     _datetime.date.today())
+            run(module.datetime_check_datetime, _datetime.datetime.now())
+            run(module.datetime_check_time,     _datetime.time(12, 30))
+            run(module.datetime_check_delta,    _datetime.timedelta(1))
+            run(module.datetime_check_tzinfo,   _datetime.tzinfo())
+        """)
+        if _interpreters is None:
+            ret = support.run_in_subinterp(script)
+            self.assertEqual(ret, 0)
+        else:
+            for name in ('isolated', 'legacy'):
+                with self.subTest(name):
+                    config = _interpreters.new_config(name).__dict__
+                    ret = support.run_in_subinterp_with_config(script, **config)
+                    self.assertEqual(ret, 0)
+
+
+class ExtensionModuleTests(unittest.TestCase):
+
+    def setUp(self):
+        if self.__class__.__name__.endswith('Pure'):
+            self.skipTest('Not relevant in pure Python')
+
+    @support.cpython_only
+    def test_gh_120161(self):
+        with self.subTest('simple'):
+            script = textwrap.dedent("""
+                import datetime
+                from _ast import Tuple
+                f = lambda: None
+                Tuple.dims = property(f, f)
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                """)
+            script_helper.assert_python_ok('-c', script)
+
+        with self.subTest('complex'):
+            script = textwrap.dedent("""
+                import asyncio
+                import datetime
+                from typing import Type
+
+                class tzutc(datetime.tzinfo):
+                    pass
+                _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=tzutc())
+
+                class FakeDateMeta(type):
+                    def __instancecheck__(self, obj):
+                        return True
+                class FakeDate(datetime.date, metaclass=FakeDateMeta):
+                    pass
+                def pickle_fake_date(datetime_) -> Type[FakeDate]:
+                    # A pickle function for FakeDate
+                    return FakeDate
+                """)
+            script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):
