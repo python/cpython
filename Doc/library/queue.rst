@@ -132,6 +132,51 @@ provide the public methods described below.
    will not block.  Similarly, if full() returns ``False`` it doesn't
    guarantee that a subsequent call to put() will not block.
 
+.. method:: Queue.__iter__()
+
+   Return an :term:`iterator` which iterates over the items in this queue
+   until :meth:`Queue.shutdown` is called and the queue is empty.
+
+   .. versionadded:: 3.14
+
+
+Example of how to wait for enqueued tasks to be completed::
+
+    import concurrent.futures, queue, random, time
+
+    def worker(name, queue):
+        # Get a "work item" out of the queue.
+        for sleep_for in queue:
+            # Sleep for the "sleep_for" seconds.
+            time.sleep(sleep_for)
+
+            print(f'{name} has slept for {sleep_for:.2f} seconds')
+
+    # Create a queue that we will use to store our "workload".
+    q = queue.Queue()
+
+    # Generate random timings and put them into the queue.
+    total_sleep_time = 0
+    for _ in range(20):
+        sleep_for = random.uniform(0.05, 1.0)
+        total_sleep_time += sleep_for
+        q.put_nowait(sleep_for)
+
+    # All tasks have been queued
+    q.shutdown()
+
+    # Create three worker tasks to process the queue concurrently.
+    started_at = time.monotonic()
+    with concurrent.futures.ThreadPoolExecutor() as tp:
+        for i in range(3):
+            tp.submit(worker, f'worker-{i}', q)
+
+    total_slept_for = time.monotonic() - started_at
+
+    print('====')
+    print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')
+    print(f'total expected sleep time: {total_sleep_time:.2f} seconds')
+
 
 .. method:: Queue.put(item, block=True, timeout=None)
 
@@ -202,32 +247,6 @@ fully processed by daemon consumer threads.
    The count goes down whenever a consumer thread calls :meth:`task_done` to
    indicate that the item was retrieved and all work on it is complete.  When the
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
-
-
-Example of how to wait for enqueued tasks to be completed::
-
-    import threading
-    import queue
-
-    q = queue.Queue()
-
-    def worker():
-        while True:
-            item = q.get()
-            print(f'Working on {item}')
-            print(f'Finished {item}')
-            q.task_done()
-
-    # Turn-on the worker thread.
-    threading.Thread(target=worker, daemon=True).start()
-
-    # Send thirty task requests to the worker.
-    for item in range(30):
-        q.put(item)
-
-    # Block until all tasks are done.
-    q.join()
-    print('All work completed')
 
 
 Terminating queues
