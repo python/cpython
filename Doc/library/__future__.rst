@@ -117,7 +117,7 @@ language using this mechanism:
    ``from __future__ import annotations`` was originally planned to become mandatory in
    Python 3.10, but was considered too disruptive. :pep:`649` instead became the default
    in Python 3.14. You can still override this by importing ``annotations``, but that's
-   deprecated and may become a no-op or be removed in the future.
+   :term:`soft deprecated` and may become a no-op or be removed in the future.
 
 
 .. seealso::
