@@ -5956,7 +5956,9 @@ _PyTypes_FiniExtTypes(PyInterpreterState *interp)
 {
     /* Static extension types must be finalized before the builtins. */
     assert(interp->types.managed_static.num_builtins > 0);
+#ifndef NDEBUG
     int started = 0;
+#endif
     for (size_t i = _Py_MAX_MANAGED_STATIC_TYPES; i > 0; i--)
     {
         /* There may be gaps. */
@@ -5970,7 +5972,9 @@ _PyTypes_FiniExtTypes(PyInterpreterState *interp)
         assert(!started || type != NULL);
         /* Currently there is no other way to finalize one of these types. */
         if (type != NULL) {
+#ifndef NDEBUG
             started = 1;
+#endif
             int final = (count == 1);
             fini_static_type(interp, type, 0, final);
         }
