@@ -1038,6 +1038,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
+    allow_reuse_port = True
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
