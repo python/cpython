@@ -1849,18 +1849,20 @@ class AbstractPickleTests:
         for proto in protocols:
             for array_type in [bytes, ZeroCopyBytes]:
                 for s in b'', b'xyz', b'xyz'*100:
-                    b = array_type(s)
-                    p = self.dumps((b, b), proto)
-                    x, y = self.loads(p)
-                    self.assertIs(x, y)
-                    self.assert_is_copy((b, b), (x, y))
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = array_type(s)
+                        p = self.dumps((b, b), proto)
+                        x, y = self.loads(p)
+                        self.assertIs(x, y)
+                        self.assert_is_copy((b, b), (x, y))
 
-                    b1, b2 = array_type(s), array_type(s)
-                    p = self.dumps((b1, b2), proto)
-                    # Note that (b1, b2) = self.loads(p) might have identical
-                    # components, i.e., b1 is b2, but this is not always the
-                    # case if the content is large (equality still holds).
-                    self.assert_is_copy((b1, b2), self.loads(p))
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b1, b2 = array_type(s), array_type(s)
+                        p = self.dumps((b1, b2), proto)
+                        # Note that (b1, b2) = self.loads(p) might have identical
+                        # components, i.e., b1 is b2, but this is not always the
+                        # case if the content is large (equality still holds).
+                        self.assert_is_copy((b1, b2), self.loads(p))
 
     def test_bytearray(self):
         for proto in protocols:
@@ -1885,25 +1887,27 @@ class AbstractPickleTests:
         for proto in protocols:
             for array_type in [bytearray, ZeroCopyBytearray]:
                 for s in b'', b'xyz', b'xyz'*100:
-                    b = array_type(s)
-                    p = self.dumps((b, b), proto)
-                    b1, b2 = self.loads(p)
-                    self.assertIs(b1, b2)
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = array_type(s)
+                        p = self.dumps((b, b), proto)
+                        b1, b2 = self.loads(p)
+                        self.assertIs(b1, b2)
 
-                    b1a, b2a = array_type(s), array_type(s)
-                    # Unlike bytes, equal but independent bytearray objects are
-                    # never identical.
-                    self.assertIsNot(b1a, b2a)
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b1a, b2a = array_type(s), array_type(s)
+                        # Unlike bytes, equal but independent bytearray objects are
+                        # never identical.
+                        self.assertIsNot(b1a, b2a)
 
-                    p = self.dumps((b1a, b2a), proto)
-                    b1b, b2b = self.loads(p)
-                    self.assertIsNot(b1b, b2b)
+                        p = self.dumps((b1a, b2a), proto)
+                        b1b, b2b = self.loads(p)
+                        self.assertIsNot(b1b, b2b)
 
-                    self.assertIsNot(b1a, b1b)
-                    self.assert_is_copy(b1a, b1b)
+                        self.assertIsNot(b1a, b1b)
+                        self.assert_is_copy(b1a, b1b)
 
-                    self.assertIsNot(b2a, b2b)
-                    self.assert_is_copy(b2a, b2b)
+                        self.assertIsNot(b2a, b2b)
+                        self.assert_is_copy(b2a, b2b)
 
     def test_ints(self):
         for proto in protocols:
