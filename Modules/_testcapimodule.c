@@ -1089,7 +1089,7 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
             PyErr_Clear();
     }
 
-exit:
+  exit:
     if (error) {
         return raiseTestError(self, "test_capsule", error);
     }
@@ -1975,7 +1975,8 @@ py_w_stopcode(PyObject *self, PyObject *args)
 
 
 static PyObject *
-test_pythread_tss_key_state(PyObject *self, PyObject *args) {
+test_pythread_tss_key_state(PyObject *self, PyObject *args)
+{
     Py_tss_t tss_key = Py_tss_NEEDS_INIT;
     if (PyThread_tss_is_created(&tss_key)) {
         return raiseTestError(self, "test_pythread_tss_key_state",
