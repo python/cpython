@@ -407,11 +407,6 @@ class _IPAddressBase:
         """
         return self._reverse_pointer()
 
-    @property
-    def version(self):
-        msg = '%200s has no version specified' % (type(self),)
-        raise NotImplementedError(msg)
-
     def _check_int_address(self, address):
         if address < 0:
             msg = "%d (< 0) is not permitted as an IPv%d address"
@@ -1146,11 +1141,11 @@ class _BaseV4:
     """
 
     __slots__ = ()
-    _version = 4
+    version = _version = 4
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
 
-    _max_prefixlen = IPV4LENGTH
+    max_prefixlen = _max_prefixlen = IPV4LENGTH
     # There are only a handful of valid v4 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
     _netmask_cache = {}
@@ -1267,15 +1262,6 @@ class _BaseV4:
         """
         reverse_octets = str(self).split('.')[::-1]
         return '.'.join(reverse_octets) + '.in-addr.arpa'
-
-    @property
-    def max_prefixlen(self):
-        return self._max_prefixlen
-
-    @property
-    def version(self):
-        return self._version
-
 
 class IPv4Address(_BaseV4, _BaseAddress):
 
@@ -1628,11 +1614,11 @@ class _BaseV6:
     """
 
     __slots__ = ()
-    _version = 6
+    version = _version = 6
     _ALL_ONES = (2**IPV6LENGTH) - 1
     _HEXTET_COUNT = 8
     _HEX_DIGITS = frozenset('0123456789ABCDEFabcdef')
-    _max_prefixlen = IPV6LENGTH
+    max_prefixlen = _max_prefixlen = IPV6LENGTH
 
     # There are only a bunch of valid v6 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
@@ -1911,15 +1897,6 @@ class _BaseV6:
         elif not scope_id or '%' in scope_id:
             raise AddressValueError('Invalid IPv6 address: "%r"' % ip_str)
         return addr, scope_id
-
-    @property
-    def max_prefixlen(self):
-        return self._max_prefixlen
-
-    @property
-    def version(self):
-        return self._version
-
 
 class IPv6Address(_BaseV6, _BaseAddress):
 
