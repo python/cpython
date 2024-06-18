@@ -313,9 +313,10 @@ def ismethoddescriptor(object):
     But not if ismethod() or isclass() or isfunction() are true.
 
     This is new in Python 2.2, and, for example, is true of int.__add__.
-    An object passing this test has a __get__ attribute but not a __set__
-    attribute, but beyond that the set of attributes varies.  __name__ is
-    usually sensible, and __doc__ often is.
+    An object passing this test has a __get__ attribute, but not a
+    __set__ attribute or a __delete__ attribute. Beyond that, the set
+    of attributes varies; __name__ is usually sensible, and __doc__
+    often is.
 
     Methods implemented via descriptors that also pass one of the other
     tests return false from the ismethoddescriptor() test, simply because
@@ -325,7 +326,9 @@ def ismethoddescriptor(object):
         # mutual exclusion
         return False
     tp = type(object)
-    return hasattr(tp, "__get__") and not hasattr(tp, "__set__")
+    return (hasattr(tp, "__get__")
+            and not hasattr(tp, "__set__")
+            and not hasattr(tp, "__delete__"))
 
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
