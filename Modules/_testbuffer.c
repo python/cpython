@@ -26,7 +26,7 @@ static PyTypeObject NDArray_Type;
 #define CHECK_LIST_OR_TUPLE(v) \
     do { \
         if (!PyList_Check(v) && !PyTuple_Check(v)) { \
-            PyErr_SetString(PyExc_TypeError,                  \
+            PyErr_SetString(PyExc_TypeError, \
                             #v " must be a list or a tuple"); \
             return NULL; \
         } \
