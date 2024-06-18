@@ -4,14 +4,12 @@ from typing import TextIO
 from analyzer import (
     Instruction,
     Uop,
-    analyze_files,
     Properties,
-    Skip,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack
+from stack import Stack
 
 
 ROOT = Path(__file__).parent.parent.parent
