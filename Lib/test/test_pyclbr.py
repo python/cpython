@@ -78,7 +78,7 @@ class PyclbrTest(TestCase):
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (oclass.__name__.lstrip('_'), objname)
+                objname = "_%s%s" % (oclass.__name__, objname)
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
@@ -115,8 +115,8 @@ class PyclbrTest(TestCase):
                         actualMethods.append(m)
                 foundMethods = []
                 for m in value.methods.keys():
-                    if m.startswith('__') and not m.endswith('__'):
-                        foundMethods.append(f"_{name.lstrip('_')}{m}")
+                    if m[:2] == '__' and m[-2:] != '__':
+                        foundMethods.append('_'+name+m)
                     else:
                         foundMethods.append(m)
 
