@@ -193,6 +193,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.join() # verify that you can join twice
             self.assertEqual(self.cum, sum(range(200)),
                              "q.join() didn't block until all tasks were done")
+
+            # instruct the threads to close
             q.shutdown()
 
     def test_queue_task_done(self):
