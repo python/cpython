@@ -126,9 +126,6 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
 
         accumulator = 0
 
-        # Two workers get items from the queue and call task_done after each.
-        # Join the queue and assert all items have been processed.
-
         async def worker():
             nonlocal accumulator
 
