@@ -159,6 +159,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         q.shutdown()
         self.cum = 0
+
         def worker():
             for x in q:
                 with self.cumlock:
@@ -172,6 +173,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
     def queue_join_test(self, q):
         self.cum = 0
+
         def worker():
             for x in q:
                 with self.cumlock:
