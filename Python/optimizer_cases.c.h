@@ -1369,10 +1369,13 @@
         }
 
         case _LOAD_SPECIAL: {
+            _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null;
+            owner = stack_pointer[-1];
+            (void)owner;
             attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
+            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
