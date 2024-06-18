@@ -871,19 +871,21 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         dir_.mkdir()
         link = tmp / 'link'
         _winapi.CreateJunction(str(dir_), str(link))
-        self.addCleanup(os_helper.unlink, link)
-        self.assertRaises(OSError, link.rmtree)
-        self.assertTrue(dir_.exists())
-        self.assertTrue(link.exists(follow_symlinks=False))
-        errors = []
+        try:
+            self.assertRaises(OSError, link.rmtree)
+            self.assertTrue(dir_.exists())
+            self.assertTrue(link.exists(follow_symlinks=False))
+            errors = []
 
-        def on_error(error):
-            errors.append(error)
+            def on_error(error):
+                errors.append(error)
 
-        link.rmtree(on_error=on_error)
-        self.assertEqual(len(errors), 1)
-        self.assertIsInstance(errors[0], OSError)
-        self.assertEqual(errors[0].filename, str(link))
+            link.rmtree(on_error=on_error)
+            self.assertEqual(len(errors), 1)
+            self.assertIsInstance(errors[0], OSError)
+            self.assertEqual(errors[0].filename, str(link))
+        finally:
+            os.unlink(str(link))
 
     @unittest.skipUnless(rmtree_use_fd_functions, "requires safe rmtree")
     def test_rmtree_fails_on_close(self):
