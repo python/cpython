@@ -226,3 +226,7 @@ class CAPITest(unittest.TestCase):
         # non-tuple
         a = [1, 2, 3]
         self.assertRaises(SystemError, resize, a, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
