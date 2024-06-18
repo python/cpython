@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile
+from ._os import copyfile, rmtree as rmtree_impl
 
 
 __all__ = [
@@ -819,59 +819,27 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
-                         os.supports_dir_fd and
-                         os.scandir in os.supports_fd and
-                         os.stat in os.supports_follow_symlinks)
+    def rmtree(self, ignore_errors=False, on_error=None):
+        """
+        Recursively delete this directory tree.
 
-    if _use_fd_functions:
-        def rmtree(self, ignore_errors=False, on_error=None):
-            """
-            Recursively delete this directory tree.
-
-            If *ignore_errors* is true, exceptions raised from scanning the tree
-            and removing files and directories are ignored. Otherwise, if
-            *on_error* is set, it will be called to handle the error. If neither
-            *ignore_errors* nor *on_error* are set, exceptions are propagated to
-            the caller.
-            """
-            path = os.fspath(self)
-            if ignore_errors:
-                def on_error(error):
-                    pass
-            elif on_error is None:
-                def on_error(error):
-                    raise
-            try:
-                if os.path.islink(path):
-                    raise OSError("Cannot call rmtree on a symbolic link")
-                results = os.fwalk(
-                    path,
-                    topdown=False,
-                    onerror=on_error,
-                    follow_symlinks=os._walk_symlinks_as_files)
-                for dirpath, dirnames, filenames, fd in results:
-                    for filename in filenames:
-                        try:
-                            os.unlink(filename, dir_fd=fd)
-                        except FileNotFoundError:
-                            pass
-                        except OSError as error:
-                            error.filename = os.path.join(dirpath, filename)
-                            on_error(error)
-                    for dirname in dirnames:
-                        try:
-                            os.rmdir(dirname, dir_fd=fd)
-                        except FileNotFoundError:
-                            pass
-                        except OSError as error:
-                            error.filename = os.path.join(dirpath, dirname)
-                            on_error(error)
-                os.rmdir(path)
-            except OSError as error:
-                error.filename = path
-                on_error(error)
-        rmtree.avoids_symlink_attacks = True
+        If *ignore_errors* is true, exceptions raised from scanning the tree
+        and removing files and directories are ignored. Otherwise, if
+        *on_error* is set, it will be called to handle the error. If neither
+        *ignore_errors* nor *on_error* are set, exceptions are propagated to
+        the caller.
+        """
+        if ignore_errors:
+            def onexc(func, filename, err):
+                pass
+        elif on_error:
+            def onexc(func, filename, err):
+                on_error(err)
+        else:
+            def onexc(func, filename, err):
+                raise err
+        rmtree_impl(str(self), None, onexc)
+    rmtree.avoids_symlink_attacks = rmtree_impl.avoids_symlink_attacks
 
     def rename(self, target):
         """

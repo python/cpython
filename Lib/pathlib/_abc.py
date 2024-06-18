@@ -883,21 +883,20 @@ class PathBase(PurePathBase):
                 top_down=False,
                 on_error=on_error,
                 follow_symlinks=False)
-            for dirpath, _, filenames in results:
-                for filename in filenames:
-                    filepath = dirpath / filename
+            for dirpath, dirnames, filenames in results:
+                for name in filenames:
+                    child = dirpath / name
                     try:
-                        filepath.unlink()
-                    except FileNotFoundError:
-                        pass
+                        child.unlink()
                     except OSError as error:
                         on_error(error)
-                try:
-                    dirpath.rmdir()
-                except FileNotFoundError:
-                    pass
-                except OSError as error:
-                    on_error(error)
+                for name in dirnames:
+                    child = dirpath / name
+                    try:
+                        child.rmdir()
+                    except OSError as error:
+                        on_error(error)
+            self.rmdir()
         except OSError as error:
             error.filename = str(self)
             on_error(error)

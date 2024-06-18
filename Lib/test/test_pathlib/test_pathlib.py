@@ -775,7 +775,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             d = self.cls(self.base, 'a')
             d.mkdir()
             try:
-                real_fwalk = os.fwalk
+                real_open = os.open
 
                 class Called(Exception):
                     pass
@@ -783,10 +783,10 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 def _raiser(*args, **kwargs):
                     raise Called
 
-                os.fwalk = _raiser
+                os.open = _raiser
                 self.assertRaises(Called, d.rmtree)
             finally:
-                os.fwalk = real_fwalk
+                os.open = real_open
         else:
             self.assertFalse(self.cls.rmtree.avoids_symlink_attacks)
 
@@ -997,16 +997,16 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_rmtree_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
+            tmp = self.cls(self.base, 'rmtree')
 
             def raiser(fn, *args, **kwargs):
-                if fn != TESTFN:
+                if fn != str(tmp):
                     raise OSError()
                 else:
                     return orig_lstat(fn)
 
             os.lstat = raiser
 
-            tmp = self.cls(self.base, 'rmtree')
             tmp.mkdir()
             foo = tmp / 'foo'
             foo.write_text('')

@@ -2497,9 +2497,13 @@ class DummyPathTest(DummyPurePathTest):
             errors.append(error)
 
         filename.rmtree(on_error=on_error)
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(len(errors), 2)
+        # First from scandir()
         self.assertIsInstance(errors[0], NotADirectoryError)
         self.assertEqual(errors[0].filename, str(filename))
+        # Then from munlink()
+        self.assertIsInstance(errors[1], NotADirectoryError)
+        self.assertEqual(errors[1].filename, str(filename))
 
     @needs_symlinks
     def test_rmtree_outer_symlink(self):

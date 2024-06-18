@@ -106,6 +106,8 @@ pathlib
 * Add :meth:`pathlib.Path.copy`, which copies the content of one file to
   another, like :func:`shutil.copyfile`.
   (Contributed by Barney Gale in :gh:`73991`.)
+* Add :meth:`pathlib.Path.rmtree`, which recursively removes a directory.
+  (Contributed by Barney Gale in :gh:`73991`.)
 
 symtable
 --------
@@ -117,12 +119,6 @@ symtable
   * :meth:`~symtable.Symbol.is_comp_cell`
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
-
-pathlib
--------
-
-* Add :meth:`pathlib.Path.rmtree`, which recursively removes a directory.
-  (Contributed by Barney Gale in :gh:`73991`.)
 
 
 Optimizations
