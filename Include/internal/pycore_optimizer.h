@@ -37,20 +37,12 @@ struct _Py_UopsSymbol {
 };
 
 #define UOP_FORMAT_TARGET 0
-#define UOP_FORMAT_EXIT 1
-#define UOP_FORMAT_JUMP 2
-#define UOP_FORMAT_UNUSED 3
+#define UOP_FORMAT_JUMP 1
 
 static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
 {
     assert(inst->format == UOP_FORMAT_TARGET);
     return inst->target;
-}
-
-static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == UOP_FORMAT_EXIT);
-    return inst->exit_index;
 }
 
 static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)

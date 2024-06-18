@@ -2053,10 +2053,6 @@
             break;
         }
 
-        case _COLD_EXIT: {
-            break;
-        }
-
         case _DYNAMIC_EXIT: {
             break;
         }
