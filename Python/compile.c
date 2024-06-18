@@ -1260,7 +1260,7 @@ compiler_call_exit_with_nones(struct compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_I(c, loc, CALL, 2);
+    ADDOP_I(c, loc, CALL, 3);
     return SUCCESS;
 }
 
@@ -1369,6 +1369,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             *ploc = LOC((stmt_ty)info->fb_datum);
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
+                ADDOP_I(c, *ploc, SWAP, 3);
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             RETURN_IF_ERROR(compiler_call_exit_with_nones(c, *ploc));
@@ -5897,6 +5898,7 @@ compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     ADDOP(c, NO_LOCATION, POP_EXCEPT);
     ADDOP(c, NO_LOCATION, POP_TOP);
     ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP);
     NEW_JUMP_TARGET_LABEL(c, exit);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, exit);
 
@@ -5952,7 +5954,12 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     loc = LOC(item->context_expr);
-    ADDOP(c, loc, BEFORE_ASYNC_WITH);
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, SWAP, 3);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
+    ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
@@ -6050,7 +6057,12 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
     location loc = LOC(item->context_expr);
-    ADDOP(c, loc, BEFORE_WITH);
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___EXIT__);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, SWAP, 3);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
+    ADDOP_I(c, loc, CALL, 0);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
