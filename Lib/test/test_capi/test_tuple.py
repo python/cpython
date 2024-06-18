@@ -213,7 +213,7 @@ class CAPITest(unittest.TestCase):
         b = resize(a, 2)
         self.assertEqual(len(b), 2)
 
-        a = (1, [2], 3)
+        a = (1, [2], [3])
         b = resize(a, 3)
         self.assertEqual(b, a)
         b = resize(a, 2)
