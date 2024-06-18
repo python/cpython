@@ -1044,12 +1044,12 @@ test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
         static char buffer[256];
 #undef FAIL
 #define FAIL(x) \
-    do { \
-        sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
-                x, known->module, known->attribute);           \
-        error = buffer; \
-        goto exit; \
-    } while (0)
+        do { \
+            sprintf(buffer, "%s module: \"%s\" attribute: \"%s\"", \
+                    x, known->module, known->attribute);           \
+            error = buffer; \
+            goto exit; \
+        } while (0)
 
         PyObject *module = PyImport_ImportModule(known->module);
         if (module) {
