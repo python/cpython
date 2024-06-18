@@ -5138,12 +5138,13 @@
             INSTRUCTION_STATS(RETURN_CONST);
             PyObject *value;
             PyObject *retval;
+            PyObject *res;
             // _LOAD_CONST
             {
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
-            // _POP_FRAME
+            // _RETURN_VALUE
             retval = value;
             {
                 #if TIER_ONE
@@ -5156,11 +5157,13 @@
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-                _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP(frame->return_offset);
+                res = retval;
                 LLTRACE_RESUME_FRAME();
             }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -5201,6 +5204,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_VALUE);
             PyObject *retval;
+            PyObject *res;
             retval = stack_pointer[-1];
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -5213,10 +5217,12 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
+            res = retval;
             LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             DISPATCH();
         }
 

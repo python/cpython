@@ -40,7 +40,7 @@ from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
-from test.support import has_subprocess_support, SuppressCrashReport
+from test.support import has_subprocess_support
 from test import support
 
 from test.test_inspect import inspect_fodder as mod
