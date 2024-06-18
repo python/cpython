@@ -782,8 +782,9 @@ class _Pickler:
             self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
-    def __save_bytes_aux(self, obj):
+    def _save_bytes_no_memo(self, obj):
         # helper for writing bytes objects for protocol >= 3
+        # without memoizing them
         assert self.proto >= 3
         n = len(obj)
         if n <= 0xff:
@@ -803,12 +804,13 @@ class _Pickler:
                 self.save_reduce(codecs.encode,
                                  (str(obj, 'latin1'), 'latin1'), obj=obj)
             return
-        self.__save_bytes_aux(obj)
+        self._save_bytes_no_memo(obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
-    def __save_bytearray_aux(self, obj):
+    def _save_bytearray_no_memo(self, obj):
         # helper for writing bytearray objects for protocol >= 5
+        # without memoizing them
         assert self.proto >= 5
         n = len(obj)
         if n >= self.framer._FRAME_SIZE_TARGET:
@@ -823,7 +825,7 @@ class _Pickler:
             else:
                 self.save_reduce(bytearray, (bytes(obj),), obj=obj)
             return
-        self.__save_bytearray_aux(obj)
+        self._save_bytearray_no_memo(obj)
         self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
@@ -846,12 +848,12 @@ class _Pickler:
                     in_memo = id(buf) in self.memo
                     if m.readonly:
                         if in_memo:
-                            self.__save_bytes_aux(buf)
+                            self._save_bytes_no_memo(buf)
                         else:
                             self.save_bytes(buf)
                     else:
                         if in_memo:
-                            self.__save_bytearray_aux(buf)
+                            self._save_bytearray_no_memo(buf)
                         else:
                             self.save_bytearray(buf)
                 else:
