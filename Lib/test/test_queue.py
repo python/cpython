@@ -189,7 +189,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for i in range(100, 200):
             q.put(i)
         q.shutdown()
-        q.join() # verify that you can join twice
+        q.join()                # verify that you can join twice
         self.assertEqual(self.cum, sum(range(200)),
                          "q.join() did not block until all tasks were done")
         for thread in threads:
