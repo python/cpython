@@ -298,6 +298,8 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(authorizer_callback)
         STRUCT_FOR_ID(autocommit)
         STRUCT_FOR_ID(b)
+        STRUCT_FOR_ID(backread)
+        STRUCT_FOR_ID(backreadinto)
         STRUCT_FOR_ID(backtick)
         STRUCT_FOR_ID(base)
         STRUCT_FOR_ID(before)
