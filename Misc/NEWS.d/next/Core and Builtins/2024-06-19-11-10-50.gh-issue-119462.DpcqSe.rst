@@ -1,4 +1,4 @@
-Make sure that invariants of type versioning are maintained: * Superclasses
-always have their version number assigned before subclasses * The
-Py_TPFLAGS_VALID_VERSION_TAG is always set if the version tag is non-zero *
-The Py_TPFLAGS_VALID_VERSION_TAG is always unset if the version tag is zero
+Make sure that invariants of type versioning are maintained:
+* Superclasses always have their version number assigned before subclasses
+* The version tag is always zero if the tag is not valid.
+* The version tag is always non-if the tag is valid.

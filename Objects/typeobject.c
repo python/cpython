@@ -936,19 +936,6 @@ PyType_ClearWatcher(int watcher_id)
     return 0;
 }
 
-#ifndef NDEBUG
-/* Returns true if tp_flags and tp_version_tag are consistent */
-static bool version_tag_consistency(PyTypeObject *type)
-{
-    if (_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        return type->tp_version_tag != 0;
-    }
-    else {
-        return type->tp_version_tag == 0;
-    }
-}
-#endif
-
 static int assign_version_tag(PyInterpreterState *interp, PyTypeObject *type);
 
 int
@@ -965,7 +952,6 @@ PyType_Watch(int watcher_id, PyObject* obj)
     }
     // ensure we will get a callback on the next modification
     BEGIN_TYPE_LOCK()
-    assert(version_tag_consistency(type));
     assign_version_tag(interp, type);
     type->tp_watched |= (1 << watcher_id);
     END_TYPE_LOCK()
@@ -992,7 +978,6 @@ static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
-    assert(version_tag_consistency(tp));
 #ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     // lookup the old version and set to null
@@ -1002,15 +987,15 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
             + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
         *slot = NULL;
     }
-#endif
     if (version) {
-        tp->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+        _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
+    }
+#else
+    if (version) {
         tp->tp_versions_used++;
     }
-    else {
-        tp->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    }
-    tp->tp_version_tag = version;
+#endif
+    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
 #ifndef Py_GIL_DISABLED
     if (version != 0) {
         PyTypeObject **slot =
@@ -1030,16 +1015,16 @@ type_modified_unlocked(PyTypeObject *type)
 
        Invariants:
 
-       - before Py_TPFLAGS_VALID_VERSION_TAG can be set on a type,
+       - before tp_version_tag can be set on a type,
          it must first be set on all super types.
 
-       This function clears the Py_TPFLAGS_VALID_VERSION_TAG of a
+       This function clears the tp_version_tag of a
        type (so it must first clear it on all subclasses).  The
-       tp_version_tag value is meaningless unless this flag is set.
+       tp_version_tag value is meaningless when equal to zero.
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+    if (type->tp_version_tag == 0) {
         return;
     }
 
@@ -1091,12 +1076,11 @@ void
 PyType_Modified(PyTypeObject *type)
 {
     // Quick check without the lock held
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+    if (type->tp_version_tag == 0) {
         return;
     }
 
     BEGIN_TYPE_LOCK()
-    assert(version_tag_consistency(type));
     type_modified_unlocked(type);
     END_TYPE_LOCK()
 }
@@ -1212,15 +1196,13 @@ _PyType_GetVersionForCurrentState(PyTypeObject *tp)
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
-    assert(version_tag_consistency(type));
     ASSERT_TYPE_LOCK_HELD();
 
-    /* Ensure that the tp_version_tag is valid and set
-       Py_TPFLAGS_VALID_VERSION_TAG.  To respect the invariant, this
-       must first be done on all super classes.  Return 0 if this
-       cannot be done, 1 if Py_TPFLAGS_VALID_VERSION_TAG.
+    /* Ensure that the tp_version_tag is valid.
+     * To respect the invariant, this must first be done on all super classes.
+     * Return 0 if this cannot be done, 1 if tp_version_tag is set.
     */
-    if (_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+    if (type->tp_version_tag != 0) {
         return 1;
     }
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
@@ -1255,7 +1237,6 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         set_version_unlocked(type, NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
-    assert(version_tag_consistency(type));
     return 1;
 }
 
@@ -3277,7 +3258,6 @@ static int
 mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
 {
     ASSERT_TYPE_LOCK_HELD();
-    assert(version_tag_consistency(type));
 
     PyObject *new_mro, *old_mro;
     int reent;
@@ -3312,7 +3292,7 @@ mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
     else {
         /* For static builtin types, this is only called during init
            before the method cache has been populated. */
-        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+        assert(type->tp_version_tag);
     }
 
     if (p_old_mro != NULL)
@@ -5455,10 +5435,9 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         }
     }
 #else
-    assert(version_tag_consistency(type));
     if (entry->version == type->tp_version_tag &&
         entry->name == name) {
-        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+        assert(type->tp_version_tag);
         OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
         OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
         Py_XINCREF(entry->value);
@@ -5481,7 +5460,6 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         version = type->tp_version_tag;
-        assert(!has_version || _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
     }
     END_TYPE_LOCK()
 
@@ -8507,7 +8485,6 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         assert(!initial);
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
         assert(self->tp_version_tag != 0);
-        assert(self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG);
     }
 
     managed_static_type_state_init(interp, self, isbuiltin, initial);
