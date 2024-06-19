@@ -1,0 +1,1 @@
+Fixed an issue where the ``RETURN_CONST`` instruction in the code object of a lambda function returning a constant value was not accompanied with correct location information.
