@@ -92,6 +92,22 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+io
+--
+
+* Add an interface for reverse read operations to the following
+  classes in the :mod:`io` module:
+
+  * :class:`~io.IOBase`, :class:`~io.RawIOBase` and :class:`~io.TextIOBase`,
+  * :class:`~io.BufferedIOBase` and :class:`io.BytesIO`, and
+  * :class:`~io.FileIO`.
+
+  Some of the classes above provide a default implementation for reverse read
+  operations such as :meth:`IOBase.backreadline <io.IOBase.backreadline>` or
+  :meth:`BytesIO.backread`, but most of them raise :exc:`UnsupportedOperation`.
+
+  (Contributed by Bénédikt Tran in :gh:`44691`.)
+
 os
 --
 
