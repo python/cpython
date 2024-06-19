@@ -6598,13 +6598,13 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
 
-    PyTypeObject *oldto = Py_TYPE(self);
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     // The real Py_TYPE(self) (`oldto`) may have changed from
-    // underneath us in another thread, so we re-fetch it here.
+    // underneath us in another thread, so we stop the world.
     _PyEval_StopTheWorld(interp);
 #endif
+    PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
        compatible_for_assignment was not set up to correctly check for memory
@@ -6669,9 +6669,12 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
+            PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
-                goto err;
+                dict = _PyObject_materialize_managed_dict_lock_held(self);
+                if (dict == NULL) {
+                    goto err;
+                }
             }
 
             // If we raced after materialization and replaced the dict
@@ -6691,7 +6694,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
             Py_INCREF(newto);
         }
 
-        oldto = Py_TYPE(self);
+#ifdef Py_GIL_DISABLED
+        _PyEval_StartTheWorld(interp);
+#endif
         Py_SET_TYPE(self, newto);
 
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
@@ -6700,9 +6705,6 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 
         RARE_EVENT_INC(set_class);
 
-#ifdef Py_GIL_DISABLED
-        _PyEval_StartTheWorld(interp);
-#endif
         return 0;
     }
     else {
