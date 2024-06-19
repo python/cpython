@@ -6604,7 +6604,7 @@ load_build(PickleState *st, UnpicklerObject *self)
             /* normally the keys for instance attributes are
                interned.  we should try to do that here. */
             Py_INCREF(d_key);
-            if (PyUnicode_CheckExact(d_key) || !PyUnicode_CHECK_INTERNED(d_key)) {
+            if (PyUnicode_CheckExact(d_key)) {
                 PyInterpreterState *interp = _PyInterpreterState_GET();
                 _PyUnicode_InternMortal(interp, &d_key);
             }
