@@ -10,15 +10,13 @@ NTHREADS = 6
 class TestFrame(unittest.TestCase):
     def test_frame_clear_simultaneous(self):
 
-        def gen():
-            for _ in range(10000):
-                return sys._getframe()
+        def getframe():
+            return sys._getframe()
 
-        foo = gen()
+        foo = getframe()
         def work():
             for _ in range(4000):
-                frame1 = foo
-                frame1.clear()
+                foo.clear()
 
 
         threads = []
