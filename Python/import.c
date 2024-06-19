@@ -1551,6 +1551,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifdef Py_DEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1566,7 +1567,7 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
     }
     return 0;
 }
-
+#endif
 
 #ifndef NDEBUG
 static _Py_ext_module_kind
