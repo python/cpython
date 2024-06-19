@@ -1902,7 +1902,7 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL) == -1) {
             Py_DECREF(dict);
             PyType_Modified(type);
             return -1;
@@ -1923,7 +1923,7 @@ type_get_annotations(PyTypeObject *type, void *context)
 
     PyObject *annotations;
     PyObject *dict = PyType_GetDict(type);
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations_cache__), &annotations) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
@@ -1962,7 +1962,7 @@ type_get_annotations(PyTypeObject *type, void *context)
         Py_DECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
+                    dict, &_Py_ID(__annotations_cache__), annotations);
             if (result) {
                 Py_CLEAR(annotations);
             } else {
@@ -1988,10 +1988,10 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     PyObject *dict = PyType_GetDict(type);
     if (value != NULL) {
         /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
+        result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
     } else {
         /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
         if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
             Py_DECREF(dict);
@@ -4224,6 +4224,24 @@ type_new_set_classcell(PyTypeObject *type)
 }
 
 static int
+type_new_set_annotate(PyTypeObject *type)
+{
+    PyObject *dict = lookup_tp_dict(type);
+    // If __annotate__ is not set (i.e., the class has no annotations),
+    // set it to None
+    int result = PyDict_Contains(dict, &_Py_ID(__annotate__));
+    if (result < 0) {
+        return -1;
+    }
+    else if (result == 0) {
+        if (PyDict_SetItem(dict, &_Py_ID(__annotate__), Py_None) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 type_new_set_classdictcell(PyTypeObject *type)
 {
     PyObject *dict = lookup_tp_dict(type);
@@ -4294,6 +4312,9 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
     if (type_new_set_classdictcell(type) < 0) {
+        return -1;
+    }
+    if (type_new_set_annotate(type) < 0) {
         return -1;
     }
     return 0;

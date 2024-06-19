@@ -1,0 +1,2 @@
+Make lookup of ``__annotate__`` and ``__annotations__`` on classes more
+robust in the presence of metaclasses.
