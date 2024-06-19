@@ -74,6 +74,7 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
+static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 /* The following places the `_PyRuntime` structure in a location that can be
@@ -1982,6 +1983,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
+    finalize_subinterpreters();
+
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
@@ -2414,6 +2417,48 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
     }
     return finalizing != NULL;
 }
+
+static void
+finalize_subinterpreters(void)
+{
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(_PyInterpreterState_GET() == main_interp);
+    _PyRuntimeState *runtime = main_interp->runtime;
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
+    /* Clean up all remaining subinterpreters. */
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interpreters->head;
+    if (interp == main_interp) {
+        interp = interp->next;
+    }
+    HEAD_UNLOCK(runtime);
+    if (interp != NULL) {
+        (void)PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "remaining subinterpreters; "
+                "destroy them with _interpreters.destroy()",
+                0);
+    }
+    while (interp != NULL) {
+        /* Destroy the subinterpreter. */
+        assert(!_PyInterpreterState_IsRunningMain(interp));
+        PyThreadState *tstate =
+            _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+        PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+        Py_EndInterpreter(tstate);
+        (void)PyThreadState_Swap(save_tstate);
+
+        /* Advance to the next interpreter. */
+        HEAD_LOCK(runtime);
+        interp = interpreters->head;
+        if (interp == main_interp) {
+            interp = interp->next;
+        }
+        HEAD_UNLOCK(runtime);
+    }
+}
+
 
 /* Add the __main__ module */
 
