@@ -567,8 +567,31 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     tt = _strptime(data_string, format)[0]
     return time.struct_time(tt[:time._STRUCT_TM_ITEMS])
 
-def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a class cls instance based on the input string and the
+def _strptime_datetime_date(cls, data_string, format="%a %b %d %Y"):
+    """Return a date instance based on the input string and the
+    format string."""
+    tt, _, _ = _strptime(data_string, format)
+    args = tt[:3]
+    return cls(*args)
+
+def _strptime_datetime_time(cls, data_string, format="%H:%M:%S"):
+    """Return a time instance based on the input string and the
+    format string."""
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
+    tzname, gmtoff = tt[-2:]
+    args = tt[3:6] + (fraction,)
+    if gmtoff is not None:
+        tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
+        if tzname:
+            tz = datetime_timezone(tzdelta, tzname)
+        else:
+            tz = datetime_timezone(tzdelta)
+        args += (tz,)
+
+    return cls(*args)
+
+def _strptime_datetime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
+    """Return a datetime instance based on the input string and the
     format string."""
     tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]

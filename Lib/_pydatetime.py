@@ -908,6 +908,7 @@ class date:
     fromtimestamp()
     today()
     fromordinal()
+    strptime()
 
     Operators:
 
@@ -1007,6 +1008,12 @@ class date:
 
         This is the inverse of the date.isocalendar() function"""
         return cls(*_isoweek_to_gregorian(year, week, day))
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        'string, format -> new date parsed from a string (like time.strptime()).'
+        import _strptime
+        return _strptime._strptime_datetime_date(cls, date_string, format)
 
     # Conversions to string
 
@@ -1328,6 +1335,7 @@ class time:
     Constructors:
 
     __new__()
+    strptime()
 
     Operators:
 
@@ -1385,6 +1393,12 @@ class time:
         self._hashcode = -1
         self._fold = fold
         return self
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        'string, format -> new time parsed from a string (like time.strptime()).'
+        import _strptime
+        return _strptime._strptime_datetime_time(cls, date_string, format)
 
     # Read-only field accessors
     @property
@@ -2092,7 +2106,7 @@ class datetime(date):
     def strptime(cls, date_string, format):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
         import _strptime
-        return _strptime._strptime_datetime(cls, date_string, format)
+        return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
     def utcoffset(self):
         """Return the timezone offset as timedelta positive east of UTC (negative west of
