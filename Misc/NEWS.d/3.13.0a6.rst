@@ -100,7 +100,7 @@ Grigoryev Semyon
 .. date: 2024-03-29-21-43-19
 .. gh-issue: 117381
 .. nonce: fT0JFM
-.. section: Core and Builtins
+.. section: Library
 
 Fix error message for :func:`ntpath.commonpath`.
 
