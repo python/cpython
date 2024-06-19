@@ -462,7 +462,8 @@ Speedup :func:`os.path.commonpath` on Unix.
 .. date: 2024-04-08-14-33-38
 .. gh-issue: 117636
 .. nonce: exnRKd
-.. section: Core and Builtins
+.. section: Library
+
 
 Speedup :func:`os.path.join`.
 
