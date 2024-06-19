@@ -298,7 +298,7 @@ Improve :exc:`SyntaxError` message for empty type param brackets.
 .. date: 2024-04-19-08-50-48
 .. gh-issue: 102511
 .. nonce: qDEB66
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`os.path.normpath` for UNC paths on Windows.
 Speed up :func:`os.path.splitroot` with a native implementation.
