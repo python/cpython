@@ -517,9 +517,9 @@ I/O Base Classes
 
    .. method:: backread(size=-1, /)
 
-      Read up to *size* bytes from the *end* of the object and return them.
-      As a convenience, if *size* is unspecified or -1, all bytes until BOF
-      are returned.  Otherwise, only one system call is ever made.  Fewer
+      Read up to *size* bytes from the *end* of the object and return them in
+      reverse order.  As a convenience, if *size* is unspecified or -1, all
+      bytes are returned.  Otherwise, only one system call is ever made.  Fewer
       than *size* bytes may be returned if the operating system call returns
       fewer than *size* bytes.
 
@@ -534,8 +534,8 @@ I/O Base Classes
 
    .. method:: backreadall()
 
-      Read and return all the bytes from the stream until BOF, using multiple
-      calls to the stream if necessary.
+      Read and return all the bytes from the stream in reverse order,
+      using multiple calls to the stream if necessary.
 
       .. versionadded:: 3.14
 
@@ -661,15 +661,15 @@ I/O Base Classes
    .. method:: backread(size=-1, /)
 
       Read backwards and return up to *size* bytes.  If the argument is
-      omitted, ``None``, or negative, data is read and returned until BOF
-      is reached.  An empty :class:`bytes` object is returned if the stream
-      is already at BOF.
+      omitted, ``None``, or negative, data is read and returned until the
+      beginning of file.  An empty :class:`bytes` object is returned if
+      the stream is already at the beginning of file.
 
       If the argument is positive, and the underlying raw stream is not
       interactive, multiple raw reads may be issued to satisfy the byte count
-      (unless BOF is reached first).  But for interactive raw streams, at most
-      one raw read will be issued, and a short result does not imply that BOF is
-      imminent.
+      (unless the beginning of file is reached first).  But for interactive
+      raw streams, at most one raw read will be issued, and a short result
+      does not imply that the beginning of file is imminent.
 
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
@@ -865,7 +865,8 @@ than raw I/O does.
    .. method:: backread(size=-1, /)
 
       Read backwards and return *size* bytes, or if *size* is not given or
-      negative, until BOF or if the read call would block in non-blocking mode.
+      negative, until the beginning of file or if the read call would block
+      in non-blocking mode.
 
       .. versionadded:: 3.14
 
@@ -1001,14 +1002,16 @@ Text I/O
    .. method:: backread(size=-1, /)
 
       Read backwards and return at most *size* characters from the stream as a
-      single :class:`str`.  If *size* is negative or ``None``, reads until BOF.
+      single :class:`str`.  If *size* is negative or ``None``, reads until the
+      beginning of file.
 
       .. versionadded:: 3.14
 
    .. method:: backreadline(size=-1, /)
 
-      Read backwards until newline or BOF and return a single :class:`str`.
-      If the stream is already at BOF, an empty string is returned.
+      Read backwards until newline or the beginning of file is reached,
+      and return a single :class:`str`. If the stream is already at the
+      beginning of file, an empty string is returned.
 
       If *size* is specified, at most *size* characters will be read.
 
