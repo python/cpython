@@ -890,5 +890,5 @@ class TestMain(TestCase):
             exit_code = process.wait(timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
             process.kill()
-            exit_code = process.returncode
+            exit_code = process.wait()
         return "\n".join(output), exit_code
