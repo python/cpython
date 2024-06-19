@@ -2132,18 +2132,6 @@ class TextIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def backread(self, size=-1):
-        """Read backwards at most size characters from stream,
-        where size is an int.
-
-        Read from underlying buffer until we have size characters or we hit
-        the beginning of file.  If size is negative or omitted, read until
-        the beginning of file.
-
-        Returns a string.
-        """
-        self._unsupported("backread")
-
     def write(self, s):
         """Write string s to stream and returning an int."""
         self._unsupported("write")
@@ -2158,6 +2146,18 @@ class TextIOBase(IOBase):
         Returns an empty string if EOF is hit immediately.
         """
         self._unsupported("readline")
+
+    def backread(self, size=-1):
+        """Read backwards at most size characters from stream,
+        where size is an int.
+
+        Read from underlying buffer until we have size characters or we hit
+        the beginning of file.  If size is negative or omitted, read until
+        the beginning of file.
+
+        Returns a string.
+        """
+        self._unsupported("backread")
 
     def backreadline(self, size=None):
         """Read until newline or the beginning of file.
@@ -2855,9 +2855,6 @@ class TextIOWrapper(TextIOBase):
                 result += self._get_decoded_chars(size - len(result))
             return result
 
-    def backread(self, size=None):
-        self._unsupported("backread")
-
     def __next__(self):
         self._telling = False
         line = self.readline()
@@ -2959,6 +2956,9 @@ class TextIOWrapper(TextIOBase):
         # Rewind _decoded_chars to just after the line ending we found.
         self._rewind_decoded_chars(len(line) - endpos)
         return line[:endpos]
+
+    def backread(self, size=None):
+        self._unsupported("backread")
 
     def backreadline(self, size=None):
         self._unsupported("backreadline")
