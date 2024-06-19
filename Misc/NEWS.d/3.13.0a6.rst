@@ -2,7 +2,7 @@
 .. gh-issue: 117648
 .. nonce: NzVEa7
 .. release date: 2024-04-09
-.. section: Core and Builtins
+.. section: Library
 
 Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
 
