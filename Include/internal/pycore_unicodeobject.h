@@ -321,11 +321,6 @@ PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **
 PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
 PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
-#define _Py_LATIN1_CHR(CH) \
-    ((CH) < 128 \
-     ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
-     : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
-
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.
 PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);

@@ -38,7 +38,6 @@
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
-#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed

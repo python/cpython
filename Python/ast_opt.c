@@ -5,7 +5,6 @@
 #include "pycore_long.h"          // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 
 typedef struct {

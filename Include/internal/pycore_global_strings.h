@@ -792,6 +792,10 @@ struct _Py_global_strings {
      (_Py_SINGLETON(strings.identifiers._py_ ## NAME._ascii.ob_base))
 #define _Py_STR(NAME) \
      (_Py_SINGLETON(strings.literals._py_ ## NAME._ascii.ob_base))
+#define _Py_LATIN1_CHR(CH) \
+    ((CH) < 128 \
+     ? (PyObject*)&_Py_SINGLETON(strings).ascii[(CH)] \
+     : (PyObject*)&_Py_SINGLETON(strings).latin1[(CH) - 128])
 
 /* _Py_DECLARE_STR() should precede all uses of _Py_STR() in a function.
 

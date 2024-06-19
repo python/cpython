@@ -9,7 +9,6 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -3419,4 +3418,4 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f6d22f52664c16a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0d0ceed6c46547bb input=a9049054013a1b77]*/

@@ -19,7 +19,6 @@
 #include "pycore_runtime.h"           // _Py_ID()
 #include "pycore_setobject.h"         // _PySet_NextEntry()
 #include "pycore_sysmodule.h"         // _PySys_GetAttr()
-#include "pycore_unicodeobject.h"     // _Py_LATIN1_CHR()
 
 #include <stdlib.h>               // strtol()
 

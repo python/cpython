@@ -180,14 +180,10 @@ class CLanguage(Language):
                     conditions.append(f"nargs < {i+1} && PySequence_Contains(kwnames, {c_id(p.name)})")
                     containscheck = "PySequence_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
-                    codegen.add_include('pycore_unicodeobject.h',
-                                        '_Py_LATIN1_CHR()')
                 else:
                     conditions.append(f"nargs < {i+1} && PyDict_Contains(kwargs, {c_id(p.name)})")
                     containscheck = "PyDict_Contains"
                     codegen.add_include('pycore_runtime.h', '_Py_ID()')
-                    codegen.add_include('pycore_unicodeobject.h',
-                                        '_Py_LATIN1_CHR()')
             else:
                 conditions = [f"nargs < {i+1}"]
         condition = ") || (".join(conditions)
