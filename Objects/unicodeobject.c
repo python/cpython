@@ -304,6 +304,57 @@ clear_interned_dict(PyInterpreterState *interp)
     }
 }
 
+static PyStatus
+init_global_interned_strings(interp)
+{
+    assert(INTERNED_STRINGS == NULL);
+    _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
+    INTERNED_STRINGS = _Py_hashtable_new_full(
+        hashtable_unicode_hash,
+        hashtable_unicode_compare,
+        NULL,
+        NULL,
+        &hashtable_alloc
+    );
+    if (INTERNED_STRINGS == NULL) {
+        PyErr_Clear();
+        return _PyStatus_ERR("failed to create global interned dict");
+    }
+
+    /* Intern statically allocated string identifiers and deepfreeze strings.
+        * This must be done before any module initialization so that statically
+        * allocated string identifiers are used instead of heap allocated strings.
+        * Deepfreeze uses the interned identifiers if present to save space
+        * else generates them and they are interned to speed up dict lookups.
+    */
+    _PyUnicode_InitStaticStrings(interp);
+
+#ifdef Py_GIL_DISABLED
+// In the free-threaded build, intern the 1-byte strings as well
+    for (int i = 0; i < 256; i++) {
+        PyObject *s = LATIN1(i);
+        _PyUnicode_InternStatic(interp, &s);
+        assert(s == LATIN1(i));
+    }
+#endif
+#ifdef Py_DEBUG
+    assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
+
+    for (int i = 0; i < 256; i++) {
+        assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
+    }
+#endif
+    return _PyStatus_ERR;
+}
+
+static void clear_global_interned_strings(void)
+{
+    if (INTERNED_STRINGS != NULL) {
+        _Py_hashtable_destroy(INTERNED_STRINGS);
+        INTERNED_STRINGS = NULL;
+    }
+}
+
 #define _Py_RETURN_UNICODE_EMPTY()   \
     do {                             \
         return unicode_get_empty();  \
@@ -15113,44 +15164,12 @@ PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
-        assert(INTERNED_STRINGS == NULL);
-        _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
-        INTERNED_STRINGS = _Py_hashtable_new_full(
-            hashtable_unicode_hash,
-            hashtable_unicode_compare,
-            NULL,
-            NULL,
-            &hashtable_alloc
-        );
-        if (INTERNED_STRINGS == NULL) {
-            PyErr_Clear();
-            return _PyStatus_ERR("failed to create global interned dict");
+        PyStatus status = init_global_interned_strings(interp);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
-
-        /* Intern statically allocated string identifiers and deepfreeze strings.
-         * This must be done before any module initialization so that statically
-         * allocated string identifiers are used instead of heap allocated strings.
-         * Deepfreeze uses the interned identifiers if present to save space
-         * else generates them and they are interned to speed up dict lookups.
-        */
-        _PyUnicode_InitStaticStrings(interp);
-
-#ifdef Py_GIL_DISABLED
-    // In the free-threaded build, intern the 1-byte strings as well
-        for (int i = 0; i < 256; i++) {
-            PyObject *s = LATIN1(i);
-            _PyUnicode_InternStatic(interp, &s);
-            assert(s == LATIN1(i));
-        }
-#endif
-#ifdef Py_DEBUG
-        assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
-
-        for (int i = 0; i < 256; i++) {
-            assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
-        }
-#endif
     }
+    assert(INTERNED_STRINGS);
 
     if (init_interned_dict(interp)) {
         PyErr_Clear();
@@ -15530,9 +15549,8 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         Py_XINCREF(ids->array[i]);
     }
     clear_interned_dict(interp);
-    if (_Py_IsMainInterpreter(interp) && INTERNED_STRINGS != NULL) {
-        _Py_hashtable_destroy(INTERNED_STRINGS);
-        INTERNED_STRINGS = NULL;
+    if (_Py_IsMainInterpreter(interp)) {
+        clear_global_interned_strings();
     }
 }
 
