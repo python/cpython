@@ -1294,19 +1294,14 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
    characters for a terminating null character. */
 static void
 unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
-                              PyObject *unicode)
+                              Py_UCS4 *ucs4_out,
+#ifndef NDEBUG
+                              Py_UCS4 *ucs4_end,
+#endif
+                              )
 {
-    const wchar_t *iter;
-    Py_UCS4 *ucs4_out;
-
-    assert(unicode != NULL);
-    assert(_PyUnicode_CHECK(unicode));
-    assert(_PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
-    ucs4_out = PyUnicode_4BYTE_DATA(unicode);
-
-    for (iter = begin; iter < end; ) {
-        assert(ucs4_out < (PyUnicode_4BYTE_DATA(unicode) +
-                           _PyUnicode_GET_LENGTH(unicode)));
+    for (const wchar_t *iter = begin; iter < end; ) {
+        assert(ucs4_out < ucs4_end);
         if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
             && (iter+1) < end
             && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
@@ -1319,9 +1314,7 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
             iter++;
         }
     }
-    assert(ucs4_out == (PyUnicode_4BYTE_DATA(unicode) +
-                        _PyUnicode_GET_LENGTH(unicode)));
-
+    assert(ucs4_out == ucs4_end);
 }
 #endif
 
@@ -1790,16 +1783,13 @@ unicode_char(Py_UCS4 ch)
     return unicode;
 }
 
-PyObject *
-PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
+static inline int
+unicode_fromwidechar(const wchar_t *u, Py_ssize_t size,
+                     PyObject **punicode, _PyUnicodeWriter *writer)
 {
-    PyObject *unicode;
-    Py_UCS4 maxchar = 0;
-    Py_ssize_t num_surrogates;
-
     if (u == NULL && size != 0) {
         PyErr_BadInternalCall();
-        return NULL;
+        return -1;
     }
 
     if (size == -1) {
@@ -1810,8 +1800,12 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
        some optimizations which share commonly used objects. */
 
     /* Optimization for empty strings */
-    if (size == 0)
-        _Py_RETURN_UNICODE_EMPTY();
+    if (size == 0) {
+        if (punicode) {
+            *punicode = unicode_get_empty();
+        }
+        return 0;
+    }
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
@@ -1819,58 +1813,110 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     if (_Py_LocaleUsesNonUnicodeWchar()) {
         wchar_t* converted = _Py_DecodeNonUnicodeWchar(u, size);
         if (!converted) {
-            return NULL;
+            return -1;
         }
         PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
         PyMem_Free(converted);
-        return unicode;
+        if (punicode) {
+            *punicode = unicode;
+            return 0;
+        }
+        else {
+            int res = _PyUnicodeWriter_WriteStr(_writer, unicode);
+            Py_DECREF(unicode);
+            return res;
+        }
     }
 #endif
 
     /* Single character Unicode objects in the Latin-1 range are
        shared when using this constructor */
-    if (size == 1 && (Py_UCS4)*u < 256)
-        return get_latin1_char((unsigned char)*u);
+    if (punicode && size == 1 && (Py_UCS4)*u < 256) {
+        *punicode = get_latin1_char((unsigned char)*u);
+        return 0;
+    }
 
     /* If not empty and not single character, copy the Unicode data
        into the new object */
+    Py_UCS4 maxchar = 0;
+    Py_ssize_t num_surrogates;
     if (find_maxchar_surrogates(u, u + size,
-                                &maxchar, &num_surrogates) == -1)
-        return NULL;
+                                &maxchar, &num_surrogates) == -1) {
+        return -1;
+    }
 
-    unicode = PyUnicode_New(size - num_surrogates, maxchar);
-    if (!unicode)
-        return NULL;
+    PyObject *unicode = NULL;
+    int kind;
+    void *data;
+    if (punicode) {
+        unicode = PyUnicode_New(size - num_surrogates, maxchar);
+        if (!unicode) {
+            return -1;
+        }
+        kind = PyUnicode_KIND(unicode);
+        data = PyUnicode_DATA(unicode);
+    }
+    else {
+        if (_PyUnicodeWriter_Prepare(writer, size - num_surrogates,
+                                     maxchar) < 0) {
+            return -1;
+        }
+        kind = writer->kind;
+        data = writer->data + writer->pos * kind;
+    }
 
-    switch (PyUnicode_KIND(unicode)) {
+    switch (kind) {
     case PyUnicode_1BYTE_KIND:
-        _PyUnicode_CONVERT_BYTES(wchar_t, unsigned char,
-                                u, u + size, PyUnicode_1BYTE_DATA(unicode));
+        _PyUnicode_CONVERT_BYTES(wchar_t, unsigned char, u, u + size, data);
         break;
     case PyUnicode_2BYTE_KIND:
 #if Py_UNICODE_SIZE == 2
-        memcpy(PyUnicode_2BYTE_DATA(unicode), u, size * 2);
+        memcpy(data, u, size * 2);
 #else
-        _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
-                                u, u + size, PyUnicode_2BYTE_DATA(unicode));
+        _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2, u, u + size, data);
 #endif
         break;
     case PyUnicode_4BYTE_KIND:
+    {
 #if SIZEOF_WCHAR_T == 2
         /* This is the only case which has to process surrogates, thus
            a simple copy loop is not enough and we need a function. */
-        unicode_convert_wchar_to_ucs4(u, u + size, unicode);
+#  ifndef NDEBUG
+        Py_UCS4* ucs4_end = (Py_UCS4*)data + (size - num_surrogates);
+        unicode_convert_wchar_to_ucs4(u, u + size, (Py_UCS4*)data, ucs4_end);
+#  else
+        unicode_convert_wchar_to_ucs4(u, u + size, (Py_UCS4*)data);
+#  endif
 #else
         assert(num_surrogates == 0);
-        memcpy(PyUnicode_4BYTE_DATA(unicode), u, size * 4);
+        memcpy(data, u, size * 4);
 #endif
         break;
+    }
     default:
         Py_UNREACHABLE();
     }
 
-    return unicode_result(unicode);
+    if (punicode) {
+        *punicode = unicode_result(unicode);
+    }
+    else {
+        writer->pos += size - num_surrogates;
+    }
+    return 0;
 }
+
+
+PyObject *
+PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
+{
+    PyObject *unicode;
+    if (unicode_fromwidechar(u, size, &unicode, NULL) < 0) {
+        return NULL;
+    }
+    return unicode;
+}
+
 
 PyObject *
 PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
@@ -13534,15 +13580,9 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer,
     if (size < 0) {
         size = wcslen(str);
     }
-    PyObject *obj = PyUnicode_FromWideChar(str, size);
-    if (obj == NULL) {
-        return -1;
-    }
 
     _PyUnicodeWriter *_writer = (_PyUnicodeWriter *)writer;
-    int res = _PyUnicodeWriter_WriteStr(_writer, obj);
-    Py_DECREF(obj);
-    return res;
+    return unicode_fromwidechar(str, size, NULL, _writer);
 }
 
 
