@@ -1551,6 +1551,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1568,7 +1569,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 
-#ifndef NDEBUG
 static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
@@ -1969,7 +1969,17 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
             if (info->filename != NULL) {
                 // XXX There's a refleak somewhere with the filename.
                 // Until we can track it down, we intern it.
-                PyObject *filename = Py_NewRef(info->filename);
+                PyObject *filename = NULL;
+                if (switched) {
+                    // The original filename may be allocated by subinterpreter's
+                    // obmalloc, so we create a copy here.
+                    filename = _PyUnicode_Copy(info->filename);
+                    if (filename == NULL) {
+                        return NULL;
+                    }
+                } else {
+                    filename = Py_NewRef(info->filename);
+                }
                 PyUnicode_InternInPlace(&filename);
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */

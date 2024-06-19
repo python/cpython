@@ -1561,7 +1561,7 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(function, /, *iterables, strict=False)\n\
+"map(function, iterable, /, *iterables, strict=False)\n\
 --\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
