@@ -1862,7 +1862,7 @@ unicode_fromwidechar(const wchar_t *u, Py_ssize_t size,
             return -1;
         }
         kind = writer->kind;
-        data = writer->data + writer->pos * kind;
+        data = (Py_UCS1*)writer->data + writer->pos * kind;
     }
 
     switch (kind) {
