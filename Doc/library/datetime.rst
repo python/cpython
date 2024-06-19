@@ -554,6 +554,25 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`date.fromisoformat`.
 
+   .. note
+
+      If *format* specifies a day of month without a year a
+      :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
+      leap year bug in code seeking to parse only a month and day as the
+      default year used in absence of one in the format is not a leap year.
+      Such *format* values may raise an error as of Python 3.15.  The
+      workaround is to always include a year in your *format*.  If parsing
+      *date_string* values that do not have a year, explicitly add a year that
+      is a leap year before parsing:
+
+      .. doctest::
+
+         >>> from datetime import date
+         >>> date_string = "02/29"
+         >>> when = date.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when.strftime("%B %d")  # doctest: +SKIP
+         'February 29'
+
    .. versionadded:: 3.14
 
 
