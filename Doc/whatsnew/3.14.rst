@@ -100,6 +100,12 @@ os
   by :func:`os.unsetenv`, or made outside Python in the same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+queue
+-----
+
+Made :class:`queue.Queue` an :term:`iterable`.
+(Contributed by Wannes Boeykens in :gh:`120503`.)
+
 symtable
 --------
 
