@@ -15179,10 +15179,12 @@ error:
     return _PyStatus_ERR("Can't initialize unicode types");
 }
 
-void
-_PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
+static /* non-null */ PyObject*
+intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
 {
-    PyObject *s = *p;
+    // Note that this steals a reference to `s`, but in many cases that
+    // stolen ref is returned, requiring no decref/incref.
+
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
@@ -15192,7 +15194,7 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
         case SSTATE_NOT_INTERNED:
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
-            return;
+            return s;
         default:
             Py_FatalError("_PyUnicode_InternStatic called on wrong string");
     }
@@ -15216,10 +15218,9 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     /* but just in case (for the non-debug build), handle this */
     if (r != NULL && r != s) {
         assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
-        Py_SETREF(*p, Py_NewRef(r));
         assert(_PyUnicode_CHECK(r));
         Py_DECREF(s);
-        return;
+        return Py_NewRef(r);
     }
 
     if (_Py_hashtable_set(INTERNED_STRINGS, s, s) < -1) {
@@ -15227,6 +15228,14 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     }
 
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+    return s;
+}
+
+void
+_PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
+{
+    *p = intern_static(interp, *p);
+    assert(*p);
 }
 
 static void
@@ -15246,29 +15255,31 @@ immortalize_interned(PyObject *s)
     _Py_SetImmortal(s);
 }
 
-static void
-intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
+static /* non-null */ PyObject*
+intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
+              bool immortalize)
 {
-    PyObject *s = *p;
+    // Note that this steals a reference to `s`, but in many cases that
+    // stolen ref is returned, requiring no decref/incref.
+
 #ifdef Py_DEBUG
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
 #else
     if (s == NULL || !PyUnicode_Check(s)) {
-        return;
+        return s;
     }
 #endif
 
     /* If it's a subclass, we don't really know what putting
        it in the interned dict might do. */
     if (!PyUnicode_CheckExact(s)) {
-        return;
+        return s;
     }
 
     /* Handle statically allocated strings. */
     if (_PyUnicode_STATE(s).statically_allocated) {
-        _PyUnicode_InternStatic(interp, p);
-        return;
+        return intern_static(interp, s);
     }
 
     /* Is it already interned? */
@@ -15281,10 +15292,10 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
             if (immortalize) {
                 immortalize_interned(s);
             }
-            return;
+            return s;
         default:
             // all done
-            return;
+            return s;
     }
 
 #if Py_GIL_DISABLED
@@ -15300,11 +15311,12 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
     /* if it's a short string, get the singleton -- and intern it */
     if (PyUnicode_GET_LENGTH(s) == 1 &&
                 PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
-        Py_SETREF(*p, LATIN1(*(unsigned char*)PyUnicode_DATA(s)));
-        if (!PyUnicode_CHECK_INTERNED(*p)) {
-            _PyUnicode_InternStatic(interp, p);
+        PyObject *r = LATIN1(*(unsigned char*)PyUnicode_DATA(s));
+        if (!PyUnicode_CHECK_INTERNED(r)) {
+            r = intern_static(interp, r);
         }
-        return;
+        Py_DECREF(s);
+        return r;
     }
 #ifdef Py_DEBUG
     assert(!unicode_is_singleton(s));
@@ -15315,8 +15327,8 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
         PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
         if (r != NULL && r != s) {
             assert(_Py_IsImmortal(r));
-            Py_SETREF(*p, Py_NewRef(r));
-            return;
+            Py_DECREF(s);
+            return Py_NewRef(r);
         }
     }
 
@@ -15329,17 +15341,16 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
         if (res < 0) {
             PyErr_Clear();
-            return;
+            return s;
         }
         else if (res == 1) {
             // value was already present (not inserted)
-            s = t;
-            Py_SETREF(*p, t);
+            Py_DECREF(s);
             if (immortalize &&
-                    PyUnicode_CHECK_INTERNED(s) == SSTATE_INTERNED_MORTAL) {
-                immortalize_interned(s);
+                    PyUnicode_CHECK_INTERNED(t) == SSTATE_INTERNED_MORTAL) {
+                immortalize_interned(t);
             }
-            return;
+            return t;
         }
         else {
             // value was newly inserted
@@ -15374,18 +15385,22 @@ intern_common(PyInterpreterState *interp, PyObject **p, bool immortalize)
     if (immortalize) {
         immortalize_interned(s);
     }
+
+    return s;
 }
 
 void
 _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **p)
 {
-    intern_common(interp, p, 1);
+    *p = intern_common(interp, *p, 1);
+    assert(*p);
 }
 
 void
 _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **p)
 {
-    intern_common(interp, p, 0);
+    *p = intern_common(interp, *p, 0);
+    assert(*p);
 }
 
 
