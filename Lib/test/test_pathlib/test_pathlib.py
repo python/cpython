@@ -513,14 +513,17 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         os.chmod(self.parser.join(self.base, 'dirE'), 0)
 
     def tearDown(self):
-        os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
+        try:
+            os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
+        except FileNotFoundError:
+            pass
         os_helper.rmtree(self.base)
 
     def tempdir(self):
         d = os_helper._longpath(tempfile.mkdtemp(suffix='-dirD',
                                                  dir=os.getcwd()))
         self.addCleanup(os_helper.rmtree, d)
-        return d
+        return self.cls(d)
 
     def test_matches_pathbase_api(self):
         our_names = {name for name in dir(self.cls) if name[0] != '_'}
@@ -652,6 +655,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with (p / 'fileA').open('rb', buffering=0) as f:
             self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
+
+    def test_copytree_no_read_permission(self):
+        base = self.cls(self.base)
+        source = base / 'dirE'
+        target = base / 'copyE'
+        self.assertRaises(PermissionError, source.copytree, target)
+        self.assertFalse(target.exists())
+        errors = []
+        source.copytree(target, on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], PermissionError)
+        self.assertFalse(target.exists())
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')

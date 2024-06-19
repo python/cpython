@@ -1822,6 +1822,170 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(target.read_bytes(), b'')
 
+    def test_copytree_simple(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        source.copytree(target)
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_complex(self):
+        def ordered_walk(path):
+            for dirpath, dirnames, filenames in path.walk(follow_symlinks=True):
+                dirnames.sort()
+                filenames.sort()
+                yield dirpath, dirnames, filenames
+        source = self.cls(self.base)
+        target = self.tempdir() / 'target'
+
+        # Special cases tested elsehwere
+        source.joinpath('dirE').rmdir()
+        if self.can_symlink:
+            source.joinpath('brokenLink').unlink()
+            source.joinpath('brokenLinkLoop').unlink()
+            source.joinpath('dirB', 'linkD').unlink()
+
+        # Perform the copy
+        source.copytree(target)
+
+        # Compare the source and target trees
+        source_walk = ordered_walk(source)
+        target_walk = ordered_walk(target)
+        for source_item, target_item in zip(source_walk, target_walk, strict=True):
+            self.assertEqual(source_item[0].relative_to(source),
+                             target_item[0].relative_to(target))  # dirpath
+            self.assertEqual(source_item[1], target_item[1])  # dirnames
+            self.assertEqual(source_item[2], target_item[2])  # filenames
+
+    def test_copytree_complex_follow_symlinks_false(self):
+        def ordered_walk(path):
+            for dirpath, dirnames, filenames in path.walk(follow_symlinks=False):
+                dirnames.sort()
+                filenames.sort()
+                yield dirpath, dirnames, filenames
+        source = self.cls(self.base)
+        target = self.tempdir() / 'target'
+
+        # Special cases tested elsewhere
+        source.joinpath('dirE').rmdir()
+
+        # Perform the copy
+        source.copytree(target, follow_symlinks=False)
+
+        # Compare the source and target trees
+        source_walk = ordered_walk(source)
+        target_walk = ordered_walk(target)
+        for source_item, target_item in zip(source_walk, target_walk, strict=True):
+            self.assertEqual(source_item[0].relative_to(source),
+                             target_item[0].relative_to(target))  # dirpath
+            self.assertEqual(source_item[1], target_item[1])  # dirnames
+            self.assertEqual(source_item[2], target_item[2])  # filenames
+
+    def test_copytree_to_existing_directory(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        target.mkdir()
+        target.joinpath('dirD').mkdir()
+        self.assertRaises(FileExistsError, source.copytree, target)
+
+    def test_copytree_to_existing_directory_dirs_exist_ok(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        target.mkdir()
+        target.joinpath('dirD').mkdir()
+        source.copytree(target, dirs_exist_ok=True)
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        self.assertRaises(NotADirectoryError, source.copytree, target)
+
+    def test_copytree_file_on_error(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        errors = []
+        source.copytree(target, on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], NotADirectoryError)
+
+    def test_copytree_ignore_false(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        ignores = []
+        def ignore_false(path):
+            ignores.append(path)
+            return False
+        source.copytree(target, ignore=ignore_false)
+        self.assertEqual(set(ignores), {
+            source / 'dirD',
+            source / 'dirD' / 'fileD',
+            source / 'fileC',
+            source / 'novel.txt',
+        })
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
+
+    def test_copytree_ignore_true(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'copyC'
+        ignores = []
+        def ignore_true(path):
+            ignores.append(path)
+            return True
+        source.copytree(target, ignore=ignore_true)
+        self.assertEqual(set(ignores), {
+            source / 'dirD',
+            source / 'fileC',
+            source / 'novel.txt',
+        })
+        self.assertTrue(target.is_dir())
+        self.assertFalse(target.joinpath('dirD').exists())
+        self.assertFalse(target.joinpath('fileC').exists())
+        self.assertFalse(target.joinpath('novel.txt').exists())
+
+    @needs_symlinks
+    def test_copytree_dangling_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'source'
+        target = base / 'target'
+
+        source.mkdir()
+        source.joinpath('link').symlink_to('nonexistent')
+
+        self.assertRaises(FileNotFoundError, source.copytree, target)
+
+        target2 = base / 'target2'
+        source.copytree(target2, follow_symlinks=False)
+        self.assertTrue(target2.joinpath('link').is_symlink())
+        self.assertEqual(target2.joinpath('link').readlink(), self.cls('nonexistent'))
+
     def test_iterdir(self):
         P = self.cls
         p = P(self.base)
