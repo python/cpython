@@ -93,6 +93,21 @@ class TypeCacheTests(unittest.TestCase):
         new_version = type_get_version(C)
         self.assertEqual(new_version, 0)
 
+    def test_119462(self):
+
+        class Holder:
+            value = None
+
+            @classmethod
+            def set_value(cls):
+                cls.value = object()
+
+        class HolderSub(Holder):
+            pass
+
+        for _ in range(1050):
+            Holder.set_value()
+            HolderSub.value
 
 @support.cpython_only
 @requires_specialization
