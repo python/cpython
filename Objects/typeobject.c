@@ -988,11 +988,11 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
         *slot = NULL;
     }
     if (version) {
-        _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
+        tp->tp_versions_used++;
     }
 #else
     if (version) {
-        tp->tp_versions_used++;
+        _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
     }
 #endif
     FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
@@ -1216,8 +1216,9 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (!assign_version_tag(interp, _PyType_CAST(b)))
+        if (!assign_version_tag(interp, _PyType_CAST(b))) {
             return 0;
+        }
     }
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
