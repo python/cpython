@@ -14,6 +14,7 @@
 #include "pycore_long.h"             // _PyLong_DigitCount
 #include "pycore_setobject.h"        // _PySet_NextEntry()
 #include "marshal.h"                 // Py_MARSHAL_VERSION
+#include "pycore_pystate.h"          // _PyInterpreterState_GET()
 
 #ifdef __APPLE__
 #  include "TargetConditionals.h"
@@ -1187,7 +1188,8 @@ r_object(RFILE *p)
             if (is_interned) {
                 // marshal is meant to serialize .pyc files with code
                 // objects, and code-related strings are currently immortal.
-                PyUnicode_InternImmortal(&v);
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &v);
             }
             retval = v;
             R_REF(retval);
@@ -1223,7 +1225,8 @@ r_object(RFILE *p)
         if (is_interned) {
                 // marshal is meant to serialize .pyc files with code
             // objects, and code-related strings are currently immortal.
-            PyUnicode_InternImmortal(&v);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            _PyUnicode_InternImmortal(interp, &v);
         }
         retval = v;
         R_REF(retval);
