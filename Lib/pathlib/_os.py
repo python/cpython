@@ -93,7 +93,7 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_file_attributes'):
-    def is_dirlink(path):
+    def _is_dirlink(path):
         try:
             st = os.lstat(path)
         except (OSError, ValueError):
@@ -114,7 +114,7 @@ if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_fil
                 return
             except OSError as err:
                 # Check for ERROR_ACCESS_DENIED
-                if err.winerror != 5 or not is_dirlink(source):
+                if err.winerror != 5 or not _is_dirlink(source):
                     raise
             flags |= _winapi.COPY_FILE_DIRECTORY
         _winapi.CopyFile2(source, target, flags)
