@@ -1294,9 +1294,9 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
    characters for a terminating null character. */
 static void
 unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
-                              Py_UCS4 *ucs4_out,
+                              Py_UCS4 *ucs4_out
 #ifndef NDEBUG
-                              Py_UCS4 *ucs4_end,
+                              , Py_UCS4 *ucs4_end
 #endif
                               )
 {
