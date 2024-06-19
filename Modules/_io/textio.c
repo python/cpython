@@ -118,8 +118,9 @@ _io._TextIOBase.backread
 
 Read backwards at most size characters from stream.
 
-Read from underlying buffer until we have size characters or we hit BOF.
-If size is negative or omitted, read until BOF.
+Read from underlying buffer until we have size characters or we hit the
+beginning of file.  If size is negative or omitted, read until the
+beginning of file.
 [clinic start generated code]*/
 
 static PyObject *
@@ -137,9 +138,9 @@ _io._TextIOBase.backreadline
     size: int(unused=True) = -1
     /
 
-Read backwards until newline or BOF.
+Read backwards until newline or the beginning of file.
 
-Return an empty string if BOF is hit immediately.
+Return an empty string if the current position is 0.
 If size is specified, at most size characters will be read.
 [clinic start generated code]*/
 

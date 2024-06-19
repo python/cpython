@@ -865,7 +865,7 @@ Read backwards at most size bytes, returned as bytes.
 
 Only makes one system call, so less data may be returned than requested.
 In non-blocking mode, returns None if no data is available.
-Return an empty bytes object at EOF.
+Return an empty bytes object if the current position is 0.
 [clinic start generated code]*/
 
 static PyObject *
@@ -900,7 +900,8 @@ _io.FileIO.backreadall
 Read all data backwards from the file, returned as bytes.
 
 In non-blocking mode, returns as much as is immediately available,
-or None if no data is available.  Return an empty bytes object at BOF.
+or None if no data is available.  Return an empty bytes object if
+the current position is 0.
 [clinic start generated code]*/
 
 static PyObject *

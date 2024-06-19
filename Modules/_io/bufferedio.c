@@ -202,7 +202,7 @@ _io._BufferedIOBase.backread
 Read backwards and return up to n bytes.
 
 If the size argument is omitted, None, or negative, read and
-return all data until BOF.
+return all data until BOF (beginning of the file).
 
 If the size argument is positive, and the underlying raw stream is
 not 'interactive', multiple raw reads may be issued to satisfy

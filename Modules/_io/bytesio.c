@@ -593,8 +593,8 @@ _io.BytesIO.backread
 
 Read backwards at most size bytes, returned as a bytes object.
 
-If the size argument is negative, read until EOF is reached.
-Return an empty bytes object at EOF.
+If the size argument is negative, read until the beginning of file (BOF) is
+reached.  Return an empty bytes object at BOF.
 [clinic start generated code]*/
 
 static PyObject *
@@ -612,7 +612,7 @@ _io.BytesIO.backreadinto
 
 Read backwards bytes into buffer.
 
-Returns number of bytes read (0 for BOF), or None if the object
+Returns number of bytes read (0 if current position is 0), or None if the object
 is set not to block and has no data to read.
 [clinic start generated code]*/
 
@@ -633,7 +633,7 @@ Next line from the end of the file, as a bytes object.
 
 Retain newline.  A non-negative size argument limits the maximum
 number of bytes to return (an incomplete line may be returned then).
-Return an empty bytes object at BOF.
+Return an empty bytes object if current position is 0.
 [clinic start generated code]*/
 
 static PyObject *
