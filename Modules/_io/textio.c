@@ -2118,20 +2118,6 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     return NULL;
 }
 
-/*[clinic input]
-@critical_section
-_io.TextIOWrapper.backread
-    size as n: Py_ssize_t(accept={int, NoneType}) = -1
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_io_TextIOWrapper_backread_impl(textio *self, Py_ssize_t n)
-/*[clinic end generated code: output=daaf4d3642b851dd input=023e4b369b276cb4]*/
-{
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return _unsupported(state, "backread");
-}
 
 /* NOTE: `end` must point to the real end of the Py_UCS4 storage,
    that is to the NUL character. Otherwise the function will produce
@@ -2412,6 +2398,40 @@ _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size)
 {
     CHECK_ATTACHED(self);
     return _textiowrapper_readline(self, size);
+}
+
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.backread
+    cls: defining_class
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_backread_impl(textio *self, PyTypeObject *cls,
+                                Py_ssize_t n)
+/*[clinic end generated code: output=ae1a73d6e2b808c4 input=042b3553a2eeb5e5]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backread");
+}
+
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.backreadline
+    cls: defining_class
+    size: Py_ssize_t = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_backreadline_impl(textio *self, PyTypeObject *cls,
+                                    Py_ssize_t size)
+/*[clinic end generated code: output=52c0d84b5ebda3e1 input=48c0dc44f3b40ffe]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backreadline");
 }
 
 /* Seek and Tell */
@@ -3396,6 +3416,8 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_WRITE_METHODDEF
     _IO_TEXTIOWRAPPER_READ_METHODDEF
     _IO_TEXTIOWRAPPER_READLINE_METHODDEF
+    _IO_TEXTIOWRAPPER_BACKREAD_METHODDEF
+    _IO_TEXTIOWRAPPER_BACKREADLINE_METHODDEF
     _IO_TEXTIOWRAPPER_FLUSH_METHODDEF
     _IO_TEXTIOWRAPPER_CLOSE_METHODDEF
 
