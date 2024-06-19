@@ -237,30 +237,8 @@ static PyObject *
 _io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=089fdcf2b4b15522 input=8240e5a3d7c8fe26]*/
 {
-    Py_ssize_t len;
-    PyObject *data;
-    PyObject *attr = &_Py_ID(backread);
-    data = _PyObject_CallMethod(self, attr, "n", buffer->len);
-    if (data == NULL) {
-        return NULL;
-    }
-    if (!PyBytes_Check(data)) {
-        Py_DECREF(data);
-        PyErr_SetString(PyExc_TypeError, "backread() should return bytes");
-        return NULL;
-    }
-    len = PyBytes_GET_SIZE(data);
-    if (len > buffer->len) {
-        PyErr_Format(PyExc_ValueError,
-                     "backread() returned too much data: "
-                     "%zd bytes requested, %zd returned",
-                     buffer->len, len);
-        Py_DECREF(data);
-        return NULL;
-    }
-    memcpy(buffer->buf, PyBytes_AS_STRING(data), len);
-    Py_DECREF(data);
-    return PyLong_FromSsize_t(len);
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
@@ -1390,8 +1368,8 @@ static PyObject *
 _io__Buffered_backread_impl(buffered *self, Py_ssize_t n)
 /*[clinic end generated code: output=1d9419484778ae01 input=e0459b8a28c1bc41]*/
 {
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return bufferediobase_unsupported(state, "backread");
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
@@ -1405,8 +1383,8 @@ static PyObject *
 _io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer)
 /*[clinic end generated code: output=740fec02a2357570 input=d596047fa0898560]*/
 {
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return bufferediobase_unsupported(state, "backreadinto");
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
@@ -1420,8 +1398,8 @@ static PyObject *
 _io__Buffered_backreadline_impl(buffered *self, Py_ssize_t size)
 /*[clinic end generated code: output=dab0e1127f375a53 input=bfaa97db6dc41727]*/
 {
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return bufferediobase_unsupported(state, "backreadline");
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
 }
 
 /*[clinic input]
