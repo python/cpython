@@ -584,7 +584,7 @@ free_interpreter(PyInterpreterState *interp)
         PyMem_RawFree(interp);
     }
 }
-#ifdef Py_DEBUG
+#ifdef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
 /* Get the interpreter state to a minimal consistent state.
@@ -1130,7 +1130,7 @@ _PyInterpreterState_IsReady(PyInterpreterState *interp)
     return interp->_ready;
 }
 
-#ifdef Py_DEBUG
+#ifdef NDEBUG
 static inline int
 check_interpreter_whence(long whence)
 {
