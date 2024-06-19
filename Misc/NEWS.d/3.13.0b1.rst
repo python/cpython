@@ -453,7 +453,7 @@ as such regardless of whether they are in extension modules or not.
 .. date: 2024-04-08-19-30-38
 .. gh-issue: 117641
 .. nonce: oaBGSJ
-.. section: Core and Builtins
+.. section: Library
 
 Speedup :func:`os.path.commonpath` on Unix.
 
