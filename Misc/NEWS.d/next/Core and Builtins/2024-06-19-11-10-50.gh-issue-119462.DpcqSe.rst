@@ -1,0 +1,4 @@
+Make sure that invariants of type versioning are maintained:
+* Superclasses always have their version number assigned before subclasses
+* The version tag is always zero if the tag is not valid.
+* The version tag is always non-if the tag is valid.
