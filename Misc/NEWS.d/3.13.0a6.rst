@@ -109,7 +109,7 @@ Fix error message for :func:`ntpath.commonpath`.
 .. date: 2024-03-29-15-04-13
 .. gh-issue: 117349
 .. nonce: OB9kQQ
-.. section: Core and Builtins
+.. section: Library
 
 Optimise several functions in :mod:`os.path`.
 
