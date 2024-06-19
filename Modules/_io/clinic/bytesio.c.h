@@ -349,8 +349,8 @@ PyDoc_STRVAR(_io_BytesIO_backread__doc__,
 "\n"
 "Read backwards at most size bytes, returned as a bytes object.\n"
 "\n"
-"If the size argument is negative, read until EOF is reached.\n"
-"Return an empty bytes object at EOF.");
+"If the size argument is negative, read until the beginning of file (BOF) is\n"
+"reached.  Return an empty bytes object at BOF.");
 
 #define _IO_BYTESIO_BACKREAD_METHODDEF    \
     {"backread", _PyCFunction_CAST(_io_BytesIO_backread), METH_FASTCALL, _io_BytesIO_backread__doc__},
@@ -386,7 +386,7 @@ PyDoc_STRVAR(_io_BytesIO_backreadinto__doc__,
 "\n"
 "Read backwards bytes into buffer.\n"
 "\n"
-"Returns number of bytes read (0 for BOF), or None if the object\n"
+"Returns number of bytes read (0 if current position is 0), or None if the object\n"
 "is set not to block and has no data to read.");
 
 #define _IO_BYTESIO_BACKREADINTO_METHODDEF    \
@@ -424,7 +424,7 @@ PyDoc_STRVAR(_io_BytesIO_backreadline__doc__,
 "\n"
 "Retain newline.  A non-negative size argument limits the maximum\n"
 "number of bytes to return (an incomplete line may be returned then).\n"
-"Return an empty bytes object at BOF.");
+"Return an empty bytes object if current position is 0.");
 
 #define _IO_BYTESIO_BACKREADLINE_METHODDEF    \
     {"backreadline", _PyCFunction_CAST(_io_BytesIO_backreadline), METH_FASTCALL, _io_BytesIO_backreadline__doc__},
@@ -645,4 +645,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=580bd186ba900f2f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca2d4ec33c58587c input=a9049054013a1b77]*/

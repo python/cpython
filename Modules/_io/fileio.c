@@ -870,7 +870,7 @@ Return an empty bytes object if the current position is 0.
 
 static PyObject *
 _io_FileIO_backread_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=7604b666a3f9ec98 input=ebce4397a8cf277b]*/
+/*[clinic end generated code: output=7604b666a3f9ec98 input=323578bc358cfdf8]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
@@ -906,7 +906,7 @@ the current position is 0.
 
 static PyObject *
 _io_FileIO_backreadall_impl(fileio *self)
-/*[clinic end generated code: output=e8d5c20f2fb382f6 input=873b6c9abb7bb762]*/
+/*[clinic end generated code: output=e8d5c20f2fb382f6 input=636bb5acd714a2cf]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;

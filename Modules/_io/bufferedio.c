@@ -220,7 +220,7 @@ mode and no data is available at the moment.
 static PyObject *
 _io__BufferedIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
                                   int Py_UNUSED(size))
-/*[clinic end generated code: output=e2aa0f9e2adc3edc input=96fd31b58363ebef]*/
+/*[clinic end generated code: output=e2aa0f9e2adc3edc input=bcb772542528cbf1]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "backread");

@@ -342,7 +342,7 @@ PyDoc_STRVAR(_io_FileIO_backread__doc__,
 "\n"
 "Only makes one system call, so less data may be returned than requested.\n"
 "In non-blocking mode, returns None if no data is available.\n"
-"Return an empty bytes object at EOF.");
+"Return an empty bytes object if the current position is 0.");
 
 #define _IO_FILEIO_BACKREAD_METHODDEF    \
     {"backread", _PyCFunction_CAST(_io_FileIO_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_backread__doc__},
@@ -446,7 +446,8 @@ PyDoc_STRVAR(_io_FileIO_backreadall__doc__,
 "Read all data backwards from the file, returned as bytes.\n"
 "\n"
 "In non-blocking mode, returns as much as is immediately available,\n"
-"or None if no data is available.  Return an empty bytes object at BOF.");
+"or None if no data is available.  Return an empty bytes object if\n"
+"the current position is 0.");
 
 #define _IO_FILEIO_BACKREADALL_METHODDEF    \
     {"backreadall", (PyCFunction)_io_FileIO_backreadall, METH_NOARGS, _io_FileIO_backreadall__doc__},
@@ -654,4 +655,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=56233fdc409b7a85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5da0b05594dd9d4 input=a9049054013a1b77]*/

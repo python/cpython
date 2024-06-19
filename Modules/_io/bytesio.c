@@ -599,7 +599,7 @@ reached.  Return an empty bytes object at BOF.
 
 static PyObject *
 _io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=d3bccd201010ec0a input=3277833a962d0635]*/
+/*[clinic end generated code: output=d3bccd201010ec0a input=1fea25a35bd6ad81]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
@@ -618,7 +618,7 @@ is set not to block and has no data to read.
 
 static PyObject *
 _io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=42f2ca676ab55937 input=6ac72ceee21684f3]*/
+/*[clinic end generated code: output=42f2ca676ab55937 input=ef424bc91ee85a0b]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
@@ -638,7 +638,7 @@ Return an empty bytes object if current position is 0.
 
 static PyObject *
 _io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=cf53cd21c22e0a4d input=c11ce93b188a03d9]*/
+/*[clinic end generated code: output=cf53cd21c22e0a4d input=2d74fa3d4ec83ed0]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;

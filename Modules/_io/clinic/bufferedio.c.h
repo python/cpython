@@ -230,7 +230,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_backread__doc__,
 "Read backwards and return up to n bytes.\n"
 "\n"
 "If the size argument is omitted, None, or negative, read and\n"
-"return all data until BOF.\n"
+"return all data until BOF (beginning of the file).\n"
 "\n"
 "If the size argument is positive, and the underlying raw stream is\n"
 "not \'interactive\', multiple raw reads may be issued to satisfy\n"
@@ -1449,4 +1449,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=df96466b7494089a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34a6812de9b4315c input=a9049054013a1b77]*/

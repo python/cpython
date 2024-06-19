@@ -126,7 +126,7 @@ beginning of file.
 static PyObject *
 _io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
                               int Py_UNUSED(size))
-/*[clinic end generated code: output=e7adf2f428a3cfa4 input=bef66883366ebb29]*/
+/*[clinic end generated code: output=e7adf2f428a3cfa4 input=1e7b896c0152c737]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "backread");
@@ -147,7 +147,7 @@ If size is specified, at most size characters will be read.
 static PyObject *
 _io__TextIOBase_backreadline_impl(PyObject *self, PyTypeObject *cls,
                                   int Py_UNUSED(size))
-/*[clinic end generated code: output=92c399ecfbede452 input=bcd50720c6e354ac]*/
+/*[clinic end generated code: output=92c399ecfbede452 input=2c62dec827da79cc]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "backreadline");

@@ -148,8 +148,9 @@ PyDoc_STRVAR(_io__TextIOBase_backread__doc__,
 "\n"
 "Read backwards at most size characters from stream.\n"
 "\n"
-"Read from underlying buffer until we have size characters or we hit BOF.\n"
-"If size is negative or omitted, read until BOF.");
+"Read from underlying buffer until we have size characters or we hit the\n"
+"beginning of file.  If size is negative or omitted, read until the\n"
+"beginning of file.");
 
 #define _IO__TEXTIOBASE_BACKREAD_METHODDEF    \
     {"backread", _PyCFunction_CAST(_io__TextIOBase_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_backread__doc__},
@@ -200,9 +201,9 @@ PyDoc_STRVAR(_io__TextIOBase_backreadline__doc__,
 "backreadline($self, size=-1, /)\n"
 "--\n"
 "\n"
-"Read backwards until newline or BOF.\n"
+"Read backwards until newline or the beginning of file.\n"
 "\n"
-"Return an empty string if BOF is hit immediately.\n"
+"Return an empty string if the current position is 0.\n"
 "If size is specified, at most size characters will be read.");
 
 #define _IO__TEXTIOBASE_BACKREADLINE_METHODDEF    \
@@ -1435,4 +1436,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=ac5c83c4f973b710 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7dfd3631829bf048 input=a9049054013a1b77]*/
