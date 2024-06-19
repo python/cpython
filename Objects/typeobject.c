@@ -115,6 +115,9 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static PyObject *
+annodescr_new(PyObject *owner);
+
 
 static inline PyTypeObject *
 type_from_ref(PyObject *ref)
@@ -4235,6 +4238,19 @@ type_new_set_annotate(PyTypeObject *type)
     }
     else if (result == 0) {
         if (PyDict_SetItem(dict, &_Py_ID(__annotate__), Py_None) < 0) {
+            return -1;
+        }
+    }
+    result = PyDict_Contains(dict, &_Py_ID(__annotations__));
+    if (result < 0) {
+        return -1;
+    }
+    else if (result == 0) {
+        PyObject *descr = annodescr_new((PyObject *)type);
+        if (descr == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItem(dict, &_Py_ID(__annotations__), descr) < 0) {
             return -1;
         }
     }
@@ -11697,4 +11713,72 @@ PyTypeObject PySuper_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = (vectorcallfunc)super_vectorcall,
+};
+
+/* Annotations descriptor for heap types */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *owner;
+    PyObject *annotations;
+} annodescrobject;
+
+static PyObject *
+annodescr_new(PyObject *owner)
+{
+    annodescrobject *ad = PyObject_GC_New(annodescrobject, &_PyAnnotationsDescriptor_Type);
+    if (ad == NULL) {
+        return NULL;
+    }
+    ad->owner = Py_NewRef(owner);
+    ad->annotations = NULL;
+    _PyObject_GC_TRACK(ad);
+    return (PyObject *)ad;
+}
+
+static void
+annodescr_dealloc(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+
+    _PyObject_GC_UNTRACK(self);
+    Py_XDECREF(ad->owner);
+    Py_XDECREF(ad->annotations);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static int
+annodescr_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+
+    Py_VISIT(ad->owner);
+    Py_VISIT(ad->annotations);
+
+    return 0;
+}
+
+static PyObject *
+annodescr_repr(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    return PyUnicode_FromFormat("<annotations for %R>", ad->owner);
+}
+
+PyDoc_STRVAR(annodescr_doc,
+"Wrapper for a class's annotations dictionary.");
+
+PyTypeObject _PyAnnotationsDescriptor_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "AnnotationsDescriptor",
+    .tp_basicsize = sizeof(annodescrobject),
+    .tp_itemsize = 0,
+    .tp_dealloc = annodescr_dealloc,
+    .tp_traverse = annodescr_traverse,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
+    .tp_free = PyObject_GC_Del,
+    .tp_doc = annodescr_doc,
+    .tp_repr = annodescr_repr,
 };
