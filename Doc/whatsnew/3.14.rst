@@ -92,6 +92,12 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+datetime
+--------
+
+Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+(Contributed by Wannes Boeykens in :gh:`120752`.)
+
 os
 --
 
