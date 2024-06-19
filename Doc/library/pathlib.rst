@@ -1432,16 +1432,25 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target)
+.. method:: Path.copy(target, *, follow_symlinks=True)
 
    Copy the contents of this file to the *target* file. If *target* specifies
    a file that already exists, it will be replaced.
+
+   If *follow_symlinks* is false, and this file is a symbolic link, *target*
+   will be created as a symbolic link. If *follow_symlinks* is true and this
+   file is a symbolic link, *target* will be a copy of the symlink target.
 
    .. note::
       This method uses operating system functionality to copy file content
       efficiently. The OS might also copy some metadata, such as file
       permissions. After the copy is complete, users may wish to call
       :meth:`Path.chmod` to set the permissions of the target file.
+
+   .. warning::
+      On old builds of Windows (before Windows 10 build 19041), this method
+      raises :exc:`OSError` when a symlink to a directory is encountered and
+      *follow_symlinks* is false.
 
    .. versionadded:: 3.14
 
