@@ -3,7 +3,6 @@
 import concurrent.futures
 import itertools
 import random
-import sys
 import threading
 import time
 import unittest
