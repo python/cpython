@@ -1551,7 +1551,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
-#ifdef NDEBUG
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
