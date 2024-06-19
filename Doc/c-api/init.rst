@@ -55,7 +55,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_RawFree`
 
-* Synchronization
+* Synchronization:
 
   * :c:func:`PyMutex_Lock`
   * :c:func:`PyMutex_Unlock`
