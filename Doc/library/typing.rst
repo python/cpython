@@ -1394,8 +1394,8 @@ These can be used as types in annotations. They all support subscription using
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
-   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeGuard`` maps to the type of the second parameter (after ``cls`` or
+   ``self``).
 
    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
@@ -2203,9 +2203,9 @@ types.
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
 
-   .. deprecated-removed:: 3.11 3.13
-      The keyword-argument syntax is deprecated in 3.11 and will be removed
-      in 3.13. It may also be unsupported by static type checkers.
+     .. deprecated-removed:: 3.11 3.13
+        The keyword-argument syntax is deprecated in 3.11 and will be removed
+        in 3.13. It may also be unsupported by static type checkers.
 
    The functional syntax should also be used when any of the keys are not valid
    :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.

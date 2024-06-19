@@ -1209,6 +1209,7 @@ dummy_func(
                             format_exc_check_arg(tstate, PyExc_NameError,
                                                 NAME_ERROR_MSG, name);
                         }
+                        Py_DECREF(mod_or_class_dict);
                         ERROR_IF(true, error);
                     }
                     Py_INCREF(v);
@@ -1230,6 +1231,7 @@ dummy_func(
                                             tstate, PyExc_NameError,
                                             NAME_ERROR_MSG, name);
                             }
+                            Py_DECREF(mod_or_class_dict);
                             ERROR_IF(true, error);
                         }
                     }

@@ -732,16 +732,16 @@ class DictConfigurator(BaseConfigurator):
 
     def _configure_queue_handler(self, klass, **kwargs):
         if 'queue' in kwargs:
-            q = kwargs['queue']
+            q = kwargs.pop('queue')
         else:
             q = queue.Queue()  # unbounded
-        rhl = kwargs.get('respect_handler_level', False)
-        if 'listener' in kwargs:
-            lklass = kwargs['listener']
-        else:
-            lklass = logging.handlers.QueueListener
-        listener = lklass(q, *kwargs.get('handlers', []), respect_handler_level=rhl)
-        handler = klass(q)
+
+        rhl = kwargs.pop('respect_handler_level', False)
+        lklass = kwargs.pop('listener', logging.handlers.QueueListener)
+        handlers = kwargs.pop('handlers', [])
+
+        listener = lklass(q, *handlers, respect_handler_level=rhl)
+        handler = klass(q, **kwargs)
         handler.listener = listener
         return handler
 
@@ -788,8 +788,12 @@ class DictConfigurator(BaseConfigurator):
                     # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
                     from multiprocessing.queues import Queue as MPQueue
+                    from multiprocessing import Manager as MM
+                    proxy_queue = MM().Queue()
+                    proxy_joinable_queue = MM().JoinableQueue()
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue)):
+                    if not isinstance(qspec, (queue.Queue, MPQueue,
+                                      type(proxy_queue), type(proxy_joinable_queue))):
                         if isinstance(qspec, str):
                             q = self.resolve(qspec)
                             if not callable(q):

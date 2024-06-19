@@ -1,4 +1,0 @@
-Fix _Py_ClearImmortal() assertion: use _Py_IsImmortal() to tolerate
-reference count lower than _Py_IMMORTAL_REFCNT. Fix the assertion for the
-stable ABI, when a C extension is built with Python 3.11 or lower. Patch by
-Victor Stinner.

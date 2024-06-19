@@ -1,1 +1,0 @@
-The Python implementation of the ``decimal`` module could appear to hang in relatively small power cases (like ``2**117``) if context precision was set to a very high value. A different method to check for exactly representable results is used now that doesn't rely on computing ``10**precision`` (which could be effectively too large to compute).

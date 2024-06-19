@@ -6,6 +6,7 @@ import doctest
 import unittest
 import weakref
 import inspect
+import types
 
 from test import support
 
@@ -89,9 +90,12 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(gc.garbage, old_garbage)
 
     def test_lambda_generator(self):
-        # Issue #23192: Test that a lambda returning a generator behaves
+        # bpo-23192, gh-119897: Test that a lambda returning a generator behaves
         # like the equivalent function
         f = lambda: (yield 1)
+        self.assertIsInstance(f(), types.GeneratorType)
+        self.assertEqual(next(f()), 1)
+
         def g(): return (yield 1)
 
         # test 'yield from'
@@ -449,26 +453,6 @@ class ExceptionTest(unittest.TestCase):
             gen.send(StopIteration(2))
         self.assertIsInstance(cm.exception.value, StopIteration)
         self.assertEqual(cm.exception.value.value, 2)
-
-    def test_close_releases_frame_locals(self):
-        # See gh-118272
-
-        class Foo:
-            pass
-
-        f = Foo()
-        f_wr = weakref.ref(f)
-
-        def genfn():
-            a = f
-            yield
-
-        g = genfn()
-        next(g)
-        del f
-        g.close()
-        support.gc_collect()
-        self.assertIsNone(f_wr())
 
 
 class GeneratorThrowTest(unittest.TestCase):

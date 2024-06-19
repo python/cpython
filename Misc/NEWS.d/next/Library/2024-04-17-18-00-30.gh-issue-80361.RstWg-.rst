@@ -1,2 +1,0 @@
-Fix TypeError in :func:`email.message.Message.get_payload` when the charset is
-:rfc:`2231` encoded.

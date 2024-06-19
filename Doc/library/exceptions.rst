@@ -967,7 +967,8 @@ their subgroups based on the types of the contained exceptions.
       Returns an exception group with the same :attr:`message`, but which
       wraps the exceptions in ``excs``.
 
-      This method is used by :meth:`subgroup` and :meth:`split`. A
+      This method is used by :meth:`subgroup` and :meth:`split`, which
+      are used in various contexts to break up an exception group. A
       subclass needs to override it in order to make :meth:`subgroup`
       and :meth:`split` return instances of the subclass rather
       than :exc:`ExceptionGroup`.
