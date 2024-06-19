@@ -1139,16 +1139,15 @@ class TestDateOnly(unittest.TestCase):
 
         d1 = date(2003, 2, 1)
         d2 = date(2003, 1, 2)
-        d3 = date(2003, 2, 1)
-        d4 = date(2003, 1, 25)
+        d3 = date(2003, 1, 25)
         inputs = [
             ('%d', '1/02/03',  '%d/%m/%y', d1),
             ('%m', '01/2/03',  '%d/%m/%y', d1),
             ('%j', '2/03',     '%j/%y',    d2),
-            ('%w', '6/04/03',  '%w/%U/%y', d3),
+            ('%w', '6/04/03',  '%w/%U/%y', d1),
             # %u requires a single digit.
-            ('%W', '6/4/2003', '%u/%W/%Y', d3),
-            ('%V', '6/4/2003', '%u/%V/%G', d4),
+            ('%W', '6/4/2003', '%u/%W/%Y', d1),
+            ('%V', '6/4/2003', '%u/%V/%G', d3),
         ]
         for reason, string, format, target in inputs:
             reason = 'test single digit ' + reason
@@ -3786,6 +3785,83 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                 for loads in pickle_loads:
                     derived = loads(data, encoding='latin1')
                     self.assertEqual(derived, expected)
+
+    def test_strptime(self):
+        string = '13:02:47.197'
+        format = '%H:%M:%S.%f'
+        expected = _strptime._strptime_datetime_time(self.theclass, string,
+                                                     format)
+        got = self.theclass.strptime(string, format)
+        self.assertEqual(expected, got)
+        self.assertIs(type(expected), self.theclass)
+        self.assertIs(type(got), self.theclass)
+
+        # bpo-34482: Check that surrogates are handled properly.
+        inputs = [
+            ('13:02\ud80047.197', '%H:%M\ud800%S.%f'),
+            ('13\ud80002:47.197', '%H\ud800%M:%S.%f'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime_time(self.theclass,
+                                                             string, format)
+                got = self.theclass.strptime(string, format)
+                self.assertEqual(expected, got)
+
+        strptime = self.theclass.strptime
+        self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
+        self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
+        self.assertEqual(
+            strptime("-00:02:01.000003", "%z").utcoffset(),
+            -timedelta(minutes=2, seconds=1, microseconds=3)
+        )
+        # Only local timezone and UTC are supported
+        for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
+                                 (-_time.timezone, _time.tzname[0])):
+            if tzseconds < 0:
+                sign = '-'
+                seconds = -tzseconds
+            else:
+                sign ='+'
+                seconds = tzseconds
+            hours, minutes = divmod(seconds//60, 60)
+            tstr = "{}{:02d}{:02d} {}".format(sign, hours, minutes, tzname)
+            t = strptime(tstr, "%z %Z")
+            self.assertEqual(t.utcoffset(), timedelta(seconds=tzseconds))
+            self.assertEqual(t.tzname(), tzname)
+
+        # Can produce inconsistent time
+        tstr, fmt = "+1234 UTC", "%z %Z"
+        t = strptime(tstr, fmt)
+        self.assertEqual(t.utcoffset(), 12 * HOUR + 34 * MINUTE)
+        self.assertEqual(t.tzname(), 'UTC')
+        # yet will roundtrip
+        self.assertEqual(t.strftime(fmt), tstr)
+
+        # Produce naive time if no %z is provided
+        self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
+
+        with self.assertRaises(ValueError): strptime("-2400", "%z")
+        with self.assertRaises(ValueError): strptime("-000", "%z")
+        with self.assertRaises(ValueError): strptime("z", "%z")
+
+    def test_strptime_single_digit(self):
+        # bpo-34903: Check that single digit times are allowed.
+        t = self.theclass(4, 5, 6)
+        inputs = [
+            ('%H', '4:05:06',   '%H:%M:%S',   t),
+            ('%M', '04:5:06',   '%H:%M:%S',   t),
+            ('%S', '04:05:6',   '%H:%M:%S',   t),
+            ('%I', '4am:05:06', '%I%p:%M:%S', t),
+        ]
+        for reason, string, format, target in inputs:
+            reason = 'test single digit ' + reason
+            with self.subTest(reason=reason,
+                              string=string,
+                              format=format,
+                              target=target):
+                newdate = self.theclass.strptime(string, format)
+                self.assertEqual(newdate, target, msg=reason)
 
     def test_bool(self):
         # time is always True.
