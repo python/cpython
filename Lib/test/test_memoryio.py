@@ -585,7 +585,7 @@ class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestC
         memio = self.ioclass(buf)
         memio.seek(0)
         memio.backreadinto(b)
-        self.assertEqual(b, b"")
+        self.assertEqual(b, self.BOF)
 
         # API checks
         memio = self.ioclass(buf)
@@ -607,7 +607,7 @@ class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestC
         b = bytearray(0)
         memio.seek(0, 2)
         self.assertEqual(memio.backreadinto(b), 0)
-        self.assertEqual(b, b"")
+        self.assertEqual(b, self.BOF)
 
         import array
         a = array.array('b', b"some very long buffer!")
