@@ -1250,6 +1250,8 @@ class BuiltinTest(unittest.TestCase):
             m2 = map(map_char, "Is this the real life?")
             self.check_iter_pickle(m1, list(m2), proto)
 
+    # strict map tests based on strict zip tests
+
     def test_map_pickle_strict(self):
         a = (1, 2, 3)
         b = (4, 5, 6)
