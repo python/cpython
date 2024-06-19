@@ -2028,6 +2028,15 @@ class TestSourcePositions(unittest.TestCase):
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
 
+    def test_constant_lambda(self):
+        namespace = {}
+        source = "f = lambda: 1"
+        code = compile(source, "<test>", "exec")
+        exec(code, namespace)
+        self.assertOpcodeSourcePositionIs(
+            namespace["f"].__code__, "RETURN_CONST", line=1, end_line=1,
+            column=12, end_column=13
+        )
 
 class TestExpectedAttributes(unittest.TestCase):
 
