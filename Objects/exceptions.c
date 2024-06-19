@@ -3685,7 +3685,7 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(interp, exc);
+        _PyStaticType_FiniBuiltin(interp, exc);
     }
 }
 

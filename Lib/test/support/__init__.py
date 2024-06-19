@@ -529,11 +529,11 @@ def suppress_immortalization(suppress=True):
         yield
         return
 
-    old_values = _testinternalcapi.set_immortalize_deferred(False)
+    _testinternalcapi.suppress_immortalization(True)
     try:
         yield
     finally:
-        _testinternalcapi.set_immortalize_deferred(*old_values)
+        _testinternalcapi.suppress_immortalization(False)
 
 def skip_if_suppress_immortalization():
     try:
@@ -1788,7 +1788,7 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
             config['gil'] = 'shared'
         elif gil == 2:
             config['gil'] = 'own'
-        else:
+        elif not isinstance(gil, str):
             raise NotImplementedError(gil)
     config = types.SimpleNamespace(**config)
     return _testinternalcapi.run_in_subinterp_with_config(code, config)

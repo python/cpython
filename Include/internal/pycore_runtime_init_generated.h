@@ -774,6 +774,7 @@ extern "C" {
     INIT_ID(_showwarnmsg), \
     INIT_ID(_shutdown), \
     INIT_ID(_slotnames), \
+    INIT_ID(_strptime), \
     INIT_ID(_strptime_datetime), \
     INIT_ID(_swappedbytes_), \
     INIT_ID(_type_), \
@@ -826,6 +827,7 @@ extern "C" {
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
     INIT_ID(c_return), \
+    INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
     INIT_ID(cafile), \

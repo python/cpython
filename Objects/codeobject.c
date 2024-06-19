@@ -110,7 +110,7 @@ should_intern_string(PyObject *o)
     // unless we've disabled immortalizing objects that use deferred reference
     // counting.
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->gc.immortalize.enable_on_thread_created) {
+    if (_Py_atomic_load_int(&interp->gc.immortalize) < 0) {
         return 1;
     }
 #endif
@@ -240,7 +240,7 @@ intern_constants(PyObject *tuple, int *modified)
         PyThreadState *tstate = PyThreadState_GET();
         if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
             !PyUnicode_CheckExact(v) &&
-            tstate->interp->gc.immortalize.enable_on_thread_created)
+            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
@@ -2020,7 +2020,7 @@ code_hash(PyCodeObject *co)
     Py_uhash_t uhash = 20221211;
     #define SCRAMBLE_IN(H) do {       \
         uhash ^= (Py_uhash_t)(H);     \
-        uhash *= _PyHASH_MULTIPLIER;  \
+        uhash *= PyHASH_MULTIPLIER;  \
     } while (0)
     #define SCRAMBLE_IN_HASH(EXPR) do {     \
         Py_hash_t h = PyObject_Hash(EXPR);  \

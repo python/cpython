@@ -2157,6 +2157,8 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_incompatible_here(module)
         with self.subTest(f'{module}: strict, fresh'):
             self.check_incompatible_fresh(module)
+        with self.subTest(f'{module}: isolated, fresh'):
+            self.check_incompatible_fresh(module, isolated=True)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):

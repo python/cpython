@@ -1,13 +1,14 @@
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_call.h"              // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"             // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_GetZero()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_typeobject.h"        // _PyType_GetModuleState()
+#include "pycore_object.h"            // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"             // _PyTuple_ITEMS()
 
-#include <stddef.h>               // offsetof()
+#include <stddef.h>                   // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -4037,7 +4038,7 @@ fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
     assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
-    When count hits Y_SSIZE_T_MAX, switch to slow_mode.
+    When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
 slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 
@@ -4186,9 +4187,30 @@ count_nextlong(countobject *lz)
 static PyObject *
 count_next(countobject *lz)
 {
+#ifndef Py_GIL_DISABLED
     if (lz->cnt == PY_SSIZE_T_MAX)
         return count_nextlong(lz);
     return PyLong_FromSsize_t(lz->cnt++);
+#else
+    // free-threading version
+    // fast mode uses compare-exchange loop
+    // slow mode uses a critical section
+    PyObject *returned;
+    Py_ssize_t cnt;
+
+    cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+    for (;;) {
+        if (cnt == PY_SSIZE_T_MAX) {
+            Py_BEGIN_CRITICAL_SECTION(lz);
+            returned = count_nextlong(lz);
+            Py_END_CRITICAL_SECTION();
+            return returned;
+        }
+        if (_Py_atomic_compare_exchange_ssize(&lz->cnt, &cnt, cnt + 1)) {
+            return PyLong_FromSsize_t(cnt);
+        }
+    }
+#endif
 }
 
 static PyObject *

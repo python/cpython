@@ -644,7 +644,7 @@ class TestBasicOps(unittest.TestCase):
         count(1, maxsize+5); sys.exc_info()
 
     @pickle_deprecated
-    def test_count_with_stride(self):
+    def test_count_with_step(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
         self.assertEqual(lzip('abc',count(start=2,step=3)),
                          [('a', 2), ('b', 5), ('c', 8)])
@@ -698,6 +698,28 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(r1, r2)
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     self.pickletest(proto, count(i, j))
+
+    @threading_helper.requires_working_threading()
+    def test_count_threading(self, step=1):
+        # this test verifies multithreading consistency, which is
+        # mostly for testing builds without GIL, but nice to test anyway
+        count_to = 10_000
+        num_threads = 10
+        c = count(step=step)
+        def counting_thread():
+            for i in range(count_to):
+                next(c)
+        threads = []
+        for i in range(num_threads):
+            thread = threading.Thread(target=counting_thread)
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
+        self.assertEqual(next(c), count_to * num_threads * step)
+
+    def test_count_with_step_threading(self):
+        self.test_count_threading(step=5)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))

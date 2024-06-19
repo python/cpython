@@ -1,1 +1,0 @@
-Fix the signature of :meth:`str.format_map`.
