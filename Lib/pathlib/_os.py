@@ -92,7 +92,7 @@ else:
     copyfd = None
 
 
-if _winapi and hasattr(_winapi, 'CopyFile2'):
+if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_file_attributes'):
     def is_dirlink(path):
         try:
             st = os.lstat(path)
