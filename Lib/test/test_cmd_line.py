@@ -5,6 +5,7 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 import unittest
@@ -737,7 +738,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testinternalcapi
+            import _testinternalcapi  # noqa: F401
         except ImportError:
             pass
         else:
@@ -754,7 +755,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Faulthandler
         try:
-            import faulthandler
+            import faulthandler  # noqa: F401
         except ImportError:
             pass
         else:
@@ -911,6 +912,75 @@ class CmdLineTest(unittest.TestCase):
                 self.assertEqual(proc.returncode, 0, proc)
                 self.assertEqual(proc.stdout.rstrip(), expected)
                 self.assertEqual(proc.stderr, '')
+
+    def test_python_asyncio_debug(self):
+        code = "import asyncio; print(asyncio.get_event_loop().get_debug())"
+        rc, out, err = assert_python_ok('-c', code, PYTHONASYNCIODEBUG='1')
+        self.assertIn(b'True', out)
+
+    @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
+    def test_python_dump_refs(self):
+        code = 'import sys; sys._clear_type_cache()'
+        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        self.assertEqual(rc, 0)
+
+    @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
+    def test_python_dump_refs_file(self):
+        with tempfile.NamedTemporaryFile() as dump_file:
+            code = 'import sys; sys._clear_type_cache()'
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            self.assertEqual(rc, 0)
+            with open(dump_file.name, 'r') as file:
+                contents = file.read()
+                self.assertIn('Remaining objects', contents)
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'PYTHONEXECUTABLE only works on macOS')
+    def test_python_executable(self):
+        code = 'import sys; print(sys.executable)'
+        expected = "/busr/bbin/bpython"
+        rc, out, err = assert_python_ok('-c', code, PYTHONEXECUTABLE=expected)
+        self.assertIn(expected.encode(), out)
+
+    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    def test_python_legacy_windows_fs_encoding(self):
+        code = "import sys; print(sys.getfilesystemencoding())"
+        expected = 'mbcs'
+        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSFSENCODING='1')
+        self.assertIn(expected.encode(), out)
+
+    @unittest.skipUnless(support.MS_WINDOWS, 'Test only applicable on Windows')
+    def test_python_legacy_windows_stdio(self):
+        code = "import sys; print(sys.stdin.encoding, sys.stdout.encoding)"
+        expected = 'cp'
+        rc, out, err = assert_python_ok('-c', code, PYTHONLEGACYWINDOWSSTDIO='1')
+        self.assertIn(expected.encode(), out)
+
+    @unittest.skipIf("-fsanitize" in sysconfig.get_config_vars().get('PY_CFLAGS', ()),
+                     "PYTHONMALLOCSTATS doesn't work with ASAN")
+    def test_python_malloc_stats(self):
+        code = "pass"
+        rc, out, err = assert_python_ok('-c', code, PYTHONMALLOCSTATS='1')
+        self.assertIn(b'Small block threshold', err)
+
+    def test_python_user_base(self):
+        code = "import site; print(site.USER_BASE)"
+        expected = "/custom/userbase"
+        rc, out, err = assert_python_ok('-c', code, PYTHONUSERBASE=expected)
+        self.assertIn(expected.encode(), out)
+
+    def test_python_basic_repl(self):
+        # Currently this only tests that the env var is set
+        code = "import os; print('PYTHON_BASIC_REPL' in os.environ)"
+        expected = "True"
+        rc, out, err = assert_python_ok('-c', code, PYTHON_BASIC_REPL='1')
+        self.assertIn(expected.encode(), out)
+
+    @unittest.skipUnless(sysconfig.get_config_var('HAVE_PERF_TRAMPOLINE'), "Requires HAVE_PERF_TRAMPOLINE support")
+    def test_python_perf_jit_support(self):
+        code = "import sys; print(sys.is_stack_trampoline_active())"
+        expected = "True"
+        rc, out, err = assert_python_ok('-c', code, PYTHON_PERF_JIT_SUPPORT='1')
+        self.assertIn(expected.encode(), out)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')

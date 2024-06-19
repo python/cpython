@@ -1221,8 +1221,8 @@ def refcount_test(test):
 
 def requires_limited_api(test):
     try:
-        import _testcapi
-        import _testlimitedcapi
+        import _testcapi  # noqa: F401
+        import _testlimitedcapi  # noqa: F401
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
@@ -2299,7 +2299,7 @@ def clear_ignored_deprecations(*tokens: object) -> None:
 def requires_venv_with_pip():
     # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
     try:
-        import zlib
+        import zlib  # noqa: F401
     except ImportError:
         return unittest.skipIf(True, "venv: ensurepip requires zlib")
 
