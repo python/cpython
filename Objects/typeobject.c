@@ -988,43 +988,38 @@ PyType_Unwatch(int watcher_id, PyObject* obj)
     return 0;
 }
 
-#ifdef Py_GIL_DISABLED
-
 static void
-type_modification_starting_unlocked(PyTypeObject *type)
+set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
-
-    /* Clear version tags on all types, but leave the valid
-       version tag intact.  This prepares for a modification so that
-       any concurrent readers of the type cache will not see invalid
-       values.
-     */
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        return;
+    assert(version_tag_consistency(tp));
+#ifndef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // lookup the old version and set to null
+    if (tp->tp_version_tag != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
+        *slot = NULL;
     }
-
-    PyObject *subclasses = lookup_tp_subclasses(type);
-    if (subclasses != NULL) {
-        assert(PyDict_CheckExact(subclasses));
-
-        Py_ssize_t i = 0;
-        PyObject *ref;
-        while (PyDict_Next(subclasses, &i, NULL, &ref)) {
-            PyTypeObject *subclass = type_from_ref(ref);
-            if (subclass == NULL) {
-                continue;
-            }
-            type_modification_starting_unlocked(subclass);
-            Py_DECREF(subclass);
-        }
-    }
-
-    /* 0 is not a valid version tag */
-    _PyType_SetVersion(type, 0);
-}
-
 #endif
+    if (version) {
+        tp->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+        tp->tp_versions_used++;
+    }
+    else {
+        tp->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    }
+    tp->tp_version_tag = version;
+#ifndef Py_GIL_DISABLED
+    if (version != 0) {
+        PyTypeObject **slot =
+            interp->types.type_version_cache
+            + (version % TYPE_VERSION_CACHE_SIZE);
+        *slot = tp;
+    }
+#endif
+}
 
 static void
 type_modified_unlocked(PyTypeObject *type)
@@ -1084,7 +1079,7 @@ type_modified_unlocked(PyTypeObject *type)
         }
     }
 
-    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
+    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1095,13 +1090,13 @@ type_modified_unlocked(PyTypeObject *type)
 void
 PyType_Modified(PyTypeObject *type)
 {
-    assert(version_tag_consistency(type));
     // Quick check without the lock held
     if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
         return;
     }
 
     BEGIN_TYPE_LOCK()
+    assert(version_tag_consistency(type));
     type_modified_unlocked(type);
     END_TYPE_LOCK()
 }
@@ -1161,7 +1156,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    _PyType_SetVersion(type, 0); /* 0 is not a valid version tag */
+    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1181,33 +1176,10 @@ This is similar to func_version_cache.
 void
 _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 {
-    assert(version_tag_consistency(tp));
-#ifndef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    // lookup the old version and set to null
-    if (tp->tp_version_tag != 0) {
-        PyTypeObject **slot =
-            interp->types.type_version_cache
-            + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
-        *slot = NULL;
-    }
-#endif
-    if (version) {
-        tp->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
-        tp->tp_versions_used++;
-    }
-    else {
-        tp->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    }
-    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
-#ifndef Py_GIL_DISABLED
-    if (version != 0) {
-        PyTypeObject **slot =
-            interp->types.type_version_cache
-            + (version % TYPE_VERSION_CACHE_SIZE);
-        *slot = tp;
-    }
-#endif
+
+    BEGIN_TYPE_LOCK()
+    set_version_unlocked(tp, version);
+    END_TYPE_LOCK()
 }
 
 PyTypeObject *
@@ -1271,7 +1243,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        _PyType_SetVersion(type, NEXT_GLOBAL_VERSION_TAG++);
+        set_version_unlocked(type, NEXT_GLOBAL_VERSION_TAG++);
         assert (type->tp_version_tag <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     }
     else {
@@ -1280,7 +1252,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             /* We have run out of version numbers */
             return 0;
         }
-        _PyType_SetVersion(type, NEXT_VERSION_TAG(interp)++);
+        set_version_unlocked(type, NEXT_VERSION_TAG(interp)++);
         assert (type->tp_version_tag != 0);
     }
     assert(version_tag_consistency(type));
@@ -5454,7 +5426,6 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
     struct type_cache_entry *entry = &cache->hashtable[h];
-    assert(version_tag_consistency(type));
 #ifdef Py_GIL_DISABLED
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
@@ -5484,6 +5455,7 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         }
     }
 #else
+    assert(version_tag_consistency(type));
     if (entry->version == type->tp_version_tag &&
         entry->name == name) {
         assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
@@ -5793,22 +5765,14 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    // In free-threaded builds readers can race with the lock-free portion
-    // of the type cache and the assignment into the dict.  We clear all of the
-    // versions initially so no readers will succeed in the lock-free case.
-    // They'll then block on the type lock until the update below is done.
-    type_modification_starting_unlocked(type);
-#endif
-
-    res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, name, value);
-
     /* Clear the VALID_VERSION flag of 'type' and all its
         subclasses.  This could possibly be unified with the
         update_subclasses() recursion in update_slot(), but carefully:
         they each have their own conditions on which to stop
         recursing into subclasses. */
     type_modified_unlocked(type);
+
+    res = _PyDict_SetItem_LockHeld((PyDictObject *)dict, name, value);
 
     if (res == 0) {
         if (is_dunder_name(name)) {
