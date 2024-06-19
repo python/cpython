@@ -250,7 +250,7 @@ For an :keyword:`!except` clause with an expression, the
 expression must evaluate to an exception type or a tuple of exception types.
 The raised exception matches an :keyword:`!except` clause whose expression evaluates
 to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
-or it evaluates to a tuple that contains such a class.
+or to a tuple that contains such a class.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
