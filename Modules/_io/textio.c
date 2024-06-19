@@ -90,27 +90,6 @@ _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
-_io._TextIOBase.backread
-    cls: defining_class
-    size: int(unused=True) = -1
-    /
-
-Read backwards at most size characters from stream.
-
-Read from underlying buffer until we have size characters or we hit BOF.
-If size is negative or omitted, read until BOF.
-[clinic start generated code]*/
-
-static PyObject *
-_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
-                              int Py_UNUSED(size))
-/*[clinic end generated code: output=e7adf2f428a3cfa4 input=bef66883366ebb29]*/
-{
-    _PyIO_State *state = get_io_state_by_cls(cls);
-    return _unsupported(state, "backread");
-}
-
-/*[clinic input]
 _io._TextIOBase.readline
     cls: defining_class
     size: int(unused=True) = -1
@@ -129,6 +108,27 @@ _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "readline");
+}
+
+/*[clinic input]
+_io._TextIOBase.backread
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards at most size characters from stream.
+
+Read from underlying buffer until we have size characters or we hit BOF.
+If size is negative or omitted, read until BOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=e7adf2f428a3cfa4 input=bef66883366ebb29]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backread");
 }
 
 /*[clinic input]
@@ -227,8 +227,8 @@ _io__TextIOBase_errors_get_impl(PyObject *self)
 static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
     _IO__TEXTIOBASE_READ_METHODDEF
-    _IO__TEXTIOBASE_BACKREAD_METHODDEF
     _IO__TEXTIOBASE_READLINE_METHODDEF
+    _IO__TEXTIOBASE_BACKREAD_METHODDEF
     _IO__TEXTIOBASE_BACKREADLINE_METHODDEF
     _IO__TEXTIOBASE_WRITE_METHODDEF
     {NULL, NULL}

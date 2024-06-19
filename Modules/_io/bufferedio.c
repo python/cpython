@@ -109,43 +109,6 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
     return _bufferediobase_readinto_generic(self, buffer, 1);
 }
 
-/*[clinic input]
-@critical_section
-_io._BufferedIOBase.backreadinto
-    buffer: Py_buffer(accept={rwbuffer})
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=089fdcf2b4b15522 input=8240e5a3d7c8fe26]*/
-{
-    Py_ssize_t len;
-    PyObject *data;
-    PyObject *attr = &_Py_ID(backread);
-    data = _PyObject_CallMethod(self, attr, "n", buffer->len);
-    if (data == NULL) {
-        return NULL;
-    }
-    if (!PyBytes_Check(data)) {
-        Py_DECREF(data);
-        PyErr_SetString(PyExc_TypeError, "backread() should return bytes");
-        return NULL;
-    }
-    len = PyBytes_GET_SIZE(data);
-    if (len > buffer->len) {
-        PyErr_Format(PyExc_ValueError,
-                     "backread() returned too much data: "
-                     "%zd bytes requested, %zd returned",
-                     buffer->len, len);
-        Py_DECREF(data);
-        return NULL;
-    }
-    memcpy(buffer->buf, PyBytes_AS_STRING(data), len);
-    Py_DECREF(data);
-    return PyLong_FromSsize_t(len);
-}
-
 static PyObject *
 bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
@@ -246,7 +209,7 @@ not 'interactive', multiple raw reads may be issued to satisfy
 the byte count (unless BOF is reached first).
 However, for interactive raw streams (as well as sockets and pipes),
 at most one raw read will be issued, and a short result does not
-imply that EOF is imminent.
+imply that BOF is imminent.
 
 Return an empty bytes object on BOF.
 
@@ -261,6 +224,43 @@ _io__BufferedIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "backread");
+}
+
+/*[clinic input]
+@critical_section
+_io._BufferedIOBase.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer)
+/*[clinic end generated code: output=089fdcf2b4b15522 input=8240e5a3d7c8fe26]*/
+{
+    Py_ssize_t len;
+    PyObject *data;
+    PyObject *attr = &_Py_ID(backread);
+    data = _PyObject_CallMethod(self, attr, "n", buffer->len);
+    if (data == NULL) {
+        return NULL;
+    }
+    if (!PyBytes_Check(data)) {
+        Py_DECREF(data);
+        PyErr_SetString(PyExc_TypeError, "backread() should return bytes");
+        return NULL;
+    }
+    len = PyBytes_GET_SIZE(data);
+    if (len > buffer->len) {
+        PyErr_Format(PyExc_ValueError,
+                     "backread() returned too much data: "
+                     "%zd bytes requested, %zd returned",
+                     buffer->len, len);
+        Py_DECREF(data);
+        return NULL;
+    }
+    memcpy(buffer->buf, PyBytes_AS_STRING(data), len);
+    Py_DECREF(data);
+    return PyLong_FromSsize_t(len);
 }
 
 /*[clinic input]
@@ -1145,21 +1145,6 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
     return res;
 }
 
-/*[clinic input]
-@critical_section
-_io._Buffered.backread
-    size as n: Py_ssize_t(accept={int, NoneType}) = -1
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_io__Buffered_backread_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=1d9419484778ae01 input=e0459b8a28c1bc41]*/
-{
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return bufferediobase_unsupported(state, "backread");
-}
-
 static PyObject *
 _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
 {
@@ -1270,20 +1255,6 @@ _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer)
     return _buffered_readinto_generic(self, buffer, 1);
 }
 
-/*[clinic input]
-@critical_section
-_io._Buffered.backreadinto
-    buffer: Py_buffer(accept={rwbuffer})
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=740fec02a2357570 input=d596047fa0898560]*/
-{
-    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
-    return bufferediobase_unsupported(state, "backreadinto");
-}
 
 static PyObject *
 _buffered_readline(buffered *self, Py_ssize_t limit)
@@ -1406,6 +1377,36 @@ _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
 {
     CHECK_INITIALIZED(self)
     return _buffered_readline(self, size);
+}
+
+/*[clinic input]
+@critical_section
+_io._Buffered.backread
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__Buffered_backread_impl(buffered *self, Py_ssize_t n)
+/*[clinic end generated code: output=1d9419484778ae01 input=e0459b8a28c1bc41]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
+    return bufferediobase_unsupported(state, "backread");
+}
+
+/*[clinic input]
+@critical_section
+_io._Buffered.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer)
+/*[clinic end generated code: output=740fec02a2357570 input=d596047fa0898560]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(Py_TYPE(self));
+    return bufferediobase_unsupported(state, "backreadinto");
 }
 
 /*[clinic input]
@@ -2449,12 +2450,6 @@ bufferedrwpair_read(rwpair *self, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_backread(rwpair *self, PyObject *args)
-{
-    return _forward_call(self->reader, &_Py_ID(backread), args);
-}
-
-static PyObject *
 bufferedrwpair_peek(rwpair *self, PyObject *args)
 {
     return _forward_call(self->reader, &_Py_ID(peek), args);
@@ -2473,15 +2468,21 @@ bufferedrwpair_readinto(rwpair *self, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_backreadinto(rwpair *self, PyObject *args)
-{
-    return _forward_call(self->reader, &_Py_ID(backreadinto), args);
-}
-
-static PyObject *
 bufferedrwpair_readinto1(rwpair *self, PyObject *args)
 {
     return _forward_call(self->reader, &_Py_ID(readinto1), args);
+}
+
+static PyObject *
+bufferedrwpair_backread(rwpair *self, PyObject *args)
+{
+    return _forward_call(self->reader, &_Py_ID(backread), args);
+}
+
+static PyObject *
+bufferedrwpair_backreadinto(rwpair *self, PyObject *args)
+{
+    return _forward_call(self->reader, &_Py_ID(backreadinto), args);
 }
 
 static PyObject *
@@ -2651,11 +2652,11 @@ static PyMethodDef bufferedreader_methods[] = {
     _IO__BUFFERED_READ_METHODDEF
     _IO__BUFFERED_PEEK_METHODDEF
     _IO__BUFFERED_READ1_METHODDEF
-    _IO__BUFFERED_BACKREAD_METHODDEF
     _IO__BUFFERED_READINTO_METHODDEF
     _IO__BUFFERED_READINTO1_METHODDEF
-    _IO__BUFFERED_BACKREADINTO_METHODDEF
     _IO__BUFFERED_READLINE_METHODDEF
+    _IO__BUFFERED_BACKREAD_METHODDEF
+    _IO__BUFFERED_BACKREADINTO_METHODDEF
     _IO__BUFFERED_BACKREADLINE_METHODDEF
     _IO__BUFFERED_SEEK_METHODDEF
     _IO__BUFFERED_TELL_METHODDEF
@@ -2768,10 +2769,10 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
     {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
     {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
-    {"backread", (PyCFunction)bufferedrwpair_backread, METH_VARARGS},
     {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
-    {"backreadinto", (PyCFunction)bufferedrwpair_backreadinto, METH_VARARGS},
     {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
+    {"backread", (PyCFunction)bufferedrwpair_backread, METH_VARARGS},
+    {"backreadinto", (PyCFunction)bufferedrwpair_backreadinto, METH_VARARGS},
 
     {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
     {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
@@ -2835,11 +2836,11 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO__BUFFERED_TRUNCATE_METHODDEF
     _IO__BUFFERED_READ_METHODDEF
     _IO__BUFFERED_READ1_METHODDEF
-    _IO__BUFFERED_BACKREAD_METHODDEF
     _IO__BUFFERED_READINTO_METHODDEF
     _IO__BUFFERED_READINTO1_METHODDEF
-    _IO__BUFFERED_BACKREADINTO_METHODDEF
     _IO__BUFFERED_READLINE_METHODDEF
+    _IO__BUFFERED_BACKREAD_METHODDEF
+    _IO__BUFFERED_BACKREADINTO_METHODDEF
     _IO__BUFFERED_BACKREADLINE_METHODDEF
     _IO__BUFFERED_PEEK_METHODDEF
     _IO_BUFFEREDWRITER_WRITE_METHODDEF

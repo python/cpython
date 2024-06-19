@@ -675,24 +675,6 @@ _io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer)
     return PyLong_FromSsize_t(n);
 }
 
-/*[clinic input]
-_io.FileIO.backreadinto
-    cls: defining_class
-    buffer: Py_buffer(accept={rwbuffer})
-    /
-
-Same as RawIOBase.backreadinto().
-[clinic start generated code]*/
-
-static PyObject *
-_io_FileIO_backreadinto_impl(fileio *self, PyTypeObject *cls,
-                             Py_buffer *buffer)
-/*[clinic end generated code: output=24dee5b2db71af8b input=d2adcec51004fa8a]*/
-{
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
-}
-
 static size_t
 new_buffersize(fileio *self, size_t currentsize)
 {
@@ -812,23 +794,6 @@ _io_FileIO_readall_impl(fileio *self)
 }
 
 /*[clinic input]
-_io.FileIO.backreadall
-
-Read all data backwards from the file, returned as bytes.
-
-In non-blocking mode, returns as much as is immediately available,
-or None if no data is available.  Return an empty bytes object at BOF.
-[clinic start generated code]*/
-
-static PyObject *
-_io_FileIO_backreadall_impl(fileio *self)
-/*[clinic end generated code: output=e8d5c20f2fb382f6 input=873b6c9abb7bb762]*/
-{
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
-}
-
-/*[clinic input]
 _io.FileIO.read
     cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -906,6 +871,41 @@ Return an empty bytes object at EOF.
 static PyObject *
 _io_FileIO_backread_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
 /*[clinic end generated code: output=7604b666a3f9ec98 input=ebce4397a8cf277b]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
+_io.FileIO.backreadinto
+    cls: defining_class
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+
+Same as RawIOBase.backreadinto().
+[clinic start generated code]*/
+
+static PyObject *
+_io_FileIO_backreadinto_impl(fileio *self, PyTypeObject *cls,
+                             Py_buffer *buffer)
+/*[clinic end generated code: output=24dee5b2db71af8b input=d2adcec51004fa8a]*/
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+/*[clinic input]
+_io.FileIO.backreadall
+
+Read all data backwards from the file, returned as bytes.
+
+In non-blocking mode, returns as much as is immediately available,
+or None if no data is available.  Return an empty bytes object at BOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_FileIO_backreadall_impl(fileio *self)
+/*[clinic end generated code: output=e8d5c20f2fb382f6 input=873b6c9abb7bb762]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
@@ -1221,10 +1221,10 @@ _io_FileIO_isatty_impl(fileio *self)
 
 static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_READ_METHODDEF
-    _IO_FILEIO_BACKREAD_METHODDEF
     _IO_FILEIO_READALL_METHODDEF
-    _IO_FILEIO_BACKREADALL_METHODDEF
     _IO_FILEIO_READINTO_METHODDEF
+    _IO_FILEIO_BACKREAD_METHODDEF
+    _IO_FILEIO_BACKREADALL_METHODDEF
     _IO_FILEIO_BACKREADINTO_METHODDEF
     _IO_FILEIO_WRITE_METHODDEF
     _IO_FILEIO_SEEK_METHODDEF
