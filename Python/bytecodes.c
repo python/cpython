@@ -2814,79 +2814,27 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
-            if (enter == NULL) {
+        inst(LOAD_SPECIAL, (owner -- attr, self_or_null)) {
+            assert(oparg <= SPECIAL_MAX);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            attr = _PyObject_LookupSpecialMethod(owner, name, &self_or_null);
+            if (attr == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner)->tp_name);
                 }
-                ERROR_NO_POP();
             }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol "
-                                  "(missed __aexit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                ERROR_NO_POP();
-            }
-            DECREF_INPUTS();
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                ERROR_IF(true, error);
-            }
+            ERROR_IF(attr == NULL, error);
         }
 
-        inst(BEFORE_WITH, (mgr -- exit, res)) {
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                ERROR_NO_POP();
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed __exit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                ERROR_NO_POP();
-            }
-            DECREF_INPUTS();
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                ERROR_IF(true, error);
-            }
-        }
-
-        inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
+        inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
                - lasti: THIRD = lasti of exception in exc_info()
-               - exit_func: FOURTH = the context.__exit__ bound method
+               - exit_self: FOURTH = the context or NULL
+               - exit_func: FIFTH = the context.__exit__ function or context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
@@ -2903,9 +2851,10 @@ dummy_func(
             }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
-                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            PyObject *stack[5] = {NULL, exit_self, exc, val, tb};
+            int has_self = (exit_self != NULL);
+            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res == NULL, error);
         }
 

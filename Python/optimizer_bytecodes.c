@@ -774,6 +774,12 @@ dummy_func(void) {
         }
     }
 
+    op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+        self_or_null = sym_new_unknown(ctx);
+    }
+
     op(_JUMP_TO_TOP, (--)) {
         ctx->done = true;
     }
@@ -781,7 +787,6 @@ dummy_func(void) {
     op(_EXIT_TRACE, (--)) {
         ctx->done = true;
     }
-
 
 // END BYTECODES //
 

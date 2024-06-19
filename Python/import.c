@@ -1551,6 +1551,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1568,7 +1569,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 
-#ifndef NDEBUG
 static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
