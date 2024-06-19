@@ -99,12 +99,13 @@ io
   classes in the :mod:`io` module:
 
   * :class:`~io.IOBase`, :class:`~io.RawIOBase` and :class:`~io.TextIOBase`,
-  * :class:`~io.BufferedIOBase` and :class:`io.BytesIO`, and
+  * :class:`~io.BufferedIOBase` and :class:`~io.BytesIO`, and
   * :class:`~io.FileIO`.
 
   Some of the classes above provide a default implementation for reverse read
   operations such as :meth:`IOBase.backreadline <io.IOBase.backreadline>` or
-  :meth:`BytesIO.backread`, but most of them raise :exc:`UnsupportedOperation`.
+  :meth:`BytesIO.backread <io.BufferedIOBase.backread>`, but most of them raise
+  :exc:`UnsupportedOperation`.
 
   (Contributed by Bénédikt Tran in :gh:`44691`.)
 
