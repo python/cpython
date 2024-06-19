@@ -1267,7 +1267,7 @@ _Py_float_to_hex(double x, int precision, int always_add_sign,
             else {
                 break;
             }
-        } while (1);
+        } while (round_prec_x4);
     }
 
     /* Conservative estimation for number of digits in the exponent.
