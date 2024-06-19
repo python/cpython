@@ -431,7 +431,7 @@ class MemoryTestMixin:
 
 class MemoryBackreadTestMixin(MemoryTestMixin):
     def test_backread(self):
-        buf = self.buftype("1234567890")
+        buf = self.buftype("\x001234567890\x00")
         rev = buf[::-1]
         memio = self.ioclass(buf)
 
@@ -449,7 +449,17 @@ class MemoryBackreadTestMixin(MemoryTestMixin):
         self.assertEqual(memio.backread(), self.BOF)
         self.assertEqual(memio.tell(), 0)
 
+        memio.seek(0, 2)
+        self.assertEqual(memio.backread(1), self.NUL)
+        memio.seek(1)
+        self.assertEqual(memio.backread(1), self.NUL)
+
     def test_backreadline(self):
+        # todo: implement when the design has been decided
+        pass
+
+    def test_reverse(self):
+        # todo: implement when the design has been decided
         pass
 
 
@@ -463,6 +473,7 @@ class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestC
         return s.encode("ascii")
     ioclass = pyio.BytesIO
     BOF = EOF = b""
+    NUL = b'\x00'
 
     def test_getbuffer(self):
         memio = self.ioclass(b"1234567890")
@@ -561,43 +572,48 @@ class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestC
         self.assertEqual(b, b"")
 
     def test_backreadinto(self):
-        buf = self.buftype("1234567890")
+        buf = self.buftype("\x001234567890\x00")
+
+        # sanity checks
+        memio = self.ioclass(buf)
+        self.assertRaises(TypeError, memio.backreadinto, '')
+        memio.close()
+        self.assertRaises(ValueError, memio.backreadinto, bytearray())
+
+        # BOF check
+        b = bytearray()
+        memio = self.ioclass(buf)
+        memio.seek(0)
+        memio.backreadinto(b)
+        self.assertEqual(b, b"")
+
+        # API checks
         memio = self.ioclass(buf)
 
         b = bytearray(b"hello")
         memio.seek(0, 2)
         self.assertEqual(memio.backreadinto(b), 5)
-        self.assertEqual(b, b"09876")
+        self.assertEqual(b, b"\x000987")
         self.assertEqual(memio.backreadinto(b), 5)
-        self.assertEqual(b, b"54321")
-        self.assertEqual(memio.backreadinto(b), 0)
-        self.assertEqual(b, b"54321")
+        self.assertEqual(b, b"65432")
+        self.assertEqual(memio.backreadinto(b), 2)
+        self.assertEqual(b, b"1\x00432")
 
-        b = bytearray(b"hello world")
+        b = bytearray(b"some very long buffer!")
         memio.seek(0, 2)
-        self.assertEqual(memio.backreadinto(b), 10)
-        self.assertEqual(b, b"0987654321d")
-        b = bytearray(b"")
+        self.assertEqual(memio.backreadinto(b), 12)
+        self.assertEqual(b, b"\x000987654321\x00ng buffer!")
 
+        b = bytearray(0)
         memio.seek(0, 2)
         self.assertEqual(memio.backreadinto(b), 0)
         self.assertEqual(b, b"")
-        self.assertRaises(TypeError, memio.backreadinto, '')
 
         import array
-        a = array.array('b', b"hello world")
-        memio = self.ioclass(buf)
+        a = array.array('b', b"some very long buffer!")
         memio.seek(0, 2)
-        memio.backreadinto(a)
-        self.assertEqual(a.tobytes(), b"0987654321d")
-        memio.close()
-        self.assertRaises(ValueError, memio.backreadinto, b)
-
-        memio = self.ioclass(b"123")
-        b = bytearray()
-        memio.seek(0)
-        memio.backreadinto(b)
-        self.assertEqual(b, b"")
+        self.assertEqual(memio.backreadinto(a), 12)
+        self.assertEqual(a.tobytes(), b"\x000987654321\x00ng buffer!")
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
