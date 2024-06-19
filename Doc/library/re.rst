@@ -911,6 +911,10 @@ Functions
    ``None`` if no position in the string matches the pattern; note that this is
    different from finding a zero-length match at some point in the string.
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
 
 .. function:: match(pattern, string, flags=0)
 
@@ -925,12 +929,20 @@ Functions
    If you want to locate a match anywhere in *string*, use :func:`search`
    instead (see also :ref:`search-vs-match`).
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
 
 .. function:: fullmatch(pattern, string, flags=0)
 
    If the whole *string* matches the regular expression *pattern*, return a
    corresponding :class:`~re.Match`.  Return ``None`` if the string does not match
    the pattern; note that this is different from a zero-length match.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionadded:: 3.4
 
@@ -974,6 +986,10 @@ Functions
       >>> re.split(r'(\W*)', '...words...')
       ['', '...', '', '', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '', '', '']
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
    .. versionchanged:: 3.1
       Added the optional flags argument.
 
@@ -999,6 +1015,10 @@ Functions
       >>> re.findall(r'(\w+)=(\d+)', 'set width=20 and height=10')
       [('width', '20'), ('height', '10')]
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
 
@@ -1009,6 +1029,10 @@ Functions
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
    matches are included in the result.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
@@ -1065,6 +1089,10 @@ Functions
    character ``'0'``.  The backreference ``\g<0>`` substitutes in the entire
    substring matched by the RE.
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
    .. versionchanged:: 3.1
       Added the optional flags argument.
 
@@ -1099,6 +1127,10 @@ Functions
 
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
 
 .. function:: escape(pattern)
