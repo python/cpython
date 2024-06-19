@@ -145,6 +145,7 @@ def filter_char(arg):
 def map_char(arg):
     return chr(ord(arg)+1)
 
+# DON NOT replace these functions with lambda's, pickle doesn't support them
 def f2(x, y): return (x, y)
 def f3(x, y, z): return (x, y, z)
 
