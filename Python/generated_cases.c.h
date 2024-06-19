@@ -4923,7 +4923,7 @@
             _PyStackRef self_or_null;
             owner = stack_pointer[-1];
             assert(oparg <= SPECIAL_MAX);
-            PyObject* *owner_o = PyStackRef_AsPyObjectSteal(owner);
+            PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
             PyObject *name = _Py_SpecialMethods[oparg].name;
             PyObject *self_or_null_o;
             attr = PyStackRef_FromPyObjectSteal(_PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o));
