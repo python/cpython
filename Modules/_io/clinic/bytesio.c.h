@@ -233,43 +233,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io_BytesIO_backread__doc__,
-"backread($self, size=-1, /)\n"
-"--\n"
-"\n"
-"Read backwards at most size bytes, returned as a bytes object.\n"
-"\n"
-"If the size argument is negative, read until EOF is reached.\n"
-"Return an empty bytes object at EOF.");
-
-#define _IO_BYTESIO_BACKREAD_METHODDEF    \
-    {"backread", _PyCFunction_CAST(_io_BytesIO_backread), METH_FASTCALL, _io_BytesIO_backread__doc__},
-
-static PyObject *
-_io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size);
-
-static PyObject *
-_io_BytesIO_backread(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t size = -1;
-
-    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _io_BytesIO_backread_impl(self, size);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "readline($self, size=-1, /)\n"
 "--\n"
@@ -303,44 +266,6 @@ _io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     }
 skip_optional:
     return_value = _io_BytesIO_readline_impl(self, size);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_io_BytesIO_backreadline__doc__,
-"backreadline($self, size=-1, /)\n"
-"--\n"
-"\n"
-"Next line from the end of the file, as a bytes object.\n"
-"\n"
-"Retain newline.  A non-negative size argument limits the maximum\n"
-"number of bytes to return (an incomplete line may be returned then).\n"
-"Return an empty bytes object at BOF.");
-
-#define _IO_BYTESIO_BACKREADLINE_METHODDEF    \
-    {"backreadline", _PyCFunction_CAST(_io_BytesIO_backreadline), METH_FASTCALL, _io_BytesIO_backreadline__doc__},
-
-static PyObject *
-_io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size);
-
-static PyObject *
-_io_BytesIO_backreadline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t size = -1;
-
-    if (!_PyArg_CheckPositional("backreadline", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _io_BytesIO_backreadline_impl(self, size);
 
 exit:
     return return_value;
@@ -418,6 +343,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BytesIO_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read backwards at most size bytes, returned as a bytes object.\n"
+"\n"
+"If the size argument is negative, read until EOF is reached.\n"
+"Return an empty bytes object at EOF.");
+
+#define _IO_BYTESIO_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io_BytesIO_backread), METH_FASTCALL, _io_BytesIO_backread__doc__},
+
+static PyObject *
+_io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size);
+
+static PyObject *
+_io_BytesIO_backread(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = -1;
+
+    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_BytesIO_backread_impl(self, size);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_backreadinto__doc__,
 "backreadinto($self, buffer, /)\n"
 "--\n"
@@ -451,6 +413,44 @@ exit:
        PyBuffer_Release(&buffer);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BytesIO_backreadline__doc__,
+"backreadline($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Next line from the end of the file, as a bytes object.\n"
+"\n"
+"Retain newline.  A non-negative size argument limits the maximum\n"
+"number of bytes to return (an incomplete line may be returned then).\n"
+"Return an empty bytes object at BOF.");
+
+#define _IO_BYTESIO_BACKREADLINE_METHODDEF    \
+    {"backreadline", _PyCFunction_CAST(_io_BytesIO_backreadline), METH_FASTCALL, _io_BytesIO_backreadline__doc__},
+
+static PyObject *
+_io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size);
+
+static PyObject *
+_io_BytesIO_backreadline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = -1;
+
+    if (!_PyArg_CheckPositional("backreadline", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_BytesIO_backreadline_impl(self, size);
+
+exit:
     return return_value;
 }
 
@@ -645,4 +645,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=04075c176ecb3d13 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=580bd186ba900f2f input=a9049054013a1b77]*/

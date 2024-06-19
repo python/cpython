@@ -464,6 +464,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io__RawIOBase_readall__doc__,
+"readall($self, /)\n"
+"--\n"
+"\n"
+"Read until EOF, using multiple read() call.");
+
+#define _IO__RAWIOBASE_READALL_METHODDEF    \
+    {"readall", (PyCFunction)_io__RawIOBase_readall, METH_NOARGS, _io__RawIOBase_readall__doc__},
+
+static PyObject *
+_io__RawIOBase_readall_impl(PyObject *self);
+
+static PyObject *
+_io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__RawIOBase_readall_impl(self);
+}
+
 PyDoc_STRVAR(_io__RawIOBase_backread__doc__,
 "backread($self, size=-1, /)\n"
 "--\n"
@@ -506,29 +524,11 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io__RawIOBase_readall__doc__,
-"readall($self, /)\n"
-"--\n"
-"\n"
-"Read until EOF, using multiple read() call.");
-
-#define _IO__RAWIOBASE_READALL_METHODDEF    \
-    {"readall", (PyCFunction)_io__RawIOBase_readall, METH_NOARGS, _io__RawIOBase_readall__doc__},
-
-static PyObject *
-_io__RawIOBase_readall_impl(PyObject *self);
-
-static PyObject *
-_io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _io__RawIOBase_readall_impl(self);
-}
-
 PyDoc_STRVAR(_io__RawIOBase_backreadall__doc__,
 "backreadall($self, /)\n"
 "--\n"
 "\n"
-"Read until EOF, using multiple read() call.");
+"Read until BOF, using multiple backread() call.");
 
 #define _IO__RAWIOBASE_BACKREADALL_METHODDEF    \
     {"backreadall", (PyCFunction)_io__RawIOBase_backreadall, METH_NOARGS, _io__RawIOBase_backreadall__doc__},
@@ -541,4 +541,4 @@ _io__RawIOBase_backreadall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_backreadall_impl(self);
 }
-/*[clinic end generated code: output=31ec34fb917240b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=717c64bd8765e547 input=a9049054013a1b77]*/

@@ -78,40 +78,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io__BufferedIOBase_backreadinto__doc__,
-"backreadinto($self, buffer, /)\n"
-"--\n"
-"\n");
-
-#define _IO__BUFFEREDIOBASE_BACKREADINTO_METHODDEF    \
-    {"backreadinto", (PyCFunction)_io__BufferedIOBase_backreadinto, METH_O, _io__BufferedIOBase_backreadinto__doc__},
-
-static PyObject *
-_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer);
-
-static PyObject *
-_io__BufferedIOBase_backreadinto(PyObject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
-        goto exit;
-    }
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io__BufferedIOBase_backreadinto_impl(self, &buffer);
-    Py_END_CRITICAL_SECTION();
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj) {
-       PyBuffer_Release(&buffer);
-    }
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
 "detach($self, /)\n"
 "--\n"
@@ -271,7 +237,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_backread__doc__,
 "the byte count (unless BOF is reached first).\n"
 "However, for interactive raw streams (as well as sockets and pipes),\n"
 "at most one raw read will be issued, and a short result does not\n"
-"imply that EOF is imminent.\n"
+"imply that BOF is imminent.\n"
 "\n"
 "Return an empty bytes object on BOF.\n"
 "\n"
@@ -320,6 +286,40 @@ skip_optional_posonly:
     return_value = _io__BufferedIOBase_backread_impl(self, cls, size);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_backreadinto__doc__,
+"backreadinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFEREDIOBASE_BACKREADINTO_METHODDEF    \
+    {"backreadinto", (PyCFunction)_io__BufferedIOBase_backreadinto, METH_O, _io__BufferedIOBase_backreadinto__doc__},
+
+static PyObject *
+_io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer);
+
+static PyObject *
+_io__BufferedIOBase_backreadinto(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__BufferedIOBase_backreadinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
     return return_value;
 }
 
@@ -815,41 +815,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io__Buffered_backread__doc__,
-"backread($self, size=-1, /)\n"
-"--\n"
-"\n");
-
-#define _IO__BUFFERED_BACKREAD_METHODDEF    \
-    {"backread", _PyCFunction_CAST(_io__Buffered_backread), METH_FASTCALL, _io__Buffered_backread__doc__},
-
-static PyObject *
-_io__Buffered_backread_impl(buffered *self, Py_ssize_t n);
-
-static PyObject *
-_io__Buffered_backread(buffered *self, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t n = -1;
-
-    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &n)) {
-        goto exit;
-    }
-skip_optional:
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io__Buffered_backread_impl(self, n);
-    Py_END_CRITICAL_SECTION();
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__Buffered_readinto__doc__,
 "readinto($self, buffer, /)\n"
 "--\n"
@@ -918,40 +883,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io__Buffered_backreadinto__doc__,
-"backreadinto($self, buffer, /)\n"
-"--\n"
-"\n");
-
-#define _IO__BUFFERED_BACKREADINTO_METHODDEF    \
-    {"backreadinto", (PyCFunction)_io__Buffered_backreadinto, METH_O, _io__Buffered_backreadinto__doc__},
-
-static PyObject *
-_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer);
-
-static PyObject *
-_io__Buffered_backreadinto(buffered *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
-        goto exit;
-    }
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _io__Buffered_backreadinto_impl(self, &buffer);
-    Py_END_CRITICAL_SECTION();
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj) {
-       PyBuffer_Release(&buffer);
-    }
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__Buffered_readline__doc__,
 "readline($self, size=-1, /)\n"
 "--\n"
@@ -984,6 +915,75 @@ skip_optional:
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__Buffered_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io__Buffered_backread), METH_FASTCALL, _io__Buffered_backread__doc__},
+
+static PyObject *
+_io__Buffered_backread_impl(buffered *self, Py_ssize_t n);
+
+static PyObject *
+_io__Buffered_backread(buffered *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t n = -1;
+
+    if (!_PyArg_CheckPositional("backread", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &n)) {
+        goto exit;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_backread_impl(self, n);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__Buffered_backreadinto__doc__,
+"backreadinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_BACKREADINTO_METHODDEF    \
+    {"backreadinto", (PyCFunction)_io__Buffered_backreadinto, METH_O, _io__Buffered_backreadinto__doc__},
+
+static PyObject *
+_io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer);
+
+static PyObject *
+_io__Buffered_backreadinto(buffered *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("backreadinto", "argument", "read-write bytes-like object", arg);
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_backreadinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
     return return_value;
 }
 
@@ -1449,4 +1449,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8ef3a85a7da4bc57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df96466b7494089a input=a9049054013a1b77]*/

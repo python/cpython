@@ -88,60 +88,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_io__TextIOBase_backread__doc__,
-"backread($self, size=-1, /)\n"
-"--\n"
-"\n"
-"Read backwards at most size characters from stream.\n"
-"\n"
-"Read from underlying buffer until we have size characters or we hit BOF.\n"
-"If size is negative or omitted, read until BOF.");
-
-#define _IO__TEXTIOBASE_BACKREAD_METHODDEF    \
-    {"backread", _PyCFunction_CAST(_io__TextIOBase_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_backread__doc__},
-
-static PyObject *
-_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
-                              int Py_UNUSED(size));
-
-static PyObject *
-_io__TextIOBase_backread(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "backread",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    int size = -1;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional_posonly;
-    }
-    size = PyLong_AsInt(args[0]);
-    if (size == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional_posonly:
-    return_value = _io__TextIOBase_backread_impl(self, cls, size);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_io__TextIOBase_readline__doc__,
 "readline($self, size=-1, /)\n"
 "--\n"
@@ -191,6 +137,60 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     }
 skip_optional_posonly:
     return_value = _io__TextIOBase_readline_impl(self, cls, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__TextIOBase_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read backwards at most size characters from stream.\n"
+"\n"
+"Read from underlying buffer until we have size characters or we hit BOF.\n"
+"If size is negative or omitted, read until BOF.");
+
+#define _IO__TEXTIOBASE_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io__TextIOBase_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_backread__doc__},
+
+static PyObject *
+_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size));
+
+static PyObject *
+_io__TextIOBase_backread(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backread",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int size = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__TextIOBase_backread_impl(self, cls, size);
 
 exit:
     return return_value;
@@ -1435,4 +1435,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=bf7d7856bb6c8cb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac5c83c4f973b710 input=a9049054013a1b77]*/

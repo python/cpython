@@ -1067,7 +1067,7 @@ Read until BOF, using multiple backread() call.
 
 static PyObject *
 _io__RawIOBase_backreadall_impl(PyObject *self)
-/*[clinic end generated code: output=2aa443d65fa96664 input=942dc26ae3e60be6]*/
+/*[clinic end generated code: output=2aa443d65fa96664 input=e5b75dc08fb8a684]*/
 {
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
