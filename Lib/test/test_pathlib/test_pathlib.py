@@ -952,21 +952,22 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         # by scandir() but before unlink() or rmdr() is called doesn't
         # generate any errors.
         def on_error(exc):
+            assert exc.filename
             if not isinstance(exc, PermissionError):
                 raise
             # Make the parent and the children writeable.
             for p, mode in zip(paths, old_modes):
-                os.chmod(p, mode)
+                p.chmod(mode)
             # Remove other dirs except one.
-            keep = next(p for p in dirs if p != exc.filename)
+            keep = next(p for p in dirs if str(p) != exc.filename)
             for p in dirs:
                 if p != keep:
-                    os.rmdir(p)
+                    p.rmdir()
             # Remove other files except one.
-            keep = next(p for p in files if p != exc.filename)
+            keep = next(p for p in files if str(p) != exc.filename)
             for p in files:
                 if p != keep:
-                    os.unlink(p)
+                    p.unlink()
 
         tmp = self.cls(self.base, 'rmtree')
         tmp.mkdir()
