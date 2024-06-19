@@ -685,8 +685,8 @@ class RawIOBase(IOBase):
     def backread(self, size=-1):
         """Read backwards and return up to size bytes, where size is an int.
 
-        Returns an empty bytes object on BOF, or None if the object is
-        set not to block and has no data to read.
+        Returns an empty bytes object on beginning of file, or None if the
+        object is set not to block and has no data to read.
 
         The returned bytes are given in reversed order they are being read,
         e.g., reading the 4 last bytes of 'abc-def' returns fed-'.
@@ -703,7 +703,8 @@ class RawIOBase(IOBase):
         return bytes(b)
 
     def backreadall(self):
-        """Read until BOF, using multiple backread() call."""
+        """Read backwards until beginning of file, using multiple backread()
+        calls."""
         res = bytearray()
         while data := self.backread(DEFAULT_BUFFER_SIZE):
             res += data
@@ -716,8 +717,9 @@ class RawIOBase(IOBase):
     def backreadinto(self, b):
         """Read backwards bytes into a pre-allocated bytes-like object b.
 
-        Returns an int representing the number of bytes read (0 for BOF), or
-        None if the object is set not to block and has no data to read.
+        Returns an int representing the number of bytes read (0 if the
+        current position is 0), or None if the object is set not to block
+        and has no data to read.
 
         For instance, back-reading 'abc-def' into a bytearray of length 3
         sets the content of the latter to 'fed' and returns 3.
@@ -825,16 +827,16 @@ class BufferedIOBase(IOBase):
         """Read from the end and return up to size bytes, where size is an int.
 
         If the argument is omitted, None, or negative, reads and
-        returns all data until BOF (beginning of file).
+        returns all data until the beginning of file.
 
         If the argument is positive, and the underlying raw stream is
         not 'interactive', multiple raw reads may be issued to satisfy
-        the byte count (unless BOF is reached first).  But for
-        interactive raw streams (XXX and for pipes?), at most one raw
-        read will be issued, and a short result does not imply that
-        BOF is imminent.
+        the byte count (unless the beginning of file is reached first).
+        But for interactive raw streams (XXX and for pipes?), at most one raw
+        read will be issued, and a short result does not imply that the
+        beginning of file is imminent.
 
-        Returns an empty bytes array on BOF.
+        Returns an empty bytes array if the current position is 0.
 
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
@@ -847,7 +849,8 @@ class BufferedIOBase(IOBase):
         Like backread(), this may issue multiple reads to the underlying raw
         stream, unless the latter is 'interactive'.
 
-        Returns an int representing the number of bytes read (0 for BOF).
+        Returns an int representing the number of bytes read (0 if the
+        current position is 0).
 
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
@@ -1921,7 +1924,8 @@ class FileIO(RawIOBase):
 
         Only makes one system call to os.read(), so less data may be
         returned than requested. In non-blocking mode, returns None
-        if no data is available. Return an empty bytes object at BOF.
+        if no data is available. Return an empty bytes object if the
+        current position is 0.
 
         For non-seekable files, this raises :exc:`UnsupportedOperation`.
         """
@@ -1955,7 +1959,8 @@ class FileIO(RawIOBase):
         """Read backwards all data from the file, returned as bytes.
 
         In non-blocking mode, returns as much as is immediately available,
-        or None if no data is available. Return an empty bytes object at BOF.
+        or None if no data is available. Return an empty bytes object if
+        the current position is 0.
 
         For non-seekable files, this raises :exc:`UnsupportedOperation`.
         """
@@ -2132,8 +2137,9 @@ class TextIOBase(IOBase):
         """Read backwards at most size characters from stream,
         where size is an int.
 
-        Read from underlying buffer until we have size characters or we hit BOF.
-        If size is negative or omitted, read until BOF.
+        Read from underlying buffer until we have size characters or we hit
+        the beginning of file.  If size is negative or omitted, read until
+        the beginning of file.
 
         Returns a string.
         """
@@ -2155,9 +2161,9 @@ class TextIOBase(IOBase):
         self._unsupported("readline")
 
     def backreadline(self, size=None):
-        """Read until newline or BOF.
+        """Read until newline or the beginning of file.
 
-        Returns an empty string if BOF is hit immediately.
+        Returns an empty string if the current position is 0.
         """
         self._unsupported("backreadline")
 
