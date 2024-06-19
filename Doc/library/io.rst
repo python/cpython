@@ -294,16 +294,17 @@ The following table summarizes the ABCs provided by the :mod:`io` module:
 ABC                        Inherits            Stub Methods              Mixin Methods and Properties
 =========================  ==================  ========================  ==================================================
 :class:`IOBase`                                ``fileno``, ``seek``,     ``close``, ``closed``, ``__enter__``,
-                                               and ``truncate``          ``__exit__``, ``flush``, ``isatty``, ``__iter__``,
-                                                                         ``__next__``, ``__reversed__``, ``readable``,
-                                                                         ``readline``, ``readlines``, ``backreadline``,
-                                                                         ``seekable``, ``tell``,
+                                               and ``truncate``          ``__exit__``, ``flush``, ``isatty``,
+                                                                         ``__iter__``, ``__next__``, ``__reversed__``,
+                                                                         ``readable``, ``readline``, ``readlines``,
+                                                                         ``backreadline``, ``seekable``, ``tell``,
                                                                          ``writable``, and ``writelines``
 :class:`RawIOBase`         :class:`IOBase`     ``readinto``,             Inherited :class:`IOBase` methods, ``read``,
                                                ``backreadinto`` and      ``readall``, ``backread``, and ``backreadall``
                                                ``write``
 :class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``,
-                                               ``read1``,  ``backread``, ``readinto1``, and ``backreadinto``
+                                               ``read1``,                ``readinto1``, and ``backreadinto``
+                                               ``backread``,
                                                and ``write``
 :class:`TextIOBase`        :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``encoding``,
                                                ``readline``,             ``errors``, and ``newlines``
