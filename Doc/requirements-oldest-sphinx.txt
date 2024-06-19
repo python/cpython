@@ -14,16 +14,16 @@ python-docs-theme>=2022.1
 
 alabaster==0.7.16
 Babel==2.15.0
-certifi==2024.2.2
+certifi==2024.6.2
 charset-normalizer==3.3.2
 docutils==0.19
 idna==3.7
 imagesize==1.4.1
 Jinja2==3.1.4
 MarkupSafe==2.1.5
-packaging==24.0
+packaging==24.1
 Pygments==2.18.0
-requests==2.32.2
+requests==2.32.3
 snowballstemmer==2.2.0
 Sphinx==6.2.1
 sphinxcontrib-applehelp==1.0.8
@@ -32,4 +32,4 @@ sphinxcontrib-htmlhelp==2.0.5
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
-urllib3==2.2.1
+urllib3==2.2.2
