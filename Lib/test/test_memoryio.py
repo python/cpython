@@ -2,7 +2,7 @@
 StringIO -- for unicode strings
 BytesIO -- for bytes
 """
-
+import test.support
 import unittest
 from test import support
 
@@ -429,7 +429,31 @@ class MemoryTestMixin:
         del __main__.PickleTestMemIO
 
 
-class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
+class MemoryBackreadTestMixin(MemoryTestMixin):
+    def test_backread(self):
+        buf = self.buftype("1234567890")
+        rev = buf[::-1]
+        memio = self.ioclass(buf)
+
+        for int_class in [int, IntLike]:
+            with self.subTest(int_class=int_class):
+                memio.seek(0, 2)
+                self.assertEqual(memio.backread(int_class(0)), self.BOF)
+                self.assertEqual(memio.backread(int_class(1)), rev[:1])
+                self.assertEqual(memio.backread(int_class(4)), rev[1:5])
+                self.assertEqual(memio.backread(int_class(900)), rev[5:])
+                self.assertEqual(memio.backread(), self.BOF)
+
+        memio.seek(0, 2)
+        self.assertEqual(memio.backread(), rev)
+        self.assertEqual(memio.backread(), self.BOF)
+        self.assertEqual(memio.tell(), 0)
+
+    def test_backreadline(self):
+        pass
+
+
+class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestCase):
     # Test _pyio.BytesIO; class also inherited for testing C implementation
 
     UnsupportedOperation = pyio.UnsupportedOperation
@@ -438,7 +462,7 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
     def buftype(s):
         return s.encode("ascii")
     ioclass = pyio.BytesIO
-    EOF = b""
+    BOF = EOF = b""
 
     def test_getbuffer(self):
         memio = self.ioclass(b"1234567890")
@@ -534,6 +558,45 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         b = bytearray()
         memio.seek(42)
         memio.readinto(b)
+        self.assertEqual(b, b"")
+
+    def test_backreadinto(self):
+        buf = self.buftype("1234567890")
+        memio = self.ioclass(buf)
+
+        b = bytearray(b"hello")
+        memio.seek(0, 2)
+        self.assertEqual(memio.backreadinto(b), 5)
+        self.assertEqual(b, b"09876")
+        self.assertEqual(memio.backreadinto(b), 5)
+        self.assertEqual(b, b"54321")
+        self.assertEqual(memio.backreadinto(b), 0)
+        self.assertEqual(b, b"54321")
+
+        b = bytearray(b"hello world")
+        memio.seek(0, 2)
+        self.assertEqual(memio.backreadinto(b), 10)
+        self.assertEqual(b, b"0987654321d")
+        b = bytearray(b"")
+
+        memio.seek(0, 2)
+        self.assertEqual(memio.backreadinto(b), 0)
+        self.assertEqual(b, b"")
+        self.assertRaises(TypeError, memio.backreadinto, '')
+
+        import array
+        a = array.array('b', b"hello world")
+        memio = self.ioclass(buf)
+        memio.seek(0, 2)
+        memio.backreadinto(a)
+        self.assertEqual(a.tobytes(), b"0987654321d")
+        memio.close()
+        self.assertRaises(ValueError, memio.backreadinto, b)
+
+        memio = self.ioclass(b"123")
+        b = bytearray()
+        memio.seek(0)
+        memio.backreadinto(b)
         self.assertEqual(b, b"")
 
     def test_relative_seek(self):

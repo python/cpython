@@ -1061,8 +1061,6 @@ class BytesIO(BufferedIOBase):
     def backread(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
-        if len(self._buffer) <= self._pos:
-            return b''
         if size is None:
             size = -1
         else:
@@ -1073,8 +1071,9 @@ class BytesIO(BufferedIOBase):
             else:
                 size = size_index()
         if size < 0:
+            rem = self._pos
             self._pos = 0
-            return bytes(reversed(self._buffer))
+            return bytes(reversed(self._buffer[:rem]))
         n = max(0, self._pos - size)
         b = self._buffer[n : self._pos]
         self._pos = n
