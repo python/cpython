@@ -1109,6 +1109,66 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
+    def test_strptime(self):
+        string = '2004-12-01'
+        format = '%Y-%m-%d'
+        expected = _strptime._strptime_datetime_date(date, string, format)
+        got = date.strptime(string, format)
+        self.assertEqual(expected, got)
+        self.assertIs(type(expected), date)
+        self.assertIs(type(got), date)
+
+        # bpo-34482: Check that surrogates are handled properly.
+        inputs = [
+            ('2004-12\ud80001', '%Y-%m\ud800%d'),
+            ('2004\ud80012-01', '%Y\ud800%m-%d'),
+        ]
+        for string, format in inputs:
+            with self.subTest(string=string, format=format):
+                expected = _strptime._strptime_datetime_date(date, string,
+                                                             format)
+                got = date.strptime(string, format)
+                self.assertEqual(expected, got)
+
+    def test_strptime_single_digit(self):
+        # bpo-34903: Check that single digit dates are allowed.
+        strptime = date.strptime
+        with self.assertRaises(ValueError):
+            # %y does require two digits.
+            newdate = strptime('01/02/3', '%d/%m/%y')
+
+        d1 = date(2003, 2, 1)
+        d2 = date(2003, 1, 2)
+        d3 = date(2003, 2, 1)
+        d4 = date(2003, 1, 25)
+        inputs = [
+            ('%d', '1/02/03',  '%d/%m/%y', d1),
+            ('%m', '01/2/03',  '%d/%m/%y', d1),
+            ('%j', '2/03',     '%j/%y',    d2),
+            ('%w', '6/04/03',  '%w/%U/%y', d3),
+            # %u requires a single digit.
+            ('%W', '6/4/2003', '%u/%W/%Y', d3),
+            ('%V', '6/4/2003', '%u/%V/%G', d4),
+        ]
+        for reason, string, format, target in inputs:
+            reason = 'test single digit ' + reason
+            with self.subTest(reason=reason,
+                              string=string,
+                              format=format,
+                              target=target):
+                newdate = strptime(string, format)
+                self.assertEqual(newdate, target, msg=reason)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            # The existing behavior that GH-70647 seeks to change.
+            date.strptime('02-29', '%m-%d')
+        with self._assertNotWarns(DeprecationWarning):
+            date.strptime('20-03-14', '%y-%m-%d')
+            date.strptime('02-29,2024', '%m-%d,%Y')
+
 class SubclassDate(date):
     sub_var = 1
 
@@ -2718,7 +2778,8 @@ class TestDateTime(TestDate):
     def test_strptime(self):
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
-        expected = _strptime._strptime_datetime_datetime(self.theclass, string, format)
+        expected = _strptime._strptime_datetime_datetime(self.theclass, string,
+                                                         format)
         got = self.theclass.strptime(string, format)
         self.assertEqual(expected, got)
         self.assertIs(type(expected), self.theclass)
@@ -2732,8 +2793,8 @@ class TestDateTime(TestDate):
         ]
         for string, format in inputs:
             with self.subTest(string=string, format=format):
-                expected = _strptime._strptime_datetime_datetime(self.theclass, string,
-                                                                 format)
+                expected = _strptime._strptime_datetime_datetime(self.theclass,
+                                                                 string, format)
                 got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
 
