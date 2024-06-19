@@ -542,6 +542,20 @@ Other constructors, all class methods:
 
    .. versionadded:: 3.8
 
+.. classmethod:: date.strptime(date_string, format)
+
+   Return a :class:`.date` corresponding to *date_string*, parsed according to
+   *format*. This is equivalent to::
+
+     date(*(time.strptime(date_string, format)[0:3]))
+
+   :exc:`ValueError` is raised if the date_string and format
+   can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`date.fromisoformat`.
+
+   .. versionadded:: 3.14
+
 
 Class attributes:
 
@@ -1821,7 +1835,7 @@ In Boolean contexts, a :class:`.time` object is always considered to be true.
    details.
 
 
-Other constructor:
+Other constructors:
 
 .. classmethod:: time.fromisoformat(time_string)
 
@@ -1862,6 +1876,22 @@ Other constructor:
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
       :meth:`time.isoformat()`.
+
+.. classmethod:: time.strptime(date_string, format)
+
+   Return a :class:`.time` corresponding to *date_string*, parsed according to
+   *format*.
+
+   If *format* does not contain microseconds or timezone information, this is equivalent to::
+
+     time(*(time.strptime(date_string, format)[3:6]))
+
+   :exc:`ValueError` is raised if the date_string and format
+   can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`time.fromisoformat`.
+
+   .. versionadded:: 3.14
 
 
 Instance methods:
@@ -2361,24 +2391,22 @@ Class attributes:
 ``strftime(format)`` method, to create a string representing the time under the
 control of an explicit format string.
 
-Conversely, the :meth:`datetime.strptime` class method creates a
-:class:`.datetime` object from a string representing a date and time and a
-corresponding format string.
+Conversely, the :meth:`date.strptime`, :meth:`datetime.strptime` and
+:meth:`time.strptime`,  class methods create an object from a string
+representing the time and a corresponding format string.
 
 The table below provides a high-level comparison of :meth:`~.datetime.strftime`
 versus :meth:`~.datetime.strptime`:
 
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-|                | ``strftime``                                           | ``strptime``                                                                 |
-+================+========================================================+==============================================================================+
-| Usage          | Convert object to a string according to a given format | Parse a string into a :class:`.datetime` object given a corresponding format |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Type of method | Instance method                                        | Class method                                                                 |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Method of      | :class:`date`; :class:`.datetime`; :class:`.time`      | :class:`.datetime`                                                           |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                                            |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+|                | ``strftime``                                           | ``strptime``                                               |
++================+========================================================+============================================================+
+| Usage          | Convert object to a string according to a given format | Parse a string into an object given a corresponding format |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+| Type of method | Instance method                                        | Class method                                               |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+| Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                          |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
 
 
    .. _format-codes:
