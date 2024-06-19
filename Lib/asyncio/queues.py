@@ -32,14 +32,14 @@ class QueueShutDown(Exception):
 
 class _AsyncQueueIterator:
     def __init__(self, queue):
-        self.queue = queue
+        self._queue = queue
 
     def __aiter__(self):
         return self
 
     async def __anext__(self):
         try:
-            return await self.queue.get()
+            return await self._queue.get()
         except QueueShutDown:
             raise StopAsyncIteration
 
