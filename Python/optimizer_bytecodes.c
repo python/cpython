@@ -634,7 +634,6 @@ dummy_func(void) {
         (void)callable;
         (void)self_or_null;
         (void)args;
-        first_valid_check_stack = NULL;
         goto done;
     }
 
