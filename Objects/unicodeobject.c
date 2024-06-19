@@ -15218,6 +15218,7 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
         assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
         Py_SETREF(*p, Py_NewRef(r));
         assert(_PyUnicode_CHECK(r));
+        Py_DECREF(s);
         return;
     }
 
