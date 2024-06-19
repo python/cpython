@@ -471,7 +471,7 @@ Speedup :func:`os.path.join`.
 .. date: 2024-04-07-18-42-09
 .. gh-issue: 117607
 .. nonce: C978BD
-.. section: Core and Builtins
+.. section: Library
 
 Speedup :func:`os.path.relpath`.
 
