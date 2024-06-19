@@ -11,7 +11,7 @@ Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
 .. date: 2024-04-06-16-42-34
 .. gh-issue: 117584
 .. nonce: hqk9Hn
-.. section: Core and Builtins
+.. section: Library
 
 Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.
 
