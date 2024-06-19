@@ -44,7 +44,7 @@ when ``globals`` is set to a non-dict. Patch by Jelle Zijlstra.
 .. date: 2024-05-27-15-22-41
 .. gh-issue: 118263
 .. nonce: QfcDja
-.. section: Core and Builtins
+.. section: Library
 
 Speed up :func:`os.path.normpath` with a direct C call.
 
