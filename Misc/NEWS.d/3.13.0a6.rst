@@ -118,7 +118,7 @@ Optimise several functions in :mod:`os.path`.
 .. date: 2024-03-28-19-13-20
 .. gh-issue: 117335
 .. nonce: d6uKJu
-.. section: Core and Builtins
+.. section: Library
 
 Raise TypeError for non-sequences for :func:`ntpath.commonpath`.
 
