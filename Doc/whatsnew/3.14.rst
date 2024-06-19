@@ -105,7 +105,7 @@ io
   Some of the classes above provide a default implementation for reverse read
   operations such as :meth:`IOBase.backreadline <io.IOBase.backreadline>` or
   :meth:`BytesIO.backread <io.BufferedIOBase.backread>`, but most of them raise
-  :exc:`UnsupportedOperation`.
+  :exc:`~io.UnsupportedOperation`.
 
   (Contributed by Bénédikt Tran in :gh:`44691`.)
 
