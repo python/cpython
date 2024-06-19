@@ -1188,7 +1188,7 @@ are always available.  They are listed here in alphabetical order.
       unchanged from previous versions.
 
 
-.. function:: map(function, iterable, *iterables, strict=False)
+.. function:: map(function, iterable, /, *iterables, strict=False)
 
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterables* arguments are passed,
