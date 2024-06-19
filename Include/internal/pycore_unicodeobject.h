@@ -277,6 +277,18 @@ extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 
 extern PyTypeObject _PyUnicodeASCIIIter_Type;
 
+/* --- Interning ---------------------------------------------------------- */
+
+// All these are "ref-neutral", like the public PyUnicode_InternInPlace.
+
+// Explicit interning routines:
+PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
+// Left here to help backporting:
+PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
+// Only for singletons in the _PyRuntime struct:
+extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
+
 /* --- Other API ---------------------------------------------------------- */
 
 struct _Py_unicode_runtime_ids {
@@ -313,13 +325,7 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
-extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
-
-// Explicit interning routines
-PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
-PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
-PyAPI_FUNC(void) _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.
