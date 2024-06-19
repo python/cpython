@@ -1200,7 +1200,7 @@ are always available.  They are listed here in alphabetical order.
    see :func:`itertools.starmap`.
 
    .. versionchanged:: 3.14
-      Added the *strict* argument.
+      Added the *strict* parameter.
 
 
 .. function:: max(iterable, *, key=None)
