@@ -586,6 +586,20 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     return PyLong_FromSsize_t(len);
 }
 
+static PyObject *
+backread_bytes(bytesio *self, Py_ssize_t size /* 0 <= size <= self->pos */)
+{
+    assert(self->buf != NULL);
+    assert(0 <= size && size <= self->pos);
+    const char *src = PyBytes_AS_STRING(self->buf) + self->pos - size;
+    char *out = malloc(size * sizeof(char));
+    reverse_buffer(out, src, size);
+    PyObject *res = PyBytes_FromStringAndSize(out, size);
+    free(out);
+    self->pos -= size;
+    return res;
+}
+
 /*[clinic input]
 _io.BytesIO.backread
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -601,8 +615,15 @@ static PyObject *
 _io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size)
 /*[clinic end generated code: output=d3bccd201010ec0a input=1fea25a35bd6ad81]*/
 {
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
+    CHECK_CLOSED(self);
+    Py_ssize_t rem = self->pos;
+    if (size < 0 || size > rem) {
+        size = rem;
+        if (size < 0) {
+            size = 0;
+        }
+    }
+    return backread_bytes(self, size);
 }
 
 /*[clinic input]
@@ -620,8 +641,30 @@ static PyObject *
 _io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
 /*[clinic end generated code: output=42f2ca676ab55937 input=ef424bc91ee85a0b]*/
 {
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
+    CHECK_CLOSED(self);
+
+    Py_ssize_t off = 0;
+    Py_ssize_t len = buffer->len;
+    assert(len >= 0);
+
+    Py_ssize_t rem = self->pos;
+    if (len >= rem) {
+        len = rem;
+    }
+    else {
+        off = rem - len;
+    }
+    if (len < 0) {
+        len = 0;
+    }
+    assert(0 <= off && off <= self->pos);
+    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + off, len);
+    // reverse the bytes that were just written
+    reverse_buffer_in_place((char *)buffer->buf, len);
+    assert(self->pos - len >= 0);
+    assert(len >= 0);
+    self->pos -= len;
+    return PyLong_FromSsize_t(len);
 }
 
 /*[clinic input]
