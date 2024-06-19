@@ -589,17 +589,17 @@ class IOBase(metaclass=abc.ABCMeta):
         self._checkClosed()
         return self
 
-    def __reversed__(self):
-        self._checkClosed()
-        while line := self.backreadline():
-            yield line
-        raise StopIteration
-
     def __next__(self):
         line = self.readline()
         if not line:
             raise StopIteration
         return line
+
+    def __reversed__(self):
+        self._checkClosed()
+        while line := self.backreadline():
+            yield line
+        raise StopIteration
 
     def readlines(self, hint=None):
         """Return a list of lines from the stream.
@@ -663,6 +663,25 @@ class RawIOBase(IOBase):
         del b[n:]
         return bytes(b)
 
+    def readall(self):
+        """Read until EOF, using multiple read() call."""
+        res = bytearray()
+        while data := self.read(DEFAULT_BUFFER_SIZE):
+            res += data
+        if res:
+            return bytes(res)
+        else:
+            # b'' or None
+            return data
+
+    def readinto(self, b):
+        """Read bytes into a pre-allocated bytes-like object b.
+
+        Returns an int representing the number of bytes read (0 for EOF), or
+        None if the object is set not to block and has no data to read.
+        """
+        self._unsupported("readinto")
+
     def backread(self, size=-1):
         """Read backwards and return up to size bytes, where size is an int.
 
@@ -683,17 +702,6 @@ class RawIOBase(IOBase):
         del b[n:]
         return bytes(b)
 
-    def readall(self):
-        """Read until EOF, using multiple read() call."""
-        res = bytearray()
-        while data := self.read(DEFAULT_BUFFER_SIZE):
-            res += data
-        if res:
-            return bytes(res)
-        else:
-            # b'' or None
-            return data
-
     def backreadall(self):
         """Read until BOF, using multiple backread() call."""
         res = bytearray()
@@ -704,14 +712,6 @@ class RawIOBase(IOBase):
         else:
             # b'' or None
             return data
-
-    def readinto(self, b):
-        """Read bytes into a pre-allocated bytes-like object b.
-
-        Returns an int representing the number of bytes read (0 for EOF), or
-        None if the object is set not to block and has no data to read.
-        """
-        self._unsupported("readinto")
 
     def backreadinto(self, b):
         """Read backwards bytes into a pre-allocated bytes-like object b.
@@ -743,10 +743,11 @@ class BufferedIOBase(IOBase):
 
     The main difference with RawIOBase is that the read() method
     supports omitting the size argument, and does not have a default
-    implementation that defers to readinto().
+    implementation that defers to readinto().  A similar argument holds
+    for the backread() method which does not defer to backreadinto().
 
-    In addition, read(), readinto() and write() may raise
-    BlockingIOError if the underlying raw stream is in non-blocking
+    In addition, read(), backread(), readinto(), backreadinto() and write()
+    may raise BlockingIOError if the underlying raw stream is in non-blocking
     mode and not ready; unlike their raw counterparts, they will never
     return None.
 
@@ -773,26 +774,6 @@ class BufferedIOBase(IOBase):
         data at the moment.
         """
         self._unsupported("read")
-
-    def backread(self, size=-1):
-        """Read from the end and return up to size bytes, where size is an int.
-
-        If the argument is omitted, None, or negative, reads and
-        returns all data until BOF (beginning of file).
-
-        If the argument is positive, and the underlying raw stream is
-        not 'interactive', multiple raw reads may be issued to satisfy
-        the byte count (unless BOF is reached first).  But for
-        interactive raw streams (XXX and for pipes?), at most one raw
-        read will be issued, and a short result does not imply that
-        BOF is imminent.
-
-        Returns an empty bytes array on BOF.
-
-        Raises BlockingIOError if the underlying raw stream has no
-        data at the moment.
-        """
-        self._unsupported("backread")
 
     def read1(self, size=-1):
         """Read up to size bytes with at most one read() system call,
@@ -825,15 +806,6 @@ class BufferedIOBase(IOBase):
 
         return self._readinto(b, read1=True)
 
-    def backreadinto(self, b):
-        if not isinstance(b, memoryview):
-            b = memoryview(b)
-        b = b.cast('B')
-        data = self.backread(len(b))
-        n = len(data)
-        b[:n] = data
-        return n
-
     def _readinto(self, b, read1):
         if not isinstance(b, memoryview):
             b = memoryview(b)
@@ -847,6 +819,45 @@ class BufferedIOBase(IOBase):
 
         b[:n] = data
 
+        return n
+
+    def backread(self, size=-1):
+        """Read from the end and return up to size bytes, where size is an int.
+
+        If the argument is omitted, None, or negative, reads and
+        returns all data until BOF (beginning of file).
+
+        If the argument is positive, and the underlying raw stream is
+        not 'interactive', multiple raw reads may be issued to satisfy
+        the byte count (unless BOF is reached first).  But for
+        interactive raw streams (XXX and for pipes?), at most one raw
+        read will be issued, and a short result does not imply that
+        BOF is imminent.
+
+        Returns an empty bytes array on BOF.
+
+        Raises BlockingIOError if the underlying raw stream has no
+        data at the moment.
+        """
+        self._unsupported("backread")
+
+    def backreadinto(self, b):
+        """Read backwards bytes into a pre-allocated bytes-like object b.
+
+        Like backread(), this may issue multiple reads to the underlying raw
+        stream, unless the latter is 'interactive'.
+
+        Returns an int representing the number of bytes read (0 for BOF).
+
+        Raises BlockingIOError if the underlying raw stream has no
+        data at the moment.
+        """
+        if not isinstance(b, memoryview):
+            b = memoryview(b)
+        b = b.cast('B')
+        data = self.backread(len(b))
+        n = len(data)
+        b[:n] = data
         return n
 
     def write(self, b):
@@ -1039,6 +1050,11 @@ class BytesIO(BufferedIOBase):
         self._pos = newpos
         return bytes(b)
 
+    def read1(self, size=-1):
+        """This is the same as read.
+        """
+        return self.read(size)
+
     def backread(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
@@ -1060,11 +1076,6 @@ class BytesIO(BufferedIOBase):
         b = self._buffer[n : self._pos]
         self._pos = n
         return bytes(reversed(b))
-
-    def read1(self, size=-1):
-        """This is the same as read.
-        """
-        return self.read(size)
 
     def write(self, b):
         if self.closed:
@@ -1240,71 +1251,6 @@ class BufferedReader(_BufferedIOMixin):
         self._read_pos = 0
         return out[:n] if out else nodata_val
 
-    def backread(self, size=-1):
-        self._checkClosed("backread of closed file")
-        if size is not None and size < -1:
-            raise ValueError("invalid number of bytes to read")
-        with self._read_lock:
-            return self._backread_unlocked(size)
-
-    def _backread_unlocked(self, n=None):
-        nodata_val = b""
-        empty_vals = (b"", None)
-
-        if n is None or n == -1:
-            buf, pos = self._read_buf, self._read_pos
-            self._reset_read_buf()
-
-            head = buf[pos::-1]
-            if hasattr(self.raw, 'backreadall'):
-                chunk = self.raw.backreadall()
-                if chunk is None:
-                    return head or None
-                return head + chunk
-            elif hasattr(self.raw, 'readall'):
-                chunk = self.raw.readall()
-                if chunk is None:
-                    return head or None
-                return head + chunk[::-1]
-            chunks = [head]
-            while True:
-                # Read until BOF or until backread() would block.
-                chunk = self.raw.backread()
-                if chunk in empty_values:
-                    nodata_val = chunk
-                    break
-                chunks.append(chunk)
-            return b"".join(chunks) or nodata_val
-
-        # Note: it is possible to further optimize this routine by first
-        # checking whether we are already at the end of the file or not.
-        # If so, we could just return the cached buffer but this requires
-        # a call to peek(). For now, we will not implement that approach
-        # and simply reset the cache and move the cursor to the end.
-        self.seek(0, 2)
-
-        # Split the data into chunks from the right and read
-        # them one by one, until encountering BOF or after 'n'
-        # bytes were read.
-        chunks = []
-        count = 0
-        chunk_size = min(self.buffer_size, n)
-        while count < n:
-            chunk = self.raw.backward(chunk_size)
-            if chunk in empty_values:
-                # We read everything in backward order and we could have cached
-                # the reversed result to speed-up future calls to forward reads
-                # but backread() is mostly used to reduce the memory complexity
-                # of read(), so we do not cache it.
-                nodata_val = chunk
-                break
-            count += len(chunk)
-            chunks.append(chunk)
-
-        out = b"".join(chunks)
-        self._reset_read_buf()
-        return out[:n] if out else nodata_val
-
     def peek(self, size=0):
         """Returns buffered bytes without advancing the position.
 
@@ -1393,6 +1339,71 @@ class BufferedReader(_BufferedIOMixin):
                     break
 
         return written
+
+    def backread(self, size=-1):
+        self._checkClosed("backread of closed file")
+        if size is not None and size < -1:
+            raise ValueError("invalid number of bytes to read")
+        with self._read_lock:
+            return self._backread_unlocked(size)
+
+    def _backread_unlocked(self, n=None):
+        nodata_val = b""
+        empty_vals = (b"", None)
+
+        if n is None or n == -1:
+            buf, pos = self._read_buf, self._read_pos
+            self._reset_read_buf()
+
+            head = buf[pos::-1]
+            if hasattr(self.raw, 'backreadall'):
+                chunk = self.raw.backreadall()
+                if chunk is None:
+                    return head or None
+                return head + chunk
+            elif hasattr(self.raw, 'readall'):
+                chunk = self.raw.readall()
+                if chunk is None:
+                    return head or None
+                return head + chunk[::-1]
+            chunks = [head]
+            while True:
+                # Read until BOF or until backread() would block.
+                chunk = self.raw.backread()
+                if chunk in empty_values:
+                    nodata_val = chunk
+                    break
+                chunks.append(chunk)
+            return b"".join(chunks) or nodata_val
+
+        # Note: it is possible to further optimize this routine by first
+        # checking whether we are already at the end of the file or not.
+        # If so, we could just return the cached buffer but this requires
+        # a call to peek(). For now, we will not implement that approach
+        # and simply reset the cache and move the cursor to the end.
+        self.seek(0, SEEK_END)
+
+        # Split the data into chunks from the right and read
+        # them one by one, until encountering BOF or after 'n'
+        # bytes were read.
+        chunks = []
+        count = 0
+        chunk_size = min(self.buffer_size, n)
+        while count < n:
+            chunk = self.raw.backward(chunk_size)
+            if chunk in empty_values:
+                # We read everything in backward order and we could have cached
+                # the reversed result to speed-up future calls to forward reads
+                # but backread() is mostly used to reduce the memory complexity
+                # of read(), so we do not cache it.
+                nodata_val = chunk
+                break
+            count += len(chunk)
+            chunks.append(chunk)
+
+        out = b"".join(chunks)
+        self._reset_read_buf()
+        return out[:n] if out else nodata_val
 
     def tell(self):
         # GH-95782: Keep return value non-negative
@@ -1549,16 +1560,8 @@ class BufferedRWPair(BufferedIOBase):
             size = -1
         return self.reader.read(size)
 
-    def backread(self, size=-1):
-        if size is None:
-            size = -1
-        return self.reader.backread(size)
-
     def readinto(self, b):
         return self.reader.readinto(b)
-
-    def backreadinto(self, b):
-        return self.reader.backreadinto(b)
 
     def write(self, b):
         return self.writer.write(b)
@@ -1571,6 +1574,14 @@ class BufferedRWPair(BufferedIOBase):
 
     def readinto1(self, b):
         return self.reader.readinto1(b)
+
+    def backread(self, size=-1):
+        if size is None:
+            size = -1
+        return self.reader.backread(size)
+
+    def backreadinto(self, b):
+        return self.reader.backreadinto(b)
 
     def readable(self):
         return self.reader.readable()
@@ -1644,19 +1655,9 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         self.flush()
         return BufferedReader.read(self, size)
 
-    def backread(self, size=None):
-        if size is None:
-            size = -1
-        self.flush()
-        return BufferedReader.backread(self, size)
-
     def readinto(self, b):
         self.flush()
         return BufferedReader.readinto(self, b)
-
-    def backreadinto(self, b):
-        self.flush()
-        return BufferedReader.backreadinto(self, b)
 
     def peek(self, size=0):
         self.flush()
@@ -1669,6 +1670,16 @@ class BufferedRandom(BufferedWriter, BufferedReader):
     def readinto1(self, b):
         self.flush()
         return BufferedReader.readinto1(self, b)
+
+    def backread(self, size=None):
+        if size is None:
+            size = -1
+        self.flush()
+        return BufferedReader.backread(self, size)
+
+    def backreadinto(self, b):
+        self.flush()
+        return BufferedReader.backreadinto(self, b)
 
     def write(self, b):
         if self._read_buf:
@@ -1905,6 +1916,33 @@ class FileIO(RawIOBase):
         m[:n] = data
         return n
 
+    def backread(self, size=-1):
+        """Read backwards at most size bytes, returned as bytes.
+
+        Only makes one system call to os.read(), so less data may be
+        returned than requested. In non-blocking mode, returns None
+        if no data is available. Return an empty bytes object at BOF.
+
+        For non-seekable files, this raises :exc:`UnsupportedOperation`.
+        """
+        if not self._seekable:
+            raise UnsupportedOperation("non-seekable files cannot be read backwards")
+        self._checkClosed()
+        self._checkReadable()
+        if size is None or size < 0:
+            return self.backreadall()
+        # equivalent to self.tell() but without the redundant
+        # call to self._checkClosed()
+        curpos = os.lseek(self._fd, 0, SEEK_CUR)
+        newpos = max(0, curpos - size)
+        # go one chunk before and read size bytes (or less)
+        os.lseek(self._fd, newpos)
+        try:
+            res = os.read(self._fd, min(curpos, size))
+        except BlockingIOError:
+            return None
+        return res[::-1]
+
     def backreadinto(self, b):
         """Same as RawIOBase.backreadinto()."""
         m = memoryview(b).cast('B')
@@ -1912,6 +1950,43 @@ class FileIO(RawIOBase):
         n = len(data)
         m[:n] = data
         return n
+
+    def backreadall(self):
+        """Read backwards all data from the file, returned as bytes.
+
+        In non-blocking mode, returns as much as is immediately available,
+        or None if no data is available. Return an empty bytes object at BOF.
+
+        For non-seekable files, this raises :exc:`UnsupportedOperation`.
+        """
+        if not self._seekable:
+            raise UnsupportedOperation("non-seekable files cannot be read backwards")
+        self._checkClosed()
+        self._checkReadable()
+        bufsize = DEFAULT_BUFFER_SIZE
+
+        rem = os.lseek(self._fd, 0, SEEK_CUR)  # number of remaining bytes
+        result = bytearray()
+        while rem > 0:
+            # move the cursor backwards
+            n = min(rem, bufsize)
+            rem -= n
+            os.lseek(self._fp, rem)
+            # forward read
+            try:
+                chunk = os.read(self._fd, n)
+            except BlockingIOError:
+                if result:
+                    break
+                return None
+            if not chunk: # reached the beginning of the file
+                break
+            result += chunk[::-1]
+            if len(result) >= bufsize:
+                # increase the buffer size for the next rounds
+                bufsize = len(result)
+                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
+        return bytes(result)
 
     def write(self, b):
         """Write bytes b to file, return number written.
