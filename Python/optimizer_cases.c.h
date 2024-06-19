@@ -1565,7 +1565,6 @@
             (void)callable;
             (void)self_or_null;
             (void)args;
-            first_valid_check_stack = NULL;
             goto done;
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
