@@ -181,6 +181,7 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
+    trampolines: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -189,14 +190,25 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def emit_aarch64_trampoline(self, hole: Hole) -> None:
+    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
-        base = len(self.body)
+        assert hole.symbol is not None
+        reuse_trampoline = hole.symbol in self.trampolines
+        if reuse_trampoline:
+            # Re-use the base address of the previously created trampoline
+            base = self.trampolines[hole.symbol]
+        else:
+            self.pad(alignment)
+            base = len(self.body)
         where = slice(hole.offset, hole.offset + 4)
         instruction = int.from_bytes(self.body[where], sys.byteorder)
         instruction &= 0xFC000000
         instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
         self.body[where] = instruction.to_bytes(4, sys.byteorder)
+
+        if reuse_trampoline:
+            return
+
         self.disassembly += [
             f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
             f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
@@ -225,6 +237,7 @@ class Stencil:
             ]
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
+        self.trampolines[hole.symbol] = base
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
@@ -300,8 +313,7 @@ class StencilGroup:
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
-                self.code.pad(alignment)
-                self.code.emit_aarch64_trampoline(hole)
+                self.code.emit_aarch64_trampoline(hole, alignment)
                 self.code.holes.remove(hole)
         self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
