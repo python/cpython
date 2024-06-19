@@ -860,6 +860,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
             return True  # end of cmd list
+        elif cmd == 'EOF':
+            print('')
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
             cmdlist.append(cmd+' '+arg)
