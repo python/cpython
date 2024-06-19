@@ -464,7 +464,6 @@ Speedup :func:`os.path.commonpath` on Unix.
 .. nonce: exnRKd
 .. section: Library
 
-
 Speedup :func:`os.path.join`.
 
 ..
