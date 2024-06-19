@@ -258,6 +258,8 @@ def test_pdb_breakpoint_commands():
     ...     'clear 3',
     ...     'break',
     ...     'condition 1',
+    ...     'commands 1',
+    ...     'EOF',       # Simulate Ctrl-D/Ctrl-Z from user, should end input
     ...     'enable 1',
     ...     'clear 1',
     ...     'commands 2',
@@ -313,6 +315,9 @@ def test_pdb_breakpoint_commands():
     2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) condition 1
     Breakpoint 1 is now unconditional.
+    (Pdb) commands 1
+    (com) EOF
+    <BLANKLINE>
     (Pdb) enable 1
     Enabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) clear 1
