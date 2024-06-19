@@ -230,7 +230,7 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
  */
 #define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
 
-/* Get number of all interned strings */
+/* Get number of all interned strings for the current interpreter. */
 Py_ssize_t
 _PyUnicode_InternedSize(void)
 {
@@ -238,7 +238,7 @@ _PyUnicode_InternedSize(void)
     return _Py_hashtable_len(INTERNED_STRINGS) + PyDict_GET_SIZE(dict);
 }
 
-/* Get number of immortal interned strings */
+/* Get number of immortal interned strings for the current interpreter. */
 Py_ssize_t
 _PyUnicode_InternedSize_Immortal(void)
 {
@@ -246,6 +246,10 @@ _PyUnicode_InternedSize_Immortal(void)
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     Py_ssize_t count = 0;
+
+    // It's tempting to keep a count and avoid a loop here. But, this function
+    // is intended for refleak tests. It spends extra work to report the true
+    // value, to help detect bugs in optimizations.
 
     while (PyDict_Next(dict, &pos, &key, &value)) {
        if (_Py_IsImmortal(key)) {

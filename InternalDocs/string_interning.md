@@ -97,7 +97,8 @@ This means:
 
 ## State
 
-The intern state is checked with PyUnicode_CHECK_INTERNED(s), and can be:
+The intern state (retrieved by `PyUnicode_CHECK_INTERNED(s)`;
+stored in `_PyUnicode_STATE(s).interned`) can be:
 
 - `SSTATE_NOT_INTERNED` (defined as 0, which is useful in a boolean context)
 - `SSTATE_INTERNED_MORTAL` (1)

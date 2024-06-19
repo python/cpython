@@ -2408,7 +2408,7 @@ _Py_SetImmortalUntracked(PyObject *op)
 {
 #ifdef Py_DEBUG
     // For strings, use _PyUnicode_InternImmortal instead.
-    if(PyUnicode_CheckExact(op)) {
+    if (PyUnicode_CheckExact(op)) {
         assert(PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }

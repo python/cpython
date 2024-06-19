@@ -1223,7 +1223,7 @@ r_object(RFILE *p)
         if (v == NULL)
             break;
         if (is_interned) {
-                // marshal is meant to serialize .pyc files with code
+            // marshal is meant to serialize .pyc files with code
             // objects, and code-related strings are currently immortal.
             PyInterpreterState *interp = _PyInterpreterState_GET();
             _PyUnicode_InternImmortal(interp, &v);
