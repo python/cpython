@@ -116,6 +116,16 @@ is_jump(cfg_instr *i)
         _instr__ptr_->i_oparg = (ARG); \
     } while (0);
 
+/* One arg with location*/
+#define INSTR_SET_OP1_LOC(I, OP, ARG, LOC) \
+    do { \
+        assert(OPCODE_HAS_ARG(OP)); \
+        cfg_instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_oparg = (ARG); \
+        _instr__ptr_->i_loc = (LOC); \
+    } while (0);
+
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
@@ -1661,7 +1671,8 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
             case RETURN_VALUE:
             {
                 INSTR_SET_OP0(inst, NOP);
-                INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
+                INSTR_SET_OP1_LOC(&bb->b_instr[++i], RETURN_CONST, oparg,
+                                  inst->i_loc);
                 break;
             }
             case TO_BOOL:
