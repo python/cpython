@@ -2718,7 +2718,7 @@ class TestDateTime(TestDate):
     def test_strptime(self):
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
-        expected = _strptime._strptime_datetime(self.theclass, string, format)
+        expected = _strptime._strptime_datetime_datetime(self.theclass, string, format)
         got = self.theclass.strptime(string, format)
         self.assertEqual(expected, got)
         self.assertIs(type(expected), self.theclass)
@@ -2732,8 +2732,8 @@ class TestDateTime(TestDate):
         ]
         for string, format in inputs:
             with self.subTest(string=string, format=format):
-                expected = _strptime._strptime_datetime(self.theclass, string,
-                                                        format)
+                expected = _strptime._strptime_datetime_datetime(self.theclass, string,
+                                                                 format)
                 got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
 
