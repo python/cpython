@@ -73,7 +73,7 @@ are in the generic class.
 .. date: 2024-05-22-13-51-40
 .. gh-issue: 118507
 .. nonce: xkIQ3v
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`os.path.isfile` on Windows for pipes.
 
