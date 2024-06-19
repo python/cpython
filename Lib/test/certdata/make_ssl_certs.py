@@ -125,6 +125,10 @@ def make_cert_key(hostname, sign=False, extra_san='',
         with tempfile.NamedTemporaryFile(delete=False) as f:
             tempnames.append(f.name)
     req_file, cert_file, key_file = tempnames
+    if sign:
+        reqext = 'req_x509_extensions_simple'
+    else:
+        reqext = ext
     try:
         req = req_template.format(
             hostname=hostname,
@@ -136,7 +140,7 @@ def make_cert_key(hostname, sign=False, extra_san='',
             f.write(req)
         args = ['req', '-new', '-nodes', '-days', '7000',
                 '-newkey', key, '-keyout', key_file,
-                '-extensions', ext,
+                '-extensions', reqext,
                 '-config', req_file]
         if sign:
             with tempfile.NamedTemporaryFile(delete=False) as f:
