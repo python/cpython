@@ -711,18 +711,24 @@ pymain_exit_error(PyStatus status)
 }
 
 
+extern int _Py_FinalizeMain(void);
+
 int
 Py_RunMain(void)
 {
     int exitcode = 0;
 
+    _PyRuntime.is_pymain = 1;
+
     pymain_run_python(&exitcode);
 
-    if (Py_FinalizeEx() < 0) {
+    if (_Py_FinalizeMain() < 0) {
         /* Value unlikely to be confused with a non-error exit status or
            other special meaning */
         exitcode = 120;
     }
+
+    _PyRuntime.is_pymain = 0;
 
     pymain_free();
 

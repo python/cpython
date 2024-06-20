@@ -1909,18 +1909,25 @@ finalize_interp_delete(PyInterpreterState *interp)
 }
 
 
-int
-Py_FinalizeEx(void)
+static int
+_Py_Finalize(_PyRuntimeState *runtime, const char *not_pymain)
 {
     int status = 0;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
     if (!runtime->initialized) {
         return status;
     }
 
+    if (not_pymain && runtime->is_pymain) {
+        fprintf(stderr,
+                "%s() should not be called while Py_RunMain() is running",
+                not_pymain);
+        return 1;
+    }
+
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->interp->runtime == runtime);
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
@@ -2142,10 +2149,28 @@ Py_FinalizeEx(void)
     return status;
 }
 
+/* _Py_FinalizeMain() is used exclusively by Py_RunMain(). */
+int
+_Py_FinalizeMain(void)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    assert(runtime->is_pymain);
+    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+    assert(_Py_IsMainThread());
+    assert(_PyThreadState_GET() == runtime->main_tstate);
+    return _Py_Finalize(runtime, NULL);
+}
+
+int
+Py_FinalizeEx(void)
+{
+    return _Py_Finalize(&_PyRuntime, "Py_FinalizeEx");
+}
+
 void
 Py_Finalize(void)
 {
-    Py_FinalizeEx();
+    (void)_Py_Finalize(&_PyRuntime, "Py_Finalize");
 }
 
 
