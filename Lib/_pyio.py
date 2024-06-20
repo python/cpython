@@ -574,15 +574,19 @@ class IOBase(metaclass=abc.ABCMeta):
             else:
                 size = size_index()
         rev_res, count = bytearray(), 0
+        eol = None  # decide whether a line break is included or not
         while size < 0 or count < size:
             b = self.backread(1)
             if not b:
                 break
             rev_res += b
             count += 1
-            if res.endswith(b"\n"):
+            if b == b"\n":
+                eol = b
                 break
-        # reverse the characters in the line
+        if eol is not None:
+            # reverse the characters in the line, except the new line character
+            return bytes(reversed(rev_res[:-1])) + eol
         return bytes(reversed(rev_res))
 
     def __iter__(self):
