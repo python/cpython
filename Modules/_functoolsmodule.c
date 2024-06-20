@@ -663,7 +663,8 @@ partial_setstate(partialobject *pto, PyObject *state)
                                       &kw, &phcount, &dict);
     }
     else {
-        PyErr_SetString(PyExc_TypeError, "invalid partial state");
+        PyErr_Format(PyExc_TypeError,
+                     "expected 4 or 5 items in state, got %zd", state_len);
         return NULL;
     }
     if (!parse_rtrn ||

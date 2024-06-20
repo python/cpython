@@ -299,6 +299,71 @@ class __PlaceholderTypeBase:
 Placeholder = type('PlaceholderType', (__PlaceholderTypeBase,), {})()
 
 
+def _partial_prepare_new(cls, func, args, keywords):
+    if args:
+        if args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+        phcount = args.count(Placeholder)
+    else:
+        phcount = 0
+    if isinstance(func, cls):
+        pto_args = func.args
+        pto_phcount = func.placeholder_count
+        # merge args with args of `func` which is `partial`
+        if pto_phcount and args:
+            tot_args = list(pto_args)
+            nargs = len(args)
+            pos = j = 0
+            end = nargs if nargs < pto_phcount else pto_phcount
+            while j < end:
+                pos = tot_args.index(Placeholder, pos)
+                tot_args[pos] = args[j]
+                pos += 1
+                j += 1
+            if pto_phcount < nargs:
+                tot_args.extend(args[pto_phcount:])
+            phcount += pto_phcount - end
+            args = tuple(tot_args)
+        else:
+            phcount += pto_phcount
+            args = func.args + args
+        keywords = {**func.keywords, **keywords}
+        func = func.func
+    return func, args, keywords, phcount
+
+
+def _partial_prepare_call(self, args, keywords):
+    pto_phcount = self.placeholder_count
+    pto_args = self.args
+    if pto_phcount:
+        n = len(args)
+        if n < pto_phcount:
+            raise TypeError(
+                "missing positional arguments "
+                "in 'partial' call; expected "
+                f"at least {pto_phcount}, got {n}")
+        pto_args = list(pto_args)
+        pos = j = 0
+        while j < pto_phcount:
+            pos = pto_args.index(Placeholder, pos)
+            pto_args[pos] = args[j]
+            pos += 1
+            j += 1
+        args = args[pto_phcount:] if n > pto_phcount else ()
+    keywords = {**self.keywords, **keywords}
+    return pto_args, args, keywords
+
+
+def _partial_repr(self):
+    cls = type(self)
+    module = cls.__module__
+    qualname = cls.__qualname__
+    args = [repr(self.func)]
+    args.extend(map(repr, self.args))
+    args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+    return f"{module}.{qualname}({', '.join(args)})"
+
+
 # Purely functional, no descriptor behaviour
 class partial:
     """New function with partial application of the given arguments
@@ -311,96 +376,48 @@ class partial:
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        if args:
-            if args[-1] is Placeholder:
-                raise TypeError("trailing Placeholders are not allowed")
-            phcount = args.count(Placeholder)
-        else:
-            phcount = 0
-        if isinstance(func, partial):
-            pto_args = func.args
-            pto_phcount = func.placeholder_count
-            # merge args with args of `func` which is `partial`
-            if pto_phcount and args:
-                tot_args = list(pto_args)
-                nargs = len(args)
-                pos = j = 0
-                end = nargs if nargs < pto_phcount else pto_phcount
-                while j < end:
-                    pos = tot_args.index(Placeholder, pos)
-                    tot_args[pos] = args[j]
-                    pos += 1
-                    j += 1
-                if pto_phcount < nargs:
-                    tot_args.extend(args[pto_phcount:])
-                phcount += pto_phcount - end
-                args = tuple(tot_args)
-            else:
-                phcount += pto_phcount
-                args = func.args + args
-            keywords = {**func.keywords, **keywords}
-            func = func.func
-
-        self = super(partial, cls).__new__(cls)
+        func, args, kwds, phcount = _partial_prepare_new(cls, func, args,
+                                                            keywords)
+        self = super().__new__(cls)
         self.func = func
         self.args = args
-        self.keywords = keywords
+        self.keywords = kwds
         self.placeholder_count = phcount
         return self
 
     def __call__(self, /, *args, **keywords):
-        pto_phcount = self.placeholder_count
-        pto_args = self.args
-        if pto_phcount:
-            n = len(args)
-            if n < pto_phcount:
-                raise TypeError(
-                    "missing positional arguments "
-                    "in 'partial' call; expected "
-                    f"at least {pto_phcount}, got {n}")
-            pto_args = list(pto_args)
-            pos = j = 0
-            while j < pto_phcount:
-                pos = pto_args.index(Placeholder, pos)
-                pto_args[pos] = args[j]
-                pos += 1
-                j += 1
-            args = args[pto_phcount:] if n > pto_phcount else ()
-        keywords = {**self.keywords, **keywords}
-        return self.func(*pto_args, *args, **keywords)
+        pargs, args, kwds = _partial_prepare_call(self, args, keywords)
+        return self.func(*pargs, *args, **kwds)
 
-    @recursive_repr()
-    def __repr__(self):
-        cls = type(self)
-        qualname = cls.__qualname__
-        module = cls.__module__
-        args = [repr(self.func)]
-        args.extend(repr(x) for x in self.args)
-        args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+    __repr__ = recursive_repr()(_partial_repr)
 
     def __reduce__(self):
-        return type(self), (self.func,), (self.func, self.args,
-               self.keywords or None, self.placeholder_count,
-               self.__dict__ or None)
+        state = (
+            self.func,
+            self.args,
+            self.keywords or None,
+            self.placeholder_count,
+            self.__dict__ or None
+        )
+        return type(self), (self.func,), state
 
     def __setstate__(self, state):
         if not isinstance(state, tuple):
             raise TypeError("argument to __setstate__ must be a tuple")
-        n = len(state)
-        if n == 4:
+        state_len = len(state)
+        if state_len == 4:
             # Support pre-placeholder de-serialization
             func, args, kwds, namespace = state
-            placeholder_count = 0
-        elif n == 5:
-            func, args, kwds, placeholder_count, namespace = state
+            phcount = 0
+        elif state_len == 5:
+            func, args, kwds, phcount, namespace = state
         else:
-            raise TypeError(f"expected 5 items in state, got {len(state)}")
+            raise TypeError(f"expected 4 or 5 items in state, got {state_len}")
 
         if (not callable(func) or not isinstance(args, tuple) or
-           (kwds is not None and not isinstance(kwds, dict)) or
-           not isinstance(placeholder_count, int) or
-           (namespace is not None and not isinstance(namespace, dict))):
+                (kwds is not None and not isinstance(kwds, dict)) or
+                not isinstance(phcount, int) or
+                (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
         args = tuple(args) # just in case it's a subclass
@@ -415,7 +432,7 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
-        self.placeholder_count = placeholder_count
+        self.placeholder_count = phcount
 
 try:
     from _functools import partial, Placeholder
@@ -423,48 +440,36 @@ except ImportError:
     pass
 
 # Descriptor version
-class partialmethod(object):
+class partialmethod:
     """Method descriptor with partial application of the given arguments
     and keywords.
 
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-
-    def __init__(self, func, /, *args, **keywords):
+    def __new__(cls, func, /, *args, **keywords):
         if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError("{!r} is not callable or a descriptor"
-                                 .format(func))
-
+            raise TypeError(f"{func!r} is not callable or a descriptor")
         # func could be a descriptor like classmethod which isn't callable,
         # so we can't inherit from partial (it verifies func is callable)
-        if isinstance(func, partialmethod):
-            # flattening is mandatory in order to place cls/self before all
-            # other arguments
-            # it's also more efficient since only one function will be called
-            self.func = func.func
-            self.args = func.args + args
-            self.keywords = {**func.keywords, **keywords}
-        else:
-            self.func = func
-            self.args = args
-            self.keywords = keywords
+        # flattening is mandatory in order to place cls/self before all
+        # other arguments
+        # it's also more efficient since only one function will be called
+        func, args, kwds, phcount = _partial_prepare_new(cls, func, args,
+                                                         keywords)
+        self = super().__new__(cls)
+        self.func = func
+        self.args = args
+        self.keywords = kwds
+        self.placeholder_count = phcount
+        return self
 
-    def __repr__(self):
-        args = ", ".join(map(repr, self.args))
-        keywords = ", ".join("{}={!r}".format(k, v)
-                                 for k, v in self.keywords.items())
-        format_string = "{module}.{cls}({func}, {args}, {keywords})"
-        return format_string.format(module=self.__class__.__module__,
-                                    cls=self.__class__.__qualname__,
-                                    func=self.func,
-                                    args=args,
-                                    keywords=keywords)
+    __repr__ = _partial_repr
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
-            keywords = {**self.keywords, **keywords}
-            return self.func(cls_or_self, *self.args, *args, **keywords)
+            pargs, args, kwds = _partial_prepare_call(self, args, keywords)
+            return self.func(cls_or_self, *pargs, *args, **kwds)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.__partialmethod__ = self
         return _method
