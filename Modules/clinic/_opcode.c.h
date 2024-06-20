@@ -669,6 +669,24 @@ _opcode_get_intrinsic2_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _opcode_get_intrinsic2_descs_impl(module);
 }
 
+PyDoc_STRVAR(_opcode_get_special_method_names__doc__,
+"get_special_method_names($module, /)\n"
+"--\n"
+"\n"
+"Return a list of special method names.");
+
+#define _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF    \
+    {"get_special_method_names", (PyCFunction)_opcode_get_special_method_names, METH_NOARGS, _opcode_get_special_method_names__doc__},
+
+static PyObject *
+_opcode_get_special_method_names_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_special_method_names(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_special_method_names_impl(module);
+}
+
 PyDoc_STRVAR(_opcode_get_executor__doc__,
 "get_executor($module, /, code, offset)\n"
 "--\n"
@@ -728,4 +746,4 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2dbb31b041b49c8f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b4d4f32eedd636e input=a9049054013a1b77]*/

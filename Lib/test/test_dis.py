@@ -481,10 +481,10 @@ dis_with = """\
 
 %4d           LOAD_FAST                0 (c)
                COPY                     1
-               LOAD_SPECIAL             1
+               LOAD_SPECIAL             1 (__exit__)
                SWAP                     2
                SWAP                     3
-               LOAD_SPECIAL             0
+               LOAD_SPECIAL             0 (__enter__)
                CALL                     0
        L1:     POP_TOP
 
@@ -543,10 +543,10 @@ dis_asyncwith = """\
 
 %4d            LOAD_FAST                0 (c)
                 COPY                     1
-                LOAD_SPECIAL             3
+                LOAD_SPECIAL             3 (__aexit__)
                 SWAP                     2
                 SWAP                     3
-                LOAD_SPECIAL             2
+                LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0
                 GET_AWAITABLE            1
                 LOAD_CONST               0 (None)
@@ -1738,10 +1738,10 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_TOP', opcode=29, arg=None, argval=None, argrepr='', offset=240, start_offset=240, starts_line=False, line_number=21, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_FAST', opcode=83, arg=0, argval='i', argrepr='i', offset=242, start_offset=242, starts_line=True, line_number=25, label=None, positions=None, cache_info=None),
   Instruction(opname='COPY', opcode=58, arg=1, argval=1, argrepr='', offset=244, start_offset=244, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_SPECIAL', opcode=91, arg=1, argval=1, argrepr='', offset=246, start_offset=246, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_SPECIAL', opcode=91, arg=1, argval=1, argrepr='__exit__', offset=246, start_offset=246, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
   Instruction(opname='SWAP', opcode=114, arg=2, argval=2, argrepr='', offset=248, start_offset=248, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
   Instruction(opname='SWAP', opcode=114, arg=3, argval=3, argrepr='', offset=250, start_offset=250, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_SPECIAL', opcode=91, arg=0, argval=0, argrepr='', offset=252, start_offset=252, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_SPECIAL', opcode=91, arg=0, argval=0, argrepr='__enter__', offset=252, start_offset=252, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
   Instruction(opname='CALL', opcode=50, arg=0, argval=0, argrepr='', offset=254, start_offset=254, starts_line=False, line_number=25, label=None, positions=None, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
   Instruction(opname='STORE_FAST', opcode=109, arg=1, argval='dodgy', argrepr='dodgy', offset=262, start_offset=262, starts_line=False, line_number=25, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_GLOBAL', opcode=89, arg=3, argval='print', argrepr='print + NULL', offset=264, start_offset=264, starts_line=True, line_number=26, label=None, positions=None, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
