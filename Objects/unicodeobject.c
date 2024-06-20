@@ -344,7 +344,7 @@ init_global_interned_strings(PyInterpreterState *interp)
         assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
     }
 #endif
-    return _PyStatus_ERR;
+    return _PyStatus_OK();
 }
 
 static void clear_global_interned_strings(void)
