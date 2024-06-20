@@ -2279,21 +2279,24 @@ class BufferedRWPairTest(unittest.TestCase):
                 self.assertEqual(bytes(data), b"abcde")
 
     def test_backread(self):
-        self.skipTest("TODO")
+        self.skipTest("TODO C (all interfaces)")
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+        pair.seek(0, 2)
         self.assertEqual(pair.backread(3), b"fed")
         self.assertEqual(pair.backread(1), b"c")
         self.assertEqual(pair.backread(), b"ba")
 
         pair = self.tp(self.BytesIO(b"abc"), self.MockRawIO())
-        self.assertEqual(pair.backread(None), b"fed")
+        pair.seek(0, 2)
+        self.assertEqual(pair.backread(None), b"cba")
 
     def test_backreadinto(self):
-        self.skipTest("TODO")
-        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+        self.skipTest("TODO C (backreadinto of buffered)")
+        pair = self.tp(self.BytesIO(b"1234567890"), self.MockRawIO())
         data = byteslike(b'\0' * 5)
+        pair.seek(0, 2)
         self.assertEqual(pair.backreadinto(data), 5)
-        self.assertEqual(bytes(data), b"fedbc")
+        self.assertEqual(bytes(data), b"09876")
 
     def test_write(self):
         w = self.MockRawIO()
