@@ -387,9 +387,16 @@ class partial:
     def __setstate__(self, state):
         if not isinstance(state, tuple):
             raise TypeError("argument to __setstate__ must be a tuple")
-        if len(state) != 5:
+        n = len(state)
+        if n == 4:
+            # Support pre-placeholder de-serialization
+            func, args, kwds, namespace = state
+            placeholder_count = 0
+        elif n == 5:
+            func, args, kwds, placeholder_count, namespace = state
+        else:
             raise TypeError(f"expected 5 items in state, got {len(state)}")
-        func, args, kwds, placeholder_count, namespace = state
+
         if (not callable(func) or not isinstance(args, tuple) or
            (kwds is not None and not isinstance(kwds, dict)) or
            not isinstance(placeholder_count, int) or

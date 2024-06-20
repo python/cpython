@@ -646,9 +646,25 @@ partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
     Py_ssize_t np;
-
-    if (!PyTuple_Check(state) ||
-        !PyArg_ParseTuple(state, "OOOnO", &fn, &fnargs, &kw, &np, &dict) ||
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "invalid partial state");
+        return NULL;
+    }
+    Py_ssize_t state_len = PyTuple_GET_SIZE(state);
+    int parse_rtrn;
+    if (state_len == 4) {
+        /* pre-placeholder support */
+        parse_rtrn = PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict);
+        np = 0;
+    }
+    else if (state_len == 5) {
+        parse_rtrn = PyArg_ParseTuple(state, "OOOnO", &fn, &fnargs, &kw, &np, &dict);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "invalid partial state");
+        return NULL;
+    }
+    if (!parse_rtrn ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
         (kw != Py_None && !PyDict_Check(kw)))
