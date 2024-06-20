@@ -455,8 +455,26 @@ class MemoryBackreadTestMixin(MemoryTestMixin):
         self.assertEqual(memio.backread(1), self.NUL)
 
     def test_backreadline(self):
-        # todo: implement when the design has been decided
-        pass
+        buf = self.buftype("1234\n5678\n90abcdef")
+        memio = self.ioclass(buf)
+
+        for int_class in [int, IntLike]:
+            with self.subTest(int_class=int_class):
+                memio.seek(0, 2)
+                self.assertEqual(memio.backreadline(), self.buftype('90abcdef\n'))
+                self.assertEqual(memio.backreadline(), self.buftype('5678\n'))
+                self.assertEqual(memio.backreadline(), self.buftype('1234'))
+
+                memio.seek(0, 2)
+                self.assertEqual(memio.backreadline(int_class(3)), self.buftype('def'))
+                self.assertEqual(memio.backreadline(int_class(3)), self.buftype('abc'))
+                self.assertEqual(memio.backreadline(int_class(2)), self.buftype('90'))
+                self.assertEqual(memio.backreadline(), self.buftype('\n'))
+                self.assertEqual(memio.backreadline(), self.buftype('5678\n'))
+                self.assertEqual(memio.backreadline(), self.buftype('1234'))
+
+                memio.seek(0)
+                self.assertEqual(memio.backreadline(int_class(0)), self.buftype(''))
 
     def test_reverse(self):
         # todo: implement when the design has been decided
