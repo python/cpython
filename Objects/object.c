@@ -2376,7 +2376,7 @@ new_reference(PyObject *op)
 #else
     op->ob_tid = _Py_ThreadId();
     op->_padding = 0;
-    op->ob_mutex = (struct _PyMutex){ 0 };
+    op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;
