@@ -1355,7 +1355,7 @@ class BufferedReader(_BufferedIOMixin):
 
         if n is None or n == -1:
             buf, pos = self._read_buf, self._read_pos
-            self._reset_read_buf()
+            self._reset_read_buf()  # discard the cache
 
             head = buf[pos::-1]
             if hasattr(self.raw, 'backreadall'):
@@ -1363,11 +1363,6 @@ class BufferedReader(_BufferedIOMixin):
                 if chunk is None:
                     return head or None
                 return head + chunk
-            elif hasattr(self.raw, 'readall'):
-                chunk = self.raw.readall()
-                if chunk is None:
-                    return head or None
-                return head + chunk[::-1]
             chunks = [head]
             while True:
                 # Read until BOF or until backread() would block.
@@ -1377,16 +1372,6 @@ class BufferedReader(_BufferedIOMixin):
                     break
                 chunks.append(chunk)
             return b"".join(chunks) or nodata_val
-
-        # Note: it is possible to further optimize this routine by first
-        # checking whether we are already at the end of the file or not.
-        # If so, we could just return the cached buffer but this requires
-        # a call to peek(). For now, we will not implement that approach
-        # and simply reset the cache and move the cursor to the end.
-
-        # cannot use seek() since the read lock is
-        # acquired and it is not a re-entrant lock
-        self._seek_unlocked(0, SEEK_END)
 
         # Split the data into chunks from the right and read
         # them one by one, until encountering BOF or after 'n'
@@ -1407,8 +1392,30 @@ class BufferedReader(_BufferedIOMixin):
             chunks.append(chunk)
 
         out = b"".join(chunks)
-        self._reset_read_buf()
+        self._reset_read_buf()  # discard the cache
         return out[:n] if out else nodata_val
+
+    # Implementing readinto() is not strictly necessary (we could rely on the
+    # base class that provides an implementation in terms of backread()), but
+    # we do it anyway to keep the Python and C implementations in sync.
+    def backreadinto(self, buf):
+        return super().backreadinto(buf)
+
+        # TODO(picnixz): sync with C implementation
+        self._checkClosed("backreadinto of closed file")
+
+        if not isinstance(buf, memoryview):
+            buf = memoryview(buf)
+        if buf.nbytes == 0:
+            return 0
+        buf = buf.cast('B')
+
+        with self._read_lock:
+            return self._backreadinto_unlocked(buf)
+
+    def _backreadinto_unlocked(self, buf):
+        # TODO(picnixz): sync with C implementation
+        raise NotImplementedError
 
     def tell(self):
         # GH-95782: Keep return value non-negative
@@ -1419,14 +1426,11 @@ class BufferedReader(_BufferedIOMixin):
             raise ValueError("invalid whence value")
         self._checkClosed("seek of closed file")
         with self._read_lock:
-            return self._seek_unlocked(pos, whence)
-
-    def _seek_unlocked(self, pos, whence=0):
-        if whence == 1:
-            pos -= len(self._read_buf) - self._read_pos
-        pos = _BufferedIOMixin.seek(self, pos, whence)
-        self._reset_read_buf()
-        return pos
+            if whence == 1:
+                pos -= len(self._read_buf) - self._read_pos
+            pos = _BufferedIOMixin.seek(self, pos, whence)
+            self._reset_read_buf()
+            return pos
 
 class BufferedWriter(_BufferedIOMixin):
 
@@ -1574,6 +1578,9 @@ class BufferedRWPair(BufferedIOBase):
     def write(self, b):
         return self.writer.write(b)
 
+    def seek(self, pos, whence=0):
+        return self.reader.seek(0, 2)
+
     def peek(self, size=0):
         return self.reader.peek(size)
 
@@ -1590,6 +1597,9 @@ class BufferedRWPair(BufferedIOBase):
 
     def backreadinto(self, b):
         return self.reader.backreadinto(b)
+
+    def seekable(self):
+        return self.reader.seekable()
 
     def readable(self):
         return self.reader.readable()
