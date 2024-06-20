@@ -47,30 +47,26 @@ PyDoc_STRVAR(bufferediobase_doc,
     );
 
 static PyObject *
-_bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readinto1)
+_bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer,
+                                 PyObject *meth, const char *name)
 {
-    Py_ssize_t len;
-    PyObject *data;
-
-    PyObject *attr = readinto1
-        ? &_Py_ID(read1)
-        : &_Py_ID(read);
-    data = _PyObject_CallMethod(self, attr, "n", buffer->len);
-    if (data == NULL)
-        return NULL;
-
-    if (!PyBytes_Check(data)) {
-        Py_DECREF(data);
-        PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+    PyObject *data = _PyObject_CallMethod(self, meth, "n", buffer->len);
+    if (data == NULL) {
         return NULL;
     }
 
-    len = PyBytes_GET_SIZE(data);
+    if (!PyBytes_Check(data)) {
+        Py_DECREF(data);
+        PyErr_Format(PyExc_TypeError, "%s() should return bytes", name);
+        return NULL;
+    }
+
+    Py_ssize_t len = PyBytes_GET_SIZE(data);
     if (len > buffer->len) {
         PyErr_Format(PyExc_ValueError,
-                     "read() returned too much data: "
+                     "%s() returned too much data: "
                      "%zd bytes requested, %zd returned",
-                     buffer->len, len);
+                     name, buffer->len, len);
         Py_DECREF(data);
         return NULL;
     }
@@ -92,7 +88,7 @@ static PyObject *
 _io__BufferedIOBase_readinto_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=8c8cda6684af8038 input=5273d20db7f56e1a]*/
 {
-    return _bufferediobase_readinto_generic(self, buffer, 0);
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(read), "read");
 }
 
 /*[clinic input]
@@ -106,7 +102,9 @@ static PyObject *
 _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=358623e4fd2b69d3 input=d6eb723dedcee654]*/
 {
-    return _bufferediobase_readinto_generic(self, buffer, 1);
+    // Same error message even when using read1() ("read() should return bytes"
+    // and not "read1() should return bytes") for compatibility purposes.
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(read1), "read");
 }
 
 static PyObject *
@@ -237,8 +235,7 @@ static PyObject *
 _io__BufferedIOBase_backreadinto_impl(PyObject *self, Py_buffer *buffer)
 /*[clinic end generated code: output=089fdcf2b4b15522 input=8240e5a3d7c8fe26]*/
 {
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
+    return _bufferediobase_readinto_generic(self, buffer, &_Py_ID(backread), "backread");
 }
 
 /*[clinic input]
