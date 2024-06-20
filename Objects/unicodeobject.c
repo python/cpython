@@ -2883,6 +2883,8 @@ unicode_from_format(_PyUnicodeWriter *writer, const char *format, va_list vargs)
     va_list vargs2;
     va_copy(vargs2, vargs);
 
+    // _PyUnicodeWriter_WriteASCIIString() below requires the format string
+    // to be encoded to ASCII.
     int is_ascii = (ucs1lib_find_max_char((Py_UCS1*)format, (Py_UCS1*)format + len) < 128);
     if (!is_ascii) {
         Py_ssize_t i;
