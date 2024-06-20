@@ -7,6 +7,7 @@
 
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
@@ -204,6 +205,70 @@ static int test_repeated_simple_init(void)
         printf("Finalized\n"); // Give test_embed some output to check
     }
     return 0;
+}
+
+
+/****************************************************************************
+ * Test discarding the initial main tstate
+ ***************************************************************************/
+
+static int test_replace_main_tstate(void)
+{
+    int err = 0;
+
+    int hascode = 0;
+    for (int i = 2; i < main_argc; i++) {
+        if (strncmp(main_argv[i], "--", 2) == 0) {
+            fprintf(stderr, "ERROR: unsupported arg %s\n", main_argv[i]);
+            err = 1;
+        }
+        else {
+            hascode = 1;
+        }
+        if (err) {
+            fprintf(stderr, "usage: %s test_replace_main_tstate [CODE ...]\n",
+                    PROGRAM);
+            return 1;
+        }
+    }
+
+#ifdef Py_DEBUG
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+    PyInterpreterState *main_interp = main_tstate->interp;
+    assert(_Py_IsMainInterpreter(main_interp));
+
+    PyThreadState_Clear(main_tstate);
+    PyThreadState_DeleteCurrent();
+    assert(PyInterpreterState_ThreadHead(main_interp) == NULL);
+
+    main_interp->threads.reuse_init_tstate = 0;
+
+    PyThreadState *tstate = PyThreadState_New(main_interp);
+    // The runtime automatically re-uses the initial main tstate.
+    // (It is statically allocated as part of the global runtime state.)
+    assert(_PyThreadState_GET() != main_tstate);
+    (void)PyThreadState_Swap(tstate);
+
+    if (hascode) {
+        for (int i = 2; i < main_argc; i++) {
+            const char *code = main_argv[i];
+            if (PyRun_SimpleString(code) != 0) {
+                err = 1;
+                break;
+            }
+        }
+    }
+
+    assert(PyThreadState_Get() != main_tstate);
+    Py_Finalize();
+
+    return err;
+#else
+    // We want to always force a new "main" tstate, which requires Py_DEBUG.
+    fprintf(stderr, "ERROR: Py_DEBUG is required\n");
+    return 1;
+#endif
 }
 
 
@@ -2161,6 +2226,7 @@ static struct TestCase TestCases[] = {
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
+    {"test_replace_main_tstate", test_replace_main_tstate},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},

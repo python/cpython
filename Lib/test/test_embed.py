@@ -226,6 +226,19 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         lines = "\n".join(lines) + "\n"
         self.assertEqual(out, lines)
 
+    def test_replace_main_tstate(self):
+        with self.subTest(exec=False):
+            self.run_embedded_interpreter(
+                'test_replace_main_tstate',
+            )
+
+        with self.subTest(exec=True):
+            out, _ = self.run_embedded_interpreter(
+                'test_replace_main_tstate',
+                'print("spam!")'
+            )
+            self.assertEqual(out.strip(), 'spam!')
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
