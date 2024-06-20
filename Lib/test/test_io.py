@@ -2278,25 +2278,16 @@ class BufferedRWPairTest(unittest.TestCase):
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 
-    def test_backread(self):
-        self.skipTest("TODO C (all interfaces)")
-        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
-        pair.seek(0, 2)
-        self.assertEqual(pair.backread(3), b"fed")
-        self.assertEqual(pair.backread(1), b"c")
-        self.assertEqual(pair.backread(), b"ba")
-
-        pair = self.tp(self.BytesIO(b"abc"), self.MockRawIO())
-        pair.seek(0, 2)
-        self.assertEqual(pair.backread(None), b"cba")
-
-    def test_backreadinto(self):
-        self.skipTest("TODO C (backreadinto of buffered)")
+    def test_no_backread_support(self):
+        # Because of the non-seekability of BufferedRWPair, it does
+        # not make sense to support backread() or backreadinto() even
+        # for seekable buffers.
         pair = self.tp(self.BytesIO(b"1234567890"), self.MockRawIO())
-        data = byteslike(b'\0' * 5)
-        pair.seek(0, 2)
-        self.assertEqual(pair.backreadinto(data), 5)
-        self.assertEqual(bytes(data), b"09876")
+        self.assertRaises(io.UnsupportedOperation, pair.backread)
+        self.assertRaises(io.UnsupportedOperation, pair.backread, 2)
+
+        pair = self.tp(self.BytesIO(b"1234567890"), self.MockRawIO())
+        self.assertRaises(io.UnsupportedOperation, pair.backreadinto, bytearray())
 
     def test_write(self):
         w = self.MockRawIO()

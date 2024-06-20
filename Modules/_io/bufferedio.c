@@ -2499,39 +2499,15 @@ bufferedrwpair_readinto1(rwpair *self, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_backread(rwpair *self, PyObject *args)
-{
-    return _forward_call(self->reader, &_Py_ID(backread), args);
-}
-
-static PyObject *
-bufferedrwpair_backreadinto(rwpair *self, PyObject *args)
-{
-    return _forward_call(self->reader, &_Py_ID(backreadinto), args);
-}
-
-static PyObject *
 bufferedrwpair_write(rwpair *self, PyObject *args)
 {
     return _forward_call(self->writer, &_Py_ID(write), args);
 }
 
 static PyObject *
-bufferedrwpair_seek(rwpair *self, PyObject *args)
-{
-    return _forward_call(self->reader, &_Py_ID(seek), args);
-}
-
-static PyObject *
 bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
-}
-
-static PyObject *
-bufferedrwpair_seekable(rwpair *self, PyObject *Py_UNUSED(ignored))
-{
-    return _forward_call(self->reader, &_Py_ID(seekable), NULL);
 }
 
 static PyObject *
@@ -2808,14 +2784,10 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
     {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
     {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
-    {"backread", (PyCFunction)bufferedrwpair_backread, METH_VARARGS},
-    {"backreadinto", (PyCFunction)bufferedrwpair_backreadinto, METH_VARARGS},
-    {"seek", (PyCFunction)bufferedrwpair_seek, METH_VARARGS},
 
     {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
     {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
 
-    {"seekable", (PyCFunction)bufferedrwpair_seekable, METH_NOARGS},
     {"readable", (PyCFunction)bufferedrwpair_readable, METH_NOARGS},
     {"writable", (PyCFunction)bufferedrwpair_writable, METH_NOARGS},
 

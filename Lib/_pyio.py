@@ -1578,9 +1578,6 @@ class BufferedRWPair(BufferedIOBase):
     def write(self, b):
         return self.writer.write(b)
 
-    def seek(self, pos, whence=0):
-        return self.reader.seek(0, 2)
-
     def peek(self, size=0):
         return self.reader.peek(size)
 
@@ -1589,17 +1586,6 @@ class BufferedRWPair(BufferedIOBase):
 
     def readinto1(self, b):
         return self.reader.readinto1(b)
-
-    def backread(self, size=-1):
-        if size is None:
-            size = -1
-        return self.reader.backread(size)
-
-    def backreadinto(self, b):
-        return self.reader.backreadinto(b)
-
-    def seekable(self):
-        return self.reader.seekable()
 
     def readable(self):
         return self.reader.readable()
