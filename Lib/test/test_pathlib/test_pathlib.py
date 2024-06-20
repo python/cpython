@@ -668,9 +668,11 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(target.exists())
         self.assertEqual(source.read_text(), target.read_text())
         target_st = target.stat()
+        self.assertLessEqual(source_st.st_atime, target_st.st_atime)
+        self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
         if hasattr(os, 'getxattr'):
             self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
-        self.assertEqual(target_st.st_mode, source_st.st_mode)
+        self.assertEqual(source_st.st_mode, target_st.st_mode)
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
@@ -689,7 +691,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(target.is_symlink())
         self.assertEqual(source.readlink(), target.readlink())
         target_st = target.lstat()
-        self.assertEqual(target_st.st_mode, source_st.st_mode)
+        self.assertLessEqual(source_st.st_atime, target_st.st_atime)
+        self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
+        self.assertEqual(source_st.st_mode, target_st.st_mode)
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
