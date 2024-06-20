@@ -1301,7 +1301,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
             }
             /* Cache entries must be unsigned values, so we offset the
              * dictoffset by MANAGED_DICT_OFFSET.
-             * We do the reverese offset in LOAD_ATTR_METHOD_LAZY_DICT */
+             * We do the reverse offset in LOAD_ATTR_METHOD_LAZY_DICT */
             dictoffset -= MANAGED_DICT_OFFSET;
             assert(((uint16_t)dictoffset) == dictoffset);
             cache->dict_offset = (uint16_t)dictoffset;

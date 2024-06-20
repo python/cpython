@@ -2,7 +2,7 @@
  * Implementation of safe memory reclamation scheme using
  * quiescent states.
  *
- * This is dervied from the "GUS" safe memory reclamation technique
+ * This is derived from the "GUS" safe memory reclamation technique
  * in FreeBSD written by Jeffrey Roberson. It is heavily modified. Any bugs
  * in this code are likely due to the modifications.
  *
@@ -238,7 +238,7 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     struct _PyThreadStateImpl *tstate_imp = (_PyThreadStateImpl*) tstate;
 
     // gh-119369: GIL must be released (if held) to prevent deadlocks, because
-    // we might not have an active tstate, which means taht blocking on PyMutex
+    // we might not have an active tstate, which means that blocking on PyMutex
     // locks will not implicitly release the GIL.
     assert(!tstate->_status.holds_gil);
 
