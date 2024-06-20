@@ -32,6 +32,7 @@ Python Library Reference.
    isolating-extensions.rst
    timerfd.rst
    mro.rst
+   free-threading-extensions.rst
 
 General:
 

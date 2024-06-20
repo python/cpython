@@ -15,7 +15,7 @@ import warnings
 import _testinternalcapi
 
 from test import support
-from test.support import (script_helper, requires_debug_ranges,
+from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization, get_c_recursion_limit)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
@@ -501,6 +501,58 @@ class TestSpecifics(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
+
+    def test_compile_redundant_jumps_and_nops_after_moving_cold_blocks(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                match name_2:
+                    case b'':
+                        pass
+            finally:
+                something
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instruction locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
+
+    def test_compile_redundant_jump_after_convert_pseudo_ops(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            if name_2:
+                pass
+            else:
+                try:
+                    pass
+                except:
+                    pass
+            ~name_5
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instruction locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
 
     def test_compile_ast(self):
         fname = __file__
@@ -1975,6 +2027,33 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
+
+    def test_lambda_return_position(self):
+        snippets = [
+            "f = lambda: x",
+            "f = lambda: 42",
+            "f = lambda: 1 + 2",
+            "f = lambda: a + b",
+        ]
+        for snippet in snippets:
+            with self.subTest(snippet=snippet):
+                lamb = run_code(snippet)["f"]
+                positions = lamb.__code__.co_positions()
+                # assert that all positions are within the lambda
+                for i, pos in enumerate(positions):
+                    with self.subTest(i=i, pos=pos):
+                        start_line, end_line, start_col, end_col = pos
+                        if i == 0 and start_col == end_col == 0:
+                            # ignore the RESUME in the beginning
+                            continue
+                        self.assertEqual(start_line, 1)
+                        self.assertEqual(end_line, 1)
+                        code_start = snippet.find(":") + 2
+                        code_end = len(snippet)
+                        self.assertGreaterEqual(start_col, code_start)
+                        self.assertLessEqual(end_col, code_end)
+                        self.assertGreaterEqual(end_col, start_col)
+                        self.assertLessEqual(end_col, code_end)
 
 
 class TestExpectedAttributes(unittest.TestCase):
