@@ -843,7 +843,7 @@ def _namespaces(elem, default_namespace=None):
     if default_namespace:
         namespaces[default_namespace] = ""
 
-    seen_prefixes = set(_namespace_map.keys())
+    seen_prefixes = set(_namespace_map.values())
     has_unqual_el = False
     for qname in _qnames_iter(elem):
         try:
