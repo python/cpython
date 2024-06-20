@@ -2160,6 +2160,11 @@ New Features
   :c:func:`PyEval_GetLocals` return :term:`strong references <strong reference>`
   rather than borrowed references. (Added as part of :pep:`667`.)
 
+* Add :c:type:`PyMutex` API, a lightweight mutex that occupies a single byte.
+  The :c:func:`PyMutex_Lock` function will release the GIL (if currently held)
+  if the operation needs to block.
+  (Contributed by Sam Gross in :gh:`108724`.)
+
 Build Changes
 =============
 
