@@ -1609,7 +1609,9 @@ object.
    ``NULL``, use the strict error handler.
 
    If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
-   bytes on success.
+   bytes on success. 
+   If *consumed* is ``NULL``, treat trailing incomplete UTF-8 byte sequences
+   as an error.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
