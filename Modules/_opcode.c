@@ -5,9 +5,10 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "internal/pycore_code.h"
-#include "internal/pycore_compile.h"
-#include "internal/pycore_intrinsics.h"
+#include "pycore_code.h"
+#include "pycore_compile.h"
+#include "pycore_intrinsics.h"
+#include "pycore_optimizer.h"     // _Py_GetExecutor()
 
 /*[clinic input]
 module _opcode

@@ -106,7 +106,8 @@ typedef struct {
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
 
-extern _PyExecutorObject* _Py_GetExecutor(PyCodeObject *code, int offset);
+// Export for '_opcode' shared extension (JIT compiler).
+PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
@@ -138,7 +139,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_
 
 #define TRACE_STACK_SIZE 5
 
-int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
@@ -270,7 +271,7 @@ extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
 #ifdef __cplusplus
 }
