@@ -190,9 +190,9 @@ class LongTests(unittest.TestCase):
         for value in (min_val, max_val, -1, 0, 1, 1234):
             with self.subTest(value=value):
                 self.assertEqual(long_asint(value), value)
+                self.assertEqual(long_asint(IntSubclass(value)), value)
+                self.assertEqual(long_asint(Index(value)), value)
 
-        self.assertEqual(long_asint(IntSubclass(42)), 42)
-        self.assertEqual(long_asint(Index(42)), 42)
         self.assertEqual(long_asint(MyIndexAndInt()), 10)
 
         self.assertRaises(OverflowError, long_asint, min_val - 1)
@@ -226,17 +226,24 @@ class LongTests(unittest.TestCase):
         # CRASHES aslongandoverflow(1.0)
         # CRASHES aslongandoverflow(NULL)
 
-    def check_long_asunsignedint(self, long_asuint, max_val):
+    def check_long_asunsignedint(self, long_asuint, max_val,
+                                 use_index=False, negative_value_error=False):
         # round trip (object -> unsigned long -> object)
         for value in (0, 1, 1234, max_val):
             with self.subTest(value=value):
                 self.assertEqual(long_asuint(value), value)
+                if use_index:
+                    self.assertEqual(long_asuint(Index(value)), value)
 
         self.assertEqual(long_asuint(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, long_asuint, Index(42))
-        self.assertRaises(TypeError, long_asuint, MyIndexAndInt())
+        if not use_index:
+            self.assertRaises(TypeError, long_asuint, Index(42))
+            self.assertRaises(TypeError, long_asuint, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, long_asuint, -1)
+        if negative_value_error:
+            self.assertRaises(ValueError, long_asuint, -1)
+        else:
+            self.assertRaises(OverflowError, long_asuint, -1)
         self.assertRaises(OverflowError, long_asuint, max_val + 1)
         self.assertRaises(TypeError, long_asuint, 1.0)
         self.assertRaises(TypeError, long_asuint, b'2')
@@ -749,23 +756,27 @@ class LongTests(unittest.TestCase):
         from _testcapi import INT32_MIN, INT32_MAX
         self.check_long_asint(to_int32, INT32_MIN, INT32_MAX)
 
-    def test_long_asuint32(self):
-        # Test PyLong_ToUInt32() and PyLong_FromUInt32()
-        to_uint32 = _testlimitedcapi.pylong_touint32
-        from _testcapi import UINT32_MAX
-        self.check_long_asunsignedint(to_uint32, UINT32_MAX)
-
     def test_long_asint64(self):
         # Test PyLong_ToInt64() and PyLong_FromInt64()
         to_int64 = _testlimitedcapi.pylong_toint64
         from _testcapi import INT64_MIN, INT64_MAX
         self.check_long_asint(to_int64, INT64_MIN, INT64_MAX)
 
+    def test_long_asuint32(self):
+        # Test PyLong_ToUInt32() and PyLong_FromUInt32()
+        to_uint32 = _testlimitedcapi.pylong_touint32
+        from _testcapi import UINT32_MAX
+        self.check_long_asunsignedint(to_uint32, UINT32_MAX,
+                                      use_index=True,
+                                      negative_value_error=True)
+
     def test_long_asuint64(self):
         # Test PyLong_ToUInt64() and PyLong_FromUInt64()
         to_uint64 = _testlimitedcapi.pylong_touint64
         from _testcapi import UINT64_MAX
-        self.check_long_asunsignedint(to_uint64, UINT64_MAX)
+        self.check_long_asunsignedint(to_uint64, UINT64_MAX,
+                                      use_index=True,
+                                      negative_value_error=True)
 
 if __name__ == "__main__":
     unittest.main()

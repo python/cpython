@@ -6694,71 +6694,54 @@ PyObject* PyLong_FromInt64(int64_t value)
 PyObject* PyLong_FromUInt64(uint64_t value)
 { return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
 
+#define LONG_TO_INT(obj, value, type_name) \
+    do { \
+        int flags = Py_ASNATIVEBYTES_NATIVE_ENDIAN; \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        if (bytes < 0) { \
+            return -1; \
+        } \
+        if ((size_t)bytes > sizeof(*value)) { \
+            PyErr_SetString(PyExc_OverflowError, \
+                            "Python int too large to convert to " type_name); \
+            return -1; \
+        } \
+        return 0; \
+    } while (0)
+
 int PyLong_ToInt32(PyObject *obj, int32_t *value)
 {
-#if SIZEOF_INT == 4
-    int res = PyLong_AsInt(obj);
-#elif SIZEOF_LONG == 4
-    long res = PyLong_AsLong(obj);
-#else
-#  error "unknown int type"
-#endif
-    if (res == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-    *value = res;
-    return 0;
+    LONG_TO_INT(obj, value, "C int32_t");
 }
 
 int PyLong_ToInt64(PyObject *obj, int64_t *value)
 {
-#if SIZEOF_LONG == 8
-    long res = PyLong_AsLong(obj);
-#elif SIZEOF_LONG_LONG == 8
-    long long res = PyLong_AsLongLong(obj);
-#else
-#  error "unknown long type"
-#endif
-    if (res == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-    *value = res;
-    return 0;
+    LONG_TO_INT(obj, value, "C int64_t");
 }
+
+#define LONG_TO_UINT(obj, value, type_name) \
+    do { \
+        int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
+                     | Py_ASNATIVEBYTES_UNSIGNED_BUFFER \
+                     | Py_ASNATIVEBYTES_REJECT_NEGATIVE); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        if (bytes < 0) { \
+            return -1; \
+        } \
+        if ((size_t)bytes > sizeof(*value)) { \
+            PyErr_SetString(PyExc_OverflowError, \
+                            "Python int too large to convert to " type_name); \
+            return -1; \
+        } \
+        return 0; \
+    } while (0)
 
 int PyLong_ToUInt32(PyObject *obj, uint32_t *value)
 {
-    Py_BUILD_ASSERT(sizeof(unsigned long) >= sizeof(uint32_t));
-    unsigned long res = PyLong_AsUnsignedLong(obj);
-    if (res == (unsigned long)-1 && PyErr_Occurred()) {
-        return -1;
-    }
-#if SIZEOF_LONG > 4
-    if (res > (unsigned long)UINT32_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large to convert to C uint32_t");
-        return -1;
-    }
-#endif
-    *value = res;
-    return 0;
+    LONG_TO_UINT(obj, value, "C uint32_t");
 }
 
 int PyLong_ToUInt64(PyObject *obj, uint64_t *value)
 {
-#if SIZEOF_LONG == 8
-    unsigned long res = PyLong_AsUnsignedLong(obj);
-    if (res == (unsigned long)-1 && PyErr_Occurred()) {
-        return -1;
-    }
-#elif SIZEOF_LONG_LONG == 8
-    unsigned long long res = PyLong_AsUnsignedLongLong(obj);
-    if (res == (unsigned long long)-1 && PyErr_Occurred()) {
-        return -1;
-    }
-#else
-#  error "unknown long type"
-#endif
-    *value = res;
-    return 0;
+    LONG_TO_UINT(obj, value, "C uint64_t");
 }
