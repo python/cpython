@@ -735,6 +735,12 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(backread);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(backreadall);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(backreadinto);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(backtick);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
