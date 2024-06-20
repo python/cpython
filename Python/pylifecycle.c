@@ -1910,17 +1910,18 @@ finalize_interp_delete(PyInterpreterState *interp)
 
 
 int
-Py_FinalizeEx(void)
+_Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
     int status = 0;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
+    /* Bail out early if already finalized. */
     if (!runtime->initialized) {
         return status;
     }
 
-    /* Get current thread state and interpreter pointer */
+    /* Get final thread state pointer. */
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->interp->runtime == runtime);
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
@@ -2142,10 +2143,22 @@ Py_FinalizeEx(void)
     return status;
 }
 
+int
+Py_FinalizeEx(void)
+{
+    struct pyfinalize_args args = {
+        .caller = "Py_FinalizeEx",
+    };
+    return _Py_Finalize(&_PyRuntime, &args);
+}
+
 void
 Py_Finalize(void)
 {
-    Py_FinalizeEx();
+    struct pyfinalize_args args = {
+        .caller = "Py_Finalize",
+    };
+    (void)_Py_Finalize(&_PyRuntime, &args);
 }
 
 
@@ -3218,7 +3231,10 @@ Py_Exit(int sts)
     if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
     }
-    if (Py_FinalizeEx() < 0) {
+    struct pyfinalize_args args = {
+        .caller = "Py_Exit",
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) < 0) {
         sts = 120;
     }
 

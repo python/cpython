@@ -114,6 +114,13 @@ PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
 // Export for special main.c string compiling with source tracebacks
 int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
 
+struct pyfinalize_args {
+    const char *caller;
+};
+
+// Export for _testembed
+extern int _Py_Finalize(_PyRuntimeState *, struct pyfinalize_args *);
+
 
 /* interpreter config */
 
