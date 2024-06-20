@@ -377,7 +377,7 @@ class partial:
         if not callable(func):
             raise TypeError("the first argument must be callable")
         func, args, kwds, phcount = _partial_prepare_new(cls, func, args,
-                                                            keywords)
+                                                         keywords)
         self = super().__new__(cls)
         self.func = func
         self.args = args
