@@ -1525,11 +1525,20 @@ static int test_audit_subinterpreter(void)
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_InitializeFromConfig();
+    PyThreadState *save_tstate = PyThreadState_Get();
 
-    Py_NewInterpreter();
-    Py_NewInterpreter();
-    Py_NewInterpreter();
+    PyThreadState *substate1 = Py_NewInterpreter();
+    PyThreadState *substate2 = Py_NewInterpreter();
+    PyThreadState *substate3 = Py_NewInterpreter();
 
+    (void)PyThreadState_Swap(substate3);
+    Py_EndInterpreter(substate3);
+    (void)PyThreadState_Swap(substate2);
+    Py_EndInterpreter(substate2);
+    (void)PyThreadState_Swap(substate1);
+    Py_EndInterpreter(substate1);
+
+    (void)PyThreadState_Swap(save_tstate);
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
