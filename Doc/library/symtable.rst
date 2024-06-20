@@ -207,7 +207,7 @@ Examining Symbol Tables
          ...    global outer
          ...    def outer(self): pass
          ... ''', 'test', 'exec')
-         >>> class_A = st.get_children()[2]
+         >>> class_A = st.get_children()[1]
          >>> class_A.get_methods()
          ('f', 'g', 'h')
 
