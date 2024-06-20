@@ -1,10 +1,8 @@
-import os
 import sys
 import copy
 import json
 import shutil
 import pathlib
-import tempfile
 import textwrap
 import functools
 import contextlib
@@ -27,29 +25,12 @@ except (ImportError, AttributeError):
 
 
 @contextlib.contextmanager
-def tempdir():
-    tmpdir = tempfile.mkdtemp()
-    try:
-        yield pathlib.Path(tmpdir)
-    finally:
-        shutil.rmtree(tmpdir)
-
-
-@contextlib.contextmanager
-def save_cwd():
-    orig = os.getcwd()
-    try:
-        yield
-    finally:
-        os.chdir(orig)
-
-
-@contextlib.contextmanager
-def tempdir_as_cwd():
-    with tempdir() as tmp:
-        with save_cwd():
-            os.chdir(str(tmp))
-            yield tmp
+def tmp_path():
+    """
+    Like os_helper.temp_dir, but yields a pathlib.Path.
+    """
+    with os_helper.temp_dir() as path:
+        yield pathlib.Path(path)
 
 
 @contextlib.contextmanager
@@ -70,7 +51,7 @@ class Fixtures:
 class SiteDir(Fixtures):
     def setUp(self):
         super().setUp()
-        self.site_dir = self.fixtures.enter_context(tempdir())
+        self.site_dir = self.fixtures.enter_context(tmp_path())
 
 
 class OnSysPath(Fixtures):
