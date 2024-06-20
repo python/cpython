@@ -79,6 +79,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_SUBSCR_STR_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_DICT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SUBSCR_GET_FUNC] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SUBSCR_INIT_CALL] = 0,
     [_LIST_APPEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_SET_ADD] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -281,6 +283,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_SLICE] = "_BINARY_SLICE",
     [_BINARY_SUBSCR] = "_BINARY_SUBSCR",
     [_BINARY_SUBSCR_DICT] = "_BINARY_SUBSCR_DICT",
+    [_BINARY_SUBSCR_GET_FUNC] = "_BINARY_SUBSCR_GET_FUNC",
+    [_BINARY_SUBSCR_INIT_CALL] = "_BINARY_SUBSCR_INIT_CALL",
     [_BINARY_SUBSCR_LIST_INT] = "_BINARY_SUBSCR_LIST_INT",
     [_BINARY_SUBSCR_STR_INT] = "_BINARY_SUBSCR_STR_INT",
     [_BINARY_SUBSCR_TUPLE_INT] = "_BINARY_SUBSCR_TUPLE_INT",
@@ -636,6 +640,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_SUBSCR_DICT:
             return 2;
+        case _BINARY_SUBSCR_GET_FUNC:
+            return 2;
+        case _BINARY_SUBSCR_INIT_CALL:
+            return 3;
         case _LIST_APPEND:
             return 2 + (oparg-1);
         case _SET_ADD:

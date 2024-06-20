@@ -511,7 +511,21 @@
             break;
         }
 
-        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 */
+        case _BINARY_SUBSCR_GET_FUNC: {
+            _Py_UopsSymbol *getitem;
+            getitem = sym_new_not_null(ctx);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _BINARY_SUBSCR_INIT_CALL: {
+            _PyInterpreterFrame *new_frame;
+            new_frame = sym_new_not_null(ctx);
+            stack_pointer[-3] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2;
+            break;
+        }
 
         case _LIST_APPEND: {
             stack_pointer += -1;

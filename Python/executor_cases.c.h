@@ -828,7 +828,57 @@
             break;
         }
 
-        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+        case _BINARY_SUBSCR_GET_FUNC: {
+            PyObject *container;
+            PyObject *getitem;
+            container = stack_pointer[-2];
+            PyTypeObject *tp = Py_TYPE(container);
+            if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            getitem = ht->_spec_cache.getitem;
+            if (getitem == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(PyFunction_Check(getitem));
+            uint32_t cached_version = ht->_spec_cache.getitem_version;
+            if (((PyFunctionObject *)getitem)->func_version != cached_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            PyCodeObject *code =  (PyCodeObject *)PyFunction_GET_CODE(getitem);
+            assert(code->co_argcount == 2);
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(BINARY_SUBSCR, hit);
+            Py_INCREF(getitem);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _BINARY_SUBSCR_INIT_CALL: {
+            PyObject *getitem;
+            PyObject *sub;
+            PyObject *container;
+            _PyInterpreterFrame *new_frame;
+            getitem = stack_pointer[-1];
+            sub = stack_pointer[-2];
+            container = stack_pointer[-3];
+            new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+            stack_pointer += -3;
+            new_frame->localsplus[0] = container;
+            new_frame->localsplus[1] = sub;
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            stack_pointer[0] = (PyObject *)new_frame;
+            stack_pointer += 1;
+            break;
+        }
 
         case _LIST_APPEND: {
             PyObject *v;

@@ -391,36 +391,60 @@
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            PyObject *sub;
             PyObject *container;
+            PyObject *getitem;
+            PyObject *sub;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
-            sub = stack_pointer[-1];
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
+            }
+            // _BINARY_SUBSCR_GET_FUNC
             container = stack_pointer[-2];
-            DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
-            PyTypeObject *tp = Py_TYPE(container);
-            DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
-            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-            PyObject *cached = ht->_spec_cache.getitem;
-            DEOPT_IF(cached == NULL, BINARY_SUBSCR);
-            assert(PyFunction_Check(cached));
-            PyFunctionObject *getitem = (PyFunctionObject *)cached;
-            uint32_t cached_version = ht->_spec_cache.getitem_version;
-            DEOPT_IF(getitem->func_version != cached_version, BINARY_SUBSCR);
-            PyCodeObject *code = (PyCodeObject *)getitem->func_code;
-            assert(code->co_argcount == 2);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
-            STAT_INC(BINARY_SUBSCR, hit);
-            Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
-            STACK_SHRINK(2);
-            new_frame->localsplus[0] = container;
-            new_frame->localsplus[1] = sub;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            {
+                PyTypeObject *tp = Py_TYPE(container);
+                DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                getitem = ht->_spec_cache.getitem;
+                DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
+                assert(PyFunction_Check(getitem));
+                uint32_t cached_version = ht->_spec_cache.getitem_version;
+                DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version, BINARY_SUBSCR);
+                PyCodeObject *code =  (PyCodeObject *)PyFunction_GET_CODE(getitem);
+                assert(code->co_argcount == 2);
+                DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
+                STAT_INC(BINARY_SUBSCR, hit);
+                Py_INCREF(getitem);
+            }
+            // _BINARY_SUBSCR_INIT_CALL
+            sub = stack_pointer[-1];
+            {
+                new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
+                stack_pointer += -2;
+                new_frame->localsplus[0] = container;
+                new_frame->localsplus[1] = sub;
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            }
+            // _PUSH_FRAME
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                LLTRACE_RESUME_FRAME();
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
