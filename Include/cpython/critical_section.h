@@ -7,8 +7,8 @@
 // These operations are no-ops in the default build. See
 // pycore_critical_section.h for details.
 
-typedef struct _PyCriticalSection _PyCriticalSection;
-typedef struct _PyCriticalSection2 _PyCriticalSection2;
+typedef struct PyCriticalSection PyCriticalSection;
+typedef struct PyCriticalSection2 PyCriticalSection2;
 
 #ifndef Py_GIL_DISABLED
 # define Py_BEGIN_CRITICAL_SECTION(op)      \
@@ -21,8 +21,9 @@ typedef struct _PyCriticalSection2 _PyCriticalSection2;
     }
 #else /* !Py_GIL_DISABLED */
 
-// (private)
-struct _PyCriticalSection {
+// NOTE: the contents of this struct are private and may change betweeen
+// Python releases without a deprecation period.
+struct PyCriticalSection {
     // Tagged pointer to an outer active critical section (or 0).
     uintptr_t prev;
 
@@ -30,49 +31,51 @@ struct _PyCriticalSection {
     PyMutex *mutex;
 };
 
-// (private) A critical section protected by two mutexes. Use
+// A critical section protected by two mutexes. Use
 // Py_BEGIN_CRITICAL_SECTION2 and Py_END_CRITICAL_SECTION2.
-struct _PyCriticalSection2 {
-    struct _PyCriticalSection base;
+// NOTE: the contents of this struct are private and may change betweeen
+// Python releases without a deprecation period.
+struct PyCriticalSection2 {
+    PyCriticalSection base;
 
     PyMutex *mutex2;
 };
 
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \
     {                                                                   \
-        _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, _PyObject_CAST(op))
+        PyCriticalSection _cs;                                         \
+        PyCriticalSection_Begin(&_cs, _PyObject_CAST(op))
 
 # define Py_END_CRITICAL_SECTION()                                      \
-        _PyCriticalSection_End(&_cs);                                   \
+        PyCriticalSection_End(&_cs);                                   \
     }
 
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
     {                                                                   \
-        _PyCriticalSection2 _cs2;                                       \
-        _PyCriticalSection2_Begin(&_cs2, _PyObject_CAST(a), _PyObject_CAST(b))
+        PyCriticalSection2 _cs2;                                       \
+        PyCriticalSection2_Begin(&_cs2, _PyObject_CAST(a), _PyObject_CAST(b))
 
 # define Py_END_CRITICAL_SECTION2()                                     \
-        _PyCriticalSection2_End(&_cs2);                                 \
+        PyCriticalSection2_End(&_cs2);                                 \
     }
 
 #endif
 
 // (private)
 PyAPI_FUNC(void)
-_PyCriticalSection_Begin(_PyCriticalSection *c, PyObject *op);
+PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op);
 
 // (private)
 PyAPI_FUNC(void)
-_PyCriticalSection_End(_PyCriticalSection *c);
+PyCriticalSection_End(PyCriticalSection *c);
 
 // (private)
 PyAPI_FUNC(void)
-_PyCriticalSection2_Begin(_PyCriticalSection2 *c, PyObject *a, PyObject *b);
+PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b);
 
 // (private)
 PyAPI_FUNC(void)
-_PyCriticalSection2_End(_PyCriticalSection2 *c);
+PyCriticalSection2_End(PyCriticalSection2 *c);
 
 // CPython internals should use pycore_critical_section.h instead.
 #ifdef Py_BUILD_CORE

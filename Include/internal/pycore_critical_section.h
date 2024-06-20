@@ -81,7 +81,7 @@ extern "C" {
 
 // Tagged pointers to critical sections use the two least significant bits to
 // mark if the pointed-to critical section is inactive and whether it is a
-// _PyCriticalSection2 object.
+// PyCriticalSection2 object.
 #define _Py_CRITICAL_SECTION_INACTIVE       0x1
 #define _Py_CRITICAL_SECTION_TWO_MUTEXES    0x2
 #define _Py_CRITICAL_SECTION_MASK           0x3
@@ -89,7 +89,7 @@ extern "C" {
 #ifdef Py_GIL_DISABLED
 # define Py_BEGIN_CRITICAL_SECTION_MUT(mutex)                           \
     {                                                                   \
-        _PyCriticalSection _cs;                                         \
+        PyCriticalSection _cs;                                          \
         _PyCriticalSection_BeginInline(&_cs, mutex)
 
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \
@@ -101,7 +101,7 @@ extern "C" {
 
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
     {                                                                   \
-        _PyCriticalSection2 _cs2;                                       \
+        PyCriticalSection2 _cs2;                                        \
         _PyCriticalSection2_BeginInline(&_cs2,                          \
                                         &_PyObject_CAST(a)->ob_mutex,   \
                                         &_PyObject_CAST(b)->ob_mutex)
@@ -119,14 +119,14 @@ extern "C" {
     {                                                                   \
         PyObject *_orig_seq = _PyObject_CAST(original);                 \
         const bool _should_lock_cs = PyList_CheckExact(_orig_seq);      \
-        _PyCriticalSection _cs;                                         \
+        PyCriticalSection _cs;                                          \
         if (_should_lock_cs) {                                          \
             _PyCriticalSection_BeginInline(&_cs, &_orig_seq->ob_mutex); \
         }
 
 # define Py_END_CRITICAL_SECTION_SEQUENCE_FAST()                        \
         if (_should_lock_cs) {                                          \
-            _PyCriticalSection_End(&_cs);                               \
+            PyCriticalSection_End(&_cs);                                \
         }                                                               \
     }
 
@@ -165,18 +165,16 @@ extern "C" {
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
 #endif  /* !Py_GIL_DISABLED */
 
-typedef struct _PyCriticalSection2 _PyCriticalSection2;
-
 // Resumes the top-most critical section.
 PyAPI_FUNC(void)
 _PyCriticalSection_Resume(PyThreadState *tstate);
 
 // (private) slow path for locking the mutex
 PyAPI_FUNC(void)
-_PyCriticalSection_BeginSlow(_PyCriticalSection *c, PyMutex *m);
+_PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m);
 
 PyAPI_FUNC(void)
-_PyCriticalSection2_BeginSlow(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
+_PyCriticalSection2_BeginSlow(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
                              int is_m1_locked);
 
 PyAPI_FUNC(void)
@@ -191,7 +189,7 @@ _PyCriticalSection_IsActive(uintptr_t tag)
 }
 
 static inline void
-_PyCriticalSection_BeginInline(_PyCriticalSection *c, PyMutex *m)
+_PyCriticalSection_BeginInline(PyCriticalSection *c, PyMutex *m)
 {
     if (PyMutex_LockFast(&m->_bits)) {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -208,7 +206,7 @@ _PyCriticalSection_BeginInline(_PyCriticalSection *c, PyMutex *m)
 // sections. If the new top-most critical section is inactive, then it is
 // resumed.
 static inline void
-_PyCriticalSection_Pop(_PyCriticalSection *c)
+_PyCriticalSection_Pop(PyCriticalSection *c)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t prev = c->prev;
@@ -220,14 +218,14 @@ _PyCriticalSection_Pop(_PyCriticalSection *c)
 }
 
 static inline void
-_PyCriticalSection_EndInline(_PyCriticalSection *c)
+_PyCriticalSection_EndInline(PyCriticalSection *c)
 {
     PyMutex_Unlock(c->mutex);
     _PyCriticalSection_Pop(c);
 }
 
 static inline void
-_PyCriticalSection2_BeginInline(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
+_PyCriticalSection2_BeginInline(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
 {
     if (m1 == m2) {
         // If the two mutex arguments are the same, treat this as a critical
@@ -266,7 +264,7 @@ _PyCriticalSection2_BeginInline(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2
 }
 
 static inline void
-_PyCriticalSection2_EndInline(_PyCriticalSection2 *c)
+_PyCriticalSection2_EndInline(PyCriticalSection2 *c)
 {
     if (c->mutex2) {
         PyMutex_Unlock(c->mutex2);
@@ -282,11 +280,11 @@ _PyCriticalSection_AssertHeld(PyMutex *mutex)
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t prev = tstate->critical_section;
     if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
-        _PyCriticalSection2 *cs = (_PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
         assert(cs != NULL && (cs->base.mutex == mutex || cs->mutex2 == mutex));
     }
     else {
-        _PyCriticalSection *cs = (_PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
+        PyCriticalSection *cs = (PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
         assert(cs != NULL && cs->mutex == mutex);
     }
 

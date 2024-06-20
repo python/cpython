@@ -64,7 +64,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 #define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
 #define BEGIN_TYPE_LOCK()                                               \
     {                                                                   \
-        _PyCriticalSection _cs;                                         \
+        PyCriticalSection _cs;                                          \
         _PyCriticalSection_BeginInline(&_cs, TYPE_LOCK);                \
 
 #define END_TYPE_LOCK()                                                 \
@@ -73,7 +73,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define BEGIN_TYPE_DICT_LOCK(d)                                         \
     {                                                                   \
-        _PyCriticalSection2 _cs;                                        \
+        PyCriticalSection2 _cs;                                         \
         _PyCriticalSection2_BeginInline(&_cs, TYPE_LOCK,                \
                                         &_PyObject_CAST(d)->ob_mutex);  \
 
