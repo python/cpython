@@ -103,24 +103,23 @@ typedef struct {
     int64_t count;
 } _PyCounterOptimizerObject;
 
-PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *executor);
-
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
-PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
-PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
-
-PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
+extern _PyExecutorObject* _Py_GetExecutor(PyCodeObject *code, int offset);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
-/* For testing */
-PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
-PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
+
+// For testing
+// Export for '_testinternalcapi' shared extension.
+PyAPI_FUNC(_PyOptimizerObject *) _Py_GetOptimizer(void);
+PyAPI_FUNC(int) _Py_SetOptimizerAPI(_PyOptimizerObject* optimizer);
+PyAPI_FUNC(PyObject *) _PyOptimizer_NewCounter(void);
+PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6

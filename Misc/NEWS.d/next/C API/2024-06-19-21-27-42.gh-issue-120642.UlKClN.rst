@@ -1,5 +1,4 @@
-Move the following unstable functions to ``<pycore_optimizer.h>`` internal
-header:
+Remove the following unstable functions:
 
 * ``PyUnstable_Replace_Executor()``
 * ``PyUnstable_SetOptimizer()``
