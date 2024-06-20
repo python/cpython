@@ -39,51 +39,6 @@ get_functools_state(PyObject *module)
 }
 
 
-
-const char *getrepr(PyObject *obj) {
-    PyObject* repr = PyObject_Repr(obj);
-    PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
-    const char *string = PyBytes_AS_STRING(str);
-    Py_XDECREF(repr);
-    Py_XDECREF(str);
-    return string;
-}
-
-
-const char *gettype(PyObject *obj) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    PyObject* tp_name = PyType_GetName(tp);
-    PyObject* str = PyUnicode_AsEncodedString(tp_name, "utf-8", "~E~");
-    const char *string = PyBytes_AS_STRING(str);
-    Py_XDECREF(tp_name);
-    Py_XDECREF(str);
-    return string;
-}
-
-
-static void pprint_tp(PyObject *obj) {
-    printf("TYPE: %s\n", gettype(obj));
-}
-
-
-static void pprint_rpr(PyObject *obj) {
-    printf("REPR: %s\n", getrepr(obj));
-}
-
-
-static void pprint_msg(PyObject *obj, const char *msg) {
-    if (strcmp(msg, "") == 0)
-        printf("%s\n", msg);
-    pprint_tp(obj);
-    pprint_rpr(obj);
-}
-
-
-static void pprint(PyObject *obj) {
-    pprint_msg(obj, ">");
-}
-
-
 /* partial object **********************************************************/
 
 typedef struct {
