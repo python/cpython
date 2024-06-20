@@ -2415,7 +2415,7 @@ type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
     }
     assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
     type->tp_version_tag = version;
-    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_versions_used++;
     Py_RETURN_NONE;
 }
 

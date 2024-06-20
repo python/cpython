@@ -978,14 +978,6 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
 #ifndef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    // lookup the old version and set to null
-    if (tp->tp_version_tag != 0) {
-        PyTypeObject **slot =
-            interp->types.type_version_cache
-            + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
-        *slot = NULL;
-    }
     if (version) {
         tp->tp_versions_used++;
     }
@@ -995,14 +987,6 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
     }
 #endif
     FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
-#ifndef Py_GIL_DISABLED
-    if (version != 0) {
-        PyTypeObject **slot =
-            interp->types.type_version_cache
-            + (version % TYPE_VERSION_CACHE_SIZE);
-        *slot = tp;
-    }
-#endif
 }
 
 static void
