@@ -20,6 +20,15 @@ except ImportError:
     _winapi = None
 
 
+__all__ = ["UnsupportedOperation"]
+
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is attempted.
+    """
+    pass
+
+
 def get_copy_blocksize(infd):
     """Determine blocksize for fastcopying on Linux.
     Hopefully the whole file will be copied in a single call.
@@ -115,9 +124,15 @@ if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_fil
             except OSError as err:
                 # Check for ERROR_ACCESS_DENIED
                 if err.winerror != 5 or not _is_dirlink(source):
-                    raise
+                    raise  # Some other error.
             flags |= _winapi.COPY_FILE_DIRECTORY
-        _winapi.CopyFile2(source, target, flags)
+        try:
+            _winapi.CopyFile2(source, target, flags)
+        except OSError as err:
+            # Check for ERROR_INVALID_PARAMETER
+            if err.winerror != 87:
+                raise  # Some other error.
+            raise UnsupportedOperation(err)
 else:
     copyfile = None
 

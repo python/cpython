@@ -1447,11 +1447,6 @@ Copying, renaming and deleting
       permissions. After the copy is complete, users may wish to call
       :meth:`Path.chmod` to set the permissions of the target file.
 
-   .. warning::
-      On old builds of Windows (before Windows 10 build 19041), this method
-      raises :exc:`OSError` when a symlink to a directory is encountered and
-      *follow_symlinks* is false.
-
    .. versionadded:: 3.14
 
 
