@@ -272,6 +272,87 @@ static int test_replace_main_tstate(void)
 }
 
 
+/****************************************************************************
+ * Test (mostly) unsupported Py_Finalize() scenarios
+ ***************************************************************************/
+
+struct fini_subthread_args {
+    PyThreadState *main_tstate;
+    PyInterpreterState *interp;
+    PyMutex done;
+};
+
+static void fini_with_new_tstate(void *arg)
+{
+    struct fini_subthread_args *args = (struct fini_subthread_args *)arg;
+
+    assert(!_Py_IsMainThread());
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState *tstate = PyThreadState_New(args->interp);
+    assert(tstate != NULL);
+    assert(tstate != args->main_tstate);
+    (void)PyThreadState_Swap(tstate);
+
+    assert(PyThreadState_Get() != args->main_tstate);
+    Py_Finalize();
+
+    PyMutex_Unlock(&args->done);
+}
+
+static int test_fini_in_subthread(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    struct fini_subthread_args args = {
+        .main_tstate = main_tstate,
+        .interp = main_tstate->interp,
+    };
+    PyMutex_Lock(&args.done);
+    (void)PyThread_start_new_thread(fini_with_new_tstate, &args);
+
+    // Wait for fini to finish.
+    PyMutex_Lock(&args.done);
+    PyMutex_Unlock(&args.done);
+
+    return 0;
+}
+
+static int test_fini_in_main_thread_with_other_tstate(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    PyThreadState *tstate = PyThreadState_New(main_tstate->interp);
+    (void)PyThreadState_Swap(tstate);
+
+    assert(PyThreadState_Get() != main_tstate);
+    Py_Finalize();
+
+    return 0;
+}
+
+static int test_fini_in_main_thread_with_subinterpreter(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    PyThreadState *substate = Py_NewInterpreter();
+    assert(substate != main_tstate);
+#ifndef NDEBUG
+    (void)main_tstate;
+    (void)substate;
+#endif
+
+    // The subinterpreter's tstate is still current.
+    assert(PyThreadState_Get() == substate);
+    Py_Finalize();
+
+    return 0;
+}
+
+
 /*****************************************************
  * Test forcing a particular IO encoding
  *****************************************************/
@@ -2227,6 +2308,11 @@ static struct TestCase TestCases[] = {
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
     {"test_replace_main_tstate", test_replace_main_tstate},
+    {"test_fini_in_subthread", test_fini_in_subthread},
+    {"test_fini_in_main_thread_with_other_tstate",
+     test_fini_in_main_thread_with_other_tstate},
+    {"test_fini_in_main_thread_with_subinterpreter",
+     test_fini_in_main_thread_with_subinterpreter},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},

@@ -239,6 +239,19 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             )
             self.assertEqual(out.strip(), 'spam!')
 
+    def test_fini_in_subthread(self):
+        self.run_embedded_interpreter('test_fini_in_subthread')
+
+    def test_fini_in_main_thread_with_other_tstate(self):
+        self.run_embedded_interpreter(
+            'test_fini_in_main_thread_with_other_tstate',
+        )
+
+    def test_fini_in_main_thread_with_subinterpreter(self):
+        self.run_embedded_interpreter(
+            'test_fini_in_main_thread_with_subinterpreter',
+        )
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
