@@ -83,11 +83,14 @@ class MockRawIOWithoutRead:
     """A RawIO implementation without read(), so as to exercise the default
     RawIO.read() which calls readinto()."""
 
-    def __init__(self, read_stack=()):
+    def __init__(self, read_stack=(), backread_stack=()):
         self._read_stack = list(read_stack)
+        self._backread_stack = list(backread_stack)
         self._write_stack = []
         self._reads = 0
+        self._backreads = 0
         self._extraneous_reads = 0
+        self._extraneous_backreads = 0
 
     def write(self, b):
         self._write_stack.append(bytes(b))
@@ -132,6 +135,27 @@ class MockRawIOWithoutRead:
             self._read_stack[0] = data[max_len:]
             return max_len
 
+    def backreadinto(self, buf):
+        self._backreads += 1
+        max_len = len(buf)
+        try:
+            data = self._backread_stack[0]
+        except IndexError:
+            self._extraneous_backreads += 1
+            return 0
+        if data is None:
+            del self._backread_stack[0]
+            return None
+        n = len(data)
+        if len(data) <= max_len:
+            del self._backread_stack[0]
+            buf[:n] = data
+            return n
+        else:
+            buf[:] = data[:max_len]
+            self._backread_stack[0] = data[max_len:]
+            return max_len
+
     def truncate(self, pos=None):
         return pos
 
@@ -152,6 +176,14 @@ class MockRawIO(MockRawIOWithoutRead):
             self._extraneous_reads += 1
             return b""
 
+    def backread(self, n=None):
+        self._backreads += 1
+        try:
+            return self._backread_stack.pop(0)
+        except:
+            self._extraneous_backreads += 1
+            return b""
+
 class CMockRawIO(MockRawIO, io.RawIOBase):
     pass
 
@@ -166,6 +198,9 @@ class MisbehavedRawIO(MockRawIO):
     def read(self, n=None):
         return super().read(n) * 2
 
+    def backread(self, n=None):
+        return super().backread(n) * 2
+
     def seek(self, pos, whence):
         return -123
 
@@ -174,6 +209,10 @@ class MisbehavedRawIO(MockRawIO):
 
     def readinto(self, buf):
         super().readinto(buf)
+        return len(buf) * 5
+
+    def backreadinto(self, buf):
+        super().backreadinto(buf)
         return len(buf) * 5
 
 class CMisbehavedRawIO(MisbehavedRawIO, io.RawIOBase):
@@ -218,6 +257,7 @@ class MockFileIO:
 
     def __init__(self, data):
         self.read_history = []
+        self.backread_history = []
         super().__init__(data)
 
     def read(self, n=None):
@@ -228,6 +268,16 @@ class MockFileIO:
     def readinto(self, b):
         res = super().readinto(b)
         self.read_history.append(res)
+        return res
+
+    def backread(self, n=None):
+        res = super().backread(n)
+        self.backread_history.append(None if res is None else len(res))
+        return res
+
+    def backreadinto(self, n=None):
+        res = super().backreadinto(n)
+        self.backread_history.append(res)
         return res
 
 class CMockFileIO(MockFileIO, io.BytesIO):
@@ -616,6 +666,15 @@ class IOTest(unittest.TestCase):
                 return None
         self.assertRaises(TypeError, R().readlines, 1)
 
+    def test_backreadline(self):
+        self.skipTest("TODO")
+
+    def test_backreadline_nonsizeable(self):
+        self.skipTest("TODO")
+
+    def test_reverse_next_nonsizeable(self):
+        self.skipTest("TODO")
+
     def test_raw_bytes_io(self):
         f = self.BytesIO()
         self.write_ops(f)
@@ -769,6 +828,9 @@ class IOTest(unittest.TestCase):
             file.close()
             self.assertRaises(ValueError, file.readinto, bytearray(1))
 
+    def test_backread_closed(self):
+        self.skipTest("TODO")
+
     def test_no_closefd_with_filename(self):
         # can't use closefd in combination with a file name
         self.assertRaises(ValueError, self.open, os_helper.TESTFN, "r",
@@ -796,7 +858,7 @@ class IOTest(unittest.TestCase):
         with self.open(os_helper.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
 
-    def test_unbounded_file(self):
+    def test_read_unbounded_file(self):
         # Issue #1174606: reading from an unbounded stream such as /dev/zero.
         zero = "/dev/zero"
         if not os.path.exists(zero):
@@ -811,6 +873,9 @@ class IOTest(unittest.TestCase):
             self.assertRaises(OverflowError, f.read)
         with self.open(zero, "r") as f:
             self.assertRaises(OverflowError, f.read)
+
+    def test_backread_unbounded_file(self):
+        self.skipTest("TODO")
 
     def check_flush_error_on_close(self, *args, **kwargs):
         # Test that the file is closed despite failed flush
@@ -870,6 +935,9 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(2), b"g")
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
+
+    def test_RawIOBase_backread(self):
+        self.skipTest("TODO")
 
     def test_types_have_dict(self):
         test = (
@@ -950,6 +1018,9 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(getattr(stream, method)(buffer), 5)
                 self.assertEqual(bytes(buffer), b"12345")
 
+    def test_buffered_backreadinto_mixin(self):
+        self.skipTest("TODO")
+
     def test_fspath_support(self):
         def check_path_succeeds(path):
             with self.open(path, "w", encoding="utf-8") as f:
@@ -985,6 +1056,9 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(), b"abcdefg")
         rawio = self.MockRawIOWithoutRead((b"abc", b"d", b"efg"))
         self.assertEqual(rawio.readall(), b"abcdefg")
+
+    def test_RawIOBase_backreadall(self):
+        self.skipTest("TODO")
 
     def test_BufferedIOBase_readinto(self):
         # Exercise the default BufferedIOBase.readinto() and readinto1()
@@ -1026,6 +1100,9 @@ class IOTest(unittest.TestCase):
                 unused = (UNUSED_BYTE,) * (request - result)
                 self.assertSequenceEqual(buffer[result:], unused)
                 self.assertEqual(len(reader.avail), avail - result)
+
+    def test_BufferedIOBase_backreadinto(self):
+        self.skipTest("TODO")
 
     def test_close_assert(self):
         class R(self.IOBase):
@@ -1394,6 +1471,21 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         # Invalid args
         self.assertRaises(ValueError, bufio.read, -2)
 
+    def test_backread(self):
+        self.skipTest("TODO")
+
+    def test_backread_all(self):
+        self.skipTest("TODO")
+
+    def test_backread_past_bof(self):
+        self.skipTest("TODO")
+
+    def test_backread_on_closed(self):
+        self.skipTest("TODO")
+
+    def test_backread_non_blocking(self):
+        self.skipTest("TODO")
+
     def test_read1(self):
         rawio = self.MockRawIO((b"abc", b"d", b"efg"))
         bufio = self.tp(rawio)
@@ -1506,6 +1598,12 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertLess(n, len(bm))
         self.assertEqual(bm[:n], data[:n])
         self.assertEqual(bm[n:], b'x' * (len(bm[n:])))
+
+    def test_backreadinto(self):
+        self.skipTest("TODO")
+
+    def test_backreadinto_array(self):
+        self.skipTest("TODO")
 
     def test_readlines(self):
         def bufio():
@@ -1746,6 +1844,24 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         bufio = self.tp(rawio)
         with self.assertRaises(OSError) as cm:
             bufio.readline()
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+    def test_bad_backreadinto_value(self):
+        self.skipTest("TODO")
+        rawio = self.tp(self.BytesIO(b"12"))
+        rawio.backreadinto = lambda buf: -1
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.backreadline()
+        self.assertIsNone(cm.exception.__cause__)
+
+    def test_bad_backreadinto_type(self):
+        self.skipTest("TODO")
+        rawio = self.tp(self.BytesIO(b"12"))
+        rawio.backreadinto = lambda buf: b''
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.backreadline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
 
@@ -2162,6 +2278,23 @@ class BufferedRWPairTest(unittest.TestCase):
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 
+    def test_backread(self):
+        self.skipTest("TODO")
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+        self.assertEqual(pair.backread(3), b"fed")
+        self.assertEqual(pair.backread(1), b"c")
+        self.assertEqual(pair.backread(), b"ba")
+
+        pair = self.tp(self.BytesIO(b"abc"), self.MockRawIO())
+        self.assertEqual(pair.backread(None), b"fed")
+
+    def test_backreadinto(self):
+        self.skipTest("TODO")
+        pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
+        data = byteslike(b'\0' * 5)
+        self.assertEqual(pair.backreadinto(data), 5)
+        self.assertEqual(bytes(data), b"fedbc")
+
     def test_write(self):
         w = self.MockRawIO()
         pair = self.tp(self.MockRawIO(), w)
@@ -2326,6 +2459,18 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
         self.assertEqual(b"ghjk", rw.read())
         self.assertEqual(b"dddeee", raw._write_stack[0])
 
+    def test_backread_and_write(self):
+        self.skipTest("TODO (C)")
+        raw = self.MockRawIO((), (b"9876", b"5432"))
+        rw = self.tp(raw, 8)
+
+        self.assertEqual(b"98", rw.backread(2))
+        rw.write(b"ddd")
+        rw.write(b"eee")
+        self.assertFalse(raw._write_stack) # Buffer writes
+        self.assertEqual(b"5432", rw.backread())
+        self.assertEqual(b"dddeee", raw._write_stack[0])
+
     def test_seek_and_tell(self):
         raw = self.BytesIO(b"asdfghjkl")
         rw = self.tp(raw)
@@ -2376,6 +2521,12 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
             n = bufio.readinto(b)
             return bytes(b[:n])
         self.check_flush_and_read(_readinto)
+
+    def test_flush_and_backread(self):
+        self.skipTest("TODO")
+
+    def test_flush_and_backreadinto(self):
+        self.skipTest("TODO")
 
     def test_flush_and_peek(self):
         def _peek(bufio, n=-1):
@@ -3307,6 +3458,15 @@ class TextIOWrapperTest(unittest.TestCase):
             reads += c
         self.assertEqual(reads, "A"*127+"\nB")
 
+    def test_backread_one_by_one(self):
+        self.skipTest("TODO (should raise)")
+
+    def test_backread_by_chunks(self):
+        self.skipTest("TODO (should raise)")
+
+    def test_backreadline(self):
+        self.skipTest("TODO (should raise)")
+
     def test_writelines(self):
         l = ['ab', 'cd', 'ef']
         buf = self.BytesIO()
@@ -3618,6 +3778,9 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(self.StringIO('a'), encoding="utf-8")
         self.assertRaises(TypeError, t.read)
 
+    def test_backread_nonbytes(self):
+        self.skipTest("TODO (should raise)")
+
     def test_illegal_encoder(self):
         # Issue 31271: Calling write() while the return value of encoder's
         # encode() is invalid shouldn't cause an assertion failure.
@@ -3710,6 +3873,9 @@ class TextIOWrapperTest(unittest.TestCase):
         bytes_val =  _to_memoryview(r.getvalue()).tobytes()
 
         self.assertEqual(t.read(200), bytes_val.decode('utf-8'))
+
+    def test_backread_byteslike(self):
+        self.skipTest("TODO (should raise)")
 
     def test_issue22849(self):
         class F(object):
@@ -3929,6 +4095,9 @@ class MemviewBytesIO(io.BytesIO):
 
     def read(self, len_):
         return _to_memoryview(super().read(len_))
+
+    def backread(self, len_):
+        return _to_memoryview(super().backread(len_))
 
 def _to_memoryview(buf):
     '''Convert bytes-object *buf* to a non-trivial memoryview'''
@@ -4799,6 +4968,16 @@ class SignalsTest(unittest.TestCase):
     def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r", encoding="latin1")
+
+    @requires_alarm
+    @support.requires_resource('walltime')
+    def test_interrupted_backread_retry_buffered(self):
+        self.skipTest("TODO")
+
+    @requires_alarm
+    @support.requires_resource('walltime')
+    def test_interrupted_backread_retry_text(self):
+        self.skipTest("TODO")
 
     def check_interrupted_write_retry(self, item, **fdopen_kwargs):
         """Check that a buffered write, when it gets interrupted (either
