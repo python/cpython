@@ -2529,6 +2529,12 @@ bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+bufferedrwpair_seekable(rwpair *self, PyObject *Py_UNUSED(ignored))
+{
+    return _forward_call(self->reader, &_Py_ID(seekable), NULL);
+}
+
+static PyObject *
 bufferedrwpair_readable(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
     return _forward_call(self->reader, &_Py_ID(readable), NULL);
@@ -2798,17 +2804,18 @@ PyType_Spec bufferedwriter_spec = {
 
 static PyMethodDef bufferedrwpair_methods[] = {
     {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
-    {"seek", (PyCFunction)bufferedrwpair_seek, METH_VARARGS},
     {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
     {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
     {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
     {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
     {"backread", (PyCFunction)bufferedrwpair_backread, METH_VARARGS},
     {"backreadinto", (PyCFunction)bufferedrwpair_backreadinto, METH_VARARGS},
+    {"seek", (PyCFunction)bufferedrwpair_seek, METH_VARARGS},
 
     {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
     {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
 
+    {"seekable", (PyCFunction)bufferedrwpair_seekable, METH_NOARGS},
     {"readable", (PyCFunction)bufferedrwpair_readable, METH_NOARGS},
     {"writable", (PyCFunction)bufferedrwpair_writable, METH_NOARGS},
 
