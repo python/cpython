@@ -893,56 +893,39 @@ contextvar_tp_hash(PyContextVar *self)
 static PyObject *
 contextvar_tp_repr(PyContextVar *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(
-            &writer, "<ContextVar name=", 17) < 0)
-    {
-        goto error;
+    // Estimation based on the shortest name and default value,
+    // but maximize the pointer size.
+    // "<ContextVar name='a' at 0x1234567812345678>"
+    // "<ContextVar name='a' default=1 at 0x1234567812345678>"
+    Py_ssize_t estimate = self->var_default ? 53 : 43;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(estimate);
+    if (writer == NULL) {
+        return NULL;
     }
 
-    PyObject *name = PyObject_Repr(self->var_name);
-    if (name == NULL) {
+    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
-        Py_DECREF(name);
+    if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
         goto error;
     }
-    Py_DECREF(name);
 
     if (self->var_default != NULL) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " default=", 9) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
             goto error;
         }
-
-        PyObject *def = PyObject_Repr(self->var_default);
-        if (def == NULL) {
+        if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, def) < 0) {
-            Py_DECREF(def);
-            goto error;
-        }
-        Py_DECREF(def);
     }
 
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
