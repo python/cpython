@@ -309,9 +309,12 @@ init_global_interned_strings(PyInterpreterState *interp)
 {
     assert(INTERNED_STRINGS == NULL);
     _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
+
     INTERNED_STRINGS = _Py_hashtable_new_full(
         hashtable_unicode_hash,
         hashtable_unicode_compare,
+        // Objects stored here are immortal and statically allocated,
+        // so we don't need key_destroy_func & value_destroy_func:
         NULL,
         NULL,
         &hashtable_alloc
