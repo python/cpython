@@ -452,7 +452,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     p = self->ob_item + i;
     Py_XSETREF(*p, newitem);
     ret = 0;
-end:
+end:;
     Py_END_CRITICAL_SECTION();
     return ret;
 }
