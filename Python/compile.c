@@ -119,6 +119,7 @@ enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
 struct fblockinfo {
     enum fblocktype fb_type;
     jump_target_label fb_block;
+    location fb_loc;
     /* (optional) type-specific exit or cleanup block */
     jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
@@ -1239,6 +1240,7 @@ compiler_push_fblock(struct compiler *c, location loc,
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
     f->fb_block = block_label;
+    f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return SUCCESS;
@@ -1366,7 +1368,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
         case WITH:
         case ASYNC_WITH:
-            *ploc = LOC((stmt_ty)info->fb_datum);
+            *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 3);
@@ -1763,7 +1765,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-compiler_visit_kwonlydefaults(struct compiler *c, location loc,
+compiler_kwonlydefaults(struct compiler *c, location loc,
                               asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 {
     /* Push a dict of keyword-only default values.
@@ -1828,7 +1830,7 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
-compiler_visit_argannotation(struct compiler *c, identifier id,
+compiler_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
@@ -1862,14 +1864,14 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
-                              Py_ssize_t *annotations_len, location loc)
+compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
+                        Py_ssize_t *annotations_len, location loc)
 {
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(
+            compiler_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
@@ -1880,39 +1882,39 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
-compiler_visit_annotations_in_scope(struct compiler *c, location loc,
-                                    arguments_ty args, expr_ty returns,
-                                    Py_ssize_t *annotations_len)
+compiler_annotations_in_scope(struct compiler *c, location loc,
+                              arguments_ty args, expr_ty returns,
+                              Py_ssize_t *annotations_len)
 {
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->args, annotations_len, loc));
+        compiler_argannotations(c, args->args, annotations_len, loc));
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->posonlyargs, annotations_len, loc));
+        compiler_argannotations(c, args->posonlyargs, annotations_len, loc));
 
     if (args->vararg && args->vararg->annotation) {
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->vararg->arg,
+            compiler_argannotation(c, args->vararg->arg,
                                          args->vararg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->kwonlyargs, annotations_len, loc));
+        compiler_argannotations(c, args->kwonlyargs, annotations_len, loc));
 
     if (args->kwarg && args->kwarg->annotation) {
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->kwarg->arg,
+            compiler_argannotation(c, args->kwarg->arg,
                                          args->kwarg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+        compiler_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
 
     return 0;
 }
 
 static int
-compiler_visit_annotations(struct compiler *c, location loc,
+compiler_annotations(struct compiler *c, location loc,
                            arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
@@ -1938,7 +1940,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     }
     Py_DECREF(ste);
 
-    if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+    if (compiler_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
         if (annotations_used) {
             compiler_exit_scope(c);
         }
@@ -1956,7 +1958,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
 }
 
 static int
-compiler_visit_defaults(struct compiler *c, arguments_ty args,
+compiler_defaults(struct compiler *c, arguments_ty args,
                         location loc)
 {
     VISIT_SEQ(c, expr, args->defaults);
@@ -1970,13 +1972,13 @@ compiler_default_arguments(struct compiler *c, location loc,
 {
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
-        RETURN_IF_ERROR(compiler_visit_defaults(c, args, loc));
+        RETURN_IF_ERROR(compiler_defaults(c, args, loc));
         funcflags |= MAKE_FUNCTION_DEFAULTS;
     }
     if (args->kwonlyargs) {
-        int res = compiler_visit_kwonlydefaults(c, loc,
-                                                args->kwonlyargs,
-                                                args->kw_defaults);
+        int res = compiler_kwonlydefaults(c, loc,
+                                          args->kwonlyargs,
+                                          args->kw_defaults);
         RETURN_IF_ERROR(res);
         if (res > 0) {
             funcflags |= MAKE_FUNCTION_KWDEFAULTS;
@@ -2342,7 +2344,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
 
-    int annotations_flag = compiler_visit_annotations(c, loc, args, returns);
+    int annotations_flag = compiler_annotations(c, loc, args, returns);
     if (annotations_flag < 0) {
         if (is_generic) {
             compiler_exit_scope(c);
@@ -2968,7 +2970,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         co = optimize_and_assemble(c, 0);
     }
     else {
-        location loc = LOCATION(e->lineno, e->lineno, 0, 0);
+        location loc = LOC(e->v.Lambda.body);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = optimize_and_assemble(c, 1);
     }
@@ -6111,7 +6113,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr1(struct compiler *c, expr_ty e)
+compiler_visit_expr(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     switch (e->kind) {
@@ -6278,13 +6280,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_tuple(c, e);
     }
     return SUCCESS;
-}
-
-static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
-{
-    int res = compiler_visit_expr1(c, e);
-    return res;
 }
 
 static bool
