@@ -5454,7 +5454,7 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
         "datetime.datetime.utcnow() is deprecated and scheduled for removal in a "
         "future version. Use timezone-aware objects to represent datetimes "
-        "in UTC: datetime.datetime.now(datetime.UTC).", 1))
+        "in UTC: datetime.datetime.now(datetime.timezone.utc).", 1))
     {
         return NULL;
     }
@@ -5497,7 +5497,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
         "datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal "
         "in a future version. Use timezone-aware objects to represent "
-        "datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
+        "datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).", 1))
     {
         return NULL;
     }
