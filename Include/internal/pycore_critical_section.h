@@ -202,7 +202,7 @@ _PyCriticalSection2_BeginSlow(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
 static inline void
 _PyCriticalSection_Begin(_PyCriticalSection *c, PyMutex *m)
 {
-    if (PyMutex_LockFast(&m->v)) {
+    if (PyMutex_LockFast(&m->_bits)) {
         PyThreadState *tstate = _PyThreadState_GET();
         c->mutex = m;
         c->prev = tstate->critical_section;
@@ -255,8 +255,8 @@ _PyCriticalSection2_Begin(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
         m2 = tmp;
     }
 
-    if (PyMutex_LockFast(&m1->v)) {
-        if (PyMutex_LockFast(&m2->v)) {
+    if (PyMutex_LockFast(&m1->_bits)) {
+        if (PyMutex_LockFast(&m2->_bits)) {
             PyThreadState *tstate = _PyThreadState_GET();
             c->base.mutex = m1;
             c->mutex2 = m2;

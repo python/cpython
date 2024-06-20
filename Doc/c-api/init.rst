@@ -55,6 +55,11 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_RawFree`
 
+* Synchronization:
+
+  * :c:func:`PyMutex_Lock`
+  * :c:func:`PyMutex_Unlock`
+
 .. note::
 
    The following functions **should not be called** before
@@ -2152,3 +2157,41 @@ be used in new code.
 .. c:function:: void PyThread_delete_key_value(int key)
 .. c:function:: void PyThread_ReInitTLS()
 
+Synchronization Primitives
+==========================
+
+The C-API provides a basic mutual exclusion lock.
+
+.. c:type:: PyMutex
+
+   A mutual exclusion lock.  The :c:type:`!PyMutex` should be initialized to
+   zero to represent the unlocked state.  For example::
+
+      PyMutex mutex = {0};
+
+   Instances of :c:type:`!PyMutex` should not be copied or moved.  Both the
+   contents and address of a :c:type:`!PyMutex` are meaningful, and it must
+   remain at a fixed, writable location in memory.
+
+   .. note::
+
+      A :c:type:`!PyMutex` currently occupies one byte, but the size should be
+      considered unstable.  The size may change in future Python releases
+      without a deprecation period.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyMutex_Lock(PyMutex *m)
+
+   Lock mutex *m*.  If another thread has already locked it, the calling
+   thread will block until the mutex is unlocked.  While blocked, the thread
+   will temporarily release the :term:`GIL` if it is held.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyMutex_Unlock(PyMutex *m)
+
+   Unlock mutex *m*. The mutex must be locked --- otherwise, the function will
+   issue a fatal error.
+
+   .. versionadded:: 3.13

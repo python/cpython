@@ -47,18 +47,12 @@ _Py_yield(void)
 #endif
 }
 
-void
-_PyMutex_LockSlow(PyMutex *m)
-{
-    _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
-}
-
 PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 {
-    uint8_t v = _Py_atomic_load_uint8_relaxed(&m->v);
+    uint8_t v = _Py_atomic_load_uint8_relaxed(&m->_bits);
     if ((v & _Py_LOCKED) == 0) {
-        if (_Py_atomic_compare_exchange_uint8(&m->v, &v, v|_Py_LOCKED)) {
+        if (_Py_atomic_compare_exchange_uint8(&m->_bits, &v, v|_Py_LOCKED)) {
             return PY_LOCK_ACQUIRED;
         }
     }
@@ -83,7 +77,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     for (;;) {
         if ((v & _Py_LOCKED) == 0) {
             // The lock is unlocked. Try to grab it.
-            if (_Py_atomic_compare_exchange_uint8(&m->v, &v, v|_Py_LOCKED)) {
+            if (_Py_atomic_compare_exchange_uint8(&m->_bits, &v, v|_Py_LOCKED)) {
                 return PY_LOCK_ACQUIRED;
             }
             continue;
@@ -104,17 +98,17 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         if (!(v & _Py_HAS_PARKED)) {
             // We are the first waiter. Set the _Py_HAS_PARKED flag.
             newv = v | _Py_HAS_PARKED;
-            if (!_Py_atomic_compare_exchange_uint8(&m->v, &v, newv)) {
+            if (!_Py_atomic_compare_exchange_uint8(&m->_bits, &v, newv)) {
                 continue;
             }
         }
 
-        int ret = _PyParkingLot_Park(&m->v, &newv, sizeof(newv), timeout,
+        int ret = _PyParkingLot_Park(&m->_bits, &newv, sizeof(newv), timeout,
                                      &entry, (flags & _PY_LOCK_DETACH) != 0);
         if (ret == Py_PARK_OK) {
             if (entry.handed_off) {
                 // We own the lock now.
-                assert(_Py_atomic_load_uint8_relaxed(&m->v) & _Py_LOCKED);
+                assert(_Py_atomic_load_uint8_relaxed(&m->_bits) & _Py_LOCKED);
                 return PY_LOCK_ACQUIRED;
             }
         }
@@ -136,7 +130,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             }
         }
 
-        v = _Py_atomic_load_uint8_relaxed(&m->v);
+        v = _Py_atomic_load_uint8_relaxed(&m->_bits);
     }
 }
 
@@ -158,13 +152,13 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
             v |= _Py_HAS_PARKED;
         }
     }
-    _Py_atomic_store_uint8(&m->v, v);
+    _Py_atomic_store_uint8(&m->_bits, v);
 }
 
 int
 _PyMutex_TryUnlock(PyMutex *m)
 {
-    uint8_t v = _Py_atomic_load_uint8(&m->v);
+    uint8_t v = _Py_atomic_load_uint8(&m->_bits);
     for (;;) {
         if ((v & _Py_LOCKED) == 0) {
             // error: the mutex is not locked
@@ -172,21 +166,13 @@ _PyMutex_TryUnlock(PyMutex *m)
         }
         else if ((v & _Py_HAS_PARKED)) {
             // wake up a single thread
-            _PyParkingLot_Unpark(&m->v, (_Py_unpark_fn_t *)mutex_unpark, m);
+            _PyParkingLot_Unpark(&m->_bits, (_Py_unpark_fn_t *)mutex_unpark, m);
             return 0;
         }
-        else if (_Py_atomic_compare_exchange_uint8(&m->v, &v, _Py_UNLOCKED)) {
+        else if (_Py_atomic_compare_exchange_uint8(&m->_bits, &v, _Py_UNLOCKED)) {
             // fast-path: no waiters
             return 0;
         }
-    }
-}
-
-void
-_PyMutex_UnlockSlow(PyMutex *m)
-{
-    if (_PyMutex_TryUnlock(m) < 0) {
-        Py_FatalError("unlocking mutex that is not locked");
     }
 }
 
@@ -583,4 +569,20 @@ uint32_t _PySeqLock_AfterFork(_PySeqLock *seqlock)
      }
 
      return 0;
+}
+
+#undef PyMutex_Lock
+void
+PyMutex_Lock(PyMutex *m)
+{
+    _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
+}
+
+#undef PyMutex_Unlock
+void
+PyMutex_Unlock(PyMutex *m)
+{
+    if (_PyMutex_TryUnlock(m) < 0) {
+        Py_FatalError("unlocking mutex that is not locked");
+    }
 }
