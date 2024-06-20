@@ -305,7 +305,7 @@ clear_interned_dict(PyInterpreterState *interp)
 }
 
 static PyStatus
-init_global_interned_strings(interp)
+init_global_interned_strings(PyInterpreterState *interp)
 {
     assert(INTERNED_STRINGS == NULL);
     _Py_hashtable_allocator_t hashtable_alloc = {PyMem_RawMalloc, PyMem_RawFree};
