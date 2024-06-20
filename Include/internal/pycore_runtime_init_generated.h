@@ -808,7 +808,6 @@ extern "C" {
     INIT_ID(autocommit), \
     INIT_ID(b), \
     INIT_ID(backread), \
-    INIT_ID(backreadinto), \
     INIT_ID(backtick), \
     INIT_ID(base), \
     INIT_ID(before), \
