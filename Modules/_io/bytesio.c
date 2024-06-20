@@ -101,6 +101,62 @@ scan_eol(bytesio *self, Py_ssize_t len)
     return len;
 }
 
+#ifdef HAVE_MEMRCHR
+# define RFIND_CHAR memrchr
+#else
+static inline void *
+RFIND_CHAR(const void *s, int c, size_t n)
+{
+    const unsigned char *sp = (const unsigned char *)s + n - 1;
+    while (n--) {
+        if (*sp == (unsigned char)c) {
+            return (void *)sp;
+        }
+        sp--;
+    }
+    return NULL;
+}
+#endif
+
+/* Internal routine to get a line from the buffer of a BytesIO
+   object in reverse order. Returns the offset between the current
+   position to the previous newline character.  Set 'found' to 1
+   if a newline character is found, '0' otherwise. */
+static Py_ssize_t
+backscan_eol_offset(bytesio *self, Py_ssize_t len, bool *found)
+{
+    if (found != NULL) {
+        *found = 0;
+    }
+    assert(self->buf != NULL);
+    Py_ssize_t rem = self->pos;  // remaining characters to scan on the left
+    if (rem <= 0) { // BOF
+        return 0;
+    }
+    if (len < 0 || len > rem) {
+        len = rem;
+    }
+    Py_ssize_t off = len;
+    if (len) {
+        assert(len <= rem);
+        const char *pos = PyBytes_AS_STRING(self->buf) + rem;
+        const char *loc = RFIND_CHAR(pos - len, '\n', len);
+        if (loc) {
+            // *** | xxx\nxxx |
+            //              ^-- pos
+            //       ^--------- pos - len
+            //          ^------ loc
+            // pos - off == '\n' => off = pos - loc
+            off = pos - loc;
+            if (found != NULL) {
+                *found = 1;
+            }
+        }
+    }
+    assert(0 <= off && off <= rem);
+    return off;
+}
+
 /* Internal routine for detaching the shared buffer of BytesIO objects.
    The caller should ensure that the 'size' argument is non-negative and
    not lesser than self->string_size.  Returns 0 on success, -1 otherwise. */
@@ -591,11 +647,23 @@ backread_bytes(bytesio *self, Py_ssize_t size /* 0 <= size <= self->pos */)
 {
     assert(self->buf != NULL);
     assert(0 <= size && size <= self->pos);
+    if (size == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
+    PyObject *res;
     const char *src = PyBytes_AS_STRING(self->buf) + self->pos - size;
-    char *out = malloc(size * sizeof(char));
-    reverse_buffer(out, src, size);
-    PyObject *res = PyBytes_FromStringAndSize(out, size);
-    free(out);
+
+    if (size == 1) {
+        // make a copy of the character (no reverse)
+        res = PyBytes_FromStringAndSize(src, 1);
+    }
+    else {
+        char *out = malloc(size * sizeof(char));
+        reverse_buffer(out, src, size);
+        res = PyBytes_FromStringAndSize(out, size);
+        free(out);
+    }
     self->pos -= size;
     return res;
 }
@@ -683,8 +751,51 @@ static PyObject *
 _io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
 /*[clinic end generated code: output=cf53cd21c22e0a4d input=2d74fa3d4ec83ed0]*/
 {
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
+    CHECK_CLOSED(self);
+
+    PyObject *res;
+    bool found = 0;
+    Py_ssize_t n = backscan_eol_offset(self, size, &found);
+    assert(0 <= n && n <= self->pos);
+
+    // fast path: BOF or on '\n'
+    if (n == 0) {
+        if (found) {
+            n = 1;
+            res = PyBytes_FromStringAndSize("\n", n);
+        }
+        else {
+            res = PyBytes_FromStringAndSize(NULL, n);
+        }
+        goto exit;
+    }
+
+    const char *head = PyBytes_AS_STRING(self->buf) + self->pos;
+    if (found && n > 1) {
+        // TODO(picnixz): check which of these is faster:
+        // * malloc() + memcpy()
+        // * PyBytes_FromStringAndSize() + concat "\n"
+        // * PyBytes_FromFormat() + "\n"
+        char *buf = malloc(n * sizeof(char));
+        // for backreadline(), the characters are kept in the forward order
+        // but they are read from the right (e.g., backreadline(3) on 'abcdef'
+        // givens 'def' instead of 'fed'. In addition, new lines are added on
+        // the right if they are found, e.g., backreadline(3) on '\nab' would
+        // return 'ab\n').
+        memcpy(buf, head - (n - 1), n);
+        // insert the new line at the end
+        buf[n - 1] = '\n';
+        res = PyBytes_FromStringAndSize(buf, n);
+        free(buf);
+    }
+    else {
+        // no need to allocate memory or create other objects
+        res = PyBytes_FromStringAndSize(head - n, n);
+    }
+exit:
+    assert(0 <= n && n <= self->pos);
+    self->pos -= n;
+    return res;
 }
 
 /*[clinic input]
