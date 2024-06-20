@@ -779,10 +779,10 @@ _io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
         char *buf = malloc(n * sizeof(char));
         // for backreadline(), the characters are kept in the forward order
         // but they are read from the right (e.g., backreadline(3) on 'abcdef'
-        // givens 'def' instead of 'fed'. In addition, new lines are added on
+        // gives 'def' instead of 'fed'. In addition, new lines are added on
         // the right if they are found, e.g., backreadline(3) on '\nab' would
         // return 'ab\n').
-        memcpy(buf, head - (n - 1), n);
+        memcpy(buf, head - (n - 1), n - 1);
         // insert the new line at the end
         buf[n - 1] = '\n';
         res = PyBytes_FromStringAndSize(buf, n);
