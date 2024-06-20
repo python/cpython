@@ -244,16 +244,26 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
-// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* Py_TYPE(PyObject *ob) {
-#ifdef Py_GIL_DISABLED
-    return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
+// Py_TYPE() implementation for the stable ABI
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+    // Stable ABI implements Py_TYPE() as a function call
+    // on limited C API version 3.14 and newer.
 #else
-    return ob->ob_type;
-#endif
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
+    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
+    {
+    #if defined(Py_GIL_DISABLED)
+        return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
+    #else
+        return ob->ob_type;
+    #endif
+    }
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
+    #else
+    #   define Py_TYPE(ob) _Py_TYPE(ob)
+    #endif
 #endif
 
 PyAPI_DATA(PyTypeObject) PyLong_Type;
@@ -556,7 +566,7 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Object has up-to-date type attribute cache */
+/* Unused. Legacy flag */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
