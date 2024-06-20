@@ -631,15 +631,6 @@ class SubprocessMixin:
         # the transport was not notified yet
         self.assertFalse(killed)
 
-        # Unlike SafeChildWatcher, FastChildWatcher does not pop the
-        # callbacks if waitpid() is called elsewhere. Let's clear them
-        # manually to avoid a warning when the watcher is detached.
-        if (sys.platform != 'win32' and
-                isinstance(self, SubprocessFastWatcherTests)):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.get_child_watcher()._callbacks.clear()
-
     async def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
