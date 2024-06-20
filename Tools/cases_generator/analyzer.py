@@ -359,7 +359,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLOSE",
     "PyStackRef_DUP",
     "PyStackRef_CLEAR",
-    "PyStackRef_SET",
     "PyStackRef_IsNull",
     "PyStackRef_TYPE",
     "PyStackRef_False",
@@ -426,6 +425,7 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_FatalError",
     "STACKREFS_TO_PYOBJECTS",
     "STACKREFS_TO_PYOBJECTS_CLEANUP",
+    "CONVERSION_FAILED",
     "_PyList_FromArraySteal",
     "_PyTuple_FromArraySteal",
 )
