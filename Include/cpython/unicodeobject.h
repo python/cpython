@@ -461,7 +461,7 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
     Py_ssize_t size);
 PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
     PyUnicodeWriter *writer,
-    wchar_t *str,
+    const wchar_t *str,
     Py_ssize_t size);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(

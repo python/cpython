@@ -1762,7 +1762,7 @@ unicode_write_widechar(int kind, void *data,
         break;
 
     case PyUnicode_2BYTE_KIND:
-#if Py_UNICODE_SIZE == 2
+#if SIZEOF_WCHAR_T == 2
         memcpy(data, u, size * 2);
 #else
         _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2, u, u + size, data);
@@ -1773,11 +1773,7 @@ unicode_write_widechar(int kind, void *data,
     {
 #if SIZEOF_WCHAR_T == 2
         // Convert a 16-bits wchar_t representation to UCS4, this will decode
-        // surrogate pairs, the other conversions are implemented as macros
-        // for efficiency.
-        //
-        // This code assumes that unicode can hold one more code point than
-        // wstr characters for a terminating null character.
+        // surrogate pairs.
         const wchar_t *end = u + size;
         Py_UCS4 *ucs4_out = (Py_UCS4*)data;
 #  ifndef NDEBUG
@@ -1871,7 +1867,7 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 
 int
 PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
-                              wchar_t *str,
+                              const wchar_t *str,
                               Py_ssize_t size)
 {
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
@@ -1901,8 +1897,6 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
     }
 #endif
 
-    /* If not empty and not single character, copy the Unicode data
-       into the new object */
     Py_UCS4 maxchar = 0;
     Py_ssize_t num_surrogates;
     if (find_maxchar_surrogates(str, str + size,
@@ -1910,8 +1904,7 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
         return -1;
     }
 
-    if (_PyUnicodeWriter_Prepare(writer, size - num_surrogates,
-                                 maxchar) < 0) {
+    if (_PyUnicodeWriter_Prepare(writer, size - num_surrogates, maxchar) < 0) {
         return -1;
     }
 

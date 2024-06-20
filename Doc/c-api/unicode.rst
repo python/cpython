@@ -1553,11 +1553,9 @@ object.
 
    See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
-.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, wchar_t *str, Py_ssize_t size)
+.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
    Writer the wide string *str* into *writer*.
-
-   *str* must not be ``NULL``.
 
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.
@@ -1609,7 +1607,7 @@ object.
    ``NULL``, use the strict error handler.
 
    If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
-   bytes on success. 
+   bytes on success.
    If *consumed* is ``NULL``, treat trailing incomplete UTF-8 byte sequences
    as an error.
 
