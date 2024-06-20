@@ -1934,10 +1934,9 @@ class FileIO(RawIOBase):
 
         For non-seekable files, this raises :exc:`UnsupportedOperation`.
         """
-        if not self._seekable:
-            raise UnsupportedOperation("non-seekable files cannot be read backwards")
         self._checkClosed()
         self._checkReadable()
+        self._checkSeekable()
         if size is None or size < 0:
             return self.backreadall()
         # equivalent to self.tell() but without the redundant
@@ -1969,10 +1968,9 @@ class FileIO(RawIOBase):
 
         For non-seekable files, this raises :exc:`UnsupportedOperation`.
         """
-        if not self._seekable:
-            raise UnsupportedOperation("non-seekable files cannot be read backwards")
         self._checkClosed()
         self._checkReadable()
+        self._checkSeekable()
         bufsize = DEFAULT_BUFFER_SIZE
 
         rem = os.lseek(self._fd, 0, SEEK_CUR)  # number of remaining bytes
