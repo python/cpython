@@ -250,7 +250,7 @@ class Class(SymbolTable):
                     match st.type:
                         case _symtable.TYPE_FUNCTION:
                             d[st.name] = 1
-                        case _symtable.TYPE_TYPE_PARAM:
+                        case _symtable.TYPE_TYPE_PARAMETERS:
                             # Get the function-def block in the annotation
                             # scope 'st' with the same identifier, if any.
                             scope_name = st.name
