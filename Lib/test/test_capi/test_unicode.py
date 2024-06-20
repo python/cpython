@@ -1784,8 +1784,24 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_widechar("latin1=\xE9")
         writer.write_widechar("-")
         writer.write_widechar("euro=\u20AC")
+        writer.write_char("-")
+        writer.write_ucs4("max=\U0010ffff", -1)
         writer.write_char('.')
-        self.assertEqual(writer.finish(), "latin1=\xE9-euro=\u20AC.")
+        self.assertEqual(writer.finish(),
+                         "latin1=\xE9-euro=\u20AC-max=\U0010ffff.")
+
+    def test_ucs4(self):
+        writer = self.create_writer(0)
+        writer.write_ucs4("ascii", -1)
+        writer.write_char("-")
+        writer.write_ucs4("latin1=\xe9", -1)
+        writer.write_char("-")
+        writer.write_ucs4("euro=\u20ac", -1)
+        writer.write_char("-")
+        writer.write_ucs4("max=\U0010ffff", -1)
+        writer.write_char(".")
+        self.assertEqual(writer.finish(),
+                         "ascii-latin1=\xE9-euro=\u20AC-max=\U0010ffff.")
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')

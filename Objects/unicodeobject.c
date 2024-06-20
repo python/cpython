@@ -2289,6 +2289,50 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     return res;
 }
 
+
+int
+PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
+                          Py_UCS4 *str,
+                          Py_ssize_t size)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
+
+    if (size < 0) {
+        size = 0;
+        for (; str[size] != '\0'; size++);
+    }
+
+    if (size == 0) {
+        return 0;
+    }
+
+    Py_UCS4 max_char = ucs4lib_find_max_char(str, str + size);
+
+    if (_PyUnicodeWriter_Prepare(writer, size, max_char) < 0) {
+        return -1;
+    }
+
+    int kind = writer->kind;
+    void *data = (Py_UCS1*)writer->data + writer->pos * kind;
+    if (kind == PyUnicode_1BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS1,
+                                 str, str + size,
+                                 data);
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS2,
+                                 str, str + size,
+                                 data);
+    }
+    else {
+        memcpy(data, str, size * sizeof(Py_UCS4));
+    }
+    writer->pos += size;
+
+    return 0;
+}
+
+
 PyObject*
 PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 {
