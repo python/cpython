@@ -778,6 +778,12 @@ static PyObject *
 _bufferedreader_read_generic(buffered *self, Py_ssize_t);
 static Py_ssize_t
 _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len);
+static PyObject *
+_bufferedreader_backread_all(buffered *self);
+static PyObject *
+_bufferedreader_backread_fast(buffered *self, Py_ssize_t);
+static PyObject *
+_bufferedreader_backread_generic(buffered *self, Py_ssize_t);
 
 /*
  * Helpers
@@ -1365,8 +1371,31 @@ static PyObject *
 _io__Buffered_backread_impl(buffered *self, Py_ssize_t n)
 /*[clinic end generated code: output=1d9419484778ae01 input=e0459b8a28c1bc41]*/
 {
-    PyErr_Format(PyExc_NotImplementedError, "TODO");
-    return NULL;
+    CHECK_INITIALIZED(self);
+    if (n < -1) {
+        PyErr_SetString(PyExc_ValueError, "backread length must be non-negative or -1");
+        return NULL;
+    }
+    CHECK_CLOSED(self, "read of closed file");
+    PyObject *res;
+    if (n == -1) {
+        if (!ENTER_BUFFERED(self)) {
+            return NULL;
+        }
+        res = _bufferedreader_backread_all(self);
+    }
+    else {
+        if ((res = _bufferedreader_backread_fast(self, n)) != Py_None) {
+            return res;
+        }
+        Py_DECREF(res);
+        if (!ENTER_BUFFERED(self)) {
+            return NULL;
+        }
+        res = _bufferedreader_backread_generic(self, n);
+    }
+    LEAVE_BUFFERED(self);
+    return res;
 }
 
 /*[clinic input]
@@ -1990,6 +2019,27 @@ _bufferedreader_peek_unlocked(buffered *self)
     return PyBytes_FromStringAndSize(self->buffer, r);
 }
 
+static PyObject *
+_bufferedreader_backread_all(buffered *self)
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+static PyObject *
+_bufferedreader_backread_fast(buffered *self, Py_ssize_t n)
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
+static PyObject *
+_bufferedreader_backread_generic(buffered *self, Py_ssize_t n)
+{
+    PyErr_Format(PyExc_NotImplementedError, "TODO");
+    return NULL;
+}
+
 
 /*
  * class BufferedWriter
@@ -2467,6 +2517,12 @@ bufferedrwpair_write(rwpair *self, PyObject *args)
 }
 
 static PyObject *
+bufferedrwpair_seek(rwpair *self, PyObject *args)
+{
+    return _forward_call(self->reader, &_Py_ID(seek), args);
+}
+
+static PyObject *
 bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
@@ -2742,6 +2798,7 @@ PyType_Spec bufferedwriter_spec = {
 
 static PyMethodDef bufferedrwpair_methods[] = {
     {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
+    {"seek", (PyCFunction)bufferedrwpair_seek, METH_VARARGS},
     {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
     {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
     {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
