@@ -2028,7 +2028,9 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_ONLY:
                 # If positional-only parameter is bound by partial,
                 # it effectively disappears from the signature
-                new_params.pop(param_name)
+                # However, if it is a Placeholder it is not removed
+                if arg_value != functools.Placeholder:
+                    new_params.pop(param_name)
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
@@ -2050,7 +2052,9 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     new_params[param_name] = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    new_params.pop(param.name)
+                    # But do not remove if it is a Placeholder
+                    if arg_value != functools.Placeholder:
+                        new_params.pop(param.name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
