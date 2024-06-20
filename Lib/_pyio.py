@@ -1951,14 +1951,6 @@ class FileIO(RawIOBase):
             return None
         return res[::-1]
 
-    def backreadinto(self, b):
-        """Same as RawIOBase.backreadinto()."""
-        m = memoryview(b).cast('B')
-        data = self.backread(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
-
     def backreadall(self):
         """Read backwards all data from the file, returned as bytes.
 
@@ -1995,6 +1987,14 @@ class FileIO(RawIOBase):
                 bufsize = len(result)
                 bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
         return bytes(result)
+
+    def backreadinto(self, b):
+        """Same as RawIOBase.backreadinto()."""
+        m = memoryview(b).cast('B')
+        data = self.backread(len(m))
+        n = len(data)
+        m[:n] = data
+        return n
 
     def write(self, b):
         """Write bytes b to file, return number written.
