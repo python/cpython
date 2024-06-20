@@ -15344,8 +15344,9 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Look in the global cache now. */
     {
         PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
-        if (r != NULL && r != s) {
+        if (r != NULL) {
             assert(_Py_IsImmortal(r));
+            assert(r != s);  // r must be statically_allocated; s is not
             Py_DECREF(s);
             return Py_NewRef(r);
         }
