@@ -2868,24 +2868,68 @@ through the object's keys; for sequences, it should iterate through the values.
       a[slice(1, 2, None)] = b
 
    and so forth.  Missing slice items are always filled in with ``None``.
+   Key can be a tuple, and a calls like ::
+
+      a[0,] = b
+      a[1:2, 3:5] = b
+
+   are translated into:. ::
+
+      a[(0,)] = b
+      a[(slice(1, 2, None), slice(3, 5, None)] = b
 
 
 .. method:: object.__getitem__(self, key)
 
-   Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
-   the accepted keys should be integers. Optionally, they may support
-   :class:`slice` objects as well.  Negative index support is also optional.
-   If *key* is
-   of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
-   outside the set of indexes for the sequence (after any special
-   interpretation of negative values), :exc:`IndexError` should be raised. For
-   :term:`mapping` types, if *key* is missing (not in the container),
-   :exc:`KeyError` should be raised.
+   Called to implement evaluation of ``self[key]``. There are 3 supported
+   duck types: :term:`sequence` types, :term:`mapping` types, and any type
+   with custom behaviour on indexing. Syntax doesn't perform any checks,
+   so it is this method responsibility to raise :exc:`TypeError` on keys of
+   improper type.
+
+   First, there is expected behaviour for :term:`sequence` types:.
+   Minimal requirement for :func:`iter` to work (without existing
+   :meth:`__iter__` method) is that, ``__getitem__`` needs to accept
+   integers from 0 up to the index, on which :exc:`IndexError` is raised,
+   stoping the iteration. :func:`reversed` will also call ``len(self)`` and
+   request only items at non-negative keys. However, if class passes as
+   :class:`collections.abc.Sequence`, ``__getitem__`` should also:.
+   1. Accept negative integer keys, for indexing from the end of the sequence.
+   2. For all integer keys outside of bounds ``-len(self) <= key < len(self)``,
+      raise :exc:`TypeError`.
+   3. For non-integer key that supports :func:`operator.index`, use that
+      index as integer key.
+   4. Fully support slicing. If possible, it should return the same type,
+      if not, it should return a similar type. Meaning, ``self[::]`` should
+      create shallow copy.
+
+   Second, there is expected behaviour for :term:`mapping` types:.
+   ``__getitem__`` should return element for given *key*, if *key* is missing
+   (not in the container), :exc:`KeyError` should be raised.
+
+   Lastly, here is an example of possible implementation for ``Matrix``,
+   that is also a ``Sequence[Sequence]``:. ::
+
+      def __getitem__(self, key):
+          if getattr(key, '__index__', None) is not None:
+              return self._rows_list[key]
+          if isinstance(key, slice):
+              return Matrix(self._rows_list[key])
+          try:
+              [key1, key2] = key
+          except ValueError as error:
+              raise TypeError from error
+          if isinstance(key1, slice):
+              indices = range(*key1.indices(len(self._rows_list)))
+              if isinstance(key2, slice):
+                  return Matrix([self._rows_list[i][key2] for i in indices])
+              return [self._rows_list[i][key2] for i in indices] #sliced column
+          return self._rows_list[key1][key2] #element or sliced row
 
    .. note::
 
-      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for
-      illegal indexes to allow proper detection of the end of the sequence.
+      It is possible to have an object, that is both :term:`sequence` and
+      :term:`mapping`.
 
    .. note::
 
@@ -2915,8 +2959,8 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__missing__(self, key)
 
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]``,
+   for dict subclasses, when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)
@@ -2926,6 +2970,16 @@ through the object's keys; for sequences, it should iterate through the values.
    objects in the container.  For mappings, it should iterate over the keys of
    the container.
 
+   If the :meth:`__iter__` method is missing, meaning the attribute is missing
+   (set to :const:`None` is not considered missing), the :func:`iter` built-in
+   will fall back to using the sequence :meth:`__getitem__`. Objects that support
+   the sequence protocol should only provide :meth:`__reversed__`, if they can
+   provide an implementation, that is more efficient than the one provided by
+   :func:`reversed`. If not, they should copy the implementation from ABC-s
+   (to support them), by being a child, or by explicit assignment:. ::
+
+      __iter__ = collections.abc.Sequence.__iter__
+
 
 .. method:: object.__reversed__(self)
 
@@ -2933,11 +2987,16 @@ through the object's keys; for sequences, it should iterate through the values.
    reverse iteration.  It should return a new iterator object that iterates
    over all the objects in the container in reverse order.
 
-   If the :meth:`__reversed__` method is not provided, the :func:`reversed`
+   If the :meth:`__reversed__` method is missing, meaning the attribute is missing
+   (set to :const:`None` is not considered missing), the :func:`reversed`
    built-in will fall back to using the sequence protocol (:meth:`__len__` and
    :meth:`__getitem__`).  Objects that support the sequence protocol should
-   only provide :meth:`__reversed__` if they can provide an implementation
+   only provide :meth:`__reversed__`, if they can provide an implementation,
    that is more efficient than the one provided by :func:`reversed`.
+   If not, they should copy the implementation from ABC-s (to support them),
+   by being a child, or by explicit assignment:. ::
+
+      __reversed__ = collections.abc.Sequence.__reversed__
 
 
 The membership test operators (:keyword:`in` and :keyword:`not in`) are normally
