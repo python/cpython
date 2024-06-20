@@ -1372,7 +1372,7 @@ class BufferedReader(_BufferedIOMixin):
             while True:
                 # Read until BOF or until backread() would block.
                 chunk = self.raw.backread()
-                if chunk in empty_values:
+                if chunk in empty_vals:
                     nodata_val = chunk
                     break
                 chunks.append(chunk)
@@ -1383,7 +1383,10 @@ class BufferedReader(_BufferedIOMixin):
         # If so, we could just return the cached buffer but this requires
         # a call to peek(). For now, we will not implement that approach
         # and simply reset the cache and move the cursor to the end.
-        self.seek(0, SEEK_END)
+
+        # cannot use seek() since the read lock is
+        # acquired and it is not a re-entrant lock
+        self._seek_unlocked(0, SEEK_END)
 
         # Split the data into chunks from the right and read
         # them one by one, until encountering BOF or after 'n'
@@ -1392,8 +1395,8 @@ class BufferedReader(_BufferedIOMixin):
         count = 0
         chunk_size = min(self.buffer_size, n)
         while count < n:
-            chunk = self.raw.backward(chunk_size)
-            if chunk in empty_values:
+            chunk = self.raw.backread(chunk_size)
+            if chunk in empty_vals:
                 # We read everything in backward order and we could have cached
                 # the reversed result to speed-up future calls to forward reads
                 # but backread() is mostly used to reduce the memory complexity
@@ -1416,11 +1419,14 @@ class BufferedReader(_BufferedIOMixin):
             raise ValueError("invalid whence value")
         self._checkClosed("seek of closed file")
         with self._read_lock:
-            if whence == 1:
-                pos -= len(self._read_buf) - self._read_pos
-            pos = _BufferedIOMixin.seek(self, pos, whence)
-            self._reset_read_buf()
-            return pos
+            return self._seek_unlocked(pos, whence)
+
+    def _seek_unlocked(self, pos, whence=0):
+        if whence == 1:
+            pos -= len(self._read_buf) - self._read_pos
+        pos = _BufferedIOMixin.seek(self, pos, whence)
+        self._reset_read_buf()
+        return pos
 
 class BufferedWriter(_BufferedIOMixin):
 
