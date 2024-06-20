@@ -1409,6 +1409,8 @@ static PyObject *
 _io__Buffered_backreadinto_impl(buffered *self, Py_buffer *buffer)
 /*[clinic end generated code: output=740fec02a2357570 input=d596047fa0898560]*/
 {
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
 }
@@ -1424,6 +1426,8 @@ static PyObject *
 _io__Buffered_backreadline_impl(buffered *self, Py_ssize_t size)
 /*[clinic end generated code: output=dab0e1127f375a53 input=bfaa97db6dc41727]*/
 {
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
 }
@@ -2022,6 +2026,8 @@ _bufferedreader_peek_unlocked(buffered *self)
 static PyObject *
 _bufferedreader_backread_all(buffered *self)
 {
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
 }
@@ -2029,6 +2035,8 @@ _bufferedreader_backread_all(buffered *self)
 static PyObject *
 _bufferedreader_backread_fast(buffered *self, Py_ssize_t n)
 {
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
 }
@@ -2036,6 +2044,8 @@ _bufferedreader_backread_fast(buffered *self, Py_ssize_t n)
 static PyObject *
 _bufferedreader_backread_generic(buffered *self, Py_ssize_t n)
 {
+    // TODO(picnixz): this implementation will be shared with BufferedRandom,
+    // so don't forget to handle the case when the object is writable!
     PyErr_Format(PyExc_NotImplementedError, "TODO");
     return NULL;
 }
