@@ -11,7 +11,7 @@ import sys
 
 glob = 42
 some_var = 12
-some_non_assigned_global_var = 11
+some_non_assigned_global_var: int
 some_assigned_global_var = 11
 
 class Mine:
@@ -51,6 +51,120 @@ class GenericMine[T: int]:
     pass
 """
 
+TEST_COMPLEX_CLASS_CODE = """
+# The following symbols are defined in ComplexClass
+# without being introduced by a 'global' statement.
+glob_unassigned_meth: Any
+glob_unassigned_meth_pep_695: Any
+
+glob_unassigned_async_meth: Any
+glob_unassigned_async_meth_pep_695: Any
+
+def glob_assigned_meth(): pass
+def glob_assigned_meth_pep_695[T](): pass
+
+async def glob_assigned_async_meth(): pass
+async def glob_assigned_async_meth_pep_695[T](): pass
+
+# The following symbols are defined in ComplexClass after
+# being introduced by a 'global' statement (and therefore
+# are not considered as local symbols of ComplexClass).
+glob_unassigned_meth_ignore: Any
+glob_unassigned_meth_pep_695_ignore: Any
+
+glob_unassigned_async_meth_ignore: Any
+glob_unassigned_async_meth_pep_695_ignore: Any
+
+def glob_assigned_meth_ignore(): pass
+def glob_assigned_meth_pep_695_ignore[T](): pass
+
+async def glob_assigned_async_meth_ignore(): pass
+async def glob_assigned_async_meth_pep_695_ignore[T](): pass
+
+class ComplexClass:
+    a_var = 1234
+    a_genexpr = (x for x in [])
+    a_lambda = lambda x: x
+
+    type a_type_alias = int
+    type a_type_alias_pep_695[T] = list[T]
+
+    class a_class: pass
+    class a_class_pep_695[T]: pass
+
+    def a_method(self): pass
+    def a_method_pep_695[T](self): pass
+
+    async def an_async_method(self): pass
+    async def an_async_method_pep_695[T](self): pass
+
+    @classmethod
+    def a_classmethod(cls): pass
+    @classmethod
+    def a_classmethod_pep_695[T](self): pass
+
+    @classmethod
+    async def an_async_classmethod(cls): pass
+    @classmethod
+    async def an_async_classmethod_pep_695[T](self): pass
+
+    @staticmethod
+    def a_staticmethod(): pass
+    @staticmethod
+    def a_staticmethod_pep_695[T](self): pass
+
+    @staticmethod
+    async def an_async_staticmethod(): pass
+    @staticmethod
+    async def an_async_staticmethod_pep_695[T](self): pass
+
+    # These ones will be considered as methods because of the 'def' although
+    # they are *not* valid methods at runtime since they are not decorated
+    # with @staticmethod.
+    def a_fakemethod(): pass
+    def a_fakemethod_pep_695[T](): pass
+
+    async def an_async_fakemethod(): pass
+    async def an_async_fakemethod_pep_695[T](): pass
+
+    # Check that those are still considered as methods
+    # since they are not using the 'global' keyword.
+    def glob_unassigned_meth(): pass
+    def glob_unassigned_meth_pep_695[T](): pass
+
+    async def glob_unassigned_async_meth(): pass
+    async def glob_unassigned_async_meth_pep_695[T](): pass
+
+    def glob_assigned_meth(): pass
+    def glob_assigned_meth_pep_695[T](): pass
+
+    async def glob_assigned_async_meth(): pass
+    async def glob_assigned_async_meth_pep_695[T](): pass
+
+    # The following are not picked as local symbols because they are not
+    # visible by the class at runtime (this is equivalent to having the
+    # definitions outside of the class).
+    global glob_unassigned_meth_ignore
+    def glob_unassigned_meth_ignore(): pass
+    global glob_unassigned_meth_pep_695_ignore
+    def glob_unassigned_meth_pep_695_ignore[T](): pass
+
+    global glob_unassigned_async_meth_ignore
+    async def glob_unassigned_async_meth_ignore(): pass
+    global glob_unassigned_async_meth_pep_695_ignore
+    async def glob_unassigned_async_meth_pep_695_ignore[T](): pass
+
+    global glob_assigned_meth_ignore
+    def glob_assigned_meth_ignore(): pass
+    global glob_assigned_meth_pep_695_ignore
+    def glob_assigned_meth_pep_695_ignore[T](): pass
+
+    global glob_assigned_async_meth_ignore
+    async def glob_assigned_async_meth_ignore(): pass
+    global glob_assigned_async_meth_pep_695_ignore
+    async def glob_assigned_async_meth_pep_695_ignore[T](): pass
+"""
+
 
 def find_block(block, name):
     for ch in block.get_children():
@@ -63,6 +177,7 @@ class SymtableTest(unittest.TestCase):
     top = symtable.symtable(TEST_CODE, "?", "exec")
     # These correspond to scopes in TEST_CODE
     Mine = find_block(top, "Mine")
+
     a_method = find_block(Mine, "a_method")
     spam = find_block(top, "spam")
     internal = find_block(spam, "internal")
@@ -237,6 +352,24 @@ class SymtableTest(unittest.TestCase):
 
     def test_class_info(self):
         self.assertEqual(self.Mine.get_methods(), ('a_method',))
+
+        top = symtable.symtable(TEST_COMPLEX_CLASS_CODE, "?", "exec")
+        this = find_block(top, "ComplexClass")
+
+        self.assertEqual(this.get_methods(), (
+            'a_method', 'a_method_pep_695',
+            'an_async_method', 'an_async_method_pep_695',
+            'a_classmethod', 'a_classmethod_pep_695',
+            'an_async_classmethod', 'an_async_classmethod_pep_695',
+            'a_staticmethod', 'a_staticmethod_pep_695',
+            'an_async_staticmethod', 'an_async_staticmethod_pep_695',
+            'a_fakemethod', 'a_fakemethod_pep_695',
+            'an_async_fakemethod', 'an_async_fakemethod_pep_695',
+            'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
+            'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
+            'glob_assigned_meth', 'glob_assigned_meth_pep_695',
+            'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
+        ))
 
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
