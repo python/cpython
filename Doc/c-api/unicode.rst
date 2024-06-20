@@ -1557,6 +1557,8 @@ object.
 
    Writer the wide string *str* into *writer*.
 
+   *str* must not be ``NULL``.
+
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.
 
