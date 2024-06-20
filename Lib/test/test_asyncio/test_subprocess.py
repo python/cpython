@@ -908,26 +908,6 @@ if sys.platform != 'win32':
         def _get_watcher(self):
             return unix_events.ThreadedChildWatcher()
 
-    class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        def _get_watcher(self):
-            with self.assertWarns(DeprecationWarning):
-                return unix_events.SafeChildWatcher()
-
-    class MultiLoopChildWatcherTests(test_utils.TestCase):
-
-        def test_warns(self):
-            with self.assertWarns(DeprecationWarning):
-                unix_events.MultiLoopChildWatcher()
-
-    class SubprocessFastWatcherTests(SubprocessWatcherMixin,
-                                     test_utils.TestCase):
-
-        def _get_watcher(self):
-            with self.assertWarns(DeprecationWarning):
-                return unix_events.FastChildWatcher()
-
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
         "operating system does not support pidfds",
