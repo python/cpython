@@ -1,20 +1,44 @@
+import io
 import itertools
 import os
 import rlcompleter
-import unittest
-from unittest import TestCase
+import select
+import subprocess
+import sys
+from unittest import TestCase, skipUnless
+from unittest.mock import patch
+from test.support import force_not_colorized
+from test.support import SHORT_TIMEOUT
 
-from .support import FakeConsole, handle_all_events, handle_events_narrow_console, multiline_input, code_to_events
+from .support import (
+    FakeConsole,
+    handle_all_events,
+    handle_events_narrow_console,
+    more_lines,
+    multiline_input,
+    code_to_events,
+)
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import multiline_input as readline_multiline_input
 
+try:
+    import pty
+except ImportError:
+    pty = None
 
 class TestCursorPosition(TestCase):
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
     def test_up_arrow_simple(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  ...\n'
+            "def f():\n"
+            "  ...\n"
         )
         # fmt: on
         events = itertools.chain(
@@ -31,8 +55,8 @@ class TestCursorPosition(TestCase):
     def test_down_arrow_end_of_input(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  ...\n'
+            "def f():\n"
+            "  ...\n"
         )
         # fmt: on
         events = itertools.chain(
@@ -298,6 +322,158 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.cxy, (1, 1))
 
 
+class TestPyReplAutoindent(TestCase):
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_auto_indent_default(self):
+        # fmt: off
+        input_code = (
+            "def f():\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+    def test_auto_indent_continuation(self):
+        # auto indenting according to previous user indentation
+        # fmt: off
+        events = itertools.chain(
+            code_to_events("def f():\n"),
+            # add backspace to delete default auto-indent
+            [
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events(
+                "  pass\n"
+                  "pass\n\n"
+            ),
+        )
+
+        output_code = (
+            "def f():\n"
+            "  pass\n"
+            "  pass\n"
+            "  "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_prev_block(self):
+        # auto indenting according to indentation in different block
+        # fmt: off
+        events = itertools.chain(
+            code_to_events("def f():\n"),
+            # add backspace to delete default auto-indent
+            [
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events(
+                "  pass\n"
+                "pass\n\n"
+            ),
+            code_to_events(
+                "def g():\n"
+                  "pass\n\n"
+            ),
+        )
+
+        output_code = (
+            "def g():\n"
+            "  pass\n"
+            "  "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output1 = multiline_input(reader)
+        output2 = multiline_input(reader)
+        self.assertEqual(output2, output_code)
+
+    def test_auto_indent_multiline(self):
+        # fmt: off
+        events = itertools.chain(
+            code_to_events(
+                "def f():\n"
+                    "pass"
+            ),
+            [
+                # go to the end of the first line
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # new line should be autoindented
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+            code_to_events(
+                "pass"
+            ),
+            [
+                # go to end of last line
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # double newline to terminate the block
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        output_code = (
+            "def f():\n"
+            "    pass\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_with_comment(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():  # foo\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():  # foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_ignore_comments(self):
+        # fmt: off
+        events = code_to_events(
+            "pass  #:\n"
+        )
+
+        output_code = (
+            "pass  #:"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+
 class TestPyReplOutput(TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
@@ -313,27 +489,34 @@ class TestPyReplOutput(TestCase):
 
     def test_multiline_edit(self):
         events = itertools.chain(
-            code_to_events("def f():\n  ...\n\n"),
+            code_to_events("def f():\n...\n\n"),
             [
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="right", raw=bytearray(b"\x1bOC")),
-                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
                 Event(evt="key", data="g", raw=bytearray(b"g")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
-                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
+                Event(evt="key", data="delete", raw=bytearray(b"\x7F")),
+                Event(evt="key", data="right", raw=bytearray(b"g")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x08")),
+                Event(evt="key", data="p", raw=bytearray(b"p")),
+                Event(evt="key", data="a", raw=bytearray(b"a")),
+                Event(evt="key", data="s", raw=bytearray(b"s")),
+                Event(evt="key", data="s", raw=bytearray(b"s")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
         reader = self.prepare_reader(events)
 
         output = multiline_input(reader)
-        self.assertEqual(output, "def f():\n  ...\n  ")
+        self.assertEqual(output, "def f():\n    ...\n    ")
         output = multiline_input(reader)
-        self.assertEqual(output, "def g():\n  ...\n  ")
+        self.assertEqual(output, "def g():\n    pass\n    ")
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -413,14 +596,15 @@ class TestPyReplCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
+    @patch("rlcompleter._readline_available", False)
     def test_simple_completion(self):
-        events = code_to_events("os.geten\t\n")
+        events = code_to_events("os.getpid\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.getenv")
+        self.assertEqual(output, "os.getpid()")
 
     def test_completion_with_many_options(self):
         # Test with something that initially displays many options
@@ -475,6 +659,26 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "os.")
 
+    @patch("_pyrepl.readline._ReadlineWrapper.get_reader")
+    @patch("sys.stderr", new_callable=io.StringIO)
+    def test_completion_with_warnings(self, mock_stderr, mock_get_reader):
+        class Dummy:
+            @property
+            def test_func(self):
+                import warnings
+
+                warnings.warn("warnings\n")
+                return None
+
+        dummy = Dummy()
+        events = code_to_events("dummy.test_func.\t\n\n")
+        namespace = {"dummy": dummy}
+        reader = self.prepare_reader(events, namespace)
+        mock_get_reader.return_value = reader
+        output = readline_multiline_input(more_lines, ">>>", "...")
+        self.assertEqual(output, "dummy.test_func.__")
+        self.assertEqual(mock_stderr.getvalue(), "")
+
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
@@ -486,12 +690,12 @@ class TestPasteEvent(TestCase):
     def test_paste(self):
         # fmt: off
         code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "    else:\n"
+            "      pass\n"
         )
         # fmt: on
 
@@ -512,10 +716,10 @@ class TestPasteEvent(TestCase):
     def test_paste_mid_newlines(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  x = y\n'
-            '  \n'
-            '  y = z\n'
+            "def f():\n"
+            "  x = y\n"
+            "  \n"
+            "  y = z\n"
         )
         # fmt: on
 
@@ -536,16 +740,16 @@ class TestPasteEvent(TestCase):
     def test_paste_mid_newlines_not_in_paste_mode(self):
         # fmt: off
         code = (
-            'def f():\n'
-            '  x = y\n'
-            '  \n'
-            '  y = z\n\n'
+            "def f():\n"
+                "x = y\n"
+                "\n"
+                "y = z\n\n"
         )
 
         expected = (
-            'def f():\n'
-            '  x = y\n'
-            '    '
+            "def f():\n"
+            "    x = y\n"
+            "    "
         )
         # fmt: on
 
@@ -557,20 +761,20 @@ class TestPasteEvent(TestCase):
     def test_paste_not_in_paste_mode(self):
         # fmt: off
         input_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '    else:\n'
-            '      pass\n\n'
+            "def a():\n"
+                "for x in range(10):\n"
+                    "if x%2:\n"
+                        "print(x)\n"
+                    "else:\n"
+                        "pass\n\n"
         )
 
         output_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '      if x%2:\n'
-            '            print(x)\n'
-            '                else:'
+            "def a():\n"
+            "    for x in range(10):\n"
+            "        if x%2:\n"
+            "            print(x)\n"
+            "            else:"
         )
         # fmt: on
 
@@ -583,25 +787,25 @@ class TestPasteEvent(TestCase):
         """Test that bracketed paste using \x1b[200~ and \x1b[201~ works."""
         # fmt: off
         input_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "\n"
+            "    else:\n"
+            "      pass\n"
         )
 
         output_code = (
-            'def a():\n'
-            '  for x in range(10):\n'
-            '\n'
-            '    if x%2:\n'
-            '      print(x)\n'
-            '\n'
-            '    else:\n'
-            '      pass\n'
+            "def a():\n"
+            "  for x in range(10):\n"
+            "\n"
+            "    if x%2:\n"
+            "      print(x)\n"
+            "\n"
+            "    else:\n"
+            "      pass\n"
         )
         # fmt: on
 
@@ -635,5 +839,56 @@ class TestPasteEvent(TestCase):
         self.assertEqual(output, input_code)
 
 
-if __name__ == "__main__":
-    unittest.main()
+@skipUnless(pty, "requires pty")
+class TestMain(TestCase):
+    @force_not_colorized
+    def test_exposed_globals_in_repl(self):
+        expected_output = (
+            "[\'__annotations__\', \'__builtins__\', \'__doc__\', \'__loader__\', "
+            "\'__name__\', \'__package__\', \'__spec__\']"
+        )
+        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn(expected_output, output)
+
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+        master_fd, slave_fd = pty.openpty()
+        process = subprocess.Popen(
+            [sys.executable, "-i", "-u"],
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+       )
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], 0.5)[0]:
+            data = os.read(master_fd, 1024).decode("utf-8")
+            if not data:
+                break
+            output.append(data)
+
+        os.close(master_fd)
+        os.close(slave_fd)
+        try:
+            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            exit_code = process.wait()
+        return "\n".join(output), exit_code

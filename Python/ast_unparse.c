@@ -79,7 +79,7 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
+    if ((PyFloat_CheckExact(obj) && isinf(PyFloat_AS_DOUBLE(obj))) ||
        PyComplex_CheckExact(obj))
     {
         PyInterpreterState *interp = _PyInterpreterState_GET();

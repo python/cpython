@@ -27,7 +27,7 @@ struct _PyCriticalSection {
     uintptr_t prev;
 
     // Mutex used to protect critical section
-    struct _PyMutex *mutex;
+    PyMutex *mutex;
 };
 
 // (private) A critical section protected by two mutexes. Use
@@ -35,7 +35,7 @@ struct _PyCriticalSection {
 struct _PyCriticalSection2 {
     struct _PyCriticalSection base;
 
-    struct _PyMutex *mutex2;
+    PyMutex *mutex2;
 };
 
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \

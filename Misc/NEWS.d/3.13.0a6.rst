@@ -913,7 +913,7 @@ call.
 .. nonce: IMLi6K
 .. section: Documentation
 
-Remove compatibilty references to Emscripten.
+Remove compatibility references to Emscripten.
 
 ..
 

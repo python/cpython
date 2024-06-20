@@ -560,7 +560,7 @@ versions prior to 3.11
 .. nonce: 9lmTCC
 .. section: Core and Builtins
 
-Remove two cases of undefined behavoir, by adding NULL checks.
+Remove two cases of undefined behavior, by adding NULL checks.
 
 ..
 
@@ -2591,7 +2591,7 @@ Update bundled pip to 22.2.2.
 
 Fix :class:`asyncio.TaskGroup` to propagate exception when
 :exc:`asyncio.CancelledError` was replaced with another exception by a
-context manger. Patch by Kumar Aditya and Guido van Rossum.
+context manager. Patch by Kumar Aditya and Guido van Rossum.
 
 ..
 
@@ -4476,7 +4476,7 @@ they are deprecated. Contributed by C.A.M. Gerlach.
 .. nonce: we7AFm
 .. section: Documentation
 
-Replaced incorrectly written true/false values in documentiation. Patch by
+Replaced incorrectly written true/false values in documentation. Patch by
 Robert O'Shea
 
 ..

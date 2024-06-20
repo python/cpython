@@ -70,7 +70,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
-        import sched
+        import sched  # noqa: F401
         self.assertIn("sched", sys.modules)
         import_helper.unload("sched")
         self.assertNotIn("sched", sys.modules)

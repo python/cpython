@@ -4,8 +4,6 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
@@ -14,7 +12,6 @@ from analyzer import (
     Part,
     analyze_files,
     Skip,
-    StackItem,
     analysis_error,
 )
 from generators_common import (
@@ -24,9 +21,8 @@ from generators_common import (
     emit_tokens,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
-from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from typing import TextIO
+from stack import Stack, SizeMismatch
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"

@@ -94,7 +94,7 @@ class InteractiveInterpreter:
         except:
             self.showtraceback()
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Display the syntax error that just occurred.
 
         This doesn't display a stack trace because there isn't one.
@@ -106,6 +106,7 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
+        colorize = kwargs.pop('colorize', False)
         type, value, tb = sys.exc_info()
         sys.last_exc = value
         sys.last_type = type
@@ -123,7 +124,7 @@ class InteractiveInterpreter:
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value)
+            lines = traceback.format_exception_only(type, value, colorize=colorize)
             self.write(''.join(lines))
         else:
             # If someone has set sys.excepthook, we let that take precedence
@@ -354,7 +355,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
         console.raw_input = readfunc
     else:
         try:
-            import readline
+            import readline  # noqa: F401
         except ImportError:
             pass
     console.interact(banner, exitmsg)

@@ -131,11 +131,10 @@ extern int _PyEval_ThreadsInitialized(void);
 extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-// Acquire the GIL and return 1. In free-threaded builds, this function may
-// return 0 to indicate that the GIL was disabled and therefore not acquired.
-extern int _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
 
-extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
+                                int final_release);
 
 #ifdef Py_GIL_DISABLED
 // Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or
@@ -146,7 +145,8 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
 static inline int
 _PyEval_IsGILEnabled(PyThreadState *tstate)
 {
-    return tstate->interp->ceval.gil->enabled != 0;
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    return _Py_atomic_load_int_relaxed(&gil->enabled) != 0;
 }
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which
@@ -244,6 +244,13 @@ typedef PyObject *(*conversion_func)(PyObject *);
 
 PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
 PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
+
+typedef struct _special_method {
+    PyObject *name;
+    const char *error;
+} _Py_SpecialMethod;
+
+PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
