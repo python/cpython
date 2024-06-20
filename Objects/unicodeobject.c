@@ -2891,31 +2891,31 @@ unicode_from_format(_PyUnicodeWriter *writer, const char *format, va_list vargs)
                 goto fail;
         }
         else {
-            const char *p;
+            const char *p = strchr(f, '%');
             Py_ssize_t len;
-
-            p = f;
-            do
-            {
-                if ((unsigned char)*p > 127) {
-                    PyErr_Format(PyExc_ValueError,
-                        "PyUnicode_FromFormatV() expects an ASCII-encoded format "
-                        "string, got a non-ASCII byte: 0x%02x",
-                        (unsigned char)*p);
-                    goto fail;
-                }
-                p++;
+            if (p != NULL) {
+                len = p - f;
             }
-            while (*p != '\0' && *p != '%');
-            len = p - f;
-
-            if (*p == '\0')
+            else {
+                len = strlen(f);
                 writer->overallocate = 0;
+            }
 
-            if (_PyUnicodeWriter_WriteASCIIString(writer, f, len) < 0)
+            int is_ascii = (ucs1lib_find_max_char((Py_UCS1*)f, (Py_UCS1*)f + len) < 128);
+            if (!is_ascii) {
+                Py_ssize_t i;
+                for (i=0; i < len && (unsigned char)f[i] <= 127; i++);
+                PyErr_Format(PyExc_ValueError,
+                    "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+                    "string, got a non-ASCII byte: 0x%02x",
+                    (unsigned char)f[i]);
                 goto fail;
+            }
 
-            f = p;
+            if (_PyUnicodeWriter_WriteASCIIString(writer, f, len) < 0) {
+                goto fail;
+            }
+            f += len;
         }
     }
     va_end(vargs2);
