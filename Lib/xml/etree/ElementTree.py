@@ -880,7 +880,6 @@ def _namespaces(elem, default_namespace=None):
         del namespaces["http://www.w3.org/XML/1998/namespace"]
     return qnames, namespaces
 
-
 def _serialize_xml(write, elem, qnames, namespaces,
                    short_empty_elements, **kwargs):
     tag = elem.tag
