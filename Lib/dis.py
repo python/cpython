@@ -14,11 +14,12 @@ from opcode import (
     _common_constants,
     _intrinsic_1_descs,
     _intrinsic_2_descs,
+    _special_method_names,
     _specializations,
     _specialized_opmap,
 )
 
-from _opcode import get_executor, get_special_method_names
+from _opcode import get_executor
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -611,7 +612,7 @@ class ArgResolver:
                 else:
                     argrepr = repr(obj)
             elif deop == LOAD_SPECIAL:
-                argrepr = get_special_method_names()[arg]
+                argrepr = _special_method_names[arg]
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
