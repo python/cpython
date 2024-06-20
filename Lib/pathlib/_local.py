@@ -1,3 +1,4 @@
+import errno
 import io
 import ntpath
 import operator
@@ -782,7 +783,7 @@ class Path(PathBase, PurePath):
                 raise
 
     if copyfile:
-        def copy(self, target, follow_symlinks=True):
+        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
             """
             Copy the contents of this file to the given target. If this file is a
             symlink and follow_symlinks is false, a symlink will be created at the
@@ -794,15 +795,57 @@ class Path(PathBase, PurePath):
                 if isinstance(target, PathBase):
                     # Target is an instance of PathBase but not os.PathLike.
                     # Use generic implementation from PathBase.
-                    return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
+                    return PathBase.copy(self, target,
+                                         follow_symlinks=follow_symlinks,
+                                         preserve_metadata=preserve_metadata)
                 raise
             copyfile(os.fspath(self), target, follow_symlinks)
+
+    def _utime(self, ns, *, follow_symlinks=True):
+        return os.utime(self, ns=ns, follow_symlinks=follow_symlinks)
+
+    if hasattr(os, 'listxattr'):
+        def _list_xattr(self, *, follow_symlinks=True):
+            try:
+                return os.listxattr(self, follow_symlinks=follow_symlinks)
+            except OSError as err:
+                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                    raise UnsupportedOperation(str(err)) from None
+                return
+
+        def _get_xattr(self, name, *, follow_symlinks=True):
+            try:
+                return os.getxattr(self, name, follow_symlinks=follow_symlinks)
+            except OSError as err:
+                if e.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                    raise UnsupportedOperation(str(err)) from None
+                return
+
+        def _set_xattr(self, name, value, *, follow_symlinks=True):
+            try:
+                return os.setxattr(self, name, value, follow_symlinks=follow_symlinks)
+            except OSError as err:
+                if e.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                    raise UnsupportedOperation(str(err)) from None
+                return
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
         """
-        os.chmod(self, mode, follow_symlinks=follow_symlinks)
+        try:
+            os.chmod(self, mode, follow_symlinks=follow_symlinks)
+        except NotImplementedError as err:
+            raise UnsupportedOperation(str(err)) from None
+
+    if hasattr(os, 'chflags'):
+        def _chflags(self, flags, *, follow_symlinks=True):
+            try:
+                os.chflags(self, flags, follow_symlinks=follow_symlinks)
+            except OSError as err:
+                if err.errno in (errno.ENOTSUP, errno.EOPNOTSUPP):
+                    raise UnsupportedOperation(str(err)) from None
+                raise
 
     def unlink(self, missing_ok=False):
         """

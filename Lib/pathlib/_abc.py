@@ -15,7 +15,7 @@ import functools
 import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
-from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO, S_IMODE
 from ._os import copyfileobj
 
 
@@ -790,7 +790,7 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
-    def copy(self, target, follow_symlinks=True):
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
         Copy the contents of this file to the given target. If this file is a
         symlink and follow_symlinks is false, a symlink will be created at the
@@ -802,18 +802,46 @@ class PathBase(PurePathBase):
             raise OSError(f"{self!r} and {target!r} are the same file")
         if not follow_symlinks and self.is_symlink():
             target.symlink_to(self.readlink())
-            return
-        with self.open('rb') as source_f:
+        else:
+            with self.open('rb') as source_f:
+                try:
+                    with target.open('wb') as target_f:
+                        copyfileobj(source_f, target_f)
+                except IsADirectoryError as e:
+                    if not target.exists():
+                        # Raise a less confusing exception.
+                        raise FileNotFoundError(
+                            f'Directory does not exist: {target}') from e
+                    else:
+                        raise
+        if preserve_metadata:
+            # Copy timestamps
+            st = self.stat(follow_symlinks=follow_symlinks)
             try:
-                with target.open('wb') as target_f:
-                    copyfileobj(source_f, target_f)
-            except IsADirectoryError as e:
-                if not target.exists():
-                    # Raise a less confusing exception.
-                    raise FileNotFoundError(
-                        f'Directory does not exist: {target}') from e
-                else:
-                    raise
+                target._utime(ns=(st.st_atime_ns, st.st_mtime_ns),
+                              follow_symlinks=follow_symlinks)
+            except UnsupportedOperation:
+                pass
+            # Copy extended attributes (xattrs)
+            try:
+                for name in self._list_xattr(follow_symlinks=follow_symlinks):
+                    value = self._get_xattr(name, follow_symlinks=follow_symlinks)
+                    target._set_xattr(name, value, follow_symlinks=follow_symlinks)
+            except UnsupportedOperation:
+                pass
+            # Copy permissions (mode)
+            try:
+                target.chmod(mode=S_IMODE(st.st_mode),
+                             follow_symlinks=follow_symlinks)
+            except UnsupportedOperation:
+                pass
+            # Copy flags
+            if hasattr(st, 'st_flags'):
+                try:
+                    target._chflags(flags=st.st_flags,
+                                    follow_symlinks=follow_symlinks)
+                except (UnsupportedOperation, PermissionError):
+                    pass
 
     def rename(self, target):
         """
@@ -839,6 +867,18 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('replace()'))
 
+    def _utime(self, ns, *, follow_symlinks=True):
+        raise UnsupportedOperation(self._unsupported_msg('_utime()'))
+
+    def _list_xattr(self, *, follow_symlinks=True):
+        raise UnsupportedOperation(self._unsupported_msg('_list_xattr()'))
+
+    def _get_xattr(self, name, *, follow_symlinks=True):
+        raise UnsupportedOperation(self._unsupported_msg('_get_xattr()'))
+
+    def _set_xattr(self, name, value, *, follow_symlinks=True):
+        raise UnsupportedOperation(self._unsupported_msg('_set_xattr()'))
+
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
@@ -851,6 +891,9 @@ class PathBase(PurePathBase):
         permissions are changed, rather than its target's.
         """
         self.chmod(mode, follow_symlinks=False)
+
+    def _chflags(self, flags, *, follow_symlinks=True):
+        raise UnsupportedOperation(self._unsupported_msg('_chflags()'))
 
     def unlink(self, missing_ok=False):
         """

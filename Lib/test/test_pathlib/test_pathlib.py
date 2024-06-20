@@ -653,6 +653,46 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
+    def test_copy_file_preserve_metadata(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        if hasattr(os, 'setxattr'):
+            os.setxattr(source, b'user.foo', b'42')
+        if hasattr(os, 'chmod'):
+            os.chmod(source, stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
+            os.chflags(source, stat.UF_NODUMP)
+        source_st = source.stat()
+        target = base / 'copyA'
+        source.copy(target, preserve_metadata=True)
+        self.assertTrue(target.exists())
+        self.assertEqual(source.read_text(), target.read_text())
+        target_st = target.stat()
+        if hasattr(os, 'getxattr'):
+            self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
+        self.assertEqual(target_st.st_mode, source_st.st_mode)
+        if hasattr(source_st, 'st_flags'):
+            self.assertEqual(source_st.st_flags, target_st.st_flags)
+
+    @needs_symlinks
+    def test_copy_link_preserve_metadata(self):
+        base = self.cls(self.base)
+        source = base / 'linkA'
+        if hasattr(os, 'lchmod'):
+            os.lchmod(source, stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
+            os.lchflags(source, stat.UF_NODUMP)
+        source_st = source.lstat()
+        target = base / 'copyA'
+        source.copy(target, follow_symlinks=False, preserve_metadata=True)
+        self.assertTrue(target.exists())
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(source.readlink(), target.readlink())
+        target_st = target.lstat()
+        self.assertEqual(target_st.st_mode, source_st.st_mode)
+        if hasattr(source_st, 'st_flags'):
+            self.assertEqual(source_st.st_flags, target_st.st_flags)
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 

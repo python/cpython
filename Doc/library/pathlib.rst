@@ -1432,7 +1432,7 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True)
+.. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
    Copy the contents of this file to the *target* file. If *target* specifies
    a file that already exists, it will be replaced.
@@ -1441,11 +1441,11 @@ Copying, renaming and deleting
    will be created as a symbolic link. If *follow_symlinks* is true and this
    file is a symbolic link, *target* will be a copy of the symlink target.
 
-   .. note::
-      This method uses operating system functionality to copy file content
-      efficiently. The OS might also copy some metadata, such as file
-      permissions. After the copy is complete, users may wish to call
-      :meth:`Path.chmod` to set the permissions of the target file.
+   If *preserve_metadata* is false (the default), only the file data is
+   guaranteed to be copied. Set *preserve_metadata* to true to ensure that the
+   file mode (permissions), flags, last access and modification times, and
+   extended attributes are all copied where supported. This argument has no
+   effect on Windows, where metadata is always preserved when copying.
 
    .. warning::
       On old builds of Windows (before Windows 10 build 19041), this method
@@ -1562,6 +1562,11 @@ Other methods
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
+   .. versionchanged:: 3.14
+      Raises :exc:`UnsupportedOperation` if *follow_symlinks* is false and
+      :func:`os.chmod` doesn't support this setting. In previous versions,
+      :exc:`NotImplementedError` was raised.
+
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
@@ -1598,6 +1603,10 @@ Other methods
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
 
+   .. versionchanged:: 3.14
+      Raises :exc:`UnsupportedOperation` if :func:`os.chmod` doesn't support
+      setting *follow_symlinks* to false. In previous versions,
+      :exc:`NotImplementedError` was raised.
 
 .. method:: Path.owner(*, follow_symlinks=True)
 
