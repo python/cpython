@@ -350,14 +350,14 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
 
 /*[clinic input]
 
-_opcode.get_special_methods
+_opcode.get_special_method_names
 
 Return a list of special method names.
 [clinic start generated code]*/
 
 static PyObject *
-_opcode_get_special_methods_impl(PyObject *module)
-/*[clinic end generated code: output=9680bba4f36cf279 input=eeb86d3a67da9811]*/
+_opcode_get_special_method_names_impl(PyObject *module)
+/*[clinic end generated code: output=fce72614cd988d17 input=25f2115560bdf163]*/
 {
     PyObject *list = PyList_New(SPECIAL_MAX + 1);
     if (list == NULL) {
@@ -419,7 +419,7 @@ opcode_functions[] =  {
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
     _OPCODE_GET_EXECUTOR_METHODDEF
-    _OPCODE_GET_SPECIAL_METHODS_METHODDEF
+    _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
