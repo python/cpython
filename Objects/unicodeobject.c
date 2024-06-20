@@ -2875,16 +2875,26 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
 static int
 unicode_from_format(_PyUnicodeWriter *writer, const char *format, va_list vargs)
 {
-    writer->min_length += strlen(format) + 100;
+    Py_ssize_t len = strlen(format);
+    writer->min_length += len + 100;
     writer->overallocate = 1;
 
-    va_list vargs2;
-    const char *f;
-
     // Copy varags to be able to pass a reference to a subfunction.
+    va_list vargs2;
     va_copy(vargs2, vargs);
 
-    for (f = format; *f; ) {
+    int is_ascii = (ucs1lib_find_max_char((Py_UCS1*)format, (Py_UCS1*)format + len) < 128);
+    if (!is_ascii) {
+        Py_ssize_t i;
+        for (i=0; i < len && (unsigned char)format[i] <= 127; i++);
+        PyErr_Format(PyExc_ValueError,
+            "PyUnicode_FromFormatV() expects an ASCII-encoded format "
+            "string, got a non-ASCII byte: 0x%02x",
+            (unsigned char)format[i]);
+        goto fail;
+    }
+
+    for (const char *f = format; *f; ) {
         if (*f == '%') {
             f = unicode_fromformat_arg(writer, f, &vargs2);
             if (f == NULL)
@@ -2892,24 +2902,12 @@ unicode_from_format(_PyUnicodeWriter *writer, const char *format, va_list vargs)
         }
         else {
             const char *p = strchr(f, '%');
-            Py_ssize_t len;
             if (p != NULL) {
                 len = p - f;
             }
             else {
                 len = strlen(f);
                 writer->overallocate = 0;
-            }
-
-            int is_ascii = (ucs1lib_find_max_char((Py_UCS1*)f, (Py_UCS1*)f + len) < 128);
-            if (!is_ascii) {
-                Py_ssize_t i;
-                for (i=0; i < len && (unsigned char)f[i] <= 127; i++);
-                PyErr_Format(PyExc_ValueError,
-                    "PyUnicode_FromFormatV() expects an ASCII-encoded format "
-                    "string, got a non-ASCII byte: 0x%02x",
-                    (unsigned char)f[i]);
-                goto fail;
             }
 
             if (_PyUnicodeWriter_WriteASCIIString(writer, f, len) < 0) {
