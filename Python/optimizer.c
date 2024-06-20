@@ -717,7 +717,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 if (target == initial_instr) {
                     /* We have looped round to the start */
                     RESERVE(1);
-                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+                    // 0th instruction is _START_EXECUTOR, so jump to the 1st:
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 1);
                 }
                 else {
                     OPT_STAT_INC(inner_loop);
