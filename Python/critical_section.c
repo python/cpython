@@ -9,48 +9,16 @@ static_assert(_Alignof(PyCriticalSection) >= 4,
 #endif
 
 void
-PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    _PyCriticalSection_BeginInline(c, &op->ob_mutex);
-#endif
-}
-
-void
-PyCriticalSection_End(PyCriticalSection *c)
-{
-#ifdef Py_GIL_DISABLED
-    _PyCriticalSection_EndInline(c);
-#endif
-}
-
-void
-PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
-{
-#ifdef Py_GIL_DISABLED
-    _PyCriticalSection2_BeginInline(c, &a->ob_mutex, &b->ob_mutex);
-#endif
-}
-
-void
-PyCriticalSection2_End(PyCriticalSection2 *c)
-{
-#ifdef Py_GIL_DISABLED
-    _PyCriticalSection2_EndInline(c);
-#endif
-}
-
-void
 _PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
-    c->mutex = NULL;
-    c->prev = (uintptr_t)tstate->critical_section;
+    c->_mutex = NULL;
+    c->_prev = (uintptr_t)tstate->critical_section;
     tstate->critical_section = (uintptr_t)c;
 
     PyMutex_Lock(m);
-    c->mutex = m;
+    c->_mutex = m;
 #endif
 }
 
@@ -60,17 +28,17 @@ _PyCriticalSection2_BeginSlow(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
-    c->base.mutex = NULL;
-    c->mutex2 = NULL;
-    c->base.prev = tstate->critical_section;
+    c->_base._mutex = NULL;
+    c->_mutex2 = NULL;
+    c->_base._prev = tstate->critical_section;
     tstate->critical_section = (uintptr_t)c | _Py_CRITICAL_SECTION_TWO_MUTEXES;
 
     if (!is_m1_locked) {
         PyMutex_Lock(m1);
     }
     PyMutex_Lock(m2);
-    c->base.mutex = m1;
-    c->mutex2 = m2;
+    c->_base._mutex = m1;
+    c->_mutex2 = m2;
 #endif
 }
 
@@ -92,18 +60,18 @@ _PyCriticalSection_SuspendAll(PyThreadState *tstate)
     while (_PyCriticalSection_IsActive(*tagptr)) {
         PyCriticalSection *c = untag_critical_section(*tagptr);
 
-        if (c->mutex) {
-            PyMutex_Unlock(c->mutex);
+        if (c->_mutex) {
+            PyMutex_Unlock(c->_mutex);
             if ((*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
                 PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-                if (c2->mutex2) {
-                    PyMutex_Unlock(c2->mutex2);
+                if (c2->_mutex2) {
+                    PyMutex_Unlock(c2->_mutex2);
                 }
             }
         }
 
         *tagptr |= _Py_CRITICAL_SECTION_INACTIVE;
-        tagptr = &c->prev;
+        tagptr = &c->_prev;
     }
 #endif
 }
@@ -116,15 +84,15 @@ _PyCriticalSection_Resume(PyThreadState *tstate)
     PyCriticalSection *c = untag_critical_section(p);
     assert(!_PyCriticalSection_IsActive(p));
 
-    PyMutex *m1 = c->mutex;
-    c->mutex = NULL;
+    PyMutex *m1 = c->_mutex;
+    c->_mutex = NULL;
 
     PyMutex *m2 = NULL;
     PyCriticalSection2 *c2 = NULL;
     if ((p & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
         c2 = (PyCriticalSection2 *)c;
-        m2 = c2->mutex2;
-        c2->mutex2 = NULL;
+        m2 = c2->_mutex2;
+        c2->_mutex2 = NULL;
     }
 
     if (m1) {
@@ -134,11 +102,47 @@ _PyCriticalSection_Resume(PyThreadState *tstate)
         PyMutex_Lock(m2);
     }
 
-    c->mutex = m1;
+    c->_mutex = m1;
     if (m2) {
-        c2->mutex2 = m2;
+        c2->_mutex2 = m2;
     }
 
     tstate->critical_section &= ~_Py_CRITICAL_SECTION_INACTIVE;
+#endif
+}
+
+#undef PyCriticalSection_Begin
+void
+PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection_Begin(c, op);
+#endif
+}
+
+#undef PyCriticalSection_End
+void
+PyCriticalSection_End(PyCriticalSection *c)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection_End(c);
+#endif
+}
+
+#undef PyCriticalSection2_Begin
+void
+PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection2_Begin(c, a, b);
+#endif
+}
+
+#undef PyCriticalSection2_End
+void
+PyCriticalSection2_End(PyCriticalSection2 *c)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection2_End(c);
 #endif
 }
