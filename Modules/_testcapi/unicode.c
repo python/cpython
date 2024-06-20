@@ -391,12 +391,22 @@ test_unicodewriter_decode_utf8(PyObject *self, PyObject *Py_UNUSED(args))
     if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "replace\xFF", -1, "replace", NULL) < 0) {
         goto error;
     }
+    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
+        goto error;
+    }
+
+    // incomplete trailing UTF-8 sequence
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "incomplete\xC3", -1, "replace", NULL) < 0) {
+        goto error;
+    }
 
     PyObject *result = PyUnicodeWriter_Finish(writer);
     if (result == NULL) {
         return NULL;
     }
-    assert(PyUnicode_EqualToUTF8(result, "ignore-replace\xef\xbf\xbd"));
+    assert(PyUnicode_EqualToUTF8(result,
+                                 "ignore-replace\xef\xbf\xbd"
+                                 "-incomplete\xef\xbf\xbd"));
     Py_DECREF(result);
 
     Py_RETURN_NONE;
@@ -423,7 +433,16 @@ test_unicodewriter_decode_utf8_consumed(PyObject *self, PyObject *Py_UNUSED(args
         goto error;
     }
     assert(consumed == 4);
+    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
+        goto error;
+    }
 
+    // non-ASCII
+    consumed = 12345;
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "\xC3\xA9-\xE2\x82\xAC", 6, NULL, &consumed) < 0) {
+        goto error;
+    }
+    assert(consumed == 6);
     if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
         goto error;
     }
@@ -440,12 +459,24 @@ test_unicodewriter_decode_utf8_consumed(PyObject *self, PyObject *Py_UNUSED(args
         goto error;
     }
     assert(consumed == 5);
+    if (PyUnicodeWriter_WriteChar(writer, '-') < 0) {
+        goto error;
+    }
+
+    // incomplete trailing UTF-8 sequence
+    consumed = 12345;
+    if (PyUnicodeWriter_DecodeUTF8Stateful(writer, "incomplete\xC3", -1, "ignore", &consumed) < 0) {
+        goto error;
+    }
+    assert(consumed == 10);
 
     PyObject *result = PyUnicodeWriter_Finish(writer);
     if (result == NULL) {
         return NULL;
     }
-    assert(PyUnicode_EqualToUTF8(result, "text-more"));
+    assert(PyUnicode_EqualToUTF8(result,
+                                 "text-\xC3\xA9-\xE2\x82\xAC-"
+                                 "more-incomplete"));
     Py_DECREF(result);
 
     Py_RETURN_NONE;
