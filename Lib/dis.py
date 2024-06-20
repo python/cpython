@@ -18,7 +18,7 @@ from opcode import (
     _specialized_opmap,
 )
 
-from _opcode import get_executor
+from _opcode import get_executor, get_special_methods
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -46,6 +46,7 @@ LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
+LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
@@ -609,6 +610,8 @@ class ArgResolver:
                     argrepr = obj.__name__
                 else:
                     argrepr = repr(obj)
+            elif deop == LOAD_SPECIAL:
+                argrepr = get_special_methods()[arg]
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
