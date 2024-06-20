@@ -92,7 +92,7 @@ class AutoFileTests:
         self.assertEqual(ba, b'\x01\x02\x00\xffefgh')
         self.assertEqual(n, 4)
 
-    def _testReadintoMemoryview(self):
+    def testReadintoMemoryview(self):
         self.f.write(bytes([1, 2, 0, 255]))
         self.f.close()
 
@@ -108,7 +108,7 @@ class AutoFileTests:
         self.assertEqual(bytes(m), b'\x01\x02\x00\xffefgh')
         self.assertEqual(n, 4)
 
-    def _testReadintoArray(self):
+    def testReadintoArray(self):
         self.f.write(bytes([1, 2, 0, 255]))
         self.f.close()
 
@@ -129,6 +129,15 @@ class AutoFileTests:
             n = f.readinto(a)
         self.assertEqual(a, array('I', b'\x01\x02\x00\xffefgh'))
         self.assertEqual(n, 4)
+
+    def test_backreadinto_bytearray(self):
+        self.skipTest("TODO")
+
+    def test_backreadinto_memoryview(self):
+        self.skipTest("TODO")
+
+    def test_backreadinto_array(self):
+        self.skipTest("TODO")
 
     def testWritelinesList(self):
         l = [b'123', b'456']
@@ -227,10 +236,20 @@ class AutoFileTests:
         for methodname in methods:
             method = getattr(self.f, methodname)
             # should raise on closed file
-            self.assertRaises(ValueError, method)
+            with self.subTest(method=methodname):
+                self.assertRaises(ValueError, method)
+
+        # TODO(picnixz): NotImplementedError -> ValueError when implemented in C
+        for methodname in ('backread', 'backreadall', 'backreadline'):
+            method = getattr(self.f, methodname)
+            with self.subTest(method=methodname):
+                self.assertRaises((NotImplementedError, ValueError), method)
 
         self.assertRaises(TypeError, self.f.readinto)
         self.assertRaises(ValueError, self.f.readinto, bytearray(1))
+        self.assertRaises(TypeError, self.f.backreadinto)
+        # TODO(picnixz): NotImplementedError -> ValueError when implemented in C
+        self.assertRaises((NotImplementedError, ValueError), self.f.backreadinto, bytearray(1))
         self.assertRaises(TypeError, self.f.seek)
         self.assertRaises(ValueError, self.f.seek, 0)
         self.assertRaises(TypeError, self.f.write)
@@ -358,6 +377,25 @@ class AutoFileTests:
         f = self.ReopenForRead()
         a = array('b', b'x'*10)
         f.readinto(a)
+
+    @ClosedFDRaises
+    def test_errno_on_closed_backread(self, f):
+        self.skipTest("TODO(C)")
+        f = self.ReopenForRead()
+        f.backread(1)
+
+    @ClosedFDRaises
+    def test_errno_on_closed_backreadall(self, f):
+        self.skipTest("TODO(C)")
+        f = self.ReopenForRead()
+        f.backreadall()
+
+    @ClosedFDRaises
+    def test_errno_on_closed_backreadinto(self, f):
+        self.skipTest("TODO(C)")
+        f = self.ReopenForRead()
+        a = array('b', b'x'*10)
+        f.backreadinto(a)
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
