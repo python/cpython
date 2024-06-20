@@ -15253,6 +15253,9 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
 void
 _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
 {
+    // This should only be called as part of runtime initialization
+    assert(!Py_IsInitialized());
+
     *p = intern_static(interp, *p);
     assert(*p);
 }
