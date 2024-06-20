@@ -27,18 +27,21 @@
 
 #if LONG_BIT >= 128
 #define STRINGLIB_BLOOM_WIDTH 128
+#define STRINGLIB_BLOOM_FULL 127
 #elif LONG_BIT >= 64
 #define STRINGLIB_BLOOM_WIDTH 64
+#define STRINGLIB_BLOOM_FULL 63
 #elif LONG_BIT >= 32
 #define STRINGLIB_BLOOM_WIDTH 32
+#define STRINGLIB_BLOOM_FULL 31
 #else
 #error "LONG_BIT is smaller than 32"
 #endif
 
 #define STRINGLIB_BLOOM_ADD(mask, ch) \
-    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
+    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_FULL)))))
 #define STRINGLIB_BLOOM(mask, ch)     \
-    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
+    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_FULL)))))
 
 #ifdef STRINGLIB_FAST_MEMCHR
 #  define MEMCHR_CUT_OFF 15
