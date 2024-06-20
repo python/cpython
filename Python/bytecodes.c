@@ -699,7 +699,6 @@ dummy_func(
 
         op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem --new_frame: _PyInterpreterFrame* )) {
             new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
-            SYNC_SP();
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -4298,6 +4297,10 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             DEOPT_IF(!((_PyExecutorObject *)executor)->vm_data.valid);
+        }
+
+        tier2 op(_GUARD_CODE, (version/2 -- )) {
+            DEOPT_IF(((PyCodeObject *)frame->f_executable)->co_version != version);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

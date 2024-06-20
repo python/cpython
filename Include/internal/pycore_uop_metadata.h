@@ -258,6 +258,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
+    [_GUARD_CODE] = HAS_DEOPT_FLAG,
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
@@ -370,6 +371,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_GUARD_BOTH_UNICODE] = "_GUARD_BOTH_UNICODE",
     [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
+    [_GUARD_CODE] = "_GUARD_CODE",
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
@@ -997,6 +999,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
+            return 0;
+        case _GUARD_CODE:
             return 0;
         case _FATAL_ERROR:
             return 0;
