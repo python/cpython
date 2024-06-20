@@ -717,8 +717,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 if (target == initial_instr) {
                     /* We have looped round to the start */
                     RESERVE(1);
-                    // 0th instruction is _START_EXECUTOR, so jump to the 1st:
-                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 1);
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
                 }
                 else {
                     OPT_STAT_INC(inner_loop);
@@ -1059,6 +1058,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 buffer[i].format = UOP_FORMAT_JUMP;
                 buffer[i].jump_target = 0;
             }
+        }
+        if (opcode == _JUMP_TO_TOP) {
+            // 0th instruction is _START_EXECUTOR, so jump to the 1st:
+            buffer[i].format = UOP_FORMAT_JUMP;
+            buffer[i].jump_target = 1;
         }
     }
     return next_spare;
