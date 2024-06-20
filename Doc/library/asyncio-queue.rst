@@ -49,8 +49,10 @@ Queue
    .. method:: __aiter__()
 
       Return an :term:`asynchronous iterator` which iterates over
-      the items in this queue until :meth:`shutdown` is called and
-      the queue is empty.
+      the queue of items until :meth:`shutdown` is called continues
+      iteration until the queue is empty.
+
+      ``shutdown(immediate=True)`` stops iteration immediately.
 
       .. versionadded:: 3.14
 
