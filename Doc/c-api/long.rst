@@ -70,17 +70,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: PyObject* PyLong_FromInt32(int32_t value)
+                PyObject* PyLong_FromInt64(int64_t value)
 
    Return a new :c:type:`PyLongObject` object from a signed C
-   :c:expr:`int32_t`, or ``NULL`` on failure.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: PyObject* PyLong_FromInt64(int64_t value)
-
-   Return a new :c:type:`PyLongObject` object from a signed C
-   :c:expr:`int64_t`, or ``NULL`` on failure.
+   :c:expr:`int32_t` or :c:expr:`int64_t`, or ``NULL`` on failure.
 
    .. versionadded:: 3.14
 
@@ -92,17 +85,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: PyObject* PyLong_FromUInt32(uint32_t value)
+                PyObject* PyLong_FromUInt64(uint64_t value)
 
    Return a new :c:type:`PyLongObject` object from an unsigned C
-   :c:expr:`uint32_t`, or ``NULL`` on failure.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: PyObject* PyLong_FromUInt64(uint64_t value)
-
-   Return a new :c:type:`PyLongObject` object from an unsigned C
-   :c:expr:`uint64_t`, or ``NULL`` on failure.
+   :c:expr:`uint32_t` or :c:expr:`uint64_t`, or ``NULL`` on failure.
 
    .. versionadded:: 3.14
 
@@ -370,8 +356,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
 .. c:function:: int PyLong_ToInt32(PyObject *obj, int32_t *value)
+                int PyLong_ToInt64(PyObject *obj, int64_t *value)
 
-   Return a signed C :c:expr:`int32_t` representation of *obj*.
+   Return a signed C :c:expr:`int32_t` or :c:expr:`int64_t` representation of
+   *obj*.
 
    If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
@@ -381,36 +369,21 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.14
 
 
-.. c:function:: int PyLong_ToInt64(PyObject *obj, int64_t *value)
-
-   Similar to :c:func:`PyLong_ToInt32`, but return a signed C
-   :c:expr:`int64_t` representation.
-
-   .. versionadded:: 3.14
-
-
 .. c:function:: int PyLong_ToUInt32(PyObject *obj, uint32_t *value)
+                int PyLong_ToUInt64(PyObject *obj, uint64_t *value)
 
-   Return an unsigned C :c:expr:`uint32_t` representation of *obj*.
+   Return an unsigned C :c:expr:`uint32_t` or :c:expr:`uint64_t` representation
+   of *obj*.
 
    If *obj* is not an instance of :c:type:`PyLongObject`, first call its
    :meth:`~object.__index__` method (if present) to convert it to a
    :c:type:`PyLongObject`.
 
    * If *obj* is negative, raise a :exc:`ValueError`.
-   * If the *obj* value is out of :c:expr:`uint32_t` range, raise an
-     :exc:`OverflowError`.
+   * If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
    Set *\*value* and return ``0`` on success.
    Set an exception and return ``-1`` on error.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: int PyLong_ToUInt64(PyObject *obj, uint64_t *value)
-
-   Similar to :c:func:`PyLong_ToUInt32`, but return an unsigned C
-   :c:expr:`int64_t` representation.
 
    .. versionadded:: 3.14
 
