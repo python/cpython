@@ -517,7 +517,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
-    def preloop(self):
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -605,15 +605,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.setup(frame, tb)
             # We should print the stack entry if and only if the user input
             # is expected, and we should print it right before the user input.
-            # If self.cmdqueue is not empty, we append a "w 0" command to the
-            # queue, which is equivalent to print_stack_entry
-            if self.cmdqueue:
-                self.cmdqueue.append('w 0')
-            else:
-                self.print_stack_entry(self.stack[self.curindex])
+            # We achieve this by appending _pdbcmd_print_frame_status to the
+            # command queue. If cmdqueue is not exausted, the user input is
+            # not expected and we will not print the stack entry.
+            self.cmdqueue.append('_pdbcmd_print_frame_status')
             self._cmdloop()
-            # If "w 0" is not used, pop it out
-            if self.cmdqueue and self.cmdqueue[-1] == 'w 0':
+            # If _pdbcmd_print_frame_status is not used, pop it out
+            if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
                 self.cmdqueue.pop()
             self.forget()
 
@@ -846,6 +844,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if not self.commands_defining:
             self._validate_file_mtime()
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -981,6 +983,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             matches.append(match)
             state += 1
         return matches
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_trace(0)
+        self._show_display()
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
