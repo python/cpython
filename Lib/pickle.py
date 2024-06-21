@@ -780,14 +780,10 @@ class _Pickler:
             self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
-    def save_bytes(self, obj):
-        if self.proto < 3:
-            if not obj: # bytes object is empty
-                self.save_reduce(bytes, (), obj=obj)
-            else:
-                self.save_reduce(codecs.encode,
-                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
-            return
+    def _save_bytes_no_memo(self, obj):
+        # helper for writing bytes objects for protocol >= 3
+        # without memoizing them
+        assert self.proto >= 3
         n = len(obj)
         if n <= 0xff:
             self.write(SHORT_BINBYTES + pack("<B", n) + obj)
@@ -797,8 +793,28 @@ class _Pickler:
             self._write_large_bytes(BINBYTES + pack("<I", n), obj)
         else:
             self.write(BINBYTES + pack("<I", n) + obj)
+
+    def save_bytes(self, obj):
+        if self.proto < 3:
+            if not obj: # bytes object is empty
+                self.save_reduce(bytes, (), obj=obj)
+            else:
+                self.save_reduce(codecs.encode,
+                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
+            return
+        self._save_bytes_no_memo(obj)
         self.memoize(obj)
     dispatch[bytes] = save_bytes
+
+    def _save_bytearray_no_memo(self, obj):
+        # helper for writing bytearray objects for protocol >= 5
+        # without memoizing them
+        assert self.proto >= 5
+        n = len(obj)
+        if n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
+        else:
+            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
 
     def save_bytearray(self, obj):
         if self.proto < 5:
@@ -807,11 +823,7 @@ class _Pickler:
             else:
                 self.save_reduce(bytearray, (bytes(obj),), obj=obj)
             return
-        n = len(obj)
-        if n >= self.framer._FRAME_SIZE_TARGET:
-            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
-        else:
-            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+        self._save_bytearray_no_memo(obj)
         self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
@@ -830,10 +842,18 @@ class _Pickler:
                 if in_band:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
+                    buf = m.tobytes()
+                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        self.save_bytes(m.tobytes())
+                        if in_memo:
+                            self._save_bytes_no_memo(buf)
+                        else:
+                            self.save_bytes(buf)
                     else:
-                        self.save_bytearray(m.tobytes())
+                        if in_memo:
+                            self._save_bytearray_no_memo(buf)
+                        else:
+                            self.save_bytearray(buf)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
