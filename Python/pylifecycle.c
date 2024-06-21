@@ -3255,7 +3255,11 @@ Py_Exit(int sts)
     if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
     }
-    if (Py_FinalizeEx() < 0) {
+    struct pyfinalize_args args = {
+        .caller = "Py_Exit",
+        /* We don't worry about checking if Py_RunMain() is running. */
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) < 0) {
         sts = 120;
     }
 
