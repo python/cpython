@@ -7,35 +7,9 @@
 extern "C" {
 #endif
 
-#define Py_CPYTHON_FRAME_H
-#include "cpython/frame.h"
-#undef Py_CPYTHON_FRAME_H
-
 /* --- Generators --------------------------------------------------------- */
 
-/* _PyGenObject_HEAD defines the initial segment of generator
-   and coroutine objects. */
-#define _PyGenObject_HEAD(prefix)                                           \
-    PyObject_HEAD                                                           \
-    /* List of weak reference. */                                           \
-    PyObject *prefix##_weakreflist;                                         \
-    /* Name of the generator. */                                            \
-    PyObject *prefix##_name;                                                \
-    /* Qualified name of the generator. */                                  \
-    PyObject *prefix##_qualname;                                            \
-    _PyErr_StackItem prefix##_exc_state;                                    \
-    PyObject *prefix##_origin_or_finalizer;                                 \
-    char prefix##_hooks_inited;                                             \
-    char prefix##_closed;                                                   \
-    char prefix##_running_async;                                            \
-    /* The frame */                                                         \
-    int8_t prefix##_frame_state;                                            \
-    struct _PyInterpreterFrame prefix##_iframe;                             \
-
-typedef struct {
-    /* The gi_ prefix is intended to remind of generator-iterator. */
-    _PyGenObject_HEAD(gi)
-} PyGenObject;
+typedef struct _PyGenObject PyGenObject;
 
 PyAPI_DATA(PyTypeObject) PyGen_Type;
 
@@ -50,9 +24,7 @@ PyAPI_FUNC(PyCodeObject *) PyGen_GetCode(PyGenObject *gen);
 
 /* --- PyCoroObject ------------------------------------------------------- */
 
-typedef struct {
-    _PyGenObject_HEAD(cr)
-} PyCoroObject;
+typedef struct _PyCoroObject PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
 
@@ -63,9 +35,7 @@ PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
 
 /* --- Asynchronous Generators -------------------------------------------- */
 
-typedef struct {
-    _PyGenObject_HEAD(ag)
-} PyAsyncGenObject;
+typedef struct _PyAsyncGenObject PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
 PyAPI_DATA(PyTypeObject) _PyAsyncGenASend_Type;
@@ -76,7 +46,6 @@ PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
 #define PyAsyncGen_CheckExact(op) Py_IS_TYPE((op), &PyAsyncGen_Type)
 
 #define PyAsyncGenASend_CheckExact(op) Py_IS_TYPE((op), &_PyAsyncGenASend_Type)
-
 
 #undef _PyGenObject_HEAD
 

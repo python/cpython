@@ -1125,7 +1125,7 @@
             assert(frame != &entry_frame);
             #endif
             frame->instr_ptr++;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
