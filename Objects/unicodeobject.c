@@ -2099,7 +2099,7 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 
 const void*
 PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
-                 Py_ssize_t *size, uint32_t *format)
+                 Py_ssize_t *nbytes, uint32_t *format)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError, "must be str, not %T", unicode);
@@ -2112,7 +2112,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         && (requested_formats & PyUnicode_FORMAT_ASCII))
     {
         *format = PyUnicode_FORMAT_ASCII;
-        *size = len;
+        *nbytes = len;
         return PyUnicode_1BYTE_DATA(unicode);
     }
 
@@ -2122,7 +2122,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         && (requested_formats & PyUnicode_FORMAT_UCS1))
     {
         *format = PyUnicode_FORMAT_UCS1;
-        *size = len;
+        *nbytes = len;
         return PyUnicode_1BYTE_DATA(unicode);
     }
 
@@ -2131,7 +2131,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         && (requested_formats & PyUnicode_FORMAT_UCS2))
     {
         *format = PyUnicode_FORMAT_UCS2;
-        *size = len * 2;
+        *nbytes = len * 2;
         return PyUnicode_2BYTE_DATA(unicode);
     }
 
@@ -2152,7 +2152,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         ucs2[len] = 0;
 
         *format = PyUnicode_FORMAT_UCS2;
-        *size = len * 2;
+        *nbytes = len * 2;
         return ucs2;
     }
 
@@ -2161,7 +2161,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         && (requested_formats & PyUnicode_FORMAT_UCS4))
     {
         *format = PyUnicode_FORMAT_UCS4;
-        *size = len * 4;
+        *nbytes = len * 4;
         return PyUnicode_4BYTE_DATA(unicode);
     }
 
@@ -2172,14 +2172,14 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
             goto error;
         }
         *format = PyUnicode_FORMAT_UCS4;
-        *size = len * 4;
+        *nbytes = len * 4;
         return ucs4;
     }
 
     // Convert to UTF-8
     if (requested_formats & PyUnicode_FORMAT_UTF8) {
         // Encode UCS1, UCS2 or UCS4 to UTF-8
-        const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, size);
+        const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, nbytes);
         if (utf8 == NULL) {
             goto error;
         }
@@ -2190,7 +2190,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
     PyErr_Format(PyExc_ValueError, "unable to find a matching export format");
 
 error:
-    *size = 0;
+    *nbytes = 0;
     *format = 0;
     return NULL;
 }
@@ -2221,44 +2221,43 @@ PyUnicode_ReleaseExport(PyObject *unicode, const void* data,
 }
 
 PyObject*
-PyUnicode_Import(const void *data, Py_ssize_t size,
+PyUnicode_Import(const void *data, Py_ssize_t nbytes,
                  uint32_t format)
 {
-    if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "Negative size");
+    if (nbytes < 0) {
+        PyErr_SetString(PyExc_ValueError, "Negative nbytes");
         return NULL;
     }
 
     switch (format)
     {
     case PyUnicode_FORMAT_ASCII:
-        return PyUnicode_DecodeASCII((const char*)data, size, NULL);
+        return PyUnicode_DecodeASCII((const char*)data, nbytes, NULL);
 
     case PyUnicode_FORMAT_UCS1:
-        return _PyUnicode_FromUCS1(data, size);
+        return _PyUnicode_FromUCS1(data, nbytes);
 
     case PyUnicode_FORMAT_UCS2:
-        if (size % 2) {
-            PyErr_Format(PyExc_ValueError, "size must be a multiple of 2: %zd",
-                         size);
+        if (nbytes % 2) {
+            PyErr_Format(PyExc_ValueError, "nbytes must be a multiple of 2: %zd",
+                         nbytes);
             return NULL;
         }
-        return _PyUnicode_FromUCS2(data, size / 2);
+        return _PyUnicode_FromUCS2(data, nbytes / 2);
 
     case PyUnicode_FORMAT_UCS4:
-        if (size % 4) {
-            PyErr_Format(PyExc_ValueError, "size must be a multiple of 4: %zd",
-                         size);
+        if (nbytes % 4) {
+            PyErr_Format(PyExc_ValueError, "nbytes must be a multiple of 4: %zd",
+                         nbytes);
             return NULL;
         }
-        return _PyUnicode_FromUCS4(data, size / 4);
+        return _PyUnicode_FromUCS4(data, nbytes / 4);
 
     case PyUnicode_FORMAT_UTF8:
-        return PyUnicode_DecodeUTF8((const char*)data, size, NULL);
+        return PyUnicode_DecodeUTF8((const char*)data, nbytes, NULL);
 
     default:
-        PyErr_Format(PyExc_ValueError, "unknown format: %i",
-                     format);
+        PyErr_Format(PyExc_ValueError, "unknown format: %i", format);
         return NULL;
     }
 }

@@ -341,19 +341,19 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: const void* PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_ssize_t *size, uint32_t *format)
+.. c:function:: const void* PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_ssize_t *nbytes, uint32_t *format)
 
    Export the contents of the *unicode* string in one of the requested format
    *requested_formats*.
 
-   * On success, set *\*size* and *\*format*, and return the contents.
+   * On success, set *\*nbytes* and *\*format*, and return the contents.
    * On error, set an exception and return ``NULL``.
 
    The contents is valid as long as *unicode* is valid.
 
    The export must be released by :c:func:`PyUnicode_ReleaseExport`.
 
-   *unicode*, *size* and *format* must not be NULL.
+   *unicode*, *nbytes* and *format* must not be NULL.
 
    Available formats:
 
@@ -382,14 +382,14 @@ APIs:
    .. versionadded:: 3.14
 
 
-.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t size, uint32_t format)
+.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, uint32_t format)
 
    Import a string from the *format* format.
 
    * Return a reference to a new string object on success.
    * Set an exception and return ``NULL`` on error.
 
-   *data* must not be NULL. *size* must be positive or zero.
+   *data* must not be NULL. *nbytes* must be positive or zero.
 
    See :c:func:`PyUnicode_Export` for the available formats.
 
