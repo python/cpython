@@ -1850,9 +1850,31 @@ unicode_export(PyObject *self, PyObject *args)
 
     Py_ssize_t size;
     uint32_t format;
-    const void *data = PyUnicode_Export(obj, requested_formats, &size, &format);
+    const char *data = PyUnicode_Export(obj, requested_formats, &size, &format);
     if (data == NULL) {
         return NULL;
+    }
+
+    // Make sure that the exported string ends with a NUL character
+    switch (format)
+    {
+    case PyUnicode_FORMAT_ASCII:
+    case PyUnicode_FORMAT_UCS1:
+        assert(data[size] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS2:
+        assert(data[size] == 0);
+        assert(data[size+1] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS4:
+        assert(data[size] == 0);
+        assert(data[size+1] == 0);
+        assert(data[size+2] == 0);
+        assert(data[size+3] == 0);
+        break;
+    case PyUnicode_FORMAT_UTF8:
+        assert(data[size] == 0);
+        break;
     }
 
     PyObject *res = Py_BuildValue("y#I", data, size, (unsigned int)format);
