@@ -1880,7 +1880,7 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL) == -1) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
             Py_DECREF(dict);
             PyType_Modified(type);
             return -1;
@@ -1929,7 +1929,7 @@ type_get_annotations(PyTypeObject *type, void *context)
 
     PyObject *annotations;
     PyObject *dict = PyType_GetDict(type);
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations_cache__), &annotations) < 0) {
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
@@ -1946,7 +1946,7 @@ type_get_annotations(PyTypeObject *type, void *context)
             return NULL;
         }
         int result = PyDict_SetItem(
-                dict, &_Py_ID(__annotations_cache__), annotations);
+                dict, &_Py_ID(__annotations__), annotations);
         if (result) {
             Py_CLEAR(annotations);
         } else {
@@ -1971,10 +1971,10 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     PyObject *dict = PyType_GetDict(type);
     if (value != NULL) {
         /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
+        result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
     } else {
         /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
+        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
         if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
             Py_DECREF(dict);
@@ -11889,6 +11889,28 @@ static PyMethodDef annodescr_methods[] = {
     {NULL, NULL},
 };
 
+static PyObject *
+annodescr_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(ad->annotations);
+}
+
+static int
+annodescr_descr_set(PyObject *self, PyObject *obj, PyObject *value)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "cannot delete __annotations__");
+        return -1;
+    }
+    Py_XSETREF(ad->annotations, value);
+    return 0;
+}
+
 PyTypeObject _PyAnnotationsDescriptor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "AnnotationsDescriptor",
@@ -11910,4 +11932,6 @@ PyTypeObject _PyAnnotationsDescriptor_Type = {
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_richcompare = annodescr_richcompare,
     .tp_methods = annodescr_methods,
+    .tp_descr_get = annodescr_descr_get,
+    .tp_descr_set = annodescr_descr_set,
 };

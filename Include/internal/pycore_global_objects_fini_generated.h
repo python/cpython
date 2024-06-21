@@ -593,7 +593,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__anext__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__annotate__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__annotations__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__annotations_cache__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__args__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__asyncio_running_event_loop__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__await__));
