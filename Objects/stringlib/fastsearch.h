@@ -26,22 +26,19 @@
 #define FAST_RSEARCH 2
 
 #if LONG_BIT >= 128
-#define STRINGLIB_BLOOM_WIDTH 128
-#define STRINGLIB_BLOOM_FULL 127
+#  define STRINGLIB_BLOOM_MASK 127
 #elif LONG_BIT >= 64
-#define STRINGLIB_BLOOM_WIDTH 64
-#define STRINGLIB_BLOOM_FULL 63
+#  define STRINGLIB_BLOOM_MASK 63
 #elif LONG_BIT >= 32
-#define STRINGLIB_BLOOM_WIDTH 32
-#define STRINGLIB_BLOOM_FULL 31
+#  define STRINGLIB_BLOOM_MASK 31
 #else
-#error "LONG_BIT is smaller than 32"
+#  error "LONG_BIT is smaller than 32"
 #endif
 
 #define STRINGLIB_BLOOM_ADD(mask, ch) \
-    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_FULL)))))
+    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
 #define STRINGLIB_BLOOM(mask, ch)     \
-    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_FULL)))))
+    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
 
 #ifdef STRINGLIB_FAST_MEMCHR
 #  define MEMCHR_CUT_OFF 15
@@ -360,9 +357,8 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 #define SHIFT_TYPE uint8_t
 #define MAX_SHIFT UINT8_MAX
 
-#define TABLE_SIZE_BITS 6u
-#define TABLE_SIZE (1U << TABLE_SIZE_BITS)
-#define TABLE_MASK (TABLE_SIZE - 1U)
+#define TABLE_SIZE 128U
+#define TABLE_MASK 127U
 
 
 typedef struct STRINGLIB(_pre) {
@@ -899,7 +895,6 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
 #undef SHIFT_TYPE
 #undef NOT_FOUND
 #undef SHIFT_OVERFLOW
-#undef TABLE_SIZE_BITS
 #undef TABLE_SIZE
 #undef TABLE_MASK
 
