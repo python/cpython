@@ -372,6 +372,8 @@ APIs:
    *requested_formats* can be a single format or a combination of the formats
    in the table above.
 
+   Note that future versions of Python may introduce additional formats.
+
    .. versionadded:: 3.14
 
 
@@ -384,7 +386,7 @@ APIs:
 
 .. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, uint32_t format)
 
-   Import a string from the *format* format.
+   Create a string object from a buffer in an “export format”.
 
    * Return a reference to a new string object on success.
    * Set an exception and return ``NULL`` on error.
