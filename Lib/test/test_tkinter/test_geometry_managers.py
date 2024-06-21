@@ -10,6 +10,8 @@ from test.test_tkinter.widget_tests import AbstractWidgetTest
 requires('gui')
 
 
+EXPECTED_FLOAT_ERRMSG = 'expected floating-point number but got "{}"'
+EXPECTED_FLOAT_OR_EMPTY_ERRMSG = 'expected floating-point number (or "" )?but got "{}"'
 EXPECTED_SCREEN_DISTANCE_ERRMSG = '(bad|expected) screen distance (but got )?"{}"'
 EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "" but got )?"{}"'
 
@@ -356,8 +358,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['relx'], '1')
         self.root.update()
         self.assertEqual(f2.winfo_x(), 200)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "spam"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_ERRMSG.format('spam')):
             f2.place_configure(in_=f, relx='spam')
 
     def test_place_configure_rely(self):
@@ -374,8 +375,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(f2.place_info()['rely'], '1')
         self.root.update()
         self.assertEqual(f2.winfo_y(), 120)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "spam"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_ERRMSG.format('spam')):
             f2.place_configure(in_=f, rely='spam')
 
     def test_place_configure_anchor(self):
@@ -420,8 +420,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relwidth='')
         self.root.update()
         self.assertEqual(f2.winfo_width(), 30)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    '(or "" )?but got "abcd"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(relwidth='abcd')
 
     def test_place_configure_relheight(self):
@@ -432,8 +431,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relheight='')
         self.root.update()
         self.assertEqual(f2.winfo_height(), 60)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    '(or "" )?but got "abcd"'):
+        with self.assertRaisesRegex(TclError, EXPECTED_FLOAT_OR_EMPTY_ERRMSG.format('abcd')):
             f2.place_configure(relheight='abcd')
 
     def test_place_configure_bordermode(self):
