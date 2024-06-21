@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+struct _PyInterpreterFrame;
+
 /* --- Generators --------------------------------------------------------- */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
@@ -26,7 +28,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    PyObject *prefix##_iframe[1];                                           \
+    struct _PyInterpreterFrame *prefix##_iframe[1];                         \
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
