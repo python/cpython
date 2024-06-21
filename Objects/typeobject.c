@@ -11861,7 +11861,7 @@ annodescr_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 #define MAKE_DICT_WRAPPER(name) \
-    PyObject *annodescr_wrap_ ## name(PyObject *self, \
+    static PyObject *annodescr_wrap_ ## name(PyObject *self, \
                                  PyObject *args, \
                                  PyObject *kwargs) \
     { \
