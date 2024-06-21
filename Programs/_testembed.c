@@ -7,6 +7,7 @@
 
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_pylifecycle.h"   // _Py_Finalize()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
@@ -281,7 +282,10 @@ static int test_replace_main_tstate(void)
     }
 
     assert(PyThreadState_Get() == tstate);
-    if (Py_FinalizeEx() != 0) {
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_replace_main_tstate",
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0 && !err) {
         err = 1;
     }
 
@@ -294,6 +298,7 @@ static int test_replace_main_tstate(void)
  ***************************************************************************/
 
 struct fini_subthread_args {
+    struct pyfinalize_args *fini_args;
     PyThreadState *main_tstate;
     PyInterpreterState *interp;
     PyMutex done;
@@ -313,7 +318,9 @@ static void fini_with_new_tstate(void *arg)
     (void)PyThreadState_Swap(tstate);
 
     assert(PyThreadState_Get() != args->main_tstate);
-    args->rc = Py_FinalizeEx();
+    if (_Py_Finalize(&_PyRuntime, args->fini_args) != 0) {
+        args->rc = 1;
+    }
 
     PyMutex_Unlock(&args->done);
 }
@@ -323,7 +330,11 @@ static int test_fini_in_subthread(void)
     _testembed_Py_InitializeFromConfig();
     PyThreadState *main_tstate = PyThreadState_Get();
 
+    struct pyfinalize_args fini_args = {
+        .caller = "_testembed.test_fini_in_subthread",
+    };
     struct fini_subthread_args args = {
+        .fini_args = &fini_args,
         .main_tstate = main_tstate,
         .interp = main_tstate->interp,
     };
@@ -346,7 +357,14 @@ static int test_fini_in_main_thread_with_other_tstate(void)
     (void)PyThreadState_Swap(tstate);
 
     assert(PyThreadState_Get() != main_tstate);
-    return Py_FinalizeEx();
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_fini_in_main_thread_with_other_tstate",
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 static int test_fini_in_main_thread_with_subinterpreter(void)
@@ -363,7 +381,14 @@ static int test_fini_in_main_thread_with_subinterpreter(void)
 
     // The subinterpreter's tstate is still current.
     assert(PyThreadState_Get() == substate);
-    return Py_FinalizeEx();
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_fini_in_main_thread_with_subinterpreter",
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 
