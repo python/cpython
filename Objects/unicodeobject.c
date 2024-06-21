@@ -6245,7 +6245,7 @@ _PyUnicode_GetNameCAPI(void)
         ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
                 PyUnicodeData_CAPSULE_NAME, 1);
 
-        // It's fine if we overwite the value here. It's always the same value.
+        // It's fine if we overwrite the value here. It's always the same value.
         _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
     }
     return ucnhash_capi;

@@ -5383,7 +5383,7 @@ fail:
 #ifdef Py_GIL_DISABLED
 
 // Grabs the key and/or value from the provided locations and if successful
-// returns them with an increased reference count.  If either one is unsucessful
+// returns them with an increased reference count.  If either one is unsuccessful
 // nothing is incref'd and returns -1.
 static int
 acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
