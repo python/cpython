@@ -774,7 +774,7 @@ def uuid7():
     global _last_timestamp_v7
     import time
     nanoseconds = time.time_ns()
-    timestamp_ms = nanoseconds // 10 ** 6  # may be improved
+    timestamp_ms = nanoseconds // 1_000_000
     if _last_timestamp_v7 is not None and timestamp_ms <= _last_timestamp_v7:
         timestamp_ms = _last_timestamp_v7 + 1
     _last_timestamp_v7 = timestamp_ms
