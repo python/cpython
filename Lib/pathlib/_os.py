@@ -204,7 +204,7 @@ def set_file_metadata(path, metadata, follow_symlinks):
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
     xattrs = metadata.get('xattrs')
-    if xattrs:
+    if xattrs is not None:
         for attr, value in xattrs:
             try:
                 os.setxattr(path, attr, value, follow_symlinks=follow_symlinks)
@@ -226,7 +226,7 @@ def set_file_metadata(path, metadata, follow_symlinks):
         # (which is what shutil always did in this circumstance.)
         pass
     flags = metadata.get('flags')
-    if flags:
+    if flags is not None:
         try:
             lookup("chflags")(path, flags, follow_symlinks=follow_symlinks)
         except OSError as why:
