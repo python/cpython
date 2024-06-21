@@ -1939,6 +1939,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
+#ifdef NORMALIZE_CENTURY
+        else if (ch == 'Y') {
+            /* default to 4 digits for year with century */
+            ptoappend = "%4Y";
+            ntoappend = 3;
+        }
+#endif
         else {
             /* percent followed by something else */
             ptoappend = pin - 2;

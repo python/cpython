@@ -204,6 +204,18 @@ def _format_offset(off, sep=':'):
                 s += '.%06d' % ss.microseconds
     return s
 
+_normalize_century = None
+def _need_normalize_century():
+    global _normalize_century
+    if _normalize_century is None:
+        try:
+            _normalize_century = (
+                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "99" and
+                _time.strftime("%4Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "0099")
+        except ValueError:
+            _normalize_century = False
+    return _normalize_century
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -261,6 +273,10 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
+                elif ch == 'Y' and _need_normalize_century():
+                    push('%')
+                    push('4')
+                    push(ch)
                 else:
                     push('%')
                     push(ch)

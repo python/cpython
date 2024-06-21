@@ -6572,6 +6572,36 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
+# Check if year with century should be normalized for strftime
+AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char year[5];
+  struct tm date = {
+    .tm_year = -1801,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(year, sizeof year, "%Y", &date) && !strcmp(year, "99") &&
+      strftime(year, sizeof year, "%4Y", &date) && !strcmp(year, "0099"))
+    exit(0);
+  exit(1);
+}
+]])],
+[ac_cv_normalize_century=yes],
+[ac_cv_normalize_century=no],
+[ac_cv_normalize_century=no])])
+if test "$ac_cv_normalize_century" = yes
+then
+  AC_DEFINE([NORMALIZE_CENTURY], [1],
+  [Define if year with century should be normalized for strftime.])
+fi
+
 dnl check for ncurses/ncursesw and panel/panelw
 dnl NOTE: old curses is not detected.
 dnl have_curses=[no, ncursesw, ncurses]
