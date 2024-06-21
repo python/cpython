@@ -2516,3 +2516,13 @@
     added = '3.14'
 [function.PyUnicode_Import]
     added = '3.14'
+[const.PyUnicode_FORMAT_ASCII]
+    added = '3.14'
+[const.PyUnicode_FORMAT_UCS1]
+    added = '3.14'
+[const.PyUnicode_FORMAT_UCS2]
+    added = '3.14'
+[const.PyUnicode_FORMAT_UCS4]
+    added = '3.14'
+[const.PyUnicode_FORMAT_UTF8]
+    added = '3.14'
