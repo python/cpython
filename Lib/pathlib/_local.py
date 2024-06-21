@@ -811,23 +811,23 @@ class Path(PathBase, PurePath):
             except OSError as err:
                 if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                     raise UnsupportedOperation(str(err)) from None
-                return
+                raise
 
         def _get_xattr(self, name, *, follow_symlinks=True):
             try:
                 return os.getxattr(self, name, follow_symlinks=follow_symlinks)
             except OSError as err:
-                if e.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                     raise UnsupportedOperation(str(err)) from None
-                return
+                raise
 
         def _set_xattr(self, name, value, *, follow_symlinks=True):
             try:
                 return os.setxattr(self, name, value, follow_symlinks=follow_symlinks)
             except OSError as err:
-                if e.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                     raise UnsupportedOperation(str(err)) from None
-                return
+                raise
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
