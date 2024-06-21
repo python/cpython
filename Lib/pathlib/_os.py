@@ -115,24 +115,30 @@ if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_fil
         Copy from one file to another using CopyFile2 (Windows only).
         """
         if follow_symlinks:
-            flags = 0
+            _winapi.CopyFile2(source, target, 0)
         else:
+            # Use COPY_FILE_COPY_SYMLINK to copy a file symlink.
             flags = _winapi.COPY_FILE_COPY_SYMLINK
             try:
                 _winapi.CopyFile2(source, target, flags)
                 return
             except OSError as err:
                 # Check for ERROR_ACCESS_DENIED
-                if err.winerror != 5 or not _is_dirlink(source):
-                    raise  # Some other error.
+                if err.winerror == 5 and _is_dirlink(source):
+                    pass
+                else:
+                    raise
+
+            # Add COPY_FILE_DIRECTORY to copy a directory symlink.
             flags |= _winapi.COPY_FILE_DIRECTORY
-        try:
-            _winapi.CopyFile2(source, target, flags)
-        except OSError as err:
-            # Check for ERROR_INVALID_PARAMETER
-            if err.winerror != 87:
-                raise  # Some other error.
-            raise UnsupportedOperation(err)
+            try:
+                _winapi.CopyFile2(source, target, flags)
+            except OSError as err:
+                # Check for ERROR_INVALID_PARAMETER
+                if err.winerror == 87:
+                    raise UnsupportedOperation(err) from None
+                else:
+                    raise
 else:
     copyfile = None
 
