@@ -6887,10 +6887,10 @@ class ExtensionModuleTests(unittest.TestCase):
             import sys
             for i in range(5):
                 import _datetime
-                _datetime.date.max > _datetime.date.min
-                _datetime.time.max > _datetime.time.min
-                _datetime.datetime.max > _datetime.datetime.min
-                _datetime.timedelta.max > _datetime.timedelta.min
+                assert _datetime.date.max > _datetime.date.min
+                assert _datetime.time.max > _datetime.time.min
+                assert _datetime.datetime.max > _datetime.datetime.min
+                assert _datetime.timedelta.max > _datetime.timedelta.min
                 assert isinstance(_datetime.timezone.min, _datetime.tzinfo)
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 assert isinstance(_datetime.timezone.max, _datetime.tzinfo)
