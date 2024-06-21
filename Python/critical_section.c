@@ -14,7 +14,7 @@ _PyCriticalSection_BeginSlow(_PyCriticalSection *c, PyMutex *m)
     c->prev = (uintptr_t)tstate->critical_section;
     tstate->critical_section = (uintptr_t)c;
 
-    _PyMutex_LockSlow(m);
+    PyMutex_Lock(m);
     c->mutex = m;
 }
 

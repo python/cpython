@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -324,7 +324,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python was built with the :c:macro:`Py_DEBUG` macro
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
    defined, that is, if
    Python was :ref:`built in debug mode <debug-build>`.
 
@@ -729,6 +729,12 @@ The :mod:`test.support` module defines the following functions:
 
    Decorator for the minimum version when running test on macOS.  If the
    macOS version is less than the minimum, the test is skipped.
+
+
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
 
 
 .. decorator:: requires_IEEE_754

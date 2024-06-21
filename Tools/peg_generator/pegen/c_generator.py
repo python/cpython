@@ -212,7 +212,7 @@ class CCallMakerVisitor(GrammarVisitor):
         if node.can_be_inlined:
             self.cache[node] = self.generate_call(node.alts[0].items[0])
         else:
-            name = self.gen.artifical_rule_from_rhs(node)
+            name = self.gen.artificial_rule_from_rhs(node)
             self.cache[node] = FunctionCall(
                 assigned_variable=f"{name}_var",
                 function=f"{name}_rule",
@@ -253,7 +253,7 @@ class CCallMakerVisitor(GrammarVisitor):
         else:
             return FunctionCall(
                 function=f"_PyPegen_lookahead",
-                arguments=[positive, call.function, *call.arguments],
+                arguments=[positive, f"(void *(*)(Parser *)) {call.function}", *call.arguments],
                 return_type="int",
             )
 
@@ -331,7 +331,7 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_Gather(self, node: Gather) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.artifical_rule_from_gather(node)
+        name = self.gen.artificial_rule_from_gather(node)
         self.cache[node] = FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",

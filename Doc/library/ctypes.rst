@@ -1,5 +1,5 @@
-:mod:`ctypes` --- A foreign function library for Python
-=======================================================
+:mod:`!ctypes` --- A foreign function library for Python
+========================================================
 
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
@@ -661,14 +661,18 @@ for debugging because they can provide useful information::
    guaranteed by the library to work in the general case.  Unions and
    structures with bit-fields should always be passed to functions by pointer.
 
-Structure/union alignment and byte order
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Structure/union layout, alignment and byte order
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behavior by specifying a
-:attr:`~Structure._pack_` class attribute in the subclass definition.
-This must be set to a positive integer and specifies the maximum alignment for the fields.
-This is what ``#pragma pack(n)`` also does in MSVC.
+By default, Structure and Union fields are laid out in the same way the C
+compiler does it.  It is possible to override this behavior entirely by specifying a
+:attr:`~Structure._layout_` class attribute in the subclass definition; see
+the attribute documentation for details.
+
+It is possible to specify the maximum alignment for the fields by setting
+the :attr:`~Structure._pack_` class attribute to a positive integer.
+This matches what ``#pragma pack(n)`` does in MSVC.
+
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
 This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
@@ -1334,8 +1338,9 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
-to locate the library, and returns a full pathname if successful::
+On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
@@ -2076,13 +2081,13 @@ Utility functions
    Does the same as the C ``sizeof`` operator.
 
 
-.. function:: string_at(address, size=-1)
+.. function:: string_at(ptr, size=-1)
 
-   This function returns the C string starting at memory address *address* as a bytes
-   object. If size is specified, it is used as size, otherwise the string is assumed
+   Return the byte string at *void \*ptr*.
+   If *size* is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
 
-   .. audit-event:: ctypes.string_at address,size ctypes.string_at
+   .. audit-event:: ctypes.string_at ptr,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -2098,14 +2103,14 @@ Utility functions
       alias of :exc:`OSError`.
 
 
-.. function:: wstring_at(address, size=-1)
+.. function:: wstring_at(ptr, size=-1)
 
-   This function returns the wide character string starting at memory address
-   *address* as a string.  If *size* is specified, it is used as the number of
+   Return the wide-character string at *void \*ptr*.
+   If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
 
-   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
+   .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -2538,6 +2543,31 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
+
+   .. attribute:: _layout_
+
+      An optional string naming the struct/union layout. It can currently
+      be set to:
+
+      - ``"ms"``: the layout used by the Microsoft compiler (MSVC).
+        On GCC and Clang, this layout can be selected with
+        ``__attribute__((ms_struct))``.
+      - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
+        data model, as used on Linux and macOS.
+        With this layout, :attr:`~Structure._pack_` must be unset or zero.
+
+      If not set explicitly, ``ctypes`` will use a default that
+      matches the platform conventions. This default may change in future
+      Python releases (for example, when a new platform gains official support,
+      or when a difference between similar platforms is found).
+      Currently the default will be:
+
+      - On Windows: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - Otherwise: ``"gcc-sysv"``
+
+      :attr:`!_layout_` must already be defined when
+      :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
 
    .. attribute:: _anonymous_
 

@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
@@ -753,7 +753,9 @@ always available.
 
 .. function:: getandroidapilevel()
 
-   Return the build time API version of Android as an integer.
+   Return the build-time API level of Android as an integer. This represents the
+   minimum version of Android this build of Python can run on. For runtime
+   version information, see :func:`platform.android_ver`.
 
    .. availability:: Android.
 
@@ -875,7 +877,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1195,6 +1197,14 @@ always available.
 
    Interned strings are not :term:`immortal`; you must keep a reference to the
    return value of :func:`intern` around to benefit from it.
+
+
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
 
 
 .. function:: is_finalizing()
@@ -1698,7 +1708,7 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,

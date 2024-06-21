@@ -310,7 +310,7 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterator of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Network or IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.
@@ -1086,7 +1086,11 @@ class _BaseNetwork(_IPAddressBase):
         """
         return any(self.network_address in priv_network and
                    self.broadcast_address in priv_network
-                   for priv_network in self._constants._private_networks)
+                   for priv_network in self._constants._private_networks) and all(
+                    self.network_address not in network and
+                    self.broadcast_address not in network
+                    for network in self._constants._private_networks_exceptions
+                )
 
     @property
     def is_global(self):
@@ -1347,7 +1351,10 @@ class IPv4Address(_BaseV4, _BaseAddress):
         ``is_private`` has value opposite to :attr:`is_global`, except for the ``100.64.0.0/10``
         IPv4 range where they are both ``False``.
         """
-        return any(self in net for net in self._constants._private_networks)
+        return (
+            any(self in net for net in self._constants._private_networks)
+            and all(self not in net for net in self._constants._private_networks_exceptions)
+        )
 
     @property
     @functools.lru_cache()
@@ -1578,13 +1585,15 @@ class _IPv4Constants:
 
     _public_network = IPv4Network('100.64.0.0/10')
 
+    # Not globally reachable address blocks listed on
+    # https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
     _private_networks = [
         IPv4Network('0.0.0.0/8'),
         IPv4Network('10.0.0.0/8'),
         IPv4Network('127.0.0.0/8'),
         IPv4Network('169.254.0.0/16'),
         IPv4Network('172.16.0.0/12'),
-        IPv4Network('192.0.0.0/29'),
+        IPv4Network('192.0.0.0/24'),
         IPv4Network('192.0.0.170/31'),
         IPv4Network('192.0.2.0/24'),
         IPv4Network('192.168.0.0/16'),
@@ -1594,6 +1603,11 @@ class _IPv4Constants:
         IPv4Network('240.0.0.0/4'),
         IPv4Network('255.255.255.255/32'),
         ]
+
+    _private_networks_exceptions = [
+        IPv4Network('192.0.0.9/32'),
+        IPv4Network('192.0.0.10/32'),
+    ]
 
     _reserved_network = IPv4Network('240.0.0.0/4')
 
@@ -2086,7 +2100,10 @@ class IPv6Address(_BaseV6, _BaseAddress):
         ipv4_mapped = self.ipv4_mapped
         if ipv4_mapped is not None:
             return ipv4_mapped.is_private
-        return any(self in net for net in self._constants._private_networks)
+        return (
+            any(self in net for net in self._constants._private_networks)
+            and all(self not in net for net in self._constants._private_networks_exceptions)
+        )
 
     @property
     def is_global(self):
@@ -2125,6 +2142,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.3.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_loopback
         return self._ip == 1
 
     @property
@@ -2241,7 +2261,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_loopback(self):
-        return self._ip == 1 and self.network.is_loopback
+        return super().is_loopback and self.network.is_loopback
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):
@@ -2342,18 +2362,30 @@ class _IPv6Constants:
 
     _multicast_network = IPv6Network('ff00::/8')
 
+    # Not globally reachable address blocks listed on
+    # https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
     _private_networks = [
         IPv6Network('::1/128'),
         IPv6Network('::/128'),
         IPv6Network('::ffff:0:0/96'),
+        IPv6Network('64:ff9b:1::/48'),
         IPv6Network('100::/64'),
         IPv6Network('2001::/23'),
-        IPv6Network('2001:2::/48'),
         IPv6Network('2001:db8::/32'),
-        IPv6Network('2001:10::/28'),
+        # IANA says N/A, let's consider it not globally reachable to be safe
+        IPv6Network('2002::/16'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]
+
+    _private_networks_exceptions = [
+        IPv6Network('2001:1::1/128'),
+        IPv6Network('2001:1::2/128'),
+        IPv6Network('2001:3::/32'),
+        IPv6Network('2001:4:112::/48'),
+        IPv6Network('2001:20::/28'),
+        IPv6Network('2001:30::/28'),
+    ]
 
     _reserved_networks = [
         IPv6Network('::/8'), IPv6Network('100::/8'),

@@ -33,11 +33,15 @@
     <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
     <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
     <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
+    <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
+    <_SbomOutputs Include="$(PySourcePath)Misc\externals.spdx.json;$(PySourcePath)Misc\sbom.spdx.json">
+      <Format>json</Format>
+    </_SbomOutputs>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
-    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources)"
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources);@(_SbomSources)"
            AlwaysCreate="False" />
   </Target>
 
@@ -126,7 +130,14 @@
           DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
   </Target>
 
-  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases">
+  <Target Name="_RegenSbom"
+          DependsOnTargets="FindPythonForBuild"
+          Inputs="@(_SbomSources)"
+          Outputs="@(_SbomOutputs)">
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\generate_sbom.py"'/>
+  </Target>
+
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases;_RegenSbom">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 

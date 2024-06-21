@@ -25,6 +25,9 @@ PyInit__testlimitedcapi(void)
     if (mod == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
         return NULL;
@@ -51,6 +54,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Long(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Object(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_PyOS(mod) < 0) {

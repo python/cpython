@@ -1,5 +1,5 @@
-:mod:`contextvars` --- Context Variables
-========================================
+:mod:`!contextvars` --- Context Variables
+=========================================
 
 .. module:: contextvars
    :synopsis: Context Variables

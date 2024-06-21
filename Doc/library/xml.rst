@@ -124,10 +124,9 @@ large tokens
   Expat needs to re-parse unfinished tokens; without the protection
   introduced in Expat 2.6.0, this can lead to quadratic runtime that can
   be used to cause denial of service in the application parsing XML.
-  The issue is known as
-  `CVE-2023-52425 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52425>`_.
+  The issue is known as :cve:`2023-52425`.
 
-The documentation for `defusedxml`_ on PyPI has further information about
+The documentation for :pypi:`defusedxml` on PyPI has further information about
 all known attack vectors with examples and references.
 
 .. _defusedxml-package:
@@ -135,14 +134,13 @@ all known attack vectors with examples and references.
 The :mod:`!defusedxml` Package
 ------------------------------
 
-`defusedxml`_ is a pure Python package with modified subclasses of all stdlib
+:pypi:`defusedxml` is a pure Python package with modified subclasses of all stdlib
 XML parsers that prevent any potentially malicious operation. Use of this
 package is recommended for any server code that parses untrusted XML data. The
 package also ships with example exploits and extended documentation on more
 XML exploits such as XPath injection.
 
 
-.. _defusedxml: https://pypi.org/project/defusedxml/
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _DTD: https://en.wikipedia.org/wiki/Document_type_definition
