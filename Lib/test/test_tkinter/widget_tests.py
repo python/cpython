@@ -119,9 +119,14 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkEnumParam(self, widget, name, *values,
                        errmsg=None, allow_empty=False, fullname=None,
-                       **kwargs):
+                       sort=False, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
         if errmsg is None:
+            if sort:
+                if values[-1]:
+                    values = tuple(sorted(values))
+                else:
+                    values = tuple(sorted(values[:-1])) + ('',)
             errmsg2 = ' %s "{}": must be %s%s or %s' % (
                     fullname or name,
                     ', '.join(values[:-1]),
@@ -151,9 +156,9 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkReliefParam(self, widget, name, *, allow_empty=False):
-        values = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
+        values = ('flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
         if allow_empty:
-            values.append('')
+            values += ('',)
         self.checkParams(widget, name, *values)
         errmsg = 'bad relief "{}": must be %s, or %s' % (
                 ', '.join(values[:-1]),

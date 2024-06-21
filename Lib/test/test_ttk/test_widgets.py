@@ -177,9 +177,9 @@ class AbstractLabelTest(AbstractWidgetTest):
                 errmsg='image "spam" doesn\'t exist')
 
     def test_configure_compound(self):
-        values = 'none text image center top bottom left right'.split()
+        values = ('none', 'text', 'image', 'center', 'top', 'bottom', 'left', 'right')
         if tk_version >= (8, 7):
-            values.append('')
+            values += ('',)
         widget = self.create()
         self.checkEnumParam(widget, 'compound', *values, allow_empty=True)
 
@@ -233,11 +233,9 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_default(self):
         widget = self.create()
-        if tk_version >= (8, 7):
-            values = ('active', 'disabled', 'normal')
-        else:
-            values = ('normal', 'active', 'disabled')
-        self.checkEnumParam(widget, 'default', *values)
+        values = ('normal', 'active', 'disabled')
+        self.checkEnumParam(widget, 'default', *values,
+                            sort=tk_version >= (8, 7))
 
     def test_invoke(self):
         success = []
@@ -790,11 +788,9 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_direction(self):
         widget = self.create()
-        if tk_version >= (8, 7):
-            values = 'above', 'below', 'flush', 'left', 'right'
-        else:
-            values = 'above', 'below', 'left', 'right', 'flush'
-        self.checkEnumParam(widget, 'direction', *values)
+        values = ('above', 'below', 'left', 'right', 'flush')
+        self.checkEnumParam(widget, 'direction', *values,
+                            sort=tk_version >= (8, 7))
 
     def test_configure_menu(self):
         widget = self.create()
@@ -957,11 +953,14 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         return ttk.Scrollbar(self.root, **kwargs)
 
 
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+@add_standard_options(PixelSizeTests if tk_version >= (8, 7) else IntegerSizeTests,
+                      StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
     )
+    if tk_version >= (8, 7):
+        _conv_pixels = False
 
     def setUp(self):
         super().setUp()
@@ -973,22 +972,6 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return ttk.Notebook(self.root, **kwargs)
-
-    def test_configure_height(self):
-        widget = self.create()
-        if tk_version >= (8, 7):
-            self.checkPixelsParam(widget, 'height', 100, -100, 0, '3c', conv=False)
-            self.checkPixelsParam(widget, 'height', 101.2, 102.6, conv=False)
-        else:
-            self.checkIntegerParam(widget, 'height', 100, -100, 0)
-
-    def test_configure_width(self):
-        widget = self.create()
-        if tk_version >= (8, 7):
-            self.checkPixelsParam(widget, 'width', 402, -402, 0, '3c', conv=False)
-            self.checkPixelsParam(widget, 'width', 401.2, 402.6, conv=False)
-        else:
-            self.checkIntegerParam(widget, 'width', 402, -402, 0)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)

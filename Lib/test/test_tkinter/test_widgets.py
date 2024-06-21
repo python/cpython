@@ -1419,12 +1419,10 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_type(self):
         widget = self.create()
-        if tk_version >= (8, 7):
-            values = ('menubar', 'normal', 'tearoff')
-        else:
-            values = ('normal', 'tearoff', 'menubar')
+        values = ('normal', 'tearoff', 'menubar')
         self.checkEnumParam(widget, 'type', *values,
-                            allow_empty=tk_version < (8, 7))
+                            allow_empty=tk_version < (8, 7),
+                            sort=tk_version >= (8, 7))
 
     def test_entryconfigure(self):
         m1 = self.create()
