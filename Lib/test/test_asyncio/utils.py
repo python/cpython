@@ -552,7 +552,7 @@ class TestCase(unittest.TestCase):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
-                    watcher = policy.get_child_watcher()
+                    watcher = policy._watcher
             except NotImplementedError:
                 # watcher is not implemented by EventLoopPolicy, e.g. Windows
                 pass
