@@ -11899,18 +11899,6 @@ annodescr_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     return Py_NewRef(ad->annotations);
 }
 
-static int
-annodescr_descr_set(PyObject *self, PyObject *obj, PyObject *value)
-{
-    annodescrobject *ad = (annodescrobject *)self;
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "cannot delete __annotations__");
-        return -1;
-    }
-    Py_XSETREF(ad->annotations, value);
-    return 0;
-}
-
 PyTypeObject _PyAnnotationsDescriptor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "AnnotationsDescriptor",
@@ -11933,5 +11921,4 @@ PyTypeObject _PyAnnotationsDescriptor_Type = {
     .tp_richcompare = annodescr_richcompare,
     .tp_methods = annodescr_methods,
     .tp_descr_get = annodescr_descr_get,
-    .tp_descr_set = annodescr_descr_set,
 };

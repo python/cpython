@@ -12,12 +12,8 @@ SOURCE = 3
 class TypeAnnotationTests(unittest.TestCase):
 
     def test_lazy_create_annotations(self):
-        # type objects lazy create their __annotations__ dict on demand.
-        # the annotations dict is stored in type.__dict__.
-        # a freshly created type shouldn't have an annotations dict yet.
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
             d = foo.__annotations__
             self.assertTrue("__annotations__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
@@ -27,7 +23,6 @@ class TypeAnnotationTests(unittest.TestCase):
     def test_setting_annotations(self):
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
             d = {'a': int}
             foo.__annotations__ = d
             self.assertTrue("__annotations__" in foo.__dict__)
