@@ -6607,7 +6607,7 @@ differs:
 
 
 static int
-object_set_class_no_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject **oldto_p)
+object_set_class_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject **oldto_p)
 {
     PyTypeObject *oldto = Py_TYPE(self);
 
@@ -6739,7 +6739,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     _PyEval_StopTheWorld(interp);
 #endif
     PyTypeObject *oldto;
-    int res = object_set_class_no_world_stopped(self, newto, &oldto);
+    int res = object_set_class_world_stopped(self, newto, &oldto);
 #ifdef Py_GIL_DISABLED
     _PyEval_StartTheWorld(interp);
 #endif
