@@ -1843,14 +1843,14 @@ static PyObject*
 unicode_export(PyObject *self, PyObject *args)
 {
     PyObject *obj;
-    unsigned int supported_formats;
-    if (!PyArg_ParseTuple(args, "OI", &obj, &supported_formats)) {
+    unsigned int requested_formats;
+    if (!PyArg_ParseTuple(args, "OI", &obj, &requested_formats)) {
         return NULL;
     }
 
     Py_ssize_t size;
     uint32_t format;
-    const void *data = PyUnicode_Export(obj, supported_formats, &size, &format);
+    const void *data = PyUnicode_Export(obj, requested_formats, &size, &format);
     if (data == NULL) {
         return NULL;
     }

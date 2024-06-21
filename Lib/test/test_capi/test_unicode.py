@@ -1808,5 +1808,39 @@ class CAPITest(unittest.TestCase):
             unicode_import(ucs4[:-3], PyUnicode_FORMAT_UCS4)
 
 
+
+    def test_unicode_export_import_roundtrip(self):
+        unicode_export = _testlimitedcapi.unicode_export
+        unicode_import = _testlimitedcapi.unicode_import
+
+        ASCII = PyUnicode_FORMAT_ASCII
+        UCS1 = PyUnicode_FORMAT_UCS1
+        UCS2 = PyUnicode_FORMAT_UCS2
+        UCS4 = PyUnicode_FORMAT_UCS4
+        UTF8 = PyUnicode_FORMAT_UTF8
+        ALL = (ASCII | UCS1 | UCS2 | UCS4 | UTF8)
+
+        for string, allowed_formats in (
+            ('', {ASCII, UCS1, UCS2, UCS4, UTF8}),
+            ('ascii', {ASCII, UCS1, UCS2, UCS4, UTF8}),
+            ('latin1:\xe9', {UCS1, UCS2, UCS4, UTF8}),
+            ('ucs2:\u20ac', {UCS2, UCS4, UTF8}),
+            ('ucs4:\U0001f638', {UCS4, UTF8}),
+        ):
+            for format in ASCII, UCS1, UCS2, UCS4, UTF8:
+                with self.subTest(string=string, format=format):
+                    if format not in allowed_formats:
+                        with self.assertRaises(ValueError):
+                            unicode_export(string, format)
+                    else:
+                        buf, buf_fmt = unicode_export(string, format)
+                        restored = unicode_import(buf, buf_fmt)
+                        self.assertEqual(restored, string)
+
+            buf, buf_fmt = unicode_export(string, ALL)
+            restored = unicode_import(buf, buf_fmt)
+            self.assertEqual(restored, string)
+
+
 if __name__ == '__main__':
     unittest.main()
