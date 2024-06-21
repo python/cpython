@@ -5643,7 +5643,6 @@
             v = stack_pointer[-1];
             {
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
-                PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
                 PyObject *retval_o;
                 assert(frame != &entry_frame);
                 if ((tstate->interp->eval_frame == NULL) &&
@@ -5667,7 +5666,7 @@
                 else {
                     retval_o = PyObject_CallMethodOneArg(receiver_o,
                         &_Py_ID(send),
-                        v_o);
+                        PyStackRef_AsPyObjectSteal(v));
                 }
                 if (retval_o == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)

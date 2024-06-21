@@ -1109,7 +1109,6 @@ dummy_func(
 
         op(_SEND, (receiver, v -- receiver, retval)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
-            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
 
             PyObject *retval_o;
             assert(frame != &entry_frame);
@@ -1134,7 +1133,7 @@ dummy_func(
             else {
                 retval_o = PyObject_CallMethodOneArg(receiver_o,
                                                      &_Py_ID(send),
-                                                     v_o);
+                                                     PyStackRef_AsPyObjectSteal(v));
             }
             if (retval_o == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
