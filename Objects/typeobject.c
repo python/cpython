@@ -4231,8 +4231,10 @@ type_new_set_annotate(PyTypeObject *type)
             return -1;
         }
         if (PyDict_SetItem(dict, &_Py_ID(__annotations__), descr) < 0) {
+            Py_DECREF(descr);
             return -1;
         }
+        Py_DECREF(descr);
     }
     return 0;
 }
@@ -11723,11 +11725,13 @@ static void
 annodescr_dealloc(PyObject *self)
 {
     annodescrobject *ad = (annodescrobject *)self;
+    PyTypeObject *tp = Py_TYPE(self);
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(ad->owner);
     Py_XDECREF(ad->annotations);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -11738,6 +11742,16 @@ annodescr_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ad->owner);
     Py_VISIT(ad->annotations);
 
+    return 0;
+}
+
+static int
+annodescr_clear(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+
+    Py_CLEAR(ad->annotations);
+    Py_CLEAR(ad->owner);
     return 0;
 }
 
@@ -11847,7 +11861,7 @@ annodescr_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 #define MAKE_DICT_WRAPPER(name) \
-    PyObject *annodescr_ ## name(PyObject *self, \
+    PyObject *annodescr_wrap_ ## name(PyObject *self, \
                                  PyObject *args, \
                                  PyObject *kwargs) \
     { \
@@ -11876,16 +11890,16 @@ MAKE_DICT_WRAPPER(copy)
 #undef MAKE_DICT_WRAPPER
 
 static PyMethodDef annodescr_methods[] = {
-    {"get", (PyCFunction)annodescr_get, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"setdefault", (PyCFunction)annodescr_setdefault, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"pop", (PyCFunction)annodescr_pop, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"popitem", (PyCFunction)annodescr_popitem, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"keys", (PyCFunction)annodescr_keys, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"values", (PyCFunction)annodescr_values, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"items", (PyCFunction)annodescr_items, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"update", (PyCFunction)annodescr_update, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"clear", (PyCFunction)annodescr_clear, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"copy", (PyCFunction)annodescr_copy, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"get", (PyCFunction)annodescr_wrap_get, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"setdefault", (PyCFunction)annodescr_wrap_setdefault, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pop", (PyCFunction)annodescr_wrap_pop, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"popitem", (PyCFunction)annodescr_wrap_popitem, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"keys", (PyCFunction)annodescr_wrap_keys, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"values", (PyCFunction)annodescr_wrap_values, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"items", (PyCFunction)annodescr_wrap_items, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"update", (PyCFunction)annodescr_wrap_update, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"clear", (PyCFunction)annodescr_wrap_clear, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"copy", (PyCFunction)annodescr_wrap_copy, METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL},
 };
 
@@ -11906,6 +11920,7 @@ PyTypeObject _PyAnnotationsDescriptor_Type = {
     .tp_itemsize = 0,
     .tp_dealloc = annodescr_dealloc,
     .tp_traverse = annodescr_traverse,
+    .tp_clear = annodescr_clear,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MAPPING,
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = PyType_GenericNew,
