@@ -145,7 +145,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *func, *pto_args, *new_args, *pto_kw;
     partialobject *pto;
-    Py_ssize_t pto_phcount;
+    Py_ssize_t pto_phcount = 0;
     Py_ssize_t new_nargs = PyTuple_GET_SIZE(args);
 
     if (new_nargs < 1) {
@@ -183,9 +183,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             assert(PyDict_Check(pto_kw));
         }
     }
-    else {
-        pto_phcount = 0;
-    }
 
     /* create partialobject structure */
     pto = (partialobject *)type->tp_alloc(type, 0);
@@ -222,13 +219,14 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if ((pto_phcount > 0) && (new_nargs > 0)) {
         Py_ssize_t npargs = PyTuple_GET_SIZE(pto_args);
         Py_ssize_t tot_nargs = npargs;
-        if (new_nargs > pto_phcount)
+        if (new_nargs > pto_phcount) {
             tot_nargs += new_nargs - pto_phcount;
+        }
         PyObject *tot_args = PyTuple_New(tot_nargs);
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
                 item = PyTuple_GET_ITEM(pto_args, i);
-                if ((j < new_nargs) & Py_Is(item, pto->placeholder)) {
+                if ((j < new_nargs) && Py_Is(item, pto->placeholder)) {
                     item = PyTuple_GET_ITEM(new_args, j);
                     j++;
                     pto_phcount--;
