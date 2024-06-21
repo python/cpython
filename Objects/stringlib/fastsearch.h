@@ -25,21 +25,6 @@
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
 
-#if LONG_BIT >= 128
-#  define STRINGLIB_BLOOM_MASK 127
-#elif LONG_BIT >= 64
-#  define STRINGLIB_BLOOM_MASK 63
-#elif LONG_BIT >= 32
-#  define STRINGLIB_BLOOM_MASK 31
-#else
-#  error "LONG_BIT is smaller than 32"
-#endif
-
-#define STRINGLIB_BLOOM_ADD(mask, ch) \
-    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
-#define STRINGLIB_BLOOM(mask, ch)     \
-    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
-
 #ifdef STRINGLIB_FAST_MEMCHR
 #  define MEMCHR_CUT_OFF 15
 #else
@@ -354,6 +339,23 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 }
 
 
+// Bloom Setup
+#if LONG_BIT >= 128
+#  define STRINGLIB_BLOOM_MASK 127
+#elif LONG_BIT >= 64
+#  define STRINGLIB_BLOOM_MASK 63
+#elif LONG_BIT >= 32
+#  define STRINGLIB_BLOOM_MASK 31
+#else
+#  error "LONG_BIT is smaller than 32"
+#endif
+
+#define STRINGLIB_BLOOM_ADD(mask, ch) \
+    ((mask |= (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
+#define STRINGLIB_BLOOM(mask, ch)     \
+    ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_MASK)))))
+
+// Boyer-Moore "Bad Character" table Setup
 #define SHIFT_TYPE uint8_t
 #define MAX_SHIFT UINT8_MAX
 
