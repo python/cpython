@@ -2196,6 +2196,8 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. _python-critical-section-api:
+
 Python Critical Section API
 ---------------------------
 
