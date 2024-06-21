@@ -321,7 +321,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.root.update()
         self.assertEqual(f2.winfo_x(), 190)
         with self.assertRaisesRegex(TclError,
-                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('spam')):
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam')):
             f2.place_configure(in_=f, x='spam')
 
     def test_place_configure_y(self):
@@ -339,7 +339,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         self.root.update()
         self.assertEqual(f2.winfo_y(), 110)
         with self.assertRaisesRegex(TclError,
-                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('spam')):
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam')):
             f2.place_configure(in_=f, y='spam')
 
     def test_place_configure_relx(self):

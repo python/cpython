@@ -10,10 +10,13 @@ import test.support
 _sentinel = object()
 
 class AbstractWidgetTest(AbstractTkTest):
+    _default_pixels = '' if tk_version >= (9, 0) else -1 if tk_version >= (8, 7) else ''
     _conv_pixels = round
     _conv_pad_pixels = None
     _stringify = False
-    clip_highlightthickness = True
+    _clip_highlightthickness = True
+    _clip_pad = False
+    _clip_borderwidth = False
 
     @property
     def scaling(self):
@@ -260,9 +263,14 @@ class StandardOptionsTests:
     def test_configure_borderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'borderwidth',
-                              0, 1.3, 2.6, 6, -2, '10p')
+                              0, 1.3, 2.6, 6, '10p')
+        expected = 0 if self._clip_borderwidth else -2
+        self.checkParam(widget, 'borderwidth', -2, expected=expected,
+                        conv=self._conv_pixels)
         if 'bd' in self.OPTIONS:
-            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, -2, '10p')
+            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, '10p')
+            self.checkParam(widget, 'bd', -2, expected=expected,
+                            conv=self._conv_pixels)
 
     def test_configure_compound(self):
         widget = self.create()
@@ -306,7 +314,7 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkPixelsParam(widget, 'highlightthickness',
                               0, 1.3, 2.6, 6, '10p')
-        expected = 0 if self.clip_highlightthickness else -2
+        expected = 0 if self._clip_highlightthickness else -2
         self.checkParam(widget, 'highlightthickness', -2, expected=expected,
                         conv=self._conv_pixels)
 
@@ -351,13 +359,19 @@ class StandardOptionsTests:
 
     def test_configure_padx(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, -2, '12m',
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
                               conv=self._conv_pad_pixels)
+        expected = 0 if self._clip_pad else -2
+        self.checkParam(widget, 'padx', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
 
     def test_configure_pady(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, -2, '12m',
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m',
                               conv=self._conv_pad_pixels)
+        expected = 0 if self._clip_pad else -2
+        self.checkParam(widget, 'pady', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
 
     def test_configure_relief(self):
         widget = self.create()
@@ -413,9 +427,8 @@ class StandardOptionsTests:
         self.checkParams(widget, 'underline', 0, 1, 10)
         if tk_version >= (8, 7):
             is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
-            default = -1 if tk_version == (8, 7) else ''
             self.checkParam(widget, 'underline', '',
-                            expected='' if is_ttk else default)
+                            expected='' if is_ttk else self._default_pixels)
             self.checkParam(widget, 'underline', '5+2',
                             expected='5+2' if is_ttk else 7)
             self.checkParam(widget, 'underline', '5-2',

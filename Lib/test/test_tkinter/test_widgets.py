@@ -144,7 +144,9 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _conv_pixels = False
-    clip_highlightthickness = False
+    _clip_highlightthickness = tk_version >= (8, 7)
+    _clip_pad = tk_version >= (8, 7)
+    _clip_borderwidth = tk_version >= (8, 7)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -276,7 +278,9 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
     _conv_pixels = round
-    clip_highlightthickness = True
+    _clip_highlightthickness = True
+    _clip_pad = True
+    _clip_borderwidth = False
 
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
@@ -309,16 +313,6 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         menu = tkinter.Menu(widget, name='menu')
         self.checkParam(widget, 'menu', menu, eq=widget_eq)
         menu.destroy()
-
-    def test_configure_padx(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'padx', -2, expected=0)
-
-    def test_configure_pady(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'pady', -2, expected=0)
 
     def test_configure_width(self):
         widget = self.create()
@@ -1188,7 +1182,9 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_elementborderwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, -2, '1m')
+        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
+        expected = self._default_pixels if tk_version >= (8, 7) else -2
+        self.checkParam(widget, 'elementborderwidth', -2, expected=expected)
 
     def test_configure_orient(self):
         widget = self.create()
@@ -1476,7 +1472,8 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     _conv_pad_pixels = False
     if tk_version >= (8, 7):
         _conv_pixels = False
-        clip_highlightthickness = False
+    _clip_pad = tk_version >= (8, 7)
+    _clip_borderwidth = tk_version >= (8, 7)
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1484,6 +1481,26 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
+
+    def test_configure_padx(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
+                              conv=self._conv_pad_pixels)
+        expected = self._default_pixels if self._clip_pad else -2
+        self.checkParam(widget, 'padx', -2, expected=expected)
+
+    def test_configure_pady(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m',
+                              conv=self._conv_pad_pixels)
+        expected = self._default_pixels if self._clip_pad else -2
+        self.checkParam(widget, 'pady', -2, expected=expected)
+
+    def test_configure_width(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, 0, '5i')
+        expected = 0 if tk_version >= (8, 7) else -402
+        self.checkParam(widget, 'width', -402, expected=expected)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
