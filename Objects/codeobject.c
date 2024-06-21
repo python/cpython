@@ -137,6 +137,7 @@ static PyObject *intern_one_constant(PyObject *op);
 static int
 intern_strings(PyObject *tuple)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t i;
 
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
@@ -146,7 +147,7 @@ intern_strings(PyObject *tuple)
                             "non-string found in code slot");
             return -1;
         }
-        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
+        _PyUnicode_InternMortal(interp, &_PyTuple_ITEMS(tuple)[i]);
     }
     return 0;
 }
@@ -157,12 +158,13 @@ intern_strings(PyObject *tuple)
 static int
 intern_constants(PyObject *tuple, int *modified)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
             if (should_intern_string(v)) {
                 PyObject *w = v;
-                PyUnicode_InternInPlace(&v);
+                _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
                     if (modified) {
@@ -458,12 +460,13 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         con->stacksize = 1;
     }
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
-    PyUnicode_InternInPlace(&co->co_filename);
-    PyUnicode_InternInPlace(&co->co_name);
-    PyUnicode_InternInPlace(&co->co_qualname);
+    _PyUnicode_InternMortal(interp, &co->co_filename);
+    _PyUnicode_InternMortal(interp, &co->co_name);
+    _PyUnicode_InternMortal(interp, &co->co_qualname);
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -489,7 +492,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_GIL_DISABLED
     PyMutex_Lock(&interp->func_state.mutex);
 #endif

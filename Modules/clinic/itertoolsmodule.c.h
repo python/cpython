@@ -47,7 +47,7 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(n), &_Py_ID(strict), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('n'), &_Py_ID(strict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -509,7 +509,7 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -580,7 +580,7 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -650,7 +650,7 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -928,4 +928,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6a515f765da86b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b13be3075f2d6d3 input=a9049054013a1b77]*/

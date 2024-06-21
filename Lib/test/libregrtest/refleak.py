@@ -110,7 +110,7 @@ def runtest_refleak(test_name, test_func,
     getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = interned_before = 0
+    rc_before = alloc_before = fd_before = interned_immortal_before = 0
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
@@ -141,9 +141,11 @@ def runtest_refleak(test_name, test_func,
         # Also, readjust the reference counts and alloc blocks by ignoring
         # any strings that might have been interned during test_func. These
         # strings will be deallocated at runtime shutdown
-        interned_after = getunicodeinternedsize()
-        alloc_after = getallocatedblocks() - interned_after
-        rc_after = gettotalrefcount() - interned_after * 2
+        interned_immortal_after = getunicodeinternedsize(
+            # Use an internal-only keyword argument that mypy doesn't know yet
+            _only_immortal=True)  # type: ignore[call-arg]
+        alloc_after = getallocatedblocks() - interned_immortal_after
+        rc_after = gettotalrefcount() - interned_immortal_after * 2
         fd_after = fd_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -170,7 +172,7 @@ def runtest_refleak(test_name, test_func,
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
-        interned_before = interned_after
+        interned_immortal_before = interned_immortal_after
 
         restore_support_xml(xml_filename)
 

@@ -844,7 +844,7 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(progress_handler), &_Py_ID(n), },
+        .ob_item = { &_Py_ID(progress_handler), _Py_LATIN1_CHR('n'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1866,4 +1866,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=7d41a178b7b2b683 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d4d7e4abe17b164 input=a9049054013a1b77]*/

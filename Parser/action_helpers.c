@@ -3,6 +3,7 @@
 #include "pegen.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)
@@ -123,7 +124,8 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     if (!uni) {
         return NULL;
     }
-    PyUnicode_InternInPlace(&uni);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &uni);
     if (_PyArena_AddPyObject(p->arena, uni) < 0) {
         Py_DECREF(uni);
         return NULL;

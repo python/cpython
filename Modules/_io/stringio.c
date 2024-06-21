@@ -196,7 +196,7 @@ write_str(stringio *self, PyObject *obj)
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
-            decoded, &_Py_STR(newline), self->writenl, -1);
+            decoded, _Py_LATIN1_CHR('\n'), self->writenl, -1);
         Py_SETREF(decoded, translated);
     }
     if (decoded == NULL)

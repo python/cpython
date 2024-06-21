@@ -370,9 +370,14 @@ def generate_static_strings_initializer(identifiers, strings):
                 # This use of _Py_ID() is ignored by iter_global_strings()
                 # since iter_files() ignores .h files.
                 printer.write(f'string = &_Py_ID({i});')
+                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
                 printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
-                printer.write(f'_PyUnicode_InternInPlace(interp, &string);')
-            # XXX What about "strings"?
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
+            for value, name in sorted(strings.items()):
+                printer.write(f'string = &_Py_STR({name});')
+                printer.write(f'_PyUnicode_InternStatic(interp, &string);')
+                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
+                printer.write(f'assert(PyUnicode_GET_LENGTH(string) != 1);')
         printer.write(END)
         printer.write(after)
 
@@ -414,15 +419,31 @@ def generate_global_object_finalizers(generated_immortal_objects):
 def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
     identifiers = set(IDENTIFIERS)
     strings = {}
+    # Note that we store strings as they appear in C source, so the checks here
+    # can be defeated, e.g.:
+    # - "a" and "\0x61" won't be reported as duplicate.
+    # - "\n" appears as 2 characters.
+    # Probably not worth adding a C string parser.
     for name, string, *_ in iter_global_strings():
         if string is None:
             if name not in IGNORED:
                 identifiers.add(name)
         else:
+            if len(string) == 1 and ord(string) < 256:
+                # Give a nice message for common mistakes.
+                # To cover tricky cases (like "\n") we also generate C asserts.
+                raise ValueError(
+                    'do not use &_PyID or &_Py_STR for one-character latin-1 '
+                    + f'strings, use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name
             elif name != strings[string]:
                 raise ValueError(f'string mismatch for {name!r} ({string!r} != {strings[name]!r}')
+    overlap = identifiers & set(strings.keys())
+    if overlap:
+        raise ValueError(
+            'do not use both _PyID and _Py_DECLARE_STR for the same string: '
+            + repr(overlap))
     return identifiers, strings
 
 

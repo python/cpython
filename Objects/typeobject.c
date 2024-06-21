@@ -1393,8 +1393,10 @@ type_module(PyTypeObject *type)
         if (s != NULL) {
             mod = PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-            if (mod != NULL)
-                PyUnicode_InternInPlace(&mod);
+            if (mod != NULL) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &mod);
+            }
         }
         else {
             mod = &_Py_ID(builtins);
@@ -5692,9 +5694,9 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         if (name == NULL)
             return -1;
     }
-    /* bpo-40521: Interned strings are shared by all subinterpreters */
     if (!PyUnicode_CHECK_INTERNED(name)) {
-        PyUnicode_InternInPlace(&name);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternMortal(interp, &name);
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyErr_SetString(PyExc_MemoryError,
                             "Out of memory interning an attribute name");
