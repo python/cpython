@@ -2371,7 +2371,7 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
             goto exit;
         }
     }
-exit:
+exit:;
     Py_END_CRITICAL_SECTION();
 
     return result;

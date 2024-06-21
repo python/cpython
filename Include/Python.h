@@ -125,6 +125,7 @@
 #include "import.h"
 #include "abstract.h"
 #include "bltinmodule.h"
+#include "critical_section.h"
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
