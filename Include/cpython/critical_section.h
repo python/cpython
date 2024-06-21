@@ -97,10 +97,10 @@ PyCriticalSection2_End(PyCriticalSection2 *c);
 // Python releases without a deprecation period.
 struct PyCriticalSection {
     // Tagged pointer to an outer active critical section (or 0).
-    uintptr_t _prev;
+    uintptr_t _cs_prev;
 
     // Mutex used to protect critical section
-    PyMutex *_mutex;
+    PyMutex *_cs_mutex;
 };
 
 // A critical section protected by two mutexes. Use
@@ -108,9 +108,9 @@ struct PyCriticalSection {
 // NOTE: the contents of this struct are private and may change betweeen
 // Python releases without a deprecation period.
 struct PyCriticalSection2 {
-    PyCriticalSection _base;
+    PyCriticalSection _cs_base;
 
-    PyMutex *_mutex2;
+    PyMutex *_cs_mutex2;
 };
 
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \

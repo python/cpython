@@ -111,8 +111,8 @@ _PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
 {
     if (PyMutex_LockFast(&m->_bits)) {
         PyThreadState *tstate = _PyThreadState_GET();
-        c->_mutex = m;
-        c->_prev = tstate->critical_section;
+        c->_cs_mutex = m;
+        c->_cs_prev = tstate->critical_section;
         tstate->critical_section = (uintptr_t)c;
     }
     else {
@@ -134,7 +134,7 @@ static inline void
 _PyCriticalSection_Pop(PyCriticalSection *c)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t prev = c->_prev;
+    uintptr_t prev = c->_cs_prev;
     tstate->critical_section = prev;
 
     if ((prev & _Py_CRITICAL_SECTION_INACTIVE) != 0) {
@@ -145,7 +145,7 @@ _PyCriticalSection_Pop(PyCriticalSection *c)
 static inline void
 _PyCriticalSection_End(PyCriticalSection *c)
 {
-    PyMutex_Unlock(c->_mutex);
+    PyMutex_Unlock(c->_cs_mutex);
     _PyCriticalSection_Pop(c);
 }
 #define PyCriticalSection_End _PyCriticalSection_End
@@ -156,8 +156,8 @@ _PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
     if (m1 == m2) {
         // If the two mutex arguments are the same, treat this as a critical
         // section with a single mutex.
-        c->_mutex2 = NULL;
-        _PyCriticalSection_BeginMutex(&c->_base, m1);
+        c->_cs_mutex2 = NULL;
+        _PyCriticalSection_BeginMutex(&c->_cs_base, m1);
         return;
     }
 
@@ -173,9 +173,9 @@ _PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
     if (PyMutex_LockFast(&m1->_bits)) {
         if (PyMutex_LockFast(&m2->_bits)) {
             PyThreadState *tstate = _PyThreadState_GET();
-            c->_base._mutex = m1;
-            c->_mutex2 = m2;
-            c->_base._prev = tstate->critical_section;
+            c->_cs_base._cs_mutex = m1;
+            c->_cs_mutex2 = m2;
+            c->_cs_base._cs_prev = tstate->critical_section;
 
             uintptr_t p = (uintptr_t)c | _Py_CRITICAL_SECTION_TWO_MUTEXES;
             tstate->critical_section = p;
@@ -199,11 +199,11 @@ _PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 static inline void
 _PyCriticalSection2_End(PyCriticalSection2 *c)
 {
-    if (c->_mutex2) {
-        PyMutex_Unlock(c->_mutex2);
+    if (c->_cs_mutex2) {
+        PyMutex_Unlock(c->_cs_mutex2);
     }
-    PyMutex_Unlock(c->_base._mutex);
-    _PyCriticalSection_Pop(&c->_base);
+    PyMutex_Unlock(c->_cs_base._cs_mutex);
+    _PyCriticalSection_Pop(&c->_cs_base);
 }
 #define PyCriticalSection2_End _PyCriticalSection2_End
 
@@ -215,11 +215,11 @@ _PyCriticalSection_AssertHeld(PyMutex *mutex)
     uintptr_t prev = tstate->critical_section;
     if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
         PyCriticalSection2 *cs = (PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
-        assert(cs != NULL && (cs->_base._mutex == mutex || cs->_mutex2 == mutex));
+        assert(cs != NULL && (cs->_cs_base._cs_mutex == mutex || cs->_cs_mutex2 == mutex));
     }
     else {
         PyCriticalSection *cs = (PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
-        assert(cs != NULL && cs->_mutex == mutex);
+        assert(cs != NULL && cs->_cs_mutex == mutex);
     }
 
 #endif
