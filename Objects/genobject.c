@@ -6,8 +6,8 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_freelist.h"      // struct _Py_async_gen_freelist
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
-#include "pycore_genobject.h"     // struct _Py_async_gen_freelist
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM

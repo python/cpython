@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"
-
 PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
 extern void _PyGen_Finalize(PyObject *self);
 
