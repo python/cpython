@@ -5666,7 +5666,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     // state.  Because we have an exact unicode and our dict has exact
     // unicodes we know that this will all complete without releasing
     // the locks.
-    if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, &old_value) < 0) {
+    if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, old_value) < 0) {
         return -1;
     }
 
