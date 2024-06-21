@@ -1699,7 +1699,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_strftime_y2k(self):
         for y in (1, 49, 70, 99, 100, 999, 1000, 1970):
             d = self.theclass(y, 1, 1)
-                        # Issue 13305:  For years < 1000, the value is not always
+            # Issue 13305:  For years < 1000, the value is not always
             # padded to 4 digits across platforms.  The C standard
             # assumes year >= 1900, so it does not specify the number
             # of digits.
