@@ -392,6 +392,7 @@ class Connection(_ConnectionBase):
         buf = io.BytesIO()
         # File descriptor
         handle = self._handle
+        # TODO: maybe because multi dimensional
         # Size is sizeof(entire numpy array) + 231 Bytes
         remaining = size
         while remaining > 0:
