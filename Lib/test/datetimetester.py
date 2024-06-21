@@ -6894,6 +6894,9 @@ class ExtensionModuleTests(unittest.TestCase):
                 assert isinstance(_datetime.timezone.min, _datetime.tzinfo)
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 assert isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                assert _datetime.timezone.__dict__["min"] is _datetime.timezone.min
+                assert _datetime.timezone.__dict__["utc"] is _datetime.timezone.utc
+                assert _datetime.timezone.__dict__["max"] is _datetime.timezone.max
                 del sys.modules['_datetime']
             """)
         script_helper.assert_python_ok('-c', script)
