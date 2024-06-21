@@ -5658,7 +5658,7 @@ _Py_type_getattro(PyObject *type, PyObject *name)
 
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
-                 PyObject **old_value)
+                 PyObject *value, PyObject **old_value)
 {
     // We don't want any re-entrancy between when we update the dict
     // and call type_modified_unlocked, including running the destructor
@@ -5760,7 +5760,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     }
 
     BEGIN_TYPE_DICT_LOCK(dict);
-    res = type_update_dict(type, (PyDictObject *)dict, name, &old_value);
+    res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
     assert(_PyType_CheckConsistency(type));
     END_TYPE_DICT_LOCK();
 
