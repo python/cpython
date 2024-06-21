@@ -2213,7 +2213,7 @@ their behavior is similar to the :term:`GIL`.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
-given macro expansions. Note that the sizes of the structures may
+given macro expansions. Note that the sizes and contents of the structures may
 change in future Python versions.
 
 .. note::
