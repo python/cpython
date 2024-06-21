@@ -134,8 +134,9 @@ provide the public methods described below.
 
 .. method:: Queue.__iter__()
 
-   Return an :term:`iterator` which iterates over the items in this queue
-   until :meth:`Queue.shutdown` is called and the queue is empty.
+   Return an :term:`iterator` which iterates over the queue of items until
+   :meth:`shutdown` is called and continues iteration until the queue is
+   empty.
 
    Example::
 
