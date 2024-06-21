@@ -5666,7 +5666,7 @@
                 else {
                     retval_o = PyObject_CallMethodOneArg(receiver_o,
                         &_Py_ID(send),
-                        PyStackRef_AsPyObjectSteal(v));
+                        PyStackRef_AsPyObjectBorrow(v));
                 }
                 if (retval_o == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
