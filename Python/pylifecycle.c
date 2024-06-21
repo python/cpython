@@ -1909,19 +1909,20 @@ finalize_interp_delete(PyInterpreterState *interp)
 }
 
 
-static int
-_Py_Finalize(_PyRuntimeState *runtime, const char *not_pymain)
+int
+_Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
     int status = 0;
 
     if (!runtime->initialized) {
+        assert(!runtime->is_pymain);
         return status;
     }
 
-    if (not_pymain && runtime->is_pymain) {
+    if (args->check_pymain && runtime->is_pymain) {
         fprintf(stderr,
                 "%s() should not be called while Py_RunMain() is running",
-                not_pymain);
+                args->caller);
         return 1;
     }
 
@@ -2158,19 +2159,30 @@ _Py_FinalizeMain(void)
     assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     assert(_Py_IsMainThread());
     assert(_PyThreadState_GET() == runtime->main_tstate);
-    return _Py_Finalize(runtime, NULL);
+    struct pyfinalize_args args = {
+        .caller = "Py_RunMain",
+    };
+    return _Py_Finalize(runtime, &args);
 }
 
 int
 Py_FinalizeEx(void)
 {
-    return _Py_Finalize(&_PyRuntime, "Py_FinalizeEx");
+    struct pyfinalize_args args = {
+        .caller = "Py_FinalizeEx",
+        .check_pymain = 1,
+    };
+    return _Py_Finalize(&_PyRuntime, &args);
 }
 
 void
 Py_Finalize(void)
 {
-    (void)_Py_Finalize(&_PyRuntime, "Py_Finalize");
+    struct pyfinalize_args args = {
+        .caller = "Py_Finalize",
+        .check_pymain = 1,
+    };
+    (void)_Py_Finalize(&_PyRuntime, &args);
 }
 
 
