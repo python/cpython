@@ -17,22 +17,22 @@ class TypeAnnotationTests(unittest.TestCase):
         # a freshly created type shouldn't have an annotations dict yet.
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations_cache__" in foo.__dict__)
+            self.assertFalse("__annotations__" in foo.__dict__)
             d = foo.__annotations__
-            self.assertTrue("__annotations_cache__" in foo.__dict__)
+            self.assertTrue("__annotations__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
-            self.assertEqual(foo.__dict__['__annotations_cache__'], d)
+            self.assertEqual(foo.__dict__['__annotations__'], d)
             del foo.__annotations__
 
     def test_setting_annotations(self):
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations_cache__" in foo.__dict__)
+            self.assertFalse("__annotations__" in foo.__dict__)
             d = {'a': int}
             foo.__annotations__ = d
-            self.assertTrue("__annotations_cache__" in foo.__dict__)
+            self.assertTrue("__annotations__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
-            self.assertEqual(foo.__dict__['__annotations_cache__'], d)
+            self.assertEqual(foo.__dict__['__annotations__'], d)
             del foo.__annotations__
 
     def test_annotations_getset_raises(self):
@@ -56,9 +56,9 @@ class TypeAnnotationTests(unittest.TestCase):
             a:int=3
             b:str=4
         self.assertEqual(C.__annotations__, {"a": int, "b": str})
-        self.assertTrue("__annotations_cache__" in C.__dict__)
+        self.assertTrue("__annotations__" in C.__dict__)
         del C.__annotations__
-        self.assertFalse("__annotations_cache__" in C.__dict__)
+        self.assertFalse("__annotations__" in C.__dict__)
 
     def test_descriptor_still_works(self):
         class C:
