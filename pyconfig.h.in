@@ -1222,9 +1222,6 @@
 /* Define if you have struct stat.st_mtimensec */
 #undef HAVE_STAT_TV_NSEC2
 
-/* Define if year with century should be normalized for strftime. */
-#undef NORMALIZE_CENTURY
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -1593,6 +1590,9 @@
 
 /* Define if mvwdelch in curses.h is an expression. */
 #undef MVWDELCH_IS_EXPRESSION
+
+/* Define if year with century should be normalized for strftime. */
+#undef NORMALIZE_CENTURY
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
