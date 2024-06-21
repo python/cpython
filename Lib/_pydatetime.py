@@ -274,9 +274,7 @@ def _wrap_strftime(object, format, timetuple):
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
                 elif ch == 'Y' and _need_normalize_century():
-                    push('%')
-                    push('4')
-                    push(ch)
+                    push('%4Y')
                 else:
                     push('%')
                     push(ch)
