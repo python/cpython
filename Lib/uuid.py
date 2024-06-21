@@ -768,25 +768,63 @@ def uuid6(node=None, clock_seq=None):
     return UUID(int=int_uuid_6, version=6)
 
 _last_timestamp_v7 = None
+_last_counter_v7_a = 0  # 12-bit sub-millisecond precision
+_last_counter_v7_b = 0  # 62-bit seeded counter
 
 def uuid7():
-    """Generate a UUID from a Unix timestamp in milliseconds and random bits."""
+    """Generate a UUID from a Unix timestamp in milliseconds and random bits.
+
+    UUIDv7 objects feature monotonicity within a millisecond.
+    """
+    # --- 48 ---   -- 4 --   - 12 -   -- 2 --   - 62 -
+    # unix_ts_ms | version | rand_a | variant | rand_b
+    #
+    # 'rand_a' is used for an additional 12-bit sub-millisecond
+    # precision constructed with Method 3 of RFC 9562, §6.2.
+    #
+    # 'rand_b' is a seeded counter generated according to
+    # the Method 2 of RFC 9562, §6.2. The initial counter
+    # is a random 62-bit integer and the counter is incremented
+    # by a random 32-bit integer within the same timestamp tick.
+    #
+    # If 'rand_b' overflows, it is regenerated and 'rand_a' is
+    # advanced by 1. If 'rand_a' also overflows, re-run uuid7().
+
+    def get_rand_b():  # random 62-bit integer
+        return int.from_bytes(os.urandom(8)) & 0x3fffffffffffffff
+
     global _last_timestamp_v7
+    global _last_counter_v7_a
+    global _last_counter_v7_b
+
     import time
     nanoseconds = time.time_ns()
-    timestamp_ms = nanoseconds // 10 ** 6  # may be improved
-    if _last_timestamp_v7 is not None and timestamp_ms <= _last_timestamp_v7:
-        timestamp_ms = _last_timestamp_v7 + 1
+    timestamp_ms, sub_millisecs = divmod(nanoseconds, 1_000_000)
+    # get the 12-bit sub-milliseconds precision part
+    assert 0 <= sub_millisecs < 1_000_000
+    rand_a = int((sub_millisecs / 1_000_000) * (1 << 12))
+    assert 0 <= rand_a <= 0xfff
+
+    if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
+        rand_b = get_rand_b()
+    else:
+        if timestamp_ms < _last_timestamp_v7:
+            timestamp_ms = _last_timestamp_v7 + 1
+        # advance 'rand_b' by a 32-bit random increment
+        rand_b = _last_counter_v7_b + int.from_bytes(os.urandom(4))
+        if rand_b > 0x3fffffffffffffff:
+            if rand_a == 4095:  # fast path to avoid a call to os.urandom()
+                return uuid7()
+            rand_a += 1
+            rand_b = get_rand_b()
+
     _last_timestamp_v7 = timestamp_ms
+    _last_counter_v7_a = rand_a
+    _last_counter_v7_b = rand_b
+
     int_uuid_7 = (timestamp_ms & 0xffffffffffff) << 80
-    # Ideally, we would have 'rand_a' = first 12 bits of 'rand'
-    # and 'rand_b' = lowest 62 bits, but it is easier to test
-    # when we pick 'rand_a' from the lowest bits of 'rand' and
-    # 'rand_b' from the next 62 bits, ignoring the 6 first bits
-    # of 'rand'.
-    rand = int.from_bytes(os.urandom(10))  # 80 random bits (ignore 6 first)
-    int_uuid_7 |= (rand & 0x0fff) << 64  # rand_a
-    int_uuid_7 |= (rand >> 12) & 0x3fffffffffffffff  # rand_b
+    int_uuid_7 |= rand_a << 64
+    int_uuid_7 |= rand_b
     return UUID(int=int_uuid_7, version=7)
 
 def uuid8(a=None, b=None, c=None):
