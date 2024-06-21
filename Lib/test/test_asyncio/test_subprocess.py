@@ -879,8 +879,7 @@ if sys.platform != 'win32':
 
             watcher = self._get_watcher()
             watcher.attach_loop(self.loop)
-            with warnings.catch_warnings():
-                policy._watcher = watcher
+            policy._watcher = watcher
 
         def tearDown(self):
             super().tearDown()
