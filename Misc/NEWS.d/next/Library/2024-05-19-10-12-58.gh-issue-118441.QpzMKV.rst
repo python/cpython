@@ -1,1 +1,2 @@
+Fix error message for :func:`os.path.realpath` on Unix.
 :func:`os.path.realpath` now raises :exc:`OSError` when *strict* mode is enabled and a path with too many symlinks is supplied.
