@@ -2211,10 +2211,15 @@ is resumed, and its locks reacquired.  This means the critical section API
 provides weaker guarantees than traditional locks -- they are useful because
 their behavior is similar to the :term:`GIL`.
 
+The functions and structs used by the macros are exposed for cases
+where C macros are not available. They should only be used as in the
+given macro expansions. Note that the sizes of the structures may
+change in future Python versions.
+
 .. note::
 
    Operations that need to lock two objects at once must use
-   :c:macro:`Py_BEGIN_CRITICAL_SECTION2()`.  You *cannot* use nested critical
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION2`.  You *cannot* use nested critical
    sections to lock more than one object at once, because the inner critical
    section may suspend the outer critical sections.  This API does not provide
    a way to lock more than two objects at once.
@@ -2225,7 +2230,7 @@ Example usage::
    set_field(MyObject *self, PyObject *value)
    {
       Py_BEGIN_CRITICAL_SECTION(self);
-      Py_SETREF(self->field, value);
+      Py_SETREF(self->field, Py_XNewRef(value));
       Py_END_CRITICAL_SECTION();
       Py_RETURN_NONE;
    }
@@ -2245,7 +2250,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection _py_cs;
-          PyCriticalSection_Begin(&_py_cs, _PyObject_CAST(op))
+          PyCriticalSection_Begin(&_py_cs, (PyObject*)(op))
 
    In the default build, this macro expands to ``{``.
 
@@ -2274,7 +2279,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection2 _py_cs2;
-          PyCriticalSection_Begin2(&_py_cs2, _PyObject_CAST(a), _PyObject_CAST(b))
+          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
 
    In the default build, this macro expands to ``{``.
 
