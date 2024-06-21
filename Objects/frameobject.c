@@ -165,10 +165,10 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
                 }
             }
             if (cell != NULL) {
-                oldvalue = PyStackRef_FromPyObjectSteal(PyCell_GET(cell));
-                if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
+                PyObject *oldvalue_o = PyCell_GET(cell);
+                if (value != oldvalue_o) {
                     PyCell_SET(cell, Py_XNewRef(value));
-                    PyStackRef_XCLOSE(oldvalue);
+                    Py_XDECREF(oldvalue_o);
                 }
             } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
                 PyStackRef_XCLOSE(fast[i]);
@@ -1525,7 +1525,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         // warnings are being treated as errors and the previous bit raises:
         for (int i = 0; i < code->co_nlocalsplus; i++) {
             if (PyStackRef_IsNull(f->f_frame->localsplus[i])) {
-                f->f_frame->localsplus[i] = PyStackRef_FromPyObjectNew(Py_None);
+                f->f_frame->localsplus[i] = PyStackRef_None;
                 unbound--;
             }
         }

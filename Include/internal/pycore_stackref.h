@@ -141,6 +141,24 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 
 #define PyStackRef_FromPyObjectNew(obj) PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
 
+// Same as PyStackRef_FromPyObjectNew but only for immortal objects.
+static inline _PyStackRef
+PyStackRef_FromPyObjectImmortal(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    // Make sure we don't take an already tagged value.
+    assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
+    assert(obj != NULL);
+    assert(_Py_IsImmortal(obj));
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+#else
+    assert(_Py_IsImmortal(obj));
+    return ((_PyStackRef){ .bits = (uintptr_t)(obj) });
+#endif
+}
+
+#define PyStackRef_FromPyObjectImmortal(obj) PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj))
+
 
 #define PyStackRef_CLEAR(op) \
     do { \
