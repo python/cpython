@@ -2372,7 +2372,7 @@ new_reference(PyObject *op)
 #else
     op->ob_tid = _Py_ThreadId();
     op->_padding = 0;
-    op->ob_mutex = (struct _PyMutex){ 0 };
+    op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;
@@ -3000,4 +3000,12 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 {
     // All constants are immortal
     return Py_GetConstant(constant_id);
+}
+
+
+// Py_TYPE() implementation for the stable ABI
+#undef Py_TYPE
+PyTypeObject* Py_TYPE(PyObject *ob)
+{
+    return _Py_TYPE(ob);
 }

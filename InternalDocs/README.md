@@ -12,6 +12,10 @@ it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
 
-[Exception Handling](exception_handling.md)
+[Compiler Design](compiler.md)
 
 [Adaptive Instruction Families](adaptive.md)
+
+[The Source Code Locations Table](locations.md)
+
+[Exception Handling](exception_handling.md)
