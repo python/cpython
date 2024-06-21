@@ -1189,7 +1189,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_orient(self):
         widget = self.create()
         self.checkEnumParam(widget, 'orient', 'vertical', 'horizontal',
-                errmsg='bad orientation "{}": must be vertical or horizontal')
+                            fullname='orientation', allow_empty=True)
 
     def test_activate(self):
         sb = self.create()
