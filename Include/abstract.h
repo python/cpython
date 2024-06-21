@@ -50,6 +50,25 @@ extern "C" {
 
    This function always succeeds. */
 
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrStringWithError(PyObject *o, const char *attr_name);
+
+   Returns 1 if object 'o' has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name);
+
+   Returns 1 if o has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
 /* Implemented elsewhere:
 
    PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name);
@@ -821,15 +840,27 @@ PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, const char *key);
    This function always succeeds. */
 PyAPI_FUNC(int) PyMapping_HasKey(PyObject *o, PyObject *key);
 
-/* On success, return a list or tuple of the keys in mapping object 'o'.
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyWithError(PyObject *o, PyObject *key);
+
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyStringWithError(PyObject *o, const char *key);
+
+/* On success, return a list of the keys in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
 
-/* On success, return a list or tuple of the values in mapping object 'o'.
+/* On success, return a list of the values in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
 
-/* On success, return a list or tuple of the items in mapping object 'o',
+/* On success, return a list of the items in mapping object 'o',
    where each item is a tuple containing a key-value pair. On failure, return
    NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);

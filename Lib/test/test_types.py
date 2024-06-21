@@ -1,9 +1,10 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
+from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
 import collections.abc
-from collections import namedtuple
+from collections import namedtuple, UserDict
 import copy
+import _datetime
 import gc
 import inspect
 import pickle
@@ -597,6 +598,8 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_dunder_get_signature(self):
         sig = inspect.signature(object.__init__.__get__)
         self.assertEqual(list(sig.parameters), ["instance", "owner"])
@@ -635,6 +638,9 @@ class TypesTests(unittest.TestCase):
             exc = e
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
+
+    def test_capsule_type(self):
+        self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
 
 class UnionTests(unittest.TestCase):
@@ -706,6 +712,26 @@ class UnionTests(unittest.TestCase):
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual((A | B).__args__, (A, B))
+        union1 = A | B
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -1729,21 +1755,50 @@ class ClassCreationTests(unittest.TestCase):
 class SimpleNamespaceTests(unittest.TestCase):
 
     def test_constructor(self):
-        ns1 = types.SimpleNamespace()
-        ns2 = types.SimpleNamespace(x=1, y=2)
-        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
+        def check(ns, expected):
+            self.assertEqual(len(ns.__dict__), len(expected))
+            self.assertEqual(vars(ns), expected)
+            # check order
+            self.assertEqual(list(vars(ns).items()), list(expected.items()))
+            for name in expected:
+                self.assertEqual(getattr(ns, name), expected[name])
+
+        check(types.SimpleNamespace(), {})
+        check(types.SimpleNamespace(x=1, y=2), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace(**dict(x=1, y=2)), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]]), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([], x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace({}, x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace([]), {})
+        check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(1, 2, 3)
+            types.SimpleNamespace([], [])  # too many positional arguments
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(**{1: 2})
-
-        self.assertEqual(len(ns1.__dict__), 0)
-        self.assertEqual(vars(ns1), {})
-        self.assertEqual(len(ns2.__dict__), 2)
-        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns3.__dict__), 2)
-        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
+            types.SimpleNamespace(1)  # not a mapping or iterable
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([1])  # non-iterable
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x']])  # not a pair
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x', 'y', 'z']])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})  # non-string key
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace({1: 2})
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[1, 2]])
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(UserDict({1: 2}))
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([[[], 2]])  # non-hashable key
 
     def test_unbound(self):
         ns1 = vars(types.SimpleNamespace())
@@ -1899,6 +1954,33 @@ class SimpleNamespaceTests(unittest.TestCase):
             ns_roundtrip = pickle.loads(ns_pickled)
 
             self.assertEqual(ns, ns_roundtrip, pname)
+
+    def test_replace(self):
+        ns = types.SimpleNamespace(x=11, y=22)
+
+        ns2 = copy.replace(ns)
+        self.assertEqual(ns2, ns)
+        self.assertIsNot(ns2, ns)
+        self.assertIs(type(ns2), types.SimpleNamespace)
+        self.assertEqual(vars(ns2), {'x': 11, 'y': 22})
+        ns2.x = 3
+        self.assertEqual(ns.x, 11)
+        ns.x = 4
+        self.assertEqual(ns2.x, 3)
+
+        self.assertEqual(vars(copy.replace(ns, x=1)), {'x': 1, 'y': 22})
+        self.assertEqual(vars(copy.replace(ns, y=2)), {'x': 4, 'y': 2})
+        self.assertEqual(vars(copy.replace(ns, x=1, y=2)), {'x': 1, 'y': 2})
+
+    def test_replace_subclass(self):
+        class Spam(types.SimpleNamespace):
+            pass
+
+        spam = Spam(ham=8, eggs=9)
+        spam2 = copy.replace(spam, ham=5)
+
+        self.assertIs(type(spam2), Spam)
+        self.assertEqual(vars(spam2), {'ham': 5, 'eggs': 9})
 
     def test_fake_namespace_compare(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
@@ -2228,6 +2310,39 @@ class CoroutineTests(unittest.TestCase):
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
             'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
             'close', 'throw'}))
+
+
+class FunctionTests(unittest.TestCase):
+    def test_function_type_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", (1, 2), None, {'c': 3},
+        )
+
+        self.assertEqual(func(), 6)
+        self.assertEqual(func.__defaults__, (1, 2))
+        self.assertEqual(func.__kwdefaults__, {'c': 3})
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", None, None, None,
+        )
+        self.assertEqual(func.__defaults__, None)
+        self.assertEqual(func.__kwdefaults__, None)
+
+    def test_function_type_wrong_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        with self.assertRaisesRegex(TypeError, 'arg 4'):
+            types.FunctionType(
+                ex.__code__, {}, "func", 1, None, {'c': 3},
+            )
+        with self.assertRaisesRegex(TypeError, 'arg 6'):
+            types.FunctionType(
+                ex.__code__, {}, "func", None, None, 3,
+            )
 
 
 if __name__ == '__main__':

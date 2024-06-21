@@ -6,6 +6,55 @@ Object Protocol
 ===============
 
 
+.. c:function:: PyObject* Py_GetConstant(unsigned int constant_id)
+
+   Get a :term:`strong reference` to a constant.
+
+   Set an exception and return ``NULL`` if *constant_id* is invalid.
+
+   *constant_id* must be one of these constant identifiers:
+
+   .. c:namespace:: NULL
+
+   ========================================  =====  =========================
+   Constant Identifier                       Value  Returned object
+   ========================================  =====  =========================
+   .. c:macro:: Py_CONSTANT_NONE             ``0``  :py:data:`None`
+   .. c:macro:: Py_CONSTANT_FALSE            ``1``  :py:data:`False`
+   .. c:macro:: Py_CONSTANT_TRUE             ``2``  :py:data:`True`
+   .. c:macro:: Py_CONSTANT_ELLIPSIS         ``3``  :py:data:`Ellipsis`
+   .. c:macro:: Py_CONSTANT_NOT_IMPLEMENTED  ``4``  :py:data:`NotImplemented`
+   .. c:macro:: Py_CONSTANT_ZERO             ``5``  ``0``
+   .. c:macro:: Py_CONSTANT_ONE              ``6``  ``1``
+   .. c:macro:: Py_CONSTANT_EMPTY_STR        ``7``  ``''``
+   .. c:macro:: Py_CONSTANT_EMPTY_BYTES      ``8``  ``b''``
+   .. c:macro:: Py_CONSTANT_EMPTY_TUPLE      ``9``  ``()``
+   ========================================  =====  =========================
+
+   Numeric values are only given for projects which cannot use the constant
+   identifiers.
+
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      In CPython, all of these constants are :term:`immortal`.
+
+
+.. c:function:: PyObject* Py_GetConstantBorrowed(unsigned int constant_id)
+
+   Similar to :c:func:`Py_GetConstant`, but return a :term:`borrowed
+   reference`.
+
+   This function is primarily intended for backwards compatibility:
+   using :c:func:`Py_GetConstant` is recommended for new code.
+
+   The reference is borrowed from the interpreter, and is valid until the
+   interpreter finalization.
+   .. versionadded:: 3.13
+
+
 .. c:var:: PyObject* Py_NotImplemented
 
    The ``NotImplemented`` singleton, used to signal that an operation is
@@ -16,7 +65,15 @@ Object Protocol
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
    function (that is, create a new :term:`strong reference`
-   to NotImplemented and return it).
+   to :const:`NotImplemented` and return it).
+
+
+.. c:macro:: Py_PRINT_RAW
+
+   Flag to be used with multiple functions that print the object (like
+   :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
+   If passed, these function would use the :func:`str` of the object
+   instead of the :func:`repr`.
 
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
@@ -27,32 +84,50 @@ Object Protocol
    instead of the :func:`repr`.
 
 
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+
+   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
+   This is equivalent to the Python expression ``hasattr(o, attr_name)``.
+   On failure, return ``-1``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyObject_HasAttrStringWithError(PyObject *o, const char *attr_name)
+
+   This is the same as :c:func:`PyObject_HasAttrWithError`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
+   This function always succeeds.
 
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetOptionalAttr` or
-      :c:func:`PyObject_GetAttr` instead.
+      For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
+      :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   This is the same as :c:func:`PyObject_HasAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods or while creating the temporary :class:`str`
-      object are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetOptionalAttrString`
+      :meth:`~object.__getattribute__` methods or while creating the temporary
+      :class:`str` object are silently ignored.
+      For proper error handling, use :c:func:`PyObject_HasAttrStringWithError`,
+      :c:func:`PyObject_GetOptionalAttrString`
       or :c:func:`PyObject_GetAttrString` instead.
 
 
@@ -68,9 +143,9 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
-   Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or ``NULL`` on failure. This is the equivalent of the Python
-   expression ``o.attr_name``.
+   This is the same as :c:func:`PyObject_GetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    If the missing attribute should not be treated as a failure, you can use
    :c:func:`PyObject_GetOptionalAttrString` instead.
@@ -93,15 +168,9 @@ Object Protocol
 
 .. c:function:: int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
 
-   Variant of :c:func:`PyObject_GetAttrString` which doesn't raise
-   :exc:`AttributeError` if the attribute is not found.
-
-   If the attribute is found, return ``1`` and set *\*result* to a new
-   :term:`strong reference` to the attribute.
-   If the attribute is not found, return ``0`` and set *\*result* to ``NULL``;
-   the :exc:`AttributeError` is silenced.
-   If an error other than :exc:`AttributeError` is raised, return ``-1`` and
-   set *\*result* to ``NULL``.
+   This is the same as :c:func:`PyObject_GetOptionalAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    .. versionadded:: 3.13
 
@@ -129,10 +198,9 @@ Object Protocol
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
-   Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Raise an exception and return ``-1`` on failure;
-   return ``0`` on success.  This is the equivalent of the Python statement
-   ``o.attr_name = v``.
+   This is the same as :c:func:`PyObject_SetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
@@ -158,8 +226,9 @@ Object Protocol
 
 .. c:function:: int PyObject_DelAttrString(PyObject *o, const char *attr_name)
 
-   Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
-   This is the equivalent of the Python statement ``del o.attr_name``.
+   This is the same as :c:func:`PyObject_DelAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)
@@ -209,12 +278,8 @@ Object Protocol
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
-   which must be one of :c:macro:`Py_LT`, :c:macro:`Py_LE`, :c:macro:`Py_EQ`,
-   :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
-   ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
-   ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
-   Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
-   *opid*.
+   like :c:func:`PyObject_RichCompare`, but returns ``-1`` on error, ``0`` if
+   the result is false, ``1`` otherwise.
 
 .. note::
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
@@ -476,3 +541,21 @@ Object Protocol
    :c:macro:`Py_TPFLAGS_ITEMS_AT_END` set.
 
    .. versionadded:: 3.12
+
+.. c:function:: int PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
+
+   Visit the managed dictionary of *obj*.
+
+   This function must only be called in a traverse function of the type which
+   has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
+
+   .. versionadded:: 3.13
+
+.. c:function:: void PyObject_ClearManagedDict(PyObject *obj)
+
+   Clear the managed dictionary of *obj*.
+
+   This function must only be called in a traverse function of the type which
+   has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
+
+   .. versionadded:: 3.13

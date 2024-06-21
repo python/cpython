@@ -2,11 +2,12 @@
 #include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_object.h"        // _PyType_PreHeaderSize
+#include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_traceback.h"
+#include "pycore_traceback.h"     // _Py_DumpASCII()
 #include <pycore_frame.h>
+
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 
 #include <stdlib.h>               // malloc()
@@ -311,7 +312,7 @@ traceback_hash(traceback_t *traceback)
     /* code based on tuplehash() of Objects/tupleobject.c */
     Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
     int len = traceback->nframe;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
+    Py_uhash_t mult = PyHASH_MULTIPLIER;
     frame_t *frame;
 
     x = 0x345678UL;
@@ -905,6 +906,10 @@ _PyTraceMalloc_Start(int max_nframe)
         return -1;
     }
 
+    if (PyRefTracer_SetTracer(_PyTraceMalloc_TraceRef, NULL) < 0) {
+        return -1;
+    }
+
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
         return 0;
@@ -1351,8 +1356,12 @@ _PyTraceMalloc_Fini(void)
    Do nothing if tracemalloc is not tracing memory allocations
    or if the object memory block is not already traced. */
 int
-_PyTraceMalloc_NewReference(PyObject *op)
+_PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ignore))
 {
+    if (event != PyRefTracer_CREATE) {
+        return 0;
+    }
+
     assert(PyGILState_Check());
 
     if (!tracemalloc_config.tracing) {

@@ -1,1 +1,0 @@
-Check for ``linux/limits.h`` before including it in ``Modules/posixmodule.c``.

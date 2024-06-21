@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _Py_convert_optional_to_ssize_t()
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_io_FileIO_close__doc__,
 "close($self, /)\n"
@@ -27,7 +27,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls);
 static PyObject *
 _io_FileIO_close(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
         return NULL;
     }
@@ -246,12 +246,7 @@ _io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     return_value = _io_FileIO_readinto_impl(self, cls, &buffer);
@@ -380,10 +375,6 @@ _io_FileIO_write(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssiz
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     return_value = _io_FileIO_write_impl(self, cls, &b);
@@ -537,4 +528,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=3a3c6ed7e5e78063 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3d9446b4087020e input=a9049054013a1b77]*/

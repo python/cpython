@@ -90,7 +90,6 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 
 /* Context manipulation (PEP 3134) */
 
-Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* In exceptions.c */
@@ -121,12 +120,12 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
     const char *func,
     const char *message);
+
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
+
+PyAPI_DATA(PyObject *) PyExc_PythonFinalizationError;
 
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

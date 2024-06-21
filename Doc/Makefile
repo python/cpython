@@ -7,7 +7,6 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
-SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 JOBS         = auto
 PAPER        =
@@ -20,8 +19,12 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j $(JOBS) \
-                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
+ALLSPHINXOPTS = -b $(BUILDER) \
+                -d build/doctrees \
+                -j $(JOBS) \
+                $(PAPEROPT_$(PAPER)) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
+                . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help
 help:
@@ -29,7 +32,9 @@ help:
 	@echo "  clean      to remove build files"
 	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
+	@echo "  gettext    to generate POT files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
+	@echo "  htmllive   to rebuild and reload HTML files in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
@@ -136,9 +141,23 @@ pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
+.PHONY: gettext
+gettext: BUILDER = gettext
+gettext: SPHINXOPTS += '-d build/doctrees-gettext'
+gettext: build
+
 .PHONY: htmlview
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
+
+.PHONY: ensure-sphinx-autobuild
+ensure-sphinx-autobuild: venv
+	$(VENVDIR)/bin/sphinx-autobuild --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install sphinx-autobuild
+
+.PHONY: htmllive
+htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
+htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
+htmllive: ensure-sphinx-autobuild html
 
 .PHONY: clean
 clean: clean-venv
@@ -154,6 +173,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		echo "Creating venv in $(VENVDIR)"; \
 		$(PYTHON) -m venv $(VENVDIR); \
 		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
 		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \

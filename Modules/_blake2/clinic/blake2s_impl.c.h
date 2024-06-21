@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_long.h"           // _PyLong_UnsignedLong_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_blake2s_new__doc__,
 "blake2s(data=b\'\', /, *, digest_size=_blake2.blake2s.MAX_DIGEST_SIZE,\n"
@@ -98,10 +98,6 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[2], &key, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&key, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'key'", "contiguous buffer", fastargs[2]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -110,20 +106,12 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[3], &salt, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&salt, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'salt'", "contiguous buffer", fastargs[3]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[4]) {
         if (PyObject_GetBuffer(fastargs[4], &person, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&person, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'person'", "contiguous buffer", fastargs[4]);
             goto exit;
         }
         if (!--noptargs) {
@@ -277,4 +265,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=2188af9910a45497 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24690e4e2586cafd input=a9049054013a1b77]*/

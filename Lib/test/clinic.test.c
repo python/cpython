@@ -550,10 +550,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[0]) && PyBytes_GET_SIZE(args[0]) == 1) {
+    if (PyBytes_Check(args[0])) {
+        if (PyBytes_GET_SIZE(args[0]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 1 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[0]));
+            goto exit;
+        }
         a = PyBytes_AS_STRING(args[0])[0];
     }
-    else if (PyByteArray_Check(args[0]) && PyByteArray_GET_SIZE(args[0]) == 1) {
+    else if (PyByteArray_Check(args[0])) {
+        if (PyByteArray_GET_SIZE(args[0]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 1 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[0]));
+            goto exit;
+        }
         a = PyByteArray_AS_STRING(args[0])[0];
     }
     else {
@@ -563,10 +577,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+    if (PyBytes_Check(args[1])) {
+        if (PyBytes_GET_SIZE(args[1]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 2 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[1]));
+            goto exit;
+        }
         b = PyBytes_AS_STRING(args[1])[0];
     }
-    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+    else if (PyByteArray_Check(args[1])) {
+        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 2 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[1]));
+            goto exit;
+        }
         b = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
@@ -576,10 +604,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[2]) && PyBytes_GET_SIZE(args[2]) == 1) {
+    if (PyBytes_Check(args[2])) {
+        if (PyBytes_GET_SIZE(args[2]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 3 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[2]));
+            goto exit;
+        }
         c = PyBytes_AS_STRING(args[2])[0];
     }
-    else if (PyByteArray_Check(args[2]) && PyByteArray_GET_SIZE(args[2]) == 1) {
+    else if (PyByteArray_Check(args[2])) {
+        if (PyByteArray_GET_SIZE(args[2]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 3 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[2]));
+            goto exit;
+        }
         c = PyByteArray_AS_STRING(args[2])[0];
     }
     else {
@@ -589,10 +631,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[3]) && PyBytes_GET_SIZE(args[3]) == 1) {
+    if (PyBytes_Check(args[3])) {
+        if (PyBytes_GET_SIZE(args[3]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 4 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[3]));
+            goto exit;
+        }
         d = PyBytes_AS_STRING(args[3])[0];
     }
-    else if (PyByteArray_Check(args[3]) && PyByteArray_GET_SIZE(args[3]) == 1) {
+    else if (PyByteArray_Check(args[3])) {
+        if (PyByteArray_GET_SIZE(args[3]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 4 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[3]));
+            goto exit;
+        }
         d = PyByteArray_AS_STRING(args[3])[0];
     }
     else {
@@ -602,10 +658,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[4]) && PyBytes_GET_SIZE(args[4]) == 1) {
+    if (PyBytes_Check(args[4])) {
+        if (PyBytes_GET_SIZE(args[4]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 5 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[4]));
+            goto exit;
+        }
         e = PyBytes_AS_STRING(args[4])[0];
     }
-    else if (PyByteArray_Check(args[4]) && PyByteArray_GET_SIZE(args[4]) == 1) {
+    else if (PyByteArray_Check(args[4])) {
+        if (PyByteArray_GET_SIZE(args[4]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 5 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[4]));
+            goto exit;
+        }
         e = PyByteArray_AS_STRING(args[4])[0];
     }
     else {
@@ -615,10 +685,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 6) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[5]) && PyBytes_GET_SIZE(args[5]) == 1) {
+    if (PyBytes_Check(args[5])) {
+        if (PyBytes_GET_SIZE(args[5]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 6 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[5]));
+            goto exit;
+        }
         f = PyBytes_AS_STRING(args[5])[0];
     }
-    else if (PyByteArray_Check(args[5]) && PyByteArray_GET_SIZE(args[5]) == 1) {
+    else if (PyByteArray_Check(args[5])) {
+        if (PyByteArray_GET_SIZE(args[5]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 6 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[5]));
+            goto exit;
+        }
         f = PyByteArray_AS_STRING(args[5])[0];
     }
     else {
@@ -628,10 +712,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[6]) && PyBytes_GET_SIZE(args[6]) == 1) {
+    if (PyBytes_Check(args[6])) {
+        if (PyBytes_GET_SIZE(args[6]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 7 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[6]));
+            goto exit;
+        }
         g = PyBytes_AS_STRING(args[6])[0];
     }
-    else if (PyByteArray_Check(args[6]) && PyByteArray_GET_SIZE(args[6]) == 1) {
+    else if (PyByteArray_Check(args[6])) {
+        if (PyByteArray_GET_SIZE(args[6]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 7 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[6]));
+            goto exit;
+        }
         g = PyByteArray_AS_STRING(args[6])[0];
     }
     else {
@@ -641,10 +739,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 8) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[7]) && PyBytes_GET_SIZE(args[7]) == 1) {
+    if (PyBytes_Check(args[7])) {
+        if (PyBytes_GET_SIZE(args[7]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 8 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[7]));
+            goto exit;
+        }
         h = PyBytes_AS_STRING(args[7])[0];
     }
-    else if (PyByteArray_Check(args[7]) && PyByteArray_GET_SIZE(args[7]) == 1) {
+    else if (PyByteArray_Check(args[7])) {
+        if (PyByteArray_GET_SIZE(args[7]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 8 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[7]));
+            goto exit;
+        }
         h = PyByteArray_AS_STRING(args[7])[0];
     }
     else {
@@ -654,10 +766,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 9) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[8]) && PyBytes_GET_SIZE(args[8]) == 1) {
+    if (PyBytes_Check(args[8])) {
+        if (PyBytes_GET_SIZE(args[8]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 9 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[8]));
+            goto exit;
+        }
         i = PyBytes_AS_STRING(args[8])[0];
     }
-    else if (PyByteArray_Check(args[8]) && PyByteArray_GET_SIZE(args[8]) == 1) {
+    else if (PyByteArray_Check(args[8])) {
+        if (PyByteArray_GET_SIZE(args[8]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 9 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[8]));
+            goto exit;
+        }
         i = PyByteArray_AS_STRING(args[8])[0];
     }
     else {
@@ -667,10 +793,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 10) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[9]) && PyBytes_GET_SIZE(args[9]) == 1) {
+    if (PyBytes_Check(args[9])) {
+        if (PyBytes_GET_SIZE(args[9]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 10 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[9]));
+            goto exit;
+        }
         j = PyBytes_AS_STRING(args[9])[0];
     }
-    else if (PyByteArray_Check(args[9]) && PyByteArray_GET_SIZE(args[9]) == 1) {
+    else if (PyByteArray_Check(args[9])) {
+        if (PyByteArray_GET_SIZE(args[9]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 10 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[9]));
+            goto exit;
+        }
         j = PyByteArray_AS_STRING(args[9])[0];
     }
     else {
@@ -680,10 +820,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 11) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[10]) && PyBytes_GET_SIZE(args[10]) == 1) {
+    if (PyBytes_Check(args[10])) {
+        if (PyBytes_GET_SIZE(args[10]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 11 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[10]));
+            goto exit;
+        }
         k = PyBytes_AS_STRING(args[10])[0];
     }
-    else if (PyByteArray_Check(args[10]) && PyByteArray_GET_SIZE(args[10]) == 1) {
+    else if (PyByteArray_Check(args[10])) {
+        if (PyByteArray_GET_SIZE(args[10]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 11 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[10]));
+            goto exit;
+        }
         k = PyByteArray_AS_STRING(args[10])[0];
     }
     else {
@@ -693,10 +847,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 12) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[11]) && PyBytes_GET_SIZE(args[11]) == 1) {
+    if (PyBytes_Check(args[11])) {
+        if (PyBytes_GET_SIZE(args[11]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 12 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[11]));
+            goto exit;
+        }
         l = PyBytes_AS_STRING(args[11])[0];
     }
-    else if (PyByteArray_Check(args[11]) && PyByteArray_GET_SIZE(args[11]) == 1) {
+    else if (PyByteArray_Check(args[11])) {
+        if (PyByteArray_GET_SIZE(args[11]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 12 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[11]));
+            goto exit;
+        }
         l = PyByteArray_AS_STRING(args[11])[0];
     }
     else {
@@ -706,10 +874,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 13) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[12]) && PyBytes_GET_SIZE(args[12]) == 1) {
+    if (PyBytes_Check(args[12])) {
+        if (PyBytes_GET_SIZE(args[12]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 13 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[12]));
+            goto exit;
+        }
         m = PyBytes_AS_STRING(args[12])[0];
     }
-    else if (PyByteArray_Check(args[12]) && PyByteArray_GET_SIZE(args[12]) == 1) {
+    else if (PyByteArray_Check(args[12])) {
+        if (PyByteArray_GET_SIZE(args[12]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 13 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[12]));
+            goto exit;
+        }
         m = PyByteArray_AS_STRING(args[12])[0];
     }
     else {
@@ -719,10 +901,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 14) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[13]) && PyBytes_GET_SIZE(args[13]) == 1) {
+    if (PyBytes_Check(args[13])) {
+        if (PyBytes_GET_SIZE(args[13]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 14 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[13]));
+            goto exit;
+        }
         n = PyBytes_AS_STRING(args[13])[0];
     }
-    else if (PyByteArray_Check(args[13]) && PyByteArray_GET_SIZE(args[13]) == 1) {
+    else if (PyByteArray_Check(args[13])) {
+        if (PyByteArray_GET_SIZE(args[13]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 14 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[13]));
+            goto exit;
+        }
         n = PyByteArray_AS_STRING(args[13])[0];
     }
     else {
@@ -740,7 +936,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=98589f02422fe6b1 input=e42330417a44feac]*/
+/*[clinic end generated code: output=ff11e203248582df input=e42330417a44feac]*/
 
 
 /*[clinic input]
@@ -1028,7 +1224,10 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
+        PyErr_Format(PyExc_TypeError,
+            "test_int_converter(): argument 3 must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(args[2]));
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
@@ -1048,7 +1247,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=5aed87a7589eefb2 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=fbcfb7554688663d input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]
@@ -4625,7 +4824,7 @@ Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 static PyObject *
 Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
         return NULL;
     }
@@ -4634,7 +4833,7 @@ Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_s
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=cc8845f22cff3dcb input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=4d68b4652c144af3 input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]
@@ -4951,6 +5150,69 @@ static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
 
+/*[clinic input]
+@getter
+Test.property
+[clinic start generated code]*/
+
+#if defined(Test_property_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, Test_property_DOCSTR},
+#endif
+
+static PyObject *
+Test_property_get_impl(TestObj *self);
+
+static PyObject *
+Test_property_get(TestObj *self, void *Py_UNUSED(context))
+{
+    return Test_property_get_impl(self);
+}
+
+static PyObject *
+Test_property_get_impl(TestObj *self)
+/*[clinic end generated code: output=27b519719d992e03 input=2d92b3449fbc7d2b]*/
+
+/*[clinic input]
+@setter
+Test.property
+[clinic start generated code]*/
+
+#if defined(TEST_PROPERTY_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#endif
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_property_set_impl(self, value);
+
+    return return_value;
+}
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=d51023f17c4ac3a1 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
@@ -5269,52 +5531,6 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
 
 
 /*[clinic input]
-Test.__init__ -> long
-Test overriding the __init__ return converter
-[clinic start generated code]*/
-
-PyDoc_STRVAR(Test___init____doc__,
-"Test()\n"
-"--\n"
-"\n"
-"Test overriding the __init__ return converter");
-
-static long
-Test___init___impl(TestObj *self);
-
-static int
-Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    PyTypeObject *base_tp = TestType;
-    long _return_value;
-
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoPositional("Test", args)) {
-        goto exit;
-    }
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
-        goto exit;
-    }
-    _return_value = Test___init___impl((TestObj *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
-}
-
-static long
-Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=daf6ee12c4e443fb input=311af0dc7f17e8e9]*/
-
-
-/*[clinic input]
 fn_with_default_binop_expr
     arg: object(c_default='CONST_A + CONST_B') = a+b
 [clinic start generated code]*/
@@ -5467,3 +5683,248 @@ exit:
 static PyObject *
 docstr_fallback_to_converter_default_impl(PyObject *module, str a)
 /*[clinic end generated code: output=ae24a9c6f60ee8a6 input=0cbe6a4d24bc2274]*/
+
+
+/*[clinic input]
+@critical_section
+test_critical_section
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section__doc__,
+"test_critical_section($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CRITICAL_SECTION_METHODDEF    \
+    {"test_critical_section", (PyCFunction)test_critical_section, METH_NOARGS, test_critical_section__doc__},
+
+static PyObject *
+test_critical_section_impl(PyObject *module);
+
+static PyObject *
+test_critical_section(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_impl(PyObject *module)
+/*[clinic end generated code: output=9d5a87bb28aa3f0c input=8c58956d6ff00f80]*/
+
+
+/*[clinic input]
+@critical_section
+test_critical_section_meth_o
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_meth_o__doc__,
+"test_critical_section_meth_o($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CRITICAL_SECTION_METH_O_METHODDEF    \
+    {"test_critical_section_meth_o", (PyCFunction)test_critical_section_meth_o, METH_O, test_critical_section_meth_o__doc__},
+
+static PyObject *
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_meth_o(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_meth_o", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_meth_o_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=7a9d7420802d1202 input=376533f51eceb6c3]*/
+
+/*[clinic input]
+@critical_section a
+test_critical_section_object
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object");
+
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_object(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=ec06df92232b0fb5 input=6f67f91b523c875f]*/
+
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object");
+
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_object(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+/*[clinic input]
+@critical_section a b
+test_critical_section_object2
+    a: object(subclass_of="&PyUnicode_Type")
+    b: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object2
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object2");
+
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
+
+static PyObject *
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    b = args[1];
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b)
+/*[clinic end generated code: output=d73a1657c18df17a input=638824e41419a466]*/
+
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object2");
+
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
+
+static PyObject *
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    b = args[1];
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
+
+exit:
+    return return_value;
+}

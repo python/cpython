@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_sre_getcodesize__doc__,
 "getcodesize($module, /)\n"
@@ -1434,7 +1434,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
         return NULL;
     }
@@ -1455,10 +1455,10 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
         return NULL;
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=b8cf77f05e44d08c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3e711f0b2f43d66 input=a9049054013a1b77]*/

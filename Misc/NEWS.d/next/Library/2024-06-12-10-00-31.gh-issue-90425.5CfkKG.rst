@@ -1,0 +1,2 @@
+The OS byte in gzip headers is now always set to 255 when using
+:func:`gzip.compress`.

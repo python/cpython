@@ -1128,6 +1128,26 @@ gh_99240_double_free_impl(PyObject *module, char *a, char *b)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+null_or_tuple_for_varargs
+
+    name: object
+    *constraints: object
+    covariant: bool = False
+
+See https://github.com/python/cpython/issues/110864
+[clinic start generated code]*/
+
+static PyObject *
+null_or_tuple_for_varargs_impl(PyObject *module, PyObject *name,
+                               PyObject *constraints, int covariant)
+/*[clinic end generated code: output=a785b35421358983 input=c9bce186637956b3]*/
+{
+    assert(name != NULL);
+    assert(constraints != NULL);
+    PyObject *c = covariant ? Py_True : Py_False;
+    return pack_arguments_newref(3, name, constraints, c);
+}
 
 /*[clinic input]
 _testclinic.clone_f1 as clone_f1
@@ -1191,6 +1211,55 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 {
     return PyUnicode_FromString(path.name);
 }
+
+
+/*[clinic input]
+class _testclinic.TestClass "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class
+    cls: defining_class
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_impl(PyObject *self,
+                                              PyTypeObject *cls)
+/*[clinic end generated code: output=94f9b0b5f7add930 input=537c59417471dee3]*/
+{
+    return Py_NewRef(cls);
+}
+
+/*[clinic input]
+_testclinic.TestClass.get_defining_class_arg
+    cls: defining_class
+    arg: object
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
+                                                  PyTypeObject *cls,
+                                                  PyObject *arg)
+/*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
+{
+    return PyTuple_Pack(2, cls, arg);
+}
+
+static struct PyMethodDef test_class_methods[] = {
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_METHODDEF
+    _TESTCLINIC_TESTCLASS_GET_DEFINING_CLASS_ARG_METHODDEF
+    {NULL, NULL}
+};
+
+static PyTypeObject TestClass = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.TestClass",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+    .tp_methods = test_class_methods,
+};
 
 
 /*[clinic input]
@@ -1843,6 +1912,7 @@ static PyMethodDef tester_methods[] = {
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
+    NULL_OR_TUPLE_FOR_VARARGS_METHODDEF
     CLONE_F1_METHODDEF
     CLONE_F2_METHODDEF
     CLONE_WITH_CONV_F1_METHODDEF
@@ -1884,6 +1954,12 @@ PyInit__testclinic(void)
     PyObject *m = PyModule_Create(&_testclinic_module);
     if (m == NULL) {
         return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
+    if (PyModule_AddType(m, &TestClass) < 0) {
+        goto error;
     }
     if (PyModule_AddType(m, &DeprStarNew) < 0) {
         goto error;

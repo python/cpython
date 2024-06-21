@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"      // _PyObject_freelists
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+
 struct _py_object_runtime_state {
 #ifdef Py_REF_DEBUG
     Py_ssize_t interpreter_leaks;
@@ -16,15 +19,17 @@ struct _py_object_runtime_state {
 };
 
 struct _py_object_state {
+#if !defined(Py_GIL_DISABLED)
+    struct _Py_object_freelists freelists;
+#endif
 #ifdef Py_REF_DEBUG
     Py_ssize_t reftotal;
 #endif
 #ifdef Py_TRACE_REFS
-    /* Head of circular doubly-linked list of all objects.  These are linked
-     * together via the _ob_prev and _ob_next members of a PyObject, which
-     * exist only in a Py_TRACE_REFS build.
-     */
-    PyObject refchain;
+    // Hash table storing all objects. The key is the object pointer
+    // (PyObject*) and the value is always the number 1 (as uintptr_t).
+    // See _PyRefchain_IsTraced() and _PyRefchain_Trace() functions.
+    _Py_hashtable_t *refchain;
 #endif
     int _not_used;
 };

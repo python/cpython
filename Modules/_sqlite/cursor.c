@@ -669,16 +669,13 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
         }
         for (i = 0; i < num_params; i++) {
             const char *name = sqlite3_bind_parameter_name(self->st, i+1);
-            if (name != NULL) {
-                int ret = PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            if (name != NULL && name[0] != '?') {
+                PyErr_Format(state->ProgrammingError,
                         "Binding %d ('%s') is a named parameter, but you "
                         "supplied a sequence which requires nameless (qmark) "
-                        "placeholders. Starting with Python 3.14 an "
-                        "sqlite3.ProgrammingError will be raised.",
+                        "placeholders.",
                         i+1, name);
-                if (ret < 0) {
-                    return;
-                }
+                return;
             }
 
             if (PyTuple_CheckExact(parameters)) {
@@ -721,7 +718,6 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     } else if (PyDict_Check(parameters)) {
         /* parameters passed as dictionary */
         for (i = 1; i <= num_params_needed; i++) {
-            PyObject *binding_name_obj;
             Py_BEGIN_ALLOW_THREADS
             binding_name = sqlite3_bind_parameter_name(self->st, i);
             Py_END_ALLOW_THREADS
@@ -733,17 +729,8 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             }
 
             binding_name++; /* skip first char (the colon) */
-            binding_name_obj = PyUnicode_FromString(binding_name);
-            if (!binding_name_obj) {
-                return;
-            }
-            if (PyDict_CheckExact(parameters)) {
-                PyObject *item = PyDict_GetItemWithError(parameters, binding_name_obj);
-                current_param = Py_XNewRef(item);
-            } else {
-                current_param = PyObject_GetItem(parameters, binding_name_obj);
-            }
-            Py_DECREF(binding_name_obj);
+            PyObject *current_param;
+            (void)PyMapping_GetOptionalItemString(parameters, binding_name, &current_param);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
                     PyErr_Format(state->ProgrammingError,

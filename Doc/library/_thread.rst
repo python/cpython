@@ -1,5 +1,5 @@
-:mod:`_thread` --- Low-level threading API
-==========================================
+:mod:`!_thread` --- Low-level threading API
+===========================================
 
 .. module:: _thread
    :synopsis: Low-level threading API.
@@ -120,9 +120,12 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      Added support for GNU/kFreeBSD.
 
 
 .. function:: stack_size([size])
@@ -166,14 +169,14 @@ Lock objects have the following methods:
    time can acquire a lock --- that's their reason for existence).
 
    If the *blocking* argument is present, the action depends on its
-   value: if it is False, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is True, the lock is acquired
+   value: if it is false, the lock is only acquired if it can be acquired
+   immediately without waiting, while if it is true, the lock is acquired
    unconditionally as above.
 
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *blocking* is False.
+   a *timeout* if *blocking* is false.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.
@@ -208,7 +211,7 @@ In addition to these methods, lock objects can also be used via the
 
 **Caveats:**
 
-  .. index:: pair: module; signal
+.. index:: pair: module; signal
 
 * Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
   exception will be received by an arbitrary thread.  (When the :mod:`signal`

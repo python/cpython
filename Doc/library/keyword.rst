@@ -1,5 +1,5 @@
-:mod:`keyword` --- Testing for Python keywords
-==============================================
+:mod:`!keyword` --- Testing for Python keywords
+===============================================
 
 .. module:: keyword
    :synopsis: Test whether a string is a keyword in Python.

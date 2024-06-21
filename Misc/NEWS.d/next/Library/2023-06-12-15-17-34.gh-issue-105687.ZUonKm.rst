@@ -1,2 +1,0 @@
-Remove deprecated ``re.template``, ``re.T``, ``re.TEMPLATE``,
-``sre_constans.SRE_FLAG_TEMPLATE``.

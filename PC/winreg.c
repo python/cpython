@@ -200,7 +200,7 @@ PyHKEY_hashFunc(PyObject *ob)
     /* Just use the address.
        XXX - should we use the handle value?
     */
-    return _Py_HashPointer(ob);
+    return PyObject_GenericHash(ob);
 }
 
 
@@ -222,13 +222,15 @@ class HKEY_converter(CConverter):
     converter = 'clinic_HKEY_converter'
     broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname):
-        return """
-        if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
-            goto exit;
-        }}}}
-        """.format(argname=argname, paramname=self.parser_name,
-                   converter=self.converter)
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
+            if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname,
+            converter=self.converter)
 
 class HKEY_return_converter(CReturnConverter):
     type = 'HKEY'
@@ -250,7 +252,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=f8cb7034338aeaba]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
 
 #include "clinic/winreg.c.h"
 
@@ -2177,6 +2179,7 @@ exec_module(PyObject *m)
 static PyModuleDef_Slot winreg_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

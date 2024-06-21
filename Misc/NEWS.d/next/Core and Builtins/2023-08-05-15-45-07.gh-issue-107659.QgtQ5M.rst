@@ -1,1 +1,0 @@
-Add docstrings for :func:`ctypes.pointer` and :func:`ctypes.POINTER`.

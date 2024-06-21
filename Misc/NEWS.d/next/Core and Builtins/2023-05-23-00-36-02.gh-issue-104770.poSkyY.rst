@@ -1,2 +1,0 @@
-If a generator returns a value upon being closed, the value is now returned
-by :meth:`generator.close`.

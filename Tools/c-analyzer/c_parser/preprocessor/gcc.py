@@ -3,13 +3,21 @@ import re
 
 from . import common as _common
 
-# The following C files must not be built with Py_BUILD_CORE,
-# because they use the limited C API.
-USE_LIMITED_C_API = frozenset((
+# The following C files must not built with Py_BUILD_CORE.
+FILES_WITHOUT_INTERNAL_CAPI = frozenset((
+    # Modules/
     '_testcapimodule.c',
+    '_testlimitedcapi.c',
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',
+))
+
+# C files in the fhe following directories must not be built with
+# Py_BUILD_CORE.
+DIRS_WITHOUT_INTERNAL_CAPI = frozenset((
+    '_testcapi',            # Modules/_testcapi/
+    '_testlimitedcapi',     # Modules/_testlimitedcapi/
 ))
 
 TOOL = 'gcc'
@@ -70,7 +78,10 @@ def preprocess(filename,
     filename = _normpath(filename, cwd)
 
     postargs = POST_ARGS
-    if os.path.basename(filename) not in USE_LIMITED_C_API:
+    basename = os.path.basename(filename)
+    dirname = os.path.basename(os.path.dirname(filename))
+    if (basename not in FILES_WITHOUT_INTERNAL_CAPI
+       and dirname not in DIRS_WITHOUT_INTERNAL_CAPI):
         postargs += ('-DPy_BUILD_CORE=1',)
 
     text = _common.preprocess(

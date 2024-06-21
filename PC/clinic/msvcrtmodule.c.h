@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
@@ -207,7 +203,7 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
 "kbhit($module, /)\n"
 "--\n"
 "\n"
-"Return true if a keypress is waiting to be read.");
+"Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.");
 
 #define MSVCRT_KBHIT_METHODDEF    \
     {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
@@ -359,10 +355,24 @@ msvcrt_putch(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
+    if (PyBytes_Check(arg)) {
+        if (PyBytes_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "putch(): argument must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(arg));
+            goto exit;
+        }
         char_value = PyBytes_AS_STRING(arg)[0];
     }
-    else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
+    else if (PyByteArray_Check(arg)) {
+        if (PyByteArray_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "putch(): argument must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(arg));
+            goto exit;
+        }
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
@@ -400,7 +410,10 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
+        PyErr_Format(PyExc_TypeError,
+            "putwch(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -434,10 +447,24 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
+    if (PyBytes_Check(arg)) {
+        if (PyBytes_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "ungetch(): argument must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(arg));
+            goto exit;
+        }
         char_value = PyBytes_AS_STRING(arg)[0];
     }
-    else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
+    else if (PyByteArray_Check(arg)) {
+        if (PyByteArray_GET_SIZE(arg) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "ungetch(): argument must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(arg));
+            goto exit;
+        }
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
@@ -475,7 +502,10 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
+        PyErr_Format(PyExc_TypeError,
+            "ungetwch(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -701,4 +731,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=f70de1b6d0e700cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=692c6f52bb9193ce input=a9049054013a1b77]*/

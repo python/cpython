@@ -7,8 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import os_helper
-from test.support import script_helper, is_android
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS
 import tempfile
 import unittest
 from textwrap import dedent
@@ -22,7 +21,6 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -35,7 +33,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
         return '^' + regex + '$'
 
 def skip_segfault_on_android(test):
-    # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
+    # gh-76319: Raising SIGSEGV on Android may not cause a crash.
     return unittest.skipIf(is_android,
                            'raising SIGSEGV on Android is unreliable')(test)
 
@@ -67,11 +65,7 @@ class FaultHandlerTests(unittest.TestCase):
 
         # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
         option = 'handle_segv=0'
-        for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
-            if name in env:
-                env[name] += f':{option}'
-            else:
-                env[name] = option
+        support.set_sanitizer_env_var(env, option)
 
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code,
@@ -272,6 +266,7 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def check_fatal_error_func(self, release_gil):
         # Test that Py_FatalError() dumps a traceback
         with support.SuppressCrashReport():
@@ -580,10 +575,12 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 8
         else:
             lineno = 10
+        # When the traceback is dumped, the waiter thread may be in the
+        # `self.running.set()` call or in `self.stop.wait()`.
         regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
-            ){{1,3}}  File "<string>", line 23 in run
+            ){{1,3}}  File "<string>", line (?:22|23) in run
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
@@ -683,6 +680,7 @@ class FaultHandlerTests(unittest.TestCase):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
 
+    @support.requires_resource('walltime')
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 

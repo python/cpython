@@ -95,7 +95,7 @@ extern void _PyErr_Fetch(
 
 extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
 
-extern int _PyErr_ExceptionMatches(
+PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
@@ -114,18 +114,18 @@ extern void _PyErr_SetObject(
 
 extern void _PyErr_ChainStackItem(void);
 
-extern void _PyErr_Clear(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
 extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-extern void _PyErr_SetString(
+PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
     const char *string);
 
-extern PyObject* _PyErr_Format(
+PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
@@ -162,6 +162,10 @@ PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
 void _PyErr_FormatNote(const char *format, ...);
+
+/* Context manipulation (PEP 3134) */
+
+Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,8 @@
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
@@ -64,12 +66,19 @@ PyDoc_STRVAR(iobase_doc,
     "with open('spam.txt', 'r') as fp:\n"
     "    fp.write('Spam and eggs!')\n");
 
-/* Use this macro whenever you want to check the internal `closed` status
+
+/* Internal methods */
+
+/* Use this function whenever you want to check the internal `closed` status
    of the IOBase object rather than the virtual `closed` attribute as returned
    by whatever subclass. */
 
+static int
+iobase_is_closed(PyObject *self)
+{
+    return PyObject_HasAttrWithError(self, &_Py_ID(__IOBase_closed));
+}
 
-/* Internal methods */
 static PyObject *
 iobase_unsupported(_PyIO_State *state, const char *message)
 {
@@ -141,18 +150,6 @@ _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
-}
-
-static int
-iobase_is_closed(PyObject *self)
-{
-    PyObject *res;
-    int ret;
-    /* This gets the derived attribute, which is *not* __IOBase_closed
-       in most cases! */
-    ret = PyObject_GetOptionalAttr(self, &_Py_ID(__IOBase_closed), &res);
-    Py_XDECREF(res);
-    return ret;
 }
 
 /* Flush and close methods */
@@ -267,7 +264,7 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    int rc, closed = iobase_is_closed(self);
+    int rc1, rc2, closed = iobase_is_closed(self);
 
     if (closed < 0) {
         return NULL;
@@ -276,19 +273,14 @@ _io__IOBase_close_impl(PyObject *self)
         Py_RETURN_NONE;
     }
 
-    PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(flush));
-
+    rc1 = _PyFile_Flush(self);
     PyObject *exc = PyErr_GetRaisedException();
-    rc = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
+    rc2 = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
     _PyErr_ChainExceptions1(exc);
-    if (rc < 0) {
-        Py_CLEAR(res);
+    if (rc1 < 0 || rc2 < 0) {
+        return NULL;
     }
 
-    if (res == NULL)
-        return NULL;
-
-    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 

@@ -1,2 +1,0 @@
-Fix bugs in :mod:`!_datetime` where exceptions could be overwritten in case
-of module initialisation failure.

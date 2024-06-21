@@ -343,13 +343,13 @@ slot typedefs
 |                             |    :c:type:`PyTypeObject` * |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`destructor`        | void *                      | void                 |
+| :c:type:`destructor`        | :c:type:`PyObject` *        | void                 |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`freefunc`          | void *                      | void                 |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`traverseproc`      | .. line-block::             | int                  |
 |                             |                             |                      |
-|                             |    void *                   |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`visitproc`      |                      |
 |                             |    void *                   |                      |
 +-----------------------------+-----------------------------+----------------------+
@@ -426,7 +426,7 @@ slot typedefs
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_buffer` *    |                      |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`inquiry`           | void *                      | int                  |
+| :c:type:`inquiry`           | :c:type:`PyObject` *        | int                  |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`unaryfunc`         | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
@@ -526,28 +526,6 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
-   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
-
-   Their initialization to ``NULL`` is taken care of by the
-   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
-   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
-   allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly linked list of *all* live objects on the heap.
-
-   This could be used for various debugging purposes; currently the only uses
-   are the :func:`sys.getobjects` function and to print the objects that are
-   still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
 
 
 PyVarObject Slots
@@ -905,6 +883,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both ``NULL``.
 
+   **Default:**
+
+   :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_GenericHash`.
+
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 
@@ -1052,7 +1034,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
-      DECREF'ed).
+      DECREF'ed). Heap types should also :ref:`support garbage collection <supporting-cycle-detection>`
+      as they can form a reference cycle with their own module object.
 
       **Inheritance:**
 
@@ -1152,6 +1135,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
+
+      The type traverse function must call :c:func:`PyObject_VisitManagedDict`
+      and its clear function must call :c:func:`PyObject_ClearManagedDict`.
 
       .. versionadded:: 3.12
 
@@ -1342,8 +1328,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
-         This flag is present in header files, but is an internal feature and should
-         not be used. It will be removed in a future version of CPython
+         This flag is present in header files, but is not be used.
+         It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1389,6 +1375,23 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    On the other hand, even if you know a member can never be part of a cycle, as a
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
    :func:`~gc.get_referents` function will include it.
+
+   Heap types (:c:macro:`Py_TPFLAGS_HEAPTYPE`) must visit their type with::
+
+       Py_VISIT(Py_TYPE(self));
+
+   It is only needed since Python 3.9. To support Python 3.8 and older, this
+   line must be conditional::
+
+       #if PY_VERSION_HEX >= 0x03090000
+           Py_VISIT(Py_TYPE(self));
+       #endif
+
+   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:func:`PyObject_VisitManagedDict` like this::
+
+       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
 
    .. warning::
        When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
@@ -1472,6 +1475,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    it's important that the pointer to the contained object be ``NULL`` at that time,
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
+
+   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:func:`PyObject_ClearManagedDict` like this::
+
+       PyObject_ClearManagedDict((PyObject*)self);
 
    Note that :c:member:`~PyTypeObject.tp_clear` is not *always* called
    before an instance is deallocated. For example, when reference counting
@@ -1823,7 +1832,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    field is ``NULL`` then no :attr:`~object.__dict__` gets created for instances.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_dictoffset` will be set to ``-1``, to indicate
    that it is unsafe to use this field.
 

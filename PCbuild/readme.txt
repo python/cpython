@@ -131,29 +131,31 @@ xxlimited_35
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
 .pyd) of the same name as the project:
-_asyncio
-_ctypes
-_ctypes_test
-_zoneinfo
-_decimal
-_elementtree
-_hashlib
-_multiprocessing
-_overlapped
-_socket
-_testbuffer
-_testcapi
-_testclinic
-_testclinic_limited
-_testconsole
-_testimportmultiple
-_testmultiphase
-_testsinglephase
-_tkinter
-pyexpat
-select
-unicodedata
-winsound
+ * _asyncio
+ * _ctypes
+ * _ctypes_test
+ * _zoneinfo
+ * _decimal
+ * _elementtree
+ * _hashlib
+ * _multiprocessing
+ * _overlapped
+ * _socket
+ * _testbuffer
+ * _testcapi
+ * _testlimitedcapi
+ * _testinternalcapi
+ * _testclinic
+ * _testclinic_limited
+ * _testconsole
+ * _testimportmultiple
+ * _testmultiphase
+ * _testsinglephase
+ * _tkinter
+ * pyexpat
+ * select
+ * unicodedata
+ * winsound
 
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
@@ -189,7 +191,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.42.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.45.3, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter
@@ -226,12 +228,18 @@ directory.  This script extracts all the external sub-projects from
 and
     https://github.com/python/cpython-bin-deps
 via a Python script called "get_external.py", located in this directory.
-If Python 3.6 or later is not available via the "py.exe" launcher, the
-path or command to use for Python can be provided in the PYTHON_FOR_BUILD
-environment variable, or get_externals.bat will download the latest
-version of NuGet and use it to download the latest "pythonx86" package
-for use with get_external.py.  Everything downloaded by these scripts is
-stored in ..\externals (relative to this directory).
+Everything downloaded by these scripts is stored in ..\externals
+(relative to this directory), or the path specified by the EXTERNALS_DIR
+environment variable.
+
+The path or command to use for Python can be provided with the
+PYTHON_FOR_BUILD environment variable. If this is not set, an active
+virtual environment will be used. If none is active, and HOST_PYTHON is
+set to a recent enough version or "py.exe" is able to find a recent
+enough version, those will be used. If all else fails, a copy of Python
+will be downloaded from NuGet and extracted to the externals directory.
+This will then be used for later builds (see PCbuild/find_python.bat
+for the full logic).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild
@@ -293,3 +301,33 @@ project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
 for different configurations.
+
+Add a new project
+-----------------
+
+For example, add a new _testclinic_limited project to build a new
+_testclinic_limited extension, the file Modules/_testclinic_limited.c:
+
+* In PCbuild/, copy _testclinic.vcxproj to _testclinic_limited.vcxproj,
+  replace RootNamespace value with `_testclinic_limited`, replace
+  `_asyncio.c` with `_testclinic_limited.c`.
+* In PCbuild/, copy _testclinic.vcxproj.filters to
+  _testclinic_limited.vcxproj.filters, edit the list of files in the new file.
+* Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
+  PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
+  project).
+* Add a dependency on the python project to the new _testclinic_limited
+  project.
+* Save and exit Visual Studio.
+* Add `;_testclinic_limited` to `<TestModules Include="...">` in
+  PCbuild\pcbuild.proj.
+* Update "exts" in Tools\msi\lib\lib_files.wxs file or in
+  Tools\msi\test\test_files.wxs file (for tests).
+* PC\layout\main.py needs updating if you add a test-only extension whose name
+  doesn't start with "_test".
+* Add the extension to PCbuild\readme.txt (this file).
+* Build Python from scratch (clean the solution) to check that the new project
+  is built successfully.
+* Ensure the new .vcxproj and .vcxproj.filters files are added to your commit,
+  as well as the changes to pcbuild.sln, pcbuild.proj and any other modified
+  files.

@@ -265,7 +265,7 @@ ABC hierarchy::
       when invalidating the caches of all finders on :data:`sys.meta_path`.
 
       .. versionchanged:: 3.4
-         Returns ``None`` when called instead of ``NotImplemented``.
+         Returns ``None`` when called instead of :data:`NotImplemented`.
 
 
 .. class:: PathEntryFinder
@@ -645,6 +645,160 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+.. class:: ResourceReader
+
+    *Superseded by TraversableResources*
+
+    An :term:`abstract base class` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`path-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_reader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
+
+    .. versionadded:: 3.7
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterable` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used
+        directly.
+
+        The abstract method returns an iterable of no items.
+
+
+.. class:: Traversable
+
+    An object with a subset of :class:`pathlib.Path` methods suitable for
+    traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.Traversable` instead.
+
+    .. attribute:: name
+
+       Abstract. The base name of this object without any parent references.
+
+    .. abstractmethod:: iterdir()
+
+       Yield ``Traversable`` objects in ``self``.
+
+    .. abstractmethod:: is_dir()
+
+       Return ``True`` if ``self`` is a directory.
+
+    .. abstractmethod:: is_file()
+
+       Return ``True`` if ``self`` is a file.
+
+    .. abstractmethod:: joinpath(child)
+
+       Return Traversable child in ``self``.
+
+    .. abstractmethod:: __truediv__(child)
+
+       Return ``Traversable`` child in ``self``.
+
+    .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+       suitable for reading (same as :attr:`pathlib.Path.open`).
+
+       When opening as text, accepts encoding parameters such as those
+       accepted by :attr:`io.TextIOWrapper`.
+
+    .. method:: read_bytes()
+
+       Read contents of ``self`` as bytes.
+
+    .. method:: read_text(encoding=None)
+
+       Read contents of ``self`` as text.
+
+
+.. class:: TraversableResources
+
+    An abstract base class for resource readers capable of serving
+    the :meth:`importlib.resources.files` interface. Subclasses
+    :class:`importlib.resources.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
+    abstract methods. Therefore, any loader supplying
+    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
+
+    Loaders that wish to support resource reading are expected to
+    implement this interface.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
+       package.
+
+
 
 :mod:`importlib.machinery` -- Importers and path hooks
 ------------------------------------------------------
@@ -991,7 +1145,7 @@ find and load modules.
       .. versionadded:: 3.4
 
 
-.. class:: NamespaceLoader(name, path, path_finder):
+.. class:: NamespaceLoader(name, path, path_finder)
 
    A concrete implementation of :class:`importlib.abc.InspectLoader` for
    namespace packages.  This is an alias for a private class and is only made
@@ -1085,6 +1239,69 @@ find and load modules.
    ``True`` if the spec's :attr:`origin` refers to a loadable location,
     ``False`` otherwise.  This value impacts how :attr:`origin` is interpreted
     and how the module's :attr:`__file__` is populated.
+
+
+.. class:: AppleFrameworkLoader(name, path)
+
+   A specialization of :class:`importlib.machinery.ExtensionFileLoader` that
+   is able to load extension modules in Framework format.
+
+   For compatibility with the iOS App Store, *all* binary modules in an iOS app
+   must be dynamic libraries, contained in a framework with appropriate
+   metadata, stored in the ``Frameworks`` folder of the packaged app. There can
+   be only a single binary per framework, and there can be no executable binary
+   material outside the Frameworks folder.
+
+   To accommodate this requirement, when running on iOS, extension module
+   binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
+   individual standalone frameworks. To discover those frameworks, this loader
+   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   file acting as a placeholder in the original location of the binary on
+   ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
+   the ``Frameworks`` folder, relative to the app bundle. To allow for
+   resolving a framework-packaged binary back to the original location, the
+   framework is expected to contain a ``.origin`` file that contains the
+   location of the ``.fwork`` file, relative to the app bundle.
+
+   For example, consider the case of an import ``from foo.bar import _whiz``,
+   where ``_whiz`` is implemented with the binary module
+   ``sources/foo/bar/_whiz.abi3.so``, with ``sources`` being the location
+   registered on ``sys.path``, relative to the application bundle. This module
+   *must* be distributed as
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz`` (creating the framework
+   name from the full import path of the module), with an ``Info.plist`` file
+   in the ``.framework`` directory identifying the binary as a framework. The
+   ``foo.bar._whiz`` module would be represented in the original location with
+   a ``sources/foo/bar/_whiz.abi3.fwork`` marker file, containing the path
+   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The framework would also contain
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz.origin``, containing the
+   path to the ``.fwork`` file.
+
+   When a module is loaded with this loader, the ``__file__`` for the module
+   will report as the location of the ``.fwork`` file. This allows code to use
+   the ``__file__`` of a  module as an anchor for file system traversal.
+   However, the spec origin will reference the location of the *actual* binary
+   in the ``.framework`` folder.
+
+   The Xcode project building the app is responsible for converting any ``.so``
+   files from wherever they exist in the ``PYTHONPATH`` into frameworks in the
+   ``Frameworks`` folder (including stripping extensions from the module file,
+   the addition of framework metadata, and signing the resulting framework),
+   and creating the ``.fwork`` and ``.origin`` files. This will usually be done
+   with a build step in the Xcode project; see the iOS documentation for
+   details on how to construct this build step.
+
+   .. versionadded:: 3.13
+
+   .. availability:: iOS.
+
+   .. attribute:: name
+
+      Name of the module the loader supports.
+
+   .. attribute:: path
+
+      Path to the ``.fwork`` file for the extension module.
 
 
 :mod:`importlib.util` -- Utility code for importers

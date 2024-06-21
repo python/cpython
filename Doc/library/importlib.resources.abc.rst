@@ -1,5 +1,5 @@
-:mod:`importlib.resources.abc` -- Abstract base classes for resources
----------------------------------------------------------------------
+:mod:`!importlib.resources.abc` -- Abstract base classes for resources
+----------------------------------------------------------------------
 
 .. module:: importlib.resources.abc
     :synopsis: Abstract base classes for resources
@@ -42,8 +42,6 @@
     specified by fullname is not a package, this method should return
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
-
-    .. versionadded:: 3.7
 
     .. deprecated-removed:: 3.12 3.14
        Use :class:`importlib.resources.abc.TraversableResources` instead.
@@ -95,11 +93,6 @@
     For a representation of the object on the file-system, use
     :meth:`importlib.resources.as_file`.
 
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.Traversable` instead.
-
     .. attribute:: name
 
        Abstract. The base name of this object without any parent references.
@@ -110,19 +103,41 @@
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directory.
+       Return ``True`` if self is a directory.
 
     .. abstractmethod:: is_file()
 
-       Return True if self is a file.
+       Return ``True`` if self is a file.
 
-    .. abstractmethod:: joinpath(child)
+    .. abstractmethod:: joinpath(*pathsegments)
 
-       Return Traversable child in self.
+       Traverse directories according to *pathsegments* and return
+       the result as :class:`!Traversable`.
+
+       Each *pathsegments* argument may contain multiple names separated by
+       forward slashes (``/``, ``posixpath.sep`` ).
+       For example, the following are equivalent::
+
+           files.joinpath('subdir', 'subsuddir', 'file.txt')
+           files.joinpath('subdir/subsuddir/file.txt')
+
+       Note that some :class:`!Traversable` implementations
+       might not be updated to the latest version of the protocol.
+       For compatibility with such implementations, provide a single argument
+       without path separators to each call to ``joinpath``. For example::
+
+           files.joinpath('subdir').joinpath('subsubdir').joinpath('file.txt')
+
+       .. versionchanged:: 3.11
+
+          ``joinpath`` accepts multiple *pathsegments*, and these segments
+          may contain forward slashes as path separators.
+          Previously, only a single *child* argument was accepted.
 
     .. abstractmethod:: __truediv__(child)
 
        Return Traversable child in self.
+       Equivalent to ``joinpath(child)``.
 
     .. abstractmethod:: open(mode='r', *args, **kwargs)
 
@@ -152,11 +167,6 @@
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
-
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.TraversableResources` instead.
 
     .. abstractmethod:: files()
 

@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
@@ -643,12 +644,27 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
+    if (PyErr_GivenExceptionMatches(exc_val, PyExc_StopIteration)) {
+        const char *msg = "StopIteration interacts badly with "
+                          "generators and cannot be raised into a "
+                          "Future";
+        PyObject *message = PyUnicode_FromString(msg);
+        if (message == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        PyObject *err = PyObject_CallOneArg(PyExc_RuntimeError, message);
+        Py_DECREF(message);
+        if (err == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        assert(PyExceptionInstance_Check(err));
+
+        PyException_SetCause(err, Py_NewRef(exc_val));
+        PyException_SetContext(err, Py_NewRef(exc_val));
         Py_DECREF(exc_val);
-        PyErr_SetString(PyExc_TypeError,
-                        "StopIteration interacts badly with generators "
-                        "and cannot be raised into a Future");
-        return NULL;
+        exc_val = err;
     }
 
     assert(!fut->fut_exception);
@@ -863,7 +879,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
-    _PyObject_ClearManagedDict((PyObject *)fut);
+    PyObject_ClearManagedDict((PyObject *)fut);
     return 0;
 }
 
@@ -881,7 +897,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -1632,11 +1648,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
+
+    // FutureIter is a heap type so any subclass must also be a heap type.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+
+    PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
+    asyncio_state *state = NULL;
+
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
+    if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
+    }
+
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
@@ -2092,12 +2122,22 @@ static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
+
+    if (task == Py_None) {
+        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
+            return NULL;
+        }
+        if (prev_task == NULL) {
+            Py_RETURN_NONE;
+        }
+        return prev_task;
+    }
+
     Py_hash_t hash;
     hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-
     prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
         if (PyErr_Occurred()) {
@@ -2106,22 +2146,12 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         prev_task = Py_None;
     }
     Py_INCREF(prev_task);
-
-    if (task == Py_None) {
-        if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            goto error;
-        }
-    } else {
-        if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            goto error;
-        }
+    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
+        Py_DECREF(prev_task);
+        return NULL;
     }
 
     return prev_task;
-
-error:
-    Py_DECREF(prev_task);
-    return NULL;
 }
 
 /* ----- Task */
@@ -2245,7 +2275,7 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -2441,6 +2471,9 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 {
     if (self->task_num_cancels_requested > 0) {
         self->task_num_cancels_requested -= 1;
+        if (self->task_num_cancels_requested == 0) {
+            self->task_must_cancel = 0;
+        }
     }
     return PyLong_FromLong(self->task_num_cancels_requested);
 }
@@ -2826,7 +2859,6 @@ gen_status_from_result(PyObject **result)
 static PyObject *
 task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
-    int res;
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
@@ -2843,20 +2875,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
-        if (exc) {
-            /* Check if exc is a CancelledError */
-            res = PyObject_IsInstance(exc, state->asyncio_CancelledError);
-            if (res == -1) {
-                /* An error occurred, abort */
-                goto fail;
-            }
-            if (res == 0) {
-                /* exc is not CancelledError; reset it to NULL */
-                exc = NULL;
-            }
-        }
-
-        if (!exc) {
+        if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
             /* exc was not a CancelledError */
             exc = create_cancelled_error(state, (FutureObj*)task);
 
@@ -3602,15 +3621,11 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_INCREF(loop);
     }
 
-    ret = PyDict_GetItemWithError(state->current_tasks, loop);
+    int rc = PyDict_GetItemRef(state->current_tasks, loop, &ret);
     Py_DECREF(loop);
-    if (ret == NULL && PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (ret == NULL) {
+    if (rc == 0) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(ret);
     return ret;
 }
 
@@ -3978,6 +3993,7 @@ module_exec(PyObject *mod)
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

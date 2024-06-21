@@ -3,7 +3,8 @@
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include <locale.h>
+
+#include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
    lower-case.  Returns 1 for a successful match, 0 otherwise. */
@@ -841,7 +842,7 @@ char * PyOS_double_to_string(double val,
 
     */
 
-    if (Py_IS_NAN(val) || Py_IS_INFINITY(val))
+    if (isnan(val) || isinf(val))
         /* 3 for 'inf'/'nan', 1 for sign, 1 for '\0' */
         bufsize = 5;
     else {
@@ -859,10 +860,10 @@ char * PyOS_double_to_string(double val,
     }
 
     /* Handle nan and inf. */
-    if (Py_IS_NAN(val)) {
+    if (isnan(val)) {
         strcpy(buf, "nan");
         t = Py_DTST_NAN;
-    } else if (Py_IS_INFINITY(val)) {
+    } else if (isinf(val)) {
         if (copysign(1., val) == 1.)
             strcpy(buf, "inf");
         else

@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_long.h"           // _PyLong_UnsignedLong_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
@@ -624,10 +624,6 @@ _overlapped_Overlapped_ReadFileInto(OverlappedObject *self, PyObject *const *arg
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("ReadFileInto", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = _overlapped_Overlapped_ReadFileInto_impl(self, handle, &bufobj);
 
 exit:
@@ -715,10 +711,6 @@ _overlapped_Overlapped_WSARecvInto(OverlappedObject *self, PyObject *const *args
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("WSARecvInto", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
         goto exit;
     }
@@ -763,10 +755,6 @@ _overlapped_Overlapped_WriteFile(OverlappedObject *self, PyObject *const *args, 
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("WriteFile", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = _overlapped_Overlapped_WriteFile_impl(self, handle, &bufobj);
 
 exit:
@@ -807,10 +795,6 @@ _overlapped_Overlapped_WSASend(OverlappedObject *self, PyObject *const *args, Py
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("WSASend", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
@@ -1138,10 +1122,6 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("WSASendTo", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
         goto exit;
     }
@@ -1239,10 +1219,6 @@ _overlapped_Overlapped_WSARecvFromInto(OverlappedObject *self, PyObject *const *
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&bufobj, 'C')) {
-        _PyArg_BadArgument("WSARecvFromInto", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     if (!_PyLong_UnsignedLong_Converter(args[2], &size)) {
         goto exit;
     }
@@ -1263,4 +1239,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=994ad727b827ff87 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=958cbddbcc355f47 input=a9049054013a1b77]*/

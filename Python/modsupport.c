@@ -88,6 +88,24 @@ static PyObject *do_mklist(const char**, va_list *, char, Py_ssize_t);
 static PyObject *do_mkdict(const char**, va_list *, char, Py_ssize_t);
 static PyObject *do_mkvalue(const char**, va_list *);
 
+static int
+check_end(const char **p_format, char endchar)
+{
+    const char *f = *p_format;
+    while (*f != endchar) {
+        if (*f != ' ' && *f != '\t' && *f != ',' && *f != ':') {
+            PyErr_SetString(PyExc_SystemError,
+                            "Unmatched paren in format");
+            return 0;
+        }
+        f++;
+    }
+    if (endchar) {
+        f++;
+    }
+    *p_format = f;
+    return 1;
+}
 
 static void
 do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
@@ -108,13 +126,8 @@ do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
         }
     }
     Py_XDECREF(v);
-    if (**p_format != endchar) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
+    if (!check_end(p_format, endchar)) {
         return;
-    }
-    if (endchar) {
-        ++*p_format;
     }
 }
 
@@ -157,14 +170,10 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
         Py_DECREF(k);
         Py_DECREF(v);
     }
-    if (**p_format != endchar) {
+    if (!check_end(p_format, endchar)) {
         Py_DECREF(d);
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
         return NULL;
     }
-    if (endchar)
-        ++*p_format;
     return d;
 }
 
@@ -191,14 +200,10 @@ do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
         }
         PyList_SET_ITEM(v, i, w);
     }
-    if (**p_format != endchar) {
+    if (!check_end(p_format, endchar)) {
         Py_DECREF(v);
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
         return NULL;
     }
-    if (endchar)
-        ++*p_format;
     return v;
 }
 
@@ -221,13 +226,8 @@ do_mkstack(PyObject **stack, const char **p_format, va_list *p_va,
         }
         stack[i] = w;
     }
-    if (**p_format != endchar) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
+    if (!check_end(p_format, endchar)) {
         goto error;
-    }
-    if (endchar) {
-        ++*p_format;
     }
     return 0;
 
@@ -261,14 +261,10 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
         }
         PyTuple_SET_ITEM(v, i, w);
     }
-    if (**p_format != endchar) {
+    if (!check_end(p_format, endchar)) {
         Py_DECREF(v);
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
         return NULL;
     }
-    if (endchar)
-        ++*p_format;
     return v;
 }
 

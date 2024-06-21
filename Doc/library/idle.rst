@@ -18,8 +18,6 @@ IDLE is Python's Integrated Development and Learning Environment.
 
 IDLE has the following features:
 
-* coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
-
 * cross-platform: works mostly the same on Windows, Unix, and macOS
 
 * Python shell window (interactive interpreter) with colorizing
@@ -422,41 +420,34 @@ and that other files do not.  Run Python code with the Run menu.
 Key bindings
 ^^^^^^^^^^^^
 
-In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
-the :kbd:`Command` key on macOS.
+The IDLE insertion cursor is a thin vertical bar between character
+positions.  When characters are entered, the insertion cursor and
+everything to its right moves right one character and
+the new character is entered in the new space.
 
-* :kbd:`Backspace` deletes to the left; :kbd:`Del` deletes to the right
+Several non-character keys move the cursor and possibly
+delete characters.  Deletion does not puts text on the clipboard,
+but IDLE has an undo list.  Wherever this doc discusses keys,
+'C' refers to the :kbd:`Control` key on Windows and
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
+assume that the keys have not been re-bound to something else.)
 
-* :kbd:`C-Backspace` delete word left; :kbd:`C-Del` delete word to the right
+* Arrow keys move the cursor one character or line.
 
-* Arrow keys and :kbd:`Page Up`/:kbd:`Page Down` to move around
+* :kbd:`C-LeftArrow` and :kbd:`C-RightArrow` moves left or right one word.
 
-* :kbd:`C-LeftArrow` and :kbd:`C-RightArrow` moves by words
+* :kbd:`Home` and :kbd:`End` go to the beginning or end of the line.
 
-* :kbd:`Home`/:kbd:`End` go to begin/end of line
+* :kbd:`Page Up` and :kbd:`Page Down` go up or down one screen.
 
-* :kbd:`C-Home`/:kbd:`C-End` go to begin/end of file
+* :kbd:`C-Home` and :kbd:`C-End` go to beginning or end of the file.
 
-* Some useful Emacs bindings are inherited from Tcl/Tk:
+* :kbd:`Backspace` and :kbd:`Del` (or :kbd:`C-d`) delete the previous
+  or next character.
 
-   * :kbd:`C-a` beginning of line
+* :kbd:`C-Backspace` and :kbd:`C-Del` delete one word left or right.
 
-   * :kbd:`C-e` end of line
-
-   * :kbd:`C-k` kill line (but doesn't put it in clipboard)
-
-   * :kbd:`C-l` center window around the insertion point
-
-   * :kbd:`C-b` go backward one character without deleting (usually you can
-     also use the cursor key for this)
-
-   * :kbd:`C-f` go forward one character without deleting (usually you can
-     also use the cursor key for this)
-
-   * :kbd:`C-p` go up one line (usually you can also use the cursor key for
-     this)
-
-   * :kbd:`C-d` delete next character
+* :kbd:`C-k` deletes ('kills') everything to the right.
 
 Standard keybindings (like :kbd:`C-c` to copy and :kbd:`C-v` to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.
@@ -611,23 +602,18 @@ when one requests a restart on the Shell menu, or when one runs code
 in an editor window.
 
 The editing features described in previous subsections work when entering
-code interactively.  IDLE's Shell window also responds to the following keys.
+code interactively.  IDLE's Shell window also responds to the following:
 
-* :kbd:`C-c` interrupts executing command
+* :kbd:`C-c` attempts to interrupt statement execution (but may fail).
 
-* :kbd:`C-d` sends end-of-file; closes window if typed at a ``>>>`` prompt
+* :kbd:`C-d` closes Shell if typed at a ``>>>`` prompt.
 
-* :kbd:`Alt-/` (Expand word) is also useful to reduce typing
+* :kbd:`Alt-p` and :kbd:`Alt-n` (:kbd:`C-p` and :kbd:`C-n` on macOS)
+  retrieve to the current prompt the previous or next previously
+  entered statement that matches anything already typed.
 
-  Command history
-
-  * :kbd:`Alt-p` retrieves previous command matching what you have typed. On
-    macOS use :kbd:`C-p`.
-
-  * :kbd:`Alt-n` retrieves next. On macOS use :kbd:`C-n`.
-
-  * :kbd:`Return` while the cursor is on any previous command
-    retrieves that command
+* :kbd:`Return` while the cursor is on any previous statement
+  appends the latter to anything already typed at the prompt.
 
 Text colors
 ^^^^^^^^^^^

@@ -1,2 +1,0 @@
-Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
-functions, deprecated in Python 3.9. Patch by Victor Stinner.

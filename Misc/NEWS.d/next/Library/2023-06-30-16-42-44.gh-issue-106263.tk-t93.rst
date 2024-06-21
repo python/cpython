@@ -1,2 +1,0 @@
-Fix crash when calling ``repr`` with a manually constructed SignalDict object.
-Patch by Charlie Zhao.

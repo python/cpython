@@ -2,12 +2,11 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
 import json
-import opcode
 import os
 import pickle
 import queue
@@ -18,7 +17,6 @@ import threading
 import time
 import types
 import unittest
-import warnings
 import weakref
 import operator
 from test import support
@@ -27,6 +25,9 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
+from test.support import suppress_immortalization
+from test.support import expected_failure_if_gil_disabled
+from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -41,13 +42,14 @@ try:
 except ImportError:
     _testsinglephase = None
 try:
-    import _xxsubinterpreters as _interpreters
+    import _interpreters
 except ModuleNotFoundError:
     _interpreters = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+import _testlimitedcapi
 import _testinternalcapi
 
 
@@ -298,26 +300,132 @@ class CAPITest(unittest.TestCase):
             # test _Py_CheckFunctionResult() instead.
             self.assertIn('returned a result with an exception set', err)
 
+    def test_buildvalue(self):
+        # Test Py_BuildValue() with object arguments
+        buildvalue = _testcapi.py_buildvalue
+        self.assertEqual(buildvalue(''), None)
+        self.assertEqual(buildvalue('()'), ())
+        self.assertEqual(buildvalue('[]'), [])
+        self.assertEqual(buildvalue('{}'), {})
+        self.assertEqual(buildvalue('()[]{}'), ((), [], {}))
+        self.assertEqual(buildvalue('O', 1), 1)
+        self.assertEqual(buildvalue('(O)', 1), (1,))
+        self.assertEqual(buildvalue('[O]', 1), [1])
+        self.assertRaises(SystemError, buildvalue, '{O}', 1)
+        self.assertEqual(buildvalue('OO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(OO)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[OO]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{OO}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{OOOO}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('((O))', 1), ((1,),))
+        self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
+
+        self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('O,', 1), 1)
+        self.assertEqual(buildvalue('   O   ', 1), 1)
+        self.assertEqual(buildvalue('\tO\t', 1), 1)
+        self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O, O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O,\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O,)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O ) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO\t)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O,]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O ] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [\tO\tO\t] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O,}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O } ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO\t}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+
+        self.assertRaises(SystemError, buildvalue, 'O', NULL)
+        self.assertRaises(SystemError, buildvalue, '(O)', NULL)
+        self.assertRaises(SystemError, buildvalue, '[O]', NULL)
+        self.assertRaises(SystemError, buildvalue, '{O}', NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '(OO)', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '(OO)', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '[OO]', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '[OO]', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '{OO}', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '{OO}', NULL, 2)
+
+    def test_buildvalue_ints(self):
+        # Test Py_BuildValue() with integer arguments
+        buildvalue = _testcapi.py_buildvalue_ints
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
+
+        self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
+        self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
+        self.assertEqual(buildvalue('H', USHRT_MAX), USHRT_MAX)
+
+        self.assertEqual(buildvalue('b', 127), 127)
+        self.assertEqual(buildvalue('b', -128), -128)
+        self.assertEqual(buildvalue('B', 255), 255)
+
+        self.assertEqual(buildvalue('c', ord('A')), b'A')
+        self.assertEqual(buildvalue('c', 255), b'\xff')
+        self.assertEqual(buildvalue('c', 256), b'\x00')
+        self.assertEqual(buildvalue('c', -1), b'\xff')
+
+        self.assertEqual(buildvalue('C', 255), chr(255))
+        self.assertEqual(buildvalue('C', 256), chr(256))
+        self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
+        self.assertRaises(ValueError, buildvalue, 'C', -1)
+        self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
+
+        # gh-84489
+        self.assertRaises(ValueError, buildvalue, '(C )i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '[C ]i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '{Ci }i', -1, 2, 3)
+
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount')
-    def test_negative_refcount(self):
+    def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """)
+        code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
 
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
@@ -364,6 +472,8 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_heap_ctype_doc_and_text_signature(self):
         self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
         self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
@@ -371,6 +481,7 @@ class CAPITest(unittest.TestCase):
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
+    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -388,6 +499,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
         self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
 
+    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
         class A(_testcapi.HeapGcCType):
             def __init__(self):
@@ -664,33 +776,11 @@ class CAPITest(unittest.TestCase):
                 with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_immutable_type_with_mutable_base(self):
-        # Add deprecation warning here so it's removed in 3.14
-        warnings._deprecated(
-            'creating immutable classes with mutable bases', remove=(3, 14))
+        class MutableBase: ...
 
-        class MutableBase:
-            def meth(self):
-                return 'original'
-
-        with self.assertWarns(DeprecationWarning):
-            ImmutableSubclass = _testcapi.make_immutable_type_with_base(
-                MutableBase)
-        instance = ImmutableSubclass()
-
-        self.assertEqual(instance.meth(), 'original')
-
-        # Cannot override the static type's method
-        with self.assertRaisesRegex(
-                TypeError,
-                "cannot set 'meth' attribute of immutable type"):
-            ImmutableSubclass.meth = lambda self: 'overridden'
-        self.assertEqual(instance.meth(), 'original')
-
-        # Can change the method on the mutable base
-        MutableBase.meth = lambda self: 'changed'
-        self.assertEqual(instance.meth(), 'changed')
+        with self.assertRaisesRegex(TypeError, 'Creating immutable type'):
+            _testcapi.make_immutable_type_with_base(MutableBase)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -992,45 +1082,80 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
-    def test_sys_getobject(self):
-        getobject = _testcapi.sys_getobject
+    def test_get_type_name(self):
+        class MyType:
+            pass
 
-        self.assertIs(getobject(b'stdout'), sys.stdout)
-        with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
+        from _testcapi import (
+            get_type_name, get_type_qualname,
+            get_type_fullyqualname, get_type_module_name)
 
-        self.assertIs(getobject(b'nonexisting'), AttributeError)
-        self.assertIs(getobject(b'\xff'), AttributeError)
-        # CRASHES getobject(NULL)
+        from collections import OrderedDict
+        ht = _testcapi.get_heaptype_for_name()
+        for cls, fullname, modname, qualname, name in (
+            (int,
+             'int',
+             'builtins',
+             'int',
+             'int'),
+            (OrderedDict,
+             'collections.OrderedDict',
+             'collections',
+             'OrderedDict',
+             'OrderedDict'),
+            (ht,
+             '_testcapi.HeapTypeNameType',
+             '_testcapi',
+             'HeapTypeNameType',
+             'HeapTypeNameType'),
+            (MyType,
+             f'{__name__}.CAPITest.test_get_type_name.<locals>.MyType',
+             __name__,
+             'CAPITest.test_get_type_name.<locals>.MyType',
+             'MyType'),
+        ):
+            with self.subTest(cls=repr(cls)):
+                self.assertEqual(get_type_fullyqualname(cls), fullname)
+                self.assertEqual(get_type_module_name(cls), modname)
+                self.assertEqual(get_type_qualname(cls), qualname)
+                self.assertEqual(get_type_name(cls), name)
 
-    def test_sys_setobject(self):
-        setobject = _testcapi.sys_setobject
+        # override __module__
+        ht.__module__ = 'test_module'
+        self.assertEqual(get_type_fullyqualname(ht), 'test_module.HeapTypeNameType')
+        self.assertEqual(get_type_module_name(ht), 'test_module')
+        self.assertEqual(get_type_qualname(ht), 'HeapTypeNameType')
+        self.assertEqual(get_type_name(ht), 'HeapTypeNameType')
 
-        value = ['value']
-        value2 = ['value2']
-        try:
-            self.assertEqual(setobject(b'newattr', value), 0)
-            self.assertIs(sys.newattr, value)
-            self.assertEqual(setobject(b'newattr', value2), 0)
-            self.assertIs(sys.newattr, value2)
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-            self.assertFalse(hasattr(sys, 'newattr'))
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-        finally:
-            with contextlib.suppress(AttributeError):
-                del sys.newattr
-        try:
-            self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
-            self.assertIs(getattr(sys, '\U0001f40d'), value)
-            self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
-            self.assertFalse(hasattr(sys, '\U0001f40d'))
-        finally:
-            with contextlib.suppress(AttributeError):
-                delattr(sys, '\U0001f40d')
+        # override __name__ and __qualname__
+        MyType.__name__ = 'my_name'
+        MyType.__qualname__ = 'my_qualname'
+        self.assertEqual(get_type_fullyqualname(MyType), f'{__name__}.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), __name__)
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
 
-        with self.assertRaises(UnicodeDecodeError):
-            setobject(b'\xff', value)
-        # CRASHES setobject(NULL, value)
+        # override also __module__
+        MyType.__module__ = 'my_module'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_module.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), 'my_module')
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # PyType_GetFullyQualifiedName() ignores the module if it's "builtins"
+        # or "__main__" of it is not a string
+        MyType.__module__ = 'builtins'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = '__main__'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = 123
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+
+
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
 
 @requires_limited_api
@@ -1042,7 +1167,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         # Test subclassing using "relative" basicsize, see PEP 697
         def check(extra_base_size, extra_size):
             Base, Sub, instance, data_ptr, data_offset, data_size = (
-                _testcapi.make_sized_heaptypes(
+                _testlimitedcapi.make_sized_heaptypes(
                     extra_base_size, -extra_size))
 
             # no alignment shenanigans when inheriting directly
@@ -1070,11 +1195,11 @@ class TestHeapTypeRelative(unittest.TestCase):
 
                 # we don't reserve (requested + alignment) or more data
                 self.assertLess(data_size - extra_size,
-                                _testcapi.ALIGNOF_MAX_ALIGN_T)
+                                _testlimitedcapi.ALIGNOF_MAX_ALIGN_T)
 
             # The offsets/sizes we calculated should be aligned.
-            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
-            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_offset % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
 
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
                         object.__basicsize__,
@@ -1100,7 +1225,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         object.__basicsize__+1})
         for extra_size in sizes:
             with self.subTest(extra_size=extra_size):
-                Sub = _testcapi.subclass_var_heaptype(
+                Sub = _testlimitedcapi.subclass_var_heaptype(
                     _testcapi.HeapCCollection, -extra_size, 0, 0)
                 collection = Sub(1, 2, 3)
                 collection.set_data_to_3s()
@@ -1114,7 +1239,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         with self.assertRaises(SystemError,
                                msg="Cannot extend variable-size class without "
                                + "Py_TPFLAGS_ITEMS_AT_END"):
-            _testcapi.subclass_heaptype(int, -8, 0)
+            _testlimitedcapi.subclass_heaptype(int, -8, 0)
 
     def test_heaptype_relative_members(self):
         """Test HeapCCollection subclasses work properly"""
@@ -1127,7 +1252,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                 for offset in sizes:
                     with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
                         if offset < extra_size:
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, -extra_size, offset, True)
                             Base = Sub.mro()[1]
                             instance = Sub()
@@ -1146,29 +1271,29 @@ class TestHeapTypeRelative(unittest.TestCase):
                                 instance.set_memb_relative(0)
                         else:
                             with self.assertRaises(SystemError):
-                                Sub = _testcapi.make_heaptype_with_member(
+                                Sub = _testlimitedcapi.make_heaptype_with_member(
                                     extra_base_size, -extra_size, offset, True)
                         with self.assertRaises(SystemError):
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, extra_size, offset, True)
                 with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
                     with self.assertRaises(SystemError):
-                        Sub = _testcapi.make_heaptype_with_member(
+                        Sub = _testlimitedcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
 
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
                 r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
-            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+            _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
-        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
         instance = Sub()
         with self.assertRaisesRegex(
                 SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
@@ -1188,13 +1313,132 @@ class TestHeapTypeRelative(unittest.TestCase):
             _testcapi.pyobject_getitemdata(0)
 
 
+    def test_function_get_closure(self):
+        from types import CellType
+
+        def regular_function(): ...
+        def unused_one_level(arg1):
+            def inner(arg2, arg3): ...
+            return inner
+        def unused_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6): ...
+                return inner
+            return decorator
+        def with_one_level(arg1):
+            def inner(arg2, arg3):
+                return arg1 + arg2 + arg3
+            return inner
+        def with_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6):
+                    return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
+                return inner
+            return decorator
+
+        # Functions without closures:
+        self.assertIsNone(_testcapi.function_get_closure(regular_function))
+        self.assertIsNone(regular_function.__closure__)
+
+        func = unused_one_level(1)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        func = unused_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        # Functions with closures:
+        func = with_one_level(5)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 1)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertTrue(closure[0].cell_contents, 5)
+
+        func = with_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 4)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertEqual([cell.cell_contents for cell in closure],
+                         [1, 2, 3, 4])
+
+    def test_function_get_closure_error(self):
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(1)
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(None)
+
+    def test_function_set_closure(self):
+        from types import CellType
+
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        func = function_without_closure
+        _testcapi.function_set_closure(func, (CellType(1), CellType(1)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 1])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 1])
+
+        func = function_with_closure(1)
+        _testcapi.function_set_closure(func,
+                                       (CellType(1), CellType(2), CellType(3)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 2, 3])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 2, 3])
+
+    def test_function_set_closure_none(self):
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        _testcapi.function_set_closure(function_without_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_without_closure))
+        self.assertIsNone(function_without_closure.__closure__)
+
+        _testcapi.function_set_closure(function_with_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_with_closure))
+        self.assertIsNone(function_with_closure.__closure__)
+
+    def test_function_set_closure_errors(self):
+        def function_without_closure(): ...
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(None, ())  # not a function
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(function_without_closure, 1)
+        self.assertIsNone(function_without_closure.__closure__)  # no change
+
+        # NOTE: this works, but goes against the docs:
+        _testcapi.function_set_closure(function_without_closure, (1, 2))
+        self.assertEqual(
+            _testcapi.function_get_closure(function_without_closure), (1, 2))
+        self.assertEqual(function_without_closure.__closure__, (1, 2))
+
+
 class TestPendingCalls(unittest.TestCase):
 
     # See the comment in ceval.c (at the "handle_eval_breaker" label)
     # about when pending calls get run.  This is especially relevant
     # here for creating deterministic tests.
 
-    def pendingcalls_submit(self, l, n):
+    def main_pendingcalls_submit(self, l, n):
         def callback():
             #this function can be interrupted by thread switching so let's
             #use an atomic operation
@@ -1209,12 +1453,27 @@ class TestPendingCalls(unittest.TestCase):
                 if _testcapi._pending_threadfunc(callback):
                     break
 
-    def pendingcalls_wait(self, l, n, context = None):
+    def pendingcalls_submit(self, l, n, *, main=True, ensure=False):
+        def callback():
+            #this function can be interrupted by thread switching so let's
+            #use an atomic operation
+            l.append(None)
+
+        if main:
+            return _testcapi._pending_threadfunc(callback, n,
+                                                 blocking=False,
+                                                 ensure_added=ensure)
+        else:
+            return _testinternalcapi.pending_threadfunc(callback, n,
+                                                        blocking=False,
+                                                        ensure_added=ensure)
+
+    def pendingcalls_wait(self, l, numadded, context = None):
         #now, stick around until l[0] has grown to 10
         count = 0
-        while len(l) != n:
+        while len(l) != numadded:
             #this busy loop is where we expect to be interrupted to
-            #run our callbacks.  Note that callbacks are only run on the
+            #run our callbacks.  Note that some callbacks are only run on the
             #main thread
             if False and support.verbose:
                 print("(%i)"%(len(l),),)
@@ -1224,12 +1483,12 @@ class TestPendingCalls(unittest.TestCase):
                 continue
             count += 1
             self.assertTrue(count < 10000,
-                "timeout waiting for %i callbacks, got %i"%(n, len(l)))
+                "timeout waiting for %i callbacks, got %i"%(numadded, len(l)))
         if False and support.verbose:
             print("(%i)"%(len(l),))
 
     @threading_helper.requires_working_threading()
-    def test_pendingcalls_threaded(self):
+    def test_main_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
         n = 32 #total callbacks
@@ -1243,15 +1502,15 @@ class TestPendingCalls(unittest.TestCase):
         context.lock = threading.Lock()
         context.event = threading.Event()
 
-        threads = [threading.Thread(target=self.pendingcalls_thread,
+        threads = [threading.Thread(target=self.main_pendingcalls_thread,
                                     args=(context,))
                    for i in range(context.nThreads)]
         with threading_helper.start_threads(threads):
             self.pendingcalls_wait(context.l, n, context)
 
-    def pendingcalls_thread(self, context):
+    def main_pendingcalls_thread(self, context):
         try:
-            self.pendingcalls_submit(context.l, context.n)
+            self.main_pendingcalls_submit(context.l, context.n)
         finally:
             with context.lock:
                 context.nFinished += 1
@@ -1261,20 +1520,54 @@ class TestPendingCalls(unittest.TestCase):
             if nFinished == context.nThreads:
                 context.event.set()
 
-    def test_pendingcalls_non_threaded(self):
+    def test_main_pendingcalls_non_threaded(self):
         #again, just using the main thread, likely they will all be dispatched at
         #once.  It is ok to ask for too many, because we loop until we find a slot.
         #the loop can be interrupted to dispatch.
         #there are only 32 dispatch slots, so we go for twice that!
         l = []
         n = 64
-        self.pendingcalls_submit(l, n)
+        self.main_pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
-    def test_gen_get_code(self):
-        def genf(): yield
-        gen = genf()
-        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+    def test_max_pending(self):
+        with self.subTest('main-only'):
+            maxpending = 32
+
+            l = []
+            added = self.pendingcalls_submit(l, 1, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, 1)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending+1, main=True)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+        with self.subTest('not main-only'):
+            # Per-interpreter pending calls has a much higher limit
+            # on how many may be pending at a time.
+            maxpending = 300
+
+            l = []
+            added = self.pendingcalls_submit(l, 1, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, 1)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
+
+            l = []
+            added = self.pendingcalls_submit(l, maxpending+1, main=False)
+            self.pendingcalls_wait(l, added)
+            self.assertEqual(added, maxpending)
 
     class PendingTask(types.SimpleNamespace):
 
@@ -1446,6 +1739,7 @@ class TestPendingCalls(unittest.TestCase):
         maxtext = 250
         main_interpid = 0
         interpid = _interpreters.create()
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
         _interpreters.run_string(interpid, f"""if True:
             import json
             import os
@@ -1713,6 +2007,7 @@ class SubinterpreterTest(unittest.TestCase):
         # double checked at the time this test was written.
         config = _testinternalcapi.get_config()
         config['int_max_str_digits'] = 55555
+        config['parse_argv'] = 0
         _testinternalcapi.set_config(config)
         sub_value = _testinternalcapi.get_config()['int_max_str_digits']
         assert sub_value == 55555, sub_value
@@ -1765,15 +2060,30 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist[-2] = 'check_multi_interp_extensions'
         kwlist[-1] = 'own_gil'
 
-        # expected to work
-        for config, expected in {
+        expected_to_work = {
             (True, True, True, True, True, True, True):
                 (ALL_FLAGS, True),
             (True, False, False, False, False, False, False):
                 (OBMALLOC, False),
             (False, False, False, True, False, True, False):
                 (THREADS | EXTENSIONS, False),
-        }.items():
+        }
+
+        expected_to_fail = {
+            (False, False, False, False, False, False, False),
+        }
+
+        # gh-117649: The free-threaded build does not currently allow
+        # setting check_multi_interp_extensions to False.
+        if Py_GIL_DISABLED:
+            for config in list(expected_to_work.keys()):
+                kwargs = dict(zip(kwlist, config))
+                if not kwargs['check_multi_interp_extensions']:
+                    del expected_to_work[config]
+                    expected_to_fail.add(config)
+
+        # expected to work
+        for config, expected in expected_to_work.items():
             kwargs = dict(zip(kwlist, config))
             exp_flags, exp_gil = expected
             expected = {
@@ -1797,9 +2107,7 @@ class SubinterpreterTest(unittest.TestCase):
                 self.assertEqual(settings, expected)
 
         # expected to fail
-        for config in [
-            (False, False, False, False, False, False, False),
-        ]:
+        for config in expected_to_fail:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
                 script = textwrap.dedent(f'''
@@ -1807,11 +2115,14 @@ class SubinterpreterTest(unittest.TestCase):
                     _testinternalcapi.get_interp_settings()
                     raise NotImplementedError('unreachable')
                     ''')
-                with self.assertRaises(RuntimeError):
+                with self.assertRaises(_interpreters.InterpreterError):
                     support.run_in_subinterp_with_config(script, **kwargs)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    # gh-117649: The free-threaded build does not currently allow overriding
+    # the check_multi_interp_extensions setting.
+    @expected_failure_if_gil_disabled()
     def test_overridden_setting_extensions_subinterp_check(self):
         """
         PyInterpreterConfig.check_multi_interp_extensions can be overridden
@@ -1863,6 +2174,9 @@ class SubinterpreterTest(unittest.TestCase):
             }
 
             r, w = os.pipe()
+            if Py_GIL_DISABLED:
+                # gh-117649: The test fails before `w` is closed
+                self.addCleanup(os.close, w)
             script = textwrap.dedent(f'''
                 from test.test_capi.check_config import run_singlephase_check
                 run_singlephase_check({override}, {w})
@@ -1907,6 +2221,9 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    # gh-117649: The free-threaded build does not currently support sharing
+    # extension module state between interpreters.
+    @expected_failure_if_gil_disabled()
     def test_module_state_shared_in_global(self):
         """
         bpo-44050: Extension module state should be shared between interpreters
@@ -1916,6 +2233,13 @@ class SubinterpreterTest(unittest.TestCase):
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         script = textwrap.dedent(f"""
             import importlib.machinery
             import importlib.util
@@ -1923,7 +2247,7 @@ class SubinterpreterTest(unittest.TestCase):
 
             fullname = '_test_module_state_shared'
             origin = importlib.util.find_spec('_testmultiphase').origin
-            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            loader = importlib.machinery.{loader}(fullname, origin)
             spec = importlib.util.spec_from_loader(fullname, loader)
             module = importlib.util.module_from_spec(spec)
             attr_id = str(id(module.Error)).encode()
@@ -1937,6 +2261,516 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
+
+
+@requires_subinterpreters
+class InterpreterConfigTests(unittest.TestCase):
+
+    supported = {
+        'isolated': types.SimpleNamespace(
+            use_main_obmalloc=False,
+            allow_fork=False,
+            allow_exec=False,
+            allow_threads=True,
+            allow_daemon_threads=False,
+            check_multi_interp_extensions=True,
+            gil='own',
+        ),
+        'legacy': types.SimpleNamespace(
+            use_main_obmalloc=True,
+            allow_fork=True,
+            allow_exec=True,
+            allow_threads=True,
+            allow_daemon_threads=True,
+            check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+            gil='shared',
+        ),
+        'empty': types.SimpleNamespace(
+            use_main_obmalloc=False,
+            allow_fork=False,
+            allow_exec=False,
+            allow_threads=False,
+            allow_daemon_threads=False,
+            check_multi_interp_extensions=False,
+            gil='default',
+        ),
+    }
+    gil_supported = ['default', 'shared', 'own']
+
+    def iter_all_configs(self):
+        for use_main_obmalloc in (True, False):
+            for allow_fork in (True, False):
+                for allow_exec in (True, False):
+                    for allow_threads in (True, False):
+                        for allow_daemon in (True, False):
+                            for checkext in (True, False):
+                                for gil in ('shared', 'own', 'default'):
+                                    yield types.SimpleNamespace(
+                                        use_main_obmalloc=use_main_obmalloc,
+                                        allow_fork=allow_fork,
+                                        allow_exec=allow_exec,
+                                        allow_threads=allow_threads,
+                                        allow_daemon_threads=allow_daemon,
+                                        check_multi_interp_extensions=checkext,
+                                        gil=gil,
+                                    )
+
+    def assert_ns_equal(self, ns1, ns2, msg=None):
+        # This is mostly copied from TestCase.assertDictEqual.
+        self.assertEqual(type(ns1), type(ns2))
+        if ns1 == ns2:
+            return
+
+        import difflib
+        import pprint
+        from unittest.util import _common_shorten_repr
+        standardMsg = '%s != %s' % _common_shorten_repr(ns1, ns2)
+        diff = ('\n' + '\n'.join(difflib.ndiff(
+                       pprint.pformat(vars(ns1)).splitlines(),
+                       pprint.pformat(vars(ns2)).splitlines())))
+        diff = f'namespace({diff})'
+        standardMsg = self._truncateMessage(standardMsg, diff)
+        self.fail(self._formatMessage(msg, standardMsg))
+
+    def test_predefined_config(self):
+        def check(name, expected):
+            expected = self.supported[expected]
+            args = (name,) if name else ()
+
+            config1 = _interpreters.new_config(*args)
+            self.assert_ns_equal(config1, expected)
+            self.assertIsNot(config1, expected)
+
+            config2 = _interpreters.new_config(*args)
+            self.assert_ns_equal(config2, expected)
+            self.assertIsNot(config2, expected)
+            self.assertIsNot(config2, config1)
+
+        with self.subTest('default'):
+            check(None, 'isolated')
+
+        for name in self.supported:
+            with self.subTest(name):
+                check(name, name)
+
+    def test_update_from_dict(self):
+        for name, vanilla in self.supported.items():
+            with self.subTest(f'noop ({name})'):
+                expected = vanilla
+                overrides = vars(vanilla)
+                config = _interpreters.new_config(name, **overrides)
+                self.assert_ns_equal(config, expected)
+
+            with self.subTest(f'change all ({name})'):
+                overrides = {k: not v for k, v in vars(vanilla).items()}
+                for gil in self.gil_supported:
+                    if vanilla.gil == gil:
+                        continue
+                    overrides['gil'] = gil
+                    expected = types.SimpleNamespace(**overrides)
+                    config = _interpreters.new_config(
+                                                            name, **overrides)
+                    self.assert_ns_equal(config, expected)
+
+            # Override individual fields.
+            for field, old in vars(vanilla).items():
+                if field == 'gil':
+                    values = [v for v in self.gil_supported if v != old]
+                else:
+                    values = [not old]
+                for val in values:
+                    with self.subTest(f'{name}.{field} ({old!r} -> {val!r})'):
+                        overrides = {field: val}
+                        expected = types.SimpleNamespace(
+                            **dict(vars(vanilla), **overrides),
+                        )
+                        config = _interpreters.new_config(
+                                                            name, **overrides)
+                        self.assert_ns_equal(config, expected)
+
+        with self.subTest('unsupported field'):
+            for name in self.supported:
+                with self.assertRaises(ValueError):
+                    _interpreters.new_config(name, spam=True)
+
+        # Bad values for bool fields.
+        for field, value in vars(self.supported['empty']).items():
+            if field == 'gil':
+                continue
+            assert isinstance(value, bool)
+            for value in [1, '', 'spam', 1.0, None, object()]:
+                with self.subTest(f'unsupported value ({field}={value!r})'):
+                    with self.assertRaises(TypeError):
+                        _interpreters.new_config(**{field: value})
+
+        # Bad values for .gil.
+        for value in [True, 1, 1.0, None, object()]:
+            with self.subTest(f'unsupported value(gil={value!r})'):
+                with self.assertRaises(TypeError):
+                    _interpreters.new_config(gil=value)
+        for value in ['', 'spam']:
+            with self.subTest(f'unsupported value (gil={value!r})'):
+                with self.assertRaises(ValueError):
+                    _interpreters.new_config(gil=value)
+
+    def test_interp_init(self):
+        questionable = [
+            # strange
+            dict(
+                allow_fork=True,
+                allow_exec=False,
+            ),
+            dict(
+                gil='shared',
+                use_main_obmalloc=False,
+            ),
+            # risky
+            dict(
+                allow_fork=True,
+                allow_threads=True,
+            ),
+            # ought to be invalid?
+            dict(
+                allow_threads=False,
+                allow_daemon_threads=True,
+            ),
+            dict(
+                gil='own',
+                use_main_obmalloc=True,
+            ),
+        ]
+        invalid = [
+            dict(
+                use_main_obmalloc=False,
+                check_multi_interp_extensions=False
+            ),
+        ]
+        if Py_GIL_DISABLED:
+            invalid.append(dict(check_multi_interp_extensions=False))
+        def match(config, override_cases):
+            ns = vars(config)
+            for overrides in override_cases:
+                if dict(ns, **overrides) == ns:
+                    return True
+            return False
+
+        def check(config):
+            script = 'pass'
+            rc = _testinternalcapi.run_in_subinterp_with_config(script, config)
+            self.assertEqual(rc, 0)
+
+        for config in self.iter_all_configs():
+            if config.gil == 'default':
+                continue
+            if match(config, invalid):
+                with self.subTest(f'invalid: {config}'):
+                    with self.assertRaises(_interpreters.InterpreterError):
+                        check(config)
+            elif match(config, questionable):
+                with self.subTest(f'questionable: {config}'):
+                    check(config)
+            else:
+                with self.subTest(f'valid: {config}'):
+                    check(config)
+
+    def test_get_config(self):
+        @contextlib.contextmanager
+        def new_interp(config):
+            interpid = _interpreters.create(config, reqrefs=False)
+            try:
+                yield interpid
+            finally:
+                try:
+                    _interpreters.destroy(interpid)
+                except _interpreters.InterpreterNotFoundError:
+                    pass
+
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            if Py_GIL_DISABLED:
+                expected.check_multi_interp_extensions = False
+            interpid, *_ = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('isolated'):
+            expected = _interpreters.new_config('isolated')
+            with new_interp('isolated') as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('legacy'):
+            expected = _interpreters.new_config('legacy')
+            with new_interp('legacy') as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('custom'):
+            orig = _interpreters.new_config(
+                'empty',
+                use_main_obmalloc=True,
+                gil='shared',
+                check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+            )
+            with new_interp(orig) as interpid:
+                config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, orig)
+
+
+@requires_subinterpreters
+class InterpreterIDTests(unittest.TestCase):
+
+    def add_interp_cleanup(self, interpid):
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+
+    def new_interpreter(self):
+        id = _interpreters.create()
+        self.add_interp_cleanup(id)
+        return id
+
+    def test_conversion_int(self):
+        convert = _testinternalcapi.normalize_interp_id
+        interpid = convert(10)
+        self.assertEqual(interpid, 10)
+
+    def test_conversion_coerced(self):
+        convert = _testinternalcapi.normalize_interp_id
+        class MyInt(str):
+            def __index__(self):
+                return 10
+        interpid = convert(MyInt())
+        self.assertEqual(interpid, 10)
+
+    def test_conversion_from_interpreter(self):
+        convert = _testinternalcapi.normalize_interp_id
+        interpid = self.new_interpreter()
+        converted = convert(interpid)
+        self.assertEqual(converted, interpid)
+
+    def test_conversion_bad(self):
+        convert = _testinternalcapi.normalize_interp_id
+
+        for badid in [
+            object(),
+            10.0,
+            '10',
+            b'10',
+        ]:
+            with self.subTest(f'bad: {badid!r}'):
+                with self.assertRaises(TypeError):
+                    convert(badid)
+
+        badid = -1
+        with self.subTest(f'bad: {badid!r}'):
+            with self.assertRaises(ValueError):
+                convert(badid)
+
+        badid = 2**64
+        with self.subTest(f'bad: {badid!r}'):
+            with self.assertRaises(OverflowError):
+                convert(badid)
+
+    def test_lookup_exists(self):
+        interpid = self.new_interpreter()
+        self.assertTrue(
+            _testinternalcapi.interpreter_exists(interpid))
+
+    def test_lookup_does_not_exist(self):
+        interpid = _testinternalcapi.unused_interpreter_id()
+        self.assertFalse(
+            _testinternalcapi.interpreter_exists(interpid))
+
+    def test_lookup_destroyed(self):
+        interpid = _interpreters.create()
+        _interpreters.destroy(interpid)
+        self.assertFalse(
+            _testinternalcapi.interpreter_exists(interpid))
+
+    def get_refcount_helpers(self):
+        return (
+            _testinternalcapi.get_interpreter_refcount,
+            (lambda id: _interpreters.incref(id, implieslink=False)),
+            _interpreters.decref,
+        )
+
+    def test_linked_lifecycle_does_not_exist(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+        get_refcount, incref, decref = self.get_refcount_helpers()
+
+        with self.subTest('never existed'):
+            interpid = _testinternalcapi.unused_interpreter_id()
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
+
+        with self.subTest('destroyed'):
+            interpid = _interpreters.create()
+            _interpreters.destroy(interpid)
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
+
+    def test_linked_lifecycle_initial(self):
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        get_refcount, _, _ = self.get_refcount_helpers()
+
+        # A new interpreter will start out not linked, with a refcount of 0.
+        interpid = self.new_interpreter()
+        linked = is_linked(interpid)
+        refcount = get_refcount(interpid)
+
+        self.assertFalse(linked)
+        self.assertEqual(refcount, 0)
+
+    def test_linked_lifecycle_never_linked(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        get_refcount, incref, decref = self.get_refcount_helpers()
+
+        interpid = self.new_interpreter()
+
+        # Incref will not automatically link it.
+        incref(interpid)
+        self.assertFalse(
+            is_linked(interpid))
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # It isn't linked so it isn't destroyed.
+        decref(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertFalse(
+            is_linked(interpid))
+        self.assertEqual(
+            0, get_refcount(interpid))
+
+    def test_linked_lifecycle_link_unlink(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+
+        interpid = self.new_interpreter()
+
+        # Linking at refcount 0 does not destroy the interpreter.
+        link(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertTrue(
+            is_linked(interpid))
+
+        # Unlinking at refcount 0 does not destroy the interpreter.
+        unlink(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertFalse(
+            is_linked(interpid))
+
+    def test_linked_lifecycle_link_incref_decref(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        get_refcount, incref, decref = self.get_refcount_helpers()
+
+        interpid = self.new_interpreter()
+
+        # Linking it will not change the refcount.
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
+        self.assertEqual(
+            0, get_refcount(interpid))
+
+        # Decref with a refcount of 0 is not allowed.
+        incref(interpid)
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # When linked, decref back to 0 destroys the interpreter.
+        decref(interpid)
+        self.assertFalse(
+            exists(interpid))
+
+    def test_linked_lifecycle_incref_link(self):
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        get_refcount, incref, _ = self.get_refcount_helpers()
+
+        interpid = self.new_interpreter()
+
+        incref(interpid)
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # Linking it will not reset the refcount.
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+    def test_linked_lifecycle_link_incref_unlink_decref(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+        get_refcount, incref, decref = self.get_refcount_helpers()
+
+        interpid = self.new_interpreter()
+
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
+
+        incref(interpid)
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # Unlinking it will not change the refcount.
+        unlink(interpid)
+        self.assertFalse(
+            is_linked(interpid))
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # Unlinked: decref back to 0 does not destroys the interpreter.
+        decref(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertEqual(
+            0, get_refcount(interpid))
 
 
 class BuiltinStaticTypesTests(unittest.TestCase):
@@ -2033,6 +2867,22 @@ class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
+    def test_thread_gilstate_in_clear(self):
+        # See https://github.com/python/cpython/issues/119585
+        class C:
+            def __del__(self):
+                _testcapi.gilstate_ensure_release()
+
+        # Thread-local variables are destroyed in `PyThreadState_Clear()`.
+        local_var = threading.local()
+
+        def callback():
+            local_var.x = C()
+
+        _testcapi._test_thread_state(callback)
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_gilstate_ensure_no_deadlock(self):
         # See https://github.com/python/cpython/issues/96071
         code = textwrap.dedent("""
@@ -2050,24 +2900,43 @@ class TestThreadState(unittest.TestCase):
         _testcapi.test_current_tstate_matches()
 
 
+def get_test_funcs(mod, exclude_prefix=None):
+    funcs = {}
+    for name in dir(mod):
+        if not name.startswith('test_'):
+            continue
+        if exclude_prefix is not None and name.startswith(exclude_prefix):
+            continue
+        funcs[name] = getattr(mod, name)
+    return funcs
+
+
 class Test_testcapi(unittest.TestCase):
-    locals().update((name, getattr(_testcapi, name))
-                    for name in dir(_testcapi)
-                    if name.startswith('test_') and not name.endswith('_code'))
+    locals().update(get_test_funcs(_testcapi))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
-        _testcapi.test_widechar()
+        _testlimitedcapi.test_widechar()
 
     def test_version_api_data(self):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
 
 
+class Test_testlimitedcapi(unittest.TestCase):
+    locals().update(get_test_funcs(_testlimitedcapi))
+
+
 class Test_testinternalcapi(unittest.TestCase):
+    locals().update(get_test_funcs(_testinternalcapi,
+                                   exclude_prefix='test_lock_'))
+
+
+@threading_helper.requires_working_threading()
+class Test_PyLock(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
-                    if name.startswith('test_'))
+                    if name.startswith('test_lock_'))
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
@@ -2081,7 +2950,12 @@ class Test_ModuleStateAccess(unittest.TestCase):
     def setUp(self):
         fullname = '_testmultiphase_meth_state_access'  # XXX
         origin = importlib.util.find_spec('_testmultiphase').origin
-        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = importlib.machinery.AppleFrameworkLoader(fullname, origin)
+        else:
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -2262,392 +3136,59 @@ class Test_Pep523API(unittest.TestCase):
         self.do_test(func, names)
 
 
-@contextlib.contextmanager
-def temporary_optimizer(opt):
-    old_opt = _testinternalcapi.get_optimizer()
-    _testinternalcapi.set_optimizer(opt)
-    try:
-        yield
-    finally:
-        _testinternalcapi.set_optimizer(old_opt)
+@unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
+class TestPyThreadId(unittest.TestCase):
+    def test_py_thread_id(self):
+        # gh-112535: Test _Py_ThreadId(): make sure that thread identifiers
+        # in a few threads are unique
+        py_thread_id = _testinternalcapi.py_thread_id
+        short_sleep = 0.010
 
+        class GetThreadId(threading.Thread):
+            def __init__(self):
+                super().__init__()
+                self.get_lock = threading.Lock()
+                self.get_lock.acquire()
+                self.started_lock = threading.Event()
+                self.py_tid = None
 
-@contextlib.contextmanager
-def clear_executors(func):
-    # Clear executors in func before and after running a block
-    func.__code__ = func.__code__.replace()
-    try:
-        yield
-    finally:
-        func.__code__ = func.__code__.replace()
+            def run(self):
+                self.started_lock.set()
+                self.get_lock.acquire()
+                self.py_tid = py_thread_id()
+                time.sleep(short_sleep)
+                self.py_tid2 = py_thread_id()
 
+        nthread = 5
+        threads = [GetThreadId() for _ in range(nthread)]
 
-class TestOptimizerAPI(unittest.TestCase):
+        # first make run sure that all threads are running
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.started_lock.wait()
 
-    def test_get_set_optimizer(self):
-        old = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.get_counter_optimizer()
-        try:
-            _testinternalcapi.set_optimizer(opt)
-            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-            _testinternalcapi.set_optimizer(None)
-            self.assertEqual(_testinternalcapi.get_optimizer(), None)
-        finally:
-            _testinternalcapi.set_optimizer(old)
+        # call _Py_ThreadId() in the main thread
+        py_thread_ids = [py_thread_id()]
 
+        # now call _Py_ThreadId() in each thread
+        for thread in threads:
+            thread.get_lock.release()
 
-    def test_counter_optimizer(self):
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent("""
-            def loop():
-                for _ in range(1000):
-                    pass
-        """), ns, ns)
-        loop = ns['loop']
+        # call _Py_ThreadId() in each thread and wait until threads complete
+        for thread in threads:
+            thread.join()
+            py_thread_ids.append(thread.py_tid)
+            # _PyThread_Id() should not change for a given thread.
+            # For example, it should remain the same after a short sleep.
+            self.assertEqual(thread.py_tid2, thread.py_tid)
 
-        for repeat in range(5):
-            opt = _testinternalcapi.get_counter_optimizer()
-            with temporary_optimizer(opt):
-                self.assertEqual(opt.get_count(), 0)
-                with clear_executors(loop):
-                    loop()
-                self.assertEqual(opt.get_count(), 1000)
-
-    def test_long_loop(self):
-        "Check that we aren't confused by EXTENDED_ARG"
-
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent("""
-            def nop():
-                pass
-
-            def long_loop():
-                for _ in range(10):
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-        """), ns, ns)
-        long_loop = ns['long_loop']
-
-        opt = _testinternalcapi.get_counter_optimizer()
-        with temporary_optimizer(opt):
-            self.assertEqual(opt.get_count(), 0)
-            long_loop()
-            self.assertEqual(opt.get_count(), 10)
-
-    def test_code_restore_for_ENTER_EXECUTOR(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.get_counter_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(1000)
-            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
-            self.assertEqual(code, replace_code)
-            self.assertEqual(hash(code), hash(replace_code))
-
-
-def get_first_executor(func):
-    code = func.__code__
-    co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
-    for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
-    return None
-
-
-class TestUops(unittest.TestCase):
-
-    def test_basic_loop(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(1000)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("SAVE_IP", uops)
-        self.assertIn("LOAD_FAST", uops)
-
-    def test_extended_arg(self):
-        "Check EXTENDED_ARG handling in superblock creation"
-        ns = {}
-        exec(textwrap.dedent("""
-            def many_vars():
-                # 260 vars, so z9 should have index 259
-                a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
-                b0 = b1 = b2 = b3 = b4 = b5 = b6 = b7 = b8 = b9 = 42
-                c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 42
-                d0 = d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = 42
-                e0 = e1 = e2 = e3 = e4 = e5 = e6 = e7 = e8 = e9 = 42
-                f0 = f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = f9 = 42
-                g0 = g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = 42
-                h0 = h1 = h2 = h3 = h4 = h5 = h6 = h7 = h8 = h9 = 42
-                i0 = i1 = i2 = i3 = i4 = i5 = i6 = i7 = i8 = i9 = 42
-                j0 = j1 = j2 = j3 = j4 = j5 = j6 = j7 = j8 = j9 = 42
-                k0 = k1 = k2 = k3 = k4 = k5 = k6 = k7 = k8 = k9 = 42
-                l0 = l1 = l2 = l3 = l4 = l5 = l6 = l7 = l8 = l9 = 42
-                m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = m8 = m9 = 42
-                n0 = n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = 42
-                o0 = o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = o9 = 42
-                p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = p8 = p9 = 42
-                q0 = q1 = q2 = q3 = q4 = q5 = q6 = q7 = q8 = q9 = 42
-                r0 = r1 = r2 = r3 = r4 = r5 = r6 = r7 = r8 = r9 = 42
-                s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = s9 = 42
-                t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = t9 = 42
-                u0 = u1 = u2 = u3 = u4 = u5 = u6 = u7 = u8 = u9 = 42
-                v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = v8 = v9 = 42
-                w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
-                x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
-                y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
-                z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
-                while z9 > 0:
-                    z9 = z9 - 1
-        """), ns, ns)
-        many_vars = ns["many_vars"]
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            ex = get_first_executor(many_vars)
-            self.assertIsNone(ex)
-            many_vars()
-
-        ex = get_first_executor(many_vars)
-        self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
-
-    def test_unspecialized_unpack(self):
-        # An example of an unspecialized opcode
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-                a, b = {1: 2, 3: 3}
-            assert a == 1 and b == 3
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("UNPACK_SEQUENCE", uops)
-
-    def test_pop_jump_if_false(self):
-        def testfunc(n):
-            i = 0
-            while i < n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
-
-    def test_pop_jump_if_none(self):
-        def testfunc(a):
-            for x in a:
-                if x is None:
-                    x = 0
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(range(10))
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
-
-    def test_pop_jump_if_not_none(self):
-        def testfunc(a):
-            for x in a:
-                if x is not None:
-                    x = 0
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(range(10))
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
-
-    def test_pop_jump_if_true(self):
-        def testfunc(n):
-            i = 0
-            while not i >= n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
-
-    def test_jump_backward(self):
-        def testfunc(n):
-            i = 0
-            while i < n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("JUMP_TO_TOP", uops)
-
-    def test_jump_forward(self):
-        def testfunc(n):
-            a = 0
-            while a < n:
-                if a < 0:
-                    a = -a
-                else:
-                    a = +a
-                a += 1
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        # Since there is no JUMP_FORWARD instruction,
-        # look for indirect evidence: the += operator
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
-
-    def test_for_iter_range(self):
-        def testfunc(n):
-            total = 0
-            for i in range(n):
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            total = testfunc(10)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_for_iter_list(self):
-        def testfunc(a):
-            total = 0
-            for i in a:
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = list(range(10))
-            total = testfunc(a)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_for_iter_tuple(self):
-        def testfunc(a):
-            total = 0
-            for i in a:
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = tuple(range(10))
-            total = testfunc(a)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_list_edge_case(self):
-        def testfunc(it):
-            for x in it:
-                pass
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = [1, 2, 3]
-            it = iter(a)
-            testfunc(it)
-            a.append(4)
-            with self.assertRaises(StopIteration):
-                next(it)
-
-    def test_call_py_exact_args(self):
-        def testfunc(n):
-            def dummy(x):
-                return x+1
-            for i in range(n):
-                dummy(i)
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_PUSH_FRAME", uops)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
-
+        # make sure that all _Py_ThreadId() are unique
+        for tid in py_thread_ids:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
+        self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
+                         py_thread_ids)
 
 
 if __name__ == "__main__":

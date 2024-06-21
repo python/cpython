@@ -8,10 +8,11 @@
 #include <stdbool.h>
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
-#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 
 #include "osdefs.h"               // SEP
 
@@ -76,6 +77,40 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     Py_XSETREF(self->args, Py_NewRef(args));
     return 0;
 }
+
+
+static PyObject *
+BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
+                         size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *type = _PyType_CAST(type_obj);
+    if (!_PyArg_NoKwnames(type->tp_name, kwnames)) {
+        return NULL;
+    }
+
+    PyBaseExceptionObject *self;
+    self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    // The dict is created on the fly in PyObject_GenericSetAttr()
+    self->dict = NULL;
+    self->notes = NULL;
+    self->traceback = NULL;
+    self->cause = NULL;
+    self->context = NULL;
+    self->suppress_context = 0;
+
+    self->args = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    if (!self->args) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
+    return (PyObject *)self;
+}
+
 
 static int
 BaseException_clear(PyBaseExceptionObject *self)
@@ -485,6 +520,7 @@ static PyTypeObject _PyExc_BaseException = {
     (initproc)BaseException_init, /* tp_init */
     0,                          /* tp_alloc */
     BaseException_new,          /* tp_new */
+    .tp_vectorcall = BaseException_vectorcall,
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
 from the previous implementation and also allowing Python objects to be used
@@ -875,13 +911,9 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 }
 
 static PyObject *
-BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
+BaseExceptionGroup_derive(PyObject *self_, PyObject *excs)
 {
     PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
-    PyObject *excs = NULL;
-    if (!PyArg_ParseTuple(args, "O", &excs)) {
-        return NULL;
-    }
     PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
     if (!init_args) {
         return NULL;
@@ -1175,13 +1207,8 @@ done:
 }
 
 static PyObject *
-BaseExceptionGroup_split(PyObject *self, PyObject *args)
+BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
 {
-    PyObject *matcher_value = NULL;
-    if (!PyArg_UnpackTuple(args, "split", 1, 1, &matcher_value)) {
-        return NULL;
-    }
-
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
@@ -1206,13 +1233,8 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
+BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 {
-    PyObject *matcher_value = NULL;
-    if (!PyArg_UnpackTuple(args, "subgroup", 1, 1, &matcher_value)) {
-        return NULL;
-    }
-
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
@@ -1487,9 +1509,9 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", (PyCFunction)Py_GenericAlias,
       METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
-    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_VARARGS},
-    {"split", (PyCFunction)BaseExceptionGroup_split, METH_VARARGS},
-    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_VARARGS},
+    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_O},
+    {"split", (PyCFunction)BaseExceptionGroup_split, METH_O},
+    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_O},
     {NULL}
 };
 
@@ -2190,6 +2212,10 @@ SimpleExtendsException(PyExc_Exception, RuntimeError,
 SimpleExtendsException(PyExc_RuntimeError, RecursionError,
                        "Recursion limit exceeded.");
 
+// PythonFinalizationError extends RuntimeError
+SimpleExtendsException(PyExc_RuntimeError, PythonFinalizationError,
+                       "Operation blocked during Python finalization.");
+
 /*
  *    NotImplementedError extends RuntimeError
  */
@@ -2579,6 +2605,11 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
                          "Improper mixture of spaces and tabs.");
 
+/*
+ *    IncompleteInputError extends SyntaxError
+ */
+MiddlingExtendsException(PyExc_SyntaxError, IncompleteInputError, SyntaxError,
+                         "incomplete input.");
 
 /*
  *    LookupError extends Exception
@@ -3547,7 +3578,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #undef EOPNOTSUPP
 #undef EPROTONOSUPPORT
 #undef EPROTOTYPE
-#undef ETIMEDOUT
 #undef EWOULDBLOCK
 
 #if defined(WSAEALREADY) && !defined(EALREADY)
@@ -3567,9 +3597,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
 #define ESHUTDOWN WSAESHUTDOWN
-#endif
-#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 #if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
 #define EWOULDBLOCK WSAEWOULDBLOCK
@@ -3648,10 +3675,12 @@ static struct static_exception static_exceptions[] = {
 
     // Level 4: Other subclasses
     ITEM(IndentationError), // base: SyntaxError(Exception)
+    ITEM(IncompleteInputError), // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
     ITEM(NotImplementedError),  // base: RuntimeError(Exception)
+    ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
     ITEM(RecursionError),  // base: RuntimeError(Exception)
     ITEM(UnboundLocalError), // base: NameError(Exception)
     ITEM(UnicodeError),  // base: ValueError(Exception)
@@ -3681,6 +3710,11 @@ _PyExc_InitTypes(PyInterpreterState *interp)
         if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
+        if (exc->tp_new == BaseException_new
+            && exc->tp_init == (initproc)BaseException_init)
+        {
+            exc->tp_vectorcall = BaseException_vectorcall;
+        }
     }
     return 0;
 }
@@ -3691,7 +3725,7 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(interp, exc);
+        _PyStaticType_FiniBuiltin(interp, exc);
     }
 }
 
@@ -3699,10 +3733,6 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 PyStatus
 _PyExc_InitGlobalObjects(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
@@ -3758,6 +3788,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef WSAETIMEDOUT
+    ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
+#endif
 
     return _PyStatus_OK();
 

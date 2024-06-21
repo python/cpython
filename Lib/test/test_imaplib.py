@@ -8,6 +8,7 @@ import socketserver
 import time
 import calendar
 import threading
+import re
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
@@ -23,8 +24,8 @@ except ImportError:
 
 support.requires_working_socket(module=True)
 
-CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 
 class TestImaplib(unittest.TestCase):
@@ -74,6 +75,7 @@ class TestImaplib(unittest.TestCase):
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
         with socket.socket() as s:
@@ -457,16 +459,13 @@ class NewIMAPTestsMixin():
             pass
 
     def test_imaplib_timeout_test(self):
-        _, server = self._setup(SimpleIMAPHandler)
-        addr = server.server_address[1]
-        client = self.imap_class("localhost", addr, timeout=None)
-        self.assertEqual(client.sock.timeout, None)
-        client.shutdown()
-        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
-        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
-        client.shutdown()
+        _, server = self._setup(SimpleIMAPHandler, connect=False)
+        with self.imap_class(*server.server_address, timeout=None) as client:
+            self.assertEqual(client.sock.timeout, None)
+        with self.imap_class(*server.server_address, timeout=support.LOOPBACK_TIMEOUT) as client:
+            self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         with self.assertRaises(ValueError):
-            client = self.imap_class("localhost", addr, timeout=0)
+            self.imap_class(*server.server_address, timeout=0)
 
     def test_imaplib_timeout_functionality_test(self):
         class TimeoutHandler(SimpleIMAPHandler):
@@ -555,10 +554,14 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         self.assertEqual(ssl_context.check_hostname, True)
         ssl_context.load_verify_locations(CAFILE)
 
-        with self.assertRaisesRegex(ssl.CertificateError,
-                "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
-            _, server = self._setup(SimpleIMAPHandler)
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            IP address mismatch, certificate is not valid for '127.0.0.1'   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
+        )""", re.X)
+        with self.assertRaisesRegex(ssl.CertificateError, regex):
+            _, server = self._setup(SimpleIMAPHandler, connect=False)
             client = self.imap_class(*server.server_address,
                                      ssl_context=ssl_context)
             client.shutdown()
@@ -567,7 +570,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
-        _, server = self._setup(SimpleIMAPHandler)
+        _, server = self._setup(SimpleIMAPHandler, connect=False)
         client = self.imap_class("localhost", server.server_address[1],
                                  ssl_context=ssl_context)
         client.shutdown()
@@ -950,10 +953,13 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
-        with self.assertRaisesRegex(
-                ssl.CertificateError,
-                "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            IP address mismatch, certificate is not valid for '127.0.0.1'   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
+        )""", re.X)
+        with self.assertRaisesRegex(ssl.CertificateError, regex):
             with self.reaped_server(SimpleIMAPHandler) as server:
                 client = self.imap_class(*server.server_address,
                                          ssl_context=ssl_context)

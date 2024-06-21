@@ -1,2 +1,0 @@
-Raise :exc:`ValueError` if the ``delay`` argument to :func:`asyncio.sleep` is a NaN (matching :func:`time.sleep`).
-

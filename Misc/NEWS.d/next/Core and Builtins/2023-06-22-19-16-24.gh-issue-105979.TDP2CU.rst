@@ -1,1 +1,0 @@
-Fix crash in :func:`!_imp.get_frozen_object` due to improper exception handling.

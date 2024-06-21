@@ -48,10 +48,9 @@ objects:
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.  (The
-   square brackets around the *i* in the method signature denote that the parameter
-   is optional, not that you should type square brackets at that position.  You
-   will see this notation frequently in the Python Library Reference.)
+   is specified, ``a.pop()`` removes and returns the last item in the list.
+   It raises an :exc:`IndexError` if the list is empty or the index is
+   outside the list range.
 
 
 .. method:: list.clear()
@@ -127,7 +126,7 @@ Python.
 
 Another thing you might notice is that not all data can be sorted or
 compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
-integers can't be compared to strings and *None* can't be compared to
+integers can't be compared to strings and ``None`` can't be compared to
 other types.  Also, there are some types that don't have a defined
 ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
 comparison.

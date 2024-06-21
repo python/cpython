@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
@@ -120,7 +120,7 @@ _asyncio_Future_exception_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_exception(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "exception() takes no arguments");
         return NULL;
     }
@@ -453,7 +453,7 @@ _asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_get_loop(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_loop() takes no arguments");
         return NULL;
     }
@@ -1547,4 +1547,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5b69c70834ee0bfb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ffe9b71bc65888b3 input=a9049054013a1b77]*/

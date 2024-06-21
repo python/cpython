@@ -79,12 +79,19 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state == NULL) {
+        return NULL;
+    }
+
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func)->tp_call == (ternaryfunc)partial_call) {
-        // The type of "func" might not be exactly the same type object
-        // as "type", but if it is called using partial_call, it must have the
-        // same memory layout (fn, args and kw members).
+
+    int res = PyObject_TypeCheck(func, state->partial_type);
+    if (res == -1) {
+        return NULL;
+    }
+    if (res == 1) {
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
@@ -335,8 +342,9 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(partial_doc,
-"partial(func, *args, **keywords) - new function with partial application\n\
-    of the given arguments and keywords.\n");
+"partial(func, /, *args, **keywords)\n--\n\n\
+Create a new function with partial application of the given arguments\n\
+and keywords.");
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
@@ -365,6 +373,8 @@ partial_repr(partialobject *pto)
 {
     PyObject *result = NULL;
     PyObject *arglist;
+    PyObject *mod;
+    PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
@@ -399,13 +409,28 @@ partial_repr(partialobject *pto)
         if (arglist == NULL)
             goto done;
     }
-    result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name,
-                                  pto->fn, arglist);
+
+    mod = PyType_GetModuleName(Py_TYPE(pto));
+    if (mod == NULL) {
+        goto error;
+    }
+    name = PyType_GetQualName(Py_TYPE(pto));
+    if (name == NULL) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
+    Py_DECREF(mod);
+    Py_DECREF(name);
     Py_DECREF(arglist);
 
  done:
     Py_ReprLeave((PyObject *)pto);
     return result;
+ error:
+    Py_DECREF(arglist);
+    Py_ReprLeave((PyObject *)pto);
+    return NULL;
 }
 
 /* Pickle strategy:
@@ -547,6 +572,17 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
+keyobject_text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj)");
+}
+
+static PyGetSetDef keyobject_getset[] = {
+    {"__text_signature__", keyobject_text_signature, (setter)NULL},
+    {NULL}
+};
+
+static PyObject *
 keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -560,6 +596,7 @@ static PyType_Slot keyobject_type_slots[] = {
     {Py_tp_clear, keyobject_clear},
     {Py_tp_richcompare, keyobject_richcompare},
     {Py_tp_members, keyobject_members},
+    {Py_tp_getset, keyobject_getset},
     {0, 0}
 };
 
@@ -725,7 +762,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial]) -> value\n\
+"reduce(function, iterable[, initial], /) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\
@@ -1087,19 +1124,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        The cache dict holds one reference to the link.
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
-    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
-                                      link->hash, Py_None);
-    if (popresult == Py_None) {
-        /* Getting here means that the user function call or another
-           thread has already removed the old key from the dictionary.
-           This link is now an orphan.  Since we don't want to leave the
-           cache in an inconsistent state, we don't restore the link. */
-        Py_DECREF(popresult);
-        Py_DECREF(link);
-        Py_DECREF(key);
-        return result;
-    }
-    if (popresult == NULL) {
+    int res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
+                                    link->hash, &popresult);
+    if (res < 0) {
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
            original position as the oldest link.  Then we allow the
@@ -1110,10 +1137,22 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(result);
         return NULL;
     }
+    if (res == 0) {
+        /* Getting here means that the user function call or another
+           thread has already removed the old key from the dictionary.
+           This link is now an orphan.  Since we don't want to leave the
+           cache in an inconsistent state, we don't restore the link. */
+        assert(popresult == NULL);
+        Py_DECREF(link);
+        Py_DECREF(key);
+        return result;
+    }
+
     /* Keep a reference to the old key and old result to prevent their
        ref counts from going to zero during the update. That will
        prevent potentially arbitrary object clean-up code (i.e. __del__)
        from running while we're still adjusting the links. */
+    assert(popresult != NULL);
     oldkey = link->key;
     oldresult = link->result;
 
@@ -1272,7 +1311,11 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    return self->wrapper(self, args, kwds);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->wrapper(self, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1285,6 +1328,7 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_info
 
 Report cache statistics
@@ -1292,7 +1336,7 @@ Report cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
-/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
+/*[clinic end generated code: output=cc796a0b06dbd717 input=00e1acb31aa21ecc]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
@@ -1306,6 +1350,7 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_clear
 
 Clear the cache and cache statistics
@@ -1313,7 +1358,7 @@ Clear the cache and cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
-/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+/*[clinic end generated code: output=58423b35efc3e381 input=dfa33acbecf8b4b2]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
@@ -1514,6 +1559,7 @@ _functools_free(void *module)
 static struct PyModuleDef_Slot _functools_slots[] = {
     {Py_mod_exec, _functools_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
