@@ -72,6 +72,9 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\critical_section.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -373,6 +376,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\context.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\critical_section.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\descrobject.h">
