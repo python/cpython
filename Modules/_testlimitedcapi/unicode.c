@@ -1848,9 +1848,9 @@ unicode_export(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    Py_ssize_t size;
+    Py_ssize_t nbytes;
     uint32_t format;
-    const char *data = PyUnicode_Export(obj, requested_formats, &size, &format);
+    const char *data = PyUnicode_Export(obj, requested_formats, &nbytes, &format);
     if (data == NULL) {
         return NULL;
     }
@@ -1860,24 +1860,24 @@ unicode_export(PyObject *self, PyObject *args)
     {
     case PyUnicode_FORMAT_ASCII:
     case PyUnicode_FORMAT_UCS1:
-        assert(data[size] == 0);
+        assert(data[nbytes] == 0);
         break;
     case PyUnicode_FORMAT_UCS2:
-        assert(data[size] == 0);
-        assert(data[size+1] == 0);
+        assert(data[nbytes] == 0);
+        assert(data[nbytes+1] == 0);
         break;
     case PyUnicode_FORMAT_UCS4:
-        assert(data[size] == 0);
-        assert(data[size+1] == 0);
-        assert(data[size+2] == 0);
-        assert(data[size+3] == 0);
+        assert(data[nbytes] == 0);
+        assert(data[nbytes+1] == 0);
+        assert(data[nbytes+2] == 0);
+        assert(data[nbytes+3] == 0);
         break;
     case PyUnicode_FORMAT_UTF8:
-        assert(data[size] == 0);
+        assert(data[nbytes] == 0);
         break;
     }
 
-    PyObject *res = Py_BuildValue("y#I", data, size, (unsigned int)format);
+    PyObject *res = Py_BuildValue("y#I", data, nbytes, (unsigned int)format);
     PyUnicode_ReleaseExport(obj, data, format);
     return res;
 }
@@ -1888,12 +1888,12 @@ static PyObject*
 unicode_import(PyObject *self, PyObject *args)
 {
     const void *data;
-    Py_ssize_t size;
+    Py_ssize_t nbytes;
     unsigned int format;
-    if (!PyArg_ParseTuple(args, "y#I", &data, &size, &format)) {
+    if (!PyArg_ParseTuple(args, "y#I", &data, &nbytes, &format)) {
         return NULL;
     }
-    return PyUnicode_Import(data, size, format);
+    return PyUnicode_Import(data, nbytes, format);
 }
 
 
