@@ -328,8 +328,10 @@ def visiblename(name, all=None, obj=None):
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
                 '__path__', '__qualname__', '__slots__', '__version__',
-                '__static_attributes__', '__firstlineno__'}:
+                '__static_attributes__', '__firstlineno__', '__annotations__'}:
         return 0
+    if name == '__annotate__' and getattr(obj, name, None) is None:
+        return False
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
     # Namedtuples have public fields and methods with a single leading underscore
