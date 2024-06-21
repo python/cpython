@@ -1,4 +1,3 @@
-import errno
 import io
 import ntpath
 import operator
@@ -19,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile
+from ._os import copyfile, get_file_metadata, set_file_metadata
 
 
 __all__ = [
@@ -801,51 +800,14 @@ class Path(PathBase, PurePath):
                 raise
             copyfile(os.fspath(self), target, follow_symlinks)
 
-    def _utime(self, ns, *, follow_symlinks=True):
-        return os.utime(self, ns=ns, follow_symlinks=follow_symlinks)
-
-    if hasattr(os, 'listxattr'):
-        def _list_xattr(self, *, follow_symlinks=True):
-            try:
-                return os.listxattr(self, follow_symlinks=follow_symlinks)
-            except OSError as err:
-                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
-                    raise UnsupportedOperation(str(err)) from None
-                raise
-
-        def _get_xattr(self, name, *, follow_symlinks=True):
-            try:
-                return os.getxattr(self, name, follow_symlinks=follow_symlinks)
-            except OSError as err:
-                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
-                    raise UnsupportedOperation(str(err)) from None
-                raise
-
-        def _set_xattr(self, name, value, *, follow_symlinks=True):
-            try:
-                return os.setxattr(self, name, value, follow_symlinks=follow_symlinks)
-            except OSError as err:
-                if err.errno in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
-                    raise UnsupportedOperation(str(err)) from None
-                raise
+    _get_metadata = get_file_metadata
+    _set_metadata = set_file_metadata
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
         """
-        try:
-            os.chmod(self, mode, follow_symlinks=follow_symlinks)
-        except NotImplementedError as err:
-            raise UnsupportedOperation(str(err)) from None
-
-    if hasattr(os, 'chflags'):
-        def _chflags(self, flags, *, follow_symlinks=True):
-            try:
-                os.chflags(self, flags, follow_symlinks=follow_symlinks)
-            except OSError as err:
-                if err.errno in (errno.ENOTSUP, errno.EOPNOTSUPP):
-                    raise UnsupportedOperation(str(err)) from None
-                raise
+        os.chmod(self, mode, follow_symlinks=follow_symlinks)
 
     def unlink(self, missing_ok=False):
         """

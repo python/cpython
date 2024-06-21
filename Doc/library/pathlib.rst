@@ -1562,11 +1562,6 @@ Other methods
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-   .. versionchanged:: 3.14
-      Raises :exc:`UnsupportedOperation` if *follow_symlinks* is false and
-      :func:`os.chmod` doesn't support this setting. In previous versions,
-      :exc:`NotImplementedError` was raised.
-
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
@@ -1603,10 +1598,6 @@ Other methods
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
 
-   .. versionchanged:: 3.14
-      Raises :exc:`UnsupportedOperation` if :func:`os.chmod` doesn't support
-      setting *follow_symlinks* to false. In previous versions,
-      :exc:`NotImplementedError` was raised.
 
 .. method:: Path.owner(*, follow_symlinks=True)
 

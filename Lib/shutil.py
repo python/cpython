@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+from pathlib._os import get_file_metadata, set_file_metadata
 
 try:
     import zlib
@@ -317,34 +318,6 @@ def copymode(src, dst, *, follow_symlinks=True):
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
 
-if hasattr(os, 'listxattr'):
-    def _copyxattr(src, dst, *, follow_symlinks=True):
-        """Copy extended filesystem attributes from `src` to `dst`.
-
-        Overwrite existing attributes.
-
-        If `follow_symlinks` is false, symlinks won't be followed.
-
-        """
-
-        try:
-            names = os.listxattr(src, follow_symlinks=follow_symlinks)
-        except OSError as e:
-            if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
-                raise
-            return
-        for name in names:
-            try:
-                value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
-                os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
-            except OSError as e:
-                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL, errno.EACCES):
-                    raise
-else:
-    def _copyxattr(*args, **kwargs):
-        pass
-
 def copystat(src, dst, *, follow_symlinks=True):
     """Copy file metadata
 
@@ -359,57 +332,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     """
     sys.audit("shutil.copystat", src, dst)
 
-    def _nop(*args, ns=None, follow_symlinks=None):
-        pass
-
     # follow symlinks (aka don't not follow symlinks)
     follow = follow_symlinks or not (_islink(src) and os.path.islink(dst))
-    if follow:
-        # use the real function if it exists
-        def lookup(name):
-            return getattr(os, name, _nop)
-    else:
-        # use the real function only if it exists
-        # *and* it supports follow_symlinks
-        def lookup(name):
-            fn = getattr(os, name, _nop)
-            if fn in os.supports_follow_symlinks:
-                return fn
-            return _nop
-
-    if isinstance(src, os.DirEntry):
-        st = src.stat(follow_symlinks=follow)
-    else:
-        st = lookup("stat")(src, follow_symlinks=follow)
-    mode = stat.S_IMODE(st.st_mode)
-    lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
-        follow_symlinks=follow)
-    # We must copy extended attributes before the file is (potentially)
-    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-    _copyxattr(src, dst, follow_symlinks=follow)
-    try:
-        lookup("chmod")(dst, mode, follow_symlinks=follow)
-    except NotImplementedError:
-        # if we got a NotImplementedError, it's because
-        #   * follow_symlinks=False,
-        #   * lchown() is unavailable, and
-        #   * either
-        #       * fchownat() is unavailable or
-        #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
-        #         (it returned ENOSUP.)
-        # therefore we're out of options--we simply cannot chown the
-        # symlink.  give up, suppress the error.
-        # (which is what shutil always did in this circumstance.)
-        pass
-    if hasattr(st, 'st_flags'):
-        try:
-            lookup("chflags")(dst, st.st_flags, follow_symlinks=follow)
-        except OSError as why:
-            for err in 'EOPNOTSUPP', 'ENOTSUP':
-                if hasattr(errno, err) and why.errno == getattr(errno, err):
-                    break
-            else:
-                raise
+    set_file_metadata(dst, get_file_metadata(src, follow), follow)
 
 def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
