@@ -1713,6 +1713,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UCS1),
                          (b'abc', PyUnicode_FORMAT_UCS1))
 
+        # export ASCII and UCS1 to UCS2
+        self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UCS2),
+                         ('abc'.encode(ucs2_enc), PyUnicode_FORMAT_UCS2))
+        self.assertEqual(unicode_export("latin1:\xe9", PyUnicode_FORMAT_UCS2),
+                         ('latin1:\xe9'.encode(ucs2_enc), PyUnicode_FORMAT_UCS2))
+
         # always export to UCS4
         self.assertEqual(unicode_export("abc", PyUnicode_FORMAT_UCS4),
                          ('abc'.encode(ucs4_enc), PyUnicode_FORMAT_UCS4))

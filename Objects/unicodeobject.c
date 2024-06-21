@@ -2105,9 +2105,9 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         PyErr_Format(PyExc_TypeError, "must be str, not %T", unicode);
         goto error;
     }
-
     Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
 
+    // Native ASCII
     if (PyUnicode_IS_ASCII(unicode)
         && (requested_formats & PyUnicode_FORMAT_ASCII))
     {
@@ -2116,6 +2116,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         return PyUnicode_1BYTE_DATA(unicode);
     }
 
+    // Native UCS1
     int kind = PyUnicode_KIND(unicode);
     if (kind == PyUnicode_1BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS1))
@@ -2125,6 +2126,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         return PyUnicode_1BYTE_DATA(unicode);
     }
 
+    // Native UCS2
     if (kind == PyUnicode_2BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS2))
     {
@@ -2133,6 +2135,28 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         return PyUnicode_2BYTE_DATA(unicode);
     }
 
+    // Convert ASCII or UCS1 to UCS2
+    if (kind == PyUnicode_1BYTE_KIND
+        && requested_formats & PyUnicode_FORMAT_UCS2)
+    {
+        Py_UCS2 *ucs2 = PyMem_Malloc((len + 1) * sizeof(Py_UCS2));
+        if (!ucs2) {
+            PyErr_NoMemory();
+            goto error;
+        }
+
+        _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS2,
+                                 PyUnicode_1BYTE_DATA(unicode),
+                                 PyUnicode_1BYTE_DATA(unicode) + len,
+                                 ucs2);
+        ucs2[len] = 0;
+
+        *format = PyUnicode_FORMAT_UCS2;
+        *size = len * 2;
+        return ucs2;
+    }
+
+    // Native UCS4
     if (kind == PyUnicode_4BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS4))
     {
@@ -2141,8 +2165,8 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         return PyUnicode_4BYTE_DATA(unicode);
     }
 
+    // Convert ASCII, UCS1 or UCS2 to UCS4
     if (requested_formats & PyUnicode_FORMAT_UCS4) {
-        // Convert UCS1 or UCS2 to UCS4
         Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(unicode);
         if (ucs4 == NULL) {
             goto error;
@@ -2152,6 +2176,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         return ucs4;
     }
 
+    // Convert to UTF-8
     if (requested_formats & PyUnicode_FORMAT_UTF8) {
         // Encode UCS1, UCS2 or UCS4 to UTF-8
         const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, size);
@@ -2163,7 +2188,6 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
     }
 
     PyErr_Format(PyExc_ValueError, "unable to find a matching export format");
-
 
 error:
     *size = 0;
