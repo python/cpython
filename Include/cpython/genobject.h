@@ -7,7 +7,9 @@
 extern "C" {
 #endif
 
-struct _PyInterpreterFrame;
+#define Py_CPYTHON_FRAME_H
+#include "cpython/frame.h"
+#undef Py_CPYTHON_FRAME_H
 
 /* --- Generators --------------------------------------------------------- */
 
@@ -28,7 +30,7 @@ struct _PyInterpreterFrame;
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    struct _PyInterpreterFrame *prefix##_iframe[1];                         \
+    struct _PyInterpreterFrame prefix##_iframe;                             \
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
