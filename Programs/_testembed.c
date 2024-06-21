@@ -216,9 +216,13 @@ static int test_replace_main_tstate(void)
 {
     int err = 0;
 
+    int reuse = 0;
     int hascode = 0;
     for (int i = 2; i < main_argc; i++) {
-        if (strncmp(main_argv[i], "--", 2) == 0) {
+        if (strcmp(main_argv[i], "--reuse") == 0) {
+            reuse = 1;
+        }
+        else if (strncmp(main_argv[i], "--", 2) == 0) {
             fprintf(stderr, "ERROR: unsupported arg %s\n", main_argv[i]);
             err = 1;
         }
@@ -226,28 +230,44 @@ static int test_replace_main_tstate(void)
             hascode = 1;
         }
         if (err) {
-            fprintf(stderr, "usage: %s test_replace_main_tstate [CODE ...]\n",
+            fprintf(stderr,
+                    "usage: %s test_replace_main_tstate --reuse [CODE ...]\n",
                     PROGRAM);
             return 1;
         }
     }
 
-#ifdef Py_DEBUG
     _testembed_Py_InitializeFromConfig();
     PyThreadState *main_tstate = PyThreadState_Get();
     PyInterpreterState *main_interp = main_tstate->interp;
     assert(_Py_IsMainInterpreter(main_interp));
 
+    // If the initial tstate is reused then there are slightly
+    // different possible failure paths through the code than if we got
+    // a completely new one.
+
+    PyThreadState *tstate = NULL;
+    if (!reuse) {
+        // The initial thread state is still alive,
+        // so this will create a completely new one,
+        // with its own distinct pointer.
+        tstate = PyThreadState_New(main_interp);
+        assert(tstate != NULL);
+        assert(tstate != main_tstate);
+    }
     PyThreadState_Clear(main_tstate);
     PyThreadState_DeleteCurrent();
-    assert(PyInterpreterState_ThreadHead(main_interp) == NULL);
+    assert(reuse == (PyInterpreterState_ThreadHead(main_interp) == NULL));
+    if (reuse) {
+        // The initial thread state has already been "destroyed",
+        // so this will re-use the statically allocated tstate
+        // (along with reinitializing it).
+        tstate = PyThreadState_New(main_interp);
+        assert(tstate != NULL);
+        assert(tstate == main_tstate);
+    }
+    assert(_PyThreadState_GET() == NULL);
 
-    main_interp->threads.reuse_init_tstate = 0;
-
-    PyThreadState *tstate = PyThreadState_New(main_interp);
-    // The runtime automatically re-uses the initial main tstate.
-    // (It is statically allocated as part of the global runtime state.)
-    assert(_PyThreadState_GET() != main_tstate);
     (void)PyThreadState_Swap(tstate);
 
     if (hascode) {
@@ -260,15 +280,10 @@ static int test_replace_main_tstate(void)
         }
     }
 
-    assert(PyThreadState_Get() != main_tstate);
+    assert(PyThreadState_Get() == tstate);
     Py_Finalize();
 
     return err;
-#else
-    // We want to always force a new "main" tstate, which requires Py_DEBUG.
-    fprintf(stderr, "ERROR: Py_DEBUG is required\n");
-    return 1;
-#endif
 }
 
 

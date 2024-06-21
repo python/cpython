@@ -227,17 +227,17 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, lines)
 
     def test_replace_main_tstate(self):
-        with self.subTest(exec=False):
-            self.run_embedded_interpreter(
-                'test_replace_main_tstate',
-            )
-
-        with self.subTest(exec=True):
-            out, _ = self.run_embedded_interpreter(
-                'test_replace_main_tstate',
-                'print("spam!")'
-            )
-            self.assertEqual(out.strip(), 'spam!')
+        for reuse in (True, False):
+            with self.subTest(reuse=reuse, exec=False):
+                self.run_embedded_interpreter(
+                    'test_replace_main_tstate',
+                )
+            with self.subTest(reuse=reuse, exec=True):
+                out, _ = self.run_embedded_interpreter(
+                    'test_replace_main_tstate',
+                    'print("spam!")'
+                )
+                self.assertEqual(out.strip(), 'spam!')
 
     def test_fini_in_subthread(self):
         self.run_embedded_interpreter('test_fini_in_subthread')

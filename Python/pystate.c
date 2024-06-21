@@ -630,10 +630,6 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-#ifdef Py_DEBUG
-    interp->threads.reuse_init_tstate = 1;
-#endif
-
     PyStatus status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1559,12 +1555,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 
     // Allocate the thread state and add it to the interpreter.
     PyThreadState *old_head = interp->threads.head;
-    if (old_head == NULL
-#ifdef Py_DEBUG
-        && interp->threads.reuse_init_tstate
-#endif
-        )
-    {
+    if (old_head == NULL) {
         // It's the interpreter's initial thread state.
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
@@ -1573,7 +1564,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     else {
         // Every valid interpreter must have at least one thread.
         assert(id > 1);
-        assert(old_head == NULL || old_head->prev == NULL);
+        assert(old_head->prev == NULL);
         used_newtstate = 1;
         tstate = new_tstate;
         // Set to _PyThreadState_INIT.

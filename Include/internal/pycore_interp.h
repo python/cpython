@@ -130,10 +130,6 @@ struct _is {
         PyThreadState *head;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
-#ifdef Py_DEBUG
-        /* For testing (_testembed, etc.). */
-        int reuse_init_tstate;
-#endif
         /* Used in Modules/_threadmodule.c. */
         Py_ssize_t count;
         /* Support for runtime thread stack size tuning.
