@@ -1821,33 +1821,21 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_annotate(PyTypeObject *type, void *Py_UNUSED(ignored))
 {
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotate__'", type->tp_name);
-        return NULL;
+    PyObject *cached_value = type->tp_cache;
+    // No annotations, or an annotations dict
+    if (cached_value == NULL || PyDict_CheckExact(cached_value)) {
+        Py_RETURN_NONE;
     }
-
-    PyObject *annotate;
-    PyObject *dict = PyType_GetDict(type);
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
-        Py_DECREF(dict);
-        return NULL;
-    }
-    if (annotate) {
-        descrgetfunc get = Py_TYPE(annotate)->tp_descr_get;
-        if (get) {
-            Py_SETREF(annotate, get(annotate, NULL, (PyObject *)type));
-        }
+    else if (PyTuple_CheckExact(cached_value)) {
+        // (annotate, annotations) tuple
+        PyObject *annotate = PyTuple_GET_ITEM(cached_value, 0);
+        return Py_XNewRef(annotate);
     }
     else {
-        annotate = Py_None;
-        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
-        if (result < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
+        // just annotate
+        assert(PyCallable_Check(cached_value));
+        return Py_XNewRef(cached_value);
     }
-    Py_DECREF(dict);
-    return annotate;
 }
 
 static int
@@ -1863,27 +1851,26 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
                      type->tp_name);
         return -1;
     }
-
     if (!Py_IsNone(value) && !PyCallable_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "__annotate__ must be callable or None");
         return -1;
     }
-
-    PyObject *dict = PyType_GetDict(type);
-    assert(PyDict_Check(dict));
-    int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), value);
-    if (result < 0) {
-        Py_DECREF(dict);
-        return -1;
-    }
-    if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
-            Py_DECREF(dict);
-            PyType_Modified(type);
-            return -1;
+    PyObject *cached_value = type->tp_cache;
+    if (PyTuple_CheckExact(cached_value)) {
+        if (Py_IsNone(value)) {
+            PyObject *annotations = PyTuple_GET_ITEM(cached_value, 1);
+            Py_XSETREF(type->tp_cache, Py_NewRef(annotations));
+        }
+        else {
+            Py_XSETREF(type->tp_cache, PyTuple_Pack(2, value, PyTuple_GET_ITEM(cached_value, 1)));
         }
     }
-    Py_DECREF(dict);
+    else if (Py_IsNone(value)) {
+        Py_CLEAR(type->tp_cache);
+    }
+    else {
+        Py_XSETREF(type->tp_cache, Py_XNewRef(value));
+    }
     PyType_Modified(type);
     return 0;
 }
@@ -1891,62 +1878,52 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
 static PyObject *
 type_get_annotations(PyTypeObject *type, void *context)
 {
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotations__'", type->tp_name);
-        return NULL;
-    }
-
     PyObject *annotations;
     PyObject *dict = PyType_GetDict(type);
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
+    Py_DECREF(dict);
     if (annotations) {
         descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
         if (get) {
             Py_SETREF(annotations, get(annotations, NULL, (PyObject *)type));
         }
+        return annotations;
+    }
+
+    PyObject *cached_value = type->tp_cache;
+    if (cached_value == NULL) {
+        PyObject *annotations = PyDict_New();
+        Py_XSETREF(type->tp_cache, annotations);
+        return Py_XNewRef(annotations);
+    }
+    else if (PyDict_CheckExact(cached_value)) {
+        return Py_NewRef(cached_value);
+    }
+    else if (PyTuple_CheckExact(cached_value)) {
+        // (annotate, annotations) tuple
+        PyObject *annotations = PyTuple_GET_ITEM(cached_value, 1);
+        return Py_XNewRef(annotations);
     }
     else {
-        PyObject *annotate = type_get_annotate(type, NULL);
-        if (annotate == NULL) {
-            Py_DECREF(dict);
+        // just annotate
+        assert(PyCallable_Check(cached_value));
+        PyObject *one = _PyLong_GetOne();
+        PyObject *annotations = _PyObject_CallOneArg(cached_value, one);
+        if (annotations == NULL) {
             return NULL;
         }
-        if (PyCallable_Check(annotate)) {
-            PyObject *one = _PyLong_GetOne();
-            annotations = _PyObject_CallOneArg(annotate, one);
-            if (annotations == NULL) {
-                Py_DECREF(dict);
-                Py_DECREF(annotate);
-                return NULL;
-            }
-            if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
-                Py_DECREF(annotations);
-                Py_DECREF(annotate);
-                Py_DECREF(dict);
-                return NULL;
-            }
+        if (!PyDict_CheckExact(annotations)) {
+            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                         Py_TYPE(annotations)->tp_name);
+            Py_DECREF(annotations);
+            return NULL;
         }
-        else {
-            annotations = PyDict_New();
-        }
-        Py_DECREF(annotate);
-        if (annotations) {
-            int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
-            if (result) {
-                Py_CLEAR(annotations);
-            } else {
-                PyType_Modified(type);
-            }
-        }
+        Py_XSETREF(type->tp_cache, PyTuple_Pack(2, cached_value, annotations));
+        return annotations;
     }
-    Py_DECREF(dict);
-    return annotations;
 }
 
 static int
@@ -1958,34 +1935,36 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
                      type->tp_name);
         return -1;
     }
-
-    int result;
     PyObject *dict = PyType_GetDict(type);
-    if (value != NULL) {
-        /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
-    } else {
-        /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
-        if (result == 0) {
-            PyErr_SetString(PyExc_AttributeError, "__annotations__");
-            Py_DECREF(dict);
-            return -1;
-        }
-    }
-    if (result < 0) {
+    if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) < 0) {
         Py_DECREF(dict);
         return -1;
     }
-    else if (result == 0) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
-            PyType_Modified(type);
-            Py_DECREF(dict);
-            return -1;
-        }
-    }
-    PyType_Modified(type);
     Py_DECREF(dict);
+
+    if (value == NULL) {
+        Py_CLEAR(type->tp_cache);
+        return 0;
+    }
+    if (!PyDict_CheckExact(value)) {
+        PyErr_SetString(PyExc_TypeError, "__annotations__ must be a dict");
+        return -1;
+    }
+    // setting annotations clears annotate (for now)
+    Py_XSETREF(type->tp_cache, Py_XNewRef(value));
+    // PyObject *cached_value = type->tp_cache;
+    // if (cached_value == NULL || PyDict_CheckExact(cached_value)) {
+    //     Py_XSETREF(type->tp_cache, Py_XNewRef(value));
+    // }
+    // else if (PyTuple_CheckExact(cached_value)) {
+    //     // (annotate, annotations) tuple
+    //     Py_XSETREF(type->tp_cache, PyTuple_Pack(2, PyTuple_GET_ITEM(cached_value, 0), value));
+    // }
+    // else {
+    //     // just annotate
+    //     assert(PyCallable_Check(cached_value));
+    //     Py_XSETREF(type->tp_cache, PyTuple_Pack(2, cached_value, value));
+    // }
     return 0;
 }
 
@@ -4226,6 +4205,48 @@ type_new_set_classdictcell(PyTypeObject *type)
 }
 
 static int
+type_new_set_annotate(PyTypeObject *type)
+{
+    PyObject *dict = lookup_tp_dict(type);
+    PyObject *annotations;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
+        return -1;
+    }
+    bool has_annotations = annotations != NULL && PyDict_CheckExact(annotations);
+    PyObject *annotate;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
+        Py_DECREF(annotations);
+        return -1;
+    }
+    bool has_annotate = annotate != NULL && PyCallable_Check(annotate);
+    PyObject *value = NULL;
+    if (has_annotations && has_annotate) {
+        value = PyTuple_Pack(2, annotations, annotate);
+        if (value == NULL) {
+            Py_DECREF(annotations);
+            Py_DECREF(annotate);
+            return -1;
+        }
+    }
+    else if (has_annotations) {
+        value = annotations;
+    }
+    else if (has_annotate) {
+        value = annotate;
+    }
+    Py_XSETREF(type->tp_cache, Py_XNewRef(value));
+    Py_XDECREF(annotations);
+    Py_XDECREF(annotate);
+    if (has_annotations && PyDict_DelItem(dict, &_Py_ID(__annotations__)) < 0) {
+        return -1;
+    }
+    if (has_annotate && PyDict_DelItem(dict, &_Py_ID(__annotate__)) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 {
     if (type_new_set_name(ctx, type) < 0) {
@@ -4269,6 +4290,9 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
     if (type_new_set_classdictcell(type) < 0) {
+        return -1;
+    }
+    if (type_new_set_annotate(type) < 0) {
         return -1;
     }
     return 0;
