@@ -6709,7 +6709,7 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 }
 
 PyDictObject *
-_PyObject_materialize_managed_dict_lock_held(PyObject *obj)
+_PyObject_MaterializeManagedDict_LockHeld(PyObject *obj)
 {
     ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
 
@@ -6740,7 +6740,7 @@ _PyObject_MaterializeManagedDict(PyObject *obj)
         goto exit;
     }
 #endif
-    dict = _PyObject_materialize_managed_dict_lock_held(obj);
+    dict = _PyObject_MaterializeManagedDict_LockHeld(obj);
 
 #ifdef Py_GIL_DISABLED
 exit:

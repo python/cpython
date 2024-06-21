@@ -323,7 +323,7 @@ _PyInlineValuesSize(PyTypeObject *tp)
 int
 _PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
 
-PyDictObject *_PyObject_materialize_managed_dict_lock_held(PyObject *);
+PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 
 #ifdef __cplusplus
 }

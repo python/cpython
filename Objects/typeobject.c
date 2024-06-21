@@ -6604,34 +6604,11 @@ differs:
     return 0;
 }
 
+
+
 static int
-object_set_class(PyObject *self, PyObject *value, void *closure)
+object_set_class_no_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject **oldto_p)
 {
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete __class__ attribute");
-        return -1;
-    }
-    if (!PyType_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
-          "__class__ must be set to a class, not '%s' object",
-          Py_TYPE(value)->tp_name);
-        return -1;
-    }
-    PyTypeObject *newto = (PyTypeObject *)value;
-
-    if (PySys_Audit("object.__setattr__", "OsO",
-                    self, "__class__", value) < 0) {
-        return -1;
-    }
-
-#ifdef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    // The real Py_TYPE(self) (`oldto`) may have changed from
-    // underneath us in another thread, so we stop the world.
-    _PyEval_StopTheWorld(interp);
-#endif
     PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
@@ -6690,7 +6667,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         PyErr_Format(PyExc_TypeError,
                      "__class__ assignment only supported for mutable types "
                      "or ModuleType subclasses");
-        goto err;
+        return -1;
     }
 
     if (compatible_for_assignment(oldto, newto, "__class__")) {
@@ -6699,9 +6676,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
             PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
-                dict = _PyObject_materialize_managed_dict_lock_held(self);
+                dict = _PyObject_MaterializeManagedDict_LockHeld(self);
                 if (dict == NULL) {
-                    goto err;
+                    return -1;
                 }
             }
 
@@ -6714,7 +6691,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                    dict->ma_values != _PyObject_InlineValues(self));
 
             if (_PyDict_DetachFromObject(dict, self) < 0) {
-                goto err;
+                return -1;
             }
 
         }
@@ -6722,27 +6699,59 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
             Py_INCREF(newto);
         }
 
-#ifdef Py_GIL_DISABLED
-        _PyEval_StartTheWorld(interp);
-#endif
         Py_SET_TYPE(self, newto);
 
+        *oldto_p = oldto;
+
+        return 0;
+    }
+    else {
+        return -1;
+    }
+}
+
+static int
+object_set_class(PyObject *self, PyObject *value, void *closure)
+{
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete __class__ attribute");
+        return -1;
+    }
+    if (!PyType_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+          "__class__ must be set to a class, not '%s' object",
+          Py_TYPE(value)->tp_name);
+        return -1;
+    }
+    PyTypeObject *newto = (PyTypeObject *)value;
+
+    if (PySys_Audit("object.__setattr__", "OsO",
+                    self, "__class__", value) < 0) {
+        return -1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // The real Py_TYPE(self) (`oldto`) may have changed from
+    // underneath us in another thread, so we stop the world.
+    _PyEval_StopTheWorld(interp);
+#endif
+    PyTypeObject *oldto;
+    int res = object_set_class_no_world_stopped(self, newto, &oldto);
+#ifdef Py_GIL_DISABLED
+    _PyEval_StartTheWorld(interp);
+#endif
+    if (res == 0) {
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
         }
 
         RARE_EVENT_INC(set_class);
-
         return 0;
     }
-    else {
-        goto err;
-    }
-err:
-#ifdef Py_GIL_DISABLED
-    _PyEval_StartTheWorld(interp);
-#endif
-    return -1;
+    return res;
 }
 
 static PyGetSetDef object_getsets[] = {
