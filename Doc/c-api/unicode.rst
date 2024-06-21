@@ -1551,9 +1551,17 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   To use a different error handler than ``strict``,
-   :c:func:`PyUnicode_DecodeUTF8` can be used with
-   :c:func:`PyUnicodeWriter_WriteStr`.
+   See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
+
+   Writer the wide string *str* into *writer*.
+
+   *size* is a number of wide characters. If *size* is equal to ``-1``, call
+   ``wcslen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
 
 .. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 
@@ -1586,3 +1594,24 @@ object.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *string, Py_ssize_t length, const char *errors, Py_ssize_t *consumed)
+
+   Decode the string *str* from UTF-8 with *errors* error handler and write the
+   output into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *errors* is an error handler name, such as ``"replace"``. If *errors* is
+   ``NULL``, use the strict error handler.
+
+   If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
+   bytes on success.
+   If *consumed* is ``NULL``, treat trailing incomplete UTF-8 byte sequences
+   as an error.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   See also :c:func:`PyUnicodeWriter_WriteUTF8`.

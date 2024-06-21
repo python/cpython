@@ -291,10 +291,12 @@ New Features
   * :c:func:`PyUnicodeWriter_Finish`.
   * :c:func:`PyUnicodeWriter_WriteChar`.
   * :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`PyUnicodeWriter_WriteWideChar`.
   * :c:func:`PyUnicodeWriter_WriteStr`.
   * :c:func:`PyUnicodeWriter_WriteRepr`.
   * :c:func:`PyUnicodeWriter_WriteSubstring`.
   * :c:func:`PyUnicodeWriter_Format`.
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
