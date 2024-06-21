@@ -62,6 +62,7 @@ class AbstractWidgetTest(AbstractTkTest):
         orig = widget[name]
         if errmsg is not None:
             errmsg = errmsg.format(re.escape(str(value)))
+            errmsg = fr'\A{errmsg}\Z'
         with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget[name] = value
         self.assertEqual(widget[name], orig)
