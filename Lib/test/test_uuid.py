@@ -699,18 +699,18 @@ class BaseTestUUID:
                 mock.patch('random.getrandbits', return_value=fake_clock_seq):
             u = self.uuid.uuid6()
             equal(u.variant, self.uuid.RFC_4122)
-            equal(u.version, 6)
+            equal(u.version, 0b0110)  # 6
 
-            # time_hi                          time_mid         time_lo
-            # 00011110100100000001111111001010 0111101001010101 101110010010
             timestamp = 137643448267529106
-            equal(u.time_hi, 0b00011110100100000001111111001010)
-            equal(u.time_mid, 0b0111101001010101)
-            equal(u.time_low, 0b101110010010)
+            # 32 (hi) | 16 (mid) | 12 (lo) == 60 bits of timestamp
+            equal(timestamp, 0b_00011110100100000001111111001010_0111101001010101_101110010010)
             equal(u.time, timestamp)
-            equal(u.fields[0], u.time_hi)
-            equal(u.fields[1], u.time_mid)
-            equal(u.fields[2], u.time_hi_version)
+            equal(u.fields[0], 0b00011110100100000001111111001010)  # 32 high bits of time
+            equal(u.fields[1], 0b0111101001010101)  # 16 bits of time (mid)
+            equal(u.fields[2], 0b0110_101110010010)  # 4 bits of version + 12 low bits of time
+            equal(u.fields[3], 0b10_010100)  # 2 bits of variant + 6 high bits of clock_seq
+            equal(u.fields[4], 0b11000101)  # 8 low bits of clock_seq
+            equal(u.fields[5], fake_node_value)
 
     def test_uuid7(self):
         equal = self.assertEqual

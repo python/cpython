@@ -298,28 +298,16 @@ class UUID:
 
     @property
     def fields(self):
-        if self.version == 6:
-            # the first field should be a 32-bit integer
-            return (self.time_hi, self.time_mid, self.time_hi_version,
-                    self.clock_seq_hi_variant, self.clock_seq_low, self.node)
         return (self.time_low, self.time_mid, self.time_hi_version,
                 self.clock_seq_hi_variant, self.clock_seq_low, self.node)
 
     @property
     def time_low(self):
-        if self.version == 6:
-            return (self.int >> 64) & 0x0fff
         return self.int >> 96
 
     @property
     def time_mid(self):
         return (self.int >> 80) & 0xffff
-
-    @property
-    def time_hi(self):
-        if self.version == 6:
-            return self.int >> 96
-        return (self.int >> 64) & 0x0fff
 
     @property
     def time_hi_version(self):
@@ -336,8 +324,16 @@ class UUID:
     @property
     def time(self):
         if self.version == 6:
-            return (self.time_hi << 28) | (self.time_mid << 12) | self.time_low
-        return (self.time_hi << 48) | (self.time_mid << 32) | self.time_low
+            # In version 1, the first field contains the 32 MSBs
+            # and the field after the version contains the 12 LSBs.
+            time_hi = self.int >> 96             # == fields[0]
+            time_lo = (self.int >> 64) & 0x0fff  # == fields[2] & 0x0fff
+            return time_hi << 28 | (self.time_mid << 12) | time_lo
+        else:
+            # In version 1, the first field contains the 32 LSBs
+            # and the field after the version contains the 12 MSBs.
+            time_hi = (self.int >> 64) & 0x0fff  # == fields[2] & 0x0fff
+            return time_hi << 48 | (self.time_mid << 32) | self.time_low
 
     @property
     def clock_seq(self):
