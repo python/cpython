@@ -2618,7 +2618,13 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            #ifdef Py_GIL_DISABLED
+            // On free-threaded builds, objects are conditionalyl immortalized.
+            // So their bits don't always compare equally.
+            int res = Py_Is(PyStackRef_AsPyObjectBorrow(left), PyStackRef_AsPyObjectBorrow(right)) ^ oparg;
+            #else
             int res = PyStackRef_Is(left, right) ^ oparg;
+            #endif
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
             b = res ? PyStackRef_True : PyStackRef_False;
