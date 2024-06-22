@@ -1628,7 +1628,7 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
         if (self._defaults
-            and len(params) < self._nparams <= len(params) + len(self._defaults)
+            and 0 < self._nparams - len(params) <= len(self._defaults)
         ):
             params = (*params, *self._defaults[len(params) - self._nparams:])
         actual_len = len(params)
