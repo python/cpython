@@ -1,9 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5(), uuid6(), uuid7(), and uuid8() for
-generating version 1 to 8 UUIDs as specified in RFC 4122 (superseeded
-by RFC 9562 but still referred to as RFC 4122 for compatibility purposes).
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid7() for generating version 1 to 7
+UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still referred to
+as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -130,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 8, meaningful only
+        version     the UUID version number (1 through 7, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
