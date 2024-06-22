@@ -780,25 +780,37 @@ class DictConfigurator(BaseConfigurator):
                 # if 'handlers' not in config:
                     # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
-                    from multiprocessing.queues import Queue as MPQueue
-                    from multiprocessing import Manager as MM
-                    proxy_queue = MM().Queue()
-                    proxy_joinable_queue = MM().JoinableQueue()
                     qspec = config['queue']
-                    if not isinstance(qspec, (queue.Queue, MPQueue,
-                                      type(proxy_queue), type(proxy_joinable_queue))):
-                        if isinstance(qspec, str):
-                            q = self.resolve(qspec)
-                            if not callable(q):
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = q()
-                        elif isinstance(qspec, dict):
-                            if '()' not in qspec:
-                                raise TypeError('Invalid queue specifier %r' % qspec)
-                            q = self.configure_custom(dict(qspec))
-                        else:
+
+                    if isinstance(qspec, str):
+                        q = self.resolve(qspec)
+                        if not callable(q):
                             raise TypeError('Invalid queue specifier %r' % qspec)
-                        config['queue'] = q
+                        config['queue'] = q()
+                    elif isinstance(qspec, dict):
+                        if '()' not in qspec:
+                            raise TypeError('Invalid queue specifier %r' % qspec)
+                        config['queue'] = self.configure_custom(dict(qspec))
+                    else:
+                        from multiprocessing.queues import Queue as MPQueue
+
+                        if not isinstance(qspec, (queue.Queue, MPQueue)):
+                            # Safely check if 'qspec' is an instance of Manager.Queue
+                            # / Manager.JoinableQueue
+
+                            from multiprocessing import Manager as MM
+                            from multiprocessing.managers import BaseProxy
+
+                            # if it's not an instance of BaseProxy, it also can't be
+                            # an instance of Manager.Queue / Manager.JoinableQueue
+                            if isinstance(qspec, BaseProxy):
+                                proxy_queue = MM().Queue()
+                                proxy_joinable_queue = MM().JoinableQueue()
+                                if not isinstance(qspec, (type(proxy_queue), type(proxy_joinable_queue))):
+                                    raise TypeError('Invalid queue specifier %r' % qspec)
+                            else:
+                                raise TypeError('Invalid queue specifier %r' % qspec)
+
                 if 'listener' in config:
                     lspec = config['listener']
                     if isinstance(lspec, type):
