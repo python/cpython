@@ -360,7 +360,7 @@ APIs:
    .. c:namespace:: NULL
 
    ===================================  ========  ===========================
-   Constant Identifier                  Value  Description
+   Constant Identifier                    Value  Description
    ===================================  ========  ===========================
    .. c:macro:: PyUnicode_FORMAT_ASCII  ``0x01``  ASCII string (``Py_UCS1*``)
    .. c:macro:: PyUnicode_FORMAT_UCS1   ``0x02``  UCS-1 string (``Py_UCS1*``)
