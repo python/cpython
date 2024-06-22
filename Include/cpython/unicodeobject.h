@@ -459,6 +459,10 @@ PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
     PyUnicodeWriter *writer,
     const char *str,
     Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
+    PyUnicodeWriter *writer,
+    const wchar_t *str,
+    Py_ssize_t size);
 
 PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
     PyUnicodeWriter *writer,
@@ -475,6 +479,12 @@ PyAPI_FUNC(int) PyUnicodeWriter_Format(
     PyUnicodeWriter *writer,
     const char *format,
     ...);
+PyAPI_FUNC(int) PyUnicodeWriter_DecodeUTF8Stateful(
+    PyUnicodeWriter *writer,
+    const char *string,         /* UTF-8 encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed */
 
 
 /* --- Private _PyUnicodeWriter API --------------------------------------- */
