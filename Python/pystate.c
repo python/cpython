@@ -1293,7 +1293,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 
     if (refcount == 0 && interp->requires_idref) {
         PyThreadState *tstate = _PyThreadState_New(interp,
-                                                   _PyThreadState_WHENCE_INTERP);
+                                                   _PyThreadState_WHENCE_FINI);
         _PyThreadState_Bind(tstate);
 
         // XXX Possible GILState issues?

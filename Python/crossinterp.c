@@ -1896,7 +1896,7 @@ _PyXI_EndInterpreter(PyInterpreterState *interp,
         }
         else {
             tstate = PyThreadState_New(interp);
-            _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
+            _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_FINI);
             assert(tstate != NULL);
             save_tstate = PyThreadState_Swap(tstate);
         }
