@@ -1366,11 +1366,15 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+        @property
+        def __annotations__(self):
+            return self.f.__annotations__
+
 The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: :attr:`~function.__name__`, :attr:`~function.__qualname__`,
-:attr:`~function.__doc__`, and :attr:`~function.__annotations__`.
+function, including :attr:`~function.__name__`, :attr:`~function.__qualname__`,
+and :attr:`~function.__doc__`.
 
 .. testcode::
     :hide:
