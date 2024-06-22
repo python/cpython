@@ -854,7 +854,9 @@ def move(src, dst, copy_function=copy2):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
         os.rename(src, real_dst)
-    except OSError:
+    except OSError as exc:
+        if exc.errno == errno.EACCES:
+            raise 
         if os.path.islink(src):
             linkto = os.readlink(src)
             os.symlink(linkto, real_dst)
