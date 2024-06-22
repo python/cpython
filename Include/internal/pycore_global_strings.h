@@ -388,6 +388,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(displayhook)
         STRUCT_FOR_ID(dklen)
         STRUCT_FOR_ID(doc)
+        STRUCT_FOR_ID(done)
         STRUCT_FOR_ID(dont_inherit)
         STRUCT_FOR_ID(dst)
         STRUCT_FOR_ID(dst_dir_fd)
