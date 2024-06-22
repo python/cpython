@@ -581,7 +581,7 @@ to be available for other threads.");
 static PyObject *
 rlock_locked(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyBool_FromLong(self->rlock_count);
+    return PyBool_FromLong(_Py_atomic_load_ullong_relaxed(&self->rlock_owner) != 0);
 }
 
 PyDoc_STRVAR(rlock_locked_doc,
