@@ -323,17 +323,17 @@ class UUID:
 
     @property
     def time(self):
+        field_1 = self.int >> 96
+        field_3_no_ver = (self.int >> 64) & 0x0fff
+
         if self.version == 6:
             # In version 6, the first field contains the 32 MSBs
             # and the field after the version contains the 12 LSBs.
-            time_hi = self.int >> 96             # == fields[0]
-            time_lo = (self.int >> 64) & 0x0fff  # == fields[2] & 0x0fff
-            return time_hi << 28 | (self.time_mid << 12) | time_lo
+            return field_1 << 28 | (self.time_mid << 12) | field_3_no_ver
         else:
             # In version 1, the first field contains the 32 LSBs
             # and the field after the version contains the 12 MSBs.
-            time_hi = (self.int >> 64) & 0x0fff  # == fields[2] & 0x0fff
-            return time_hi << 48 | (self.time_mid << 32) | self.time_low
+            return field_3_no_ver << 48 | (self.time_mid << 32) | field_1
 
     @property
     def clock_seq(self):
