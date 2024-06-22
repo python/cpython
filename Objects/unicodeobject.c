@@ -2612,11 +2612,7 @@ static int
 unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
                               Py_ssize_t width, Py_ssize_t precision, int flags)
 {
-    /* UTF-8 */
     Py_ssize_t length;
-    PyObject *unicode;
-    int res;
-
     if (precision == -1) {
         length = wcslen(str);
     }
@@ -2626,11 +2622,17 @@ unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
             length++;
         }
     }
-    unicode = PyUnicode_FromWideChar(str, length);
+
+    if (width < 0) {
+        return PyUnicodeWriter_WriteWideChar((PyUnicodeWriter*)writer,
+                                             str, length);
+    }
+
+    PyObject *unicode = PyUnicode_FromWideChar(str, length);
     if (unicode == NULL)
         return -1;
 
-    res = unicode_fromformat_write_str(writer, unicode, width, -1, flags);
+    int res = unicode_fromformat_write_str(writer, unicode, width, -1, flags);
     Py_DECREF(unicode);
     return res;
 }
