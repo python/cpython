@@ -11348,8 +11348,9 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     struct stat statbuffer;
     fstat(fd, &statbuffer);
     if (S_ISFIFO(statbuffer.st_mode)) {
-	// TODO: cache pipe size
-	int ps = fcntl(fd, F_GETPIPE_SZ);
+	static int ps;
+	if (ps == 0)
+		ps = fcntl(fd, F_GETPIPE_SZ);
 	length = Py_MIN(ps, length);
     }
 #endif
