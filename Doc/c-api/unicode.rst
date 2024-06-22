@@ -381,6 +381,11 @@ APIs:
 
    Release an export created by :c:func:`PyUnicode_Export`.
 
+   Each argument must match the corresponding argument or result of
+   a single earlier call to :c:func:`PyUnicode_Export`.
+   In particular, this means that you must hold a reference to *unicode*
+   while an export is valid.
+
    .. versionadded:: 3.14
 
 
