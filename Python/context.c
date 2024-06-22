@@ -669,6 +669,7 @@ context_run(PyContext *self, PyObject *const *args,
         ts, args[0], args + 1, nargs - 1, kwnames);
 
     if (_PyContext_Exit(ts, (PyObject *)self)) {
+        Py_XDECREF(call_result);
         return NULL;
     }
 
