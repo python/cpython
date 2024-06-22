@@ -13347,6 +13347,12 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 PyUnicodeWriter*
 PyUnicodeWriter_Create(Py_ssize_t length)
 {
+    if (length < 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "length must be positive");
+        return NULL;
+    }
+
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
     if (pub_writer == NULL) {
@@ -13390,6 +13396,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
+    assert(length >= 0);
     assert(maxchar <= MAX_UNICODE);
 
     /* ensure that the _PyUnicodeWriter_Prepare macro was used */
@@ -13501,6 +13508,12 @@ _PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
 int
 PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 {
+    if (ch > MAX_UNICODE) {
+        PyErr_SetString(PyExc_ValueError,
+                        "character must be in range(0x110000)");
+        return -1;
+    }
+
     return _PyUnicodeWriter_WriteChar((_PyUnicodeWriter*)writer, ch);
 }
 
