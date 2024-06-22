@@ -13,6 +13,10 @@
 
 #include <Python.h>
 
+#ifdef __STDC_IEC_559_COMPLEX__
+#  include <complex.h>            // csqrt()
+#  undef I
+#endif
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
 #include <string.h>               // memset()
@@ -442,6 +446,13 @@ EXPORT(double) my_sqrt(double a)
 {
     return sqrt(a);
 }
+
+#ifdef __STDC_IEC_559_COMPLEX__
+EXPORT(double complex) my_csqrt(double complex a)
+{
+    return csqrt(a);
+}
+#endif
 
 EXPORT(void) my_qsort(void *base, size_t num, size_t width, int(*compare)(const void*, const void*))
 {

@@ -266,6 +266,17 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, following
+complex types are available:
+
++----------------------------------+---------------------------------+-----------------+
+| ctypes type                      | C type                          | Python type     |
++==================================+===================================================+
+| :class:`!c_double_complex`       | :c:expr:`double complex`        | complex         |
++----------------------------------+---------------------------------+-----------------+
+
+
+(1)
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
 

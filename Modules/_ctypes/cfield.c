@@ -11,6 +11,10 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
+#ifdef __STDC_IEC_559_COMPLEX__
+#  include <complex.h>            // complex
+#endif
+
 #include <ffi.h>
 #include "ctypes.h"
 
@@ -1087,6 +1091,30 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
+#ifdef __STDC_IEC_559_COMPLEX__
+static PyObject *
+C_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    Py_complex c = PyComplex_AsCComplex(value);
+    double complex x = CMPLX(c.real, c.imag);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+C_get(void *ptr, Py_ssize_t size)
+{
+    double complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles(creal(x), cimag(x));
+}
+#endif
+
 static PyObject *
 d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1592,6 +1620,7 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
+    { 'C', C_set, C_get, NULL},
     { 'g', g_set, g_get, NULL},
     { 'f', f_set, f_get, NULL, f_set_sw, f_get_sw},
     { 'h', h_set, h_get, NULL, h_set_sw, h_get_sw},
@@ -1642,6 +1671,9 @@ _ctypes_init_fielddesc(void)
         case 'B': fd->pffi_type = &ffi_type_uchar; break;
         case 'c': fd->pffi_type = &ffi_type_schar; break;
         case 'd': fd->pffi_type = &ffi_type_double; break;
+#ifdef __STDC_IEC_559_COMPLEX__
+        case 'C': fd->pffi_type = &ffi_type_complex_double; break;
+#endif
         case 'g': fd->pffi_type = &ffi_type_longdouble; break;
         case 'f': fd->pffi_type = &ffi_type_float; break;
         case 'h': fd->pffi_type = &ffi_type_sshort; break;

@@ -1750,7 +1750,11 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
+#ifdef __STDC_IEC_559_COMPLEX__
+static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCfuzZqQPXOv?g";
+#else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
+#endif
 
 /*[clinic input]
 _ctypes.c_wchar_p.from_param as c_wchar_p_from_param
@@ -2226,7 +2230,17 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stginfo->ffi_type_pointer = *fmt->pffi_type;
+    if (fmt->pffi_type->type != FFI_TYPE_COMPLEX) {
+        stginfo->ffi_type_pointer = *fmt->pffi_type;
+    }
+    else {
+        stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
+        stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
+        stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2*sizeof(ffi_type));
+        memcpy(stginfo->ffi_type_pointer.elements,
+               fmt->pffi_type->elements, 2*sizeof(ffi_type));
+    }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -5810,6 +5824,12 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_string_at_addr", PyLong_FromVoidPtr(string_at));
     MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
     MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
+
+#ifdef __STDC_IEC_559_COMPLEX__
+    MOD_ADD("__STDC_IEC_559_COMPLEX__", PyLong_FromLong(__STDC_IEC_559_COMPLEX__));
+#else
+    MOD_ADD("__STDC_IEC_559_COMPLEX__", PyLong_FromLong(0));
+#endif
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
