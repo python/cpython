@@ -2612,7 +2612,7 @@ class TextIOWrapper(TextIOBase):
                     endpos = pos + len(self._readnl)
                     break
 
-            if size >= 0 and len(line) >= size:
+            if 0 <= size <= len(line):
                 endpos = size  # reached length size
                 break
 
@@ -2628,7 +2628,7 @@ class TextIOWrapper(TextIOBase):
                 self._snapshot = None
                 return line
 
-        if size >= 0 and endpos > size:
+        if 0 <= size < endpos:
             endpos = size  # don't exceed size
 
         # Rewind _decoded_chars to just after the line ending we found.

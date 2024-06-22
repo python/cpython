@@ -63,7 +63,7 @@ class RobotFileParser:
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True
-            elif err.code >= 400 and err.code < 500:
+            elif 400 <= err.code < 500:
                 self.allow_all = True
         else:
             raw = f.read()

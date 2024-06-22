@@ -1051,7 +1051,7 @@ def gzip_decode(data, max_decode=20971520):
                 decoded = gzf.read(max_decode + 1)
         except OSError:
             raise ValueError("invalid data")
-    if max_decode >= 0 and len(decoded) > max_decode:
+    if 0 <= max_decode < len(decoded):
         raise ValueError("max gzipped payload length exceeded")
     return decoded
 

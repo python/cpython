@@ -1155,7 +1155,7 @@ class ZipExtFile(io.BufferedIOBase):
         read_offset = new_pos - curr_pos
         buff_offset = read_offset + self._offset
 
-        if buff_offset >= 0 and buff_offset < len(self._readbuffer):
+        if 0 <= buff_offset < len(self._readbuffer):
             # Just move the _offset index if the new position is in the _readbuffer
             self._offset = buff_offset
             read_offset = 0
