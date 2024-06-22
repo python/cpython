@@ -6870,6 +6870,23 @@ class ExtensionModuleTests(unittest.TestCase):
                 """)
             script_helper.assert_python_ok('-c', script)
 
+    def test_update_type_cache(self):
+        # gh-120782
+        script = textwrap.dedent("""
+            import sys
+            for i in range(5):
+                import _datetime
+                _datetime.date.max > _datetime.date.min
+                _datetime.time.max > _datetime.time.min
+                _datetime.datetime.max > _datetime.datetime.min
+                _datetime.timedelta.max > _datetime.timedelta.min
+                isinstance(_datetime.timezone.min, _datetime.tzinfo)
+                isinstance(_datetime.timezone.utc, _datetime.tzinfo)
+                isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                del sys.modules['_datetime']
+            """)
+        script_helper.assert_python_ok('-c', script)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
