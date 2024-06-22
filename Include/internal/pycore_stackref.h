@@ -13,8 +13,6 @@ extern "C" {
 #include <stddef.h>
 
 /*
-  Authors: Ken Jin, Mark Shannon
-
   This file introduces a new API for handling references on the stack, called
   _PyStackRef. This API is inspired by HPy.
 
@@ -26,28 +24,25 @@ extern "C" {
     3. New
 
   Borrow means that the reference is converted without any change in ownership.
-  This is discouraged because it makes unboxed integers harder in the future.
+  This is discouraged because it makes verification much harder. It also makes
+  unboxed integers harder in the future.
 
-  Steal "steals" the reference. What this means is that the old reference
-  is now invalid, and the reference is now owned by what it is converted to.
+  Steal means that ownership is transferred to something else. The total
+  number of references to the object stays the same.
 
   New creates a new reference from the old reference. The old reference
-  is unchanged.
+  is still valid.
 
   With these 3 API, a strict stack discipline must be maintained. All
   _PyStackRef must be operated on by the new reference operations:
 
     1. DUP
     2. CLOSE
-    3. CLEAR
 
-   DUP is equivalent to Py_NewRef. It creates a new reference from an old
+   DUP is roughly equivalent to Py_NewRef. It creates a new reference from an old
    reference. The old reference remains unchanged.
 
-   CLOSE is equivalent to Py_DECREF. It destroys a reference.
-
-   CLEAR is equivalent to Py_CLEAR. It's just a convenience function wrapping
-   DUP.
+   CLOSE is roughly equivalent to Py_DECREF. It destroys a reference.
 
    Note that it is unsafe to borrow a _PyStackRef and then do normal
    CPython refcounting operations on it!
