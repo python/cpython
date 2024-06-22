@@ -1,9 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5(), and uuid7() for generating version 1 to 7
-UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still referred to
-as RFC 4122 for compatibility purposes).
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid7() for generating version 1, 3,
+4, 5, and 7 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
+referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -130,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 7, meaningful only
+        version     the UUID version number (1, 3, 4, 5 and 7, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -215,7 +215,7 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 8:
+            if not 1 <= version <= 7:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
@@ -323,7 +323,8 @@ class UUID:
 
     @property
     def time(self):
-        return (self.time_hi << 48) | (self.time_mid << 32) | self.time_low
+        return (((self.time_hi_version & 0x0fff) << 48) |
+                (self.time_mid << 32) | self.time_low)
 
     @property
     def clock_seq(self):
