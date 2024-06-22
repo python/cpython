@@ -705,7 +705,7 @@ async def sleep(delay, result=None):
         h.cancel()
 
 
-def ensure_future(coro_or_future, *, loop=None):
+def ensure_future(coro_or_future, *, loop=None, context=None):
     """Wrap a coroutine or an awaitable in a future.
 
     If the argument is a Future, it is returned directly.
@@ -730,7 +730,10 @@ def ensure_future(coro_or_future, *, loop=None):
     if loop is None:
         loop = events.get_event_loop()
     try:
-        return loop.create_task(coro_or_future)
+        if context is None:
+            return loop.create_task(coro_or_future)
+        else:
+            return loop.create_task(coro_or_future, context=context)
     except RuntimeError:
         if should_close:
             coro_or_future.close()

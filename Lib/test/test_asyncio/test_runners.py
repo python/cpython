@@ -93,8 +93,8 @@ class RunTests(BaseTest):
     def test_asyncio_run_only_coro(self):
         for o in {1, lambda: None}:
             with self.subTest(obj=o), \
-                    self.assertRaisesRegex(ValueError,
-                                           'coroutine was expected'):
+                    self.assertRaisesRegex(TypeError,
+                                           'an awaitable is required'):
                 asyncio.run(o)
 
     def test_asyncio_run_debug(self):
@@ -319,8 +319,8 @@ class RunnerTests(BaseTest):
     def test_run_non_coro(self):
         with asyncio.Runner() as runner:
             with self.assertRaisesRegex(
-                ValueError,
-                "coroutine was expected"
+                TypeError,
+                "an awaitable is required"
             ):
                 runner.run(123)
 
