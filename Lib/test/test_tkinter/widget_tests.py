@@ -2,7 +2,7 @@
 
 import re
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, tk_version,
+from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -17,6 +17,7 @@ class AbstractWidgetTest(AbstractTkTest):
     _clip_highlightthickness = True
     _clip_pad = False
     _clip_borderwidth = False
+    _allow_empty_justify = False
 
     @property
     def scaling(self):
@@ -200,6 +201,7 @@ class AbstractWidgetTest(AbstractTkTest):
             aliases = {
                 'bd': 'borderwidth',
                 'bg': 'background',
+                'bgimg': 'backgroundimage',
                 'fg': 'foreground',
                 'invcmd': 'invalidcommand',
                 'vcmd': 'validatecommand',
@@ -242,6 +244,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'activeforeground')
 
+    def test_configure_activerelief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'activerelief')
+
     def test_configure_anchor(self):
         widget = self.create()
         self.checkEnumParam(widget, 'anchor',
@@ -252,6 +258,11 @@ class StandardOptionsTests:
         self.checkColorParam(widget, 'background')
         if 'bg' in self.OPTIONS:
             self.checkColorParam(widget, 'bg')
+
+    @requires_tk(8, 7)
+    def test_configure_backgroundimage(self):
+        widget = self.create()
+        self.checkImageParam(widget, 'backgroundimage')
 
     def test_configure_bitmap(self):
         widget = self.create()
@@ -299,8 +310,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
-        self.checkInvalidParam(widget, 'font', '',
-                               errmsg='font "" doesn\'t exist')
+        is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
+        if not is_ttk:
+            self.checkInvalidParam(widget, 'font', '',
+                                   errmsg='font "" doesn\'t exist')
 
     def test_configure_foreground(self):
         widget = self.create()
@@ -355,7 +368,10 @@ class StandardOptionsTests:
 
     def test_configure_justify(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'justify', 'left', 'right', 'center',
+        values = ('left', 'right', 'center')
+        if self._allow_empty_justify:
+            values += ('',)
+        self.checkEnumParam(widget, 'justify', *values,
                             fullname='justification')
 
     def test_configure_orient(self):
@@ -378,6 +394,16 @@ class StandardOptionsTests:
         expected = 0 if self._clip_pad else -2
         self.checkParam(widget, 'pady', -2, expected=expected,
                         conv=self._conv_pad_pixels)
+
+    @requires_tk(8, 7)
+    def test_configure_placeholder(self):
+        widget = self.create()
+        self.checkParam(widget, 'placeholder', 'xxx')
+
+    @requires_tk(8, 7)
+    def test_configure_placeholderforeground(self):
+        widget = self.create()
+        self.checkColorParam(widget, 'placeholderforeground')
 
     def test_configure_relief(self):
         widget = self.create()
@@ -423,6 +449,11 @@ class StandardOptionsTests:
         widget = self.create()
         var = tkinter.StringVar(self.root)
         self.checkVariableParam(widget, 'textvariable', var)
+
+    @requires_tk(8, 7)
+    def test_configure_tile(self):
+        widget = self.create()
+        self.checkBooleanParam(widget, 'tile')
 
     def test_configure_troughcolor(self):
         widget = self.create()
