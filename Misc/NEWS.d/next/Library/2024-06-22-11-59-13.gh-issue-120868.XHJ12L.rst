@@ -1,0 +1,6 @@
+Fix a bug in :mod:`logging.config` that would eagerly create an instance of
+:class:`multiprocessing.Manager` when configuring a queue_listener with
+:class:`logging.handlers.QueueHandler`. This could cause issue in environments where
+``multiprocessing.Manager`` does not work. The new implementation will only check for
+these types when it has been verified that ``multiprocessing.Manager`` has been used to
+create the ``queue`` in the logging configuration in question.
