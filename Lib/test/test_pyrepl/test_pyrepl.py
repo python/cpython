@@ -1,10 +1,12 @@
 import io
 import itertools
 import os
+import pathlib
 import rlcompleter
 import select
 import subprocess
 import sys
+import tempfile
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -844,14 +846,27 @@ class TestMain(TestCase):
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         expected_output = (
-            "[\'__annotations__\', \'__builtins__\', \'__doc__\', \'__loader__\', "
-            "\'__name__\', \'__package__\', \'__spec__\']"
+            "['__annotations__', '__builtins__', '__cached__', '__doc__', "
+            "'__file__', '__loader__', '__name__', '__package__', '__spec__']"
         )
         output, exit_code = self.run_repl(["sorted(dir())", "exit"])
         if "can\'t use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn(expected_output, output)
+
+    @force_not_colorized
+    def test_globals_from_file_passed_included_in_repl_globals(self):
+        with tempfile.TemporaryDirectory() as td:
+            fake_main = pathlib.Path(td, "foo.py")
+            fake_main.write_text("FOO = 42", encoding="utf-8")
+            output, exit_code = self.run_repl(
+                ["FOO", "exit"], main_module=str(fake_main)
+            )
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn("42", output)
 
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
@@ -862,10 +877,19 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+    def run_repl(
+            self,
+            repl_input: str | list[str],
+            env: dict | None = None,
+            *,
+            main_module: str | None = None
+        ) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
+        repl_args = [sys.executable, "-u", "-i"]
+        if main_module is not None:
+            repl_args.append(main_module)
         process = subprocess.Popen(
-            [sys.executable, "-i", "-u"],
+            repl_args,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
