@@ -4,7 +4,7 @@ from tkinter import TclError
 import os
 from test.support import requires
 
-from test.test_tkinter.support import (requires_tk,
+from test.test_tkinter.support import (requires_tk, tk_version,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
@@ -13,6 +13,9 @@ from test.test_tkinter.widget_tests import (
 
 requires('gui')
 
+
+EXPECTED_SCREEN_DISTANCE_ERRMSG = '(bad|expected) screen distance (but got )?"{}"'
+EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "" but got )?"{}"'
 
 def float_round(x):
     return float(round(x))
@@ -141,11 +144,9 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _conv_pixels = False
-
-    def test_configure_highlightthickness(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'highlightthickness',
-                              0, 1.3, 2.6, 6, -2, '10p')
+    _clip_highlightthickness = tk_version >= (8, 7)
+    _clip_pad = tk_version >= (8, 7)
+    _clip_borderwidth = tk_version >= (8, 7)
 
 
 @add_standard_options(StandardOptionsTests)
@@ -277,6 +278,9 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
     _conv_pixels = round
+    _clip_highlightthickness = True
+    _clip_pad = True
+    _clip_borderwidth = False
 
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
@@ -289,9 +293,6 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     def test_configure_height(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
-
-    test_configure_highlightthickness = \
-        StandardOptionsTests.test_configure_highlightthickness
 
     def test_configure_image(self):
         widget = self.create()
@@ -312,16 +313,6 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         menu = tkinter.Menu(widget, name='menu')
         self.checkParam(widget, 'menu', menu, eq=widget_eq)
         menu.destroy()
-
-    def test_configure_padx(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'padx', -2, expected=0)
-
-    def test_configure_pady(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'pady', -2, expected=0)
 
     def test_configure_width(self):
         widget = self.create()
@@ -489,8 +480,12 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'to', 100.0)
         self.checkFloatParam(widget, 'from', -10, 10.2, 11.7)
-        self.checkInvalidParam(widget, 'from', 200,
-                errmsg='-to value must be greater than -from value')
+        if tk_version >= (8, 7):
+            self.checkFloatParam(widget, 'from', 200, expected=100)
+        else:
+            self.checkInvalidParam(
+                    widget, 'from', 200,
+                    errmsg='-to value must be greater than -from value')
 
     def test_configure_increment(self):
         widget = self.create()
@@ -500,8 +495,12 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'from', -100.0)
         self.checkFloatParam(widget, 'to', -10, 10.2, 11.7)
-        self.checkInvalidParam(widget, 'to', -200,
-                errmsg='-to value must be greater than -from value')
+        if tk_version >= (8, 7):
+            self.checkFloatParam(widget, 'to', -200, expected=-100)
+        else:
+            self.checkInvalidParam(
+                    widget, 'to', -200,
+                    errmsg='-to value must be greater than -from value')
 
     def test_configure_values(self):
         # XXX
@@ -666,7 +665,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
         self.checkInvalidParam(widget, 'tabs', 'spam',
-                               errmsg='bad screen distance "spam"')
+                errmsg=EXPECTED_SCREEN_DISTANCE_ERRMSG.format('spam'))
 
     def test_configure_tabstyle(self):
         widget = self.create()
@@ -860,24 +859,27 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_create_polygon(self):
         c = self.create()
-        i1 = c.create_polygon(20, 30, 40, 50, 60, 10)
+        tk87 = tk_version >= (8, 7)
+        # In Tk < 8.7 polygons are filled, but has no outline by default.
+        # This affects its size, so always explicitly specify outline.
+        i1 = c.create_polygon(20, 30, 40, 50, 60, 10, outline='red')
         self.assertEqual(c.coords(i1), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
-        self.assertEqual(c.bbox(i1), (19, 9, 61, 51))
+        self.assertEqual(c.bbox(i1), (18, 8, 62, 52))
         self.assertEqual(c.itemcget(i1, 'joinstyle'), 'round')
         self.assertEqual(c.itemcget(i1, 'smooth'), '0')
         self.assertEqual(c.itemcget(i1, 'splinestep'), '12')
 
-        i2 = c.create_polygon([21, 31, 41, 51, 61, 11])
+        i2 = c.create_polygon([21, 31, 41, 51, 61, 11], outline='red')
         self.assertEqual(c.coords(i2), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
-        self.assertEqual(c.bbox(i2), (20, 10, 62, 52))
+        self.assertEqual(c.bbox(i2), (19, 9, 63, 53))
 
-        i3 = c.create_polygon((22, 32), (42, 52), (62, 12))
+        i3 = c.create_polygon((22, 32), (42, 52), (62, 12), outline='red')
         self.assertEqual(c.coords(i3), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
-        self.assertEqual(c.bbox(i3), (21, 11, 63, 53))
+        self.assertEqual(c.bbox(i3), (20, 10, 64, 54))
 
-        i4 = c.create_polygon([(23, 33), (43, 53), (63, 13)])
+        i4 = c.create_polygon([(23, 33), (43, 53), (63, 13)], outline='red')
         self.assertEqual(c.coords(i4), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
-        self.assertEqual(c.bbox(i4), (22, 12, 64, 54))
+        self.assertEqual(c.bbox(i4), (21, 11, 65, 55))
 
         self.assertRaises(TclError, c.create_polygon, 20, 30, 60)
         self.assertRaises(TclError, c.create_polygon, [20, 30, 60])
@@ -1180,12 +1182,14 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_elementborderwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, -2, '1m')
+        self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
+        expected = self._default_pixels if tk_version >= (8, 7) else -2
+        self.checkParam(widget, 'elementborderwidth', -2, expected=expected)
 
     def test_configure_orient(self):
         widget = self.create()
         self.checkEnumParam(widget, 'orient', 'vertical', 'horizontal',
-                errmsg='bad orientation "{}": must be vertical or horizontal')
+                            fullname='orientation', allow_empty=True)
 
     def test_activate(self):
         sb = self.create()
@@ -1256,7 +1260,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     @requires_tk(8, 6, 5)
     def test_configure_proxyrelief(self):
         widget = self.create()
-        self.checkReliefParam(widget, 'proxyrelief')
+        self.checkReliefParam(widget, 'proxyrelief',
+                              allow_empty=(tk_version >= (8, 7)))
 
     def test_configure_sashcursor(self):
         widget = self.create()
@@ -1329,7 +1334,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'height', 10, 10)
         self.check_paneconfigure_bad(p, b, 'height',
-                                     'bad screen distance "badValue"')
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
     def test_paneconfigure_hide(self):
         p, b, c = self.create2()
@@ -1341,19 +1346,19 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'minsize', 10, 10)
         self.check_paneconfigure_bad(p, b, 'minsize',
-                                     'bad screen distance "badValue"')
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_padx(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'padx', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'padx',
-                                     'bad screen distance "badValue"')
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_pady(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'pady', 1.3, 1)
         self.check_paneconfigure_bad(p, b, 'pady',
-                                     'bad screen distance "badValue"')
+                EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_sticky(self):
         p, b, c = self.create2()
@@ -1374,7 +1379,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'width', 10, 10)
         self.check_paneconfigure_bad(p, b, 'width',
-                                     'bad screen distance "badValue"')
+                EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
 
 @add_standard_options(StandardOptionsTests)
@@ -1414,14 +1419,10 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_type(self):
         widget = self.create()
-        opts = ('normal, tearoff, or menubar'
-                if widget.info_patchlevel() < (8, 7) else
-                'menubar, normal, or tearoff')
-        self.checkEnumParam(
-            widget, 'type',
-            'normal', 'tearoff', 'menubar',
-            errmsg='bad type "{}": must be ' + opts,
-            )
+        values = ('normal', 'tearoff', 'menubar')
+        self.checkEnumParam(widget, 'type', *values,
+                            allow_empty=tk_version < (8, 7),
+                            sort=tk_version >= (8, 7))
 
     def test_entryconfigure(self):
         m1 = self.create()
@@ -1467,6 +1468,10 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable', 'width',
     )
     _conv_pad_pixels = False
+    if tk_version >= (8, 7):
+        _conv_pixels = False
+    _clip_pad = tk_version >= (8, 7)
+    _clip_borderwidth = tk_version >= (8, 7)
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
@@ -1474,6 +1479,26 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_aspect(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
+
+    def test_configure_padx(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
+                              conv=self._conv_pad_pixels)
+        expected = self._default_pixels if self._clip_pad else -2
+        self.checkParam(widget, 'padx', -2, expected=expected)
+
+    def test_configure_pady(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m',
+                              conv=self._conv_pad_pixels)
+        expected = self._default_pixels if self._clip_pad else -2
+        self.checkParam(widget, 'pady', -2, expected=expected)
+
+    def test_configure_width(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, 0, '5i')
+        expected = 0 if tk_version >= (8, 7) else -402
+        self.checkParam(widget, 'width', -402, expected=expected)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
