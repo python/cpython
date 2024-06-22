@@ -5,8 +5,9 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from test.test_tkinter.support import (AbstractTkTest, tk_version, get_tk_patchlevel,
-                                  simulate_mouse_click, AbstractDefaultRootTest)
+from test.test_tkinter.support import (
+    AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
+    simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_standard_options,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
@@ -43,6 +44,10 @@ class StandardTtkOptionsTests(StandardOptionsTests):
                         expected=(5, 6, 7, 8), conv=padding_conv)
         self.checkParam(widget, 'padding', ('5p', '6p', '7p', '8p'))
         self.checkParam(widget, 'padding', (), expected='')
+
+    def test_configure_state(self):
+        widget = self.create()
+        self.checkParams(widget, 'state', 'active', 'disabled', 'readonly')
 
     def test_configure_style(self):
         widget = self.create()
@@ -182,10 +187,6 @@ class AbstractLabelTest(AbstractWidgetTest):
             values += ('',)
         widget = self.create()
         self.checkEnumParam(widget, 'compound', *values, allow_empty=True)
-
-    def test_configure_state(self):
-        widget = self.create()
-        self.checkParams(widget, 'state', 'active', 'disabled', 'normal')
 
     def test_configure_width(self):
         widget = self.create()
@@ -358,11 +359,6 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'show', '*')
         self.checkParam(widget, 'show', '')
         self.checkParam(widget, 'show', ' ')
-
-    def test_configure_state(self):
-        widget = self.create()
-        self.checkParams(widget, 'state',
-                         'disabled', 'normal', 'readonly')
 
     def test_configure_validate(self):
         widget = self.create()
@@ -803,7 +799,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'cursor', 'from', 'length',
-        'orient', 'style', 'takefocus', 'to', 'value', 'variable',
+        'orient', 'state', 'style', 'takefocus', 'to', 'value', 'variable',
     )
     _conv_pixels = False
     default_orient = 'horizontal'
@@ -824,6 +820,8 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_length(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'length', 130, 131.2, 135.6, '5i')
+
+    test_configure_state = requires_tk(8, 6, 9)(StandardTtkOptionsTests.test_configure_state)
 
     def test_configure_to(self):
         widget = self.create()
