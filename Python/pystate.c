@@ -1292,9 +1292,8 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0 && interp->requires_idref) {
-        PyThreadState *tstate = _PyThreadState_New(interp,
-                                                   _PyThreadState_WHENCE_FINI);
-        _PyThreadState_Bind(tstate);
+        PyThreadState *tstate =
+            _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
 
         // XXX Possible GILState issues?
         PyThreadState *save_tstate = _PyThreadState_Swap(runtime, tstate);
@@ -1602,8 +1601,13 @@ new_threadstate(PyInterpreterState *interp, int whence)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = new_threadstate(interp,
-                                            _PyThreadState_WHENCE_UNKNOWN);
+    return _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_UNKNOWN);
+}
+
+PyThreadState *
+_PyThreadState_NewBound(PyInterpreterState *interp, int whence)
+{
+    PyThreadState *tstate = new_threadstate(interp, whence);
     if (tstate) {
         bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
