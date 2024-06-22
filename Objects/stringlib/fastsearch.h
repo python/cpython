@@ -744,8 +744,8 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
              7. Run above for different problems. Take averages.
                 Compare with current calibration constants.
 
-             8. It works well, but is not perfect.
-                See if you can come up with more accurate model.
+             8. Current calibration works well, but is not perfect.
+                Maybe you can come up with more accurate model.
     */
     LOG(find_mode ? "Horspool Find\n" : "Horspool Count.\n");
 
@@ -765,16 +765,17 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
     const Py_ssize_t w = n - m;
 
     // Retrieve Preparation
-    Py_ssize_t true_gap = pw->true_gap;
+    int bloom_on = pw->true_gap != 0;
     unsigned long mask = pw->mask;
-    Py_ssize_t j_stop = true_gap ? m_m1 : m;
-    Py_ssize_t gap = pw->gap;
+    // If bloom_on last character always matches so no need to check it
+    Py_ssize_t j_stop = bloom_on ? m_m1 : m;
+    Py_ssize_t gap = bloom_on ? pw->true_gap : pw->gap;
     SHIFT_TYPE *table = pw->table;
 
     // Direction Dependent
-    const Py_ssize_t s_stt = dir == 1 ? 0 : n - 1;
-    const Py_ssize_t p_stt = dir == 1 ? 0 : m - 1;
-    const Py_ssize_t p_end = dir == 1 ? m - 1 : 0;
+    const Py_ssize_t s_stt = reversed ? n - 1 : 0;
+    const Py_ssize_t p_stt = reversed ? m - 1 : 0;
+    const Py_ssize_t p_end = reversed ? 0 : m - 1;
     const Py_ssize_t dir_m_m1 = reversed ? -m_m1 : m_m1;
     const STRINGLIB_CHAR *const ss = s + s_stt + dir_m_m1;
     const STRINGLIB_CHAR p_last = p[p_end];
@@ -795,46 +796,47 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
     STRINGLIB_CHAR s_last;
     // Counters
     Py_ssize_t count = 0;
-    Py_ssize_t iloop = 0, ihits_last = 0;
-    Py_ssize_t ihits = 0, iloop_last = 0;
+    Py_ssize_t iloop = 0, iloop_last = 0;
+    Py_ssize_t ihits = 0, ihits_last = 0;
     // Loop
     for (i = 0; i <= w;) {
         iloop++;
         ip = reversed ? -i : i;
         s_last = ss[ip];
         LOG2("Last window ch: %c\n", s_last);
-        if (true_gap) {
+        if (bloom_on) {
             shift = 0;
             if (s_last != p_last) {
-                // full skip: check if next character is part of pattern
-                if (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])) {
-                    shift = m_p1;
-                }
-                else {
-                    shift = Py_MAX(table[s_last & TABLE_MASK], 1);
-                }
+                shift = i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir]) ?
+                        m_p1 : Py_MAX(table[s_last & TABLE_MASK], 1);
             }
+            if (shift) {
+                LOG("Shift: %ld\n", shift);
+                i += shift;
+                continue;
+            }
+            assert(s_last == p_last);
         }
         else {
             shift = table[s_last & TABLE_MASK];
+            if (shift) {
+                LOG("Shift: %ld\n", shift);
+                i += shift;
+                continue;
+            }
+            assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK));
         }
-        if (shift) {
-            LOG("Shift: %ld\n", shift);
-            i += shift;
-            continue;
-        }
-
-        // assert(s_last == p_last);                               // true_gap
-        // assert((s_last & TABLE_MASK) == (p_last & TABLE_MASK)); // else
         j_off = ip - p_end;
+        jp = p_stt;
         for (j = 0; j < j_stop; j++) {
             ihits++;
-            jp = p_stt + (reversed ? -j : j);
             LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
             if (ss[j_off + jp] != p[jp]) {
                 break;
             }
+            jp += dir;
         }
+
         if (j == j_stop) {
             LOG("Found a match!\n");
             if (find_mode) {
@@ -845,26 +847,17 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
             }
             i += m;
         }
-        else if (true_gap) {
+        else if (bloom_on && i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])) {
             // full skip: check if next character is part of pattern
-            if (i < w && !STRINGLIB_BLOOM(mask, ss[ip+dir])) {
-                LOG("Move by (m + 1) = %ld\n", m_p1);
-                i += m_p1;
-            }
-            else {
-                LOG("Move by true gap = %ld\n", gap);
-                i += true_gap;
-            }
+            LOG("Move by (m + 1) = %ld\n", m_p1);
+            i += m_p1;
         }
         else {
-            LOG("Move by table gap = %ld\n", gap);
+            LOG("Move by gap = %ld\n", gap);
             i += gap;
         }
 
-        if (dynamic) {
-            if (ihits - ihits_last < 100 && iloop - iloop_last < 100) {
-                continue;
-            }
+        if (dynamic && ihits - ihits_last >= 100) {
             ll = (double)(w - i + 1);
             exp_hrs = ((double)iloop * hrs_lcost +
                        (double)ihits * hrs_hcost) / (double)i * ll;
@@ -894,9 +887,9 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
     return find_mode ? -1 : count;
 }
 
+#undef STRINGLIB_BLOOM_MASK
+
 #undef SHIFT_TYPE
-#undef NOT_FOUND
-#undef SHIFT_OVERFLOW
 #undef TABLE_SIZE
 #undef TABLE_MASK
 
