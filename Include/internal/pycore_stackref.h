@@ -12,6 +12,47 @@ extern "C" {
 
 #include <stddef.h>
 
+/*
+  Authors: Ken Jin, Mark Shannon
+
+  This file introduces a new API for handling references on the stack, called
+  _PyStackRef. This API is inspired by HPy.
+
+  There are 3 main operations, that convert _PyStackRef to PyObject* and
+  vice versa:
+
+    1. Borrow (discouraged)
+    2. Steal
+    3. New
+
+  Borrow means that the reference is converted without any change in ownership.
+  This is discouraged because it makes unboxed integers harder in the future.
+
+  Steal "steals" the reference. What this means is that the old reference
+  is now invalid, and the reference is now owned by what it is converted to.
+
+  New creates a new reference from the old reference. The old reference
+  is unchanged.
+
+  With these 3 API, a strict stack discipline must be maintained. All
+  _PyStackRef must be operated on by the new reference operations:
+
+    1. DUP
+    2. CLOSE
+    3. CLEAR
+
+   DUP is equivalent to Py_NewRef. It creates a new reference from an old
+   reference. The old reference remains unchanged.
+
+   CLOSE is equivalent to Py_DECREF. It destroys a reference.
+
+   CLEAR is equivalent to Py_CLEAR. It's just a convenience function wrapping
+   DUP.
+
+   Note that it is unsafe to borrow a _PyStackRef and then do normal
+   CPython refcounting operations on it!
+*/
+
 typedef union {
     uintptr_t bits;
 } _PyStackRef;
@@ -73,8 +114,8 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 #endif
 }
 
-// Converts a PyStackRef back to a PyObject *, converting deferred references
-// to new references.
+// Converts a PyStackRef back to a PyObject *, stealing the
+// PyStackRef.
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
