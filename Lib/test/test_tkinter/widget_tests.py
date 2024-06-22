@@ -2,7 +2,7 @@
 
 import re
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, tk_version,
+from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -200,6 +200,7 @@ class AbstractWidgetTest(AbstractTkTest):
             aliases = {
                 'bd': 'borderwidth',
                 'bg': 'background',
+                'bgimg': 'backgroundimage',
                 'fg': 'foreground',
                 'invcmd': 'invalidcommand',
                 'vcmd': 'validatecommand',
@@ -242,6 +243,11 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'activeforeground')
 
+    @requires_tk(8, 7)
+    def test_configure_activerelief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'activerelief')
+
     def test_configure_anchor(self):
         widget = self.create()
         self.checkEnumParam(widget, 'anchor',
@@ -252,6 +258,11 @@ class StandardOptionsTests:
         self.checkColorParam(widget, 'background')
         if 'bg' in self.OPTIONS:
             self.checkColorParam(widget, 'bg')
+
+    @requires_tk(8, 7)
+    def test_configure_backgroundimage(self):
+        widget = self.create()
+        self.checkImageParam(widget, 'backgroundimage')
 
     def test_configure_bitmap(self):
         widget = self.create()
@@ -379,6 +390,16 @@ class StandardOptionsTests:
         self.checkParam(widget, 'pady', -2, expected=expected,
                         conv=self._conv_pad_pixels)
 
+    @requires_tk(8, 7)
+    def test_configure_placeholder(self):
+        widget = self.create()
+        self.checkParam(widget, 'placeholder', 'xxx')
+
+    @requires_tk(8, 7)
+    def test_configure_placeholderforeground(self):
+        widget = self.create()
+        self.checkColorParam(widget, 'placeholderforeground')
+
     def test_configure_relief(self):
         widget = self.create()
         self.checkReliefParam(widget, 'relief')
@@ -423,6 +444,11 @@ class StandardOptionsTests:
         widget = self.create()
         var = tkinter.StringVar(self.root)
         self.checkVariableParam(widget, 'textvariable', var)
+
+    @requires_tk(8, 7)
+    def test_configure_tile(self):
+        widget = self.create()
+        self.checkBooleanParam(widget, 'tile')
 
     def test_configure_troughcolor(self):
         widget = self.create()
