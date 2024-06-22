@@ -1455,7 +1455,7 @@ Copying, renaming and deleting
    .. versionadded:: 3.14
 
 
-.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False,
+.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
                           ignore=None, on_error=None)
 
    Recursively copy this directory tree to the given destination.

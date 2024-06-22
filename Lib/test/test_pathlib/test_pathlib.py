@@ -656,6 +656,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
+    @unittest.skipIf(sys.platform == "win32", "directories are always readable on Windows")
     def test_copytree_no_read_permission(self):
         base = self.cls(self.base)
         source = base / 'dirE'
