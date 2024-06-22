@@ -352,6 +352,9 @@ APIs:
    The contents is valid as long as *unicode* is valid.
 
    The export must be released by :c:func:`PyUnicode_ReleaseExport`.
+   The contents of the buffer are valid until they are released.
+
+   The buffer must not be modified.
 
    *unicode*, *nbytes* and *format* must not be NULL.
 
@@ -369,8 +372,9 @@ APIs:
    .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
    ===================================  ========  ===========================
 
-   *requested_formats* can be a single format or a combination of the formats
-   in the table above.
+   *requested_formats* can be a single format or a bitwise combination of the
+   formats in the table above.
+   On success, *\*format* will be set to a single one of the requested flags.
 
    Note that future versions of Python may introduce additional formats.
 
