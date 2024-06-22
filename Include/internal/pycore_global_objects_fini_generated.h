@@ -899,6 +899,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(displayhook));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dklen));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(doc));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(done));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dont_inherit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(dst_dir_fd));
