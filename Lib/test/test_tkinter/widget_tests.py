@@ -17,6 +17,7 @@ class AbstractWidgetTest(AbstractTkTest):
     _clip_highlightthickness = True
     _clip_pad = False
     _clip_borderwidth = False
+    _allow_empty_justify = False
 
     @property
     def scaling(self):
@@ -243,7 +244,6 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'activeforeground')
 
-    @requires_tk(8, 7)
     def test_configure_activerelief(self):
         widget = self.create()
         self.checkReliefParam(widget, 'activerelief')
@@ -310,8 +310,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
-        self.checkInvalidParam(widget, 'font', '',
-                               errmsg='font "" doesn\'t exist')
+        is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
+        if not is_ttk:
+            self.checkInvalidParam(widget, 'font', '',
+                                   errmsg='font "" doesn\'t exist')
 
     def test_configure_foreground(self):
         widget = self.create()
@@ -366,7 +368,10 @@ class StandardOptionsTests:
 
     def test_configure_justify(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'justify', 'left', 'right', 'center',
+        values = ('left', 'right', 'center')
+        if self._allow_empty_justify:
+            values += ('',)
+        self.checkEnumParam(widget, 'justify', *values,
                             fullname='justification')
 
     def test_configure_orient(self):

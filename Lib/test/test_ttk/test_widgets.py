@@ -167,6 +167,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 
 class AbstractLabelTest(AbstractWidgetTest):
+    _allow_empty_justify = True
 
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')
@@ -188,14 +189,7 @@ class AbstractLabelTest(AbstractWidgetTest):
         widget = self.create()
         self.checkEnumParam(widget, 'compound', *values, allow_empty=True)
 
-    @requires_tk(8, 7)
-    def test_configure_justify(self):
-        widget = self.create()
-        values = ('left', 'right', 'center')
-        if tk_version >= (8, 7):
-            values += ('',)
-        self.checkEnumParam(widget, 'justify', *values,
-                            fullname='justification')
+    test_configure_justify = requires_tk(8, 7)(StandardOptionsTests.test_configure_justify)
 
     def test_configure_width(self):
         widget = self.create()
@@ -212,22 +206,12 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         'underline', 'width', 'wraplength',
     )
     _conv_pixels = False
+    _allow_empty_justify = tk_version >= (8, 7)
 
     def create(self, **kwargs):
         return ttk.Label(self.root, **kwargs)
 
-    def test_configure_justify(self):
-        widget = self.create()
-        values = ('left', 'right', 'center')
-        if tk_version >= (8, 7):
-            values += ('',)
-        self.checkEnumParam(widget, 'justify', *values,
-                            fullname='justification')
-
-    def test_configure_font(self):
-        widget = self.create()
-        self.checkParam(widget, 'font',
-                        '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
+    test_configure_justify = StandardOptionsTests.test_configure_justify
 
 
 @add_standard_options(StandardTtkOptionsTests)
@@ -924,6 +908,7 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         'style', 'takefocus', 'value', 'variable',
     )
     _conv_pixels = False
+    _allow_empty_justify = True
     default_orient = 'horizontal'
 
     def create(self, **kwargs):
@@ -935,20 +920,9 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'anchor',
                 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center', '')
 
-    @requires_tk(8, 7)
-    def test_configure_font(self):
-        widget = self.create()
-        self.checkParam(widget, 'font',
-                        '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
-
+    test_configure_font = requires_tk(8, 7)(StandardOptionsTests.test_configure_font)
     test_configure_foreground = requires_tk(8, 7)(StandardOptionsTests.test_configure_foreground)
-
-    @requires_tk(8, 7)
-    def test_configure_justify(self):
-        widget = self.create()
-        values = ('left', 'right', 'center', '')
-        self.checkEnumParam(widget, 'justify', *values,
-                            fullname='justification')
+    test_configure_justify = requires_tk(8, 7)(StandardTtkOptionsTests.test_configure_justify)
 
     def test_configure_length(self):
         widget = self.create()

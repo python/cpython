@@ -148,7 +148,6 @@ class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _clip_pad = tk_version >= (8, 7)
     _clip_borderwidth = tk_version >= (8, 7)
 
-    test_configure_justify = requires_tk(8, 7)(StandardOptionsTests.test_configure_justify)
 
 @add_standard_options(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
@@ -1178,10 +1177,6 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return tkinter.Scrollbar(self.root, **kwargs)
 
-    def test_configure_activerelief(self):
-        widget = self.create()
-        self.checkReliefParam(widget, 'activerelief')
-
     def test_configure_elementborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'elementborderwidth', 4.3, 5.6, '1m')
@@ -1403,6 +1398,8 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         i = widget.index('none')
         self.assertIsNone(i)
+
+    test_configure_activerelief = requires_tk(8, 7)(StandardOptionsTests.test_configure_activerelief)
 
     def test_configure_postcommand(self):
         widget = self.create()
