@@ -324,7 +324,7 @@ class UUID:
     @property
     def time(self):
         if self.version == 6:
-            # In version 1, the first field contains the 32 MSBs
+            # In version 6, the first field contains the 32 MSBs
             # and the field after the version contains the 12 LSBs.
             time_hi = self.int >> 96             # == fields[0]
             time_lo = (self.int >> 64) & 0x0fff  # == fields[2] & 0x0fff
