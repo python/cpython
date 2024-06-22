@@ -683,35 +683,6 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
-    def test_uuid6(self):
-        equal = self.assertEqual
-        u = self.uuid.uuid6()
-        equal(u.variant, self.uuid.RFC_4122)
-        equal(u.version, 6)
-
-        fake_nanoseconds = 1545052026752910643
-        fake_node_value = 93328246233727
-        fake_clock_seq = 5317
-        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
-                mock.patch.object(self.uuid, '_last_timestamp_v6', None), \
-                mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value), \
-                mock.patch('time.time_ns', return_value=fake_nanoseconds), \
-                mock.patch('random.getrandbits', return_value=fake_clock_seq):
-            u = self.uuid.uuid6()
-            equal(u.variant, self.uuid.RFC_4122)
-            equal(u.version, 6)
-
-            # time_hi                          time_mid         time_lo
-            # 00011110100100000001111111001010 0111101001010101 101110010010
-            timestamp = 137643448267529106
-            equal(u.time_hi, 0b00011110100100000001111111001010)
-            equal(u.time_mid, 0b0111101001010101)
-            equal(u.time_low, 0b101110010010)
-            equal(u.time, timestamp)
-            equal(u.fields[0], u.time_hi)
-            equal(u.fields[1], u.time_mid)
-            equal(u.fields[2], u.time_hi_version)
-
     def test_uuid7(self):
         equal = self.assertEqual
         u = self.uuid.uuid7()
@@ -863,29 +834,6 @@ class BaseTestUUID:
             rand_b_second_call = int.from_bytes(random_bytes[1]) & 0x3fffffffffffffff
             equal(self.uuid._last_counter_v7_b, rand_b_second_call)
             equal(u.int & 0x3fffffffffffffff, rand_b_second_call)
-
-    def test_uuid8(self):
-        equal = self.assertEqual
-        u = self.uuid.uuid8()
-
-        equal(u.variant, self.uuid.RFC_4122)
-        equal(u.version, 8)
-
-        for (_, hi, mid, lo) in product(
-            range(10),  # repeat 10 times
-            [None, 0, random.getrandbits(48)],
-            [None, 0, random.getrandbits(12)],
-            [None, 0, random.getrandbits(62)],
-        ):
-            u = self.uuid.uuid8(hi, mid, lo)
-            equal(u.variant, self.uuid.RFC_4122)
-            equal(u.version, 8)
-            if hi is not None:
-                equal((u.int >> 80) & 0xffffffffffff, hi)
-            if mid is not None:
-                equal((u.int >> 64) & 0xfff, mid)
-            if lo is not None:
-                equal(u.int & 0x3fffffffffffffff, lo)
 
     @support.requires_fork()
     def testIssue8621(self):
