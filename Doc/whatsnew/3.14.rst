@@ -95,8 +95,8 @@ Added :func:`ast.compare` for comparing two ASTs.
 asyncio
 -------
 
-Made :class:`asyncio.Queue` an :term:`asynchronous iterable`.
-(Contributed by Wannes Boeykens in :gh:`120491`.)
+Add :meth:`asyncio.Queue.iter` and :meth:`asyncio.Queue.iter_nowait`.
+(Contributed by Wannes Boeykens in ``gh-???`120925``.)
 
 os
 --
