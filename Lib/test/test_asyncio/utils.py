@@ -550,10 +550,8 @@ class TestCase(unittest.TestCase):
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    watcher = policy.get_child_watcher()
-            except NotImplementedError:
+                watcher = policy._watcher
+            except AttributeError:
                 # watcher is not implemented by EventLoopPolicy, e.g. Windows
                 pass
             else:

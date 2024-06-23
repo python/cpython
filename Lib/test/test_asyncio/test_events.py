@@ -2212,16 +2212,14 @@ else:
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
             super().setUp()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = asyncio.ThreadedChildWatcher()
-                watcher.attach_loop(self.loop)
-                asyncio.set_child_watcher(watcher)
+            watcher = asyncio.ThreadedChildWatcher()
+            watcher.attach_loop(self.loop)
+            policy = asyncio.get_event_loop_policy()
+            policy._watcher = watcher
 
         def tearDown(self):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
+            policy = asyncio.get_event_loop_policy()
+            policy._watcher = None
             super().tearDown()
 
 
@@ -2716,9 +2714,6 @@ class PolicyTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, policy.get_event_loop)
         self.assertRaises(NotImplementedError, policy.set_event_loop, object())
         self.assertRaises(NotImplementedError, policy.new_event_loop)
-        self.assertRaises(NotImplementedError, policy.get_child_watcher)
-        self.assertRaises(NotImplementedError, policy.set_child_watcher,
-                          object())
 
     def test_get_event_loop(self):
         policy = asyncio.DefaultEventLoopPolicy()
@@ -2836,9 +2831,8 @@ class GetEventLoopTestsMixin:
     def tearDown(self):
         try:
             if sys.platform != 'win32':
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    asyncio.set_child_watcher(None)
+                policy = asyncio.get_event_loop_policy()
+                policy._watcher = None
 
             super().tearDown()
         finally:
