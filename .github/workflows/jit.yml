@@ -133,7 +133,6 @@ jobs:
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      # --with-lto has been removed temporarily as a result of an open issue in LLVM 18 (see https://github.com/llvm/llvm-project/issues/87553)
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
@@ -143,7 +142,6 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      # --with-lto has been removed temporarily as a result of an open issue in LLVM 18 (see https://github.com/llvm/llvm-project/issues/87553)
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
         # The --ignorefile on ./python -m test is used to exclude tests known to fail when running on an emulated Linux.
