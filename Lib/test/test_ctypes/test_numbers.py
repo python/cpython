@@ -1,4 +1,5 @@
 import array
+import ctypes
 import struct
 import sys
 import unittest
@@ -7,6 +8,10 @@ from ctypes import (byref, sizeof, alignment,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble, c_bool)
+try:
+    from ctypes import c_double_complex
+except ImportError:
+    pass
 
 
 def valid_ranges(*types):
@@ -37,6 +42,22 @@ float_types = [c_double, c_float]
 unsigned_ranges = valid_ranges(*unsigned_types)
 signed_ranges = valid_ranges(*signed_types)
 bool_values = [True, False, 0, 1, -1, 5000, 'test', [], [1]]
+
+class IntLike:
+    def __int__(self):
+        return 2
+
+class IndexLike:
+    def __index__(self):
+        return 2
+
+class FloatLike:
+    def __float__(self):
+        return 2.0
+
+class ComplexLike:
+    def __complex__(self):
+        return 1+1j
 
 
 class NumberTestCase(unittest.TestCase):
@@ -82,13 +103,9 @@ class NumberTestCase(unittest.TestCase):
             parm = byref(t())
             self.assertEqual(ArgType, type(parm))
 
-
     def test_floats(self):
         # c_float and c_double can be created from
         # Python int and float
-        class FloatLike:
-            def __float__(self):
-                return 2.0
         f = FloatLike()
         for t in float_types:
             self.assertEqual(t(2.0).value, 2.0)
@@ -96,18 +113,24 @@ class NumberTestCase(unittest.TestCase):
             self.assertEqual(t(2).value, 2.0)
             self.assertEqual(t(f).value, 2.0)
 
-    def test_integers(self):
-        class FloatLike:
-            def __float__(self):
-                return 2.0
+    @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
+                         "requires C11 complex type")
+    def test_complex(self):
+        i = IndexLike()
         f = FloatLike()
-        class IntLike:
-            def __int__(self):
-                return 2
+        c = ComplexLike()
+
+        for t in [c_double_complex]:
+            self.assertEqual(t(1).value, 1+0j)
+            self.assertEqual(t(1.0).value, 1+0j)
+            self.assertEqual(t(1+1j).value, 1+1j)
+            self.assertEqual(t(i).value, 2+0j)
+            self.assertEqual(t(f).value, 2+0j)
+            self.assertEqual(t(c).value, 1+1j)
+
+    def test_integers(self):
+        f = FloatLike()
         d = IntLike()
-        class IndexLike:
-            def __index__(self):
-                return 2
         i = IndexLike()
         # integers cannot be constructed from floats,
         # but from integer-like objects
