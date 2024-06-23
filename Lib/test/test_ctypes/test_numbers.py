@@ -103,6 +103,7 @@ class NumberTestCase(unittest.TestCase):
             parm = byref(t())
             self.assertEqual(ArgType, type(parm))
 
+
     def test_floats(self):
         # c_float and c_double can be created from
         # Python int and float

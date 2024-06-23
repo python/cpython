@@ -276,7 +276,6 @@ complex types are available:
 +----------------------------------+---------------------------------+-----------------+
 
 
-(1)
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
 
@@ -2299,6 +2298,8 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`double complex` datatype, if it's available.  The
    constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
 
 
 .. class:: c_int
