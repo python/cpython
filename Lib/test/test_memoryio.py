@@ -682,48 +682,77 @@ class PyBytesIOTest(MemoryBackreadTestMixin, MemorySeekTestMixin, unittest.TestC
         self.assertEqual(b, b"")
 
     def test_backreadinto(self):
-        buf = self.buftype("\x001234567890\x00")
-
         # sanity checks
-        memio = self.ioclass(buf)
-        self.assertRaises(TypeError, memio.backreadinto, '')
-        memio.close()
-        self.assertRaises(ValueError, memio.backreadinto, bytearray())
+        buf, mem = self.getdata("sanity checks", goto_eof=True)
+        self.assertRaises(TypeError, mem.backreadinto, "")
+        mem.close()
+        self.assertRaises(ValueError, mem.backreadinto, bytearray())
 
-        # BOF check
-        b = bytearray()
-        memio = self.ioclass(buf)
-        memio.seek(0)
-        memio.backreadinto(b)
-        self.assertEqual(b, self.BOF)
+        buf, mem = self.getdata("1234", goto_eof=True)
+        self.assertEqual(mem.backreadinto(b := bytearray()), 0)
+        self.assertEqual(mem.tell(), 4)     # no change of position
+        self.assertEqual(list(b), [])       # nothing is read
+
+        def check_backreadinto(mem, out, count, newpos, expect):
+            self.assertEqual(mem.backreadinto(out), count)
+            self.assertEqual(mem.tell(), newpos)
+            self.assertEqual(out, bytes(expect))
+
+        # special positions checks
+        buf, mem = self.getdata(self.BOF)
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+
+        buf, mem = self.getdata("BOF/EOF checks")
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(0), 0, 0, [])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(0), 0, len(buf), [])
+        mem.seek(0)
+        check_backreadinto(mem, bytearray(2), 0, 0, [0, 0])
+        mem.seek(0, 2)
+        check_backreadinto(mem, bytearray(2), 2, len(buf) - 2, b'sk')
 
         # API checks
-        memio = self.ioclass(buf)
+        buf, mem = self.getdata("\x0012345\x0067890\x00")
 
         b = bytearray(b"hello")
-        memio.seek(0, 2)
-        self.assertEqual(memio.backreadinto(b), 5)
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b), 5)
         self.assertEqual(b, b"\x000987")
-        self.assertEqual(memio.backreadinto(b), 5)
-        self.assertEqual(b, b"65432")
-        self.assertEqual(memio.backreadinto(b), 2)
-        self.assertEqual(b, b"1\x00432")
+        self.assertEqual(mem.backreadinto(b), 5)
+        self.assertEqual(b, b"6\x00543")
+        self.assertEqual(mem.backreadinto(b), 3)
+        self.assertEqual(b, b"21\x0043")
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(0)), 0)
+        self.assertEqual(list(b), [])
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(1)), 1)
+        self.assertEqual(list(b), [0])
+
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b := bytearray(2)), 2)
+        self.assertEqual(list(b), [0, ord('0')])
 
         b = bytearray(b"some very long buffer!")
-        memio.seek(0, 2)
-        self.assertEqual(memio.backreadinto(b), 12)
-        self.assertEqual(b, b"\x000987654321\x00ng buffer!")
-
-        b = bytearray(0)
-        memio.seek(0, 2)
-        self.assertEqual(memio.backreadinto(b), 0)
-        self.assertEqual(b, self.BOF)
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(b), 13)
+        self.assertEqual(b, b"\x0009876\x0054321\x00g buffer!")
 
         import array
         a = array.array('b', b"some very long buffer!")
-        memio.seek(0, 2)
-        self.assertEqual(memio.backreadinto(a), 12)
-        self.assertEqual(a.tobytes(), b"\x000987654321\x00ng buffer!")
+        mem.seek(0, 2)
+        self.assertEqual(mem.backreadinto(a), 13)
+        self.assertEqual(a.tobytes(), b"\x0009876\x0054321\x00g buffer!")
 
     def test_relative_seek(self):
         buf = self.buftype("1234567890")
