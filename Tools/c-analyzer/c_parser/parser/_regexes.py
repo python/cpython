@@ -123,7 +123,7 @@ SIMPLE_TYPE = textwrap.dedent(rf'''
             (?: signed | unsigned )  # implies int
             |
             (?:
-                (?: (?: float | double ) \s+ )?
+                (?: (?: float | double | long\s+double ) \s+ )?
                 _Complex
             )
             |
