@@ -73,7 +73,7 @@ static inline PyObject* bytes_get_empty(void)
    PyBytes_FromStringAndSize()) or the length of the string in the 'str'
    parameter (for PyBytes_FromString()).
 */
-PyObject *
+static PyObject *
 _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
 {
     PyBytesObject *op;

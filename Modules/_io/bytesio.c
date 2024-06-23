@@ -814,16 +814,14 @@ _io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
         // avoid concatenating bytes (and creating a writer object), we instead
         // specialize PyBytes_FromStringAndSize() by creating a nul-terminated
         // bytes object and fill its buffer manually.
-        PyBytesObject *op = (PyBytesObject *)_PyBytes_FromSize(n, 0);
-        if (op == NULL) {
-            res = NULL;
+        if ((res = PyBytes_FromStringAndSize(NULL, n)) == NULL) {
             goto exit;
         }
         // copy the n - 1 last characters (no need for an auxiliary buffer)
-        memcpy(op->ob_sval, head - (n - 1), n - 1);
-        // op->ob_sval has n + 1 elements, and op->ob_sval[n] == '\0'
-        op->ob_sval[n - 1] = '\n';
-        res = (PyObject *)(op);
+        char *buf = ((PyBytesObject *)res)->ob_sval;
+        memcpy(buf, head - (n - 1), n - 1);
+        // 'ob_sval' has n + 1 elements, and ob_sval[n] == '\0'
+        buf[n - 1] = '\n';
     }
     else {
         // No need to create a temporary object if the result

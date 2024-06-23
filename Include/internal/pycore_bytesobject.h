@@ -18,11 +18,6 @@ extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);
 
-// Helper for allocating an unfilled bytes object.
-extern PyObject* _PyBytes_FromSize(
-    Py_ssize_t size,
-    int use_calloc);
-
 // Helper for PyBytes_DecodeEscape that detects invalid escape chars.
 // Export for test_peg_generator.
 PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
