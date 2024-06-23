@@ -152,6 +152,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.do_blocking_test(q.get, (True, 10), q.put, ('empty',))
 
     def test_iter(self):
+        q = self.type2test()
         self.cum = 0
 
         def worker():
@@ -162,7 +163,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with concurrent.futures.ThreadPoolExecutor() as tp:
             tp.submit(worker)
             tp.submit(worker)
-            q = self.type2test()
             for i in range(100):
                 q.put(i)
 
@@ -171,6 +171,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.assertEqual(self.cum, sum(range(100)))
 
     def test_iter_nowait(self):
+        q = self.type2test()
         self.cum = 0
 
         def worker():
@@ -179,7 +180,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
                     self.cum += x
 
         with concurrent.futures.ThreadPoolExecutor() as tp:
-            q = self.type2test()
             for i in range(100):
                 q.put(i)
 
