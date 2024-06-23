@@ -143,8 +143,6 @@ provide the public methods described below.
    available, but raise the :exc:`Empty` exception if none are (*timeout* is ignored
    in that case).
 
-   :meth:`task_done` is called automatically.
-
    Example::
 
       import concurrent.futures
@@ -257,6 +255,7 @@ Example of how to wait for enqueued tasks to be completed::
         for item in q:
             print(f'Working on {item}')
             print(f'Finished {item}')
+            q.task_done()
 
     # Turn-on the worker thread.
     threading.Thread(target=worker, daemon=True).start()

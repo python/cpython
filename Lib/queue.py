@@ -286,19 +286,15 @@ class Queue:
         is false), iterate over all item which are immediately available, but
         raise the Empty exception if none are ('timeout' is ignored in that
         case).
-
-        task_done() is called automatically.
         '''
         try:
             yield self.get(block=block, timeout=timeout)
-            self.task_done()
         except ShutDown:
             return
 
         try:
             while True:
                 yield self.get(block=block, timeout=timeout)
-                self.task_done()
         except (Empty, ShutDown):
             return
 
