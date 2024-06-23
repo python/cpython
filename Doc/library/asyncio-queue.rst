@@ -46,16 +46,6 @@ Queue
 
       Number of items allowed in the queue.
 
-   .. method:: __aiter__()
-
-      Return an :term:`asynchronous iterator` which iterates over
-      the queue of items until :meth:`shutdown` is called and
-      continues iteration until the queue is empty.
-
-      ``shutdown(immediate=True)`` stops iteration immediately.
-
-      .. versionadded:: 3.14
-
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
@@ -79,6 +69,18 @@ Queue
 
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
+
+   .. method:: iter()
+
+      .. TODO(Nice Zombies)
+
+      .. versionadded:: 3.14
+
+   .. method:: iter_nowait()
+
+      .. TODO(Nice Zombies)
+
+      .. versionadded:: 3.14
 
    .. coroutinemethod:: join()
 
@@ -202,7 +204,7 @@ concurrent tasks::
 
    async def worker(name, queue):
        # Get a "work item" out of the queue.
-       async for sleep_for in queue:
+       async for sleep_for in queue.iter():
            # Sleep for the "sleep_for" seconds.
            await asyncio.sleep(sleep_for)
 

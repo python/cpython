@@ -90,8 +90,6 @@ class Queue(mixins._LoopBoundMixin):
                 waiter.set_result(None)
                 break
 
-    def __aiter__(self):
-        return _AsyncQueueIterator(self)
 
     def __repr__(self):
         return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
@@ -232,6 +230,23 @@ class Queue(mixins._LoopBoundMixin):
         item = self._get()
         self._wakeup_next(self._putters)
         return item
+
+    def iter(self):
+        # TODO(Nice Zombies)
+        return _AsyncQueueIterator(self)
+    
+    def iter_nowait(self):
+        # TODO(Nice Zombies)
+        try:
+            yield self.get_nowait()
+        except QueueShutDown:
+            return
+
+        try:
+            while True:
+                yield self.get_nowait()
+        except (QueueEmpty, QueueShutDown):
+            return
 
     def task_done(self):
         """Indicate that a formerly enqueued task is complete.

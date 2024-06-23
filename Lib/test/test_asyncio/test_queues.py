@@ -116,23 +116,40 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
-    async def test_aiter(self):
+    async def test_iter(self):
         q = asyncio.Queue()
-        for i in range(100):
-            q.put_nowait(i)
-
-        # All tasks have been queued
-        q.shutdown()
-
         accumulator = 0
 
         async def worker():
             nonlocal accumulator
 
-            async for item in q:
+            async for item in q.iter():
                 accumulator += item
 
         async with asyncio.TaskGroup() as tg:
+            tg.create_task(worker())
+            tg.create_task(worker())
+            for i in range(100):
+                q.put_nowait(i)
+
+            q.shutdown()
+
+        self.assertEqual(sum(range(100)), accumulator)
+
+    async def test_iter_nowait(self):
+        q = asyncio.Queue()
+        accumulator = 0
+
+        async def worker():
+            nonlocal accumulator
+
+            for item in q.iter_nowait():
+                accumulator += item
+
+        async with asyncio.TaskGroup() as tg:
+            for i in range(100):
+                q.put_nowait(i)
+
             tg.create_task(worker())
             tg.create_task(worker())
 
@@ -497,7 +514,7 @@ class _QueueJoinTestMixin:
         async def worker():
             nonlocal accumulator
 
-            async for item in q:
+            async for item in q.iter():
                 accumulator += item
                 q.task_done()
 
