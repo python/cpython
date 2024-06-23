@@ -62,24 +62,13 @@ class object "PyObject *" "&PyBaseObject_Type"
 // be released and reacquired during a subclass update if there's contention
 // on the subclass lock.
 #define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
-#define BEGIN_TYPE_LOCK()                                               \
-    {                                                                   \
-        _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, TYPE_LOCK);                      \
+#define BEGIN_TYPE_LOCK() Py_BEGIN_CRITICAL_SECTION_MUT(TYPE_LOCK)
+#define END_TYPE_LOCK() Py_END_CRITICAL_SECTION()
 
-#define END_TYPE_LOCK()                                                 \
-        _PyCriticalSection_End(&_cs);                                   \
-    }
+#define BEGIN_TYPE_DICT_LOCK(d) \
+    Py_BEGIN_CRITICAL_SECTION2_MUT(TYPE_LOCK, &_PyObject_CAST(d)->ob_mutex)
 
-#define BEGIN_TYPE_DICT_LOCK(d)                                         \
-    {                                                                   \
-        _PyCriticalSection2 _cs;                                        \
-        _PyCriticalSection2_Begin(&_cs, TYPE_LOCK,                      \
-                                  &_PyObject_CAST(d)->ob_mutex);        \
-
-#define END_TYPE_DICT_LOCK()                                            \
-        _PyCriticalSection2_End(&_cs);                                  \
-    }
+#define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
 #define ASSERT_TYPE_LOCK_HELD() \
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(TYPE_LOCK)
@@ -442,7 +431,7 @@ _PyType_GetBases(PyTypeObject *self)
     BEGIN_TYPE_LOCK();
     res = lookup_tp_bases(self);
     Py_INCREF(res);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 
     return res;
 }
@@ -513,7 +502,7 @@ _PyType_GetMRO(PyTypeObject *self)
     BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(self);
     Py_XINCREF(mro);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return mro;
 #else
     return Py_XNewRef(lookup_tp_mro(self));
@@ -951,10 +940,10 @@ PyType_Watch(int watcher_id, PyObject* obj)
         return -1;
     }
     // ensure we will get a callback on the next modification
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     assign_version_tag(interp, type);
     type->tp_watched |= (1 << watcher_id);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return 0;
 }
 
@@ -1080,9 +1069,9 @@ PyType_Modified(PyTypeObject *type)
         return;
     }
 
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     type_modified_unlocked(type);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 }
 
 static int
@@ -1161,9 +1150,9 @@ void
 _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 {
 
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     set_version_unlocked(tp, version);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 }
 
 PyTypeObject *
@@ -1245,9 +1234,9 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int assigned;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     assigned = assign_version_tag(interp, type);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return assigned;
 }
 
@@ -1393,8 +1382,10 @@ type_module(PyTypeObject *type)
         if (s != NULL) {
             mod = PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-            if (mod != NULL)
-                PyUnicode_InternInPlace(&mod);
+            if (mod != NULL) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &mod);
+            }
         }
         else {
             mod = &_Py_ID(builtins);
@@ -1530,7 +1521,7 @@ type_get_mro(PyTypeObject *type, void *context)
 {
     PyObject *mro;
 
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(type);
     if (mro == NULL) {
         mro = Py_None;
@@ -1538,7 +1529,7 @@ type_get_mro(PyTypeObject *type, void *context)
         Py_INCREF(mro);
     }
 
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return mro;
 }
 
@@ -3119,9 +3110,9 @@ static PyObject *
 mro_implementation(PyTypeObject *type)
 {
     PyObject *mro;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     mro = mro_implementation_unlocked(type);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return mro;
 }
 
@@ -3308,9 +3299,9 @@ static int
 mro_internal(PyTypeObject *type, PyObject **p_old_mro)
 {
     int res;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     res = mro_internal_unlocked(type, 0, p_old_mro);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return res;
 }
 
@@ -5171,7 +5162,7 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     }
 
     PyObject *res = NULL;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
 
     PyObject *mro = lookup_tp_mro(type);
     // The type must be ready
@@ -5198,7 +5189,7 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
             break;
         }
     }
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return res;
 }
 
@@ -5456,13 +5447,13 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
 
     int has_version = 0;
     int version = 0;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     res = find_name_in_mro(type, name, &error);
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         version = type->tp_version_tag;
     }
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
     if (error) {
@@ -5692,9 +5683,9 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         if (name == NULL)
             return -1;
     }
-    /* bpo-40521: Interned strings are shared by all subinterpreters */
     if (!PyUnicode_CHECK_INTERNED(name)) {
-        PyUnicode_InternInPlace(&name);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternMortal(interp, &name);
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyErr_SetString(PyExc_MemoryError,
                             "Out of memory interning an attribute name");
@@ -8452,14 +8443,14 @@ PyType_Ready(PyTypeObject *type)
     }
 
     int res;
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
         res = type_ready(type, 1);
     } else {
         res = 0;
         assert(_PyType_CheckConsistency(type));
     }
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return res;
 }
 
@@ -8493,7 +8484,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     int res;
     BEGIN_TYPE_LOCK();
     res = type_ready(self, initial);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
         managed_static_type_state_clear(interp, self, isbuiltin, initial);
@@ -8965,7 +8956,7 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
     int res;
     BEGIN_TYPE_LOCK();
     res = hackcheck_unlocked(self, func, what);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
     return res;
 }
 
@@ -10894,14 +10885,14 @@ fixup_slot_dispatchers(PyTypeObject *type)
     // This lock isn't strictly necessary because the type has not been
     // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
     // where we'd like to assert that the type is locked.
-    BEGIN_TYPE_LOCK()
+    BEGIN_TYPE_LOCK();
 
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
         p = update_one_slot(type, p);
     }
 
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 }
 
 static void
@@ -11190,7 +11181,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
        another thread can modify it after we end the critical section
        below  */
     Py_XINCREF(mro);
-    END_TYPE_LOCK()
+    END_TYPE_LOCK();
 
     if (mro == NULL)
         return NULL;

@@ -199,7 +199,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                          extra=None, **kwargs):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            watcher = events.get_child_watcher()
+            watcher = events.get_event_loop_policy()._watcher
 
         with watcher:
             if not watcher.is_active():
@@ -1009,59 +1009,6 @@ class PidfdChildWatcher(AbstractChildWatcher):
         return True
 
 
-class BaseChildWatcher(AbstractChildWatcher):
-
-    def __init__(self):
-        self._loop = None
-        self._callbacks = {}
-
-    def close(self):
-        self.attach_loop(None)
-
-    def is_active(self):
-        return self._loop is not None and self._loop.is_running()
-
-    def _do_waitpid(self, expected_pid):
-        raise NotImplementedError()
-
-    def _do_waitpid_all(self):
-        raise NotImplementedError()
-
-    def attach_loop(self, loop):
-        assert loop is None or isinstance(loop, events.AbstractEventLoop)
-
-        if self._loop is not None and loop is None and self._callbacks:
-            warnings.warn(
-                'A loop is being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-
-        if self._loop is not None:
-            self._loop.remove_signal_handler(signal.SIGCHLD)
-
-        self._loop = loop
-        if loop is not None:
-            loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
-
-            # Prevent a race condition in case a child terminated
-            # during the switch.
-            self._do_waitpid_all()
-
-    def _sig_chld(self):
-        try:
-            self._do_waitpid_all()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException as exc:
-            # self._loop should always be available here
-            # as '_sig_chld' is added as a signal handler
-            # in 'attach_loop'
-            self._loop.call_exception_handler({
-                'message': 'Unknown exception in SIGCHLD handler',
-                'exception': exc,
-            })
-
-
 class ThreadedChildWatcher(AbstractChildWatcher):
     """Threaded child watcher implementation.
 
@@ -1161,15 +1108,10 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
     def __init__(self):
         super().__init__()
-        self._watcher = None
-
-    def _init_watcher(self):
-        with events._lock:
-            if self._watcher is None:  # pragma: no branch
-                if can_use_pidfd():
-                    self._watcher = PidfdChildWatcher()
-                else:
-                    self._watcher = ThreadedChildWatcher()
+        if can_use_pidfd():
+            self._watcher = PidfdChildWatcher()
+        else:
+            self._watcher = ThreadedChildWatcher()
 
     def set_event_loop(self, loop):
         """Set the event loop.
@@ -1184,33 +1126,6 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         if (self._watcher is not None and
                 threading.current_thread() is threading.main_thread()):
             self._watcher.attach_loop(loop)
-
-    def get_child_watcher(self):
-        """Get the watcher for child processes.
-
-        If not yet set, a ThreadedChildWatcher object is automatically created.
-        """
-        if self._watcher is None:
-            self._init_watcher()
-
-        warnings._deprecated("get_child_watcher",
-                            "{name!r} is deprecated as of Python 3.12 and will be "
-                            "removed in Python {remove}.", remove=(3, 14))
-        return self._watcher
-
-    def set_child_watcher(self, watcher):
-        """Set the watcher for child processes."""
-
-        assert watcher is None or isinstance(watcher, AbstractChildWatcher)
-
-        if self._watcher is not None:
-            self._watcher.close()
-
-        self._watcher = watcher
-        warnings._deprecated("set_child_watcher",
-                            "{name!r} is deprecated as of Python 3.12 and will be "
-                            "removed in Python {remove}.", remove=(3, 14))
-
 
 SelectorEventLoop = _UnixSelectorEventLoop
 DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy

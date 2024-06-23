@@ -1807,8 +1807,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
 {
     PyObject *dotted_path;
     Py_ssize_t i, n;
-    _Py_DECLARE_STR(dot, ".");
-    dotted_path = PyUnicode_Split(name, &_Py_STR(dot), -1);
+    dotted_path = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);
@@ -6605,8 +6604,10 @@ load_build(PickleState *st, UnpicklerObject *self)
             /* normally the keys for instance attributes are
                interned.  we should try to do that here. */
             Py_INCREF(d_key);
-            if (PyUnicode_CheckExact(d_key))
-                PyUnicode_InternInPlace(&d_key);
+            if (PyUnicode_CheckExact(d_key)) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &d_key);
+            }
             if (PyObject_SetItem(dict, d_key, d_value) < 0) {
                 Py_DECREF(d_key);
                 goto error;

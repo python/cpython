@@ -879,17 +879,13 @@ if sys.platform != 'win32':
 
             watcher = self._get_watcher()
             watcher.attach_loop(self.loop)
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                policy.set_child_watcher(watcher)
+            policy._watcher = watcher
 
         def tearDown(self):
             super().tearDown()
             policy = asyncio.get_event_loop_policy()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                watcher = policy.get_child_watcher()
-                policy.set_child_watcher(None)
+            watcher = policy._watcher
+            policy._watcher = None
             watcher.attach_loop(None)
             watcher.close()
 
@@ -910,66 +906,6 @@ if sys.platform != 'win32':
             return unix_events.PidfdChildWatcher()
 
 
-    class GenericWatcherTests(test_utils.TestCase):
-
-        def test_create_subprocess_fails_with_inactive_watcher(self):
-            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
-            watcher.is_active.return_value = False
-
-            async def execute():
-                asyncio.set_child_watcher(watcher)
-
-                with self.assertRaises(RuntimeError):
-                    await subprocess.create_subprocess_exec(
-                        os_helper.FakePath(sys.executable), '-c', 'pass')
-
-                watcher.add_child_handler.assert_not_called()
-
-            with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    self.assertIsNone(runner.run(execute()))
-            self.assertListEqual(watcher.mock_calls, [
-                mock.call.__enter__(),
-                mock.call.is_active(),
-                mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
-            ], watcher.mock_calls)
-
-
-        @unittest.skipUnless(
-            unix_events.can_use_pidfd(),
-            "operating system does not support pidfds",
-        )
-        def test_create_subprocess_with_pidfd(self):
-            async def in_thread():
-                proc = await asyncio.create_subprocess_exec(
-                    *PROGRAM_CAT,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate(b"some data")
-                return proc.returncode, stdout
-
-            async def main():
-                # asyncio.Runner did not call asyncio.set_event_loop()
-                with warnings.catch_warnings():
-                    warnings.simplefilter('error', DeprecationWarning)
-                    # get_event_loop() raises DeprecationWarning if
-                    # set_event_loop() was never called and RuntimeError if
-                    # it was called at least once.
-                    with self.assertRaises((RuntimeError, DeprecationWarning)):
-                        asyncio.get_event_loop_policy().get_event_loop()
-                return await asyncio.to_thread(asyncio.run, in_thread())
-            with self.assertWarns(DeprecationWarning):
-                asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
-            try:
-                with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
-                    returncode, stdout = runner.run(main())
-                self.assertEqual(returncode, 0)
-                self.assertEqual(stdout, b'some data')
-            finally:
-                with self.assertWarns(DeprecationWarning):
-                    asyncio.set_child_watcher(None)
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
