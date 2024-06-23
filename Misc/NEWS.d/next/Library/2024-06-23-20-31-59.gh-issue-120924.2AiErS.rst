@@ -1,0 +1,2 @@
+Add :meth:`asyncio.Queue.iter` and :meth:`asyncio.Queue.iter_nowait`.
+(Contributed by Wannes Boeykens in :gh:`120927`.)
