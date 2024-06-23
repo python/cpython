@@ -35,7 +35,7 @@ def declare_variable(
     if var.name in variables:
         return
     variables.add(var.name)
-    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "Py_STACKREF_NULL")
+    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
     space = " " if type[-1].isalnum() else ""
     if var.condition:
         out.emit(f"{type}{space}{var.name} = {null};\n")

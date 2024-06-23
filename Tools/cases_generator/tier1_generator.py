@@ -38,7 +38,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
                     variables.add(var.name)
-                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "Py_STACKREF_NULL")
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
                     space = " " if type[-1].isalnum() else ""
                     if var.condition:
                         out.emit(f"{type}{space}{var.name} = {null};\n")
@@ -50,7 +50,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
-                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "Py_STACKREF_NULL")
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
                     space = " " if type[-1].isalnum() else ""
                     if var.condition:
                         out.emit(f"{type}{space}{var.name} = {null};\n")

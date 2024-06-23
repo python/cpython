@@ -59,12 +59,12 @@ typedef union {
 #define Py_TAG_BITS     (1)
 
 #ifdef Py_GIL_DISABLED
-    static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 | Py_TAG_DEFERRED};
+    static const _PyStackRef PyStackRef_NULL = { .bits = 0 | Py_TAG_DEFERRED};
 #else
-    static const _PyStackRef Py_STACKREF_NULL = { .bits = 0 };
+    static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 #endif
 
-#define PyStackRef_IsNull(stackref) ((stackref).bits == Py_STACKREF_NULL.bits)
+#define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
 
 
 #ifdef Py_GIL_DISABLED
@@ -201,7 +201,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
         _PyStackRef *_tmp_op_ptr = &(op); \
         _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
         if (!PyStackRef_IsNull(_tmp_old_op)) { \
-            *_tmp_op_ptr = Py_STACKREF_NULL; \
+            *_tmp_op_ptr = PyStackRef_NULL; \
             PyStackRef_CLOSE(_tmp_old_op); \
         } \
     } while (0)

@@ -144,7 +144,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = Py_STACKREF_NULL;
+        frame->localsplus[i] = PyStackRef_NULL;
     }
 }
 

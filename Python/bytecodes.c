@@ -237,7 +237,7 @@ dummy_func(
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
-            GETLOCAL(oparg) = Py_STACKREF_NULL;
+            GETLOCAL(oparg) = PyStackRef_NULL;
         }
 
         inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
@@ -278,7 +278,7 @@ dummy_func(
         }
 
         pure inst(PUSH_NULL, (-- res)) {
-            res = Py_STACKREF_NULL;
+            res = PyStackRef_NULL;
         }
 
         macro(END_FOR) = POP_TOP;
@@ -1621,7 +1621,7 @@ dummy_func(
                     }
                 }
             }
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -1653,7 +1653,7 @@ dummy_func(
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             STAT_INC(LOAD_GLOBAL, hit);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -1664,7 +1664,7 @@ dummy_func(
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             STAT_INC(LOAD_GLOBAL, hit);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -1689,7 +1689,7 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            SETLOCAL(oparg, Py_STACKREF_NULL);
+            SETLOCAL(oparg, PyStackRef_NULL);
         }
 
         inst(MAKE_CELL, (--)) {
@@ -2009,7 +2009,7 @@ dummy_func(
             attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(super, name));
             Py_DECREF(super);
             ERROR_IF(PyStackRef_IsNull(attr), error);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
         }
 
         macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
@@ -2054,7 +2054,7 @@ dummy_func(
                 self_or_null = self_st; // transfer ownership
             } else {
                 PyStackRef_CLOSE(self_st);
-                self_or_null = Py_STACKREF_NULL;
+                self_or_null = PyStackRef_NULL;
             }
 
             attr = PyStackRef_FromPyObjectSteal(attr_o);
@@ -2111,7 +2111,7 @@ dummy_func(
                     */
                     DECREF_INPUTS();
                     ERROR_IF(attr_o == NULL, error);
-                    self_or_null = Py_STACKREF_NULL;
+                    self_or_null = PyStackRef_NULL;
                 }
             }
             else {
@@ -2147,7 +2147,7 @@ dummy_func(
             DEOPT_IF(attr_o == NULL);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             DECREF_INPUTS();
         }
@@ -2178,7 +2178,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2218,7 +2218,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2236,7 +2236,7 @@ dummy_func(
             PyObject *attr_o = *(PyObject **)addr;
             DEOPT_IF(attr_o == NULL);
             STAT_INC(LOAD_ATTR, hit);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             attr = PyStackRef_FromPyObjectNew(attr_o);
             DECREF_INPUTS();
         }
@@ -2260,7 +2260,7 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2870,7 +2870,7 @@ dummy_func(
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             if (next_o == NULL) {
-                next = Py_STACKREF_NULL;
+                next = PyStackRef_NULL;
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         ERROR_NO_POP();
@@ -4640,12 +4640,12 @@ dummy_func(
 
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             value = PyStackRef_FromPyObjectNew(ptr);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
             value = PyStackRef_FromPyObjectSteal(ptr);
-            null = Py_STACKREF_NULL;
+            null = PyStackRef_NULL;
         }
 
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {

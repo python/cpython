@@ -625,10 +625,10 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             _PyStackRef cc;
-            _PyStackRef input = Py_STACKREF_NULL;
+            _PyStackRef input = PyStackRef_NULL;
             _PyStackRef aa;
             _PyStackRef xx;
-            _PyStackRef output = Py_STACKREF_NULL;
+            _PyStackRef output = PyStackRef_NULL;
             _PyStackRef zz;
             cc = stack_pointer[-1];
             if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
@@ -662,7 +662,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef middle;
             _PyStackRef left;
             _PyStackRef deep;
-            _PyStackRef extra = Py_STACKREF_NULL;
+            _PyStackRef extra = PyStackRef_NULL;
             _PyStackRef res;
             // A
             right = stack_pointer[-1];
