@@ -663,7 +663,7 @@ backread_bytes(bytesio *self, Py_ssize_t n /* exact number of bytes to read */)
         if ((res = PyBytes_FromStringAndSize(NULL, n)) != NULL) {
             // 'ob_sval' has size + 1 elements, and ob_sval[size] == '\0'
             char *buf = ((PyBytesObject *)res)->ob_sval;
-            for (size_t i = 0; i < n; ++i) {
+            for (Py_ssize_t i = 0; i < n; ++i) {
                 buf[n - 1 - i] = src[i];
             }
         }
@@ -755,7 +755,6 @@ _io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
             // i = 0, j = 3 :: a <-> d (d__a)
             // i = 1, j = 2 :: b <-> c (dcba)
             // i = 2, j = 1 :: exit -> nothing to do
-            assert(j >= 0);
             assert(i == j + 1);
         }
     }
