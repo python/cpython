@@ -1,2 +1,0 @@
-Made :class:`queue.Queue` an :term:`iterable`.
-(Contributed by Wannes Boeykens in :gh:`120503`.)
