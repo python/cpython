@@ -124,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:

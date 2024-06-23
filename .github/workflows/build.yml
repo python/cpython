@@ -54,7 +54,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
           # Check if we should run hypothesis tests
@@ -199,8 +199,9 @@ jobs:
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # macos-14 is M1, macos-13 is Intel
-      os-matrix: '["macos-14", "macos-13"]'
+      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+      # Cirrus used for upstream, macos-14 for forks.
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -210,8 +211,9 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
-      # macos-14-large is Intel with 12 cores (most parallelism)
-      os-matrix: '["macos-14"]'
+      # Cirrus and macos-14 are M1.
+      # Cirrus used for upstream, macos-14 for forks.
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -388,7 +390,7 @@ jobs:
       id: cache-hypothesis-database
       uses: actions/cache@v4
       with:
-        path: ./hypothesis
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
           - hypothesis-database-
@@ -416,7 +418,7 @@ jobs:
       if: always()
       with:
         name: hypothesis-example-db
-        path: .hypothesis/examples/
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
 
   build_asan:

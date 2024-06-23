@@ -231,7 +231,8 @@ static void monitor_reraise(PyThreadState *tstate,
                  _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr);
+                 _Py_CODEUNIT *instr,
+                 PyObject *value);
 static void monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
@@ -340,6 +341,29 @@ const conversion_func _PyEval_ConversionFuncs[4] = {
     [FVC_STR] = PyObject_Str,
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
+};
+
+const _Py_SpecialMethod _Py_SpecialMethods[] = {
+    [SPECIAL___ENTER__] = {
+        .name = &_Py_ID(__enter__),
+        .error = "'%.200s' object does not support the "
+                 "context manager protocol (missed __enter__ method)",
+    },
+    [SPECIAL___EXIT__] = {
+        .name = &_Py_ID(__exit__),
+        .error = "'%.200s' object does not support the "
+                 "context manager protocol (missed __exit__ method)",
+    },
+    [SPECIAL___AENTER__] = {
+        .name = &_Py_ID(__aenter__),
+        .error = "'%.200s' object does not support the asynchronous "
+                 "context manager protocol (missed __aenter__ method)",
+    },
+    [SPECIAL___AEXIT__] = {
+        .name = &_Py_ID(__aexit__),
+        .error = "'%.200s' object does not support the asynchronous "
+                 "context manager protocol (missed __aexit__ method)",
+    }
 };
 
 
@@ -1477,7 +1501,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         localsplus[total_args] = u;
     }
     else if (argcount > n) {
-        /* Too many postional args. Error is reported later */
+        /* Too many positional args. Error is reported later */
         for (j = n; j < argcount; j++) {
             Py_DECREF(args[j]);
         }
@@ -2215,12 +2239,19 @@ monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
 static int
 monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
-                       _Py_CODEUNIT *instr)
+                       _Py_CODEUNIT *instr, PyObject *value)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
         return 0;
     }
-    return do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
+    assert(!PyErr_Occurred());
+    PyErr_SetObject(PyExc_StopIteration, value);
+    int res = do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
+    if (res < 0) {
+        return res;
+    }
+    PyErr_SetRaisedException(NULL);
+    return 0;
 }
 
 static void

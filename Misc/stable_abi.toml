@@ -2507,3 +2507,6 @@
     added = '3.13'
 [function.PyEval_GetFrameLocals]
     added = '3.13'
+
+[function.Py_TYPE]
+    added = '3.14'

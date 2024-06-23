@@ -213,7 +213,7 @@ dummy_func(
             }
         }
 
-        pseudo(LOAD_CLOSURE) = {
+        pseudo(LOAD_CLOSURE, (-- unused)) = {
             LOAD_FAST,
         };
 
@@ -259,7 +259,7 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        pseudo(STORE_FAST_MAYBE_NULL) = {
+        pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
             STORE_FAST,
         };
 
@@ -292,11 +292,9 @@ dummy_func(
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     ERROR_NO_POP();
                 }
-                PyErr_SetRaisedException(NULL);
             }
             DECREF_INPUTS();
         }
@@ -307,11 +305,9 @@ dummy_func(
 
         tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, this_instr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr, value)) {
                     ERROR_NO_POP();
                 }
-                PyErr_SetRaisedException(NULL);
             }
             Py_DECREF(receiver);
         }
@@ -831,7 +827,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval --)) {
+        inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -843,14 +839,11 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
+            res = retval;
             LLTRACE_RESUME_FRAME();
         }
-
-        macro(RETURN_VALUE) =
-            _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
@@ -873,7 +866,7 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            _POP_FRAME;
+            RETURN_VALUE;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
@@ -1188,8 +1181,18 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ASSERTION_ERROR, ( -- value)) {
-            value = Py_NewRef(PyExc_AssertionError);
+        inst(LOAD_COMMON_CONSTANT, ( -- value)) {
+            // Keep in sync with _common_constants in opcode.py
+            switch(oparg) {
+            case CONSTANT_ASSERTIONERROR:
+                value = PyExc_AssertionError;
+                break;
+            case CONSTANT_NOTIMPLEMENTEDERROR:
+                value = PyExc_NotImplementedError;
+                break;
+            default:
+                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
+            }
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
@@ -1379,18 +1382,35 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    ERROR_NO_POP();
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                            (PyDictObject *)BUILTINS(),
+                                            name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                            * an exception if the key doesn't exist */
+                            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                                    NAME_ERROR_MSG, name);
+                        }
                         ERROR_NO_POP();
                     }
+                }
+                else {
+                    /* Slow-path if globals or builtins is not a dict */
+                    /* namespace 1: globals */
+                    ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0, error);
                     if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                                    tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG, name);
-                        ERROR_NO_POP();
+                        /* namespace 2: builtins */
+                        ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0, error);
+                        if (v == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            ERROR_IF(true, error);
+                        }
                     }
                 }
             }
@@ -1547,7 +1567,7 @@ dummy_func(
 
         inst(MAKE_CELL, (--)) {
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via the f_locals proxy before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -1806,18 +1826,6 @@ dummy_func(
 
         macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
 
-        pseudo(LOAD_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR,
-        };
-
-        pseudo(LOAD_ZERO_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
-        };
-
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (0))) {
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type);
@@ -1918,10 +1926,6 @@ dummy_func(
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +
             _LOAD_ATTR;
-
-        pseudo(LOAD_METHOD) = {
-            LOAD_ATTR,
-        };
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2129,11 +2133,8 @@ dummy_func(
             _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
-        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner --)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
@@ -2167,6 +2168,11 @@ dummy_func(
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
         }
+
+        macro(STORE_ATTR_WITH_HINT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _STORE_ATTR_WITH_HINT;
 
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
@@ -2401,12 +2407,12 @@ dummy_func(
             #endif /* _Py_TIER2 */
         }
 
-        pseudo(JUMP) = {
+        pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD,
         };
 
-        pseudo(JUMP_NO_INTERRUPT) = {
+        pseudo(JUMP_NO_INTERRUPT, (--)) = {
             JUMP_FORWARD,
             JUMP_BACKWARD_NO_INTERRUPT,
         };
@@ -2808,79 +2814,27 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
-            if (enter == NULL) {
+        inst(LOAD_SPECIAL, (owner -- attr, self_or_null)) {
+            assert(oparg <= SPECIAL_MAX);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            attr = _PyObject_LookupSpecialMethod(owner, name, &self_or_null);
+            if (attr == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner)->tp_name);
                 }
-                ERROR_NO_POP();
             }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol "
-                                  "(missed __aexit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                ERROR_NO_POP();
-            }
-            DECREF_INPUTS();
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                ERROR_IF(true, error);
-            }
+            ERROR_IF(attr == NULL, error);
         }
 
-        inst(BEFORE_WITH, (mgr -- exit, res)) {
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                ERROR_NO_POP();
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed __exit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                ERROR_NO_POP();
-            }
-            DECREF_INPUTS();
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                ERROR_IF(true, error);
-            }
-        }
-
-        inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
+        inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
                - lasti: THIRD = lasti of exception in exc_info()
-               - exit_func: FOURTH = the context.__exit__ bound method
+               - exit_self: FOURTH = the context or NULL
+               - exit_func: FIFTH = the context.__exit__ function or context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
@@ -2897,25 +2851,34 @@ dummy_func(
             }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
-                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            PyObject *stack[5] = {NULL, exit_self, exc, val, tb};
+            int has_self = (exit_self != NULL);
+            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
+        pseudo(SETUP_FINALLY, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position
+             * and push one value before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
+        pseudo(SETUP_CLEANUP, (-- unused, unused), (HAS_ARG)) = {
+            /* As SETUP_FINALLY, but push lasti as well */
             NOP,
         };
 
-        pseudo(SETUP_WITH, (HAS_ARG)) = {
+        pseudo(SETUP_WITH, (-- unused), (HAS_ARG)) = {
+            /* If an exception is raised, restore the stack position to the
+             * position before the result of __(a)enter__ and push 2 values
+             * before jumping to the handler.
+             */
             NOP,
         };
 
-        pseudo(POP_BLOCK) = {
+        pseudo(POP_BLOCK, (--)) = {
             NOP,
         };
 
@@ -3271,10 +3234,9 @@ dummy_func(
             DEOPT_IF(tstate->interp->eval_frame);
         }
 
-        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-            EXIT_IF(!PyFunction_Check(callable));
+        op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            assert(PyFunction_Check(callable));
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            EXIT_IF(func->func_version != func_version);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             EXIT_IF(code->co_argcount != oparg + (self_or_null != NULL));
         }
@@ -3318,6 +3280,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
@@ -3327,6 +3290,7 @@ dummy_func(
         macro(CALL_PY_EXACT_ARGS) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
@@ -3956,6 +3920,11 @@ dummy_func(
                     assert(PyTuple_CheckExact(attr));
                     assert(func_obj->func_defaults == NULL);
                     func_obj->func_defaults = attr;
+                    break;
+                case MAKE_FUNCTION_ANNOTATE:
+                    assert(PyCallable_Check(attr));
+                    assert(func_obj->func_annotate == NULL);
+                    func_obj->func_annotate = attr;
                     break;
                 default:
                     Py_UNREACHABLE();
