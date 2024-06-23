@@ -192,7 +192,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.cum = 0
 
         def worker():
-            for x in q:
+            for x in q.iter():
                 with self.cumlock:
                     self.cum += x
                     q.task_done()
