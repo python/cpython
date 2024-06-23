@@ -875,6 +875,14 @@ if sys.platform != 'win32':
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
+        def test_watcher_implementation(self):
+            loop = self.loop
+            watcher = loop._watcher
+            if unix_events.can_use_pidfd():
+                self.assertIsInstance(watcher, unix_events._PidfdChildWatcher)
+            else:
+                self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
+
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
