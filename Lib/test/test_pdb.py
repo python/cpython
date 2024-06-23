@@ -446,6 +446,38 @@ def test_pdb_pp_repr_exc():
     (Pdb) continue
     """
 
+def test_pdb_empty_line():
+    """Test that empty line repeats the last command.
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+    ...     y = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p x',
+    ...     '',  # Should repeat p x
+    ...     'n ;; p 0 ;; p x',  # Fill cmdqueue with multiple commands
+    ...     '',  # Should still repeat p x
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(4)test_function()
+    -> pass
+    (Pdb) p x
+    1
+    (Pdb)
+    1
+    (Pdb) n ;; p 0 ;; p x
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(5)test_function()
+    -> y = 2
+    (Pdb)
+    1
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -703,7 +735,7 @@ def test_pdb_where_command():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
     >>> def f():
-    ...     g()
+    ...     g();
 
     >>> def test_function():
     ...     f()
@@ -711,13 +743,8 @@ def test_pdb_where_command():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
     ...     'w',
     ...     'where',
-    ...     'w 1',
-    ...     'w invalid',
     ...     'u',
     ...     'w',
-    ...     'w 0',
-    ...     'w 100',
-    ...     'w -100',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -726,63 +753,35 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
       <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
+    -> g();
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) where
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
       <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
+    -> g();
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) w 1
-    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) w invalid
-    *** Invalid count (invalid)
     (Pdb) u
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
+    -> g();
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
-      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) w 0
-    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
-    (Pdb) w 100
-    ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
-    -> test_function()
-      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
-    -> f()
-    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
-      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) w -100
-    ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
-    -> test_function()
-      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
-    -> f()
-    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g()
+    -> g();
       <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
@@ -2299,7 +2298,6 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
         self.assertNotIn("SyntaxError", stdout)
         self.assertIn("a+8=9", stdout)
-        self.assertIn("-> b = 2", stdout)
 
     def test_pdbrc_empty_line(self):
         """Test that empty lines in .pdbrc are ignored."""

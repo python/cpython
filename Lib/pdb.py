@@ -395,7 +395,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
-    def preloop(self):
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -421,15 +421,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.setup(frame, traceback)
         # We should print the stack entry if and only if the user input
         # is expected, and we should print it right before the user input.
-        # If self.cmdqueue is not empty, we append a "w 0" command to the
-        # queue, which is equivalent to print_stack_entry
-        if self.cmdqueue:
-            self.cmdqueue.append('w 0')
-        else:
-            self.print_stack_entry(self.stack[self.curindex])
+        # We achieve this by appending _pdbcmd_print_frame_status to the
+        # command queue. If cmdqueue is not exausted, the user input is
+        # not expected and we will not print the stack entry.
+        self.cmdqueue.append('_pdbcmd_print_frame_status')
         self._cmdloop()
-        # If "w 0" is not used, pop it out
-        if self.cmdqueue and self.cmdqueue[-1] == 'w 0':
+        # If _pdbcmd_print_frame_status is not used, pop it out
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
             self.cmdqueue.pop()
         self.forget()
 
@@ -532,6 +530,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -630,6 +632,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_entry(self.stack[self.curindex])
+        self._show_display()
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -1053,24 +1061,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_cl = _complete_location
 
     def do_where(self, arg):
-        """w(here) [count]
+        """w(here)
 
-        Print a stack trace. If count is not specified, print the full stack.
-        If count is 0, print the current frame entry. If count is positive,
-        print count entries from the most recent frame. If count is negative,
-        print -count entries from the least recent frame.
+        Print a stack trace, with the most recent frame at the bottom.
         An arrow indicates the "current frame", which determines the
         context of most commands.  'bt' is an alias for this command.
         """
-        if not arg:
-            count = None
-        else:
-            try:
-                count = int(arg)
-            except ValueError:
-                self.error('Invalid count (%s)' % arg)
-                return
-        self.print_stack_trace(count)
+        self.print_stack_trace()
     do_w = do_where
     do_bt = do_where
 
@@ -1642,22 +1639,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # It is also consistent with the up/down commands (which are
     # compatible with dbx and gdb: up moves towards 'main()'
     # and down moves towards the most recent stack frame).
-    #     * if count is None, prints the full stack
-    #     * if count = 0, prints the current frame entry
-    #     * if count < 0, prints -count least recent frame entries
-    #     * if count > 0, prints count most recent frame entries
 
-    def print_stack_trace(self, count=None):
-        if count is None:
-            stack_to_print = self.stack
-        elif count == 0:
-            stack_to_print = [self.stack[self.curindex]]
-        elif count < 0:
-            stack_to_print = self.stack[:-count]
-        else:
-            stack_to_print = self.stack[-count:]
+    def print_stack_trace(self):
         try:
-            for frame_lineno in stack_to_print:
+            for frame_lineno in self.stack:
                 self.print_stack_entry(frame_lineno)
         except KeyboardInterrupt:
             pass
