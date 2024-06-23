@@ -605,7 +605,22 @@ else:
         return stat.S_ISLNK(st.st_mode)
 
 # version vulnerable to race conditions
-def _rmtree_unsafe(path, onexc):
+def _rmtree_unsafe(path, dir_fd, onexc):
+    if dir_fd is not None:
+        raise NotImplementedError("dir_fd unavailable on this platform")
+    try:
+        st = os.lstat(path)
+    except OSError as err:
+        onexc(os.lstat, path, err)
+        return
+    try:
+        if _rmtree_islink(st):
+            # symlinks to directories are forbidden, see bug #1669
+            raise OSError("Cannot call rmtree on a symbolic link")
+    except OSError as err:
+        onexc(os.path.islink, path, err)
+        # can't continue even if onexc hook returns
+        return
     def onerror(err):
         if not isinstance(err, FileNotFoundError):
             onexc(os.scandir, err.filename, err)
@@ -635,7 +650,26 @@ def _rmtree_unsafe(path, onexc):
         onexc(os.rmdir, path, err)
 
 # Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(stack, onexc):
+def _rmtree_safe_fd(path, dir_fd, onexc):
+    # While the unsafe rmtree works fine on bytes, the fd based does not.
+    if isinstance(path, bytes):
+        path = os.fsdecode(path)
+    stack = [(os.lstat, dir_fd, path, None)]
+    try:
+        while stack:
+            _rmtree_safe_fd_step(stack, onexc)
+    finally:
+        # Close any file descriptors still on the stack.
+        while stack:
+            func, fd, path, entry = stack.pop()
+            if func is not os.close:
+                continue
+            try:
+                os.close(fd)
+            except OSError as err:
+                onexc(os.close, path, err)
+
+def _rmtree_safe_fd_step(stack, onexc):
     # Each stack item has four elements:
     # * func: The first operation to perform: os.lstat, os.close or os.rmdir.
     #   Walking a directory starts with an os.lstat() to detect symlinks; in
@@ -710,6 +744,7 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
+_rmtree_impl = _rmtree_safe_fd if _use_fd_functions else _rmtree_unsafe
 
 def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.
@@ -753,41 +788,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
 
-    if _use_fd_functions:
-        # While the unsafe rmtree works fine on bytes, the fd based does not.
-        if isinstance(path, bytes):
-            path = os.fsdecode(path)
-        stack = [(os.lstat, dir_fd, path, None)]
-        try:
-            while stack:
-                _rmtree_safe_fd(stack, onexc)
-        finally:
-            # Close any file descriptors still on the stack.
-            while stack:
-                func, fd, path, entry = stack.pop()
-                if func is not os.close:
-                    continue
-                try:
-                    os.close(fd)
-                except OSError as err:
-                    onexc(os.close, path, err)
-    else:
-        if dir_fd is not None:
-            raise NotImplementedError("dir_fd unavailable on this platform")
-        try:
-            st = os.lstat(path)
-        except OSError as err:
-            onexc(os.lstat, path, err)
-            return
-        try:
-            if _rmtree_islink(st):
-                # symlinks to directories are forbidden, see bug #1669
-                raise OSError("Cannot call rmtree on a symbolic link")
-        except OSError as err:
-            onexc(os.path.islink, path, err)
-            # can't continue even if onexc hook returns
-            return
-        return _rmtree_unsafe(path, onexc)
+    _rmtree_impl(path, dir_fd, onexc)
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
