@@ -143,6 +143,9 @@ provide the public methods described below.
    available, but raise the :exc:`Empty` exception if none are (*timeout* is ignored
    in that case).
 
+   Stops iteration if the queue has been shut down and is empty, or if the queue has
+   been shut down immediately.
+
    Example::
 
       import concurrent.futures

@@ -286,6 +286,9 @@ class Queue:
         is false), iterate over all item which are immediately available, but
         raise the Empty exception if none are ('timeout' is ignored in that
         case).
+
+        Stops iteration if the queue has been shut down and is empty, or if the
+        queue has been shut down immediately.
         '''
         try:
             yield self.get(block=block, timeout=timeout)
