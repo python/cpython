@@ -16,6 +16,10 @@ try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 
 
 NULL = None
@@ -352,13 +356,13 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, fromobject, [])
         # CRASHES fromobject(NULL)
 
+    @unittest.skipIf(ctypes is None, 'need ctypes')
     def test_from_format(self):
         """Test PyUnicode_FromFormat()"""
         # Length modifiers "j" and "t" are not tested here because ctypes does
         # not expose types for intmax_t and ptrdiff_t.
         # _testlimitedcapi.test_string_from_format() has a wider coverage of all
         # formats.
-        import_helper.import_module('ctypes')
         from ctypes import (
             c_char_p,
             pythonapi, py_object, sizeof,
@@ -1674,6 +1678,150 @@ class CAPITest(unittest.TestCase):
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
+
+
+class PyUnicodeWriterTest(unittest.TestCase):
+    def create_writer(self, size):
+        return _testcapi.PyUnicodeWriter(size)
+
+    def test_basic(self):
+        writer = self.create_writer(100)
+
+        # test PyUnicodeWriter_WriteUTF8()
+        writer.write_utf8(b'var', -1)
+
+        # test PyUnicodeWriter_WriteChar()
+        writer.write_char('=')
+
+        # test PyUnicodeWriter_WriteSubstring()
+        writer.write_substring("[long]", 1, 5);
+
+        # test PyUnicodeWriter_WriteStr()
+        writer.write_str(" value ")
+
+        # test PyUnicodeWriter_WriteRepr()
+        writer.write_repr("repr")
+
+        self.assertEqual(writer.finish(),
+                         "var=long value 'repr'")
+
+    def test_utf8(self):
+        writer = self.create_writer(0)
+        writer.write_utf8(b"ascii", -1)
+        writer.write_char('-')
+        writer.write_utf8(b"latin1=\xC3\xA9", -1)
+        writer.write_char('-')
+        writer.write_utf8(b"euro=\xE2\x82\xAC", -1)
+        writer.write_char('.')
+        self.assertEqual(writer.finish(),
+                         "ascii-latin1=\xE9-euro=\u20AC.")
+
+    def test_invalid_utf8(self):
+        writer = self.create_writer(0)
+        with self.assertRaises(UnicodeDecodeError):
+            writer.write_utf8(b"invalid=\xFF", -1)
+
+    def test_recover_utf8_error(self):
+        # test recovering from PyUnicodeWriter_WriteUTF8() error
+        writer = self.create_writer(0)
+        writer.write_utf8(b"value=", -1)
+
+        # write fails with an invalid string
+        with self.assertRaises(UnicodeDecodeError):
+            writer.write_utf8(b"invalid\xFF", -1)
+
+        # retry write with a valid string
+        writer.write_utf8(b"valid", -1)
+
+        self.assertEqual(writer.finish(),
+                         "value=valid")
+
+    def test_decode_utf8(self):
+        # test PyUnicodeWriter_DecodeUTF8Stateful()
+        writer = self.create_writer(0)
+        writer.decodeutf8stateful(b"ign\xFFore", -1, b"ignore")
+        writer.write_char('-')
+        writer.decodeutf8stateful(b"replace\xFF", -1, b"replace")
+        writer.write_char('-')
+
+        # incomplete trailing UTF-8 sequence
+        writer.decodeutf8stateful(b"incomplete\xC3", -1, b"replace")
+
+        self.assertEqual(writer.finish(),
+                         "ignore-replace\uFFFD-incomplete\uFFFD")
+
+    def test_decode_utf8_consumed(self):
+        # test PyUnicodeWriter_DecodeUTF8Stateful() with consumed
+        writer = self.create_writer(0)
+
+        # valid string
+        consumed = writer.decodeutf8stateful(b"text", -1, b"strict", True)
+        self.assertEqual(consumed, 4)
+        writer.write_char('-')
+
+        # non-ASCII
+        consumed = writer.decodeutf8stateful(b"\xC3\xA9-\xE2\x82\xAC", 6, b"strict", True)
+        self.assertEqual(consumed, 6)
+        writer.write_char('-')
+
+        # invalid UTF-8 (consumed is 0 on error)
+        with self.assertRaises(UnicodeDecodeError):
+            writer.decodeutf8stateful(b"invalid\xFF", -1, b"strict", True)
+
+        # ignore error handler
+        consumed = writer.decodeutf8stateful(b"more\xFF", -1, b"ignore", True)
+        self.assertEqual(consumed, 5)
+        writer.write_char('-')
+
+        # incomplete trailing UTF-8 sequence
+        consumed = writer.decodeutf8stateful(b"incomplete\xC3", -1, b"ignore", True)
+        self.assertEqual(consumed, 10)
+
+        self.assertEqual(writer.finish(), "text-\xE9-\u20AC-more-incomplete")
+
+    def test_widechar(self):
+        writer = self.create_writer(0)
+        writer.write_widechar("latin1=\xE9")
+        writer.write_widechar("-")
+        writer.write_widechar("euro=\u20AC")
+        writer.write_char('.')
+        self.assertEqual(writer.finish(), "latin1=\xE9-euro=\u20AC.")
+
+
+@unittest.skipIf(ctypes is None, 'need ctypes')
+class PyUnicodeWriterFormatTest(unittest.TestCase):
+    def create_writer(self, size):
+        return _testcapi.PyUnicodeWriter(size)
+
+    def writer_format(self, writer, *args):
+        from ctypes import c_char_p, pythonapi, c_int, c_void_p
+        _PyUnicodeWriter_Format = getattr(pythonapi, "PyUnicodeWriter_Format")
+        _PyUnicodeWriter_Format.argtypes = (c_void_p, c_char_p,)
+        _PyUnicodeWriter_Format.restype = c_int
+
+        if _PyUnicodeWriter_Format(writer.get_pointer(), *args) < 0:
+            raise ValueError("PyUnicodeWriter_Format failed")
+
+    def test_format(self):
+        from ctypes import c_int
+        writer = self.create_writer(0)
+        self.writer_format(writer, b'%s %i', b'abc', c_int(123))
+        writer.write_char('.')
+        self.assertEqual(writer.finish(), 'abc 123.')
+
+    def test_recover_error(self):
+        # test recovering from PyUnicodeWriter_Format() error
+        writer = self.create_writer(0)
+        self.writer_format(writer, b"%s ", b"Hello")
+
+        # PyUnicodeWriter_Format() fails with an invalid format string
+        with self.assertRaises(ValueError):
+            self.writer_format(writer, b"%s\xff", b"World")
+
+        # Retry PyUnicodeWriter_Format() with a valid format string
+        self.writer_format(writer, b"%s.", b"World")
+
+        self.assertEqual(writer.finish(), 'Hello World.')
 
 
 if __name__ == "__main__":

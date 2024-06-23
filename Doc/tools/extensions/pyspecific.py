@@ -33,7 +33,7 @@ from sphinx.util.display import status_iterator
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 # Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/3.13/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -604,7 +604,7 @@ def parse_monitoring_event(env, sig, signode):
 
 
 def process_audit_events(app, doctree, fromdocname):
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         break
     else:
         return
@@ -663,7 +663,7 @@ def process_audit_events(app, doctree, fromdocname):
 
         body += row
 
-    for node in doctree.traverse(audit_event_list):
+    for node in doctree.findall(audit_event_list):
         node.replace_self(table)
 
 

@@ -343,7 +343,7 @@ instance::
     >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
-For editable packages, an origin property may present :pep:`610`
+For editable packages, an ``origin`` property may present :pep:`610`
 metadata::
 
     >>> dist.origin.url

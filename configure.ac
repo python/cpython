@@ -1609,7 +1609,7 @@ then
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
   )
 fi
@@ -2289,6 +2289,11 @@ PYDEBUG_CFLAGS="-O0"
 AS_VAR_IF([ac_cv_cc_supports_og], [yes],
           [PYDEBUG_CFLAGS="-Og"])
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST([OPT])
@@ -2403,10 +2408,10 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
-    dnl gh-117645: Set the memory size to 20 MiB, the stack size to 8 MiB,
+    dnl gh-117645: Set the memory size to 40 MiB, the stack size to 16 MiB,
     dnl and move the stack first.
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"])
   ]
 )
 
@@ -3417,7 +3422,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -3641,6 +3646,7 @@ AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
   [aarch64-linux-gnu], [perf_trampoline=yes],
+  [riscv64-linux-gnu], [perf_trampoline=yes],
   [perf_trampoline=no]
 )
 AC_MSG_RESULT([$perf_trampoline])
@@ -3980,6 +3986,13 @@ AC_ARG_WITH(
   [with_system_libmpdec="yes"])
 AC_MSG_RESULT([$with_system_libmpdec])
 
+AC_DEFUN([USE_BUNDLED_LIBMPDEC],
+         [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
+          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
+          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
+          have_mpdec=yes
+          with_system_libmpdec=no])
+
 AS_VAR_IF(
   [with_system_libmpdec], [yes],
   [PKG_CHECK_MODULES(
@@ -3987,9 +4000,7 @@ AS_VAR_IF(
     [LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
      LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
      LIBMPDEC_INTERNAL=])],
-  [LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-   LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"])
+  [USE_BUNDLED_LIBMPDEC()])
 
 AS_VAR_IF([with_system_libmpdec], [yes],
   [WITH_SAVE_ENV([
@@ -4006,13 +4017,15 @@ AS_VAR_IF([with_system_libmpdec], [yes],
       [have_mpdec=yes],
       [have_mpdec=no])
   ])],
-  [AS_VAR_SET([have_mpdec], [yes])
-   AC_MSG_WARN([m4_normalize([
+  [AC_MSG_WARN([m4_normalize([
      the bundled copy of libmpdecimal is scheduled for removal in Python 3.15;
      consider using a system installed mpdecimal library.])])])
 
 AS_IF([test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"],
-      [AC_MSG_WARN([no system libmpdecimal found; unable to build _decimal])])
+      [AC_MSG_WARN([m4_normalize([
+         no system libmpdecimal found; falling back to bundled libmpdecimal
+         (deprecated and scheduled for removal in Python 3.15)])])
+       USE_BUNDLED_LIBMPDEC()])
 
 # Disable forced inlining in debug builds, see GH-94847
 AS_VAR_IF(

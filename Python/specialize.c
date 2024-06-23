@@ -637,7 +637,7 @@ specialize_module_load_attr(
 ) {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyModuleObject *m = (PyModuleObject *)owner;
-    assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+    assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
@@ -1301,7 +1301,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
             }
             /* Cache entries must be unsigned values, so we offset the
              * dictoffset by MANAGED_DICT_OFFSET.
-             * We do the reverese offset in LOAD_ATTR_METHOD_LAZY_DICT */
+             * We do the reverse offset in LOAD_ATTR_METHOD_LAZY_DICT */
             dictoffset -= MANAGED_DICT_OFFSET;
             assert(((uint16_t)dictoffset) == dictoffset);
             cache->dict_offset = (uint16_t)dictoffset;

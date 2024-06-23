@@ -896,6 +896,7 @@ SYMBOL_NAMES = (
     "Py_SetProgramName",
     "Py_SetPythonHome",
     "Py_SetRecursionLimit",
+    "Py_TYPE",
     "Py_UTF8Mode",
     "Py_VaBuildValue",
     "Py_Version",

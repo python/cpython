@@ -256,15 +256,15 @@ def _type_repr(obj):
     return repr(obj)
 
 
-def _collect_parameters(args, *, enforce_default_ordering: bool = True):
-    """Collect all type variables and parameter specifications in args
+def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
+    """Collect all type parameters in args
     in order of first appearance (lexicographic order).
 
     For example::
 
         >>> P = ParamSpec('P')
         >>> T = TypeVar('T')
-        >>> _collect_parameters((T, Callable[P, T]))
+        >>> _collect_type_parameters((T, Callable[P, T]))
         (~T, ~P)
     """
     # required type parameter cannot appear after parameter with default
@@ -280,7 +280,7 @@ def _collect_parameters(args, *, enforce_default_ordering: bool = True):
             # `t` might be a tuple, when `ParamSpec` is substituted with
             # `[T, int]`, or `[int, *Ts]`, etc.
             for x in t:
-                for collected in _collect_parameters([x]):
+                for collected in _collect_type_parameters([x]):
                     if collected not in parameters:
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
@@ -320,7 +320,7 @@ def _check_generic_specialization(cls, arguments):
         if actual_len < expected_len:
             # If the parameter at index `actual_len` in the parameters list
             # has a default, then all parameters after it must also have
-            # one, because we validated as much in _collect_parameters().
+            # one, because we validated as much in _collect_type_parameters().
             # That means that no error needs to be raised here, despite
             # the number of arguments being passed not matching the number
             # of parameters: all parameters that aren't explicitly
@@ -1255,7 +1255,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
     if error:
         raise TypeError("Cannot inherit from plain Generic")
     if '__orig_bases__' in cls.__dict__:
-        tvars = _collect_parameters(cls.__orig_bases__)
+        tvars = _collect_type_parameters(cls.__orig_bases__)
         # Look for Generic[T1, ..., Tn].
         # If found, tvars must be a subset of it.
         # If not found, tvars is it.
@@ -1417,7 +1417,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
         enforce_default_ordering = origin in (Generic, Protocol)
-        self.__parameters__ = _collect_parameters(
+        self.__parameters__ = _collect_type_parameters(
             args,
             enforce_default_ordering=enforce_default_ordering,
         )
@@ -1889,6 +1889,7 @@ _SPECIAL_NAMES = frozenset({
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
     '__match_args__', '__static_attributes__', '__firstlineno__',
+    '__annotate__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -2411,7 +2412,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
                 base_globals = globalns
-            ann = base.__dict__.get('__annotations__', {})
+            ann = getattr(base, '__annotations__', {})
             if isinstance(ann, types.GetSetDescriptorType):
                 ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
@@ -2969,7 +2970,12 @@ class NamedTupleMeta(type):
                 raise TypeError(
                     'can only inherit from a NamedTuple type and Generic')
         bases = tuple(tuple if base is _NamedTuple else base for base in bases)
-        types = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            types = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            types = ns["__annotate__"](1)  # VALUE
+        else:
+            types = {}
         default_names = []
         for field_name in types:
             if field_name in ns:
@@ -3130,7 +3136,12 @@ class _TypedDictMeta(type):
             tp_dict.__orig_bases__ = bases
 
         annotations = {}
-        own_annotations = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            own_annotations = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            own_annotations = ns["__annotate__"](1)  # VALUE
+        else:
+            own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
             n: _type_check(tp, msg, module=tp_dict.__module__)
@@ -3142,7 +3153,12 @@ class _TypedDictMeta(type):
         mutable_keys = set()
 
         for base in bases:
-            annotations.update(base.__dict__.get('__annotations__', {}))
+            # TODO: Avoid eagerly evaluating annotations in VALUE format.
+            # Instead, evaluate in FORWARDREF format to figure out which
+            # keys have Required/NotRequired/ReadOnly qualifiers, and create
+            # a new __annotate__ function for the resulting TypedDict that
+            # combines the annotations from this class and its parents.
+            annotations.update(base.__annotations__)
 
             base_required = base.__dict__.get('__required_keys__', set())
             required_keys |= base_required
@@ -3770,6 +3786,16 @@ def __getattr__(attr):
     elif attr in {"ContextManager", "AsyncContextManager"}:
         import contextlib
         obj = _alias(getattr(contextlib, f"Abstract{attr}"), 2, name=attr, defaults=(bool | None,))
+    elif attr == "_collect_parameters":
+        import warnings
+
+        depr_message = (
+            "The private _collect_parameters function is deprecated and will be"
+            " removed in a future version of Python. Any use of private functions"
+            " is discouraged and may break in the future."
+        )
+        warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
+        obj = _collect_type_parameters
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj

@@ -537,7 +537,7 @@ add_to_trace(
 // Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
 
-// Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
+// Trace stack operations (used by _PUSH_FRAME, _RETURN_VALUE)
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
@@ -748,10 +748,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     int nuops = expansion->nuops;
                     RESERVE(nuops + 1); /* One extra for exit */
                     int16_t last_op = expansion->uops[nuops-1].uop;
-                    if (last_op == _POP_FRAME || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
+                    if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
-                        // LOAD_CONST + _POP_FRAME.
+                        // LOAD_CONST + _RETURN_VALUE.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
                             OPT_STAT_INC(trace_stack_underflow);
@@ -810,7 +810,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _POP_FRAME || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                        if (uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
@@ -1237,7 +1237,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     inst->oparg = oparg;
     executor->vm_data.valid = true;
     executor->vm_data.linked = false;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
 #ifdef Py_DEBUG
@@ -1455,7 +1455,7 @@ PyUnstable_Optimizer_NewCounter(void)
 
 /* We use a bloomfilter with k = 6, m = 256
  * The choice of k and the following constants
- * could do with a more rigourous analysis,
+ * could do with a more rigorous analysis,
  * but here is a simple analysis:
  *
  * We want to keep the false positive rate low.
@@ -1496,7 +1496,7 @@ address_to_hash(void *ptr) {
     uintptr_t addr = (uintptr_t)ptr;
     for (int i = 0; i < SIZEOF_VOID_P; i++) {
         uhash ^= addr & 255;
-        uhash *= (uint64_t)_PyHASH_MULTIPLIER;
+        uhash *= (uint64_t)PyHASH_MULTIPLIER;
         addr >>= 8;
     }
     return uhash;
@@ -1505,7 +1505,7 @@ address_to_hash(void *ptr) {
 void
 _Py_BloomFilter_Init(_PyBloomFilter *bloom)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
 }
@@ -1530,7 +1530,7 @@ _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
 static bool
 bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 {
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
             return false;
         }
@@ -1591,7 +1591,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
+    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);

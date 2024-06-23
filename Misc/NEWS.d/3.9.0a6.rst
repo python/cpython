@@ -635,7 +635,7 @@ script is killed by signal 11, it now logs: "CGI script exit code -11."
 .. section: Library
 
 Improve the error message when triying to import a module using :mod:`runpy`
-and incorrently use the ".py" extension at the end of the module name. Patch
+and incorrectly using the ".py" extension at the end of the module name. Patch
 by Pablo Galindo.
 
 ..

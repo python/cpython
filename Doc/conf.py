@@ -339,7 +339,8 @@ repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
     "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
     "repository_url": repository_url.removesuffix(".git") if repository_url else None,
-    "pr_id": os.getenv("READTHEDOCS_VERSION")
+    "pr_id": os.getenv("READTHEDOCS_VERSION"),
+    "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -374,6 +375,8 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+# Split pot files one per reST file
+gettext_compact = False
 
 # Options for LaTeX output
 # ------------------------
@@ -434,6 +437,10 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+
+# index pages are not valid xhtml
+# https://github.com/sphinx-doc/sphinx/issues/12359
+epub_use_index = False
 
 # Options for the coverage checker
 # --------------------------------

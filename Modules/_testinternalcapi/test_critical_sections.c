@@ -49,15 +49,6 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     Py_END_CRITICAL_SECTION2();
     assert_nogil(!PyMutex_IsLocked(&d2->ob_mutex));
 
-    // Optional variant behaves the same if the object is non-NULL
-    Py_XBEGIN_CRITICAL_SECTION(d1);
-    assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
-    Py_XEND_CRITICAL_SECTION();
-
-    // No-op
-    Py_XBEGIN_CRITICAL_SECTION(NULL);
-    Py_XEND_CRITICAL_SECTION();
-
     Py_DECREF(d2);
     Py_DECREF(d1);
     Py_RETURN_NONE;
@@ -139,6 +130,7 @@ test_critical_sections_suspend(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#ifdef Py_CAN_START_THREADS
 struct test_data {
     PyObject *obj1;
     PyObject *obj2;
@@ -179,7 +171,6 @@ thread_critical_sections(void *arg)
     }
 }
 
-#ifdef Py_CAN_START_THREADS
 static PyObject *
 test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
 {

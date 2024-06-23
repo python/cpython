@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the
 # Python 2.2 license.
@@ -402,7 +400,7 @@ class Trace:
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
-                     `count' and `trace'
+                     'count' and 'trace'
         @param ignoremods a list of the names of modules to ignore
         @param ignoredirs a list of the names of directories to ignore
                      all of the (recursive) contents of
@@ -534,7 +532,7 @@ class Trace:
     def globaltrace_lt(self, frame, why, arg):
         """Handler for call events.
 
-        If the code block being entered is to be ignored, returns `None',
+        If the code block being entered is to be ignored, returns 'None',
         else returns self.localtrace.
         """
         if why == 'call':

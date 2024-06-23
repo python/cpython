@@ -21,6 +21,12 @@ chmod +x llvm.sh
 sudo ./llvm.sh 18
 ```
 
+Install LLVM 18 on Fedora Linux 40 or newer:
+
+```sh
+sudo dnf install 'clang(major) = 18' 'llvm(major) = 18'
+```
+
 ### macOS
 
 Install LLVM 18 with [Homebrew](https://brew.sh):
@@ -34,6 +40,12 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 ### Windows
 
 Install LLVM 18 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=18), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
+
+Alternatively, you can use [chocolatey](https://chocolatey.org):
+
+```sh
+choco install llvm --version=18.1.6
+```
 
 ### Dev Containers
 

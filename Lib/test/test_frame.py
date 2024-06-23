@@ -1,11 +1,9 @@
 import copy
-import gc
 import operator
 import re
 import sys
 import textwrap
 import threading
-import types
 import unittest
 import weakref
 try:
@@ -13,8 +11,9 @@ try:
 except ImportError:
     _testcapi = None
 
+from collections.abc import Mapping
 from test import support
-from test.support import import_helper, threading_helper, Py_GIL_DISABLED
+from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -371,6 +370,15 @@ class TestFrameLocals(unittest.TestCase):
         f_locals['o'] = f_locals['k']
         self.assertEqual(o, 'a.b.c')
 
+    def test_copy(self):
+        x = 0
+        d = sys._getframe().f_locals
+        d_copy = d.copy()
+        self.assertIsInstance(d_copy, dict)
+        self.assertEqual(d_copy['x'], 0)
+        d_copy['x'] = 1
+        self.assertEqual(x, 0)
+
     def test_update_with_self(self):
         def f():
             f_locals = sys._getframe().f_locals
@@ -405,15 +413,23 @@ class TestFrameLocals(unittest.TestCase):
     def test_unsupport(self):
         x = 1
         d = sys._getframe().f_locals
-        with self.assertRaises(AttributeError):
-            d.copy()
-
         with self.assertRaises(TypeError):
             copy.copy(d)
 
         with self.assertRaises(TypeError):
             copy.deepcopy(d)
 
+    def test_is_mapping(self):
+        x = 1
+        d = sys._getframe().f_locals
+        self.assertIsInstance(d, Mapping)
+        match d:
+            case {"x": value}:
+                self.assertEqual(value, 1)
+                kind = "mapping"
+            case _:
+                kind = "other"
+        self.assertEqual(kind, "mapping")
 
 class TestFrameCApi(unittest.TestCase):
     def test_basic(self):

@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion
+from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -3723,7 +3723,7 @@ class ProtocolTests(BaseTestCase):
 
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
-            '__init__', '__annotations__', '__subclasshook__',
+            '__init__', '__annotations__', '__subclasshook__', '__annotate__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(
@@ -6325,6 +6325,8 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+
+class InternalsTests(BaseTestCase):
     def test_deprecation_for_no_type_params_passed_to__evaluate(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
@@ -6348,6 +6350,15 @@ class ForwardRefTests(BaseTestCase):
         ) as cm:
             self.assertIs(f._evaluate(globals(), {}, recursive_guard=frozenset()), int)
 
+        self.assertEqual(cm.filename, __file__)
+
+    def test_collect_parameters(self):
+        typing = import_helper.import_fresh_module("typing")
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The private _collect_parameters function is deprecated"
+        ) as cm:
+            typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
 
@@ -6623,7 +6634,7 @@ class GetTypeHintTests(BaseTestCase):
             gth(None)
 
     def test_get_type_hints_modules(self):
-        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
+        ann_module_type_hints = {'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
@@ -6641,7 +6652,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
-        self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
+        self.assertEqual(gth(ann_module.M), {'o': type})
         self.assertEqual(gth(ann_module.D),
                          {'j': str, 'k': str, 'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.Y), {'z': int})
@@ -7049,24 +7060,16 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance(42, typing.Iterator)
 
     def test_awaitable(self):
-        ns = {}
-        exec(
-            "async def foo() -> typing.Awaitable[int]:\n"
-            "    return await AwaitableWrapper(42)\n",
-            globals(), ns)
-        foo = ns['foo']
+        async def foo() -> typing.Awaitable[int]:
+            return await AwaitableWrapper(42)
         g = foo()
         self.assertIsInstance(g, typing.Awaitable)
         self.assertNotIsInstance(foo, typing.Awaitable)
         g.send(None)  # Run foo() till completion, to avoid warning.
 
     def test_coroutine(self):
-        ns = {}
-        exec(
-            "async def foo():\n"
-            "    return\n",
-            globals(), ns)
-        foo = ns['foo']
+        async def foo():
+            return
         g = foo()
         self.assertIsInstance(g, typing.Coroutine)
         with self.assertRaises(TypeError):
@@ -7341,10 +7344,9 @@ class CollectionsAbcTests(BaseTestCase):
             typing.Generator[int, int, int]()
 
     def test_async_generator(self):
-        ns = {}
-        exec("async def f():\n"
-             "    yield 42\n", globals(), ns)
-        g = ns['f']()
+        async def f():
+             yield 42
+        g = f()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 
     def test_no_async_generator_instantiation(self):
@@ -7431,9 +7433,8 @@ class CollectionsAbcTests(BaseTestCase):
             def athrow(self, typ, val=None, tb=None):
                 pass
 
-        ns = {}
-        exec('async def g(): yield 0', globals(), ns)
-        g = ns['g']
+        async def g(): yield 0
+
         self.assertIsSubclass(G, typing.AsyncGenerator)
         self.assertIsSubclass(G, typing.AsyncIterable)
         self.assertIsSubclass(G, collections.abc.AsyncGenerator)
@@ -10236,14 +10237,33 @@ class NoDefaultTests(BaseTestCase):
     def test_constructor(self):
         self.assertIs(NoDefault, type(NoDefault)())
         with self.assertRaises(TypeError):
-            NoDefault(1)
+            type(NoDefault)(1)
 
     def test_repr(self):
         self.assertEqual(repr(NoDefault), 'typing.NoDefault')
 
+    @requires_docstrings
+    def test_doc(self):
+        self.assertIsInstance(NoDefault.__doc__, str)
+
+    def test_class(self):
+        self.assertIs(NoDefault.__class__, type(NoDefault))
+
     def test_no_call(self):
         with self.assertRaises(TypeError):
             NoDefault()
+
+    def test_no_attributes(self):
+        with self.assertRaises(AttributeError):
+            NoDefault.foo = 3
+        with self.assertRaises(AttributeError):
+            NoDefault.foo
+
+        # TypeError is consistent with the behavior of NoneType
+        with self.assertRaises(TypeError):
+            type(NoDefault).foo = 3
+        with self.assertRaises(AttributeError):
+            type(NoDefault).foo
 
 
 class AllTests(BaseTestCase):

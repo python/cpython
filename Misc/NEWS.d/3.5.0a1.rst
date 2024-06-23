@@ -1345,7 +1345,7 @@ newer worked.
 .. section: Library
 
 The "ip" command is now used on Linux to determine MAC address in
-uuid.getnode().  Pach by Bruno Cauet.
+uuid.getnode().  Patch by Bruno Cauet.
 
 ..
 
@@ -3930,7 +3930,7 @@ has been called.
 .. nonce: 5CDoox
 .. section: Library
 
-New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` incase of
+New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` in case of
 an attribute startswith assert or assret.
 
 ..
@@ -4339,7 +4339,7 @@ these modules are not used.
 .. nonce: V1-XhC
 .. section: Library
 
-Include the broadcast address in the usuable hosts for IPv6 in ipaddress.
+Include the broadcast address in the usable hosts for IPv6 in ipaddress.
 
 ..
 
