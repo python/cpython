@@ -128,6 +128,11 @@ SIMPLE_TYPE = textwrap.dedent(rf'''
             )
             |
             (?:
+                _Complex
+                (?: \s+ (?: float | double | long\s+double ) )?
+            )
+            |
+            (?:
                 (?: (?: signed | unsigned ) \s+ )?
                 (?: (?: long | short ) \s+ )?
                 (?: char | short | int | long | float | double )
