@@ -192,29 +192,6 @@ find_io_state_by_def(PyTypeObject *type)
 
 extern PyObject *_PyIOBase_cannot_pickle(PyObject *self, PyObject *args);
 
-static inline void
-reverse_buffer(char *out, const char *src, size_t len)
-{
-    size_t i;
-    for (i = 0; i < len; ++i) {
-        out[len - 1 - i] = src[i];
-    }
-}
-
-static inline void
-reverse_buffer_in_place(char *buf, size_t len)
-{
-    if (len > 1) {
-        char c;
-        size_t i, j;
-        for (i = 0, j = len - 1; i < j; ++i, --j) {
-            c = buf[i];
-            buf[i] = buf[j];
-            buf[j] = c;
-        }
-    }
-}
-
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif

@@ -644,28 +644,31 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 }
 
 static PyObject *
-backread_bytes(bytesio *self, Py_ssize_t size /* 0 <= size <= self->pos */)
+backread_bytes(bytesio *self, Py_ssize_t n /* exact number of bytes to read */)
 {
     assert(self->buf != NULL);
-    assert(0 <= size && size <= self->pos);
-    if (size == 0) {
+    assert(0 <= n && n <= self->pos);
+    if (n == 0) {
         return PyBytes_FromStringAndSize(NULL, 0);
     }
 
     PyObject *res;
-    const char *src = PyBytes_AS_STRING(self->buf) + self->pos - size;
+    const char *src = PyBytes_AS_STRING(self->buf) + self->pos - n;
 
-    if (size == 1) {
-        // make a copy of the character (no reverse)
+    if (n == 1) {
+        // single character (no reverse) can be immortalized
         res = PyBytes_FromStringAndSize(src, 1);
     }
     else {
-        char *out = malloc(size * sizeof(char));
-        reverse_buffer(out, src, size);
-        res = PyBytes_FromStringAndSize(out, size);
-        free(out);
+        if ((res = PyBytes_FromStringAndSize(NULL, n)) != NULL) {
+            // 'ob_sval' has size + 1 elements, and ob_sval[size] == '\0'
+            char *buf = ((PyBytesObject *)res)->ob_sval;
+            for (size_t i = 0; i < n; ++i) {
+                buf[n - 1 - i] = src[i];
+            }
+        }
     }
-    self->pos -= size;
+    self->pos -= n;
     return res;
 }
 
@@ -725,11 +728,38 @@ _io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
     }
     if (len < 0) {
         len = 0;
+        goto exit;
     }
     assert(0 <= off && off <= self->pos);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + off, len);
-    // reverse the bytes that were just written
-    reverse_buffer_in_place((char *)buffer->buf, len);
+
+    const char *src = PyBytes_AS_STRING(self->buf) + off;
+    char *out = (char *)(buffer->buf);
+
+    if (len >= 1) {
+        size_t i, j;
+        // swap characters in len / 2 iterations
+        for (i = 0, j = len - 1; i < j; ++i, --j) {
+            out[i] = src[j];
+            out[j] = src[i];
+        }
+        if (len % 2 == 1) {
+            // buf = abc  (odd length)
+            //  i = 0, j = 4 :: a <-> e (e__a)
+            //  i = 1, j = 3 :: b <-> d (ed_ba)
+            //  i = 2, j = 2 :: exit & copy the remaining character
+            assert(i == j);
+            out[i] = src[i];
+        }
+        else {
+            // buf = abcd   (even length)
+            // i = 0, j = 3 :: a <-> d (d__a)
+            // i = 1, j = 2 :: b <-> c (dcba)
+            // i = 2, j = 1 :: exit -> nothing to do
+            assert(j >= 0);
+            assert(i == j + 1);
+        }
+    }
+exit:
     assert(self->pos - len >= 0);
     assert(len >= 0);
     self->pos -= len;
