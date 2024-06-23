@@ -1620,7 +1620,9 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
+#ifdef __STDC_IEC_559_COMPLEX__
     { 'C', C_set, C_get, NULL},
+#endif
     { 'g', g_set, g_get, NULL},
     { 'f', f_set, f_get, NULL, f_set_sw, f_get_sw},
     { 'h', h_set, h_get, NULL, h_set_sw, h_get_sw},
