@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytes_FromSize()
 #include "pycore_object.h"
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
 
@@ -762,34 +763,41 @@ _io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
     if (n == 0) {
         if (found) {
             n = 1;
-            res = PyBytes_FromStringAndSize("\n", n);
+            res = PyBytes_FromStringAndSize("\n", 1);
         }
         else {
-            res = PyBytes_FromStringAndSize(NULL, n);
+            // empty bytes
+            res = PyBytes_FromStringAndSize(NULL, 0);
         }
         goto exit;
     }
 
+    // For backreadline(), the characters are kept in the forward order
+    // but they are read from the right (e.g., backreadline(3) on 'abcdef'
+    // gives 'def' instead of 'fed'. In addition, new lines are added on
+    // the right if they are found, e.g., backreadline(3) on '\nab' would
+    // return 'ab\n').
     const char *head = PyBytes_AS_STRING(self->buf) + self->pos;
     if (found && n > 1) {
-        // TODO(picnixz): check which of these is faster:
-        // * malloc() + memcpy()
-        // * PyBytes_FromStringAndSize() + concat "\n"
-        // * PyBytes_FromFormat() + "\n"
-        char *buf = malloc(n * sizeof(char));
-        // for backreadline(), the characters are kept in the forward order
-        // but they are read from the right (e.g., backreadline(3) on 'abcdef'
-        // gives 'def' instead of 'fed'. In addition, new lines are added on
-        // the right if they are found, e.g., backreadline(3) on '\nab' would
-        // return 'ab\n').
-        memcpy(buf, head - (n - 1), n - 1);
-        // insert the new line at the end
-        buf[n - 1] = '\n';
-        res = PyBytes_FromStringAndSize(buf, n);
-        free(buf);
+        // To avoid calling malloc() twice (once in PyBytes_FromStringAndSize()
+        // and once for temporarily storing the n - 1 last characters) and to
+        // avoid concatenating bytes (and creating a writer object), we instead
+        // specialize PyBytes_FromStringAndSize() by creating a nul-terminated
+        // bytes object and fill its buffer manually.
+        PyBytesObject *op = (PyBytesObject *)_PyBytes_FromSize(n, 0);
+        if (op == NULL) {
+            res = NULL;
+            goto exit;
+        }
+        // copy the n - 1 last characters (no need for an auxiliary buffer)
+        memcpy(op->ob_sval, head - (n - 1), n - 1);
+        // op->ob_sval has n + 1 elements, and op->ob_sval[n] == '\0'
+        op->ob_sval[n - 1] = '\n';
+        res = (PyObject *)(op);
     }
     else {
-        // no need to allocate memory or create other objects
+        // No need to create a temporary object if the result
+        // is a single '\n' or does not contain a new line.
         res = PyBytes_FromStringAndSize(head - n, n);
     }
 exit:
