@@ -22,7 +22,7 @@ class LibTest(unittest.TestCase):
         self.assertEqual(lib.my_sqrt(4.0), 2.0)
         self.assertEqual(lib.my_sqrt(2.0), math.sqrt(2.0))
 
-    @unittest.skipUnless(ctypes.__STDC_IEC_559_COMPLEX__,
+    @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,

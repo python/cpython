@@ -5825,12 +5825,6 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
     MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
 
-#ifdef __STDC_IEC_559_COMPLEX__
-    MOD_ADD("__STDC_IEC_559_COMPLEX__", PyLong_FromLong(__STDC_IEC_559_COMPLEX__));
-#else
-    MOD_ADD("__STDC_IEC_559_COMPLEX__", PyLong_FromLong(0));
-#endif
-
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
 #  define RTLD_LOCAL 0

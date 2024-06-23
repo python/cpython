@@ -12,7 +12,6 @@ from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
-from _ctypes import __STDC_IEC_559_COMPLEX__
 
 from struct import calcsize as _calcsize
 
@@ -206,9 +205,11 @@ class c_longdouble(_SimpleCData):
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
-if __STDC_IEC_559_COMPLEX__:
+try:
     class c_double_complex(_SimpleCData):
         _type_ = "C"
+except AttributeError:
+    pass
 
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
