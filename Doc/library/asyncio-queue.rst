@@ -72,13 +72,21 @@ Queue
 
    .. method:: iter()
 
-      .. TODO(Nice Zombies)
+      Return an :term:`asynchronous iterator` which iterates over the queue
+      of items. If queue is empty, wait until the next item is available.
+
+      Stops iteration if the queue has been shut down and is empty, or if
+      the queue has been shut down immediately.
 
       .. versionadded:: 3.14
 
    .. method:: iter_nowait()
 
-      .. TODO(Nice Zombies)
+      Return an :term:`iterator` which iterates over the queue of items
+      without blocking.
+
+      Only iterate over the items which are immediately available, but raise
+      the :exc:`QueueEmpty` exception if none are.
 
       .. versionadded:: 3.14
 

@@ -232,11 +232,21 @@ class Queue(mixins._LoopBoundMixin):
         return item
 
     def iter(self):
-        # TODO(Nice Zombies)
+        """Return an asynchronous iterator which iterates over the queue of
+        items. If queue is empty, wait until the next item is available.
+
+        Stops iteration if the queue has been shut down and is empty, or if the
+        queue has been shut down immediately.
+        """
         return _AsyncQueueIterator(self)
 
     def iter_nowait(self):
-        # TODO(Nice Zombies)
+        """Return an iterator which iterates over the queue of items without
+        blocking.
+
+        Only iterate over the items which are immediately available, but raise
+        the QueueEmpty exception if none are.
+        """
         try:
             yield self.get_nowait()
         except QueueShutDown:
