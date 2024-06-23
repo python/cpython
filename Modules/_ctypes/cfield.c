@@ -1092,6 +1092,10 @@ d_get(void *ptr, Py_ssize_t size)
 }
 
 #ifdef __STDC_IEC_559_COMPLEX__
+#if defined(__clang__) && __has_builtin(__builtin_complex) && \
+    !defined(CMPLX)
+#  define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
+#endif
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
