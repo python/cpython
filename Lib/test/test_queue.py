@@ -289,7 +289,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put("data")
         with self.assertRaises(self.queue.ShutDown):
             q.get()
-        list(q.iter())
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_nonempty(self):
         q = self.type2test()
@@ -298,8 +298,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.get()
         with self.assertRaises(self.queue.ShutDown):
             q.get()
-        with self.assertRaises(self.queue.ShutDown):
-            list(q.iter())
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_immediate(self):
         q = self.type2test()
@@ -307,8 +306,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.shutdown(immediate=True)
         with self.assertRaises(self.queue.ShutDown):
             q.get()
-        with self.assertRaises(self.queue.ShutDown):
-            list(q.iter())
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from alive via shutdown to immediate
