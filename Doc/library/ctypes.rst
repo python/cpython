@@ -266,7 +266,7 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, following
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
 complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
@@ -2296,7 +2296,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_double_complex
 
-   Represents the C :c:expr:`double complex` datatype, if it's available.  The
+   Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
    .. versionadded:: 3.14
