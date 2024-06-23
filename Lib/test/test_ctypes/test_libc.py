@@ -22,6 +22,8 @@ class LibTest(unittest.TestCase):
         self.assertEqual(lib.my_sqrt(4.0), 2.0)
         self.assertEqual(lib.my_sqrt(2.0), math.sqrt(2.0))
 
+    @unittest.skipUnless(ctypes.__STDC_IEC_559_COMPLEX__,
+                         "requires C11 complex type")
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
@@ -29,8 +31,6 @@ class LibTest(unittest.TestCase):
         self.assertEqual(lib.my_csqrt(complex(-1, +0.)), complex(0, +1))
         self.assertEqual(lib.my_csqrt(complex(-1, -0.)), complex(0, -1))
 
-    @unittest.skipUnless(ctypes.__STDC_IEC_559_COMPLEX__,
-                         "requires C11 complex type")
     def test_qsort(self):
         comparefunc = CFUNCTYPE(c_int, POINTER(c_char), POINTER(c_char))
         lib.my_qsort.argtypes = c_void_p, c_size_t, c_size_t, comparefunc
