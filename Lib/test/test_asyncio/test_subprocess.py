@@ -869,31 +869,19 @@ if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
 
-        Watcher = None
-
         def setUp(self):
             super().setUp()
             policy = asyncio.get_event_loop_policy()
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self._get_watcher()
-            watcher.attach_loop(self.loop)
-            policy._watcher = watcher
-
-        def tearDown(self):
-            super().tearDown()
-            policy = asyncio.get_event_loop_policy()
-            watcher = policy._watcher
-            policy._watcher = None
-            watcher.attach_loop(None)
-            watcher.close()
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
-
-        def _get_watcher(self):
-            return unix_events.ThreadedChildWatcher()
+        def setUp(self):
+            # Force the use of the threaded child watcher
+            unix_events.can_use_pidfd = mock.Mock(return_value=False)
+            super().setUp()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
@@ -902,9 +890,7 @@ if sys.platform != 'win32':
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
 
-        def _get_watcher(self):
-            return unix_events.PidfdChildWatcher()
-
+        pass
 
 else:
     # Windows
