@@ -111,7 +111,7 @@ queue
 -----
 
 Add :meth:`queue.Queue.iter()` and :meth:`queue.Queue.iter_nowait()`.
-(Contributed by Wannes Boeykens in ``gh-???``.)
+(Contributed by Wannes Boeykens in :gh:`120925`.)
 
 symtable
 --------
