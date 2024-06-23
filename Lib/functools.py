@@ -406,6 +406,13 @@ class partial:
                 (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        if args:
+            if args[-1] is Placeholder:
+                raise TypeError("trailing Placeholders are not allowed")
+            phcount = args.count(Placeholder)
+        else:
+            phcount = 0
+
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
             kwds = {}
@@ -418,7 +425,7 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
-        self.placeholder_count = args.count(Placeholder)
+        self.placeholder_count = phcount
 
 try:
     from _functools import partial, Placeholder

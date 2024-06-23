@@ -360,6 +360,11 @@ class TestPartial:
             self.assertEqual(f(), (PH, 1), dict(a=10))
         self.assertEqual(f(2), ((2, 1), dict(a=10)))
 
+        # Leading Placeholder error
+        f = self.partial(signature)
+        with self.assertRaises(TypeError):
+            f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
+
     def test_setstate_errors(self):
         f = self.partial(signature)
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
