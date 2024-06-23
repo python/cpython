@@ -110,8 +110,8 @@ pathlib
 queue
 -----
 
-Add :meth:`queue.Queue.iter()`.
-(Contributed by Wannes Boeykens in :gh:`???`.)
+Add :meth:`queue.Queue.iter()` and :meth:`queue.Queue.iter_nowait()`.
+(Contributed by Wannes Boeykens in ``gh-???``.)
 
 symtable
 --------

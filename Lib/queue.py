@@ -291,13 +291,14 @@ class Queue:
         '''
         try:
             yield self.get(block=block, timeout=timeout)
+            self.task_done()
         except ShutDown:
             return
 
         try:
             while True:
-                self.task_done()
                 yield self.get(block=block, timeout=timeout)
+                self.task_done()
         except (Empty, ShutDown):
             return
 
