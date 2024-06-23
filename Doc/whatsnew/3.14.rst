@@ -173,6 +173,26 @@ ast
 
   (Contributed by Alex Waygood in :gh:`119562`.)
 
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
+
 collections.abc
 ---------------
 
@@ -291,10 +311,12 @@ New Features
   * :c:func:`PyUnicodeWriter_Finish`.
   * :c:func:`PyUnicodeWriter_WriteChar`.
   * :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`PyUnicodeWriter_WriteWideChar`.
   * :c:func:`PyUnicodeWriter_WriteStr`.
   * :c:func:`PyUnicodeWriter_WriteRepr`.
   * :c:func:`PyUnicodeWriter_WriteSubstring`.
   * :c:func:`PyUnicodeWriter_Format`.
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
