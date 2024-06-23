@@ -2209,22 +2209,8 @@ if sys.platform == 'win32':
 else:
     import selectors
 
-    class UnixEventLoopTestsMixin(EventLoopTestsMixin):
-        def setUp(self):
-            super().setUp()
-            watcher = asyncio.ThreadedChildWatcher()
-            watcher.attach_loop(self.loop)
-            policy = asyncio.get_event_loop_policy()
-            policy._watcher = watcher
-
-        def tearDown(self):
-            policy = asyncio.get_event_loop_policy()
-            policy._watcher = None
-            super().tearDown()
-
-
     if hasattr(selectors, 'KqueueSelector'):
-        class KqueueEventLoopTests(UnixEventLoopTestsMixin,
+        class KqueueEventLoopTests(EventLoopTestsMixin,
                                    SubprocessTestsMixin,
                                    test_utils.TestCase):
 
@@ -2249,7 +2235,7 @@ else:
                 super().test_write_pty()
 
     if hasattr(selectors, 'EpollSelector'):
-        class EPollEventLoopTests(UnixEventLoopTestsMixin,
+        class EPollEventLoopTests(EventLoopTestsMixin,
                                   SubprocessTestsMixin,
                                   test_utils.TestCase):
 
@@ -2257,7 +2243,7 @@ else:
                 return asyncio.SelectorEventLoop(selectors.EpollSelector())
 
     if hasattr(selectors, 'PollSelector'):
-        class PollEventLoopTests(UnixEventLoopTestsMixin,
+        class PollEventLoopTests(EventLoopTestsMixin,
                                  SubprocessTestsMixin,
                                  test_utils.TestCase):
 
@@ -2265,7 +2251,7 @@ else:
                 return asyncio.SelectorEventLoop(selectors.PollSelector())
 
     # Should always exist.
-    class SelectEventLoopTests(UnixEventLoopTestsMixin,
+    class SelectEventLoopTests(EventLoopTestsMixin,
                                SubprocessTestsMixin,
                                test_utils.TestCase):
 
@@ -2830,10 +2816,6 @@ class GetEventLoopTestsMixin:
 
     def tearDown(self):
         try:
-            if sys.platform != 'win32':
-                policy = asyncio.get_event_loop_policy()
-                policy._watcher = None
-
             super().tearDown()
         finally:
             self.loop.close()

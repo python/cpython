@@ -1112,32 +1112,6 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.connection_lost.called)
 
 
-class AbstractChildWatcherTests(unittest.TestCase):
-
-    def test_warns_on_subclassing(self):
-        with self.assertWarns(DeprecationWarning):
-            class MyWatcher(asyncio.AbstractChildWatcher):
-                pass
-
-    def test_not_implemented(self):
-        f = mock.Mock()
-        watcher = asyncio.AbstractChildWatcher()
-        self.assertRaises(
-            NotImplementedError, watcher.add_child_handler, f, f)
-        self.assertRaises(
-            NotImplementedError, watcher.remove_child_handler, f)
-        self.assertRaises(
-            NotImplementedError, watcher.attach_loop, f)
-        self.assertRaises(
-            NotImplementedError, watcher.close)
-        self.assertRaises(
-            NotImplementedError, watcher.is_active)
-        self.assertRaises(
-            NotImplementedError, watcher.__enter__)
-        self.assertRaises(
-            NotImplementedError, watcher.__exit__, f, f, f)
-
-
 class TestFunctional(unittest.TestCase):
 
     def setUp(self):
