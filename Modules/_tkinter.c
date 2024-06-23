@@ -497,24 +497,28 @@ unicodeFromTclString(const char *s)
 }
 
 static PyObject *
-unicodeFromTclObj(Tcl_Obj *value)
+unicodeFromTclObj(TkappObject *tkapp, Tcl_Obj *value)
 {
     Tcl_Size len;
 #if USE_TCL_UNICODE
-    int byteorder = NATIVE_BYTEORDER;
-    const Tcl_UniChar *u = Tcl_GetUnicodeFromObj(value, &len);
-    if (sizeof(Tcl_UniChar) == 2)
-        return PyUnicode_DecodeUTF16((const char *)u, len * 2,
-                                     "surrogatepass", &byteorder);
-    else if (sizeof(Tcl_UniChar) == 4)
-        return PyUnicode_DecodeUTF32((const char *)u, len * 4,
-                                     "surrogatepass", &byteorder);
-    else
-        Py_UNREACHABLE();
-#else
+    if (value->typePtr != NULL && tkapp != NULL &&
+        (value->typePtr == tkapp->StringType ||
+         value->typePtr == tkapp->UTF32StringType))
+    {
+        int byteorder = NATIVE_BYTEORDER;
+        const Tcl_UniChar *u = Tcl_GetUnicodeFromObj(value, &len);
+        if (sizeof(Tcl_UniChar) == 2)
+            return PyUnicode_DecodeUTF16((const char *)u, len * 2,
+                                         "surrogatepass", &byteorder);
+        else if (sizeof(Tcl_UniChar) == 4)
+            return PyUnicode_DecodeUTF32((const char *)u, len * 4,
+                                         "surrogatepass", &byteorder);
+        else
+            Py_UNREACHABLE();
+    }
+#endif
     const char *s = Tcl_GetStringFromObj(value, &len);
     return unicodeFromTclStringAndSize(s, len);
-#endif
 }
 
 /*[clinic input]
@@ -796,7 +800,7 @@ static PyObject *
 PyTclObject_string(PyTclObject *self, void *ignored)
 {
     if (!self->string) {
-        self->string = unicodeFromTclObj(self->value);
+        self->string = unicodeFromTclObj(NULL, self->value);
         if (!self->string)
             return NULL;
     }
@@ -810,7 +814,7 @@ PyTclObject_str(PyTclObject *self)
         return Py_NewRef(self->string);
     }
     /* XXX Could cache result if it is non-ASCII. */
-    return unicodeFromTclObj(self->value);
+    return unicodeFromTclObj(NULL, self->value);
 }
 
 static PyObject *
@@ -1149,7 +1153,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
-        return unicodeFromTclObj(value);
+        return unicodeFromTclObj(tkapp, value);
     }
 
     if (value->typePtr == tkapp->BooleanType ||
@@ -1214,7 +1218,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     if (value->typePtr == tkapp->StringType ||
         value->typePtr == tkapp->UTF32StringType)
     {
-        return unicodeFromTclObj(value);
+        return unicodeFromTclObj(tkapp, value);
     }
 
     if (tkapp->BignumType == NULL &&
@@ -1314,7 +1318,7 @@ finally:
 static PyObject *
 Tkapp_UnicodeResult(TkappObject *self)
 {
-    return unicodeFromTclObj(Tcl_GetObjResult(self->interp));
+    return unicodeFromTclObj(self, Tcl_GetObjResult(self->interp));
 }
 
 
@@ -1333,7 +1337,7 @@ Tkapp_ObjectResult(TkappObject *self)
         res = FromObj(self, value);
         Tcl_DecrRefCount(value);
     } else {
-        res = unicodeFromTclObj(value);
+        res = unicodeFromTclObj(self, value);
     }
     return res;
 }
@@ -1863,7 +1867,7 @@ GetVar(TkappObject *self, PyObject *args, int flags)
             res = FromObj(self, tres);
         }
         else {
-            res = unicodeFromTclObj(tres);
+            res = unicodeFromTclObj(self, tres);
         }
     }
     LEAVE_OVERLAP_TCL
@@ -2308,7 +2312,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
         return PythonCmd_Error(interp);
 
     for (i = 0; i < (objc - 1); i++) {
-        PyObject *s = unicodeFromTclObj(objv[i + 1]);
+        PyObject *s = unicodeFromTclObj((TkappObject *)data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
             return PythonCmd_Error(interp);
