@@ -306,6 +306,16 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
 
+    def test_old__complex__(self):
+        old_complex_like = _testcapi.old_complex_like
+
+        x = old_complex_like()
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(complex(x), 1+2j)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, complex, x)
+
 
 if __name__ == "__main__":
     unittest.main()

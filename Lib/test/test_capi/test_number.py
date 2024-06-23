@@ -83,6 +83,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(check(0.5))
         self.assertTrue(check(FloatLike.with_val(4.25)))
         self.assertTrue(check(1+2j))
+        self.assertTrue(check(ComplexLike.with_val(1+2j)))
 
         self.assertFalse(check([]))
         self.assertFalse(check("abc"))

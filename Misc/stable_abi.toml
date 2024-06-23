@@ -238,6 +238,8 @@
     added = '3.2'
 [const.Py_nb_float]
     added = '3.2'
+[const.Py_nb_complex]
+    added = '3.14'
 [const.Py_nb_inplace_add]
     added = '3.2'
 [const.Py_nb_inplace_subtract]

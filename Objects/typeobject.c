@@ -10047,6 +10047,7 @@ SLOT1BIN(slot_nb_xor, nb_xor, __xor__, __rxor__)
 SLOT1BIN(slot_nb_or, nb_or, __or__, __ror__)
 
 SLOT0(slot_nb_int, __int__)
+SLOT0(slot_nb_complex, __complex__)
 SLOT0(slot_nb_float, __float__)
 SLOT1(slot_nb_inplace_add, __iadd__, PyObject *)
 SLOT1(slot_nb_inplace_subtract, __isub__, PyObject *)
@@ -10862,6 +10863,8 @@ static pytype_slotdef slotdefs[] = {
     RBINSLOT(__ror__, nb_or, slot_nb_or, "|"),
     UNSLOT(__int__, nb_int, slot_nb_int, wrap_unaryfunc,
            "int(self)"),
+    UNSLOT(__complex__, nb_complex, slot_nb_complex, wrap_unaryfunc,
+           "complex(self)"),
     UNSLOT(__float__, nb_float, slot_nb_float, wrap_unaryfunc,
            "float(self)"),
     IBSLOT(__iadd__, nb_inplace_add, slot_nb_inplace_add,

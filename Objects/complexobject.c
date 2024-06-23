@@ -488,34 +488,44 @@ PyComplex_ImagAsDouble(PyObject *op)
 static PyObject *
 try_complex_special_method(PyObject *op)
 {
-    PyObject *f;
+    PyNumberMethods *m = Py_TYPE(op)->tp_as_number;
+    PyObject *res = NULL;
 
-    f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
-    if (f) {
-        PyObject *res = _PyObject_CallNoArgs(f);
-        Py_DECREF(f);
-        if (!res || PyComplex_CheckExact(res)) {
-            return res;
+    if (m && m->nb_complex) {
+        res = m->nb_complex(op);
+    }
+    else {
+        PyObject *f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
+        if (f) {
+            res = _PyObject_CallNoArgs(f);
+            Py_DECREF(f);
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "Use nb_complex slot to implement __complex__", 1)) {
+                Py_XDECREF(res);
+                return NULL;
+            }
         }
-        if (!PyComplex_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                "__complex__ returned non-complex (type %.200s)",
-                Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            return NULL;
-        }
-        /* Issue #29894: warn if 'res' not of exact type complex. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__complex__ returned non-complex (type %.200s).  "
-                "The ability to return an instance of a strict subclass of complex "
-                "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(res)->tp_name)) {
-            Py_DECREF(res);
-            return NULL;
-        }
+    }
+    if (!res || PyComplex_CheckExact(res)) {
         return res;
     }
-    return NULL;
+    if (!PyComplex_Check(res)) {
+        PyErr_Format(PyExc_TypeError,
+            "__complex__ returned non-complex (type %.200s)",
+            Py_TYPE(res)->tp_name);
+        Py_DECREF(res);
+        return NULL;
+    }
+    /* Issue #29894: warn if 'res' not of exact type complex. */
+    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "__complex__ returned non-complex (type %.200s).  "
+            "The ability to return an instance of a strict subclass of complex "
+            "is deprecated, and may be removed in a future version of Python.",
+            Py_TYPE(res)->tp_name)) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
 }
 
 Py_complex
@@ -908,24 +918,16 @@ complex___format___impl(PyComplexObject *self, PyObject *format_spec)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
-/*[clinic input]
-complex.__complex__
-
-Convert this value to exact type complex.
-[clinic start generated code]*/
-
 static PyObject *
-complex___complex___impl(PyComplexObject *self)
-/*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
+complex_complex(PyObject *self)
 {
     if (PyComplex_CheckExact(self)) {
         return Py_NewRef(self);
     }
     else {
-        return PyComplex_FromCComplex(self->cval);
+        return PyComplex_FromCComplex(((PyComplexObject *)self)->cval);
     }
 }
-
 
 static PyObject *
 complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
@@ -1297,7 +1299,6 @@ complex_from_number_impl(PyTypeObject *type, PyObject *number)
 static PyMethodDef complex_methods[] = {
     COMPLEX_FROM_NUMBER_METHODDEF
     COMPLEX_CONJUGATE_METHODDEF
-    COMPLEX___COMPLEX___METHODDEF
     COMPLEX___GETNEWARGS___METHODDEF
     COMPLEX___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
@@ -1329,7 +1330,7 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_xor */
     0,                                          /* nb_or */
     0,                                          /* nb_int */
-    0,                                          /* nb_reserved */
+    complex_complex,                            /* nb_complex */
     0,                                          /* nb_float */
     0,                                          /* nb_inplace_add */
     0,                                          /* nb_inplace_subtract */

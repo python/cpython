@@ -2118,7 +2118,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_xor */
     0,                          /* nb_or */
     0,                          /* nb_int */
-    0,                          /* nb_reserved */
+    0,                          /* nb_complex */
     0,                          /* nb_float */
     0,                          /* nb_inplace_add */
     0,                          /* nb_inplace_subtract */
