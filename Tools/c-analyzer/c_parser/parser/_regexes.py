@@ -72,6 +72,7 @@ _KEYWORD = textwrap.dedent(r'''
             long |
             float |
             double |
+            _Complex |
             void |
 
             struct |
@@ -120,6 +121,11 @@ SIMPLE_TYPE = textwrap.dedent(rf'''
             void
             |
             (?: signed | unsigned )  # implies int
+            |
+            (?:
+                (?: (?: float | double ) \s+ )?
+                _Complex
+            )
             |
             (?:
                 (?: (?: signed | unsigned ) \s+ )?
