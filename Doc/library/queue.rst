@@ -132,11 +132,18 @@ provide the public methods described below.
    will not block.  Similarly, if full() returns ``False`` it doesn't
    guarantee that a subsequent call to put() will not block.
 
-.. method:: Queue.__iter__()
+.. method:: Queue.iter(block=True, timeout=None)
 
-   Return an :term:`iterator` which iterates over the queue of items until
-   :meth:`shutdown` is called and continues iteration until the queue is
-   empty.
+   Return an :term:`iterator` which iterates over the queue of items.  If optional
+   args *block* is true and *timeout* is ``None`` (the default), block if necessary
+   until the next item is available.  If *timeout* is a positive number, it blocks
+   at most *timeout* seconds and stops iteration if no item was available within that
+   time, but if the first item is not available the :exc:`Empty` exception is raised.
+   Otherwise (*block* is false), iterate over all item which are immediately
+   available, but raise the :exc:`Empty` exception if none are (*timeout* is ignored
+   in that case).
+
+   :meth:`task_done` is called automatically.
 
    Example::
 
@@ -145,7 +152,7 @@ provide the public methods described below.
       import time
 
       def worker(name, q):
-          for item in q:
+          for item in q.iter():
               time.sleep(.01)
               print(f'{name} finished {item}')
 
@@ -162,6 +169,11 @@ provide the public methods described below.
 
    .. versionadded:: 3.14
 
+.. method:: Queue.iter_nowait()
+
+   Equivalent to ``iter(False)``.
+
+   .. versionadded:: 3.14
 
 .. method:: Queue.put(item, block=True, timeout=None)
 
@@ -245,7 +257,6 @@ Example of how to wait for enqueued tasks to be completed::
         for item in q:
             print(f'Working on {item}')
             print(f'Finished {item}')
-            q.task_done()
 
     # Turn-on the worker thread.
     threading.Thread(target=worker, daemon=True).start()

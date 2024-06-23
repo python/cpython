@@ -275,12 +275,40 @@ class Queue:
     def _get(self):
         return self.queue.popleft()
 
-    def __iter__(self):
+    def iter(self, block=True, timeout=None):
+        '''Return an iterator which iterates over the queue of items.
+
+        If optional args 'block' is true and 'timeout' is None (the default),
+        block if necessary until the next item is available. If 'timeout' is a
+        positive number, it blocks at most 'timeout' seconds and stops
+        iteration if no item was available within that time, but if the first
+        item is not available the Empty exception is raised. Otherwise ('block'
+        is false), iterate over all item which are immediately available, but
+        raise the Empty exception if none are ('timeout' is ignored in that
+        case).
+
+        task_done() is called automatically.
+        '''
         try:
-            while True:
-                yield self.get()
+            yield self.get(block=block, timeout=timeout)
         except ShutDown:
             return
+
+        try:
+            while True:
+                self.task_done()
+                yield self.get(block=block, timeout=timeout)
+        except (Empty, ShutDown):
+            return
+
+    def iter_nowait(self):
+        '''Return an iterator which iterates over the queue of items without
+        blocking.
+
+        Only iterate over the items which are immediately available, but raise
+        the Empty exception if none are.
+        '''
+        return self.iter(block=False)
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
