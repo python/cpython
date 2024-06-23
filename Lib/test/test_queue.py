@@ -169,8 +169,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
             tp.submit(worker)
 
         self.assertEqual(self.cum, sum(range(100)))
-        for _ in q.iter():
-            pass
 
     def test_iter_nowait(self):
         q = self.type2test()
@@ -189,9 +187,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
             tp.submit(worker)
 
         self.assertEqual(self.cum, sum(range(100)))
-        with self.assertRaises(self.queue.Empty):
-            for _ in q.iter_nowait():
-                pass
 
     def queue_join_test(self, q):
         self.cum = 0
@@ -257,6 +252,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put(1, timeout=-1)
         with self.assertRaises(ValueError):
             q.get(1, timeout=-1)
+        with self.assertRaises(ValueError):
+            list(q.iter(1, timeout=-1))
 
     def test_nowait(self):
         q = self.type2test(QUEUE_SIZE)
@@ -269,6 +266,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.get_nowait()
         with self.assertRaises(self.queue.Empty):
             q.get_nowait()
+        with self.assertRaises(self.queue.Empty):
+            list(q.iter_nowait())
 
     def test_shrinking_queue(self):
         # issue 10110
@@ -290,6 +289,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put("data")
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        list(q.iter())
 
     def test_shutdown_nonempty(self):
         q = self.type2test()
@@ -298,6 +298,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.get()
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        with self.assertRaises(self.queue.ShutDown):
+            list(q.iter())
 
     def test_shutdown_immediate(self):
         q = self.type2test()
@@ -305,6 +307,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.shutdown(immediate=True)
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        with self.assertRaises(self.queue.ShutDown):
+            list(q.iter())
 
     def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from alive via shutdown to immediate
