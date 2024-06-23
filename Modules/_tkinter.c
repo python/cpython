@@ -1018,7 +1018,9 @@ AsObj(PyObject *value)
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
         }
-        if (PyUnicode_IS_ASCII(value)) {
+        if (PyUnicode_IS_ASCII(value) &&
+            strlen(PyUnicode_DATA(value)) == (size_t)PyUnicode_GET_LENGTH(value))
+        {
             return Tcl_NewStringObj((const char *)PyUnicode_DATA(value),
                                     (int)size);
         }
@@ -1040,6 +1042,21 @@ AsObj(PyObject *value)
             return NULL;
         }
         size = PyBytes_GET_SIZE(encoded);
+#if !USE_TCL_UNICODE
+        if (strlen(PyBytes_AS_STRING(encoded)) != (size_t)size) {
+            /* Tcl needs to represent a null character in the UTF-8 encoding
+             * as \xc0\x80.  Otherwise the string can be truncated in some
+             * internal operations. */
+            Py_SETREF(encoded,
+                      PyObject_CallMethod(encoded, "replace", "y#y#",
+                                          "\0", (Py_ssize_t)1,
+                                          "\xc0\x80", (Py_ssize_t)2));
+            if (!encoded) {
+                return NULL;
+            }
+            size = PyBytes_GET_SIZE(encoded);
+        }
+#endif
         if (size > INT_MAX) {
             Py_DECREF(encoded);
             PyErr_SetString(PyExc_OverflowError, "string is too long");
