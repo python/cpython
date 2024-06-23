@@ -110,8 +110,8 @@ pathlib
 queue
 -----
 
-Made :class:`queue.Queue` an :term:`iterable`.
-(Contributed by Wannes Boeykens in :gh:`120503`.)
+Add :meth:`queue.Queue.iter()`.
+(Contributed by Wannes Boeykens in :gh:`???`.)
 
 symtable
 --------
