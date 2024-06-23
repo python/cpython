@@ -467,14 +467,14 @@ def test_pdb_empty_line():
     -> pass
     (Pdb) p x
     1
-    (Pdb) 
+    (Pdb)
     1
     (Pdb) n ;; p 0 ;; p x
     0
     1
     > <doctest test.test_pdb.test_pdb_empty_line[0]>(5)test_function()
     -> y = 2
-    (Pdb) 
+    (Pdb)
     1
     (Pdb) continue
     """
