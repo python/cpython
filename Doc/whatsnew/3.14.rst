@@ -173,6 +173,26 @@ ast
 
   (Contributed by Alex Waygood in :gh:`119562`.)
 
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120893`.)
+
+
 collections.abc
 ---------------
 
