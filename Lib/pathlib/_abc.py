@@ -815,6 +815,36 @@ class PathBase(PurePathBase):
                 else:
                     raise
 
+    def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+                 ignore=None, on_error=None):
+        """
+        Recursively copy this directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if on_error is None:
+            def on_error(err):
+                raise err
+        stack = [(self, target)]
+        while stack:
+            source_dir, target_dir = stack.pop()
+            try:
+                sources = source_dir.iterdir()
+                target_dir.mkdir(exist_ok=dirs_exist_ok)
+                for source in sources:
+                    if ignore and ignore(source):
+                        continue
+                    try:
+                        if source.is_dir(follow_symlinks=follow_symlinks):
+                            stack.append((source, target_dir.joinpath(source.name)))
+                        else:
+                            source.copy(target_dir.joinpath(source.name),
+                                        follow_symlinks=follow_symlinks)
+                    except OSError as err:
+                        on_error(err)
+            except OSError as err:
+                on_error(err)
+
     def rename(self, target):
         """
         Rename this path to the target path.
