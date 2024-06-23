@@ -190,7 +190,7 @@ asyncio
   * :func:`!asyncio.get_child_watcher`
   * :func:`!asyncio.set_child_watcher`
 
-  (Contributed by Kumar Aditya in :gh:`120893`.)
+  (Contributed by Kumar Aditya in :gh:`120804`.)
 
 
 collections.abc
