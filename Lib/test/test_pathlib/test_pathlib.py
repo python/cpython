@@ -513,17 +513,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         os.chmod(self.parser.join(self.base, 'dirE'), 0)
 
     def tearDown(self):
-        try:
-            os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
-        except FileNotFoundError:
-            pass
+        os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
         os_helper.rmtree(self.base)
 
     def tempdir(self):
         d = os_helper._longpath(tempfile.mkdtemp(suffix='-dirD',
                                                  dir=os.getcwd()))
         self.addCleanup(os_helper.rmtree, d)
-        return self.cls(d)
+        return d
 
     def test_matches_pathbase_api(self):
         our_names = {name for name in dir(self.cls) if name[0] != '_'}

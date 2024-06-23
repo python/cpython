@@ -1836,24 +1836,23 @@ class DummyPathTest(DummyPurePathTest):
         self.assertTrue(target.joinpath('fileC').read_text(),
                         "this is file C\n")
 
-    def test_copytree_complex(self):
+    def test_copytree_complex(self, follow_symlinks=True):
         def ordered_walk(path):
-            for dirpath, dirnames, filenames in path.walk(follow_symlinks=True):
+            for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
                 dirnames.sort()
                 filenames.sort()
                 yield dirpath, dirnames, filenames
-        source = self.cls(self.base)
-        target = self.tempdir() / 'target'
+        base = self.cls(self.base)
+        source = base / 'dirC'
 
-        # Special cases tested elsehwere
-        source.joinpath('dirE').rmdir()
         if self.can_symlink:
-            source.joinpath('brokenLink').unlink()
-            source.joinpath('brokenLinkLoop').unlink()
-            source.joinpath('dirB', 'linkD').unlink()
+            # Add some symlinks
+            source.joinpath('linkC').symlink_to('fileC')
+            source.joinpath('linkD').symlink_to('dirD')
 
         # Perform the copy
-        source.copytree(target)
+        target = base / 'copyC'
+        source.copytree(target, follow_symlinks=follow_symlinks)
 
         # Compare the source and target trees
         source_walk = ordered_walk(source)
@@ -1863,30 +1862,24 @@ class DummyPathTest(DummyPurePathTest):
                              target_item[0].relative_to(target))  # dirpath
             self.assertEqual(source_item[1], target_item[1])  # dirnames
             self.assertEqual(source_item[2], target_item[2])  # filenames
+            # Compare files and symlinks
+            for filename in source_item[2]:
+                source_file = source_item[0].joinpath(filename)
+                target_file = target_item[0].joinpath(filename)
+                if follow_symlinks or not source_file.is_symlink():
+                    # Regular file.
+                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
+                elif source_file.is_dir():
+                    # Symlink to directory.
+                    self.assertTrue(target_file.is_dir())
+                    self.assertEqual(source_file.readlink(), target_file.readlink())
+                else:
+                    # Symlink to file.
+                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
+                    self.assertEqual(source_file.readlink(), target_file.readlink())
 
     def test_copytree_complex_follow_symlinks_false(self):
-        def ordered_walk(path):
-            for dirpath, dirnames, filenames in path.walk(follow_symlinks=False):
-                dirnames.sort()
-                filenames.sort()
-                yield dirpath, dirnames, filenames
-        source = self.cls(self.base)
-        target = self.tempdir() / 'target'
-
-        # Special cases tested elsewhere
-        source.joinpath('dirE').rmdir()
-
-        # Perform the copy
-        source.copytree(target, follow_symlinks=False)
-
-        # Compare the source and target trees
-        source_walk = ordered_walk(source)
-        target_walk = ordered_walk(target)
-        for source_item, target_item in zip(source_walk, target_walk, strict=True):
-            self.assertEqual(source_item[0].relative_to(source),
-                             target_item[0].relative_to(target))  # dirpath
-            self.assertEqual(source_item[1], target_item[1])  # dirnames
-            self.assertEqual(source_item[2], target_item[2])  # filenames
+        self.test_copytree_complex(follow_symlinks=False)
 
     def test_copytree_to_existing_directory(self):
         base = self.cls(self.base)
