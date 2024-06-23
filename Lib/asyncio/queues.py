@@ -234,7 +234,7 @@ class Queue(mixins._LoopBoundMixin):
     def iter(self):
         # TODO(Nice Zombies)
         return _AsyncQueueIterator(self)
-    
+
     def iter_nowait(self):
         # TODO(Nice Zombies)
         try:
