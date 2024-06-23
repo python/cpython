@@ -192,7 +192,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     pto->fn = Py_NewRef(func);
 
     pto->placeholder = state->placeholder;
-    if (Py_Is(PyTuple_GET_ITEM(args, new_nargs), pto->placeholder)) {
+    if (new_nargs && Py_Is(PyTuple_GET_ITEM(args, new_nargs), pto->placeholder)) {
         PyErr_SetString(PyExc_TypeError,
                         "trailing Placeholders are not allowed");
         return NULL;
@@ -204,15 +204,11 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    Py_ssize_t phcount = 0;
-    PyObject *item;
     /* Count placeholders */
-    if (new_nargs > 1) {
-        for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
-            item = PyTuple_GET_ITEM(new_args, i);
-            if (Py_Is(item, pto->placeholder)) {
-                phcount++;
-            }
+    Py_ssize_t phcount = 0;
+    for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
+        if (Py_Is(PyTuple_GET_ITEM(new_args, i), pto->placeholder)) {
+            phcount++;
         }
     }
     /* merge args with args of `func` which is `partial` */
@@ -222,6 +218,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (new_nargs > pto_phcount) {
             tot_nargs += new_nargs - pto_phcount;
         }
+        PyObject *item;
         PyObject *tot_args = PyTuple_New(tot_nargs);
         for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
             if (i < npargs) {
@@ -635,8 +632,8 @@ partial_repr(partialobject *pto)
 static PyObject *
 partial_reduce(partialobject *pto, PyObject *unused)
 {
-    return Py_BuildValue("O(O)(OOOnO)", Py_TYPE(pto), pto->fn, pto->fn,
-                         pto->args, pto->kw, pto->phcount,
+    return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
+                         pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
 }
 
@@ -644,34 +641,38 @@ static PyObject *
 partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
-    Py_ssize_t phcount;
+
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
     }
     Py_ssize_t state_len = PyTuple_GET_SIZE(state);
-    int parse_rtrn;
-    if (state_len == 4) {
-        /* pre-placeholder support */
-        parse_rtrn = PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict);
-        phcount = 0;
-    }
-    else if (state_len == 5) {
-        parse_rtrn = PyArg_ParseTuple(state, "OOOnO", &fn, &fnargs,
-                                      &kw, &phcount, &dict);
-    }
-    else {
+    if (state_len != 4) {
         PyErr_Format(PyExc_TypeError,
-                     "expected 4 or 5 items in state, got %zd", state_len);
+                     "expected 4 items in state, got %zd", state_len);
         return NULL;
     }
-    if (!parse_rtrn ||
+    if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
         (kw != Py_None && !PyDict_Check(kw)))
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
+    }
+
+    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
+    if (nargs && Py_Is(PyTuple_GET_ITEM(fnargs, nargs - 1), pto->placeholder)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "trailing Placeholders are not allowed");
+        return NULL;
+    }
+    /* Count placeholders */
+    Py_ssize_t phcount = 0;
+    for (Py_ssize_t i = 0; i < nargs - 1; i++) {
+        if (Py_Is(PyTuple_GET_ITEM(fnargs, i), pto->placeholder)) {
+            phcount++;
+        }
     }
 
     if(!PyTuple_CheckExact(fnargs))

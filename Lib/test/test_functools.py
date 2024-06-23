@@ -352,13 +352,9 @@ class TestPartial:
         self.assertEqual(f(), ((), {}))
 
         # Set State with placeholders
-        f = self.partial(signature)
-        f.__setstate__((capture, (1,), dict(a=10), 0, dict(attr=[])))
-        self.assertEqual(signature(f), (capture, (1,), dict(a=10), dict(attr=[])))
-
         PH = self.module.Placeholder
         f = self.partial(signature)
-        f.__setstate__((capture, (PH, 1), dict(a=10), 1, dict(attr=[])))
+        f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
         self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
         with self.assertRaises(TypeError):
             self.assertEqual(f(), (PH, 1), dict(a=10))

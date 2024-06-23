@@ -392,31 +392,17 @@ class partial:
     __repr__ = recursive_repr()(_partial_repr)
 
     def __reduce__(self):
-        state = (
-            self.func,
-            self.args,
-            self.keywords or None,
-            self.placeholder_count,
-            self.__dict__ or None
-        )
-        return type(self), (self.func,), state
+        return type(self), (self.func,), (self.func, self.args,
+               self.keywords or None, self.__dict__ or None)
 
     def __setstate__(self, state):
         if not isinstance(state, tuple):
             raise TypeError("argument to __setstate__ must be a tuple")
-        state_len = len(state)
-        if state_len == 4:
-            # Support pre-placeholder de-serialization
-            func, args, kwds, namespace = state
-            phcount = 0
-        elif state_len == 5:
-            func, args, kwds, phcount, namespace = state
-        else:
-            raise TypeError(f"expected 4 or 5 items in state, got {state_len}")
-
+        if len(state) != 4:
+            raise TypeError(f"expected 4 items in state, got {len(state)}")
+        func, args, kwds, namespace = state
         if (not callable(func) or not isinstance(args, tuple) or
                 (kwds is not None and not isinstance(kwds, dict)) or
-                not isinstance(phcount, int) or
                 (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
@@ -432,7 +418,7 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
-        self.placeholder_count = phcount
+        self.placeholder_count = args.count(Placeholder)
 
 try:
     from _functools import partial, Placeholder
