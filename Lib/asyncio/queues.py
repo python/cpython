@@ -90,7 +90,6 @@ class Queue(mixins._LoopBoundMixin):
                 waiter.set_result(None)
                 break
 
-
     def __repr__(self):
         return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
 
