@@ -1871,8 +1871,8 @@ without the dedicated syntax, as documented below.
    of ``*args``::
 
       def call_soon[*Ts](
-               callback: Callable[[*Ts], None],
-               *args: *Ts
+          callback: Callable[[*Ts], None],
+          *args: *Ts
       ) -> None:
           ...
           callback(*args)
