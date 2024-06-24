@@ -1499,14 +1499,14 @@ Permissions and ownership
 .. method:: Path.owner(*, follow_symlinks=True)
 
    Return the name of the user owning the file. :exc:`KeyError` is raised
-   if the file's uid isn't found in the system database.
+   if the file's user identifier (UID) isn't found in the system database.
 
    This method normally follows symlinks; to get the owner of the symlink, add
    the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
+      available. In earlier versions, :exc:`NotImplementedError` was raised.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
@@ -1515,14 +1515,14 @@ Permissions and ownership
 .. method:: Path.group(*, follow_symlinks=True)
 
    Return the name of the group owning the file. :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
+   if the file's group identifier (GID) isn't found in the system database.
 
    This method normally follows symlinks; to get the group of the symlink, add
    the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
+      available. In earlier versions, :exc:`NotImplementedError` was raised.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
