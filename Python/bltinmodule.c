@@ -1095,7 +1095,9 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         goto error;
     }
-    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
+
+    PyObject *custom_builtins = NULL;
+    int r = PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &custom_builtins);
     if (r == 0) {
         r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
     }
@@ -1166,20 +1168,64 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                                        &source_copy);
         if (str == NULL)
             goto error;
+
+        bool injected_module_name = 0;
+        r = PyDict_Contains(globals, &_Py_ID(__name__));
+        if (r == 0) {
+            // Set the execution's module to the name of the builtins module
+            // to be backwards compatible. If a custom __builtins__ is given,
+            // we first look for its __name__ entry, if any.
+            PyObject *module_name = NULL;
+            if (custom_builtins != NULL) {
+                if (PyDict_GetItemRef(custom_builtins, &_Py_ID(__name__), &module_name) < 0) {
+                    goto error;
+                }
+            }
+            if (module_name == NULL) {
+                // If there is no custom __builtins__['__name__'], we use the native module name.
+                r = PyObject_GetOptionalAttr(module, &_Py_ID(__name__), &module_name);
+                if (r < 0) {
+                    goto error;
+                }
+                assert(module_name != NULL);
+            }
+            if (module_name) {
+                r = PyDict_SetItem(globals, &_Py_ID(__name__), module_name);
+                if (r >= 0) {
+                    injected_module_name = 1;
+                }
+                Py_DECREF(module_name);
+            }
+            if (r < 0) {
+                goto error;
+            }
+        }
+
         if (PyEval_MergeCompilerFlags(&cf))
             v = PyRun_StringFlags(str, Py_file_input, globals,
                                   locals, &cf);
         else
             v = PyRun_String(str, Py_file_input, globals, locals);
         Py_XDECREF(source_copy);
+        if (injected_module_name) {
+            // remove the injected name from the globals
+            r = PyDict_DelItem(globals, &_Py_ID(__name__));
+            if (r < 0) {
+                Py_XDECREF(v);
+                goto error;
+            }
+        }
+
     }
     if (v == NULL)
         goto error;
+    Py_XDECREF(custom_builtins);
     Py_DECREF(locals);
     Py_DECREF(v);
     Py_RETURN_NONE;
 
   error:
+    Py_XDECREF(custom_builtins);
     Py_XDECREF(locals);
     return NULL;
 }
