@@ -4149,9 +4149,7 @@ dummy_func(
         }
 
         op(_JUMP_TO_TOP, (--)) {
-#ifndef _Py_JIT
-            next_uop = &current_executor->trace[1];
-#endif
+            JUMP_TO_JUMP_TARGET();
         }
 
         tier2 op(_SET_IP, (instr_ptr/4 --)) {

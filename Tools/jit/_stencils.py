@@ -42,8 +42,6 @@ class HoleValue(enum.Enum):
     ERROR_TARGET = enum.auto()
     # The index of the exit to be jumped through (exposed as _JIT_EXIT_INDEX):
     EXIT_INDEX = enum.auto()
-    # The base address of the machine code for the first uop (exposed as _JIT_TOP):
-    TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
 
@@ -110,7 +108,6 @@ _HOLE_EXPRS = {
     HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
     HoleValue.EXIT_INDEX: "instruction->exit_index",
-    HoleValue.TOP: "instruction_starts[1]",
     HoleValue.ZERO: "",
 }
 
