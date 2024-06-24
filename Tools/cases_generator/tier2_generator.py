@@ -4,16 +4,12 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -28,7 +24,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -72,21 +68,21 @@ def tier2_replace_error(
     label = next(tkn_iter).text
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
-    try:
-        offset = -int(c_offset)
-        close = ";\n"
-    except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label + "_tier_two")
-    out.emit(close)
+    out.emit(") JUMP_TO_ERROR();\n")
 
+
+def tier2_replace_error_no_pop(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+) -> None:
+    next(tkn_iter)  # LPAREN
+    next(tkn_iter)  # RPAREN
+    next(tkn_iter)  # Semi colon
+    out.emit_at("JUMP_TO_ERROR();", tkn)
 
 def tier2_replace_deopt(
     out: CWriter,
@@ -100,7 +96,10 @@ def tier2_replace_deopt(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") goto deoptimize;\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n");
+    out.emit("}\n")
 
 
 def tier2_replace_exit_if(
@@ -115,7 +114,10 @@ def tier2_replace_exit_if(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") goto side_exit;\n")
+    out.emit(") {\n")
+    out.emit("UOP_STAT_INC(uopcode, miss);\n")
+    out.emit("JUMP_TO_JUMP_TARGET();\n")
+    out.emit("}\n")
 
 
 def tier2_replace_oparg(
@@ -141,6 +143,7 @@ def tier2_replace_oparg(
 
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
+TIER2_REPLACEMENT_FUNCTIONS["ERROR_NO_POP"] = tier2_replace_error_no_pop
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
 TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
 TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
@@ -201,8 +204,9 @@ def generate_tier2(
             continue
         if uop.is_super():
             continue
-        if not uop.is_viable():
-            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
+        why_not_viable = uop.why_not_viable()
+        if why_not_viable is not None:
+            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)

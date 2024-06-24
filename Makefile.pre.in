@@ -40,6 +40,7 @@ LINKCC=		@LINKCC@
 AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
+ABIFLAGS=	@ABIFLAGS@
 LDVERSION=	@LDVERSION@
 MODULE_LDFLAGS=@MODULE_LDFLAGS@
 GITVERSION=	@GITVERSION@
@@ -150,7 +151,6 @@ INCLUDEDIR=	@includedir@
 CONFINCLUDEDIR=	$(exec_prefix)/include
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
-ABIFLAGS=	@ABIFLAGS@
 # executable name for shebangs
 EXENAME=	$(BINDIR)/python$(LDVERSION)$(EXE)
 # Variable used by ensurepip
@@ -186,11 +186,17 @@ PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 PYTHONFRAMEWORKINSTALLNAMEPREFIX= @PYTHONFRAMEWORKINSTALLNAMEPREFIX@
 RESSRCDIR= @RESSRCDIR@
-# Deployment target selected during configure, to be checked
+# macOS deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 @EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
+# iOS Deployment target selected during configure. Unlike macOS, the iOS
+# deployment target is controlled using `-mios-version-min` arguments added to
+# CFLAGS and LDFLAGS by the configure script. This variable is not used during
+# the build, and is only listed here so it will be included in sysconfigdata.
+IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 # Option to install to strip binaries
 STRIPFLAG=-s
@@ -226,6 +232,9 @@ LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 
 # Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
 TZPATH=@TZPATH@
+
+# If to install mimalloc headers
+INSTALL_MIMALLOC=@INSTALL_MIMALLOC@
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
@@ -434,7 +443,9 @@ PYTHON_OBJS=	\
 		Python/import.o \
 		Python/importdl.o \
 		Python/initconfig.o \
+		Python/interpconfig.o \
 		Python/instrumentation.o \
+		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
 		Python/legacy_tracing.o \
@@ -477,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
+		Python/perf_jit_trampoline.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -619,7 +631,9 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
-		Modules/expat/xmltok_impl.h
+		Modules/expat/xmltok_impl.h \
+		Modules/expat/xmltok_impl.c \
+		Modules/expat/xmltok_ns.c
 
 ##########################################################################
 # hashlib's HACL* library
@@ -985,6 +999,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/critical_section.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dynamic_annotations.h \
@@ -1000,12 +1015,14 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
+		$(srcdir)/Include/lock.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
+		$(srcdir)/Include/monitoring.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1035,6 +1052,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytypedefs.h \
 		$(srcdir)/Include/rangeobject.h \
+		$(srcdir)/Include/refcount.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
@@ -1060,6 +1078,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/complexobject.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/critical_section.h \
 		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
@@ -1071,10 +1090,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/listobject.h \
+		$(srcdir)/Include/cpython/lock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
+		$(srcdir)/Include/cpython/monitoring.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1112,6 +1133,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
+		$(srcdir)/Include/internal/pycore_backoff.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_blocks_output_buffer.h \
 		$(srcdir)/Include/internal/pycore_brc.h \
@@ -1119,6 +1141,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_capsule.h \
+		$(srcdir)/Include/internal/pycore_cell.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_ceval_state.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1156,6 +1179,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_importdl.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_instruments.h \
+		$(srcdir)/Include/internal/pycore_instruction_sequence.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_jit.h \
@@ -1206,6 +1230,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
+		$(srcdir)/Include/internal/pycore_stackref.h \
 		$(srcdir)/Include/internal/pycore_time.h \
 		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
@@ -1667,13 +1692,17 @@ Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule
 
 Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
 
-Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_interpretersmodule.o: $(srcdir)/Modules/_interpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
 
-Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_interpqueuesmodule.o: $(srcdir)/Modules/_interpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
 
-Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
+Modules/_interpchannelsmodule.o: $(srcdir)/Modules/_interpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
 
 Python/crossinterp.o: $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
+
+Python/initconfig.o: $(srcdir)/Python/initconfig.c $(srcdir)/Python/config_common.h
+
+Python/interpconfig.o: $(srcdir)/Python/interpconfig.c $(srcdir)/Python/config_common.h
 
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
@@ -1782,7 +1811,7 @@ regen-sre:
 		$(srcdir)/Modules/_sre/sre_constants.h \
 		$(srcdir)/Modules/_sre/sre_targets.h
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -1814,6 +1843,7 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
+		$(srcdir)/Objects/stringlib/repr.h \
 		$(srcdir)/Objects/stringlib/split.h \
 		$(srcdir)/Objects/stringlib/ucs1lib.h \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \
@@ -1917,8 +1947,12 @@ regen-uop-metadata:
 	    $(srcdir)/Include/internal/pycore_uop_metadata.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
 
-
-Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
+Python/compile.o Python/assemble.o Python/flowgraph.o Python/instruction_sequence.o: \
+                $(srcdir)/Include/internal/pycore_compile.h \
+                $(srcdir)/Include/internal/pycore_flowgraph.h \
+                $(srcdir)/Include/internal/pycore_instruction_sequence.h \
+                $(srcdir)/Include/internal/pycore_opcode_metadata.h \
+                $(srcdir)/Include/internal/pycore_opcode_utils.h
 
 Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
@@ -2009,7 +2043,7 @@ testuniversal: all
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
 XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
 .PHONY: testios
 testios:
@@ -2033,11 +2067,23 @@ testios:
 	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
 	# Copy the framework from the install location to the testbed project.
 	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
+
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, extract and print the console output, then re-raise the failure
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
-		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
-		echo ; \
+	# If the suite fails, touch a file in the test folder as a marker
+	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
+	 	touch $(XCFOLDER)/failed; \
+	fi
+
+	# Regardless of success or failure, extract and print the test output
+	xcrun xcresulttool get --path $(XCRESULT) \
+		--id $$( \
+			xcrun xcresulttool get --path $(XCRESULT) --format json | \
+			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
+		) \
+		--format json | \
+		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
+
+	@if test -e $(XCFOLDER)/failed ; then \
 		exit 1; \
 	fi
 
@@ -2216,10 +2262,10 @@ bininstall: commoninstall altbininstall
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)-config; \
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(LDVERSION)-config python$(VERSION)-config); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION).pc python-$(LDVERSION).pc); \
-		rm -f $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc; \
-		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(VERSION)-embed.pc python-$(LDVERSION)-embed.pc); \
+		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION).pc; \
+		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION).pc python-$(VERSION).pc); \
+		rm -f $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc; \
+		(cd $(DESTDIR)$(LIBPC); $(LN) -s python-$(LDVERSION)-embed.pc python-$(VERSION)-embed.pc); \
 	fi
 	-rm -f $(DESTDIR)$(BINDIR)/python3-config
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python3-config)
@@ -2296,6 +2342,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zipfile zipfile/_path \
 		zoneinfo \
+		_pyrepl \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
@@ -2330,6 +2377,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
+		test/test_free_threading \
 		test/test_future_stmt \
 		test/test_gdb \
 		test/test_import \
@@ -2340,6 +2388,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		test/test_import/data/package3 \
+		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
@@ -2387,6 +2437,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/data03/namespace/portion1 \
 		test/test_importlib/resources/data03/namespace/portion2 \
 		test/test_importlib/resources/namespacedata01 \
+		test/test_importlib/resources/namespacedata01/subdirectory \
 		test/test_importlib/resources/zipdata01 \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
@@ -2400,6 +2451,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_pydoc \
+		test/test_pyrepl \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
@@ -2436,7 +2488,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/typinganndata \
 		test/wheeldata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20
+		test/xmltestdata/c14n-20 \
+		test/zipimport_data
 
 COMPILEALL_OPTS=-j0
 
@@ -2579,6 +2632,12 @@ inclinstall:
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
 	else	true; \
 	fi
+	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
+		if test ! -d $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; then \
+			echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
+		fi; \
+	fi
 	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
@@ -2594,6 +2653,16 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
+	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
+		echo $(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
+		$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
+		for i in $(srcdir)/Include/internal/mimalloc/mimalloc/*.h; \
+		do \
+			echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc/mimalloc; \
+			$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
+		done; \
+	fi
+	echo $(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
@@ -2634,8 +2703,8 @@ libainstall: all scripts
 	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
 	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
-	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(VERSION).pc
-	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(VERSION)-embed.pc
+	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc
+	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
@@ -2772,8 +2841,8 @@ frameworkinstallmobileheaders: frameworkinstallunversionedstructure inclinstall
 		echo "Removing old framework headers"; \
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
 	fi
-	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
-	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
@@ -3038,6 +3107,7 @@ MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_Blake2b.h Modules/_hacl/Hacl_Hash_Blake2s.h Modules/_hacl/internal/Hacl_Hash_Blake2b.h Modules/_hacl/internal/Hacl_Hash_Blake2s.h Modules/_hacl/Hacl_Hash_Blake2b.c Modules/_hacl/Hacl_Hash_Blake2s.c
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@

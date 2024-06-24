@@ -38,6 +38,10 @@ typedef struct _PyThreadStateImpl {
     struct _brc_thread_state brc;
 #endif
 
+#if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
+    Py_ssize_t reftotal;  // this thread's total refcount operations
+#endif
+
 } _PyThreadStateImpl;
 
 

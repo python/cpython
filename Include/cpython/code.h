@@ -24,6 +24,16 @@ typedef struct _Py_GlobalMonitors {
     uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_GlobalMonitors;
 
+typedef struct {
+    union {
+        struct {
+            uint16_t backoff : 4;
+            uint16_t value : 12;
+        };
+        uint16_t as_counter;  // For printf("%#x", ...)
+    };
+} _Py_BackoffCounter;
+
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
  * opcode allows for larger values but the current limit is 3 uses
@@ -39,6 +49,7 @@ typedef union {
         uint8_t code;
         uint8_t arg;
     } op;
+    _Py_BackoffCounter counter;  // First cache entry of specializable op
 } _Py_CODEUNIT;
 
 
@@ -215,7 +226,7 @@ struct PyCodeObject _PyCode_DEF(1);
 */
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 
-#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
+#define CO_MAXBLOCKS 21 /* Max static block nesting within a function */
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 

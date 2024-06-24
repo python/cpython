@@ -1,7 +1,9 @@
 """Core data structures for compiled code templates."""
+
 import dataclasses
 import enum
 import sys
+import typing
 
 import _schema
 
@@ -27,14 +29,90 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand (exposed as _JIT_OPERAND):
+    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
     OPERAND = enum.auto()
+    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
+    OPERAND_HI = enum.auto()
+    OPERAND_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
+    # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
+    JUMP_TARGET = enum.auto()
+    # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
+    ERROR_TARGET = enum.auto()
+    # The index of the exit to be jumped through (exposed as _JIT_EXIT_INDEX):
+    EXIT_INDEX = enum.auto()
     # The base address of the machine code for the first uop (exposed as _JIT_TOP):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
+
+
+# Map relocation types to our JIT's patch functions. "r" suffixes indicate that
+# the patch function is relative. "x" suffixes indicate that they are "relaxing"
+# (see comments in jit.c for more info):
+_PATCH_FUNCS = {
+    # aarch64-apple-darwin:
+    "ARM64_RELOC_BRANCH26": "patch_aarch64_26r",
+    "ARM64_RELOC_GOT_LOAD_PAGE21": "patch_aarch64_21rx",
+    "ARM64_RELOC_GOT_LOAD_PAGEOFF12": "patch_aarch64_12x",
+    "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
+    "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
+    "ARM64_RELOC_UNSIGNED": "patch_64",
+    # x86_64-pc-windows-msvc:
+    "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
+    # aarch64-pc-windows-msvc:
+    "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
+    "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12L": "patch_aarch64_12x",
+    # i686-pc-windows-msvc:
+    "IMAGE_REL_I386_DIR32": "patch_32",
+    "IMAGE_REL_I386_REL32": "patch_x86_64_32rx",
+    # aarch64-unknown-linux-gnu:
+    "R_AARCH64_ABS64": "patch_64",
+    "R_AARCH64_ADD_ABS_LO12_NC": "patch_aarch64_12",
+    "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
+    "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21r",
+    "R_AARCH64_CALL26": "patch_aarch64_26r",
+    "R_AARCH64_JUMP26": "patch_aarch64_26r",
+    "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12x",
+    "R_AARCH64_MOVW_UABS_G0_NC": "patch_aarch64_16a",
+    "R_AARCH64_MOVW_UABS_G1_NC": "patch_aarch64_16b",
+    "R_AARCH64_MOVW_UABS_G2_NC": "patch_aarch64_16c",
+    "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
+    # x86_64-unknown-linux-gnu:
+    "R_X86_64_64": "patch_64",
+    "R_X86_64_GOTPCREL": "patch_32r",
+    "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
+    "R_X86_64_PC32": "patch_32r",
+    "R_X86_64_REX_GOTPCRELX": "patch_x86_64_32rx",
+    # x86_64-apple-darwin:
+    "X86_64_RELOC_BRANCH": "patch_32r",
+    "X86_64_RELOC_GOT": "patch_x86_64_32rx",
+    "X86_64_RELOC_GOT_LOAD": "patch_x86_64_32rx",
+    "X86_64_RELOC_SIGNED": "patch_32r",
+    "X86_64_RELOC_UNSIGNED": "patch_64",
+}
+# Translate HoleValues to C expressions:
+_HOLE_EXPRS = {
+    HoleValue.CODE: "(uintptr_t)code",
+    HoleValue.CONTINUE: "(uintptr_t)code + sizeof(code_body)",
+    HoleValue.DATA: "(uintptr_t)data",
+    HoleValue.EXECUTOR: "(uintptr_t)executor",
+    # These should all have been turned into DATA values by process_relocations:
+    # HoleValue.GOT: "",
+    HoleValue.OPARG: "instruction->oparg",
+    HoleValue.OPERAND: "instruction->operand",
+    HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
+    HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.TARGET: "instruction->target",
+    HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
+    HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
+    HoleValue.EXIT_INDEX: "instruction->exit_index",
+    HoleValue.TOP: "instruction_starts[1]",
+    HoleValue.ZERO: "",
+}
 
 
 @dataclasses.dataclass
@@ -53,19 +131,43 @@ class Hole:
     symbol: str | None
     # ...plus this addend:
     addend: int
+    func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
 
-    def as_c(self) -> str:
-        """Dump this hole as an initialization of a C Hole struct."""
-        parts = [
-            f"{self.offset:#x}",
-            f"HoleKind_{self.kind}",
-            f"HoleValue_{self.value.name}",
-            f"&{self.symbol}" if self.symbol else "NULL",
-            f"{_signed(self.addend):#x}",
-        ]
-        return f"{{{', '.join(parts)}}}"
+    def __post_init__(self) -> None:
+        self.func = _PATCH_FUNCS[self.kind]
+
+    def fold(self, other: typing.Self) -> typing.Self | None:
+        """Combine two holes into a single hole, if possible."""
+        if (
+            self.offset + 4 == other.offset
+            and self.value == other.value
+            and self.symbol == other.symbol
+            and self.addend == other.addend
+            and self.func == "patch_aarch64_21rx"
+            and other.func == "patch_aarch64_12x"
+        ):
+            # These can *only* be properly relaxed when they appear together and
+            # patch the same value:
+            folded = self.replace()
+            folded.func = "patch_aarch64_33rx"
+            return folded
+        return None
+
+    def as_c(self, where: str) -> str:
+        """Dump this hole as a call to a patch_* function."""
+        location = f"{where} + {self.offset:#x}"
+        value = _HOLE_EXPRS[self.value]
+        if self.symbol:
+            if value:
+                value += " + "
+            value += f"(uintptr_t)&{self.symbol}"
+        if _signed(self.addend):
+            if value:
+                value += " + "
+            value += f"{_signed(self.addend):#x}"
+        return f"{self.func}({location}, {value});"
 
 
 @dataclasses.dataclass
@@ -79,6 +181,7 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
+    trampolines: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -87,14 +190,25 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def emit_aarch64_trampoline(self, hole: Hole) -> None:
+    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> None:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
-        base = len(self.body)
+        assert hole.symbol is not None
+        reuse_trampoline = hole.symbol in self.trampolines
+        if reuse_trampoline:
+            # Re-use the base address of the previously created trampoline
+            base = self.trampolines[hole.symbol]
+        else:
+            self.pad(alignment)
+            base = len(self.body)
         where = slice(hole.offset, hole.offset + 4)
         instruction = int.from_bytes(self.body[where], sys.byteorder)
         instruction &= 0xFC000000
         instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
         self.body[where] = instruction.to_bytes(4, sys.byteorder)
+
+        if reuse_trampoline:
+            return
+
         self.disassembly += [
             f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
             f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
@@ -123,6 +237,7 @@ class Stencil:
             ]
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
+        self.trampolines[hole.symbol] = base
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
@@ -194,11 +309,11 @@ class StencilGroup:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
-                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
+                hole.kind
+                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
-                self.code.pad(alignment)
-                self.code.emit_aarch64_trampoline(hole)
+                self.code.emit_aarch64_trampoline(hole, alignment)
                 self.code.holes.remove(hole)
         self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
@@ -253,6 +368,10 @@ class StencilGroup:
                 f"{len(self.data.body):x}: {value_part}{addend_part}"
             )
             self.data.body.extend([0] * 8)
+
+    def as_c(self, opname: str) -> str:
+        """Dump this hole as a StencilGroup initializer."""
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:

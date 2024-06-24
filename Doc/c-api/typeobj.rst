@@ -1034,7 +1034,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
       subtypes; only the type referenced by the instance's ob_type gets INCREF'ed or
-      DECREF'ed).
+      DECREF'ed). Heap types should also :ref:`support garbage collection <supporting-cycle-detection>`
+      as they can form a reference cycle with their own module object.
 
       **Inheritance:**
 
@@ -1327,8 +1328,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
-         This flag is present in header files, but is an internal feature and should
-         not be used. It will be removed in a future version of CPython
+         This flag is present in header files, but is not be used.
+         It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1380,7 +1381,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        Py_VISIT(Py_TYPE(self));
 
    It is only needed since Python 3.9. To support Python 3.8 and older, this
-   line must be conditionnal::
+   line must be conditional::
 
        #if PY_VERSION_HEX >= 0x03090000
            Py_VISIT(Py_TYPE(self));

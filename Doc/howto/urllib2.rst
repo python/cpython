@@ -594,5 +594,5 @@ This document was reviewed and revised by John Lee.
        scripts with a localhost server, I have to prevent urllib from using
        the proxy.
 .. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe
-       <https://code.activestate.com/recipes/456195/>`_.
+       <https://code.activestate.com/recipes/456195-urrlib2-opener-for-ssl-proxy-connect-method/>`_.
 

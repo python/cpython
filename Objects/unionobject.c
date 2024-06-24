@@ -182,15 +182,14 @@ _Py_union_type_or(PyObject* self, PyObject* other)
 }
 
 static int
-union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
+union_repr_item(PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = NULL;
     PyObject *module = NULL;
-    PyObject *r = NULL;
     int rc;
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
+        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
@@ -200,17 +199,17 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto use_repr;
     }
     if (rc < 0) {
-        goto exit;
+        goto error;
     }
 
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
-        goto exit;
+        goto error;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
-        goto exit;
+        goto error;
     }
     if (module == NULL || module == Py_None) {
         goto use_repr;
@@ -221,24 +220,25 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         _PyUnicode_EqualToASCIIString(module, "builtins"))
     {
         // builtins don't need a module name
-        r = PyObject_Str(qualname);
-        goto exit;
+        rc = PyUnicodeWriter_WriteStr(writer, qualname);
+        goto done;
     }
     else {
-        r = PyUnicode_FromFormat("%S.%S", module, qualname);
-        goto exit;
+        rc = PyUnicodeWriter_Format(writer, "%S.%S", module, qualname);
+        goto done;
     }
 
+error:
+    rc = -1;
+    goto done;
+
 use_repr:
-    r = PyObject_Repr(p);
-exit:
+    rc = PyUnicodeWriter_WriteRepr(writer, p);
+    goto done;
+
+done:
     Py_XDECREF(qualname);
     Py_XDECREF(module);
-    if (r == NULL) {
-        return -1;
-    }
-    rc = _PyUnicodeWriter_WriteStr(writer, r);
-    Py_DECREF(r);
     return rc;
 }
 
@@ -248,20 +248,26 @@ union_repr(PyObject *self)
     unionobject *alias = (unionobject *)self;
     Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-     for (Py_ssize_t i = 0; i < len; i++) {
-        if (i > 0 && _PyUnicodeWriter_WriteASCIIString(&writer, " | ", 3) < 0) {
+    // Shortest type name "int" (3 chars) + " | " (3 chars) separator
+    Py_ssize_t estimate = (len <= PY_SSIZE_T_MAX / 6) ? len * 6 : len;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(estimate);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (i > 0 && PyUnicodeWriter_WriteUTF8(writer, " | ", 3) < 0) {
             goto error;
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
-        if (union_repr_item(&writer, p) < 0) {
+        if (union_repr_item(writer, p) < 0) {
             goto error;
         }
     }
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
+
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 

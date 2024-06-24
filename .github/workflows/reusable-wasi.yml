@@ -9,7 +9,7 @@ jobs:
   build_wasi_reusable:
     name: 'build and test'
     timeout-minutes: 60
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       WASMTIME_VERSION: 18.0.3
       WASI_SDK_VERSION: 21
@@ -50,7 +50,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.CROSS_BUILD_PYTHON }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+        # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}-${{ env.pythonLocation }}
     - name: "Configure build Python"
       run: python3 Tools/wasm/wasi.py configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
@@ -59,7 +60,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.CROSS_BUILD_WASI }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}-${{ inputs.config_hash }}
+        # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}-${{ inputs.config_hash }}-${{ env.pythonLocation }}
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi.py configure-host -- --config-cache

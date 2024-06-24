@@ -1,2 +1,0 @@
-In ``PathFinder.invalidate_caches``, delegate to
-``MetadataPathFinder.invalidate_caches``.

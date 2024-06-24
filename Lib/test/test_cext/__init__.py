@@ -40,11 +40,11 @@ class TestExt(unittest.TestCase):
     def test_build_c99(self):
         self.check_build('_test_c99_cext', std='c99')
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, 'incompatible with Free Threading')
+    @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited(self):
         self.check_build('_test_limited_cext', limited=True)
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, 'broken for now with Free Threading')
+    @support.requires_gil_enabled('broken for now with Free Threading')
     def test_build_limited_c11(self):
         self.check_build('_test_limited_c11_cext', limited=True, std='c11')
 

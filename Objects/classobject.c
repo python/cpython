@@ -188,15 +188,18 @@ method_getattro(PyObject *obj, PyObject *name)
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
-        descr = _PyType_Lookup(tp, name);
+        descr = _PyType_LookupRef(tp, name);
     }
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (f != NULL) {
+            PyObject *res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            return Py_NewRef(descr);
+            return descr;
         }
     }
 
@@ -410,14 +413,17 @@ instancemethod_getattro(PyObject *self, PyObject *name)
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_LookupRef(tp, name);
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, self, (PyObject *)Py_TYPE(self));
+        if (f != NULL) {
+            PyObject *res = f(descr, self, (PyObject *)Py_TYPE(self));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            return Py_NewRef(descr);
+            return descr;
         }
     }
 

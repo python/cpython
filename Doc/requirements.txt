@@ -6,11 +6,10 @@
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
-sphinx~=7.2.0
+sphinx~=7.3.0
 
 blurb
 
-sphinx-autobuild
 sphinxext-opengraph==0.7.5
 sphinx-notfound-page==1.0.0
 

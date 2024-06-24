@@ -751,7 +751,7 @@ PyDoc_STRVAR(index_doc,
 
 static PyMethodDef range_methods[] = {
     {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
-    {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
+    {"__reduce__",      (PyCFunction)range_reduce,  METH_NOARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
     {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
     {NULL,              NULL}           /* sentinel */

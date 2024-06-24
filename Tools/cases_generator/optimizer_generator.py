@@ -18,13 +18,12 @@ from generators_common import (
     ROOT,
     write_header,
     emit_tokens,
-    emit_to,
     replace_sync_sp,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, SizeMismatch, UNUSED
+from stack import Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -84,14 +83,11 @@ def emit_default(out: CWriter, uop: Uop) -> None:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
                 out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
-                out.emit(f"if ({var.name}[_i] == NULL) goto out_of_space;\n")
                 out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
 
 
 def write_uop(

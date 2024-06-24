@@ -1659,6 +1659,9 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if rl_startup_hook takes arguments */
+#undef Py_RL_STARTUP_HOOK_TAKES_ARGS
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
