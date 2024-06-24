@@ -92,6 +92,12 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+asyncio
+-------
+
+Add :meth:`asyncio.Queue.iter` and :meth:`asyncio.Queue.iter_nowait`.
+(Contributed by Wannes Boeykens in :gh:`120925`.)
+
 os
 --
 

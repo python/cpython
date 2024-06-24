@@ -116,6 +116,37 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
+    async def test_iter(self):
+        q = asyncio.Queue()
+        accumulator = 0
+
+        async def worker():
+            nonlocal accumulator
+
+            async for item in q.iter():
+                accumulator += item
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(worker())
+            tg.create_task(worker())
+            for i in range(100):
+                q.put_nowait(i)
+
+            q.shutdown()
+
+        self.assertEqual(sum(range(100)), accumulator)
+
+    async def test_iter_nowait(self):
+        q = asyncio.Queue()
+        accumulator = 0
+        for i in range(100):
+            q.put_nowait(i)
+
+        for item in q.iter_nowait():
+            accumulator += item
+
+        self.assertEqual(sum(range(100)), accumulator)
+
 
 class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
@@ -167,6 +198,8 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
     def test_nonblocking_get_exception(self):
         q = asyncio.Queue()
         self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
+        with self.assertRaises(asyncio.QueueEmpty):
+            list(q.iter_nowait())
 
     async def test_get_cancelled_race(self):
         q = asyncio.Queue()
@@ -471,27 +504,22 @@ class _QueueJoinTestMixin:
 
         # Two workers get items from the queue and call task_done after each.
         # Join the queue and assert all items have been processed.
-        running = True
 
         async def worker():
             nonlocal accumulator
 
-            while running:
-                item = await q.get()
+            async for item in q.iter():
                 accumulator += item
                 q.task_done()
 
         async with asyncio.TaskGroup() as tg:
-            tasks = [tg.create_task(worker())
-                     for index in range(2)]
-
+            tg.create_task(worker())
+            tg.create_task(worker())
             await q.join()
             self.assertEqual(sum(range(100)), accumulator)
 
             # close running generators
-            running = False
-            for i in range(len(tasks)):
-                q.put_nowait(0)
+            q.shutdown()
 
     async def test_join_empty_queue(self):
         q = self.q_class()
@@ -566,6 +594,7 @@ class _QueueShutdownTestMixin:
             await q.get()
         with self.assertRaisesShutdown():
             q.get_nowait()
+        self.assertEqual(list(q.iter_nowait()), [])
 
     async def test_shutdown_nonempty(self):
         # Test shutting down a non-empty queue
@@ -610,6 +639,7 @@ class _QueueShutdownTestMixin:
             await q.get()
         with self.assertRaisesShutdown():
             q.get_nowait()
+        self.assertEqual(list(q.iter_nowait()), [])
 
         # Ensure there is 1 unfinished task, and join() task succeeds
         q.task_done()
@@ -652,6 +682,7 @@ class _QueueShutdownTestMixin:
             await q.get()
         with self.assertRaisesShutdown():
             q.get_nowait()
+        self.assertEqual(list(q.iter_nowait()), [])
 
         # Ensure there are no unfinished tasks
         with self.assertRaises(

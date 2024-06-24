@@ -30,6 +30,20 @@ class QueueShutDown(Exception):
     pass
 
 
+class _AsyncQueueIterator:
+    def __init__(self, queue):
+        self._queue = queue
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return await self._queue.get()
+        except QueueShutDown:
+            raise StopAsyncIteration
+
+
 class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
@@ -215,6 +229,33 @@ class Queue(mixins._LoopBoundMixin):
         item = self._get()
         self._wakeup_next(self._putters)
         return item
+
+    def iter(self):
+        """Return an asynchronous iterator which iterates over the queue of
+        items. If queue is empty, wait until the next item is available.
+
+        Stops iteration if the queue has been shut down and is empty, or if the
+        queue has been shut down immediately.
+        """
+        return _AsyncQueueIterator(self)
+
+    def iter_nowait(self):
+        """Return an iterator which iterates over the queue of items without
+        blocking.
+
+        Only iterate over the items which are immediately available, but raise
+        the QueueEmpty exception if none are.
+        """
+        try:
+            yield self.get_nowait()
+        except QueueShutDown:
+            return
+
+        try:
+            while True:
+                yield self.get_nowait()
+        except (QueueEmpty, QueueShutDown):
+            return
 
     def task_done(self):
         """Indicate that a formerly enqueued task is complete.
