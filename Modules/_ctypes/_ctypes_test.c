@@ -13,8 +13,8 @@
 
 #include <Python.h>
 
-#ifdef __STDC_IEC_559_COMPLEX__
-#  include <complex.h>            // csqrt()
+#ifdef HAVE_C_COMPLEX
+#  include "../_complex.h"        // csqrt()
 #  undef I
 #endif
 #include <stdio.h>                // printf()
@@ -447,7 +447,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#ifdef __STDC_IEC_559_COMPLEX__
+#ifdef HAVE_C_COMPLEX
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);

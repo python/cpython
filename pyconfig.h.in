@@ -223,6 +223,9 @@
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
 
+/* Defined if _Complex C type is available. */
+#undef HAVE_C_COMPLEX
+
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
 

@@ -11,8 +11,8 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#ifdef __STDC_IEC_559_COMPLEX__
-#  include <complex.h>            // complex
+#ifdef HAVE_C_COMPLEX
+#  include "../_complex.h"        // complex
 #endif
 
 #include <ffi.h>
@@ -1091,33 +1091,7 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#ifdef __STDC_IEC_559_COMPLEX__
-/* Other compilers (than clang), that claims to
-   implement C11 *and* define __STDC_IEC_559_COMPLEX__ don't have
-   issue with CMPLX().  This is specific to glibc & clang combination:
-   https://sourceware.org/bugzilla/show_bug.cgi?id=26287
-
-   Here we fallback to using __builtin_complex(), available in clang
-   v12+.  Else CMPLX implemented following C11 6.2.5p13: "Each complex type
-   has the same representation and alignment requirements as an array
-   type containing exactly two elements of the corresponding real type;
-   the first element is equal to the real part, and the second element
-   to the imaginary part, of the complex number.
- */
-#  if !defined(CMPLX)
-#    if defined(__clang__) && __has_builtin(__builtin_complex)
-#      define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
-#    else
-inline double complex
-CMPLX(double real, imag)
-{
-    double complex z;
-    ((double *)(&z))[0] = real;
-    ((double *)(&z))[1] = imag;
-    return z;
-}
-#    endif
-#  endif
+#ifdef HAVE_C_COMPLEX
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1646,7 +1620,7 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
-#ifdef __STDC_IEC_559_COMPLEX__
+#ifdef HAVE_C_COMPLEX
     { 'C', C_set, C_get, NULL},
 #endif
     { 'g', g_set, g_get, NULL},
@@ -1699,7 +1673,7 @@ _ctypes_init_fielddesc(void)
         case 'B': fd->pffi_type = &ffi_type_uchar; break;
         case 'c': fd->pffi_type = &ffi_type_schar; break;
         case 'd': fd->pffi_type = &ffi_type_double; break;
-#ifdef __STDC_IEC_559_COMPLEX__
+#ifdef HAVE_C_COMPLEX
         case 'C': fd->pffi_type = &ffi_type_complex_double; break;
 #endif
         case 'g': fd->pffi_type = &ffi_type_longdouble; break;
