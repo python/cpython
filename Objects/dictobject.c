@@ -2801,8 +2801,6 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     if (!PyDict_Check(op))
         return 0;
 
-    ASSERT_DICT_LOCKED(op);
-
     mp = (PyDictObject *)op;
     i = *ppos;
     if (_PyDict_HasSplitTable(mp)) {
@@ -2875,11 +2873,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
 int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    res = _PyDict_Next(op, ppos, pkey, pvalue, NULL);
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
 }
 
 

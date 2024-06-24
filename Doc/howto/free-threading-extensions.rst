@@ -114,6 +114,24 @@ Containers like :c:struct:`PyListObject`,
 in the free-threaded build.  For example, the :c:func:`PyList_Append` will
 lock the list before appending an item.
 
+.. _PyDict_Next:
+
+``PyDict_Next``
+'''''''''''''''
+
+A notable exception is :c:func:`PyDict_Next`, which does not lock the
+dictionary.  You should use :c:macro:`Py_BEGIN_CRITICAL_SECTION` to protect
+the dictionary while iterating over it if the dictionary may be concurrently
+modified::
+
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        ...
+    }
+    Py_END_CRITICAL_SECTION();
+
 
 Borrowed References
 ===================
@@ -141,7 +159,7 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_SetDefault`       | :c:func:`PyDict_SetDefaultRef`    |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyDict_Next`             | no direct replacement             |
+| :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
