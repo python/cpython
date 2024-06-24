@@ -361,6 +361,36 @@ writer_write_widechar(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_write_ucs4(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Un", &str, &size)) {
+        return NULL;
+    }
+    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+    size = Py_MIN(size, len);
+
+    Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(str);
+    if (ucs4 == NULL) {
+        return NULL;
+    }
+
+    int res = PyUnicodeWriter_WriteUCS4(self->writer, ucs4, size);
+    PyMem_Free(ucs4);
+    if (res < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_write_str(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -484,6 +514,7 @@ static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
     {"write_widechar", _PyCFunction_CAST(writer_write_widechar), METH_VARARGS},
+    {"write_ucs4", _PyCFunction_CAST(writer_write_ucs4), METH_VARARGS},
     {"write_str", _PyCFunction_CAST(writer_write_str), METH_VARARGS},
     {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_VARARGS},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
