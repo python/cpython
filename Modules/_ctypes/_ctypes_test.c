@@ -452,9 +452,9 @@ EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
 }
-EXPORT(double complex) my_cexp(double complex a)
+EXPORT(double complex) my_csquare(double complex a)
 {
-    return cexp(a);
+    return a*a;
 }
 #endif
 
