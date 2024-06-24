@@ -1295,6 +1295,9 @@ PEP 594: dead batteries (and other module removals)
 
   * :mod:`!imghdr`: use the projects :pypi:`filetype`,
     :pypi:`puremagic`, or :pypi:`python-magic` instead.
+    The ``puremagic.what()`` function can be used to replace
+    the ``imghdr.what()`` function for all file formats that
+    were supported by ``imghdr``.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!mailcap`.
