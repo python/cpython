@@ -8321,7 +8321,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     int count2 = 0, count3 = 0;
     int kind;
     const void *data;
-    Py_ssize_t length;
+    int length;
     Py_UCS4 ch;
 
     if (!PyUnicode_Check(string) || !PyUnicode_GET_LENGTH(string)) {
@@ -8330,8 +8330,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     }
     kind = PyUnicode_KIND(string);
     data = PyUnicode_DATA(string);
-    length = PyUnicode_GET_LENGTH(string);
-    length = Py_MIN(length, 256);
+    length = (int)Py_MIN(PyUnicode_GET_LENGTH(string), 256);
     memset(level1, 0xFF, sizeof level1);
     memset(level2, 0xFF, sizeof level2);
 
@@ -8372,7 +8371,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
                 Py_DECREF(result);
                 return NULL;
             }
-            PyObject *value = PyLong_FromLong(i);
+            PyObject *value = PyLong_FromSsize_t(i);
             if (value == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(result);
