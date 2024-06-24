@@ -28,9 +28,8 @@ class LibTest(unittest.TestCase):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
         self.assertEqual(lib.my_csqrt(4.0), 2+0j)
-        lib.my_csquare.argtypes = ctypes.c_double_complex,
-        lib.my_csquare.restype = ctypes.c_double_complex
-        self.assertEqual(lib.my_csquare(1+2j), -3+4j)
+        self.assertEqual(lib.my_csqrt(complex(-1, +0.)), complex(0, +1))
+        self.assertEqual(lib.my_csqrt(complex(-1, -0.)), complex(0, -1))
 
     def test_qsort(self):
         comparefunc = CFUNCTYPE(c_int, POINTER(c_char), POINTER(c_char))

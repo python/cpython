@@ -452,10 +452,6 @@ EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);
 }
-EXPORT(double complex) my_csquare(double complex a)
-{
-    return a*a;
-}
 #endif
 
 EXPORT(void) my_qsort(void *base, size_t num, size_t width, int(*compare)(const void*, const void*))
