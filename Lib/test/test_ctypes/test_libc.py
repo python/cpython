@@ -3,7 +3,7 @@ import math
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, POINTER, create_string_buffer, sizeof,
                     c_void_p, c_char, c_int, c_double, c_size_t)
-from test.support import import_helper
+from test.support import import_helper, requires_IEEE_754
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -24,6 +24,7 @@ class LibTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
+    @requires_IEEE_754
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
