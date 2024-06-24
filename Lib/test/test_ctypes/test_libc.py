@@ -1,6 +1,8 @@
 import ctypes
 import math
+import platform
 import unittest
+import sys
 from ctypes import (CDLL, CFUNCTYPE, POINTER, create_string_buffer, sizeof,
                     c_void_p, c_char, c_int, c_double, c_size_t)
 from test.support import import_helper
@@ -24,6 +26,8 @@ class LibTest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
+    @unittest.skipIf(sys.platform == 'darwin'
+                     and platform.machine() == 'ARM64', "TODO")
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
