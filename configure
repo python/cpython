@@ -25898,10 +25898,7 @@ int main(void)
     .tm_mon = 0,
     .tm_mday = 1
   };
-  if (strftime(year, sizeof year, "%Y", &date) && !strcmp(year, "99") &&
-      strftime(year, sizeof year, "%4Y", &date) && !strcmp(year, "0099"))
-    exit(0);
-  exit(1);
+  exit(strftime(year, sizeof year, "%Y", &date) && !strcmp(year, "0099"));
 }
 
 _ACEOF

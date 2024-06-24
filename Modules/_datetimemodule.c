@@ -1941,9 +1941,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
 #ifdef NORMALIZE_CENTURY
         else if (ch == 'Y') {
-            /* default to 4 digits for year with century */
-            ptoappend = "%4Y";
-            ntoappend = 3;
+            /* 0-pad year with century on platforms that do not do so */
+            PyObject *year = PyObject_GetAttrString(object, "year");
+            if (year == NULL)
+                goto Done;
+            char formatted[5];
+            ntoappend = sprintf(formatted, "%04d", (int)PyLong_AsLong(year));
+            ptoappend = formatted;
+            Py_DECREF(year);
         }
 #endif
         else {

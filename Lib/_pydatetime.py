@@ -210,8 +210,7 @@ def _need_normalize_century():
     if _normalize_century is None:
         try:
             _normalize_century = (
-                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "99" and
-                _time.strftime("%4Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "0099")
+                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "99")
         except ValueError:
             _normalize_century = False
     return _normalize_century
@@ -274,7 +273,7 @@ def _wrap_strftime(object, format, timetuple):
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
                 elif ch == 'Y' and _need_normalize_century():
-                    push('%4Y')
+                    push('{:04}'.format(object.year))
                 else:
                     push('%')
                     push(ch)
