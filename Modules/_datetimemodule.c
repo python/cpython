@@ -1841,7 +1841,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
     const char *pin;            /* pointer to next char in input format */
     Py_ssize_t flen;            /* length of input format */
+#ifdef NORMALIZE_CENTURY
     char ch;                    /* next char in input format */
+#endif
 
     PyObject *newfmt = NULL;            /* py string, the output format */
     char *pnew;         /* pointer to available byte in output format */
