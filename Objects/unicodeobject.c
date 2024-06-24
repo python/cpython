@@ -2298,7 +2298,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
     if (size < 0) {
         PyErr_SetString(PyExc_TypeError,
                         "size must be positive");
-        return NULL;
+        return -1;
     }
 
     if (size == 0) {
