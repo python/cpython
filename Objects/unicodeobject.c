@@ -2581,6 +2581,7 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
                               Py_ssize_t width, Py_ssize_t precision, int flags)
 {
     /* UTF-8 */
+    Py_ssize_t *pconsumed = NULL;
     Py_ssize_t length;
     if (precision == -1) {
         length = strlen(str);
@@ -2590,15 +2591,23 @@ unicode_fromformat_write_utf8(_PyUnicodeWriter *writer, const char *str,
         while (length < precision && str[length]) {
             length++;
         }
+        if (length == precision) {
+            /* The input string is not NUL-terminated.  If it ends with an
+             * incomplete UTF-8 sequence, truncate the string just before it.
+             * Incomplete sequences in the middle and sequences which cannot
+             * be valid prefixes are still treated as errors and replaced
+             * with \xfffd. */
+            pconsumed = &length;
+        }
     }
 
     if (width < 0) {
         return unicode_decode_utf8_writer(writer, str, length,
-                                          _Py_ERROR_REPLACE, "replace", NULL);
+                                          _Py_ERROR_REPLACE, "replace", pconsumed);
     }
 
     PyObject *unicode = PyUnicode_DecodeUTF8Stateful(str, length,
-                                                     "replace", NULL);
+                                                     "replace", pconsumed);
     if (unicode == NULL)
         return -1;
 
