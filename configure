@@ -8260,6 +8260,11 @@ else $as_nop
 then :
   as_fn_append REGEN_JIT_COMMAND " --debug"
 fi
+           if test "x$enable_pystats" = xyes
+then :
+  as_fn_append REGEN_JIT_COMMAND " --pystats"
+fi
+
 fi
 
 
