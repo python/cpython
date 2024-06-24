@@ -2035,11 +2035,9 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
         if (!converted) {
             return -1;
         }
-        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
-        PyMem_Free(converted);
 
-        int res = _PyUnicodeWriter_WriteStr(writer, unicode);
-        Py_DECREF(unicode);
+        int res = PyUnicodeWriter_WriteUCS4(pub_writer, converted, size);
+        PyMem_Free(converted);
         return res;
     }
 #endif
@@ -2288,6 +2286,51 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
+
+
+int
+PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
+                          Py_UCS4 *str,
+                          Py_ssize_t size)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
+
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "size must be positive");
+        return -1;
+    }
+
+    if (size == 0) {
+        return 0;
+    }
+
+    Py_UCS4 max_char = ucs4lib_find_max_char(str, str + size);
+
+    if (_PyUnicodeWriter_Prepare(writer, size, max_char) < 0) {
+        return -1;
+    }
+
+    int kind = writer->kind;
+    void *data = (Py_UCS1*)writer->data + writer->pos * kind;
+    if (kind == PyUnicode_1BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS1,
+                                 str, str + size,
+                                 data);
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS2,
+                                 str, str + size,
+                                 data);
+    }
+    else {
+        memcpy(data, str, size * sizeof(Py_UCS4));
+    }
+    writer->pos += size;
+
+    return 0;
+}
+
 
 PyObject*
 PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
@@ -13357,7 +13400,7 @@ PyUnicodeWriter*
 PyUnicodeWriter_Create(Py_ssize_t length)
 {
     if (length < 0) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "length must be positive");
         return NULL;
     }

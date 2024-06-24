@@ -1563,6 +1563,15 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+
+   Writer the UCS4 string *str* into *writer*.
+
+   *size* is a number of UCS4 characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
 .. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
