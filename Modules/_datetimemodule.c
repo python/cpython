@@ -1837,13 +1837,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
+#ifdef NORMALIZE_CENTURY
     char year_formatted[5];             /* formatted year with century for %Y */
+#endif
 
     const char *pin;            /* pointer to next char in input format */
     Py_ssize_t flen;            /* length of input format */
-#ifdef NORMALIZE_CENTURY
     char ch;                    /* next char in input format */
-#endif
 
     PyObject *newfmt = NULL;            /* py string, the output format */
     char *pnew;         /* pointer to available byte in output format */
