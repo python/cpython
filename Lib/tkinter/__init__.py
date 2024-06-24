@@ -498,8 +498,8 @@ class Variable:
 
         Return the name of the callback.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        be removed in Tcl 9.0.  Use trace_add() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_add() instead.
         """
         import warnings
         warnings.warn(
@@ -518,8 +518,8 @@ class Variable:
         MODE is one of "r", "w", "u" for read, write, undefine.
         CBNAME is the name of the callback returned from trace_variable or trace.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_remove() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_remove() instead.
         """
         import warnings
         warnings.warn(
@@ -541,8 +541,8 @@ class Variable:
     def trace_vinfo(self):
         """Return all trace callback information.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_info() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_info() instead.
         """
         import warnings
         warnings.warn(
