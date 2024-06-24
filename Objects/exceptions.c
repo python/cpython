@@ -510,10 +510,10 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
-#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+#define MiddlingExtendsExceptionEx(EXCBASE, EXCNAME, PYEXCNAME, EXCSTORE, EXCDOC) \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
-    # EXCNAME, \
+    # PYEXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
     0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
@@ -522,8 +522,12 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
     (initproc)EXCSTORE ## _init, 0, 0, \
-}; \
-PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
+};
+
+#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
+    static MiddlingExtendsExceptionEx( \
+        EXCBASE, EXCNAME, EXCNAME, EXCSTORE, EXCDOC); \
+    PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
@@ -2573,8 +2577,8 @@ MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
 /*
  *    IncompleteInputError extends SyntaxError
  */
-MiddlingExtendsException(PyExc_SyntaxError, IncompleteInputError, SyntaxError,
-                         "incomplete input.");
+MiddlingExtendsExceptionEx(PyExc_SyntaxError, IncompleteInputError, _IncompleteInputError,
+                           SyntaxError, "incomplete input.");
 
 /*
  *    LookupError extends Exception
@@ -3640,7 +3644,7 @@ static struct static_exception static_exceptions[] = {
 
     // Level 4: Other subclasses
     ITEM(IndentationError), // base: SyntaxError(Exception)
-    ITEM(IncompleteInputError), // base: SyntaxError(Exception)
+    {&_PyExc_IncompleteInputError, "_IncompleteInputError"}, // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)

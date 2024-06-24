@@ -1,6 +1,7 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
 #include <errcode.h>
 
 #include "lexer/lexer.h"
