@@ -45,7 +45,7 @@ BaseException
       ├── StopAsyncIteration
       ├── StopIteration
       ├── SyntaxError
-      │    └── IncompleteInputError
+      │    └── _IncompleteInputError
       │    └── IndentationError
       │         └── TabError
       ├── SystemError

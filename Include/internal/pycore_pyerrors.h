@@ -167,6 +167,10 @@ void _PyErr_FormatNote(const char *format, ...);
 
 Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
+// implementation detail for the codeop module.
+extern PyTypeObject _PyExc_IncompleteInputError;
+#define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
+
 #ifdef __cplusplus
 }
 #endif
