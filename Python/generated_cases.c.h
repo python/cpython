@@ -2747,7 +2747,7 @@
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
-                gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+                gen_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(gen_frame, Py_None);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -3461,7 +3461,7 @@
             retval = stack_pointer[-1];
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -5180,7 +5180,7 @@
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
@@ -5260,7 +5260,7 @@
                     ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
                 {
                     PyGenObject *gen = (PyGenObject *)receiver;
-                    _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+                    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                     STACK_SHRINK(1);
                     _PyFrame_StackPush(gen_frame, v);
                     gen->gi_frame_state = FRAME_EXECUTING;
@@ -5310,7 +5310,7 @@
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type, SEND);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
             STAT_INC(SEND, hit);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             STACK_SHRINK(1);
             _PyFrame_StackPush(gen_frame, v);
             gen->gi_frame_state = FRAME_EXECUTING;
@@ -6198,7 +6198,7 @@
             assert(frame != &entry_frame);
             #endif
             frame->instr_ptr++;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;

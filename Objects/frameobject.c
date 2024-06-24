@@ -1338,7 +1338,7 @@ static bool frame_is_suspended(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame->f_frame);
         return FRAME_STATE_SUSPENDED(gen->gi_frame_state);
     }
     return false;
@@ -1665,7 +1665,7 @@ static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyFrame_GetGenerator(f->f_frame);
+        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(f->f_frame);
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
         }
@@ -2097,7 +2097,7 @@ PyFrame_GetGenerator(PyFrameObject *frame)
     if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
         return NULL;
     }
-    PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
+    PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame->f_frame);
     return Py_NewRef(gen);
 }
 
