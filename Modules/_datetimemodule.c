@@ -4615,7 +4615,6 @@ time_strptime(PyObject *cls, PyObject *args)
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format)) {
         return NULL;
     }
-        return NULL;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
     if (module == NULL) {
