@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_cell.h"
+#include "pycore_code.h"
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"

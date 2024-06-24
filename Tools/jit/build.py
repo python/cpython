@@ -14,6 +14,9 @@ if __name__ == "__main__":
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
     )
     parser.add_argument(
+        "--pystats", action="store_true", help="compile for a pystats build of Python"
+    )
+    parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
     parser.add_argument(
@@ -25,4 +28,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
+    args.target.pystats = args.pystats
     args.target.build(pathlib.Path.cwd(), comment=comment, force=args.force)

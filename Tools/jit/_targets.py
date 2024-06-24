@@ -44,11 +44,13 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    pystats: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
+        hasher.update(self.pystats.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -142,6 +144,8 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
+        if self.pystats:
+            args.append("-DPy_STATS=1")
         if self.ghccc:
             # This is a bit of an ugly workaround, but it makes the code much
             # smaller and faster, so it's worth it. We want to use the GHC
