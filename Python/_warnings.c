@@ -1399,12 +1399,12 @@ exit:
 }
 
 void
-_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+_PyErr_WarnUnawaitedAgenMethod(PyGenObject *agen, PyObject *method)
 {
     PyObject *exc = PyErr_GetRaisedException();
     if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
                           "coroutine method %R of %R was never awaited",
-                          method, agen->ag_qualname) < 0)
+                          method, agen->gi_qualname) < 0)
     {
         PyErr_WriteUnraisable((PyObject *)agen);
     }
@@ -1413,7 +1413,7 @@ _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
 
 
 void
-_PyErr_WarnUnawaitedCoroutine(PyObject *coro)
+_PyErr_WarnUnawaitedCoroutine(PyGenObject *coro)
 {
     /* First, we attempt to funnel the warning through
        warnings._warn_unawaited_coroutine.
@@ -1437,9 +1437,10 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     int warned = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp != NULL);
+    PyObject *coro_obj = (PyObject*)coro;
     PyObject *fn = GET_WARNINGS_ATTR(interp, _warn_unawaited_coroutine, 1);
     if (fn) {
-        PyObject *res = PyObject_CallOneArg(fn, coro);
+        PyObject *res = PyObject_CallOneArg(fn, coro_obj);
         Py_DECREF(fn);
         if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
             warned = 1;
@@ -1448,14 +1449,14 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_WriteUnraisable(coro_obj);
     }
     if (!warned) {
-        if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
+        if (_PyErr_WarnFormat(coro_obj, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
-                              ((PyCoroObject *)coro)->cr_qualname) < 0)
+                              coro->gi_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_WriteUnraisable(coro_obj);
         }
     }
 }

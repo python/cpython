@@ -24,7 +24,7 @@ PyAPI_FUNC(PyCodeObject *) PyGen_GetCode(PyGenObject *gen);
 
 /* --- PyCoroObject ------------------------------------------------------- */
 
-typedef struct _PyCoroObject PyCoroObject;
+typedef PyGenObject PyCoroObject;
 
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
 
@@ -35,7 +35,7 @@ PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
 
 /* --- Asynchronous Generators -------------------------------------------- */
 
-typedef struct _PyAsyncGenObject PyAsyncGenObject;
+typedef PyGenObject PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
 PyAPI_DATA(PyTypeObject) _PyAsyncGenASend_Type;
