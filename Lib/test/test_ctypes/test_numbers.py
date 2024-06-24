@@ -117,17 +117,13 @@ class NumberTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
-        i = IndexLike()
-        f = FloatLike()
-        c = ComplexLike()
-
         for t in [c_double_complex]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
-            self.assertEqual(t(1+1j).value, 1+1j)
-            self.assertEqual(t(i).value, 2+0j)
-            self.assertEqual(t(f).value, 2+0j)
-            self.assertEqual(t(c).value, 1+1j)
+            self.assertEqual(t(1+0.125j).value, 1+0.125j)
+            self.assertEqual(t(IndexLike()).value, 2+0j)
+            self.assertEqual(t(FloatLike()).value, 2+0j)
+            self.assertEqual(t(ComplexLike()).value, 1+1j)
 
     def test_integers(self):
         f = FloatLike()

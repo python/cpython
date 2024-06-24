@@ -3766,8 +3766,10 @@ esac
 # check for _Complex C type
 #
 # Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
-# none properly support C11+ Annex G (where imaginary types are mandatory).
-# This is a bug, so we don't rely on presence of __STDC_IEC_559_COMPLEX__.
+# none properly support C11+ Annex G (where pure imaginary types
+# represented by _Imaginary are mandatory).  This is a bug (see e.g.
+# llvm/llvm-project#60269), so we don't rely on presence
+# of __STDC_IEC_559_COMPLEX__.
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 int main(void)
