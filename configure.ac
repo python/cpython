@@ -1798,7 +1798,12 @@ AS_VAR_IF([jit_flags],
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
-                     [])])
+                     [])
+           AS_VAR_IF([enable_pystats],
+                     [yes],
+                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --pystats"])],
+                     [])
+                    ])
 AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
