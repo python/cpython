@@ -864,7 +864,7 @@ _PyPegen_make_module(Parser *p, asdl_stmt_seq *a) {
         if (type_ignores == NULL) {
             return NULL;
         }
-        for (int i = 0; i < num; i++) {
+        for (Py_ssize_t i = 0; i < num; i++) {
             PyObject *tag = _PyPegen_new_type_comment(p, p->type_ignore_comments.items[i].comment);
             if (tag == NULL) {
                 return NULL;

@@ -398,7 +398,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
-    int i;
+    Py_ssize_t i;
     PyThreadState *tstate;
     int starting_recursion_depth;
 
@@ -1594,7 +1594,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 
 #define VISIT_SEQ(ST, TYPE, SEQ) \
     do { \
-        int i; \
+        Py_ssize_t i; \
         asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
         for (i = 0; i < asdl_seq_LEN(seq); i++) { \
             TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -1605,7 +1605,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
     do { \
-        int i; \
+        Py_ssize_t i; \
         asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
         for (i = (START); i < asdl_seq_LEN(seq); i++) { \
             TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -1916,7 +1916,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
         break;
     case Global_kind: {
-        int i;
+        Py_ssize_t i;
         asdl_identifier_seq *seq = s->v.Global.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
@@ -1952,7 +1952,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     }
     case Nonlocal_kind: {
-        int i;
+        Py_ssize_t i;
         asdl_identifier_seq *seq = s->v.Nonlocal.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
@@ -2494,7 +2494,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
 static int
 symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 {
-    int i;
+    Py_ssize_t i;
 
     if (!args)
         return -1;
@@ -2555,7 +2555,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 static int
 symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
-    int i;
+    Py_ssize_t i;
 
     if (!args)
         return -1;
