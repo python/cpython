@@ -21,7 +21,7 @@
 #    define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
 #  else
 inline double complex
-CMPLX(double real, imag)
+CMPLX(double real, double imag)
 {
     double complex z;
     ((double *)(&z))[0] = real;
