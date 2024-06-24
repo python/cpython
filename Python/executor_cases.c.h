@@ -971,8 +971,9 @@
             break;
         }
 
-        case _POP_FRAME: {
+        case _RETURN_VALUE: {
             PyObject *retval;
+            PyObject *res;
             retval = stack_pointer[-1];
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -985,10 +986,12 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
+            res = retval;
             LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
@@ -1405,35 +1408,7 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
-            PyObject *mod_or_class_dict;
-            PyObject *v;
-            oparg = CURRENT_OPARG();
-            mod_or_class_dict = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                JUMP_TO_ERROR();
-            }
-            if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    JUMP_TO_ERROR();
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        JUMP_TO_ERROR();
-                    }
-                    if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        JUMP_TO_ERROR();
-                    }
-                }
-            }
-            Py_DECREF(mod_or_class_dict);
-            stack_pointer[-1] = v;
-            break;
-        }
+        /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
@@ -1569,7 +1544,7 @@
         case _MAKE_CELL: {
             oparg = CURRENT_OPARG();
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via the f_locals proxy before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -2908,23 +2883,45 @@
             break;
         }
 
-        /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
-
-        /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _LOAD_SPECIAL: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self_or_null;
+            oparg = CURRENT_OPARG();
+            owner = stack_pointer[-1];
+            assert(oparg <= SPECIAL_MAX);
+            PyObject *name = _Py_SpecialMethods[oparg].name;
+            attr = _PyObject_LookupSpecialMethod(owner, name, &self_or_null);
+            if (attr == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  _Py_SpecialMethods[oparg].error,
+                                  Py_TYPE(owner)->tp_name);
+                }
+            }
+            if (attr == NULL) JUMP_TO_ERROR();
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = self_or_null;
+            stack_pointer += 1;
+            break;
+        }
 
         case _WITH_EXCEPT_START: {
             PyObject *val;
             PyObject *lasti;
+            PyObject *exit_self;
             PyObject *exit_func;
             PyObject *res;
             val = stack_pointer[-1];
             lasti = stack_pointer[-3];
-            exit_func = stack_pointer[-4];
+            exit_self = stack_pointer[-4];
+            exit_func = stack_pointer[-5];
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
                - lasti: THIRD = lasti of exception in exc_info()
-               - exit_func: FOURTH = the context.__exit__ bound method
+               - exit_self: FOURTH = the context or NULL
+               - exit_func: FIFTH = the context.__exit__ function or context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
              */
@@ -2940,9 +2937,10 @@
             }
             assert(PyLong_Check(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[4] = {NULL, exc, val, tb};
-            res = PyObject_Vectorcall(exit_func, stack + 1,
-                                      3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            PyObject *stack[5] = {NULL, exit_self, exc, val, tb};
+            int has_self = (exit_self != NULL);
+            res = PyObject_Vectorcall(exit_func, stack + 2 - has_self,
+                                      (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -4088,6 +4086,11 @@
                 assert(PyTuple_CheckExact(attr));
                 assert(func_obj->func_defaults == NULL);
                 func_obj->func_defaults = attr;
+                break;
+                case MAKE_FUNCTION_ANNOTATE:
+                assert(PyCallable_Check(attr));
+                assert(func_obj->func_annotate == NULL);
+                func_obj->func_annotate = attr;
                 break;
                 default:
                 Py_UNREACHABLE();

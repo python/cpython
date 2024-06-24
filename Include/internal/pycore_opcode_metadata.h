@@ -33,10 +33,6 @@ extern int _PyOpcode_num_popped(int opcode, int oparg);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_popped(int opcode, int oparg)  {
     switch(opcode) {
-        case BEFORE_ASYNC_WITH:
-            return 1;
-        case BEFORE_WITH:
-            return 1;
         case BINARY_OP:
             return 2;
         case BINARY_OP_ADD_FLOAT:
@@ -331,6 +327,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 0;
         case LOAD_NAME:
             return 0;
+        case LOAD_SPECIAL:
+            return 1;
         case LOAD_SUPER_ATTR:
             return 3;
         case LOAD_SUPER_ATTR_ATTR:
@@ -468,7 +466,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case UNPACK_SEQUENCE_TWO_TUPLE:
             return 1;
         case WITH_EXCEPT_START:
-            return 4;
+            return 5;
         case YIELD_VALUE:
             return 1;
         default:
@@ -482,10 +480,6 @@ extern int _PyOpcode_num_pushed(int opcode, int oparg);
 #ifdef NEED_OPCODE_METADATA
 int _PyOpcode_num_pushed(int opcode, int oparg)  {
     switch(opcode) {
-        case BEFORE_ASYNC_WITH:
-            return 2;
-        case BEFORE_WITH:
-            return 2;
         case BINARY_OP:
             return 1;
         case BINARY_OP_ADD_FLOAT:
@@ -780,6 +774,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case LOAD_NAME:
             return 1;
+        case LOAD_SPECIAL:
+            return 2;
         case LOAD_SUPER_ATTR:
             return 1 + (oparg & 1);
         case LOAD_SUPER_ATTR_ATTR:
@@ -831,11 +827,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case RESUME_CHECK:
             return 0;
         case RETURN_CONST:
-            return 0;
+            return 1;
         case RETURN_GENERATOR:
             return 1;
         case RETURN_VALUE:
-            return 0;
+            return 1;
         case SEND:
             return 2;
         case SEND_GEN:
@@ -917,7 +913,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case UNPACK_SEQUENCE_TWO_TUPLE:
             return 2;
         case WITH_EXCEPT_START:
-            return 5;
+            return 6;
         case YIELD_VALUE:
             return 1;
         default:
@@ -992,8 +988,6 @@ struct opcode_metadata {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[264];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
-    [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
-    [BEFORE_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
@@ -1138,6 +1132,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[264] = {
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_LOCALS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [LOAD_SPECIAL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_SUPER_ATTR_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1323,11 +1318,11 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { _LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _LOAD_FAST, 5, 0 }, { _LOAD_FAST, 6, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
-    [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_GLOBAL] = { .nuops = 1, .uops = { { _LOAD_GLOBAL, 0, 0 } } },
     [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
     [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
+    [LOAD_SPECIAL] = { .nuops = 1, .uops = { { _LOAD_SPECIAL, 0, 0 } } },
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { _LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { _LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
     [MAKE_CELL] = { .nuops = 1, .uops = { { _MAKE_CELL, 0, 0 } } },
@@ -1347,9 +1342,9 @@ _PyOpcode_macro_expansion[256] = {
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { _PUSH_EXC_INFO, 0, 0 } } },
     [PUSH_NULL] = { .nuops = 1, .uops = { { _PUSH_NULL, 0, 0 } } },
     [RESUME_CHECK] = { .nuops = 1, .uops = { { _RESUME_CHECK, 0, 0 } } },
-    [RETURN_CONST] = { .nuops = 2, .uops = { { _LOAD_CONST, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_CONST] = { .nuops = 2, .uops = { { _LOAD_CONST, 0, 0 }, { _RETURN_VALUE, 0, 0 } } },
     [RETURN_GENERATOR] = { .nuops = 1, .uops = { { _RETURN_GENERATOR, 0, 0 } } },
-    [RETURN_VALUE] = { .nuops = 1, .uops = { { _POP_FRAME, 0, 0 } } },
+    [RETURN_VALUE] = { .nuops = 1, .uops = { { _RETURN_VALUE, 0, 0 } } },
     [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { _SETUP_ANNOTATIONS, 0, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, 0, 0 } } },
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { _SET_FUNCTION_ATTRIBUTE, 0, 0 } } },
@@ -1392,8 +1387,6 @@ _PyOpcode_macro_expansion[256] = {
 extern const char *_PyOpcode_OpName[264];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[264] = {
-    [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
-    [BEFORE_WITH] = "BEFORE_WITH",
     [BINARY_OP] = "BINARY_OP",
     [BINARY_OP_ADD_FLOAT] = "BINARY_OP_ADD_FLOAT",
     [BINARY_OP_ADD_INT] = "BINARY_OP_ADD_INT",
@@ -1542,6 +1535,7 @@ const char *_PyOpcode_OpName[264] = {
     [LOAD_GLOBAL_MODULE] = "LOAD_GLOBAL_MODULE",
     [LOAD_LOCALS] = "LOAD_LOCALS",
     [LOAD_NAME] = "LOAD_NAME",
+    [LOAD_SPECIAL] = "LOAD_SPECIAL",
     [LOAD_SUPER_ATTR] = "LOAD_SUPER_ATTR",
     [LOAD_SUPER_ATTR_ATTR] = "LOAD_SUPER_ATTR_ATTR",
     [LOAD_SUPER_ATTR_METHOD] = "LOAD_SUPER_ATTR_METHOD",
@@ -1643,8 +1637,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [BEFORE_ASYNC_WITH] = BEFORE_ASYNC_WITH,
-    [BEFORE_WITH] = BEFORE_WITH,
     [BINARY_OP] = BINARY_OP,
     [BINARY_OP_ADD_FLOAT] = BINARY_OP,
     [BINARY_OP_ADD_INT] = BINARY_OP,
@@ -1790,6 +1782,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_GLOBAL_MODULE] = LOAD_GLOBAL,
     [LOAD_LOCALS] = LOAD_LOCALS,
     [LOAD_NAME] = LOAD_NAME,
+    [LOAD_SPECIAL] = LOAD_SPECIAL,
     [LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
     [LOAD_SUPER_ATTR_ATTR] = LOAD_SUPER_ATTR,
     [LOAD_SUPER_ATTR_METHOD] = LOAD_SUPER_ATTR,
@@ -1860,6 +1853,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 118: \
     case 119: \
     case 120: \
     case 121: \

@@ -145,7 +145,8 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
 static inline int
 _PyEval_IsGILEnabled(PyThreadState *tstate)
 {
-    return tstate->interp->ceval.gil->enabled != 0;
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    return _Py_atomic_load_int_relaxed(&gil->enabled) != 0;
 }
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which
@@ -243,6 +244,13 @@ typedef PyObject *(*conversion_func)(PyObject *);
 
 PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
 PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
+
+typedef struct _special_method {
+    PyObject *name;
+    const char *error;
+} _Py_SpecialMethod;
+
+PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);

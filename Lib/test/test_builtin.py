@@ -662,6 +662,16 @@ class BuiltinTest(unittest.TestCase):
             self.assertAlmostEqual(result[1], exp_result[1])
 
         self.assertRaises(TypeError, divmod)
+        self.assertRaisesRegex(
+            ZeroDivisionError,
+            "division by zero",
+            divmod, 1, 0,
+        )
+        self.assertRaisesRegex(
+            ZeroDivisionError,
+            "division by zero",
+            divmod, 0.0, 0,
+        )
 
     def test_eval(self):
         self.assertEqual(eval('1+1'), 2)
