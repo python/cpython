@@ -1,2 +1,0 @@
-Introduced :c:func:`PyUnstable_PerfTrampoline_CompileCode`, :c:func:`PyUnstable_PerfTrampoline_SetPersistAfterFork` and
-:c:func:`PyUnstable_CopyPerfMapFile`. These functions allow extension modules to initialize trampolines eagerly, after the application is "warmed up". This makes it possible to have perf-trampolines running in an always-enabled fashion.

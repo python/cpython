@@ -9,13 +9,14 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The default Python prompt of the interactive shell.  Often seen for code
-      examples which can be executed interactively in the interpreter.
+      The default Python prompt of the :term:`interactive` shell.  Often
+      seen for code examples which can be executed interactively in the
+      interpreter.
 
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering the
+      * The default Python prompt of the :term:`interactive` shell when entering the
         code for an indented code block, when within a pair of matching left and
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
@@ -151,9 +152,9 @@ Glossary
       A :term:`file object` able to read and write
       :term:`bytes-like objects <bytes-like object>`.
       Examples of binary files are files opened in binary mode (``'rb'``,
-      ``'wb'`` or ``'rb+'``), :data:`sys.stdin.buffer`,
-      :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
-      :class:`gzip.GzipFile`.
+      ``'wb'`` or ``'rb+'``), :data:`sys.stdin.buffer <sys.stdin>`,
+      :data:`sys.stdout.buffer <sys.stdout>`, and instances of
+      :class:`io.BytesIO` and :class:`gzip.GzipFile`.
 
       See also :term:`text file` for a file object able to read and write
       :class:`str` objects.
@@ -304,8 +305,9 @@ Glossary
       :ref:`class definitions <class>` for more about decorators.
 
    descriptor
-      Any object which defines the methods :meth:`__get__`, :meth:`__set__`, or
-      :meth:`__delete__`.  When a class attribute is a descriptor, its special
+      Any object which defines the methods :meth:`~object.__get__`,
+      :meth:`~object.__set__`, or :meth:`~object.__delete__`.
+      When a class attribute is a descriptor, its special
       binding behavior is triggered upon attribute lookup.  Normally, using
       *a.b* to get, set or delete an attribute looks up the object named *b* in
       the class dictionary for *a*, but if *b* is a descriptor, the respective
@@ -319,7 +321,8 @@ Glossary
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
-      keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
+      keys can be any object with :meth:`~object.__hash__` and
+      :meth:`~object.__eq__` methods.
       Called a hash in Perl.
 
    dictionary comprehension
@@ -339,7 +342,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`__doc__` attribute
+      recognized by the compiler and put into the :attr:`!__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -383,7 +386,7 @@ Glossary
 
    file object
       An object exposing a file-oriented API (with methods such as
-      :meth:`read()` or :meth:`write()`) to an underlying resource.  Depending
+      :meth:`!read` or :meth:`!write`) to an underlying resource.  Depending
       on the way it was created, a file object can mediate access to a real
       on-disk file or to another type of storage or communication device
       (for example standard input/output, in-memory buffers, sockets, pipes,
@@ -422,11 +425,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -434,6 +437,12 @@ Glossary
       evaluates to ``2`` in contrast to the ``2.75`` returned by float true
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
+
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
 
    function
       A series of statements which returns some value to a caller. It can also
@@ -502,7 +511,7 @@ Glossary
       .. index:: single: generator expression
 
    generator expression
-      An expression that returns an iterator.  It looks like a normal expression
+      An :term:`expression` that returns an :term:`iterator`.  It looks like a normal expression
       followed by a :keyword:`!for` clause defining a loop variable, range,
       and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
@@ -545,12 +554,12 @@ Glossary
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
-      Past efforts to create a "free-threaded" interpreter (one which locks
-      shared data at a much finer granularity) have not been successful
-      because performance suffered in the common single-processor case. It
-      is believed that overcoming this performance issue would make the
-      implementation much more complicated and therefore costlier to maintain.
-
+      As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
+      build configuration. After building Python with this option, code must be
+      run with :option:`-X gil 0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
+      environment variable. This feature enables improved performance for
+      multi-threaded applications and makes it easier to use multi-core CPUs
+      efficiently. For more details, see :pep:`703`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -559,8 +568,9 @@ Glossary
 
    hashable
       An object is *hashable* if it has a hash value which never changes during
-      its lifetime (it needs a :meth:`__hash__` method), and can be compared to
-      other objects (it needs an :meth:`__eq__` method).  Hashable objects which
+      its lifetime (it needs a :meth:`~object.__hash__` method), and can be
+      compared to other objects (it needs an :meth:`~object.__eq__` method).
+      Hashable objects which
       compare equal must have the same hash value.
 
       Hashability makes an object usable as a dictionary key and a set member,
@@ -578,6 +588,16 @@ Glossary
       An Integrated Development and Learning Environment for Python.
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
+
+   immortal
+      If an object is immortal, its reference count is never modified, and
+      therefore it is never deallocated.
+
+      Built-in strings and singletons are immortal objects. For example,
+      :const:`True` and :const:`None` singletons are immortal.
+
+      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
+      <https://peps.python.org/pep-0683/>`_ for more information.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -607,7 +627,8 @@ Glossary
       execute them and see their results.  Just launch ``python`` with no
       arguments (possibly by selecting it from your computer's main
       menu). It is a very powerful way to test out new ideas or inspect
-      modules and packages (remember ``help(x)``).
+      modules and packages (remember ``help(x)``). For more on interactive
+      mode, see :ref:`tut-interac`.
 
    interpreted
       Python is an interpreted language, as opposed to a compiled one,
@@ -636,7 +657,8 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` method or with a :meth:`~object.__getitem__` method
+      with an :meth:`~iterator.__iter__` method or with a
+      :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
       Iterables can be
@@ -645,7 +667,7 @@ Glossary
       as an argument to the built-in function :func:`iter`, it returns an
       iterator for the object.  This iterator is good for one pass over the set
       of values.  When using iterables, it is usually not necessary to call
-      :func:`iter` or deal with iterator objects yourself.  The ``for``
+      :func:`iter` or deal with iterator objects yourself.  The :keyword:`for`
       statement does that automatically for you, creating a temporary unnamed
       variable to hold the iterator for the duration of the loop.  See also
       :term:`iterator`, :term:`sequence`, and :term:`generator`.
@@ -656,8 +678,8 @@ Glossary
       :func:`next`) return successive items in the stream.  When no more data
       are available a :exc:`StopIteration` exception is raised instead.  At this
       point, the iterator object is exhausted and any further calls to its
-      :meth:`__next__` method just raise :exc:`StopIteration` again.  Iterators
-      are required to have an :meth:`__iter__` method that returns the iterator
+      :meth:`!__next__` method just raise :exc:`StopIteration` again.  Iterators
+      are required to have an :meth:`~iterator.__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
       places where other iterables are accepted.  One notable exception is code
       which attempts multiple iteration passes.  A container object (such as a
@@ -671,7 +693,10 @@ Glossary
       .. impl-detail::
 
          CPython does not consistently apply the requirement that an iterator
-         define :meth:`__iter__`.
+         define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value
@@ -713,22 +738,10 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
-   locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
-
-      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
-
-      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
-
-      ``locale.getencoding()`` can be used to get the locale encoding.
-
-      See also the :term:`filesystem encoding and error handler`.
-
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements is O(1).
+      elements is *O*\ (1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -743,6 +756,18 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      :func:`locale.getencoding` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    magic method
       .. index:: pair: magic; method
@@ -786,8 +811,7 @@ Glossary
 
    method resolution order
       Method Resolution Order is the order in which base classes are searched
-      for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <https://www.python.org/download/releases/2.3/mro/>`_ for details of the
+      for a member during lookup. See :ref:`python_2.3_mro` for details of the
       algorithm used by the Python interpreter since the 2.3 release.
 
    module
@@ -827,10 +851,11 @@ Glossary
       Some named tuples are built-in types (such as the above examples).
       Alternatively, a named tuple can be created from a regular class
       definition that inherits from :class:`tuple` and that defines named
-      fields.  Such a class can be written by hand or it can be created with
-      the factory function :func:`collections.namedtuple`.  The latter
-      technique also adds some extra methods that may not be found in
-      hand-written or built-in named tuples.
+      fields.  Such a class can be written by hand, or it can be created by
+      inheriting :class:`typing.NamedTuple`, or with the factory function
+      :func:`collections.namedtuple`.  The latter techniques also add some
+      extra methods that may not be found in hand-written or built-in named
+      tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -865,12 +890,22 @@ Glossary
       Old name for the flavor of classes now used for all class objects.  In
       earlier Python versions, only new-style classes could use Python's newer,
       versatile features like :attr:`~object.__slots__`, descriptors,
-      properties, :meth:`__getattribute__`, class methods, and static methods.
+      properties, :meth:`~object.__getattribute__`, class methods, and static
+      methods.
 
    object
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
+
+   optimized scope
+      A scope where target local variable names are reliably known to the
+      compiler when the code is compiled, allowing optimization of read and
+      write access to these names. The local namespaces for functions,
+      generators, coroutines, comprehensions, and generator expressions are
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
@@ -945,7 +980,7 @@ Glossary
       finders implement.
 
    path entry hook
-      A callable on the :data:`sys.path_hook` list which returns a :term:`path
+      A callable on the :data:`sys.path_hooks` list which returns a :term:`path
       entry finder` if it knows how to find modules on a specific :term:`path
       entry`.
 
@@ -1056,7 +1091,7 @@ Glossary
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Some objects are
-      "immortal" and have reference counts that are never modified, and
+      :term:`immortal` and have reference counts that are never modified, and
       therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  Programmers can call the
@@ -1069,6 +1104,10 @@ Glossary
 
       See also :term:`namespace package`.
 
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
+
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
       instance attributes and eliminating instance dictionaries.  Though
@@ -1079,20 +1118,22 @@ Glossary
    sequence
       An :term:`iterable` which supports efficient element access using integer
       indices via the :meth:`~object.__getitem__` special method and defines a
-      :meth:`__len__` method that returns the length of the sequence.
+      :meth:`~object.__len__` method that returns the length of the sequence.
       Some built-in sequence types are :class:`list`, :class:`str`,
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
-      supports :meth:`~object.__getitem__` and :meth:`__len__`, but is considered a
+      supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
-      :meth:`~object.__getitem__` and :meth:`__len__`, adding :meth:`count`,
-      :meth:`index`, :meth:`__contains__`, and
-      :meth:`__reversed__`. Types that implement this expanded
+      :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
+      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
+      :meth:`~object.__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.ABCMeta.register`.
+      :func:`~abc.ABCMeta.register`. For more documentation on sequence
+      methods generally, see
+      :ref:`Common Sequence Operations <typesseq-common>`.
 
    set comprehension
       A compact way to process all or part of the elements in an iterable and

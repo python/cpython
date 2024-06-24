@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
 
-# This must be kept in sync with Tools/cases_generator/generate_cases.py
+# This must be kept in sync with Tools/cases_generator/analyzer.py
 RESUME = 149
 
 def isprintable(b: bytes) -> bool:

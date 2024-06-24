@@ -1,5 +1,5 @@
-:mod:`email.policy`: Policy Objects
------------------------------------
+:mod:`!email.policy`: Policy Objects
+------------------------------------
 
 .. module:: email.policy
    :synopsis: Controlling the parsing and generating of messages
@@ -219,7 +219,6 @@ added matters.  To illustrate::
       Default: :const:`False`.
 
       .. versionadded:: 3.5
-         The *mangle_from_* parameter.
 
 
    .. attribute:: message_factory

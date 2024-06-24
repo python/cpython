@@ -1170,7 +1170,7 @@ PyConfig
 
    .. c:member:: int show_ref_count
 
-      Show total reference count at exit (excluding immortal objects)?
+      Show total reference count at exit (excluding :term:`immortal` objects)?
 
       Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 
@@ -1250,8 +1250,11 @@ PyConfig
       If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
       for more information.
 
-      Set by :option:`-X perf <-X>` command line option and by the
-      :envvar:`PYTHONPERFSUPPORT` environment variable.
+      Set by :option:`-X perf <-X>` command-line option and by the
+      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
+      with stack pointers and :option:`-X perf_jit <-X>` command-line option
+      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
+      support with DWARF JIT information.
 
       Default: ``-1``.
 

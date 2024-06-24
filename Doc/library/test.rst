@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
@@ -143,7 +143,7 @@ guidelines to be followed:
          arg = (1, 2, 3)
 
   When using this pattern, remember that all classes that inherit from
-  :class:`unittest.TestCase` are run as tests.  The :class:`Mixin` class in the example above
+  :class:`unittest.TestCase` are run as tests.  The :class:`!TestFuncAcceptsSequencesMixin` class in the example above
   does not have any data and so can't be run by itself, thus it does not
   inherit from :class:`unittest.TestCase`.
 
@@ -158,6 +158,9 @@ guidelines to be followed:
 
 Running tests using the command-line interface
 ----------------------------------------------
+
+.. module:: test.regrtest
+   :synopsis: Drives the regression test suite.
 
 The :mod:`test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
@@ -321,9 +324,9 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
-   Python is :ref:`built in debug mode <debug-build>`
-   (:option:`./configure --with-pydebug <--with-pydebug>`).
+   ``True`` if Python was built with the :c:macro:`Py_DEBUG` macro
+   defined, that is, if
+   Python was :ref:`built in debug mode <debug-build>`.
 
    .. versionadded:: 3.12
 
@@ -726,6 +729,12 @@ The :mod:`test.support` module defines the following functions:
 
    Decorator for the minimum version when running test on macOS.  If the
    macOS version is less than the minimum, the test is skipped.
+
+
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
 
 
 .. decorator:: requires_IEEE_754
@@ -1405,7 +1414,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. class:: FakePath(path)
 
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   Simple :term:`path-like object`.  It implements the
+   :meth:`~os.PathLike.__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
 

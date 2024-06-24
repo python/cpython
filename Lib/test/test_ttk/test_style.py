@@ -258,6 +258,55 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaisesRegex(TclError, 'bad option'):
             style.element_create('block2', 'image', image, spam=1)
 
+    def test_element_create_vsapi_1(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('smallclose', 'vsapi', 'WINDOW', 19, [
+                             ('disabled', 4),
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1)])
+        style.layout('CloseButton',
+                     [('CloseButton.smallclose', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 13)
+        self.assertEqual(b.winfo_reqheight(), 13)
+
+    def test_element_create_vsapi_2(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3, [
+                             ('pressed', '!selected', 3),
+                             ('active', '!selected', 2),
+                             ('pressed', 'selected', 6),
+                             ('active', 'selected', 5),
+                             ('selected', 4),
+                             ('', 1)])
+        style.layout('Explorer.Pin',
+                     [('Explorer.Pin.pin', {'sticky': 'news'})])
+        pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
+        pin.pack(expand=True, fill='both')
+        self.assertEqual(pin.winfo_reqwidth(), 16)
+        self.assertEqual(pin.winfo_reqheight(), 16)
+
+    def test_element_create_vsapi_3(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('headerclose', 'vsapi', 'EXPLORERBAR', 2, [
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1)])
+        style.layout('Explorer.CloseButton',
+                     [('Explorer.CloseButton.headerclose', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='Explorer.CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 16)
+        self.assertEqual(b.winfo_reqheight(), 16)
+
     def test_theme_create(self):
         style = self.style
         curr_theme = style.theme_use()
@@ -355,6 +404,39 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 134)
         self.assertEqual(b.winfo_reqheight(), 100)
+
+        style.theme_use(curr_theme)
+
+    def test_theme_create_vsapi(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        curr_theme = style.theme_use()
+        new_theme = 'testtheme5'
+        style.theme_create(new_theme, settings={
+            'pin' : {
+                'element create': ['vsapi', 'EXPLORERBAR', 3, [
+                                   ('pressed', '!selected', 3),
+                                   ('active', '!selected', 2),
+                                   ('pressed', 'selected', 6),
+                                   ('active', 'selected', 5),
+                                   ('selected', 4),
+                                   ('', 1)]],
+            },
+            'Explorer.Pin' : {
+                'layout': [('Explorer.Pin.pin', {'sticky': 'news'})],
+            },
+        })
+
+        style.theme_use(new_theme)
+        self.assertIn('pin', style.element_names())
+        self.assertEqual(style.layout('Explorer.Pin'),
+                         [('Explorer.Pin.pin', {'sticky': 'nswe'})])
+
+        pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
+        pin.pack(expand=True, fill='both')
+        self.assertEqual(pin.winfo_reqwidth(), 16)
+        self.assertEqual(pin.winfo_reqheight(), 16)
 
         style.theme_use(curr_theme)
 

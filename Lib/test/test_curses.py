@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -1142,6 +1142,8 @@ class TestCurses(unittest.TestCase):
         with self.assertRaises(TypeError):
             del stdscr.encoding
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_issue21088(self):
         stdscr = self.stdscr
         #

@@ -1,5 +1,5 @@
-:mod:`reprlib` --- Alternate :func:`repr` implementation
-========================================================
+:mod:`!reprlib` --- Alternate :func:`repr` implementation
+=========================================================
 
 .. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`reprlib` module provides a means for producing object representations
+The :mod:`!reprlib` module provides a means for producing object representations
 with limits on the size of the resulting strings. This is used in the Python
 debugger and may be useful in other contexts as well.
 
@@ -58,29 +58,31 @@ This module provides a class, an instance, and a function:
    limits on most sizes.
 
 In addition to size-limiting tools, the module also provides a decorator for
-detecting recursive calls to :meth:`__repr__` and substituting a placeholder
-string instead.
+detecting recursive calls to :meth:`~object.__repr__` and substituting a
+placeholder string instead.
 
 
 .. index:: single: ...; placeholder
 
 .. decorator:: recursive_repr(fillvalue="...")
 
-   Decorator for :meth:`__repr__` methods to detect recursive calls within the
+   Decorator for :meth:`~object.__repr__` methods to detect recursive calls within the
    same thread.  If a recursive call is made, the *fillvalue* is returned,
-   otherwise, the usual :meth:`__repr__` call is made.  For example:
+   otherwise, the usual :meth:`!__repr__` call is made.  For example:
 
-        >>> from reprlib import recursive_repr
-        >>> class MyList(list):
-        ...     @recursive_repr()
-        ...     def __repr__(self):
-        ...         return '<' + '|'.join(map(repr, self)) + '>'
-        ...
-        >>> m = MyList('abc')
-        >>> m.append(m)
-        >>> m.append('x')
-        >>> print(m)
-        <'a'|'b'|'c'|...|'x'>
+   .. doctest::
+
+      >>> from reprlib import recursive_repr
+      >>> class MyList(list):
+      ...     @recursive_repr()
+      ...     def __repr__(self):
+      ...         return '<' + '|'.join(map(repr, self)) + '>'
+      ...
+      >>> m = MyList('abc')
+      >>> m.append(m)
+      >>> m.append('x')
+      >>> print(m)
+      <'a'|'b'|'c'|...|'x'>
 
    .. versionadded:: 3.2
 
@@ -148,10 +150,10 @@ which format specific object types.
    with no line breaks or indentation, like the standard :func:`repr`.
    For example:
 
-   .. code-block:: pycon
+   .. doctest:: indent
 
       >>> example = [
-              1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
+      ...     1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
       >>> import reprlib
       >>> aRepr = reprlib.Repr()
       >>> print(aRepr.repr(example))
@@ -160,7 +162,7 @@ which format specific object types.
    If :attr:`~Repr.indent` is set to a string, each recursion level
    is placed on its own line, indented by that string:
 
-   .. code-block:: pycon
+   .. doctest:: indent
 
       >>> aRepr.indent = '-->'
       >>> print(aRepr.repr(example))
@@ -181,7 +183,7 @@ which format specific object types.
    Setting :attr:`~Repr.indent` to a positive integer value behaves as if it
    was set to a string with that number of spaces:
 
-   .. code-block:: pycon
+   .. doctest:: indent
 
       >>> aRepr.indent = 4
       >>> print(aRepr.repr(example))
@@ -234,7 +236,9 @@ Subclassing Repr Objects
 The use of dynamic dispatching by :meth:`Repr.repr1` allows subclasses of
 :class:`Repr` to add support for additional built-in object types or to modify
 the handling of types already supported. This example shows how special support
-for file objects could be added::
+for file objects could be added:
+
+.. testcode::
 
    import reprlib
    import sys
@@ -248,3 +252,7 @@ for file objects could be added::
 
    aRepr = MyRepr()
    print(aRepr.repr(sys.stdin))         # prints '<stdin>'
+
+.. testoutput::
+
+   <stdin>

@@ -56,7 +56,7 @@ __date__    = "07 February 2010"
 #
 #_startTime is used as the base when calculating the relative time of events
 #
-_startTime = time.time()
+_startTime = time.time_ns()
 
 #
 #raiseExceptions is used to see if exceptions during handling should be
@@ -300,7 +300,7 @@ class LogRecord(object):
         """
         Initialize a logging record with interesting information.
         """
-        ct = time.time()
+        ct = time.time_ns()
         self.name = name
         self.msg = msg
         #
@@ -339,9 +339,17 @@ class LogRecord(object):
         self.stack_info = sinfo
         self.lineno = lineno
         self.funcName = func
-        self.created = ct
-        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
-        self.relativeCreated = (self.created - _startTime) * 1000
+        self.created = ct / 1e9  # ns to float seconds
+        # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
+        # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
+        # Convert to float by adding 0.0 for historical reasons. See gh-89047
+        self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
+        if self.msecs == 999.0 and int(self.created) != ct // 1_000_000_000:
+            # ns -> sec conversion can round up, e.g:
+            # 1_677_903_920_999_999_900 ns --> 1_677_903_921.0 sec
+            self.msecs = 0.0
+
+        self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
             self.thread = threading.get_ident()
             self.threadName = threading.current_thread().name
@@ -572,7 +580,7 @@ class Formatter(object):
     %(lineno)d          Source line number where the logging call was issued
                         (if available)
     %(funcName)s        Function name
-    %(created)f         Time when the LogRecord was created (time.time()
+    %(created)f         Time when the LogRecord was created (time.time_ns() / 1e9
                         return value)
     %(asctime)s         Textual time when the LogRecord was created
     %(msecs)d           Millisecond portion of the creation time
@@ -1493,7 +1501,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
+        logger.debug("Houston, we have a %s", "thorny problem", exc_info=True)
         """
         if self.isEnabledFor(DEBUG):
             self._log(DEBUG, msg, args, **kwargs)
@@ -1505,7 +1513,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
+        logger.info("Houston, we have a %s", "notable problem", exc_info=True)
         """
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
@@ -1517,7 +1525,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
+        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=True)
         """
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
@@ -1529,7 +1537,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.error("Houston, we have a %s", "major problem", exc_info=1)
+        logger.error("Houston, we have a %s", "major problem", exc_info=True)
         """
         if self.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
@@ -1547,7 +1555,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
+        logger.critical("Houston, we have a %s", "major disaster", exc_info=True)
         """
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
@@ -1565,7 +1573,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
+        logger.log(level, "We have a %s", "mysterious problem", exc_info=True)
         """
         if not isinstance(level, int):
             if raiseExceptions:
@@ -1949,18 +1957,11 @@ class LoggerAdapter(object):
         """
         return self.logger.hasHandlers()
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, **kwargs):
         """
         Low-level log implementation, proxied to allow nested logger adapters.
         """
-        return self.logger._log(
-            level,
-            msg,
-            args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
-        )
+        return self.logger._log(level, msg, args, **kwargs)
 
     @property
     def manager(self):
@@ -2020,7 +2021,7 @@ def basicConfig(**kwargs):
               that this argument is incompatible with 'filename' - if both
               are present, 'stream' is ignored.
     handlers  If specified, this should be an iterable of already created
-              handlers, which will be added to the root handler. Any handler
+              handlers, which will be added to the root logger. Any handler
               in the list which does not have a formatter assigned will be
               assigned the formatter created in this function.
     force     If this keyword  is specified as true, any existing handlers

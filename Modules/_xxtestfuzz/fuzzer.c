@@ -501,6 +501,70 @@ static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
     return 0;
 }
 
+#define MAX_PYCOMPILE_TEST_SIZE 16384
+
+static const int start_vals[] = {Py_eval_input, Py_single_input, Py_file_input};
+const size_t NUM_START_VALS = sizeof(start_vals) / sizeof(start_vals[0]);
+
+static const int optimize_vals[] = {-1, 0, 1, 2};
+const size_t NUM_OPTIMIZE_VALS = sizeof(optimize_vals) / sizeof(optimize_vals[0]);
+
+/* Fuzz `PyCompileStringExFlags` using a variety of input parameters.
+ * That function is essentially behind the `compile` builtin */
+static int fuzz_pycompile(const char* data, size_t size) {
+    // Ignore overly-large inputs, and account for a NUL terminator
+    if (size > MAX_PYCOMPILE_TEST_SIZE - 1) {
+        return 0;
+    }
+
+    // Need 2 bytes for parameter selection
+    if (size < 2) {
+        return 0;
+    }
+
+    // Use first byte to determine element of `start_vals` to use
+    unsigned char start_idx = (unsigned char) data[0];
+    int start = start_vals[start_idx % NUM_START_VALS];
+
+    // Use second byte to determine element of `optimize_vals` to use
+    unsigned char optimize_idx = (unsigned char) data[1];
+    int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
+
+    char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
+
+    // Create a NUL-terminated C string from the remaining input
+    memcpy(pycompile_scratch, data + 2, size - 2);
+    // Put a NUL terminator just after the copied data. (Space was reserved already.)
+    pycompile_scratch[size - 2] = '\0';
+
+    // XXX: instead of always using NULL for the `flags` value to
+    // `Py_CompileStringExFlags`, there are many flags that conditionally
+    // change parser behavior:
+    //
+    //     #define PyCF_TYPE_COMMENTS 0x1000
+    //     #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
+    //     #define PyCF_ONLY_AST 0x0400
+    //
+    // It would be good to test various combinations of these, too.
+    PyCompilerFlags *flags = NULL;
+
+    PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, flags, optimize);
+    if (result == NULL) {
+        /* Compilation failed, most likely from a syntax error. If it was a
+           SystemError we abort. There's no non-bug reason to raise a
+           SystemError. */
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SystemError)) {
+            PyErr_Print();
+            abort();
+        }
+        PyErr_Clear();
+    } else {
+        Py_DECREF(result);
+    }
+
+    return 0;
+}
+
 /* Run fuzzer and abort on failure. */
 static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* , size_t)) {
     int rv = fuzzer((const char*) data, size);
@@ -642,6 +706,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     rv |= _run_fuzz(data, size, fuzz_elementtree_parsewhole);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
+    rv |= _run_fuzz(data, size, fuzz_pycompile);
 #endif
   return rv;
 }

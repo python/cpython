@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -346,8 +346,8 @@ the `load_tests protocol`_.
    ``python -m unittest discover -s root/namespace -t root``).
 
 .. versionchanged:: 3.11
-   Python 3.11 dropped the :term:`namespace packages <namespace package>`
-   support. It has been broken since Python 3.7. Start directory and
+   :mod:`unittest` dropped the :term:`namespace packages <namespace package>`
+   support in Python 3.11. It has been broken since Python 3.7. Start directory and
    subdirectories containing tests must be regular package that have
    ``__init__.py`` file.
 
@@ -390,8 +390,8 @@ testing code::
            widget = Widget('The widget')
            self.assertEqual(widget.size(), (50, 50))
 
-Note that in order to test something, we use one of the :meth:`assert\*`
-methods provided by the :class:`TestCase` base class.  If the test fails, an
+Note that in order to test something, we use one of the :ref:`assert\* methods <assert-methods>`
+provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised with an explanatory message, and :mod:`unittest`
 will identify the test case as a :dfn:`failure`.  Any other exceptions will be
 treated as :dfn:`errors`.
@@ -1733,7 +1733,7 @@ Grouping tests
    .. method:: __iter__()
 
       Tests grouped by a :class:`TestSuite` are always accessed by iteration.
-      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      Subclasses can lazily provide tests by overriding :meth:`!__iter__`. Note
       that this method may be called several times on a single suite (for
       example when counting tests or comparing for equality) so the tests
       returned by repeated iterations before :meth:`TestSuite.run` must be the
@@ -1744,7 +1744,7 @@ Grouping tests
 
       .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
-         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         than through iteration, so overriding :meth:`!__iter__` wasn't sufficient
          for providing tests.
 
       .. versionchanged:: 3.4
@@ -1880,8 +1880,8 @@ Loading and running tests
       Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
-      the start directory is not the top level directory then the top level
-      directory must be specified separately.
+      the start directory is not the top level directory then *top_level_dir*
+      must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then
       this will be recorded as a single error and discovery will continue.  If
@@ -1901,9 +1901,11 @@ Loading and running tests
       package.
 
       The pattern is deliberately not stored as a loader attribute so that
-      packages can continue discovery themselves. *top_level_dir* is stored so
-      ``load_tests`` does not need to pass this argument in to
-      ``loader.discover()``.
+      packages can continue discovery themselves.
+
+      *top_level_dir* is stored internally, and used as a default to any
+      nested calls to ``discover()``. That is, if a package's ``load_tests``
+      calls ``loader.discover()``, it does not need to pass this argument.
 
       *start_dir* can be a dotted module name as well as a directory.
 
@@ -1930,6 +1932,9 @@ Loading and running tests
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
          It has been broken since Python 3.7 and Python 3.11 officially remove it.
 
+      .. versionchanged:: 3.13
+         *top_level_dir* is only stored for the duration of *discover* call.
+
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1940,14 +1945,14 @@ Loading and running tests
       String giving the prefix of method names which will be interpreted as test
       methods.  The default value is ``'test'``.
 
-      This affects :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*`
+      This affects :meth:`getTestCaseNames` and all the ``loadTestsFrom*``
       methods.
 
 
    .. attribute:: sortTestMethodsUsing
 
       Function to be used to compare method names when sorting them in
-      :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*` methods.
+      :meth:`getTestCaseNames` and all the ``loadTestsFrom*`` methods.
 
 
    .. attribute:: suiteClass
@@ -1956,7 +1961,7 @@ Loading and running tests
       methods on the resulting object are needed.  The default value is the
       :class:`TestSuite` class.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
    .. attribute:: testNamePatterns
 
@@ -1969,7 +1974,7 @@ Loading and running tests
       so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
       .. versionadded:: 3.7
 
@@ -2003,7 +2008,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks. Each tuple represents a test where a failure
-      was explicitly signalled using the :meth:`TestCase.assert\*` methods.
+      was explicitly signalled using the :ref:`assert\* methods <assert-methods>`.
 
    .. attribute:: skipped
 
@@ -2196,8 +2201,8 @@ Loading and running tests
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.12
-      Added *durations* keyword argument.
+   .. versionchanged:: 3.12
+      Added the *durations* keyword parameter.
 
 .. data:: defaultTestLoader
 
@@ -2290,7 +2295,7 @@ Loading and running tests
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
    an exit code indicating success (0) or failure (1) of the tests run.
-   An exit code of 5 indicates that no tests were run.
+   An exit code of 5 indicates that no tests were run or skipped.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
@@ -2325,6 +2330,8 @@ Loading and running tests
       The *defaultTest* parameter was changed to also accept an iterable of
       test names.
 
+
+.. _load_tests-protocol:
 
 load_tests Protocol
 ###################

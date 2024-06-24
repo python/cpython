@@ -8,7 +8,15 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
+
+/**************/
+/* exceptions */
+/**************/
+
+PyAPI_DATA(PyObject *) PyExc_InterpreterError;
+PyAPI_DATA(PyObject *) PyExc_InterpreterNotFoundError;
 
 
 /***************************/
@@ -79,6 +87,11 @@ struct _xid {
 PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
 
+#define _PyCrossInterpreterData_DATA(DATA) ((DATA)->data)
+#define _PyCrossInterpreterData_OBJ(DATA) ((DATA)->obj)
+#define _PyCrossInterpreterData_INTERPID(DATA) ((DATA)->interpid)
+// Users should not need getters for "new_object" or "free".
+
 
 /* defining cross-interpreter data */
 
@@ -92,6 +105,25 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
         xid_newobjectfunc);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
         PyInterpreterState *, _PyCrossInterpreterData *);
+
+// Normally the Init* functions are sufficient.  The only time
+// additional initialization might be needed is to set the "free" func,
+// though that should be infrequent.
+#define _PyCrossInterpreterData_SET_FREE(DATA, FUNC) \
+    do { \
+        (DATA)->free = (FUNC); \
+    } while (0)
+// Additionally, some shareable types are essentially light wrappers
+// around other shareable types.  The crossinterpdatafunc of the wrapper
+// can often be implemented by calling the wrapped object's
+// crossinterpdatafunc and then changing the "new_object" function.
+// We have _PyCrossInterpreterData_SET_NEW_OBJECT() here for that,
+// but might be better to have a function like
+// _PyCrossInterpreterData_AdaptToWrapper() instead.
+#define _PyCrossInterpreterData_SET_NEW_OBJECT(DATA, FUNC) \
+    do { \
+        (DATA)->new_object = (FUNC); \
+    } while (0)
 
 
 /* using cross-interpreter data */
@@ -128,7 +160,7 @@ struct _xidregitem {
 struct _xidregistry {
     int global;  /* builtin types or heap types */
     int initialized;
-    PyThread_type_lock mutex;
+    PyMutex mutex;
     struct _xidregitem *head;
 };
 
@@ -159,6 +191,11 @@ struct _xi_state {
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
 
+extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
+extern void _PyXI_FiniTypes(PyInterpreterState *interp);
+
+#define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
+
 
 /***************************/
 /* short-term data sharing */
@@ -170,9 +207,20 @@ extern void _PyXI_Fini(PyInterpreterState *interp);
 // of the exception in the calling interpreter.
 
 typedef struct _excinfo {
-    const char *type;
+    struct _excinfo_type {
+        PyTypeObject *builtin;
+        const char *name;
+        const char *qualname;
+        const char *module;
+    } type;
     const char *msg;
-} _Py_excinfo;
+    const char *errdisplay;
+} _PyXI_excinfo;
+
+PyAPI_FUNC(int) _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc);
+PyAPI_FUNC(PyObject *) _PyXI_FormatExcInfo(_PyXI_excinfo *info);
+PyAPI_FUNC(PyObject *) _PyXI_ExcInfoAsObject(_PyXI_excinfo *info);
+PyAPI_FUNC(void) _PyXI_ClearExcInfo(_PyXI_excinfo *info);
 
 
 typedef enum error_code {
@@ -193,13 +241,13 @@ typedef struct _sharedexception {
     // The kind of error to propagate.
     _PyXI_errcode code;
     // The exception information to propagate, if applicable.
-    // This is populated only for _PyXI_ERR_UNCAUGHT_EXCEPTION.
-    _Py_excinfo uncaught;
-} _PyXI_exception_info;
+    // This is populated only for some error codes,
+    // but always for _PyXI_ERR_UNCAUGHT_EXCEPTION.
+    _PyXI_excinfo uncaught;
+} _PyXI_error;
 
-PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
-    _PyXI_exception_info *info,
-    PyObject *exctype);
+PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
+
 
 typedef struct xi_session _PyXI_session;
 typedef struct _sharedns _PyXI_namespace;
@@ -251,13 +299,13 @@ struct xi_session {
 
     // This is set if the interpreter is entered and raised an exception
     // that needs to be handled in some special way during exit.
-    _PyXI_errcode *exc_override;
+    _PyXI_errcode *error_override;
     // This is set if exit captured an exception to propagate.
-    _PyXI_exception_info *exc;
+    _PyXI_error *error;
 
     // -- pre-allocated memory --
-    _PyXI_exception_info _exc;
-    _PyXI_errcode _exc_override;
+    _PyXI_error _error;
+    _PyXI_errcode _error_override;
 };
 
 PyAPI_FUNC(int) _PyXI_Enter(
@@ -266,10 +314,24 @@ PyAPI_FUNC(int) _PyXI_Enter(
     PyObject *nsupdates);
 PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
 
-PyAPI_FUNC(void) _PyXI_ApplyCapturedException(
-    _PyXI_session *session,
-    PyObject *excwrapper);
+PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
+
+
+/*************/
+/* other API */
+/*************/
+
+// Export for _testinternalcapi shared extension
+PyAPI_FUNC(PyInterpreterState *) _PyXI_NewInterpreter(
+    PyInterpreterConfig *config,
+    long *maybe_whence,
+    PyThreadState **p_tstate,
+    PyThreadState **p_save_tstate);
+PyAPI_FUNC(void) _PyXI_EndInterpreter(
+    PyInterpreterState *interp,
+    PyThreadState *tstate,
+    PyThreadState **p_save_tstate);
 
 
 #ifdef __cplusplus

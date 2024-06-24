@@ -180,6 +180,7 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
+// Soft deprecated since Python 3.14, use memcpy() instead.
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
@@ -563,9 +564,17 @@ extern "C" {
 #      define _Py_ADDRESS_SANITIZER
 #    endif
 #  endif
+#  if __has_feature(thread_sanitizer)
+#    if !defined(_Py_THREAD_SANITIZER)
+#      define _Py_THREAD_SANITIZER
+#    endif
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#  endif
+#  if defined(__SANITIZE_THREAD__)
+#    define _Py_THREAD_SANITIZER
 #  endif
 #endif
 
@@ -584,6 +593,14 @@ extern "C" {
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
 #endif
 
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)

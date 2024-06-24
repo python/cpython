@@ -19,12 +19,33 @@ _PyPegen_interactive_exit(Parser *p)
 }
 
 Py_ssize_t
-_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+_PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset)
 {
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return -1;
+    const char *data = PyUnicode_AsUTF8(line);
+
+    Py_ssize_t len = 0;
+    while (col_offset < end_col_offset) {
+        Py_UCS4 ch = data[col_offset];
+        if (ch < 0x80) {
+            col_offset += 1;
+        } else if ((ch & 0xe0) == 0xc0) {
+            col_offset += 2;
+        } else if ((ch & 0xf0) == 0xe0) {
+            col_offset += 3;
+        } else if ((ch & 0xf8) == 0xf0) {
+            col_offset += 4;
+        } else {
+            PyErr_SetString(PyExc_ValueError, "Invalid UTF-8 sequence");
+            return -1;
+        }
+        len++;
     }
+    return len;
+}
+
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
+{
     Py_ssize_t len = strlen(str);
     if (col_offset > len + 1) {
         col_offset = len + 1;
@@ -37,6 +58,16 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
     Py_DECREF(text);
     return size;
+}
+
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    return _PyPegen_byte_offset_to_character_offset_raw(str, col_offset);
 }
 
 // Here, mark is the start of the node, while p->mark is the end.
@@ -496,7 +527,8 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
-    PyUnicode_InternInPlace(&id);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)
     {
         Py_DECREF(id);
@@ -838,7 +870,7 @@ _PyPegen_run_parser(Parser *p)
     if (res == NULL) {
         if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
             PyErr_Clear();
-            return RAISE_SYNTAX_ERROR("incomplete input");
+            return _PyPegen_raise_error(p, PyExc_IncompleteInputError, 0, "incomplete input");
         }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;

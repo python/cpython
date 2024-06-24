@@ -1,2 +1,0 @@
-Fix crashes in :meth:`io.TextIOWrapper.reconfigure` when pass invalid
-arguments, e.g. non-string encoding.

@@ -1,2 +1,0 @@
-Fix argument parsing by ``_PyArg_UnpackKeywordsWithVararg`` for functions
-defining pos-or-keyword, vararg, and kw-only parameters.

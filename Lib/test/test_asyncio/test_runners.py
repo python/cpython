@@ -495,6 +495,24 @@ class RunnerTests(BaseTest):
         self.assertEqual(1, policy.set_event_loop.call_count)
         runner.close()
 
+    def test_no_repr_is_call_on_the_task_result(self):
+        # See https://github.com/python/cpython/issues/112559.
+        class MyResult:
+            def __init__(self):
+                self.repr_count = 0
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        async def coro():
+            return MyResult()
+
+
+        with asyncio.Runner() as runner:
+            result = runner.run(coro())
+
+        self.assertEqual(0, result.repr_count)
+
 
 if __name__ == '__main__':
     unittest.main()

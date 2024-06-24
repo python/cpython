@@ -1,5 +1,5 @@
-:mod:`logging.handlers` --- Logging handlers
-============================================
+:mod:`!logging.handlers` --- Logging handlers
+=============================================
 
 .. module:: logging.handlers
    :synopsis: Handlers for the logging module.
@@ -66,7 +66,7 @@ and :meth:`flush` methods).
 
       :param stream: The stream that the handler should use.
 
-      :return: the old stream, if the stream was changed, or *None* if it wasn't.
+      :return: the old stream, if the stream was changed, or ``None`` if it wasn't.
 
       .. versionadded:: 3.7
 
@@ -871,8 +871,8 @@ supports sending logging messages to an email address via SMTP.
    A timeout can be specified for communication with the SMTP server using the
    *timeout* argument.
 
-   .. versionadded:: 3.3
-      The *timeout* argument was added.
+   .. versionchanged:: 3.3
+      Added the *timeout* parameter.
 
    .. method:: emit(record)
 

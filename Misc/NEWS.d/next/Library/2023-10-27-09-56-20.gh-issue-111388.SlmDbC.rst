@@ -1,2 +1,0 @@
-Add ``show_group`` parameter to :func:`traceback.format_exception_only`,
-which allows to format :exc:`ExceptionGroup` instances.

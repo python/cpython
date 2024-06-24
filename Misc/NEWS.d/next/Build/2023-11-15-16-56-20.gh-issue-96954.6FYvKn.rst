@@ -1,1 +1,0 @@
-Make ``make regen-unicodedata`` work for out-of-tree builds of CPython.

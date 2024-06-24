@@ -70,7 +70,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
-        import sched
+        import sched  # noqa: F401
         self.assertIn("sched", sys.modules)
         import_helper.unload("sched")
         self.assertNotIn("sched", sys.modules)
@@ -630,7 +630,7 @@ class TestSupport(unittest.TestCase):
             if depth:
                 recursive_function(depth - 1)
 
-        for max_depth in (5, 25, 250):
+        for max_depth in (5, 25, 250, 2500):
             with support.infinite_recursion(max_depth):
                 available = support.get_recursion_available()
 

@@ -1,1 +1,0 @@
-Make :mod:`pdb` enter post-mortem mode even for :exc:`SyntaxError`

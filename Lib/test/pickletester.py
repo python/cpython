@@ -1825,6 +1825,14 @@ class AbstractPickleTests:
             t2 = self.loads(p)
             self.assert_is_copy(t, t2)
 
+    def test_unicode_memoization(self):
+        # Repeated str is re-used (even when escapes added).
+        for proto in protocols:
+            for s in '', 'xyz', 'xyz\n', 'x\\yz', 'x\xa1yz\r':
+                p = self.dumps((s, s), proto)
+                s1, s2 = self.loads(p)
+                self.assertIs(s1, s2)
+
     def test_bytes(self):
         for proto in protocols:
             for s in b'', b'xyz', b'xyz'*100:
@@ -1836,6 +1844,25 @@ class AbstractPickleTests:
             for s in [bytes([i, i]) for i in range(256)]:
                 p = self.dumps(s, proto)
                 self.assert_is_copy(s, self.loads(p))
+
+    def test_bytes_memoization(self):
+        for proto in protocols:
+            for array_type in [bytes, ZeroCopyBytes]:
+                for s in b'', b'xyz', b'xyz'*100:
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = array_type(s)
+                        p = self.dumps((b, b), proto)
+                        x, y = self.loads(p)
+                        self.assertIs(x, y)
+                        self.assert_is_copy((b, b), (x, y))
+
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b1, b2 = array_type(s), array_type(s)
+                        p = self.dumps((b1, b2), proto)
+                        # Note that (b1, b2) = self.loads(p) might have identical
+                        # components, i.e., b1 is b2, but this is not always the
+                        # case if the content is large (equality still holds).
+                        self.assert_is_copy((b1, b2), self.loads(p))
 
     def test_bytearray(self):
         for proto in protocols:
@@ -1856,13 +1883,31 @@ class AbstractPickleTests:
                     self.assertNotIn(b'bytearray', p)
                     self.assertTrue(opcode_in_pickle(pickle.BYTEARRAY8, p))
 
-    def test_bytearray_memoization_bug(self):
+    def test_bytearray_memoization(self):
         for proto in protocols:
-            for s in b'', b'xyz', b'xyz'*100:
-                b = bytearray(s)
-                p = self.dumps((b, b), proto)
-                b1, b2 = self.loads(p)
-                self.assertIs(b1, b2)
+            for array_type in [bytearray, ZeroCopyBytearray]:
+                for s in b'', b'xyz', b'xyz'*100:
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=False):
+                        b = array_type(s)
+                        p = self.dumps((b, b), proto)
+                        b1, b2 = self.loads(p)
+                        self.assertIs(b1, b2)
+
+                    with self.subTest(proto=proto, array_type=array_type, s=s, independent=True):
+                        b1a, b2a = array_type(s), array_type(s)
+                        # Unlike bytes, equal but independent bytearray objects are
+                        # never identical.
+                        self.assertIsNot(b1a, b2a)
+
+                        p = self.dumps((b1a, b2a), proto)
+                        b1b, b2b = self.loads(p)
+                        self.assertIsNot(b1b, b2b)
+
+                        self.assertIsNot(b1a, b1b)
+                        self.assert_is_copy(b1a, b1b)
+
+                        self.assertIsNot(b2a, b2b)
+                        self.assert_is_copy(b2a, b2b)
 
     def test_ints(self):
         for proto in protocols:
@@ -2429,7 +2474,7 @@ class AbstractPickleTests:
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
         for proto in range(2):
-            with support.infinite_recursion():
+            with support.infinite_recursion(25):
                 self.assertRaises(RuntimeError, self.dumps, x, proto)
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(x, proto)
@@ -3513,6 +3558,84 @@ class AbstractPickleModuleTests:
 
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
+
+    def test_unpickler_bad_file(self):
+        # bpo-38384: Crash in _pickle if the read attribute raises an error.
+        def raises_oserror(self, *args, **kwargs):
+            raise OSError
+        @property
+        def bad_property(self):
+            1/0
+
+        # File without read and readline
+        class F:
+            pass
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File without read
+        class F:
+            readline = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File without readline
+        class F:
+            read = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File with bad read
+        class F:
+            read = bad_property
+            readline = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline
+        class F:
+            readline = bad_property
+            read = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline, no read
+        class F:
+            readline = bad_property
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad read, no readline
+        class F:
+            read = bad_property
+        self.assertRaises((AttributeError, ZeroDivisionError), self.Unpickler, F())
+
+        # File with bad peek
+        class F:
+            peek = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
+
+        # File with bad readinto
+        class F:
+            readinto = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
+
+    def test_pickler_bad_file(self):
+        # File without write
+        class F:
+            pass
+        self.assertRaises(TypeError, self.Pickler, F())
+
+        # File with bad write
+        class F:
+            @property
+            def write(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.Pickler, F())
 
     def check_dumps_loads_oob_buffers(self, dumps, loads):
         # No need to do the full gamut of tests here, just enough to
