@@ -2296,7 +2296,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
 
     if (size < 0) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "size must be positive");
         return -1;
     }
@@ -13391,7 +13391,7 @@ PyUnicodeWriter*
 PyUnicodeWriter_Create(Py_ssize_t length)
 {
     if (length < 0) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "length must be positive");
         return NULL;
     }

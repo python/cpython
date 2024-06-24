@@ -1792,7 +1792,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
 
     def test_ucs4(self):
         writer = self.create_writer(0)
-        writer.write_ucs4("ascii", 5)
+        writer.write_ucs4("ascii IGNORED", 5)
         writer.write_char("-")
         writer.write_ucs4("latin1=\xe9", 8)
         writer.write_char("-")
@@ -1802,6 +1802,24 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char(".")
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC-max=\U0010ffff.")
+
+        # Test some special characters
+        writer = self.create_writer(0)
+        # Lone surrogate character
+        writer.write_ucs4("lone\uDC80", 5)
+        writer.write_char("-")
+        # Surrogate pair
+        writer.write_ucs4("pair\uDBFF\uDFFF", 5)
+        writer.write_char("-")
+        writer.write_ucs4("null[\0]", 7)
+        self.assertEqual(writer.finish(),
+                         "lone\udc80-pair\udbff-null[\0]")
+
+        # invalid size
+        writer = self.create_writer(0)
+        with self.assertRaises(ValueError):
+            writer.write_ucs4("text", -1)
+
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')
