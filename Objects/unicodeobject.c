@@ -2298,8 +2298,9 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
 
     if (size < 0) {
-        size = 0;
-        for (; str[size] != '\0'; size++);
+        PyErr_SetString(PyExc_TypeError,
+                        "size must be positive");
+        return NULL;
     }
 
     if (size == 0) {

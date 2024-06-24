@@ -1567,8 +1567,7 @@ object.
 
    Writer the UCS4 string *str* into *writer*.
 
-   *size* is a number of UCS4 characters. If *size* is equal to ``-1``, get the
-   string length (search the NUL character).
+   *size* is a number of UCS4 characters.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
