@@ -377,15 +377,15 @@ The :mod:`functools` module defines the following functions:
    only one positional argument is provided, while there are two placeholders
    in :ref:`partial object <partial-objects>`.
 
-   Placeholders can be used repetitively to reduce the number
-   of positional arguments with each successive application:
+   :data:`!Placeholder` sentinels can be used repetitively to reduce the number
+   of positional arguments with each successive application. A place for positional
+   argument is retained when :data:`!Placeholder` sentinel is replaced with the new one:
 
       >>> from functools import partial, Placeholder as _
-      >>> count = partial(print, _, 2, _, _, 5)
-      >>> count = partial(count, 1,    _, 4)
-      >>> count = partial(count,       3)
-      >>> count()
-      1 2 3 4 5
+      >>> count = partial(print, _, _, _, 4)
+      >>> count = partial(count, _, 2)
+      >>> count(1, 3)
+      1 2 3 4
 
    .. versionchanged:: 3.14
       Support for :data:`Placeholder` in *args*
