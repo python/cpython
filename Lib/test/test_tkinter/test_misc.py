@@ -382,6 +382,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(vi.micro, 0)
         self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
 
+    def test_embedded_null(self):
+        widget = tkinter.Entry(self.root)
+        widget.insert(0, 'abc\0def')  # ASCII-only
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), 'abc\x00def')
+        widget.insert(0, '\u20ac\0')  # non-ASCII
+        widget.selection_range(0, 'end')
+        self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
+
 
 class EventTest(AbstractTkTest, unittest.TestCase):
 

@@ -73,6 +73,18 @@ class TclTest(unittest.TestCase):
         tcl.call('set','a','1')
         self.assertEqual(tcl.call('set','a'),'1')
 
+    def test_call_passing_null(self):
+        tcl = self.interp
+        tcl.call('set', 'a', 'a\0b')  # ASCII-only
+        self.assertEqual(tcl.getvar('a'), 'a\x00b')
+        self.assertEqual(tcl.call('set', 'a'), 'a\x00b')
+        self.assertEqual(tcl.eval('set a'), 'a\x00b')
+
+        tcl.call('set', 'a', '\u20ac\0')  # non-ASCII
+        self.assertEqual(tcl.getvar('a'), '\u20ac\x00')
+        self.assertEqual(tcl.call('set', 'a'), '\u20ac\x00')
+        self.assertEqual(tcl.eval('set a'), '\u20ac\x00')
+
     def testCallException(self):
         tcl = self.interp
         self.assertRaises(TclError,tcl.call,'set','a')
@@ -97,6 +109,18 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         tcl.setvar('a','1')
         self.assertEqual(tcl.eval('set a'),'1')
+
+    def test_setvar_passing_null(self):
+        tcl = self.interp
+        tcl.setvar('a', 'a\0b')  # ASCII-only
+        self.assertEqual(tcl.getvar('a'), 'a\x00b')
+        self.assertEqual(tcl.call('set', 'a'), 'a\x00b')
+        self.assertEqual(tcl.eval('set a'), 'a\x00b')
+
+        tcl.setvar('a', '\u20ac\0')  # non-ASCII
+        self.assertEqual(tcl.getvar('a'), '\u20ac\x00')
+        self.assertEqual(tcl.call('set', 'a'), '\u20ac\x00')
+        self.assertEqual(tcl.eval('set a'), '\u20ac\x00')
 
     def testSetVarArray(self):
         tcl = self.interp
