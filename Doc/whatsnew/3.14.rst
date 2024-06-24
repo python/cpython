@@ -96,7 +96,7 @@ datetime
 --------
 
 Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
-(Contributed by Wannes Boeykens in :gh:`120752`.)
+(Contributed by Wannes Boeykens in :gh:`41431`.)
 
 os
 --
