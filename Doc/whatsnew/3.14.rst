@@ -75,7 +75,9 @@ New Features
 Other Language Changes
 ======================
 
+* TODO.
 
+  (Contributed by Bénédikt Tran in :gh:`120857`.)
 
 New Modules
 ===========
