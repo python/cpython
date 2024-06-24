@@ -1151,7 +1151,7 @@ DNS
    Both *getaddrinfo* and *getnameinfo* internally utilize their synchronous
    versions through the loop's default thread pool executor.
    When this executor is saturated, these methods may experience delays,
-   which can manifest as "DNS timeouts" in higher-level networking libraries.
+   which higher-level networking libraries may report as increased timeouts.
    To mitigate this, consider using a custom executor for other user tasks,
    or setting a default executor with a larger number of workers.
 
