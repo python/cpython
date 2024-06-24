@@ -1380,6 +1380,48 @@ Renaming and deleting
    Remove this directory.  The directory must be empty.
 
 
+Ownership and permissions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.owner()
+
+   Return the name of the user owning the file.  :exc:`KeyError` is raised
+   if the file's user identifier (UID) isn't found in the system database.
+
+
+.. method:: Path.group()
+
+   Return the name of the group owning the file.  :exc:`KeyError` is raised
+   if the file's group identifier (GID) isn't found in the system database.
+
+
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
+
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_mode
+      33277
+      >>> p.chmod(0o444)
+      >>> p.stat().st_mode
+      33060
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.lchmod(mode)
+
+   Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
+   symbolic link's mode is changed rather than its target's.
+
+
 Other methods
 ^^^^^^^^^^^^^
 
@@ -1406,27 +1448,6 @@ Other methods
    .. versionadded:: 3.5
 
 
-.. method:: Path.chmod(mode, *, follow_symlinks=True)
-
-   Change the file mode and permissions, like :func:`os.chmod`.
-
-   This method normally follows symlinks. Some Unix flavours support changing
-   permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
-
-   ::
-
-      >>> p = Path('setup.py')
-      >>> p.stat().st_mode
-      33277
-      >>> p.chmod(0o444)
-      >>> p.stat().st_mode
-      33060
-
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
-
-
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
@@ -1440,24 +1461,6 @@ Other methods
       PosixPath('/home/eric/films/Monty Python')
 
    .. versionadded:: 3.5
-
-
-.. method:: Path.group()
-
-   Return the name of the group owning the file.  :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
-
-
-.. method:: Path.lchmod(mode)
-
-   Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
-   symbolic link's mode is changed rather than its target's.
-
-
-.. method:: Path.owner()
-
-   Return the name of the user owning the file.  :exc:`KeyError` is raised
-   if the file's uid isn't found in the system database.
 
 
 .. method:: Path.readlink()
