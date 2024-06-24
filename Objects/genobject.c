@@ -813,7 +813,7 @@ static PyAsyncMethods gen_as_async = {
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
-    sizeof(PyGenObject),                        /* tp_basicsize */
+    offsetof(PyGenObject, gi_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */
@@ -1164,7 +1164,7 @@ static PyAsyncMethods coro_as_async = {
 PyTypeObject PyCoro_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "coroutine",                                /* tp_name */
-    sizeof(PyCoroObject),                       /* tp_basicsize */
+    offsetof(PyCoroObject, cr_iframe.localsplus),/* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */
@@ -1579,7 +1579,7 @@ static PyAsyncMethods async_gen_as_async = {
 PyTypeObject PyAsyncGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "async_generator",                          /* tp_name */
-    sizeof(PyAsyncGenObject),                   /* tp_basicsize */
+    offsetof(PyAsyncGenObject, ag_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */
