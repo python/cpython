@@ -236,7 +236,7 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string consants in the free-threaded build, but only if
+        // Intern non-string constants in the free-threaded build, but only if
         // we are also immortalizing objects that use deferred reference
         // counting.
         PyThreadState *tstate = PyThreadState_GET();
