@@ -23,10 +23,7 @@
 static double complex
 CMPLX(double real, double imag)
 {
-    double complex z;
-    ((double *)(&z))[0] = real;
-    ((double *)(&z))[1] = imag;
-    return z;
+    return real + imag*_Complex_I;
 }
 #  endif
 #endif
