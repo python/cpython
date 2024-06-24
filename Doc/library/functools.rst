@@ -340,30 +340,12 @@ The :mod:`functools` module defines the following functions:
       Placeholder = object()
 
       def partial(func, /, *args, **keywords):
-          # Trim trailing placeholders and count how many remaining
-          nargs = len(args)
-          while nargs and args[nargs-1] is Placeholder:
-              nargs -= 1
-          args = args[:nargs]
-          placeholder_count = args.count(Placeholder)
           def newfunc(*fargs, **fkeywords):
-              if len(fargs) < placeholder_count:
-                  raise TypeError("missing positional arguments in 'partial' call;"
-                                  f" expected at least {placeholder_count}, "
-                                  f"got {len(fargs)}")
-              newargs = list(args)
-              j = 0
-              for i, arg in enumarate(args):
-                  if arg is Placeholder:
-                      newargs[i] = fargs[j]
-                      j += 1
-              newargs.extend(fargs[j:])
               newkeywords = {**keywords, **fkeywords}
-              return func(*newargs, **newkeywords)
+              return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
-          newfunc.placeholder_count = placeholder_count
           return newfunc
 
    The :func:`partial` is used for partial function application which "freezes"
@@ -391,7 +373,19 @@ The :mod:`functools` module defines the following functions:
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
 
-   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`.
+   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`, because
+   only one positional argument is provided, while there are two placeholders
+   in :ref:`partial object <partial-objects>`.
+
+   Placeholders can be used repetitively to reduce the number
+   of positional arguments with each successive application:
+
+      >>> from functools import partial, Placeholder as _
+      >>> count = partial(print, _, 2, _, _, 5)
+      >>> count = partial(count, 1,    _, 4)
+      >>> count = partial(count,       3)
+      >>> count()
+      1 2 3 4 5
 
    .. versionchanged:: 3.14
       Support for :data:`Placeholder` in *args*
