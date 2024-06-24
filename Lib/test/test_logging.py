@@ -1038,6 +1038,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
+    allow_reuse_port = True
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -3898,6 +3899,7 @@ class ConfigDictTest(BaseTest):
                 self.addCleanup(os.remove, fn)
 
     @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
     def test_config_queue_handler(self):
         q = CustomQueue()
         dq = {
@@ -3926,11 +3928,9 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    @support.requires_subprocess()
     def test_multiprocessing_queues(self):
         # See gh-119819
-
-        # will skip test if it's not available
-        import_helper.import_module('_multiprocessing')
 
         cd = copy.deepcopy(self.config_queue_handler)
         from multiprocessing import Queue as MQ, Manager as MM
@@ -4649,13 +4649,18 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
             (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
             (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
+            (1_677_903_920_999_999_900, 0.0), # check rounding up
         )
         for ns, want in tests:
             with patch('time.time_ns') as patched_ns:
                 patched_ns.return_value = ns
                 record = logging.makeLogRecord({'msg': 'test'})
-            self.assertEqual(record.msecs, want)
-            self.assertEqual(record.created, ns / 1e9)
+            with self.subTest(ns):
+                self.assertEqual(record.msecs, want)
+                self.assertEqual(record.created, ns / 1e9)
+                self.assertAlmostEqual(record.created - int(record.created),
+                                       record.msecs / 1e3,
+                                       delta=1e-3)
 
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402.
