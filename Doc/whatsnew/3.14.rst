@@ -96,7 +96,7 @@ asyncio
 -------
 
 Add :meth:`asyncio.Queue.iter` and :meth:`asyncio.Queue.iter_nowait`.
-(Contributed by Wannes Boeykens in :gh:`120925`.)
+(Contributed by Wannes Boeykens in :gh:`120924`.)
 
 os
 --
@@ -117,7 +117,7 @@ queue
 -----
 
 Add :meth:`queue.Queue.iter` and :meth:`queue.Queue.iter_nowait`.
-(Contributed by Wannes Boeykens in :gh:`120925`.)
+(Contributed by Wannes Boeykens in :gh:`120924`.)
 
 symtable
 --------
