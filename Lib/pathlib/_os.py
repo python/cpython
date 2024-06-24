@@ -160,15 +160,14 @@ def copyfileobj(source_f, target_f):
 
 
 def get_file_metadata(path, follow_symlinks):
-    if isinstance(path, os.DirEntry):
-        st = path.stat(follow_symlinks=follow_symlinks)
-    else:
-        st = os.stat(path, follow_symlinks=follow_symlinks)
+    st = os.stat(path, follow_symlinks=follow_symlinks)
     result = {
         'mode': stat.S_IMODE(st.st_mode),
         'atime_ns': st.st_atime_ns,
         'mtime_ns': st.st_mtime_ns,
     }
+    if hasattr(st, 'st_flags'):
+        result['flags'] = st.st_flags
     if hasattr(os, 'listxattr'):
         try:
             result['xattrs'] = [
@@ -177,8 +176,6 @@ def get_file_metadata(path, follow_symlinks):
         except OSError as err:
             if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                 raise
-    if hasattr(st, 'st_flags'):
-        result['flags'] = st.st_flags
     return result
 
 
