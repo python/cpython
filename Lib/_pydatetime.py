@@ -210,9 +210,9 @@ def _need_normalize_century():
     if _normalize_century is None:
         try:
             _normalize_century = (
-                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) == "99")
+                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) != "0099")
         except ValueError:
-            _normalize_century = False
+            _normalize_century = True
     return _normalize_century
 
 # Correctly substitute for %z and %Z escapes in strftime formats.
