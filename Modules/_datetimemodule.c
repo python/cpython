@@ -1942,13 +1942,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #ifdef NORMALIZE_CENTURY
         else if (ch == 'Y') {
             /* 0-pad year with century on platforms that do not do so */
-            PyObject *year = PyObject_GetAttrString(object, "year");
-            if (year == NULL)
-                goto Done;
             char formatted[5];
-            ntoappend = sprintf(formatted, "%04d", (int)PyLong_AsLong(year));
+            ntoappend = sprintf(formatted, "%04ld",
+                                PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0)));
             ptoappend = formatted;
-            Py_DECREF(year);
         }
 #endif
         else {
