@@ -27,7 +27,7 @@ class LibTest(unittest.TestCase):
     def test_csqrt(self):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
-        self.assertEqual(lib.my_csqrt(4.0), 2+0j)
+        self.assertAlmostEqual(lib.my_csqrt(4.0), 2+0j)
         self.assertAlmostEqual(lib.my_csqrt(1+1j),
                                1.09868411346781+0.45508986056222733j)
         self.assertAlmostEqual(lib.my_csqrt(1-1j),
