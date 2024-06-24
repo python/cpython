@@ -28,6 +28,10 @@ class LibTest(unittest.TestCase):
         lib.my_csqrt.argtypes = ctypes.c_double_complex,
         lib.my_csqrt.restype = ctypes.c_double_complex
         self.assertEqual(lib.my_csqrt(4.0), 2+0j)
+        self.assertAlmostEqual(lib.my_csqrt(1+0.01j),
+                               1.000000124999961+0.0004999999375000273j)
+        self.assertAlmostEqual(lib.my_csqrt(1-0.01j),
+                               1.000000124999961-0.0004999999375000273j)
         self.assertAlmostEqual(lib.my_csqrt(-1+0.01j),
                                0.004999937502734214+1.0000124996093955j)
         self.assertAlmostEqual(lib.my_csqrt(-1-0.01j),
