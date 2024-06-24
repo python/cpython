@@ -8380,7 +8380,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
                 Py_DECREF(result);
                 return NULL;
             }
-            PyObject *value = PyLong_FromSsize_t(i);
+            PyObject *value = PyLong_FromLong(i);
             if (value == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(result);
