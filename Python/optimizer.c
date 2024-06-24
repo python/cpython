@@ -1059,6 +1059,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 buffer[i].jump_target = 0;
             }
         }
+        if (opcode == _JUMP_TO_TOP) {
+            assert(buffer[0].opcode == _START_EXECUTOR);
+            buffer[i].format = UOP_FORMAT_JUMP;
+            buffer[i].jump_target = 1;
+        }
     }
     return next_spare;
 }

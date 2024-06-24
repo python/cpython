@@ -137,17 +137,13 @@ struct _object {
 // fields have been merged.
 #define _Py_UNOWNED_TID             0
 
-// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
-// pycore_lock.h. See pycore_lock.h for more details.
-struct _PyMutex { uint8_t v; };
-
 struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
     uintptr_t ob_tid;
     uint16_t _padding;
-    struct _PyMutex ob_mutex;   // per-object lock
+    PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
@@ -566,7 +562,7 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Object has up-to-date type attribute cache */
+/* Unused. Legacy flag */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */

@@ -1432,16 +1432,52 @@ Creating files and directories
 Copying, renaming and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target)
+.. method:: Path.copy(target, *, follow_symlinks=True)
 
    Copy the contents of this file to the *target* file. If *target* specifies
    a file that already exists, it will be replaced.
+
+   If *follow_symlinks* is false, and this file is a symbolic link, *target*
+   will be created as a symbolic link. If *follow_symlinks* is true and this
+   file is a symbolic link, *target* will be a copy of the symlink target.
 
    .. note::
       This method uses operating system functionality to copy file content
       efficiently. The OS might also copy some metadata, such as file
       permissions. After the copy is complete, users may wish to call
       :meth:`Path.chmod` to set the permissions of the target file.
+
+   .. warning::
+      On old builds of Windows (before Windows 10 build 19041), this method
+      raises :exc:`OSError` when a symlink to a directory is encountered and
+      *follow_symlinks* is false.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+                          ignore=None, on_error=None)
+
+   Recursively copy this directory tree to the given destination.
+
+   If a symlink is encountered in the source tree, and *follow_symlinks* is
+   true (the default), the symlink's target is copied. Otherwise, the symlink
+   is recreated in the destination tree.
+
+   If the destination is an existing directory and *dirs_exist_ok* is false
+   (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
+   operation will continue if it encounters existing directories, and files
+   within the destination tree will be overwritten by corresponding files from
+   the source tree.
+
+   If *ignore* is given, it should be a callable accepting one argument: a
+   file or directory path within the source tree. The callable may return true
+   to suppress copying of the path.
+
+   If *on_error* is given, it should be a callable accepting one argument: an
+   instance of :exc:`OSError`. The callable may re-raise the exception or do
+   nothing, in which case the copying operation continues. If *on_error* isn't
+   given, exceptions are propagated to the caller.
 
    .. versionadded:: 3.14
 
