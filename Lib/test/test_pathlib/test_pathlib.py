@@ -784,7 +784,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     def test_rmtree_uses_safe_fd_version_if_available(self):
         if rmtree_use_fd_functions:
-            self.assertTrue(self.cls.rmtree.avoids_symlink_attacks)
             d = self.cls(self.base, 'a')
             d.mkdir()
             try:
@@ -800,8 +799,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 self.assertRaises(Called, d.rmtree)
             finally:
                 os.open = real_open
-        else:
-            self.assertFalse(self.cls.rmtree.avoids_symlink_attacks)
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")

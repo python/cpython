@@ -935,7 +935,6 @@ class PathBase(PurePathBase):
         except OSError as error:
             error.filename = str(self)
             on_error(error)
-    rmtree.avoids_symlink_attacks = False
 
     def owner(self, *, follow_symlinks=True):
         """

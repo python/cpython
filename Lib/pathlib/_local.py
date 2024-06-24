@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile, rmtree as rmtree_impl
+from ._os import copyfile
 
 
 __all__ = [
@@ -831,18 +831,14 @@ class Path(PathBase, PurePath):
         *ignore_errors* nor *on_error* are set, exceptions are propagated to
         the caller.
         """
-        if ignore_errors:
-            def onexc(func, filename, err):
-                pass
-        elif on_error:
+        if on_error:
             def onexc(func, filename, err):
                 err.filename = filename
                 on_error(err)
         else:
-            def onexc(func, filename, err):
-                raise err
-        rmtree_impl(str(self), None, onexc)
-    rmtree.avoids_symlink_attacks = rmtree_impl.avoids_symlink_attacks
+            onexc = None
+        import shutil
+        shutil.rmtree(str(self), ignore_errors, onexc=onexc)
 
     def rename(self, target):
         """
