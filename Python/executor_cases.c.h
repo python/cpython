@@ -4302,9 +4302,7 @@
         }
 
         case _JUMP_TO_TOP: {
-            #ifndef _Py_JIT
-            next_uop = &current_executor->trace[1];
-            #endif
+            JUMP_TO_JUMP_TARGET();
             break;
         }
 
