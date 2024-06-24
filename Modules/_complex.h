@@ -1,6 +1,8 @@
-/* Workarounds for buggy complex number arithmetic implementations.
-   If HAVE_C_COMPLEX is defined, you can include this file
-   instead of <complex.h>. */
+/* Workarounds for buggy complex number arithmetic implementations. */
+
+#ifndef HAVE_C_COMPLEX
+#  error "this header file should be included if HAVE_C_COMPLEX is defined"
+#endif
 
 #include <complex.h>
 
