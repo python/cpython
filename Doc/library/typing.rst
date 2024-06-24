@@ -27,12 +27,13 @@ This module provides runtime support for type hints.
 
 Consider the function below::
 
-   def moon_weight(earth_weight: float) -> str:
-       return f'On the moon, you would weigh {earth_weight * 0.166} kilograms.'
+   def distance(kilometers: float) -> str:
+       return f"The distance is {kilometers} kilometers ({kilometers / 1.60934} miles)."
 
-The function ``moon_weight`` takes an argument expected to be an instance of :class:`float`,
-as indicated by the *type hint* ``earth_weight: float``. The function is expected to
-return an instance of :class:`str`, as indicated by the ``-> str`` hint.
+The function ``distance`` takes an argument expected to be an instance
+of :class:`float`, as indicated by the *type hint* ``kilometers: float``.
+The function is expected to return an instance of :class:`str`, as indicated
+by the ``-> str`` hint.
 
 While type hints can be simple classes like :class:`float` or :class:`str`,
 they can also be more complex. The :mod:`typing` module provides a vocabulary of
