@@ -512,7 +512,7 @@ unicodeFromTclObj(TkappObject *tkapp, Tcl_Obj *value)
         else
             Py_UNREACHABLE();
     }
-#endif
+#endif /* USE_TCL_UNICODE */
     const char *s = Tcl_GetStringFromObj(value, &len);
     return unicodeFromTclStringAndSize(s, len);
 }
@@ -1035,18 +1035,32 @@ AsObj(PyObject *value)
                     "surrogatepass", NATIVE_BYTEORDER);
         else
             Py_UNREACHABLE();
-#else
-        encoded = _PyUnicode_AsUTF8String(value, "surrogateescape");
-#endif
         if (!encoded) {
             return NULL;
         }
         size = PyBytes_GET_SIZE(encoded);
-#if !USE_TCL_UNICODE
+        if (size > INT_MAX) {
+            Py_DECREF(encoded);
+            PyErr_SetString(PyExc_OverflowError, "string is too long");
+            return NULL;
+        }
+        result = Tcl_NewUnicodeObj((const Tcl_UniChar *)PyBytes_AS_STRING(encoded),
+                                   (int)(size / sizeof(Tcl_UniChar)));
+#else
+        encoded = _PyUnicode_AsUTF8String(value, "surrogateescape");
+        if (!encoded) {
+            return NULL;
+        }
+        size = PyBytes_GET_SIZE(encoded);
         if (strlen(PyBytes_AS_STRING(encoded)) != (size_t)size) {
-            /* Tcl needs to represent a null character in the UTF-8 encoding
-             * as \xc0\x80.  Otherwise the string can be truncated in some
-             * internal operations. */
+            /* The string contains embedded null characters.
+             * Tcl needs a null character to be represented as \xc0\x80 in
+             * the Modified UTF-8 encoding.  Otherwise the string can be
+             * truncated in some internal operations.
+             *
+             * NOTE: stringlib_replace() could be used here, but optimizing
+             * this obscure case isn't worth it unless stringlib_replace()
+             * was already exposed in the C API for other reasons. */
             Py_SETREF(encoded,
                       PyObject_CallMethod(encoded, "replace", "y#y#",
                                           "\0", (Py_ssize_t)1,
@@ -1056,18 +1070,13 @@ AsObj(PyObject *value)
             }
             size = PyBytes_GET_SIZE(encoded);
         }
-#endif
         if (size > INT_MAX) {
             Py_DECREF(encoded);
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
         }
-#if USE_TCL_UNICODE
-        result = Tcl_NewUnicodeObj((const Tcl_UniChar *)PyBytes_AS_STRING(encoded),
-                                   (int)(size / sizeof(Tcl_UniChar)));
-#else
         result = Tcl_NewStringObj(PyBytes_AS_STRING(encoded), (int)size);
-#endif
+#endif /* USE_TCL_UNICODE */
         Py_DECREF(encoded);
         return result;
     }
