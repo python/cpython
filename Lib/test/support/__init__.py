@@ -4,7 +4,6 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
-import dataclasses
 import functools
 import _opcode
 import os
@@ -1197,6 +1196,7 @@ def no_rerun(reason):
     test using the 'reason' parameter.
     """
     def deco(func):
+        assert not isinstance(func, type), func
         _has_run = False
         def wrapper(self):
             nonlocal _has_run
@@ -1221,8 +1221,8 @@ def refcount_test(test):
 
 def requires_limited_api(test):
     try:
-        import _testcapi
-        import _testlimitedcapi
+        import _testcapi  # noqa: F401
+        import _testlimitedcapi  # noqa: F401
     except ImportError:
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
@@ -1807,7 +1807,7 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
             config['gil'] = 'shared'
         elif gil == 2:
             config['gil'] = 'own'
-        else:
+        elif not isinstance(gil, str):
             raise NotImplementedError(gil)
     config = types.SimpleNamespace(**config)
     return _testinternalcapi.run_in_subinterp_with_config(code, config)
@@ -2299,7 +2299,7 @@ def clear_ignored_deprecations(*tokens: object) -> None:
 def requires_venv_with_pip():
     # ensurepip requires zlib to open ZIP archives (.whl binary wheel packages)
     try:
-        import zlib
+        import zlib  # noqa: F401
     except ImportError:
         return unittest.skipIf(True, "venv: ensurepip requires zlib")
 

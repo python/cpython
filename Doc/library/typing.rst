@@ -97,8 +97,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
-           message: str,
-           servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
+       message: str,
+       servers: Sequence[tuple[tuple[str, int], dict[str, str]]]
+   ) -> None:
        ...
 
 The :keyword:`type` statement is new in Python 3.12. For backwards
@@ -1454,8 +1455,8 @@ These can be used as types in annotations. They all support subscription using
    to write such functions in a type-safe manner.
 
    If a ``TypeIs`` function is a class or instance method, then the type in
-   ``TypeIs`` maps to the type of the second parameter after ``cls`` or
-   ``self``.
+   ``TypeIs`` maps to the type of the second parameter (after ``cls`` or
+   ``self``).
 
    In short, the form ``def foo(arg: TypeA) -> TypeIs[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` is an instance
@@ -1871,8 +1872,8 @@ without the dedicated syntax, as documented below.
    of ``*args``::
 
       def call_soon[*Ts](
-               callback: Callable[[*Ts], None],
-               *args: *Ts
+          callback: Callable[[*Ts], None],
+          *args: *Ts
       ) -> None:
           ...
           callback(*args)

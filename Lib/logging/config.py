@@ -984,7 +984,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         A simple TCP socket-based logging config receiver.
         """
 
-        allow_reuse_address = 1
+        allow_reuse_address = True
+        allow_reuse_port = True
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
