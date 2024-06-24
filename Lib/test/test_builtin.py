@@ -992,6 +992,66 @@ class BuiltinTest(unittest.TestCase):
             three_freevars.__globals__,
             closure=my_closure)
 
+    def test_exec_set_module(self):
+        # assert that the name of the module is set correctly when using 'type()'
+        source = (
+            'class Parent: pass;\n'
+            'class Child(Parent): pass\n'
+            'GrandChild = type("GrandChild", (Child,), {})\n'
+            'Derived = type("Derived", (Child,), {"__module__": "my_module"})'
+        )
+
+        sentinel = object()
+
+        def check_class(namespace, class_name, module_name, global_name):
+            with self.subTest(module_name=module_name,
+                              class_name=class_name,
+                              global_name=global_name):
+                self.assertIn(class_name, namespace)
+                klass = namespace[class_name]
+                self.assertTrue(hasattr(klass, '__module__'))
+                self.assertEqual(klass.__module__, module_name)
+
+                if global_name is sentinel:
+                    self.assertNotIn('__name__', namespace)
+                else:
+                    self.assertIn('__name__', namespace)
+                    self.assertEqual(namespace['__name__'], global_name)
+
+        def check(namespace, module_name, global_name):
+            for class_name in ['Parent', 'Child', 'GrandChild']:
+                check_class(namespace, class_name, module_name, global_name)
+            check_class(namespace, 'Derived', 'my_module', global_name)
+
+        exec(source, ns := globals().copy())
+        check(ns, __name__, __name__)
+
+        exec(source, ns := {})
+        check(ns, builtins.__name__, sentinel)
+
+        exec(source, ns := {'__name__': 'my_mod'})
+        check(ns, 'my_mod', 'my_mod')
+
+        exec(source, ns := types.ModuleType('my_mod').__dict__)
+        check(ns, 'my_mod', 'my_mod')
+
+        my_builtins = {**builtins.__dict__, '__name__': 'my_builtins_mod'}
+        exec(source, ns := dict(__builtins__=my_builtins))
+        check(ns, 'my_builtins_mod', sentinel)
+
+        my_builtins = {**builtins.__dict__, '__name__': 'my_builtins_mod'}
+        exec(source, ns := dict(__builtins__=my_builtins, __name__='my_mod'))
+        check(ns, 'my_mod', 'my_mod')
+
+        my_builtins = dict(builtins.__dict__)
+        del my_builtins['__name__']
+        exec(source, ns := dict(__builtins__=my_builtins))
+        check(ns, builtins.__name__, sentinel)
+
+        my_builtins = dict(builtins.__dict__)
+        del my_builtins['__name__']
+        exec(source, ns := dict(__builtins__=my_builtins, __name__='my_mod'))
+        check(ns, 'my_mod', 'my_mod')
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
