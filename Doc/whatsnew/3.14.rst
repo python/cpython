@@ -96,7 +96,7 @@ asyncio
 -------
 
 Made :class:`asyncio.Queue` an :term:`asynchronous iterable`.
-(Contributed by Wannes Boeykens in :gh:`120491`.)
+(Contributed by Wannes Boeykens in :gh:`119154`.)
 
 os
 --
