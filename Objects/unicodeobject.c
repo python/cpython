@@ -2035,11 +2035,9 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
         if (!converted) {
             return -1;
         }
-        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
-        PyMem_Free(converted);
 
-        int res = _PyUnicodeWriter_WriteStr(writer, unicode);
-        Py_DECREF(unicode);
+        int res = PyUnicodeWriter_WriteUCS4(pub_writer, converted, size);
+        PyMem_Free(converted);
         return res;
     }
 #endif
