@@ -1011,7 +1011,7 @@ class date:
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new date parsed from a string (like time.strptime()).'
+        """Parse a date string according to the given format (like time.strptime())."""
         import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
@@ -1396,7 +1396,7 @@ class time:
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new time parsed from a string (like time.strptime()).'
+        """string, format -> new time parsed from a string (like time.strptime())."""
         import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 

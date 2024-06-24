@@ -1905,8 +1905,8 @@ Other constructors:
 
      time(*(time.strptime(date_string, format)[3:6]))
 
-   :exc:`ValueError` is raised if the date_string and format
-   can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
+   :exc:`ValueError` is raised if the *date_string* and *format*
+   cannot be parsed by :func:`time.strptime` or if it returns a value which is not a
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`time.fromisoformat`.
 
@@ -2411,7 +2411,7 @@ Class attributes:
 control of an explicit format string.
 
 Conversely, the :meth:`date.strptime`, :meth:`datetime.strptime` and
-:meth:`time.strptime`,  class methods create an object from a string
+:meth:`time.strptime` class methods create an object from a string
 representing the time and a corresponding format string.
 
 The table below provides a high-level comparison of :meth:`~.datetime.strftime`
