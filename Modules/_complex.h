@@ -20,7 +20,7 @@
 #  if defined(__clang__) && __has_builtin(__builtin_complex)
 #    define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
 #  else
-inline double complex
+static double complex
 CMPLX(double real, double imag)
 {
     double complex z;
