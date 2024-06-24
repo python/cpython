@@ -2656,11 +2656,7 @@ static int
 unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
                               Py_ssize_t width, Py_ssize_t precision, int flags)
 {
-    /* UTF-8 */
     Py_ssize_t length;
-    PyObject *unicode;
-    int res;
-
     if (precision == -1) {
         length = wcslen(str);
     }
@@ -2670,11 +2666,17 @@ unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
             length++;
         }
     }
-    unicode = PyUnicode_FromWideChar(str, length);
+
+    if (width < 0) {
+        return PyUnicodeWriter_WriteWideChar((PyUnicodeWriter*)writer,
+                                             str, length);
+    }
+
+    PyObject *unicode = PyUnicode_FromWideChar(str, length);
     if (unicode == NULL)
         return -1;
 
-    res = unicode_fromformat_write_str(writer, unicode, width, -1, flags);
+    int res = unicode_fromformat_write_str(writer, unicode, width, -1, flags);
     Py_DECREF(unicode);
     return res;
 }
@@ -13389,6 +13391,12 @@ _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 PyUnicodeWriter*
 PyUnicodeWriter_Create(Py_ssize_t length)
 {
+    if (length < 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "length must be positive");
+        return NULL;
+    }
+
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
     if (pub_writer == NULL) {
@@ -13432,6 +13440,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
+    assert(length >= 0);
     assert(maxchar <= MAX_UNICODE);
 
     /* ensure that the _PyUnicodeWriter_Prepare macro was used */
@@ -13543,6 +13552,12 @@ _PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
 int
 PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 {
+    if (ch > MAX_UNICODE) {
+        PyErr_SetString(PyExc_ValueError,
+                        "character must be in range(0x110000)");
+        return -1;
+    }
+
     return _PyUnicodeWriter_WriteChar((_PyUnicodeWriter*)writer, ch);
 }
 
