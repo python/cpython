@@ -503,8 +503,8 @@ class Variable:
         """
         import warnings
         warnings.warn(
-                "trace_variable() is deprecated and not supported with Tcl 9, "
-                "use trace_add() instead",
+                "trace_variable() is deprecated and not supported with Tcl 9; "
+                "use trace_add() instead.",
                 DeprecationWarning, stacklevel=2)
         cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
@@ -523,8 +523,8 @@ class Variable:
         """
         import warnings
         warnings.warn(
-                "trace_vdelete() is deprecated and not supported with Tcl 9, "
-                "use trace_remove() instead",
+                "trace_vdelete() is deprecated and not supported with Tcl 9; "
+                "use trace_remove() instead.",
                 DeprecationWarning, stacklevel=2)
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
         cbname = self._tk.splitlist(cbname)[0]
@@ -546,8 +546,8 @@ class Variable:
         """
         import warnings
         warnings.warn(
-                "trace_vinfo() is deprecated and not supported with Tcl 9, "
-                "use trace_info() instead",
+                "trace_vinfo() is deprecated and not supported with Tcl 9; "
+                "use trace_info() instead.",
                 DeprecationWarning, stacklevel=2)
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
