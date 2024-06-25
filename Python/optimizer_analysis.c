@@ -53,14 +53,6 @@
     #define DPRINTF(level, ...)
 #endif
 
-
-
-static inline bool
-op_is_end(uint32_t opcode)
-{
-    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
-}
-
 static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
@@ -289,7 +281,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 prechecked_function_version = (uint32_t)buffer[pc].operand;
                 break;
             default:
-                if (op_is_end(opcode)) {
+                if (is_terminator(inst)) {
                     return 1;
                 }
                 break;
@@ -548,6 +540,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
+            case _COLD_EXIT:
+            case _DYNAMIC_EXIT:
                 return pc + 1;
             default:
             {

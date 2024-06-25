@@ -948,7 +948,9 @@ done:
                 progress_needed ? "no progress" : "too short");
         return 0;
     }
-    if (trace[trace_length-1].opcode != _JUMP_TO_TOP) {
+    if (!is_terminator(&trace[trace_length-1])) {
+        /* Allow space for _EXIT_TRACE */
+        max_length += 2;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
     }
     DPRINTF(1,
@@ -1131,7 +1133,7 @@ sanity_check(_PyExecutorObject *executor)
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _COLD_EXIT) {
+        if (is_terminator(inst)) {
             ended = true;
             i++;
             break;
@@ -1269,9 +1271,7 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
         if (opcode == _NOP) {
             nop_count++;
         }
-        if (opcode == _EXIT_TRACE ||
-            opcode == _JUMP_TO_TOP ||
-            opcode == _COLD_EXIT) {
+        if (is_terminator(&buffer[i]) {
             return i+1-nop_count;
         }
     }
@@ -1320,7 +1320,7 @@ uop_optimize(
         else if (oparg < _PyUop_Replication[opcode]) {
             buffer[pc].opcode = opcode + oparg + 1;
         }
-        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        else if (is_terminator(&buffer[pc])) {
             break;
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
