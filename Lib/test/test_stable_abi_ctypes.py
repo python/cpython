@@ -267,7 +267,6 @@ SYMBOL_NAMES = (
     "PyExc_IOError",
     "PyExc_ImportError",
     "PyExc_ImportWarning",
-    "PyExc_IncompleteInputError",
     "PyExc_IndentationError",
     "PyExc_IndexError",
     "PyExc_InterruptedError",

@@ -6,8 +6,8 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_freelist.h"      // struct _Py_async_gen_freelist
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
-#include "pycore_genobject.h"     // struct _Py_async_gen_freelist
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -30,8 +30,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 /* Returns a borrowed reference */
 static inline PyCodeObject *
 _PyGen_GetCode(PyGenObject *gen) {
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
-    return _PyFrame_GetCode(frame);
+    return _PyFrame_GetCode(&gen->gi_iframe);
 }
 
 PyCodeObject *
@@ -48,7 +47,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
     if (gen->gi_frame_state != FRAME_CLEARED) {
-        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
+        _PyInterpreterFrame *frame = &gen->gi_iframe;
         assert(frame->frame_obj == NULL ||
                frame->frame_obj->f_frame->owner == FRAME_OWNED_BY_GENERATOR);
         int err = _PyFrame_Traverse(frame, visit, arg);
@@ -141,7 +140,7 @@ gen_dealloc(PyGenObject *gen)
         Py_CLEAR(((PyAsyncGenObject*)gen)->ag_origin_or_finalizer);
     }
     if (gen->gi_frame_state != FRAME_CLEARED) {
-        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+        _PyInterpreterFrame *frame = &gen->gi_iframe;
         gen->gi_frame_state = FRAME_CLEARED;
         frame->previous = NULL;
         _PyFrame_ClearExceptCode(frame);
@@ -163,7 +162,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    _PyInterpreterFrame *frame = &gen->gi_iframe;
 
     *presult = NULL;
     if (gen->gi_frame_state == FRAME_CREATED && arg && arg != Py_None) {
@@ -342,7 +341,7 @@ PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
-        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+        _PyInterpreterFrame *frame = &gen->gi_iframe;
         assert(is_resume(frame->instr_ptr));
         assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
         return Py_NewRef(_PyFrame_StackPeek(frame));
@@ -372,7 +371,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         gen->gi_frame_state = state;
         Py_DECREF(yf);
     }
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    _PyInterpreterFrame *frame = &gen->gi_iframe;
     if (is_resume(frame->instr_ptr)) {
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
@@ -382,7 +381,7 @@ gen_close(PyGenObject *gen, PyObject *args)
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
-            _PyFrame_ClearLocals((_PyInterpreterFrame *)gen->gi_iframe);
+            _PyFrame_ClearLocals(&gen->gi_iframe);
             Py_RETURN_NONE;
         }
     }
@@ -431,7 +430,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
     PyObject *yf = _PyGen_yf(gen);
 
     if (yf) {
-        _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+        _PyInterpreterFrame *frame = &gen->gi_iframe;
         PyObject *ret;
         int err;
         if (PyErr_GivenExceptionMatches(typ, PyExc_GeneratorExit) &&
@@ -739,7 +738,7 @@ _gen_getframe(PyGenObject *gen, const char *const name)
     if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         Py_RETURN_NONE;
     }
-    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject((_PyInterpreterFrame *)gen->gi_iframe));
+    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
 }
 
 static PyObject *
@@ -814,8 +813,7 @@ static PyAsyncMethods gen_as_async = {
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
-    offsetof(PyGenObject, gi_iframe) +
-    offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
+    offsetof(PyGenObject, gi_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */
@@ -949,7 +947,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     /* Copy the frame */
     assert(f->f_frame->frame_obj == NULL);
     assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
+    _PyInterpreterFrame *frame = &gen->gi_iframe;
     _PyFrame_Copy((_PyInterpreterFrame *)f->_f_frame_data, frame);
     gen->gi_frame_state = FRAME_CREATED;
     assert(frame->frame_obj == f);
@@ -1166,8 +1164,7 @@ static PyAsyncMethods coro_as_async = {
 PyTypeObject PyCoro_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "coroutine",                                /* tp_name */
-    offsetof(PyCoroObject, cr_iframe) +
-    offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
+    offsetof(PyCoroObject, cr_iframe.localsplus),/* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */
@@ -1582,8 +1579,7 @@ static PyAsyncMethods async_gen_as_async = {
 PyTypeObject PyAsyncGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "async_generator",                          /* tp_name */
-    offsetof(PyAsyncGenObject, ag_iframe) +
-    offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
+    offsetof(PyAsyncGenObject, ag_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
     (destructor)gen_dealloc,                    /* tp_dealloc */

@@ -1,25 +1,7 @@
-.. date: 2024-04-08-20-26-15
-.. gh-issue: 117648
-.. nonce: NzVEa7
-.. release date: 2024-04-09
-.. section: Core and Builtins
-
-Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
-
-..
-
-.. date: 2024-04-06-16-42-34
-.. gh-issue: 117584
-.. nonce: hqk9Hn
-.. section: Core and Builtins
-
-Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.
-
-..
-
 .. date: 2024-04-04-13-42-59
 .. gh-issue: 117494
 .. nonce: GPQH64
+.. release date: 2024-04-09
 .. section: Core and Builtins
 
 Refactored the instruction sequence data structure out of compile.c into
@@ -97,33 +79,6 @@ Grigoryev Semyon
 
 ..
 
-.. date: 2024-03-29-21-43-19
-.. gh-issue: 117381
-.. nonce: fT0JFM
-.. section: Core and Builtins
-
-Fix error message for :func:`ntpath.commonpath`.
-
-..
-
-.. date: 2024-03-29-15-04-13
-.. gh-issue: 117349
-.. nonce: OB9kQQ
-.. section: Core and Builtins
-
-Optimise several functions in :mod:`os.path`.
-
-..
-
-.. date: 2024-03-28-19-13-20
-.. gh-issue: 117335
-.. nonce: d6uKJu
-.. section: Core and Builtins
-
-Raise TypeError for non-sequences for :func:`ntpath.commonpath`.
-
-..
-
 .. date: 2024-03-26-17-22-38
 .. gh-issue: 117266
 .. nonce: Kwh79O
@@ -167,16 +122,6 @@ bit set correctly if they get moved into the old generation.
 The cycle GC now chooses the size of increments based on the total heap
 size, instead of the rate of object creation. This ensures that it can keep
 up with growing heaps.
-
-..
-
-.. date: 2024-03-21-09-57-57
-.. gh-issue: 117114
-.. nonce: Qu-p55
-.. section: Core and Builtins
-
-Make :func:`os.path.isdevdrive` available on all platforms. For those that
-do not offer Dev Drives, it will always return ``False``.
 
 ..
 
@@ -305,6 +250,24 @@ operator. Patch by Pablo Galindo
 
 ..
 
+.. date: 2024-04-08-20-26-15
+.. gh-issue: 117648
+.. nonce: NzVEa7
+.. section: Library
+
+Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
+
+..
+
+.. date: 2024-04-06-16-42-34
+.. gh-issue: 117584
+.. nonce: hqk9Hn
+.. section: Library
+
+Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.
+
+..
+
 .. date: 2024-04-03-18-36-53
 .. gh-issue: 117467
 .. nonce: l6rWlj
@@ -336,6 +299,15 @@ which can happen on Linux >= 2.6.36 with glibc < 2.27.
 
 ..
 
+.. date: 2024-03-29-21-43-19
+.. gh-issue: 117381
+.. nonce: fT0JFM
+.. section: Library
+
+Fix error message for :func:`ntpath.commonpath`.
+
+..
+
 .. date: 2024-03-29-15-58-01
 .. gh-issue: 117337
 .. nonce: 7w3Qwp
@@ -347,6 +319,15 @@ argument instead.
 
 ..
 
+.. date: 2024-03-29-15-04-13
+.. gh-issue: 117349
+.. nonce: OB9kQQ
+.. section: Library
+
+Optimise several functions in :mod:`os.path`.
+
+..
+
 .. date: 2024-03-29-12-07-26
 .. gh-issue: 117348
 .. nonce: WjCYvK
@@ -354,6 +335,15 @@ argument instead.
 
 Refactored :meth:`configparser.RawConfigParser._read` to reduce cyclometric
 complexity and improve comprehensibility.
+
+..
+
+.. date: 2024-03-28-19-13-20
+.. gh-issue: 117335
+.. nonce: d6uKJu
+.. section: Library
+
+Raise TypeError for non-sequences for :func:`ntpath.commonpath`.
 
 ..
 
@@ -467,6 +457,16 @@ reverts the ``__class__`` to :class:`types.ModuleType`.
 
 Fix :mod:`zipfile` extraction for directory entries with the name containing
 backslashes on Windows.
+
+..
+
+.. date: 2024-03-21-09-57-57
+.. gh-issue: 117114
+.. nonce: Qu-p55
+.. section: Library
+
+Make :func:`os.path.isdevdrive` available on all platforms. For those that
+do not offer Dev Drives, it will always return ``False``.
 
 ..
 

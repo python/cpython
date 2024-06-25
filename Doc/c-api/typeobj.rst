@@ -1328,8 +1328,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
-         This flag is present in header files, but is an internal feature and should
-         not be used. It will be removed in a future version of CPython
+         This flag is present in header files, but is not be used.
+         It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
