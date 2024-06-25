@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytes_FromSize()
 #include "pycore_object.h"
 #include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
 
