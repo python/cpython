@@ -1,0 +1,2 @@
+Fix calling :func:`copy.deepcopy` on :mod:`ast` trees that have been
+modified to have references to parent nodes. Patch by Jelle Zijlstra.
