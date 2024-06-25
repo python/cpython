@@ -2039,6 +2039,7 @@ dummy_func(
             DEOPT_IF(!PyType_Check(owner));
             assert(type_version != 0);
             DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
+
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
@@ -4238,11 +4239,6 @@ dummy_func(
             value = Py_NewRef(ptr);
         }
 
-        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
-            Py_DECREF(pop);
-            value = Py_NewRef(ptr);
-        }
-
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = ptr;
         }
@@ -4253,12 +4249,6 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-            value = Py_NewRef(ptr);
-            null = NULL;
-        }
-
-        tier2 pure op(_POP_TOP_LOAD_CONST_INLINE_WITH_NULL, (ptr/4, pop -- value, null)) {
-            Py_DECREF(pop);
             value = Py_NewRef(ptr);
             null = NULL;
         }

@@ -2038,13 +2038,6 @@
             break;
         }
 
-        case _POP_TOP_LOAD_CONST_INLINE: {
-            _Py_UopsSymbol *value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
-            break;
-        }
-
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
@@ -2070,17 +2063,6 @@
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
-            break;
-        }
-
-        case _POP_TOP_LOAD_CONST_INLINE_WITH_NULL: {
-            _Py_UopsSymbol *value;
-            _Py_UopsSymbol *null;
-            value = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
-            stack_pointer[-1] = value;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
             break;
         }
 
