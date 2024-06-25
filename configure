@@ -9692,7 +9692,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9810,7 +9810,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9855,7 +9855,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9896,7 +9896,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9937,7 +9937,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9978,7 +9978,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -10019,7 +10019,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -10071,7 +10071,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
