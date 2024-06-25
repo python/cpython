@@ -1839,7 +1839,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 #ifdef NORMALIZE_CENTURY
-    long year;                           /* year of timetuple as long */
+    long year;                          /* year of timetuple as long */
     char year_formatted[12];            /* formatted year with century for %Y */
 #endif
 
