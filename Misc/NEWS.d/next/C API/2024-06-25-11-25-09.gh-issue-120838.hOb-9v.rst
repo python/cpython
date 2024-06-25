@@ -1,0 +1,2 @@
+:c:func:`PyFinalize` and :c:func:`PyFinalizeEx` now explicitly fail if you
+try to call them while :c:func:`Py_RunMain` is running.
