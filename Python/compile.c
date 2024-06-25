@@ -645,8 +645,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -5110,7 +5109,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     if (names == NULL) {
         return ERROR;
     }
-    for (int i = 0; i < nkwelts; i++) {
+    for (Py_ssize_t i = 0; i < nkwelts; i++) {
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
