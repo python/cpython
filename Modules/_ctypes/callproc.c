@@ -651,6 +651,7 @@ union result {
     double d;
     float f;
     void *p;
+    double _Complex C;
 };
 
 struct argument {
