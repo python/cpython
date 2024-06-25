@@ -119,7 +119,7 @@ struct pyfinalize_args {
 };
 
 // Export for _testembed
-extern int _Py_Finalize(_PyRuntimeState *, struct pyfinalize_args *);
+PyAPI_FUNC(int) _Py_Finalize(_PyRuntimeState *, struct pyfinalize_args *);
 
 
 /* interpreter config */
