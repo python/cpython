@@ -188,6 +188,28 @@ distributable application:
 * `PyInstaller <https://pyinstaller.org/>`__: A cross-platform packaging tool that creates
   a single file or folder as a distributable artifact.
 
+App Store Compliance
+--------------------
+
+Apps submitted for distribution through the macOS App Store must pass Apple's
+app review process. This process includes a set of automated validation rules
+that inspect the submitted application bundle for problematic code.
+
+The Python standard library contains some code that is known to violate these
+automated rules. While these violations appear to be false positives, Apple's
+review rules cannot be challenged. Therefore, it is necessary to modify the
+Python standard library for an app to pass App Store review.
+
+The Python source tree contains
+:source:`a patch file <Mac/Resources/app-store-compliance.rst>` that will remove
+all code that is known to cause issues with the App Store review process. This
+patch is applied automatically when Python is configured with the
+``--with-app-store-compliance`` option.
+
+This patch is not normally required to use Python on a Mac; nor is it required
+if you are distributing an app *outside* the macOS App Store. It is *only*
+required if you are using the macOS App Store as a distribution channel.
+
 Other Resources
 ===============
 

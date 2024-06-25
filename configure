@@ -981,6 +981,9 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
+APP_STORE_COMPLIANCE_PATCH_FLAGS
+APP_STORE_COMPLIANCE_PATCH_TARGET
+APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -1076,6 +1079,7 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
+with_app_store_compliance
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1855,6 +1859,10 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
+  --with-app-store-compliance=[=PATCH-FILE]
+                          Enable any patches required for compiliance with app
+                          stores. Optional PATCH-FILE specifies the custom
+                          patch to apply.
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4428,6 +4436,76 @@ fi
 
 
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-app-store-compliance" >&5
+printf %s "checking for --with-app-store-compliance... " >&6; }
+
+# Check whether --with-app_store_compliance was given.
+if test ${with_app_store_compliance+y}
+then :
+  withval=$with_app_store_compliance;
+	  case "$withval" in
+	  yes)
+      case $ac_sys_system in
+        Darwin)
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        *) as_fn_error $? "No default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
+      esac
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"applying default app store compliance patch\"" >&5
+printf "%s\n" "\"applying default app store compliance patch\"" >&6; }
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
+      APP_STORE_COMPLIANCE_PATCH_FLAGS=
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"applying custom app store compliance patch\"" >&5
+printf "%s\n" "\"applying custom app store compliance patch\"" >&6; }
+      ;;
+    esac
+
+else $as_nop
+
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="iOS/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"applying default app store compliance patch\"" >&5
+printf "%s\n" "\"applying default app store compliance patch\"" >&6; }
+        ;;
+      Darwin)
+        # Always *check* the compliance patch on macOS
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"checking (not applying) default app store compliance patch\"" >&5
+printf "%s\n" "\"checking (not applying) default app store compliance patch\"" >&6; }
+        ;;
+      *)
+        # No app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        APP_STORE_COMPLIANCE_PATCH_TARGET=
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"not patching for app store compliance\"" >&5
+printf "%s\n" "\"not patching for app store compliance\"" >&6; }
+        ;;
+    esac
+
+fi
+
+
+
 
 
 

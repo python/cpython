@@ -945,6 +945,17 @@ See :source:`Mac/README.rst`.
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
 
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to cause
+   trigger automated inspection tools when submitted for distribution by
+   the macOS App Store. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
+
 iOS Options
 -----------
 
