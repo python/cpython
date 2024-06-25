@@ -1,5 +1,6 @@
 import ast
 import builtins
+import copy
 import dis
 import enum
 import os
@@ -23,7 +24,7 @@ from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
+    if t is None or isinstance(t, (str, int, complex, float, bytes)) or t is Ellipsis:
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -971,15 +972,6 @@ class AST_Tests(unittest.TestCase):
         x = ast.Sub()
         self.assertEqual(x._fields, ())
 
-    def test_pickling(self):
-        import pickle
-
-        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-            for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                with self.subTest(ast=ast, protocol=protocol):
-                    ast2 = pickle.loads(pickle.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
-
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
@@ -1221,6 +1213,80 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+
+class CopyTests(unittest.TestCase):
+    """Test copying and pickling AST nodes."""
+
+    def test_pickling(self):
+        import pickle
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for code in exec_tests:
+                with self.subTest(code=code, protocol=protocol):
+                    tree = compile(code, "?", "exec", 0x400)
+                    ast2 = pickle.loads(pickle.dumps(tree, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(tree))
+
+    def test_copy_with_parents(self):
+        # gh-120108
+        code = """
+        ('',)
+        while i < n:
+            if ch == '':
+                ch = format[i]
+                if ch == '':
+                    if freplace is None:
+                        '' % getattr(object)
+                elif ch == '':
+                    if zreplace is None:
+                        if hasattr:
+                            offset = object.utcoffset()
+                            if offset is not None:
+                                if offset.days < 0:
+                                    offset = -offset
+                                h = divmod(timedelta(hours=0))
+                                if u:
+                                    zreplace = '' % (sign,)
+                                elif s:
+                                    zreplace = '' % (sign,)
+                                else:
+                                    zreplace = '' % (sign,)
+                elif ch == '':
+                    if Zreplace is None:
+                        Zreplace = ''
+                        if hasattr(object):
+                            s = object.tzname()
+                            if s is not None:
+                                Zreplace = s.replace('')
+                    newformat.append(Zreplace)
+                else:
+                    push('')
+            else:
+                push(ch)
+
+        """
+        tree = ast.parse(textwrap.dedent(code))
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                child.parent = node
+        try:
+            with support.infinite_recursion(200):
+                tree2 = copy.deepcopy(tree)
+        finally:
+            # Singletons like ast.Load() are shared; make sure we don't
+            # leave them mutated after this test.
+            for node in ast.walk(tree):
+                if hasattr(node, "parent"):
+                    del node.parent
+
+        for node in ast.walk(tree2):
+            for child in ast.iter_child_nodes(node):
+                if hasattr(child, "parent") and not isinstance(child, (
+                    ast.expr_context, ast.boolop, ast.unaryop, ast.cmpop, ast.operator,
+                )):
+                    self.assertEqual(to_tuple(child.parent), to_tuple(node))
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
