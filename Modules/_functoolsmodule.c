@@ -553,8 +553,6 @@ static PyMemberDef partial_memberlist[] = {
      "tuple of arguments to future partial calls"},
     {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
-    {"placeholder_count",   Py_T_PYSSIZET,  OFF(phcount),   Py_READONLY,
-     "number of placeholders"},
     {"__weaklistoffset__", Py_T_PYSSIZET,
      offsetof(partialobject, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET,

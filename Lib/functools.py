@@ -17,6 +17,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
+from operator import itemgetter
 from reprlib import recursive_repr
 from _thread import RLock
 
@@ -299,71 +300,77 @@ class PlaceholderType:
     def __reduce__(self):
         return 'Placeholder'
 
-
 Placeholder = PlaceholderType()
 del PlaceholderType
 
+def _partial_prepare_merger(args):
+    j = len(args)
+    order = list(range(j))
+    for i, a in enumerate(args):
+        if a is Placeholder:
+            order[i] = j
+            j += 1
+    return itemgetter(*order)
+
 def _partial_prepare_new(cls, func, args, keywords):
-    if args:
-        if args[-1] is Placeholder:
-            raise TypeError("trailing Placeholders are not allowed")
-        phcount = args.count(Placeholder)
-    else:
-        phcount = 0
+    if args and args[-1] is Placeholder:
+        raise TypeError("trailing Placeholders are not allowed")
+    tot_args = args
+    phcount = 0
+    merger = None
     if isinstance(func, cls):
         pto_args = func.args
-        pto_phcount = func.placeholder_count
-        # merge args with args of `func` which is `partial`
+        pto_phcount = func._phcount
         if pto_phcount and args:
-            tot_args = list(pto_args)
+            # merge args with args of `func` which is `partial`
             nargs = len(args)
-            pos = j = 0
-            end = nargs if nargs < pto_phcount else pto_phcount
-            while j < end:
-                pos = tot_args.index(Placeholder, pos)
-                tot_args[pos] = args[j]
-                pos += 1
-                j += 1
-            if pto_phcount < nargs:
-                tot_args.extend(args[pto_phcount:])
-            phcount += pto_phcount - end
-            args = tuple(tot_args)
+            pto_merger = func._merger
+            if nargs >= pto_phcount:
+                phcount = args.count(Placeholder)
+                tot_args = pto_merger(pto_args + args[:pto_phcount])
+                tot_args += args[pto_phcount:]
+            else:
+                phcount = (pto_phcount - nargs)
+                tot_args = pto_args + args + (Placeholder,) * phcount
+                tot_args = pto_merger(tot_args)
+        elif pto_phcount:
+            # and not args
+            phcount = pto_phcount
+            tot_args = pto_args
+            merger = func._merger
+        elif args:
+            # and not pto_phcount
+            phcount = args.count(Placeholder)
+            tot_args = pto_args + args
         else:
-            phcount += pto_phcount
-            args = func.args + args
+            # not pto_phcount and not args
+            phcount = 0
+            tot_args = pto_args
         keywords = {**func.keywords, **keywords}
         func = func.func
-    return func, args, keywords, phcount
+    elif args:
+        phcount = args.count(Placeholder)
+    if phcount and merger is None:
+        merger = _partial_prepare_merger(tot_args)
+    return func, tot_args, keywords, phcount, merger
 
-def _partial_prepare_call(self, args, keywords):
-    pto_phcount = self.placeholder_count
-    pto_args = self.args
-    if pto_phcount:
-        n = len(args)
-        if n < pto_phcount:
+def _partial_prepare_call_args(self, args):
+    phcount = self._phcount
+    if phcount:
+        nargs = len(args)
+        if nargs < phcount:
             raise TypeError(
                 "missing positional arguments "
                 "in 'partial' call; expected "
-                f"at least {pto_phcount}, got {n}")
-        pto_args = list(pto_args)
-        pos = j = 0
-        while j < pto_phcount:
-            pos = pto_args.index(Placeholder, pos)
-            pto_args[pos] = args[j]
-            pos += 1
-            j += 1
-        args = args[pto_phcount:] if n > pto_phcount else ()
-    keywords = {**self.keywords, **keywords}
-    return pto_args, args, keywords
-
-def _partial_repr(self):
-    cls = type(self)
-    module = cls.__module__
-    qualname = cls.__qualname__
-    args = [repr(self.func)]
-    args.extend(map(repr, self.args))
-    args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
-    return f"{module}.{qualname}({', '.join(args)})"
+                f"at least {phcount}, got {len(args)}")
+        if nargs > phcount:
+            merged_args = self._merger(self.args + args[:phcount])
+            return merged_args, args[phcount:]
+        else:
+            merged_args = self._merger(self.args + args)
+            return merged_args, ()
+    else:
+        return self.args, args
 
 # Purely functional, no descriptor behaviour
 class partial:
@@ -371,26 +378,36 @@ class partial:
     and keywords.
     """
 
-    __slots__ = ("func", "args", "keywords", "placeholder_count",
+    __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
                  "__dict__", "__weakref__")
 
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        func, args, kwds, phcount = _partial_prepare_new(cls, func, args,
-                                                         keywords)
+        func, args, keywords, phcount, merger = _partial_prepare_new(
+            cls, func, args, keywords)
         self = super().__new__(cls)
         self.func = func
         self.args = args
-        self.keywords = kwds
-        self.placeholder_count = phcount
+        self.keywords = keywords
+        self._phcount = phcount
+        self._merger = merger
         return self
 
     def __call__(self, /, *args, **keywords):
-        pargs, args, kwds = _partial_prepare_call(self, args, keywords)
-        return self.func(*pargs, *args, **kwds)
+        pto_args, args = _partial_prepare_call_args(self, args)
+        keywords = {**self.keywords, **keywords}
+        return self.func(*pto_args, *args, **keywords)
 
-    __repr__ = recursive_repr()(_partial_repr)
+    @recursive_repr()
+    def __repr__(self):
+        cls = type(self)
+        module = cls.__module__
+        qualname = cls.__qualname__
+        args = [repr(self.func)]
+        args.extend(map(repr, self.args))
+        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+        return f"{module}.{qualname}({', '.join(args)})"
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -407,12 +424,14 @@ class partial:
                 (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        phcount = 0
+        merger = None
         if args:
             if args[-1] is Placeholder:
                 raise TypeError("trailing Placeholders are not allowed")
             phcount = args.count(Placeholder)
-        else:
-            phcount = 0
+            if phcount:
+                merger = _partial_prepare_merger(args)
 
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
@@ -426,7 +445,8 @@ class partial:
         self.func = func
         self.args = args
         self.keywords = kwds
-        self.placeholder_count = phcount
+        self._phcount = phcount
+        self._merger = merger
 
 try:
     from _functools import partial, Placeholder
@@ -449,21 +469,32 @@ class partialmethod:
         # flattening is mandatory in order to place cls/self before all
         # other arguments
         # it's also more efficient since only one function will be called
-        func, args, kwds, phcount = _partial_prepare_new(cls, func, args,
-                                                         keywords)
+        func, args, keywords, phcount, merger = _partial_prepare_new(
+            cls, func, args, keywords)
         self = super().__new__(cls)
         self.func = func
         self.args = args
-        self.keywords = kwds
-        self.placeholder_count = phcount
+        self.keywords = keywords
+        self._phcount = phcount
+        self._merger = merger
         return self
 
-    __repr__ = _partial_repr
+    def __repr__(self):
+        args = ", ".join(map(repr, self.args))
+        keywords = ", ".join("{}={!r}".format(k, v)
+                                 for k, v in self.keywords.items())
+        format_string = "{module}.{cls}({func}, {args}, {keywords})"
+        return format_string.format(module=self.__class__.__module__,
+                                    cls=self.__class__.__qualname__,
+                                    func=self.func,
+                                    args=args,
+                                    keywords=keywords)
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
-            pargs, args, kwds = _partial_prepare_call(self, args, keywords)
-            return self.func(cls_or_self, *pargs, *args, **kwds)
+            pto_args, args = _partial_prepare_call_args(self, args)
+            keywords = {**self.keywords, **keywords}
+            return self.func(cls_or_self, *pto_args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.__partialmethod__ = self
         return _method
