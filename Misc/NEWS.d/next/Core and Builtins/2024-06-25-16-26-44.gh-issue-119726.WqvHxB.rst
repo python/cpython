@@ -1,0 +1,1 @@
+Replace AArch64 trampolines with LDR of a PC relative literal. Patch from Diego Russo
