@@ -503,7 +503,6 @@ typedef int(*PyType_WatchCallback)(PyTypeObject *);
 PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
-PyAPI_FUNC(int) PyType_IsWatched(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
 
 /* Attempt to assign a version tag to the given type.

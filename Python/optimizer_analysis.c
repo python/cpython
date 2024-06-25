@@ -75,6 +75,12 @@ increment_mutations(PyObject* dict) {
     d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
 }
 
+/* The first two dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID 0
+#define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
+
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)

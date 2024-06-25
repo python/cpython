@@ -154,12 +154,6 @@ PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
-/* The first two dict watcher IDs are reserved for CPython,
- * so we don't need to check that they haven't been used */
-#define BUILTINS_WATCHER_ID 0
-#define GLOBALS_WATCHER_ID  1
-#define TYPE_WATCHER_ID  0
-
 #ifdef __cplusplus
 }
 #endif
