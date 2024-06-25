@@ -1094,30 +1094,8 @@
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            if (sym_is_const(owner)) {
-                assert(sym_is_a_class(owner));
-                PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
-                assert(PyType_Check((PyObject *)ty));
-                // No guard previously, indicates the descr is valid.
-                if ((this_instr - 1)->opcode == _NOP) {
-                    // Previous guards should have already watched the version, so
-                    // we don't need to watch it again.
-                    REPLACE_OP(this_instr, (oparg & 1)
-                           ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE,
-                        0,
-                        (uintptr_t)descr);
-                    attr = sym_new_const(ctx, descr);
-                    null = sym_new_null(ctx);
-                }
-                else {
-                    attr = sym_new_not_null(ctx);
-                    null = sym_new_null(ctx);
-                }
-            }
-            else {
-                attr = sym_new_not_null(ctx);
-                null = sym_new_null(ctx);
-            }
+            attr = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
             (void)descr;
             (void)owner;
             stack_pointer[-1] = attr;

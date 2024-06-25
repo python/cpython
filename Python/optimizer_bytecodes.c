@@ -536,31 +536,8 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
-        if (sym_is_const(owner)) {
-            assert(sym_is_a_class(owner));
-            PyTypeObject *ty = (PyTypeObject *)sym_get_const(owner);
-            assert(PyType_Check((PyObject *)ty));
-            // No guard previously, indicates the descr is valid.
-            if ((this_instr - 1)->opcode == _NOP) {
-                // Previous guards should have already watched the version, so
-                // we don't need to watch it again.
-                REPLACE_OP(this_instr, (oparg & 1)
-                    ? _POP_TOP_LOAD_CONST_INLINE_WITH_NULL : _POP_TOP_LOAD_CONST_INLINE,
-                    0,
-                    (uintptr_t)descr);
-                attr = sym_new_const(ctx, descr);
-                null = sym_new_null(ctx);
-            }
-            else {
-                attr = sym_new_not_null(ctx);
-                null = sym_new_null(ctx);
-            }
-
-        }
-        else {
-            attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
-        }
+        attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
