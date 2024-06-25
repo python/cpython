@@ -6,7 +6,9 @@ from test.support import threading_helper
 @threading_helper.reap_threads
 @threading_helper.requires_working_threading()
 def test_reversed_threading(self):
-    # Test that when reading out with multiple treads no identical elemenents are returned
+    # Test reading out the iterator with multiple threads cannot corrupt
+    # the reversed iterator.
+    # The reversed iterator is not guaranteed to be thread safe
     def work(r, output):
         while True:
             try:
@@ -25,10 +27,6 @@ def test_reversed_threading(self):
         worker_threads.append(Thread(target=work, args=[r, output]))
     _ = [t.start() for t in worker_threads]
     _ = [t.join() for t in worker_threads]
-
-    if sorted(output) != x:
-        raise ValueError('reversed returned value from sequence twice')
-
 
 if __name__ == "__main__":
     unittest.main()

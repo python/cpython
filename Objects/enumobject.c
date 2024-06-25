@@ -429,12 +429,12 @@ static PyObject *
 reversed_next(reversedobject *ro)
 {
     PyObject *item;
-    Py_ssize_t index = _Py_atomic_load_ssize_relaxed(&ro->index);
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
     if (index >= 0) {
         item = PySequence_GetItem(ro->seq, index);
         if (item != NULL) {
-            _Py_atomic_store_ssize_relaxed(&ro->index, index - 1);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, index - 1);
             return item;
         }
         if (PyErr_ExceptionMatches(PyExc_IndexError) ||
@@ -452,13 +452,15 @@ static PyObject *
 reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t position, seqsize;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
-    if (ro->seq == NULL)
+    if (index == -1)
         return PyLong_FromLong(0);
+    assert(ro->seq != 0);
     seqsize = PySequence_Size(ro->seq);
     if (seqsize == -1)
         return NULL;
-    position = ro->index + 1;
+    position = index + 1;
     return PyLong_FromSsize_t((seqsize < position)  ?  0  :  position);
 }
 
