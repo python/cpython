@@ -935,7 +935,7 @@ $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 # known modifications to the source tree before building.
 .PHONY: app-store-compliance
 app-store-compliance:
-	patch -p1 @APP_STORE_COMPLIANCE_PATCH_FLAGS@ < $(srcdir)/$(APP_STORE_COMPLIANCE_PATCH)
+	patch @APP_STORE_COMPLIANCE_PATCH_FLAGS@ --forward --strip=1 --directory="$(srcdir)" --input "$(APP_STORE_COMPLIANCE_PATCH)"
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
