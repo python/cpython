@@ -1004,6 +1004,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/critical_section.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dynamic_annotations.h \
@@ -1081,6 +1082,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/complexobject.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/critical_section.h \
 		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \

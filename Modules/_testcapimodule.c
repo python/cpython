@@ -3320,6 +3320,18 @@ function_set_warning(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    Py_BEGIN_CRITICAL_SECTION(module);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2(module, module);
+    Py_END_CRITICAL_SECTION2();
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3463,6 +3475,7 @@ static PyMethodDef TestMethods[] = {
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
+    {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

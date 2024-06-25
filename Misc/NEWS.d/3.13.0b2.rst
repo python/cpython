@@ -190,16 +190,6 @@ thread that occur in free-threaded builds.
 
 ..
 
-.. date: 2024-05-08-18-33-07
-.. gh-issue: 118507
-.. nonce: OCQsAY
-.. section: Core and Builtins
-
-Speedup :func:`os.path.isjunction` and :func:`os.path.lexists` on Windows
-with a native implementation.
-
-..
-
 .. date: 2024-05-07-16-57-56
 .. gh-issue: 118561
 .. nonce: wNMKVd
@@ -207,16 +197,6 @@ with a native implementation.
 
 Fix race condition in free-threaded build where :meth:`!list.extend` could
 expose uninitialised memory to concurrent readers.
-
-..
-
-.. date: 2024-04-28-19-51-00
-.. gh-issue: 118263
-.. nonce: Gaap3S
-.. section: Core and Builtins
-
-Speed up :func:`os.path.splitroot` & :func:`os.path.normpath` with a direct
-C call.
 
 ..
 
@@ -492,6 +472,16 @@ Fix errors in calling Tkinter bindings on Windows.
 
 ..
 
+.. date: 2024-05-08-18-33-07
+.. gh-issue: 118507
+.. nonce: OCQsAY
+.. section: Library
+
+Speedup :func:`os.path.isjunction` and :func:`os.path.lexists` on Windows
+with a native implementation.
+
+..
+
 .. date: 2024-05-08-09-21-49
 .. gh-issue: 118772
 .. nonce: c16E8X
@@ -509,6 +499,16 @@ instances without a default in some cases. Patch by Jelle Zijlstra.
 
 :func:`os.path.realpath` now suppresses any :exc:`OSError` from
 :func:`os.readlink` when *strict* mode is disabled (the default).
+
+..
+
+.. date: 2024-04-28-19-51-00
+.. gh-issue: 118263
+.. nonce: Gaap3S
+.. section: Library
+
+Speed up :func:`os.path.splitroot` & :func:`os.path.normpath` with a direct
+C call.
 
 ..
 

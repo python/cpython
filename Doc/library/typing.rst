@@ -27,12 +27,13 @@ This module provides runtime support for type hints.
 
 Consider the function below::
 
-   def moon_weight(earth_weight: float) -> str:
-       return f'On the moon, you would weigh {earth_weight * 0.166} kilograms.'
+   def surface_area_of_cube(edge_length: float) -> str:
+       return f"The surface area of the cube is {6 * edge_length ** 2}."
 
-The function ``moon_weight`` takes an argument expected to be an instance of :class:`float`,
-as indicated by the *type hint* ``earth_weight: float``. The function is expected to
-return an instance of :class:`str`, as indicated by the ``-> str`` hint.
+The function ``surface_area_of_cube`` takes an argument expected to
+be an instance of :class:`float`, as indicated by the :term:`type hint`
+``edge_length: float``. The function is expected to return an instance
+of :class:`str`, as indicated by the ``-> str`` hint.
 
 While type hints can be simple classes like :class:`float` or :class:`str`,
 they can also be more complex. The :mod:`typing` module provides a vocabulary of
@@ -97,8 +98,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
-           message: str,
-           servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
+       message: str,
+       servers: Sequence[tuple[tuple[str, int], dict[str, str]]]
+   ) -> None:
        ...
 
 The :keyword:`type` statement is new in Python 3.12. For backwards
@@ -1871,8 +1873,8 @@ without the dedicated syntax, as documented below.
    of ``*args``::
 
       def call_soon[*Ts](
-               callback: Callable[[*Ts], None],
-               *args: *Ts
+          callback: Callable[[*Ts], None],
+          *args: *Ts
       ) -> None:
           ...
           callback(*args)
