@@ -27,13 +27,13 @@ This module provides runtime support for type hints.
 
 Consider the function below::
 
-   def distance(kilometers: float) -> str:
-       return f"The distance is {kilometers} kilometers ({kilometers / 1.60934} miles)."
+   def surface_area_of_cube(edge_length: float) -> str:
+       return f"The surface area of the cube is {6 * edge_length ** 2}."
 
-The function ``distance`` takes an argument expected to be an instance
-of :class:`float`, as indicated by the *type hint* ``kilometers: float``.
-The function is expected to return an instance of :class:`str`, as indicated
-by the ``-> str`` hint.
+The function ``surface_area_of_cube`` takes an argument expected to
+be an instance of :class:`float`, as indicated by the :term:`type hint`
+``edge_length: float``. The function is expected to return an instance
+of :class:`str`, as indicated by the ``-> str`` hint.
 
 While type hints can be simple classes like :class:`float` or :class:`str`,
 they can also be more complex. The :mod:`typing` module provides a vocabulary of
