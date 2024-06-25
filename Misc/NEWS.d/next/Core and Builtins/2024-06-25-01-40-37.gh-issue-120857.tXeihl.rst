@@ -1,0 +1,1 @@
+The ``__module__`` attribute of a class is now set to ``None`` when the module name is unavailable, like how it is for function and method.
