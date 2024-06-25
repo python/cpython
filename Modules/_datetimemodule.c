@@ -19,6 +19,7 @@
 #include "datetime.h"
 
 
+#include <stdlib.h>
 #include <time.h>
 
 #ifdef MS_WINDOWS
@@ -1838,6 +1839,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 #ifdef NORMALIZE_CENTURY
+    long year;                           /* year of timetuple as long */
     char year_formatted[12];            /* formatted year with century for %Y */
 #endif
 
@@ -1875,6 +1877,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (newfmt == NULL) goto Done;
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
+
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+
+    if (strftime == NULL)
+        goto Done;
 
     while ((ch = *pin++) != '\0') {
         if (ch != '%') {
@@ -1944,9 +1951,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
 #ifdef NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G') {
-            /* 0-pad year with century on platforms that do not do so */
-            ntoappend = sprintf(year_formatted, "%04ld",
-                                PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0)));
+            /* 0-pad year with century as necessary */
+            if (ch == 'G') {
+                format = PyUnicode_FromString("%G");
+                result = PyObject_CallFunctionObjArgs(strftime, format,
+                                                      timetuple, NULL);
+                year = atoi(PyUnicode_AsUTF8(result));
+                Py_DECREF(format);
+                Py_DECREF(result);
+            } else
+                year = PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0));
+            ntoappend = sprintf(year_formatted, "%04ld", year);
             ptoappend = year_formatted;
         }
 #endif
@@ -1983,10 +1998,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
 
-        if (strftime == NULL)
-            goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
             result = PyObject_CallFunctionObjArgs(strftime,

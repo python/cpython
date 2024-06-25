@@ -1697,10 +1697,14 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.max)
 
     def test_strftime_y2k(self):
-        for y in (1, 49, 70, 99, 100, 999, 1000, 1970):
+        for y, o in ((1, 0), (49, -1), (70, 0), (99, 0), (100, -1),
+                            (999, 0), (1000, 0), (1970, 0)):
             for s in 'YG':
-                d = self.theclass(y, 1, 1)
-                self.assertEqual(d.strftime("%" + s), '%04d' % y)
+                with self.subTest(year=y, specifier=s):
+                    d = self.theclass(y, 1, 1)
+                    if s == 'G':
+                        y += o
+                    self.assertEqual(d.strftime("%" + s), '%04d' % y)
 
     def test_replace(self):
         cls = self.theclass
