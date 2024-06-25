@@ -116,6 +116,7 @@ int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCo
 
 struct pyfinalize_args {
     const char *caller;
+    int verbose;
 };
 
 // Export for _testembed

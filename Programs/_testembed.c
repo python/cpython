@@ -284,6 +284,7 @@ static int test_replace_main_tstate(void)
     assert(PyThreadState_Get() == tstate);
     struct pyfinalize_args args = {
         .caller = "_testembed.test_replace_main_tstate",
+        .verbose = 1,
     };
     if (_Py_Finalize(&_PyRuntime, &args) != 0 && !err) {
         err = 1;
@@ -332,6 +333,7 @@ static int test_fini_in_subthread(void)
 
     struct pyfinalize_args fini_args = {
         .caller = "_testembed.test_fini_in_subthread",
+        .verbose = 1,
     };
     struct fini_subthread_args args = {
         .fini_args = &fini_args,
@@ -359,6 +361,7 @@ static int test_fini_in_main_thread_with_other_tstate(void)
     assert(PyThreadState_Get() != main_tstate);
     struct pyfinalize_args args = {
         .caller = "_testembed.test_fini_in_main_thread_with_other_tstate",
+        .verbose = 1,
     };
     if (_Py_Finalize(&_PyRuntime, &args) != 0) {
         return 1;
@@ -383,6 +386,7 @@ static int test_fini_in_main_thread_with_subinterpreter(void)
     assert(PyThreadState_Get() == substate);
     struct pyfinalize_args args = {
         .caller = "_testembed.test_fini_in_main_thread_with_subinterpreter",
+        .verbose = 1,
     };
     if (_Py_Finalize(&_PyRuntime, &args) != 0) {
         return 1;
