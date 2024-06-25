@@ -455,7 +455,7 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #ifdef __APPLE__
 /* macOS seems to have less stack space on non-main threads*/
-#define MAX_STACKREF_SCRATCH 0
+#define MAX_STACKREF_SCRATCH 1
 #else
 #define MAX_STACKREF_SCRATCH 10
 #endif
@@ -467,7 +467,6 @@ do { \
 #else
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     PyObject **NAME = (PyObject **)ARGS; \
-    /* This hopefully hints to the compiler to DCE the NULL check for error */ \
     assert(NAME != NULL);
 #endif
 
