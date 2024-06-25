@@ -4445,15 +4445,10 @@ printf %s "checking for --with-app-store-compliance... " >&6; }
 if test ${with_app_store_compliance+y}
 then :
   withval=$with_app_store_compliance;
-	  case "$withval" in
-	  yes)
+    case "$withval" in
+    yes)
       case $ac_sys_system in
-        Darwin)
-          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
-          ;;
-        iOS)
+        Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
           APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
@@ -4478,7 +4473,7 @@ else $as_nop
     case $ac_sys_system in
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
-        APP_STORE_COMPLIANCE_PATCH="iOS/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
         APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
         APP_STORE_COMPLIANCE_PATCH_FLAGS=
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"applying default app store compliance patch\"" >&5

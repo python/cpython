@@ -704,15 +704,10 @@ AC_ARG_WITH(
     [Enable any patches required for compiliance with app stores.
      Optional PATCH-FILE specifies the custom patch to apply.]
   )],[
-	  case "$withval" in
-	  yes)
+    case "$withval" in
+    yes)
       case $ac_sys_system in
-        Darwin)
-          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
-          ;;
-        iOS)
+        Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
           APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
@@ -733,7 +728,7 @@ AC_ARG_WITH(
     case $ac_sys_system in
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
-        APP_STORE_COMPLIANCE_PATCH="iOS/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
         APP_STORE_COMPLIANCE_PATCH_TARGET="app-store-compliance"
         APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT(["applying default app store compliance patch"])
