@@ -451,7 +451,12 @@ do { \
 /* Stackref macros */
 
 /* How much scratch space to give stackref to PyObject* conversion. */
+#ifdef __APPLE__
+/* macOS seems to have less stack space on non-main threads*/
+#define MAX_STACKREF_SCRATCH 0
+#else
 #define MAX_STACKREF_SCRATCH 10
+#endif
 
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
