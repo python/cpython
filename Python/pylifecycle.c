@@ -677,7 +677,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
+                                               _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -2233,7 +2233,7 @@ new_interpreter(PyThreadState **tstate_p,
         goto error;
     }
 
-    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         status = _PyStatus_NO_MEMORY();
         goto error;

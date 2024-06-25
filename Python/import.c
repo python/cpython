@@ -1518,11 +1518,11 @@ switch_to_main_interpreter(PyThreadState *tstate)
     if (_Py_IsMainInterpreter(tstate->interp)) {
         return tstate;
     }
-    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    PyThreadState *main_tstate = _PyThreadState_NewBound(
+            _PyInterpreterState_Main(), _PyThreadState_WHENCE_EXEC);
     if (main_tstate == NULL) {
         return NULL;
     }
-    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
 #ifndef NDEBUG
     PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
     assert(old_tstate == tstate);

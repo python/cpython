@@ -1586,8 +1586,8 @@ exec_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     PyObject *res = NULL;
-    PyThreadState *tstate = PyThreadState_New(interp);
-    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
+    PyThreadState *tstate =
+        _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
 
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
