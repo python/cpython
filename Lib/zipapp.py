@@ -75,8 +75,8 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False, include_regex=None,
-                   exclude_regex=None):
+                   filter=None, compressed=False, include_pattern=None,
+                   exclude_pattern=None):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -133,9 +133,6 @@ def create_archive(source, target=None, interpreter=None, main=None,
     elif not hasattr(target, 'write'):
         target = pathlib.Path(target)
 
-    include_pattern = re.compile(include_regex) if include_regex else None
-    exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
-
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else
@@ -187,13 +184,13 @@ def main(args=None):
                  "Files are stored uncompressed by default.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
-    parser.add_argument('--include', default=None,
+    parser.add_argument('--include-pattern', default=None,
             help=(
                     "A regex of filenames to be included in archive."
                     " This will run first if --exclude is also used."
                     " Only applicable to directories."
                 ))
-    parser.add_argument('--exclude', default=None,
+    parser.add_argument('--exclude-pattern', default=None,
             help=(
                     "A regex of filenames to be excluded from archive."
                     " This will run second if --include is also used."
@@ -219,10 +216,13 @@ def main(args=None):
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
 
+    include_pattern = re.compile(args.include_pattern) if args.include_pattern else None
+    exclude_pattern = re.compile(args.exclude_pattern) if args.exclude_pattern else None
+
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress, include_regex=args.include,
-                   exclude_regex=args.exclude)
+                   compressed=args.compress, include_pattern=include_pattern,
+                   exclude_pattern=exclude_pattern)
 
 
 if __name__ == '__main__':
