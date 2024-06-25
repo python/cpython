@@ -796,7 +796,7 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
     STRINGLIB_CHAR s_last;
     // Counters
     Py_ssize_t count = 0;
-    Py_ssize_t iloop = 0, iloop_last = 0;
+    Py_ssize_t iloop = 0;
     Py_ssize_t ihits = 0, ihits_last = 0;
     // Loop
     for (i = 0; i <= w;) {
@@ -876,7 +876,6 @@ STRINGLIB(horspool_find)(const STRINGLIB_CHAR* haystack,
                 }
             }
             ihits_last = ihits;
-            iloop_last = iloop;
         }
     }
     // Loop Counter and False Hit Counter Logging
