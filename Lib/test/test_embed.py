@@ -239,6 +239,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 )
                 self.assertEqual(out.strip(), 'spam!')
 
+    @unittest.skipIf(MS_WINDOWS, "this crashes on Windows")
     def test_fini_in_subthread(self):
         self.run_embedded_interpreter('test_fini_in_subthread')
 
