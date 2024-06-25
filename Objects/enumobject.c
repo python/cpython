@@ -469,7 +469,8 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
-    if (ro->seq)
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
+    if (index != -1)
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
     else
         return Py_BuildValue("O(())", Py_TYPE(ro));
