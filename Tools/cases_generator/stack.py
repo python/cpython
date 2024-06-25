@@ -199,6 +199,7 @@ class Stack:
         number = self.base_offset.to_c()
         if number != "0":
             out.emit(f"stack_pointer += {number};\n")
+            out.emit("assert(WITHIN_STACK_BOUNDS());\n")
         self.variables = []
         self.base_offset.clear()
         self.top_offset.clear()

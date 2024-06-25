@@ -80,6 +80,9 @@ do {                                                         \
 #undef JUMP_TO_ERROR
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
+#undef WITHIN_STACK_BOUNDS
+#define WITHIN_STACK_BOUNDS() 1
+
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
