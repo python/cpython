@@ -1908,14 +1908,59 @@ finalize_interp_delete(PyInterpreterState *interp)
 }
 
 
+/* Conceptually, there isn't a good reason for Py_Finalize()
+   to be called in any other thread than the one where Py_Initialize()
+   was called.  Consequently, it would make sense to fail if the thread
+   or thread state (or interpreter) don't match.  However, such
+   constraints have never been enforced, and, as unlikely as it may be,
+   there may be users relying on the unconstrained behavior.  Thus,
+   we do our best here to accommodate that possibility. */
+
 static PyThreadState *
 resolve_final_tstate(_PyRuntimeState *runtime)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    // XXX assert(_Py_IsMainInterpreter(tstate->interp));
-    // XXX assert(_Py_IsMainThread());
+    PyThreadState *main_tstate = runtime->main_tstate;
+    assert(main_tstate != NULL);
+    assert(main_tstate->thread_id == runtime->main_thread);
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(main_tstate->interp == main_interp);
 
-    return tstate;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_Py_IsMainThread()) {
+        if (tstate != main_tstate) {
+            /* This implies that Py_Finalize() was called while
+               a non-main interpreter was active or while the main
+               tstate was temporarily swapped out with another.
+               Neither case should be allowed, but, until we get around
+               to fixing that (and Py_Exit()), we're letting it go. */
+            (void)PyThreadState_Swap(main_tstate);
+        }
+    }
+    else {
+        /* This is another unfortunate case where Py_Finalize() was
+           called when it shouldn't have been.  We can't simply switch
+           over to the main thread.  At the least, however, we can make
+           sure the main interpreter is active. */
+        if (!_Py_IsMainInterpreter(tstate->interp)) {
+            /* We don't go to the trouble of updating runtime->main_tstate
+               since it will be dead soon anyway. */
+            main_tstate =
+                _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
+            if (main_tstate != NULL) {
+                _PyThreadState_Bind(main_tstate);
+                (void)PyThreadState_Swap(main_tstate);
+            }
+            else {
+                /* Fall back to the current tstate.  It's better than nothing. */
+                main_tstate = tstate;
+            }
+        }
+    }
+    assert(main_tstate != NULL);
+
+    /* We might want to warn if main_tstate->current_frame != NULL. */
+
+    return main_tstate;
 }
 
 static int
