@@ -281,7 +281,9 @@ static int test_replace_main_tstate(void)
     }
 
     assert(PyThreadState_Get() == tstate);
-    Py_Finalize();
+    if (Py_FinalizeEx() != 0) {
+        err = 1;
+    }
 
     return err;
 }
@@ -295,6 +297,7 @@ struct fini_subthread_args {
     PyThreadState *main_tstate;
     PyInterpreterState *interp;
     PyMutex done;
+    int rc;
 };
 
 static void fini_with_new_tstate(void *arg)
@@ -310,7 +313,7 @@ static void fini_with_new_tstate(void *arg)
     (void)PyThreadState_Swap(tstate);
 
     assert(PyThreadState_Get() != args->main_tstate);
-    Py_Finalize();
+    args->rc = Py_FinalizeEx();
 
     PyMutex_Unlock(&args->done);
 }
@@ -331,7 +334,7 @@ static int test_fini_in_subthread(void)
     PyMutex_Lock(&args.done);
     PyMutex_Unlock(&args.done);
 
-    return 0;
+    return args.rc;
 }
 
 static int test_fini_in_main_thread_with_other_tstate(void)
@@ -343,9 +346,7 @@ static int test_fini_in_main_thread_with_other_tstate(void)
     (void)PyThreadState_Swap(tstate);
 
     assert(PyThreadState_Get() != main_tstate);
-    Py_Finalize();
-
-    return 0;
+    return Py_FinalizeEx();
 }
 
 static int test_fini_in_main_thread_with_subinterpreter(void)
@@ -362,9 +363,7 @@ static int test_fini_in_main_thread_with_subinterpreter(void)
 
     // The subinterpreter's tstate is still current.
     assert(PyThreadState_Get() == substate);
-    Py_Finalize();
-
-    return 0;
+    return Py_FinalizeEx();
 }
 
 
