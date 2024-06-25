@@ -274,13 +274,16 @@ except ImportError:
 ################################################################################
 
 
-class PlaceholderTypeBase:
+class PlaceholderType:
     """The type of the Placeholder singleton.
 
     Used as a placeholder for partial arguments.
     """
     __instance = None
     __slots__ = ()
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
 
     def __new__(cls):
         if cls.__instance is None:
@@ -296,16 +299,9 @@ class PlaceholderTypeBase:
     def __reduce__(self):
         return 'Placeholder'
 
-def placeholder_init_subclass(cls, *args, **kwargs):
-    raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
 
-Placeholder = type(
-    'PlaceholderType',
-    (PlaceholderTypeBase,),
-    {'__slots__': (), '__init_subclass__': placeholder_init_subclass}
-)()
-
-del PlaceholderTypeBase, placeholder_init_subclass
+Placeholder = PlaceholderType()
+del PlaceholderType
 
 def _partial_prepare_new(cls, func, args, keywords):
     if args:
