@@ -215,7 +215,7 @@ class Stencil:
         ]
         for code in [
             0x58000048.to_bytes(4, sys.byteorder),
-            0xd61f0100.to_bytes(4, sys.byteorder),
+            0xD61F0100.to_bytes(4, sys.byteorder),
             0x00000000.to_bytes(4, sys.byteorder),
             0x00000000.to_bytes(4, sys.byteorder),
         ]:
