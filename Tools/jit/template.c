@@ -81,6 +81,9 @@ do {                                                         \
 #undef JUMP_TO_ERROR
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
+#undef WITHIN_STACK_BOUNDS
+#define WITHIN_STACK_BOUNDS() 1
+
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
@@ -106,9 +109,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
     UOP_STAT_INC(uopcode, execution_count);
 
     // The actual instruction definitions (only one will be used):
-    if (uopcode == _JUMP_TO_TOP) {
-        PATCH_JUMP(_JIT_TOP);
-    }
     switch (uopcode) {
 #include "executor_cases.c.h"
         default:
