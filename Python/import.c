@@ -94,11 +94,7 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.import_func
 
 #define IMPORT_LOCK(interp) \
-    (interp)->imports.lock.mutex
-#define IMPORT_LOCK_THREAD(interp) \
-    (interp)->imports.lock.thread
-#define IMPORT_LOCK_LEVEL(interp) \
-    (interp)->imports.lock.level
+    (interp)->imports.lock
 
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
@@ -115,74 +111,14 @@ static struct _inittab *inittab_copy = NULL;
 void
 _PyImport_AcquireLock(PyInterpreterState *interp)
 {
-    unsigned long me = PyThread_get_thread_ident();
-    if (me == PYTHREAD_INVALID_THREAD_ID)
-        return; /* Too bad */
-    if (IMPORT_LOCK(interp) == NULL) {
-        IMPORT_LOCK(interp) = PyThread_allocate_lock();
-        if (IMPORT_LOCK(interp) == NULL)
-            return;  /* Nothing much we can do. */
-    }
-    if (IMPORT_LOCK_THREAD(interp) == me) {
-        IMPORT_LOCK_LEVEL(interp)++;
-        return;
-    }
-    if (IMPORT_LOCK_THREAD(interp) != PYTHREAD_INVALID_THREAD_ID ||
-        !PyThread_acquire_lock(IMPORT_LOCK(interp), 0))
-    {
-        PyThreadState *tstate = PyEval_SaveThread();
-        PyThread_acquire_lock(IMPORT_LOCK(interp), WAIT_LOCK);
-        PyEval_RestoreThread(tstate);
-    }
-    assert(IMPORT_LOCK_LEVEL(interp) == 0);
-    IMPORT_LOCK_THREAD(interp) = me;
-    IMPORT_LOCK_LEVEL(interp) = 1;
+    _PyRecursiveMutex_Lock(&IMPORT_LOCK(interp));
 }
 
-int
+void
 _PyImport_ReleaseLock(PyInterpreterState *interp)
 {
-    unsigned long me = PyThread_get_thread_ident();
-    if (me == PYTHREAD_INVALID_THREAD_ID || IMPORT_LOCK(interp) == NULL)
-        return 0; /* Too bad */
-    if (IMPORT_LOCK_THREAD(interp) != me)
-        return -1;
-    IMPORT_LOCK_LEVEL(interp)--;
-    assert(IMPORT_LOCK_LEVEL(interp) >= 0);
-    if (IMPORT_LOCK_LEVEL(interp) == 0) {
-        IMPORT_LOCK_THREAD(interp) = PYTHREAD_INVALID_THREAD_ID;
-        PyThread_release_lock(IMPORT_LOCK(interp));
-    }
-    return 1;
+    _PyRecursiveMutex_Unlock(&IMPORT_LOCK(interp));
 }
-
-#ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child() to ensure that newly
-   created child processes do not share locks with the parent.
-   We now acquire the import lock around fork() calls but on some platforms
-   (Solaris 9 and earlier? see isue7242) that still left us with problems. */
-PyStatus
-_PyImport_ReInitLock(PyInterpreterState *interp)
-{
-    if (IMPORT_LOCK(interp) != NULL) {
-        if (_PyThread_at_fork_reinit(&IMPORT_LOCK(interp)) < 0) {
-            return _PyStatus_ERR("failed to create a new lock");
-        }
-    }
-
-    if (IMPORT_LOCK_LEVEL(interp) > 1) {
-        /* Forked as a side effect of import */
-        unsigned long me = PyThread_get_thread_ident();
-        PyThread_acquire_lock(IMPORT_LOCK(interp), WAIT_LOCK);
-        IMPORT_LOCK_THREAD(interp) = me;
-        IMPORT_LOCK_LEVEL(interp)--;
-    } else {
-        IMPORT_LOCK_THREAD(interp) = PYTHREAD_INVALID_THREAD_ID;
-        IMPORT_LOCK_LEVEL(interp) = 0;
-    }
-    return _PyStatus_OK();
-}
-#endif
 
 
 /***************/
@@ -1615,6 +1551,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1632,7 +1569,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 
-#ifndef NDEBUG
 static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
@@ -2031,10 +1967,22 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
+                PyObject *filename = NULL;
+                if (switched) {
+                    // The original filename may be allocated by subinterpreter's
+                    // obmalloc, so we create a copy here.
+                    filename = _PyUnicode_Copy(info->filename);
+                    if (filename == NULL) {
+                        return NULL;
+                    }
+                } else {
+                    filename = Py_NewRef(info->filename);
+                }
                 // XXX There's a refleak somewhere with the filename.
-                // Until we can track it down, we intern it.
-                PyObject *filename = Py_NewRef(info->filename);
-                PyUnicode_InternInPlace(&filename);
+                // Until we can track it down, we immortalize it.
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &filename);
+
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }
@@ -4111,11 +4059,6 @@ _PyImport_FiniCore(PyInterpreterState *interp)
         PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
     }
 
-    if (IMPORT_LOCK(interp) != NULL) {
-        PyThread_free_lock(IMPORT_LOCK(interp));
-        IMPORT_LOCK(interp) = NULL;
-    }
-
     _PyImport_ClearCore(interp);
 }
 
@@ -4248,8 +4191,7 @@ _imp_lock_held_impl(PyObject *module)
 /*[clinic end generated code: output=8b89384b5e1963fc input=9b088f9b217d9bdf]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyBool_FromLong(
-            IMPORT_LOCK_THREAD(interp) != PYTHREAD_INVALID_THREAD_ID);
+    return PyBool_FromLong(PyMutex_IsLocked(&IMPORT_LOCK(interp).mutex));
 }
 
 /*[clinic input]
@@ -4283,11 +4225,12 @@ _imp_release_lock_impl(PyObject *module)
 /*[clinic end generated code: output=7faab6d0be178b0a input=934fb11516dd778b]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyImport_ReleaseLock(interp) < 0) {
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&IMPORT_LOCK(interp))) {
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
         return NULL;
     }
+    _PyImport_ReleaseLock(interp);
     Py_RETURN_NONE;
 }
 
