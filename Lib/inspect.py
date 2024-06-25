@@ -2052,9 +2052,13 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     new_params[param_name] = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    # But do not remove if it is a Placeholder
-                    if arg_value is not functools.Placeholder:
-                        new_params.pop(param.name)
+                    # Do not pop if it is a Placeholder
+                    #   and change kind to positional only
+                    if arg_value is functools.Placeholder:
+                        new_param = param.replace(kind=_POSITIONAL_ONLY)
+                        new_params[param_name] = new_param
+                    else:
+                        new_params.pop(param_name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
@@ -2548,6 +2552,11 @@ def _signature_from_callable(obj, *,
                 sig_params = tuple(sig.parameters.values())
                 assert (not sig_params or
                         first_wrapped_param is not sig_params[0])
+                # If there were placeholders set,
+                #   first param is transformaed to positional only
+                if partialmethod.args.count(functools.Placeholder):
+                    first_wrapped_param = first_wrapped_param.replace(
+                        kind=Parameter.POSITIONAL_ONLY)
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 

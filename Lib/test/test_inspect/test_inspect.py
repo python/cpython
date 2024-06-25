@@ -3311,13 +3311,13 @@ class TestSignatureObject(unittest.TestCase):
 
         # With Placeholder
         self.assertEqual(self.signature(partial(test, Placeholder, 1)),
-                         ((('a', ..., ..., "positional_or_keyword"),
+                         ((('a', ..., ..., "positional_only"),
                            ('c', ..., ..., "keyword_only"),
                            ('d', ..., ..., "keyword_only")),
                           ...))
 
         self.assertEqual(self.signature(partial(test, Placeholder, 1, c=2)),
-                         ((('a', ..., ..., "positional_or_keyword"),
+                         ((('a', ..., ..., "positional_only"),
                            ('c', 2, ..., "keyword_only"),
                            ('d', ..., ..., "keyword_only")),
                           ...))
@@ -3364,6 +3364,15 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(test, b=0, test=1)),
                          ((('a', ..., ..., "positional_or_keyword"),
+                           ('args', ..., ..., "var_positional"),
+                           ('b', 0, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # With Placeholder
+        p = partial(test, Placeholder, Placeholder, 1, b=0, test=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
                            ('args', ..., ..., "var_positional"),
                            ('b', 0, ..., "keyword_only"),
                            ('kwargs', ..., ..., "var_keyword")),
@@ -3505,12 +3514,12 @@ class TestSignatureObject(unittest.TestCase):
 
         # With Placeholder
         self.assertEqual(self.signature(Spam.bar, eval_str=False),
-                         ((('it', ..., ..., 'positional_or_keyword'),
-                           ('a', ..., ..., 'positional_or_keyword'),
+                         ((('it', ..., ..., 'positional_only'),
+                           ('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
         self.assertEqual(self.signature(Spam().bar, eval_str=False),
-                         ((('a', ..., ..., 'positional_or_keyword'),
+                         ((('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 

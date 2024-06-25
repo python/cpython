@@ -366,8 +366,6 @@ The :mod:`functools` module defines the following functions:
 
       >>> from functools import partial, Placeholder
       >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")
-      >>> say_to_world.placeholder_count
-      2
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
 
