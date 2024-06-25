@@ -247,8 +247,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter(
             'test_fini_in_subthread',
             # At the moment, this actually succeeds on all platforms,
-            # except for Windows.
-            returncode=1 if MS_WINDOWS else 0,
+            # except for Windows (STATUS_ACCESS_VIOLATION).
+            returncode=0xC0000005 if MS_WINDOWS else 0,
         )
 
     def test_fini_in_main_thread_with_other_tstate(self):
