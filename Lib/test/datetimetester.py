@@ -1697,8 +1697,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.max)
 
     def test_strftime_y2k(self):
-        for y, o in ((1, 0), (49, -1), (70, 0), (99, 0), (100, -1),
-                            (999, 0), (1000, 0), (1970, 0)):
+        # Test that years less than 1000 are 0-padded; note that the beginning
+        # an ISO 8601 year may fall in an ISO week of the year before, and
+        # therefore needs an offset of -1 when formatting with '%G'.
+        for y, o in ((1, 0), (49, -1), (70, 0), (99, 0), (100, -1), (999, 0),
+                     (1000, 0), (1970, 0)):
             for s in 'YG':
                 with self.subTest(year=y, specifier=s):
                     d = self.theclass(y, 1, 1)
