@@ -1920,13 +1920,13 @@ finalize_interp_delete(PyInterpreterState *interp)
 static PyThreadState *
 resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
-#define HANDLE_ERROR(msg)                               \
+#define PRINT_ERROR(msg)                                \
     if (args->verbose) {                                \
         fprintf(stderr, "%s: %s\n", args->caller, msg); \
     }
 
     if (!_Py_IsMainThread()) {
-        HANDLE_ERROR("expected to be in the main thread");
+        PRINT_ERROR("expected to be in the main thread");
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1935,19 +1935,19 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
 
     if (tstate->interp != main_interp) {
-        HANDLE_ERROR("expected main interpreter to be active");
+        PRINT_ERROR("expected main interpreter to be active");
     }
 
     /* The main tstate is set by Py_Initialize(), but can be unset
      * or even replaced in unlikely cases. */
     PyThreadState *main_tstate = runtime->main_tstate;
     if (main_tstate == NULL) {
-        HANDLE_ERROR("main thread state not set");
+        PRINT_ERROR("main thread state not set");
     }
     else if (tstate != main_tstate) {
         /* Code running in the main thread could swap out the main tstate,
            which ends up being a headache. */
-        HANDLE_ERROR("using different thread state than Py_Initialize()");
+        PRINT_ERROR("using different thread state than Py_Initialize()");
     }
     else {
         assert(main_tstate->interp != NULL);
@@ -1956,7 +1956,7 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 
     return tstate;
 
-#undef ERROR
+#undef PRINT_ERROR
 }
 
 int
