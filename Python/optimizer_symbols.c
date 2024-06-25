@@ -198,7 +198,6 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const
         sym->typ = typ;
         sym->const_val = Py_NewRef(const_val);
     }
-
 }
 
 void

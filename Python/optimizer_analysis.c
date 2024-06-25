@@ -486,6 +486,7 @@ error:
 
 }
 
+
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
