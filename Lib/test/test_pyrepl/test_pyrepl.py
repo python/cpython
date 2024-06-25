@@ -862,6 +862,7 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    @force_not_colorized
     def test_python_basic_repl(self):
         env = os.environ.copy()
         commands = ("from test.support import initialized_with_pyrepl\n"
@@ -870,6 +871,8 @@ class TestMain(TestCase):
 
         env.pop("PYTHON_BASIC_REPL", None)
         output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn("True", output)
         self.assertNotIn("Exception", output)
