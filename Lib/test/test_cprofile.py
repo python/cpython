@@ -30,10 +30,9 @@ class CProfileTest(ProfileTest):
 
             self.assertEqual(cm.unraisable.exc_type, TypeError)
 
-    @unittest.skipUnless(support.check_sanitizer(address=True), "only used to fail with ASAN")
     def test_evil_external_timer(self):
         # gh-120289
-        # Disabling profiler in external timer should not crash with ASAN
+        # Disabling profiler in external timer should not crash
         import _lsprof
         class EvilTimer():
             def __init__(self, disable_count):
