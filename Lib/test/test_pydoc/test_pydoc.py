@@ -31,7 +31,7 @@ from test.support import os_helper
 from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
-from test.support import (reap_children, captured_output, captured_stdout,
+from test.support import (reap_children, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
@@ -77,6 +77,11 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
+     |  Methods defined here:
+     |
+     |  __annotate__(...)
+     |
+     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -87,8 +92,6 @@ CLASSES
      |  Data and other attributes defined here:
      |
      |  NO_MEANING = 'eggs'
-     |
-     |  __annotations__ = {'NO_MEANING': <class 'str'>}
 
     class C(builtins.object)
      |  Methods defined here:
@@ -176,6 +179,9 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
+    Methods defined here:
+        __annotate__(...)
+    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -184,7 +190,6 @@ class B(builtins.object)
     ----------------------------------------------------------------------
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
-        __annotations__ = {'NO_MEANING': <class 'str'>}
 
 
 class C(builtins.object)
@@ -380,6 +385,11 @@ def html2text(html):
 
 
 class PydocBaseTest(unittest.TestCase):
+    def tearDown(self):
+        # Self-testing. Mocking only works if sys.modules['pydoc'] and pydoc
+        # are the same. But some pydoc functions reload the module and change
+        # sys.modules, so check that it was restored.
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def _restricted_walk_packages(self, walk_packages, path=None):
         """
@@ -411,6 +421,8 @@ class PydocBaseTest(unittest.TestCase):
 
 class PydocDocTest(unittest.TestCase):
     maxDiff = None
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
@@ -675,9 +687,8 @@ class PydocDocTest(unittest.TestCase):
         help_header = textwrap.dedent(help_header)
         expected_help_pattern = help_header + expected_text_pattern
 
-        with captured_output('stdout') as output, \
-             captured_output('stderr') as err, \
-             StringIO() as buf:
+        with captured_stdout() as output, captured_stderr() as err:
+            buf = StringIO()
             helper = pydoc.Helper(output=buf)
             helper.help(module)
             result = buf.getvalue().strip()
@@ -701,9 +712,8 @@ class PydocDocTest(unittest.TestCase):
 
         def run_pydoc_for_request(request, expected_text_part):
             """Helper function to run pydoc with its output redirected"""
-            with captured_output('stdout') as output, \
-                 captured_output('stderr') as err, \
-                 StringIO() as buf:
+            with captured_stdout() as output, captured_stderr() as err:
+                buf = StringIO()
                 helper = pydoc.Helper(output=buf)
                 helper.help(request)
                 result = buf.getvalue().strip()
@@ -736,6 +746,45 @@ class PydocDocTest(unittest.TestCase):
         # test for pydoc.Helper.help
         run_pydoc_for_request(pydoc.Helper.help, 'Help on function help in module pydoc:')
         # test for pydoc.Helper() instance skipped because it is always meant to be interactive
+
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
+    @requires_docstrings
+    def test_help_output_pager(self):
+        def run_pydoc_pager(request, what, expected_first_line):
+            with (captured_stdout() as output,
+                  captured_stderr() as err,
+                  unittest.mock.patch('pydoc.pager') as pager_mock,
+                  self.subTest(repr(request))):
+                helper = pydoc.Helper()
+                helper.help(request)
+                self.assertEqual('', err.getvalue())
+                self.assertEqual('\n', output.getvalue())
+                pager_mock.assert_called_once()
+                result = clean_text(pager_mock.call_args.args[0])
+                self.assertEqual(result.splitlines()[0], expected_first_line)
+                self.assertEqual(pager_mock.call_args.args[1], f'Help on {what}')
+
+        run_pydoc_pager('%', 'EXPRESSIONS', 'Operator precedence')
+        run_pydoc_pager('True', 'bool object', 'Help on bool object:')
+        run_pydoc_pager(True, 'bool object', 'Help on bool object:')
+        run_pydoc_pager('assert', 'assert', 'The "assert" statement')
+        run_pydoc_pager('TYPES', 'TYPES', 'The standard type hierarchy')
+        run_pydoc_pager('pydoc.Helper.help', 'pydoc.Helper.help',
+                        'Help on function help in pydoc.Helper:')
+        run_pydoc_pager(pydoc.Helper.help, 'Helper.help',
+                        'Help on function help in module pydoc:')
+        run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
+        run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
+        run_pydoc_pager('str.upper', 'str.upper', 'Help on method_descriptor in str:')
+        run_pydoc_pager(str.upper, 'str.upper', 'Help on method_descriptor:')
+        run_pydoc_pager(str.__add__, 'str.__add__', 'Help on wrapper_descriptor:')
+        run_pydoc_pager(int.numerator, 'int.numerator',
+                        'Help on getset descriptor builtins.int.numerator:')
+        run_pydoc_pager(list[int], 'list',
+                        'Help on GenericAlias in module builtins:')
+        run_pydoc_pager('sys', 'sys', 'Help on built-in module sys:')
+        run_pydoc_pager(sys, 'sys', 'Help on built-in module sys:')
 
     def test_showtopic(self):
         with captured_stdout() as showtopic_io:
@@ -770,9 +819,8 @@ class PydocDocTest(unittest.TestCase):
         # Helper.showtopic should be redirected
         self.maxDiff = None
 
-        with captured_output('stdout') as output, \
-             captured_output('stderr') as err, \
-             StringIO() as buf:
+        with captured_stdout() as output, captured_stderr() as err:
+            buf = StringIO()
             helper = pydoc.Helper(output=buf)
             helper.showtopic('with')
             result = buf.getvalue().strip()
@@ -785,7 +833,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_with_return_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"return": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a, b, c) -> int", helptext)
@@ -793,7 +841,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_without_return_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"a": int, "b": int, "c": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a: int, b: int, c: int)", helptext)
@@ -801,7 +849,7 @@ class PydocDocTest(unittest.TestCase):
     def test_lambda_with_return_and_params_annotation(self):
         func = lambda a, b, c: 1
         func.__annotations__ = {"a": int, "b": int, "c": int, "return": int}
-        with captured_output('stdout') as help_io:
+        with captured_stdout() as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
         self.assertIn("lambda (a: int, b: int, c: int) -> int", helptext)
@@ -1191,7 +1239,8 @@ class PydocImportTest(PydocBaseTest):
             sys.path.insert(0, TESTFN)
             try:
                 with self.assertRaisesRegex(ValueError, "ouch"):
-                    import test_error_package  # Sanity check
+                    # Sanity check
+                    import test_error_package  # noqa: F401
 
                 text = self.call_url_handler("search?key=test_error_package",
                     "Pydoc: Search Results")
@@ -1243,12 +1292,15 @@ class PydocImportTest(PydocBaseTest):
         self.assertTrue(result.startswith(expected))
 
     def test_importfile(self):
-        loaded_pydoc = pydoc.importfile(pydoc.__file__)
+        try:
+            loaded_pydoc = pydoc.importfile(pydoc.__file__)
 
-        self.assertIsNot(loaded_pydoc, pydoc)
-        self.assertEqual(loaded_pydoc.__name__, 'pydoc')
-        self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
-        self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
+            self.assertIsNot(loaded_pydoc, pydoc)
+            self.assertEqual(loaded_pydoc.__name__, 'pydoc')
+            self.assertEqual(loaded_pydoc.__file__, pydoc.__file__)
+            self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
+        finally:
+            sys.modules['pydoc'] = pydoc
 
 
 class Rect:
@@ -1263,6 +1315,8 @@ class Square(Rect):
 
 
 class TestDescriptions(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def test_module(self):
         # Check that pydocfodder module can be described
@@ -1752,6 +1806,8 @@ foo
 
 
 class PydocFodderTest(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def getsection(self, text, beginline, endline):
         lines = text.splitlines()
@@ -1891,6 +1947,8 @@ class PydocFodderTest(unittest.TestCase):
 )
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
 
     def test_server(self):
         # Minimal test that starts the server, checks that it works, then stops
@@ -1953,9 +2011,14 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("foobar", "Pydoc: Error - foobar"),
             ]
 
-        with self.restrict_walk_packages():
-            for url, title in requests:
-                self.call_url_handler(url, title)
+        self.assertIs(sys.modules['pydoc'], pydoc)
+        try:
+            with self.restrict_walk_packages():
+                for url, title in requests:
+                    self.call_url_handler(url, title)
+        finally:
+            # Some requests reload the module and change sys.modules.
+            sys.modules['pydoc'] = pydoc
 
 
 class TestHelper(unittest.TestCase):
@@ -1965,6 +2028,9 @@ class TestHelper(unittest.TestCase):
 
 
 class PydocWithMetaClasses(unittest.TestCase):
+    def tearDown(self):
+        self.assertIs(sys.modules['pydoc'], pydoc)
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings

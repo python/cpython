@@ -584,9 +584,9 @@ free_interpreter(PyInterpreterState *interp)
         PyMem_RawFree(interp);
     }
 }
-
+#ifndef NDEBUG
 static inline int check_interpreter_whence(long);
-
+#endif
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1130,7 +1130,7 @@ _PyInterpreterState_IsReady(PyInterpreterState *interp)
     return interp->_ready;
 }
 
-
+#ifndef NDEBUG
 static inline int
 check_interpreter_whence(long whence)
 {
@@ -1142,6 +1142,7 @@ check_interpreter_whence(long whence)
     }
     return 0;
 }
+#endif
 
 long
 _PyInterpreterState_GetWhence(PyInterpreterState *interp)

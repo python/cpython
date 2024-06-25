@@ -100,6 +100,27 @@ os
   by :func:`os.unsetenv`, or made outside Python in the same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+pathlib
+-------
+
+* Add :meth:`pathlib.Path.copy`, which copies the content of one file to
+  another, like :func:`shutil.copyfile`.
+  (Contributed by Barney Gale in :gh:`73991`.)
+* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
+  another.
+  (Contributed by Barney Gale in :gh:`73991`.)
+
+symtable
+--------
+
+* Expose the following :class:`symtable.Symbol` methods:
+
+  * :meth:`~symtable.Symbol.is_free_class`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_comp_cell`
+
+  (Contributed by Bénédikt Tran in :gh:`120029`.)
+
 
 Optimizations
 =============
@@ -154,6 +175,26 @@ ast
   Use :attr:`!ast.Constant.value` instead.
 
   (Contributed by Alex Waygood in :gh:`119562`.)
+
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
 
 collections.abc
 ---------------
@@ -265,8 +306,31 @@ New Features
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
   (Contributed by Sergey B Kirpichev in :gh:`116560`.)
 
+* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
+  object:
+
+  * :c:func:`PyUnicodeWriter_Create`.
+  * :c:func:`PyUnicodeWriter_Discard`.
+  * :c:func:`PyUnicodeWriter_Finish`.
+  * :c:func:`PyUnicodeWriter_WriteChar`.
+  * :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`PyUnicodeWriter_WriteUCS4`.
+  * :c:func:`PyUnicodeWriter_WriteWideChar`.
+  * :c:func:`PyUnicodeWriter_WriteStr`.
+  * :c:func:`PyUnicodeWriter_WriteRepr`.
+  * :c:func:`PyUnicodeWriter_WriteSubstring`.
+  * :c:func:`PyUnicodeWriter_Format`.
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+  (Contributed by Victor Stinner in :gh:`119182`.)
+
 Porting to Python 3.14
 ----------------------
+
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` is now implemented as
+  an opaque function call to hide implementation details.
+  (Contributed by Victor Stinner in :gh:`120600`.)
+
 
 Deprecated
 ----------

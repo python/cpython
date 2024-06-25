@@ -10,7 +10,6 @@ __all__ = (
     'Handle', 'TimerHandle',
     'get_event_loop_policy', 'set_event_loop_policy',
     'get_event_loop', 'set_event_loop', 'new_event_loop',
-    'get_child_watcher', 'set_child_watcher',
     '_set_running_loop', 'get_running_loop',
     '_get_running_loop',
 )
@@ -652,17 +651,6 @@ class AbstractEventLoopPolicy:
         the current context, set_event_loop must be called explicitly."""
         raise NotImplementedError
 
-    # Child processes handling (Unix only).
-
-    def get_child_watcher(self):
-        "Get the watcher for child processes."
-        raise NotImplementedError
-
-    def set_child_watcher(self, watcher):
-        """Set the watcher for child processes."""
-        raise NotImplementedError
-
-
 class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     """Default policy implementation for accessing the event loop.
 
@@ -835,17 +823,6 @@ def set_event_loop(loop):
 def new_event_loop():
     """Equivalent to calling get_event_loop_policy().new_event_loop()."""
     return get_event_loop_policy().new_event_loop()
-
-
-def get_child_watcher():
-    """Equivalent to calling get_event_loop_policy().get_child_watcher()."""
-    return get_event_loop_policy().get_child_watcher()
-
-
-def set_child_watcher(watcher):
-    """Equivalent to calling
-    get_event_loop_policy().set_child_watcher(watcher)."""
-    return get_event_loop_policy().set_child_watcher(watcher)
 
 
 # Alias pure-Python implementations for testing purposes.

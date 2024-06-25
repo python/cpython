@@ -16,6 +16,7 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from ._os import copyfileobj
 
 
 __all__ = ["UnsupportedOperation"]
@@ -563,6 +564,15 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
+    def _samefile_safe(self, other_path):
+        """
+        Like samefile(), but returns False rather than raising OSError.
+        """
+        try:
+            return self.samefile(other_path)
+        except (OSError, ValueError):
+            return False
+
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -779,6 +789,61 @@ class PathBase(PurePathBase):
         Create a new directory at this given path.
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
+
+    def copy(self, target, follow_symlinks=True):
+        """
+        Copy the contents of this file to the given target. If this file is a
+        symlink and follow_symlinks is false, a symlink will be created at the
+        target.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if self._samefile_safe(target):
+            raise OSError(f"{self!r} and {target!r} are the same file")
+        if not follow_symlinks and self.is_symlink():
+            target.symlink_to(self.readlink())
+            return
+        with self.open('rb') as source_f:
+            try:
+                with target.open('wb') as target_f:
+                    copyfileobj(source_f, target_f)
+            except IsADirectoryError as e:
+                if not target.exists():
+                    # Raise a less confusing exception.
+                    raise FileNotFoundError(
+                        f'Directory does not exist: {target}') from e
+                else:
+                    raise
+
+    def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+                 ignore=None, on_error=None):
+        """
+        Recursively copy this directory tree to the given destination.
+        """
+        if not isinstance(target, PathBase):
+            target = self.with_segments(target)
+        if on_error is None:
+            def on_error(err):
+                raise err
+        stack = [(self, target)]
+        while stack:
+            source_dir, target_dir = stack.pop()
+            try:
+                sources = source_dir.iterdir()
+                target_dir.mkdir(exist_ok=dirs_exist_ok)
+                for source in sources:
+                    if ignore and ignore(source):
+                        continue
+                    try:
+                        if source.is_dir(follow_symlinks=follow_symlinks):
+                            stack.append((source, target_dir.joinpath(source.name)))
+                        else:
+                            source.copy(target_dir.joinpath(source.name),
+                                        follow_symlinks=follow_symlinks)
+                    except OSError as err:
+                        on_error(err)
+            except OSError as err:
+                on_error(err)
 
     def rename(self, target):
         """

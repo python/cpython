@@ -6,7 +6,7 @@ import tkinter
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
 from test.support import ALWAYS_EQ
-from test.test_tkinter.support import AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractDefaultRootTest, tcl_version
 
 
 class Var(Variable):
@@ -112,6 +112,8 @@ class TestVariable(TestBase):
         self.assertTrue(v.side_effect)
 
     def test_trace_old(self):
+        if tcl_version >= (9, 0):
+            self.skipTest('requires Tcl version < 9.0')
         # Old interface
         v = Variable(self.root)
         vname = str(v)
