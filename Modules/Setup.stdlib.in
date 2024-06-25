@@ -83,7 +83,7 @@
 @MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
 @MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__BLAKE2_TRUE@_blake2 blake2module.c  -I$(srcdir)/Modules/_hacl/ -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_Blake2s.c _hacl/Hacl_Hash_Blake2b.c _hacl/Lib_Memzero0.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+@MODULE__BLAKE2_TRUE@_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/ -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_Blake2s.c _hacl/Hacl_Hash_Blake2b.c _hacl/Hacl_Hash_Blake2s_Simd128.c _hacl/Hacl_Hash_Blake2b_Simd256.c _hacl/Lib_Memzero0.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 
 ############################################################################
 # XML and text

@@ -47,12 +47,16 @@ dist_files=(
   Hacl_Hash_SHA3.h
   Hacl_Hash_Blake2b.h
   Hacl_Hash_Blake2s.h
+  Hacl_Hash_Blake2b_Simd256.h
+  Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Hash_MD5.h
   internal/Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA2.h
   internal/Hacl_Hash_SHA3.h
   internal/Hacl_Hash_Blake2b.h
   internal/Hacl_Hash_Blake2s.h
+  internal/Hacl_Hash_Blake2b_Simd256.h
+  internal/Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Impl_Blake2_Constants.h
   Hacl_Hash_MD5.c
   Hacl_Hash_SHA1.c
@@ -60,6 +64,9 @@ dist_files=(
   Hacl_Hash_SHA3.c
   Hacl_Hash_Blake2b.c
   Hacl_Hash_Blake2s.c
+  Hacl_Hash_Blake2b_Simd256.c
+  Hacl_Hash_Blake2s_Simd128.c
+  libintvector.h
   lib_memzero0.h
   Lib_Memzero0.c
 )

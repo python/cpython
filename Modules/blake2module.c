@@ -17,6 +17,86 @@
 #include "hashlib.h"
 #include "pycore_strhex.h"       // _Py_strhex()
 
+// QUICK CPU AUTODETECTION
+// See https://github.com/python/cpython/pull/119316 -- we only enable
+// vectorized versions for Intel CPUs, even though HACL*'s "vec128" modules also
+// run on ARM NEON. (We could enable them on POWER -- but I don't have access to
+// a test machine to see if that speeds anything up.)
+
+#if defined(__x86_64__) && defined(__GNUC__)
+#include <cpuid.h>
+#elif defined(_M_X64)
+#include <intrin.h>
+#endif
+
+#include <stdbool.h>
+
+// ECX
+#define ECX_SSE3 (1 << 0)
+#define ECX_SSSE3 (1 << 9)
+#define ECX_SSE4_1 (1 << 19)
+#define ECX_SSE4_2 (1 << 20)
+#define ECX_AVX (1 << 28)
+
+// EBX
+#define EBX_AVX2 (1 << 5)
+
+// EDX
+#define EDX_SSE (1 << 25)
+#define EDX_SSE2 (1 << 26)
+#define EDX_CMOV (1 << 15)
+
+// zero-initialized by default
+static bool sse, sse2, sse3, sse41, sse42, cmov, avx, avx2;
+
+static void detect_cpu_features(void) {
+  static bool done = false;
+  if (!done) {
+    int eax1 = 0, ebx1 = 0, ecx1 = 0, edx1 = 0;
+    int eax7 = 0, ebx7 = 0, ecx7 = 0, edx7 = 0;
+#if defined(__x86_64__) && defined(__GNUC__)
+    __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
+    __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
+#elif defined(_M_X64)
+    int info1[4] = { 0 };
+    int info7[4] = { 0 };
+    __cpuidex(info1, 1, 0);
+    __cpuidex(info7, 7, 0);
+    eax1 = info1[0];
+    ebx1 = info1[1];
+    ecx1 = info1[2];
+    edx1 = info1[3];
+    eax7 = info7[0];
+    ebx7 = info7[1];
+    ecx7 = info7[2];
+    edx7 = info7[3];
+#endif
+
+    avx = (ecx1 & ECX_AVX) != 0;
+
+    avx2 = (ebx7 & EBX_AVX2) != 0;
+
+    sse = (edx1 & EDX_SSE) != 0;
+    sse2 = (edx1 & EDX_SSE2) != 0;
+    cmov = (edx1 & EDX_CMOV) != 0;
+
+    sse3 = (ecx1 & ECX_SSE3) != 0;
+    /* ssse3 = (ecx1 & ECX_SSSE3) != 0; */
+    sse41 = (ecx1 & ECX_SSE4_1) != 0;
+    sse42 = (ecx1 & ECX_SSE4_2) != 0;
+
+    done = true;
+  }
+}
+
+static inline bool has_intel_vec128(void) {
+  return sse && sse2 && sse3 && sse41 && sse42 && cmov;
+}
+
+static inline bool has_intel_vec256(void) {
+  return avx && avx2;
+}
+
 #include "_hacl/Hacl_Hash_Blake2b.h"
 #include "_hacl/Hacl_Hash_Blake2s.h"
 
