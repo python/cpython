@@ -1914,19 +1914,21 @@ _Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
     int status = 0;
 
+    /* Bail out early if already finalized. */
     if (!runtime->initialized) {
         assert(!runtime->is_pymain);
         return status;
     }
 
+    /* Make sure Py_RunMain() users aren't calling Py_Finalize(). */
     if (args->check_pymain && runtime->is_pymain) {
         fprintf(stderr,
-                "%s() should not be called while Py_RunMain() is running",
+                "%s() should not be called while Py_RunMain() is running\n",
                 args->caller);
-        return 1;
+        return -1;
     }
 
-    /* Get current thread state and interpreter pointer */
+    /* Get final thread state pointer. */
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate->interp->runtime == runtime);
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
