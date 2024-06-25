@@ -2715,7 +2715,7 @@ class TestType(unittest.TestCase):
         ns = {}
         exec("A = type('A', (), {})", ns)
         self.assertIs(ns['A'].__module__, None)
-    
+
     def test_namespace_order(self):
         # bpo-34320: namespace should preserve order
         od = collections.OrderedDict([('a', 1), ('b', 2)])

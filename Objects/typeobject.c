@@ -3946,9 +3946,8 @@ type_new_set_module(PyTypeObject *type)
         return 0;
     }
 
-    PyObject *globals = PyEval_GetGlobals();
     PyObject *module;
-    if (globals != NULL &&
+    if (PyEval_GetGlobals() != NULL &&
         PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) == 1 && module) {
         r = PyDict_SetItem(dict, &_Py_ID(__module__), module);
         Py_DECREF(module);
