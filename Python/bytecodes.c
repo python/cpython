@@ -2036,9 +2036,9 @@ dummy_func(
             unused/5;
 
         op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
-            EXIT_IF(!PyType_Check(owner));
+            DEOPT_IF(!PyType_Check(owner));
             assert(type_version != 0);
-            EXIT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {

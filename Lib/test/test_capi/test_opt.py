@@ -1481,7 +1481,7 @@ class TestUopsOptimization(unittest.TestCase):
         fn(A())
 
 
-    def test_type_attribute_constant_propagated(self):
+    def test_type_attribute_type_check_eliminated(self):
         ns = {}
         src = textwrap.dedent("""
             class MyEnum:
@@ -1489,15 +1489,17 @@ class TestUopsOptimization(unittest.TestCase):
 
             def testfunc(n):
                 for i in range(n):
-                    x = MyEnum.A
-                    y = MyEnum.A
+                    enum = MyEnum
+                    # Note: can't just put MyEnum here because we lose
+                    # information between constant promotions.
+                    x = enum.A
+                    y = enum.A
         """)
         exec(src, ns, ns)
         testfunc = ns['testfunc']
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD * 2)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertLessEqual(uops.count("_LOAD_ATTR_CLASS_0"), 1)
         self.assertLessEqual(uops.count("_CHECK_ATTR_CLASS"), 1)
 
 

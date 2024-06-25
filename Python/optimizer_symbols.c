@@ -199,19 +199,6 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const
         sym->const_val = Py_NewRef(const_val);
     }
 
-    if (PyType_Check(const_val)) {
-        sym_set_flag(sym, IS_TYPE_SUBCLASS);
-        if (PyType_IsWatched(TYPE_WATCHER_ID, const_val)) {
-            sym->type_version = ((PyTypeObject *)const_val)->tp_version_tag;
-        }
-    }
-    else {
-        PyTypeObject *ty = Py_TYPE(const_val);
-        if (PyType_IsWatched(TYPE_WATCHER_ID, (PyObject *)ty)) {
-            sym->type_version = ty->tp_version_tag;
-        }
-    }
-
 }
 
 void
