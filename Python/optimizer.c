@@ -1662,7 +1662,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 void _Py_Executor_Invalidate(_PyExecutorObject *executor)
 {
    if (executor->vm_data.valid) {
-    printf("Invalidating executor %p\n", executor);
     unlink_executor(executor);
     executor_clear(executor);
    }
