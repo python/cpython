@@ -690,7 +690,7 @@ dummy_func(
             assert(PyFunction_Check(getitem));
             uint32_t cached_version = ht->_spec_cache.getitem_version;
             DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version);
-            PyCodeObject *code =  (PyCodeObject *)PyFunction_GET_CODE(getitem);
+            PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(BINARY_SUBSCR, hit);

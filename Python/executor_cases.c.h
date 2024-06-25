@@ -848,7 +848,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            PyCodeObject *code =  (PyCodeObject *)PyFunction_GET_CODE(getitem);
+            PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
             assert(code->co_argcount == 2);
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UOP_STAT_INC(uopcode, miss);
