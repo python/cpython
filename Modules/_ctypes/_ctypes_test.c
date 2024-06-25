@@ -15,7 +15,7 @@
 
 #ifdef HAVE_C_COMPLEX
 #  include "../_complex.h"        // csqrt()
-#  undef I
+#  undef I                        // for _ctypes_test_generated.c.h
 #endif
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()

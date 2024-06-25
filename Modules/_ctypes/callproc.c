@@ -105,6 +105,10 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
+#ifdef HAVE_C_COMPLEX
+#include "../complex.h"           // complex
+#endif
+
 #include "clinic/callproc.c.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
@@ -652,7 +656,7 @@ union result {
     float f;
     void *p;
 #ifdef HAVE_C_COMPLEX
-    double _Complex C;
+    double complex C;
 #endif
 };
 

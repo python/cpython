@@ -3774,8 +3774,8 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
 int main(void)
 {
-    double _Complex z = 1 + _Complex_I*2;
-    z = z + _Complex_I*z;
+    double complex z = 1 + 2*I;
+    z = z + z*I;
     return (creal(z) != -1) || (cimag(z) != 3);
 }]])], [ac_cv_c_complex_supported=yes],
 [ac_cv_c_complex_supported=no],

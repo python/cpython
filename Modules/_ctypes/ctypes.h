@@ -5,6 +5,10 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
+#ifdef HAVE_C_COMPLEX
+#   include "../complex.h"        // complex
+#endif
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -394,7 +398,7 @@ struct tagPyCArgObject {
         float f;
         void *p;
 #ifdef HAVE_C_COMPLEX
-        double _Complex C;
+        double complex C;
 #endif
     } value;
     PyObject *obj;
