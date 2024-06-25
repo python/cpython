@@ -3,7 +3,6 @@ import pickle
 import threading
 from textwrap import dedent
 import unittest
-import time
 
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.

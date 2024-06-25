@@ -105,9 +105,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     UOP_STAT_INC(uopcode, execution_count);
 
     // The actual instruction definitions (only one will be used):
-    if (uopcode == _JUMP_TO_TOP) {
-        PATCH_JUMP(_JIT_TOP);
-    }
     switch (uopcode) {
 #include "executor_cases.c.h"
         default:

@@ -13,6 +13,8 @@
 
 # Build system
 configure*                    @erlend-aasland @corona10
+Makefile.pre.in               @erlend-aasland
+Modules/Setup*                @erlend-aasland
 
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
@@ -40,7 +42,7 @@ Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
-Python/symtable.c             @JelleZijlstra @carljm 
+Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
@@ -199,7 +201,6 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-**/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
@@ -210,6 +211,7 @@ Doc/c-api/stable.rst          @encukou
 **/*ensurepip*                @pfmoore @pradyunsg
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
 
@@ -245,7 +247,7 @@ Doc/howto/clinic.rst          @erlend-aasland
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
 Lib/test/support/interpreters/  @ericsnowcurrently
-Modules/_xx*interp*module.c   @ericsnowcurrently
+Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
