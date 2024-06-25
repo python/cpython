@@ -1,36 +1,33 @@
-# The Frame Stack
+# Frames
 
-Each call to a Python function has an activation record,
-commonly known as a "frame".
-Python semantics allows frames to outlive the activation,
-so they have (before 3.11) been allocated on the heap.
-This is expensive as it requires many allocations and
-results in poor locality of reference.
-
-In 3.11, rather than have these frames scattered about memory,
-as happens for heap-allocated objects, frames are allocated
-contiguously in a per-thread stack.
-This improves performance significantly for two reasons:
-* It reduces allocation overhead to a pointer comparison and increment.
-* Stack allocated data has the best possible locality and will always be in
-  CPU cache.
-
-Generator and coroutines still need heap allocated activation records, but
-can be linked into the per-thread stack so as to not impact performance too much.
-
-## Layout
-
-Each activation record consists of four conceptual sections:
+Each call to a Python function has an activation record, commonly known as a
+"frame". It contains information about the function being executed, consisting
+of four conceptual sections:
 
 * Local variables (including arguments, cells and free variables)
-* Evaluation stack
+* Evaluation stack and instruction pointer
 * Specials: The per-frame object references needed by the VM: globals dict,
   code object, etc.
 * Linkage: Pointer to the previous activation record, stack depth, etc.
 
-### Layout
+The definition of the ``_PyInterpreterFrame`` struct is in
+[Include/internal/pycore_frame.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_frame.h).
 
-The specials and linkage sections are a fixed size, so are grouped together.
+# Allocation
+
+Python semantics allows frames to outlive the activation, so they need to
+be allocated outside the C call stack. To reduce overhead and improve locality
+of reference, most frames are allocated contiguously in a per-thread stack
+(see ``_PyThreadState_PushFrame`` in
+[Python/pystate.c](https://github.com/python/cpython/blob/main/Python/pystate.c)).
+
+Frames of generators and coroutines are allocated on the heap, embedded in the
+generator and coroutine objects. See ``PyGenObject`` in
+[Include/internal/pycore_genobject.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_genobject.h).
+
+## Layout
+
+The specials and linkage sections have a fixed size, so are grouped together.
 
 Each activation record is laid out as:
 * Specials and linkage
@@ -53,7 +50,7 @@ as the arguments on the stack are (usually) already in the correct
 location for the parameters. However, it requires the VM to maintain
 an extra pointer for the locals, which can hurt performance.
 
-A variant that only needs the need two pointers is to reverse the numbering
+A variant that only needs two pointers is to reverse the numbering
 of the locals, so that the last one is numbered `0`, and the first in memory
 is numbered `N-1`.
 This allows the locals, specials and linkage to accessed from the frame pointer.
@@ -62,7 +59,7 @@ We may implement this in the future.
 #### Note:
 
 > In a contiguous stack, we would need to save one fewer registers, as the
-> top of the caller's activation record would be the same at the base of the
+> top of the caller's activation record would be the same as the base of the
 > callee's. However, since some activation records are kept on the heap we
 > cannot do this.
 
@@ -99,18 +96,16 @@ frames for each activation, but with low runtime overhead.
 
 ### Generators and Coroutines
 
-
-Generator objects have a `_PyInterpreterFrame` embedded in them.
-This means that creating a generator requires only a single allocation,
-reducing allocation overhead and improving locality of reference.
-The embedded frame is linked into the per-thread frame when iterated or
-awaited.
+Generators (objects of type ``PyGen_Type``, ``PyCoro_Type`` or
+``PyAsyncGen_Type``) have a `_PyInterpreterFrame` embedded in them, so
+that they can be created with a single memory allocation.
+When such an embedded frame is iterated or awaited, it can be linked with
+frames on the per-thread stack via the linkage fields.
 
 If a frame object associated with a generator outlives the generator, then
-the embedded `_PyInterpreterFrame` is copied into the frame object.
-
-
-All the above applies to coroutines and async generators as well.
+the embedded `_PyInterpreterFrame` is copied into the frame object (see
+``take_ownership()`` in
+[Python/frame.c](https://github.com/python/cpython/blob/main/Python/frame.c)).
 
 ### Field names
 
@@ -119,7 +114,7 @@ Thus, some of the field names may be a bit misleading.
 
 For example the `f_globals` field has a `f_` prefix implying it belongs to the
 `PyFrameObject` struct, although it belongs to the `_PyInterpreterFrame` struct.
-We may rationalize this naming scheme for 3.12.
+We may rationalize this naming scheme for a later version.
 
 
 ### Shim frames
