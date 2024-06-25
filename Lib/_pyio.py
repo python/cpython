@@ -573,6 +573,11 @@ class IOBase(metaclass=abc.ABCMeta):
                 raise TypeError(f"{size!r} is not an integer")
             else:
                 size = size_index()
+
+        # We could use a deque() to insert at the front and then
+        # join the entire result using b''.join(characters) but
+        # this would require importing 'collections', which is
+        # an overkill for the Python implementation.
         rev_res, count = bytearray(), 0
         eol = None  # decide whether a line break is included or not
         while size < 0 or count < size:
@@ -584,10 +589,11 @@ class IOBase(metaclass=abc.ABCMeta):
             if b == b"\n":
                 eol = b
                 break
-        if eol is not None:
-            # reverse the characters in the line, except the new line character
-            return bytes(reversed(rev_res[:-1])) + eol
-        return bytes(reversed(rev_res))
+        bytes_rev_res = bytes(rev_res)[::-1]
+        if eol is None:
+            return bytes_rev_res
+        # reverse the characters in the line, except the new line character
+        return bytes_rev_res[1:] + eol
 
     def __iter__(self):
         self._checkClosed()
@@ -1077,11 +1083,11 @@ class BytesIO(BufferedIOBase):
         if size < 0:
             rem = self._pos
             self._pos = 0
-            return bytes(reversed(self._buffer[:rem]))
+            return bytes(self._buffer[:rem])[::-1]
         n = max(0, self._pos - size)
         b = self._buffer[n : self._pos]
         self._pos = n
-        return bytes(reversed(b))
+        return bytes(b)[::-1]
 
     def write(self, b):
         if self.closed:
