@@ -429,11 +429,12 @@ static PyObject *
 reversed_next(reversedobject *ro)
 {
     PyObject *item;
-    Py_ssize_t index = _Py_atomic_add_ssize(&(ro->index), -1);
+    Py_ssize_t index = _Py_atomic_load_ssize_relaxed(&ro->index);
 
     if (index >= 0) {
         item = PySequence_GetItem(ro->seq, index);
         if (item != NULL) {
+            _Py_atomic_store_ssize_relaxed(&ro->index, index - 1);
             return item;
         }
         if (PyErr_ExceptionMatches(PyExc_IndexError) ||
