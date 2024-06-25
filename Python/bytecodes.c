@@ -681,11 +681,11 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        op(_BINARY_SUBSCR_GET_FUNC, (container, unused -- container, unused, getitem)) {
+        op(_BINARY_SUBSCR_CHECK_FUNC, (container, unused -- container, unused)) {
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-            getitem = ht->_spec_cache.getitem;
+            PyObject *getitem = ht->_spec_cache.getitem;
             DEOPT_IF(getitem == NULL);
             assert(PyFunction_Check(getitem));
             uint32_t cached_version = ht->_spec_cache.getitem_version;
@@ -697,7 +697,10 @@ dummy_func(
             Py_INCREF(getitem);
         }
 
-        op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem --new_frame: _PyInterpreterFrame* )) {
+        op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _PyInterpreterFrame* )) {
+            PyTypeObject *tp = Py_TYPE(container);
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = ht->_spec_cache.getitem;
             new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
@@ -707,7 +710,7 @@ dummy_func(
         macro(BINARY_SUBSCR_GETITEM) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
-            _BINARY_SUBSCR_GET_FUNC +
+            _BINARY_SUBSCR_CHECK_FUNC +
             _BINARY_SUBSCR_INIT_CALL +
             _PUSH_FRAME;
 

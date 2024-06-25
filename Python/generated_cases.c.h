@@ -396,7 +396,6 @@
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *container;
-            PyObject *getitem;
             PyObject *sub;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
@@ -404,13 +403,13 @@
             {
                 DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
             }
-            // _BINARY_SUBSCR_GET_FUNC
+            // _BINARY_SUBSCR_CHECK_FUNC
             container = stack_pointer[-2];
             {
                 PyTypeObject *tp = Py_TYPE(container);
                 DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-                getitem = ht->_spec_cache.getitem;
+                PyObject *getitem = ht->_spec_cache.getitem;
                 DEOPT_IF(getitem == NULL, BINARY_SUBSCR);
                 assert(PyFunction_Check(getitem));
                 uint32_t cached_version = ht->_spec_cache.getitem_version;
@@ -424,6 +423,9 @@
             // _BINARY_SUBSCR_INIT_CALL
             sub = stack_pointer[-1];
             {
+                PyTypeObject *tp = Py_TYPE(container);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                PyObject *getitem = ht->_spec_cache.getitem;
                 new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
                 new_frame->localsplus[0] = container;
                 new_frame->localsplus[1] = sub;

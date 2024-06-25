@@ -511,19 +511,15 @@
             break;
         }
 
-        case _BINARY_SUBSCR_GET_FUNC: {
-            _Py_UopsSymbol *getitem;
-            getitem = sym_new_not_null(ctx);
-            stack_pointer[0] = getitem;
-            stack_pointer += 1;
+        case _BINARY_SUBSCR_CHECK_FUNC: {
             break;
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
             _PyInterpreterFrame *new_frame;
             new_frame = sym_new_not_null(ctx);
-            stack_pointer[-3] = (_Py_UopsSymbol *)new_frame;
-            stack_pointer += -2;
+            stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -1;
             break;
         }
 

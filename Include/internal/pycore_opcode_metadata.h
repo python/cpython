@@ -1230,7 +1230,7 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, 0, 0 } } },
     [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_DICT, 0, 0 } } },
-    [BINARY_SUBSCR_GETITEM] = { .nuops = 4, .uops = { { _CHECK_PEP_523, 0, 0 }, { _BINARY_SUBSCR_GET_FUNC, 0, 0 }, { _BINARY_SUBSCR_INIT_CALL, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
+    [BINARY_SUBSCR_GETITEM] = { .nuops = 4, .uops = { { _CHECK_PEP_523, 0, 0 }, { _BINARY_SUBSCR_CHECK_FUNC, 0, 0 }, { _BINARY_SUBSCR_INIT_CALL, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_LIST_INT, 0, 0 } } },
     [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
