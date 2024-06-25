@@ -246,7 +246,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
 
-#define  WITHIN_STACK_BOUNDS() \
+#define WITHIN_STACK_BOUNDS() \
    (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
