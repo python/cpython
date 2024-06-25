@@ -274,7 +274,7 @@ except ImportError:
 ################################################################################
 
 
-class __PlaceholderTypeBase:
+class PlaceholderTypeBase:
     """The type of the Placeholder singleton.
 
     Used as a placeholder for partial arguments.
@@ -296,15 +296,16 @@ class __PlaceholderTypeBase:
     def __reduce__(self):
         return 'Placeholder'
 
-def __placeholder_init_subclass__(cls, *args, **kwargs):
+def placeholder_init_subclass(cls, *args, **kwargs):
     raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
 
 Placeholder = type(
     'PlaceholderType',
-    (__PlaceholderTypeBase,),
-    {'__slots__': (), '__init_subclass__': __placeholder_init_subclass__}
+    (PlaceholderTypeBase,),
+    {'__slots__': (), '__init_subclass__': placeholder_init_subclass}
 )()
 
+del PlaceholderTypeBase, placeholder_init_subclass
 
 def _partial_prepare_new(cls, func, args, keywords):
     if args:
@@ -338,7 +339,6 @@ def _partial_prepare_new(cls, func, args, keywords):
         func = func.func
     return func, args, keywords, phcount
 
-
 def _partial_prepare_call(self, args, keywords):
     pto_phcount = self.placeholder_count
     pto_args = self.args
@@ -360,7 +360,6 @@ def _partial_prepare_call(self, args, keywords):
     keywords = {**self.keywords, **keywords}
     return pto_args, args, keywords
 
-
 def _partial_repr(self):
     cls = type(self)
     module = cls.__module__
@@ -369,7 +368,6 @@ def _partial_repr(self):
     args.extend(map(repr, self.args))
     args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
     return f"{module}.{qualname}({', '.join(args)})"
-
 
 # Purely functional, no descriptor behaviour
 class partial:
