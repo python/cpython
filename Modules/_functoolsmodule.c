@@ -63,6 +63,17 @@ placeholder_repr(PyObject *op)
     return PyUnicode_FromString("Placeholder");
 }
 
+static PyObject *
+placeholder_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("Placeholder");
+}
+
+static PyMethodDef placeholder_methods[] = {
+    {"__reduce__", placeholder_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
 static void
 placeholder_dealloc(PyObject* placeholder)
 {
@@ -98,6 +109,7 @@ static PyType_Slot placeholder_type_slots[] = {
     {Py_tp_dealloc, placeholder_dealloc},
     {Py_tp_repr, placeholder_repr},
     {Py_tp_doc, (void *)placeholder_doc},
+    {Py_tp_methods, placeholder_methods},
     {Py_tp_new, placeholder_new},
     // Number protocol
     {Py_nb_bool, placeholder_bool},

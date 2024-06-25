@@ -198,6 +198,7 @@ typedef struct {
     /* functools.partial, used for implementing __newobj_ex__ with protocols
        2 and 3 */
     PyObject *partial;
+    PyObject *placeholder;
 
     /* Types */
     PyTypeObject *Pickler_Type;
@@ -253,6 +254,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->codecs_encode);
     Py_CLEAR(st->getattr);
     Py_CLEAR(st->partial);
+    Py_CLEAR(st->placeholder);
     Py_CLEAR(st->Pickler_Type);
     Py_CLEAR(st->Unpickler_Type);
     Py_CLEAR(st->Pdata_Type);
@@ -374,6 +376,9 @@ _Pickle_InitState(PickleState *st)
 
     st->partial = _PyImport_GetModuleAttrString("functools", "partial");
     if (!st->partial)
+        goto error;
+    st->placeholder = _PyImport_GetModuleAttrString("functools", "Placeholder");
+    if (!st->placeholder)
         goto error;
 
     return 0;
@@ -3860,6 +3865,9 @@ save_type(PickleState *state, PicklerObject *self, PyObject *obj)
     }
     else if (obj == (PyObject *)&_PyNotImplemented_Type) {
         return save_singleton_type(state, self, obj, Py_NotImplemented);
+    }
+    else if (obj == (PyObject *)Py_TYPE(state->placeholder)) {
+        return save_singleton_type(state, self, obj, state->placeholder);
     }
     return save_global(state, self, obj, NULL);
 }
@@ -7791,6 +7799,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->getattr);
     Py_VISIT(st->partial);
+    Py_VISIT(st->placeholder);
     Py_VISIT(st->Pickler_Type);
     Py_VISIT(st->Unpickler_Type);
     Py_VISIT(st->Pdata_Type);

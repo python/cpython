@@ -280,6 +280,7 @@ class __PlaceholderTypeBase:
     Used as a placeholder for partial arguments.
     """
     __instance = None
+    __slots__ = ()
 
     def __new__(cls):
         if cls.__instance is None:
@@ -295,8 +296,14 @@ class __PlaceholderTypeBase:
     def __reduce__(self):
         return 'Placeholder'
 
+def __placeholder_init_subclass__(cls, *args, **kwargs):
+    raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
 
-Placeholder = type('PlaceholderType', (__PlaceholderTypeBase,), {})()
+Placeholder = type(
+    'PlaceholderType',
+    (__PlaceholderTypeBase,),
+    {'__slots__': (), '__init_subclass__': __placeholder_init_subclass__}
+)()
 
 
 def _partial_prepare_new(cls, func, args, keywords):

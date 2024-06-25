@@ -27,7 +27,7 @@ from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice
-from functools import partial
+from functools import partial, Placeholder
 import sys
 from sys import maxsize
 from struct import pack, unpack
@@ -1120,6 +1120,8 @@ class _Pickler:
             return self.save_reduce(type, (NotImplemented,), obj=obj)
         elif obj is type(...):
             return self.save_reduce(type, (...,), obj=obj)
+        elif obj is type(Placeholder):
+            return self.save_reduce(type, (Placeholder,), obj=obj)
         return self.save_global(obj)
 
     dispatch[FunctionType] = save_global
