@@ -231,26 +231,38 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(reuse=reuse, exec=False):
                 self.run_embedded_interpreter(
                     'test_replace_main_tstate',
+                    # At the moment, this actually succeeds on all platforms.
+                    returncode=0,
                 )
             with self.subTest(reuse=reuse, exec=True):
                 out, _ = self.run_embedded_interpreter(
                     'test_replace_main_tstate',
-                    'print("spam!")'
+                    'print("spam!")',
+                    # At the moment, this actually succeeds on all platforms.
+                    returncode=0,
                 )
                 self.assertEqual(out.strip(), 'spam!')
 
-    @unittest.skipIf(MS_WINDOWS, "this crashes on Windows")
     def test_fini_in_subthread(self):
-        self.run_embedded_interpreter('test_fini_in_subthread')
+        self.run_embedded_interpreter(
+            'test_fini_in_subthread',
+            # At the moment, this actually succeeds on all platforms,
+            # except for Windows.
+            returncode=1 if MS_WINDOWS else 0,
+        )
 
     def test_fini_in_main_thread_with_other_tstate(self):
         self.run_embedded_interpreter(
             'test_fini_in_main_thread_with_other_tstate',
+            # At the moment, this actually succeeds on all platforms.
+            returncode=0,
         )
 
     def test_fini_in_main_thread_with_subinterpreter(self):
         self.run_embedded_interpreter(
             'test_fini_in_main_thread_with_subinterpreter',
+            # At the moment, this actually succeeds on all platforms.
+            returncode=0,
         )
 
     def test_forced_io_encoding(self):
