@@ -651,7 +651,9 @@ union result {
     double d;
     float f;
     void *p;
+#ifdef HAVE_C_COMPLEX
     double _Complex C;
+#endif
 };
 
 struct argument {
