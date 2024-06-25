@@ -890,6 +890,11 @@ Instances have the following methods and attributes:
 
    Size of the uncompressed file.
 
+.. attribute:: ZipInfo.file_mode
+
+   External attributes of the uncompressed file.
+
+   .. versionadded:: 3.14
 
 .. _zipfile-commandline:
 .. program:: zipfile

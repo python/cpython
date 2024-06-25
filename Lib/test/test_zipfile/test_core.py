@@ -381,7 +381,7 @@ class AbstractTestsWithSourceFile:
                 self.assertIn("mode='r'", r)
                 r = repr(zipfp.getinfo(fname))
                 self.assertIn('filename=%r' % fname, r)
-                self.assertIn('filemode=', r)
+                self.assertIn('file_mode=', r)
                 self.assertIn('file_size=', r)
                 if self.compression != zipfile.ZIP_STORED:
                     self.assertIn('compress_type=', r)
@@ -2203,7 +2203,7 @@ class OtherTests(unittest.TestCase):
     def test_create_empty_zipinfo_repr(self):
         """Before bpo-26185, repr() on empty ZipInfo object was failing."""
         zi = zipfile.ZipInfo(filename="empty")
-        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
+        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_mode=b'' file_size=0>")
 
     def test_create_empty_zipinfo_default_attributes(self):
         """Ensure all required attributes are set."""
@@ -2226,6 +2226,8 @@ class OtherTests(unittest.TestCase):
         # Before bpo-26185, both were missing
         self.assertEqual(zi.file_size, 0)
         self.assertEqual(zi.compress_size, 0)
+
+        self.assertEqual(zi.file_mode, b"")
 
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
