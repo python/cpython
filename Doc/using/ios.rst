@@ -327,6 +327,6 @@ review rules cannot be challenged; so, it is necessary to modify the Python
 standard library for an app to pass App Store review.
 
 The Python source tree contains
-:source:`a patch file <Mac/Resources/app-store-compliance.rst>` that will remove
+:source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
 all code that is known to cause issues with the App Store review process. This
 patch is applied automatically when building for iOS.
