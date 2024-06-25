@@ -6592,7 +6592,7 @@ int main(void)
 ]])],
 [ac_cv_normalize_century=yes],
 [ac_cv_normalize_century=no],
-[ac_cv_normalize_century=no])])
+[ac_cv_normalize_century=yes])])
 if test "$ac_cv_normalize_century" = yes
 then
   AC_DEFINE([NORMALIZE_CENTURY], [1],

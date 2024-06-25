@@ -272,7 +272,7 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
-                elif ch == 'Y' and _need_normalize_century():
+                elif ch in 'YG' and _need_normalize_century():
                     push('{:04}'.format(object.year))
                 else:
                     push('%')
