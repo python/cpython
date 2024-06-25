@@ -3706,6 +3706,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(eager_iter);
     TaskObj *head = state->asyncio_tasks.head;
+    Py_INCREF(head);
     assert(head != NULL);
     assert(head->prev == NULL);
     TaskObj *tail = &state->asyncio_tasks.tail;
@@ -3714,10 +3715,11 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         if (add_one_task(state, tasks, (PyObject *)head, loop) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
+            Py_DECREF(head);
             return NULL;
         }
-        head = head->next;
-        assert(head != NULL);
+        Py_INCREF(head->next);
+        Py_SETREF(head, head->next);
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
@@ -3944,6 +3946,7 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
+    Py_SET_REFCNT(&state->asyncio_tasks.tail, _Py_IMMORTAL_REFCNT);
     state->asyncio_tasks.head = &state->asyncio_tasks.tail;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
