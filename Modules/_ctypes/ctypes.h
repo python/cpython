@@ -393,6 +393,9 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
+#ifdef HAVE_C_COMPLEX
+        double _Complex C;
+#endif
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
