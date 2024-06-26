@@ -1006,7 +1006,7 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    if (_Py_SetOptimizerAPI((_PyOptimizerObject*)opt) < 0) {
+    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
