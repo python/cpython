@@ -1393,7 +1393,7 @@ counter_optimize(
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[4] = {
         { .opcode = _START_EXECUTOR, .jump_target = 3, .format=UOP_FORMAT_JUMP },
-        { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
+        { .opcode = _LOAD_CONST_INLINE, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
     };
