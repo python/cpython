@@ -2914,7 +2914,7 @@ static inline void
 release_dict_lock_for_dump(PyObject *obj) {
 #ifdef Py_GIL_DISABLED
     PyMutex *mutex = &obj->ob_mutex;
-    uint8_t expected = _Py_UNLOCKED;
+    uint8_t expected = _Py_LOCKED;
     // Do not wake up other threads.
     _Py_atomic_compare_exchange_uint8(&mutex->_bits, &expected, _Py_UNLOCKED);
 #else
