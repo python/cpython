@@ -1,1 +1,2 @@
-Replace AArch64 trampolines with LDR of a PC relative literal. Patch from Diego Russo
+Improve the speed and memory use of C function calls from JIT code on AArch64.
+Patch by Diego Russo
