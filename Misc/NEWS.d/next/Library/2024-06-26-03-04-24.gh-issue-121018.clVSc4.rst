@@ -1,0 +1,2 @@
+Fixed an issue where :meth:`!argparse.ArgumentParser.parses_args` did not honor ``exit_on_error=False`` when given unrecognized arguments.
+Patch by Ben Hsing.
