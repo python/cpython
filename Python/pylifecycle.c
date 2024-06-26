@@ -2422,33 +2422,61 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
 static void
 finalize_subinterpreters(void)
 {
+    PyThreadState *final_tstate = _PyThreadState_GET();
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    assert(_PyInterpreterState_GET() == main_interp);
+    assert(final_tstate->interp == main_interp);
     _PyRuntimeState *runtime = main_interp->runtime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
-    /* Clean up all remaining subinterpreters. */
+    /* Get the first interpreter in the list. */
     HEAD_LOCK(runtime);
     PyInterpreterState *interp = interpreters->head;
     if (interp == main_interp) {
         interp = interp->next;
     }
     HEAD_UNLOCK(runtime);
-    if (interp != NULL) {
-        (void)PyErr_WarnEx(
-                PyExc_RuntimeWarning,
-                "remaining subinterpreters; "
-                "destroy them with _interpreters.destroy()",
-                0);
+
+    /* Bail out if there are no subinterpreters left. */
+    if (interp == NULL) {
+        return;
     }
+
+    /* Warn the user if they forgot to clean up subinterpreters. */
+    (void)PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "remaining subinterpreters; "
+            "destroy them with _interpreters.destroy()",
+            0);
+
+    /* Swap out the current tstate, which we know must belong
+       to the main interpreter. */
+    _PyThreadState_Detach(final_tstate);
+
+    /* Clean up all remaining subinterpreters. */
     while (interp != NULL) {
-        /* Destroy the subinterpreter. */
         assert(!_PyInterpreterState_IsRunningMain(interp));
-        PyThreadState *tstate =
-            _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
-        PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+
+        /* Find the tstate to use for fini.  We assume the interpreter
+           will have at most one tstate at this point. */
+        PyThreadState *tstate = interp->threads.head;
+        if (tstate != NULL) {
+            /* Ideally we would be able to use tstate as-is, and rely
+               on it being in a ready state: no exception set, not
+               running anything (tstate->current_frame), matching the
+               current thread ID (tstate->thread_id).  To play it safe,
+               we always delete it and use a fresh tstate instead. */
+            assert(tstate != final_tstate);
+            _PyThreadState_Attach(tstate);
+            PyThreadState_Clear(tstate);
+            _PyThreadState_Detach(tstate);
+            PyThreadState_Delete(tstate);
+        }
+        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+
+        /* Destroy the subinterpreter. */
+        _PyThreadState_Attach(tstate);
         Py_EndInterpreter(tstate);
-        (void)PyThreadState_Swap(save_tstate);
+        assert(_PyThreadState_GET() == NULL);
 
         /* Advance to the next interpreter. */
         HEAD_LOCK(runtime);
@@ -2458,6 +2486,9 @@ finalize_subinterpreters(void)
         }
         HEAD_UNLOCK(runtime);
     }
+
+    /* Switch back to the main interpreter. */
+    _PyThreadState_Attach(final_tstate);
 }
 
 
