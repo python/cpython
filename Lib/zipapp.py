@@ -195,6 +195,7 @@ def main(args=None):
                     "A regex of filenames to be excluded from archive."
                     " This will run second if --include is also used."
                     " Only applicable to directories."
+                    " Usage example: `python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'`"
                 ))
     parser.add_argument('source',
             help="Source directory (or existing archive).")
