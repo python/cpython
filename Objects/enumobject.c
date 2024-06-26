@@ -456,7 +456,7 @@ reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 
     if (index == -1)
         return PyLong_FromLong(0);
-    assert(ro->seq != 0);
+    assert(ro->seq != NULL);
     seqsize = PySequence_Size(ro->seq);
     if (seqsize == -1)
         return NULL;
