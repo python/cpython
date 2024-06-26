@@ -3555,6 +3555,8 @@ dummy_func(
             self = stack_pointer[-1 - oparg];
             func = stack_pointer[-2 - oparg];
             PyStackRef_CLOSE(callable);
+            // self may be unused in tier 1, so silence warnings.
+            (void)self;
         }
 
         op(_CHECK_PEP_523, (--)) {
