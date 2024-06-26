@@ -897,6 +897,7 @@ extern "C" {
     INIT_ID(displayhook), \
     INIT_ID(dklen), \
     INIT_ID(doc), \
+    INIT_ID(done), \
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
