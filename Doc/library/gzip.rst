@@ -188,9 +188,7 @@ The module defines the following items:
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above. When *mtime* is set to ``0``, this
-   function is equivalent to :func:`zlib.compress` with *wbits* set to ``31``.
-   The zlib function is faster.
+   the :class:`GzipFile` constructor above.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
@@ -198,7 +196,13 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
-      :func:`zlib.compress` for better speed.
+      :func:`zlib.compress` for better speed. In this situation the
+      output may contain a gzip header "OS" byte value other than 255
+      "unknown" as supplied by the underlying zlib implementation.
+
+   .. versionchanged:: 3.13
+      The gzip header OS byte is guaranteed to be set to 255 when this function
+      is used as was the case in 3.10 and earlier.
 
 .. function:: decompress(data)
 

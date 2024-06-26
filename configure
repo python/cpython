@@ -7758,7 +7758,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -9414,6 +9414,11 @@ then :
   PYDEBUG_CFLAGS="-Og"
 fi
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -9560,7 +9565,7 @@ then :
 
 fi
 
-                as_fn_append LDFLAGS_NODIST " -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"
+                as_fn_append LDFLAGS_NODIST " -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"
 
  ;; #(
   *) :
@@ -9614,7 +9619,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9732,7 +9737,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9777,7 +9782,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9818,7 +9823,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9859,7 +9864,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9900,7 +9905,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9941,7 +9946,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9993,7 +9998,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
