@@ -37,13 +37,13 @@ using function-call syntax::
 
    from enum import Enum
 
-   
+
    class Color(Enum):
        RED = '#FF0000'
        GREEN = 65280
        BLUE = '#0000FF'
-   
-   
+
+
    # functional syntax
    Color = Enum('Color', [('RED', '#FF0000'), ('GREEN', 65280), ('BLUE', '#0000FF')])
 
