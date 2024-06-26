@@ -366,6 +366,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_None",
     "PyStackRef_Is",
     "PyStackRef_FromPyObjectNew",
+    "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectImmortal",
     "Py_INCREF",
     "_PyManagedDictPointer_IsValues",
     "_PyObject_GetManagedDict",
