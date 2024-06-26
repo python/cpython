@@ -128,15 +128,15 @@ def replace_decrefs(
             continue
         if var.size != "1":
             out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"Py_DECREF({var.name}[_i]);\n")
+            out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
             out.emit("}\n")
         elif var.condition:
             if var.condition == "1":
-                out.emit(f"Py_DECREF({var.name});\n")
+                out.emit(f"PyStackRef_CLOSE({var.name});\n")
             elif var.condition != "0":
-                out.emit(f"Py_XDECREF({var.name});\n")
+                out.emit(f"PyStackRef_XCLOSE({var.name});\n")
         else:
-            out.emit(f"Py_DECREF({var.name});\n")
+            out.emit(f"PyStackRef_CLOSE({var.name});\n")
 
 
 def replace_sync_sp(

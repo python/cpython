@@ -81,29 +81,12 @@ REPL_COMMANDS = {
 }
 
 
-def default_namespace() -> dict[str, Any]:
-    ns = {}
-    for key, value in sys.modules["__main__"].__dict__.items():
-        # avoid `getattr(value, "__module__", "")`,
-        # as some objects raise `TypeError` on attribute access, etc.
-        try:
-            module = value.__module__
-        except Exception:
-            pass
-        else:
-            if module.split(".")[0] == "_pyrepl":
-                continue
-        ns[key] = value
-    return ns
-
-
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None = None,
+    namespace: dict[str, Any],
     future_flags: int = 0,
     console: code.InteractiveConsole | None = None,
 ) -> None:
     from .readline import _setup
-    namespace = mainmodule.__dict__ if mainmodule else default_namespace()
     _setup(namespace)
 
     if console is None:

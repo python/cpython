@@ -12,7 +12,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
-#include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -105,18 +104,6 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     instr->op.arg = index;
 }
 
-int
-PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *new)
-{
-    if (instr->op.code != ENTER_EXECUTOR) {
-        PyErr_Format(PyExc_ValueError, "No executor to replace");
-        return -1;
-    }
-    int index = instr->op.arg;
-    assert(index >= 0);
-    insert_executor(code, instr, index, new);
-    return 0;
-}
 
 static int
 never_optimize(
@@ -144,7 +131,7 @@ static _PyOptimizerObject _PyOptimizer_Default = {
 };
 
 _PyOptimizerObject *
-PyUnstable_GetOptimizer(void)
+_Py_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->optimizer == &_PyOptimizer_Default) {
@@ -195,7 +182,7 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 }
 
 int
-PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
+_Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
@@ -209,7 +196,7 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
-    PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
+    _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
@@ -240,7 +227,7 @@ _PyOptimizer_Optimize(
 }
 
 _PyExecutorObject *
-PyUnstable_GetExecutor(PyCodeObject *code, int offset)
+_Py_GetExecutor(PyCodeObject *code, int offset)
 {
     int code_len = (int)Py_SIZE(code);
     for (int i = 0 ; i < code_len;) {
@@ -1354,7 +1341,7 @@ PyTypeObject _PyUOpOptimizer_Type = {
 };
 
 PyObject *
-PyUnstable_Optimizer_NewUOpOptimizer(void)
+_PyOptimizer_NewUOpOptimizer(void)
 {
     _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
     if (opt == NULL) {
@@ -1406,7 +1393,7 @@ counter_optimize(
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     _PyUOpInstruction buffer[4] = {
         { .opcode = _START_EXECUTOR, .jump_target = 3, .format=UOP_FORMAT_JUMP },
-        { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
+        { .opcode = _LOAD_CONST_INLINE, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
     };
@@ -1442,7 +1429,7 @@ PyTypeObject _PyCounterOptimizer_Type = {
 };
 
 PyObject *
-PyUnstable_Optimizer_NewCounter(void)
+_PyOptimizer_NewCounter(void)
 {
     _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
     if (opt == NULL) {

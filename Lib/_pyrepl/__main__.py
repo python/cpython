@@ -1,8 +1,6 @@
-# Important: put as few things as possible in the global namespace of this module,
-# as it's easy for things in this module's `__globals__` to accidentally end up
-# in the globals of the REPL
-
-from ._main import interactive_console
+# Important: don't add things to this module, as they will end up in the REPL's
+# default globals.  Use _pyrepl.main instead.
 
 if __name__ == "__main__":
-    interactive_console()
+    from .main import interactive_console as __pyrepl_interactive_console
+    __pyrepl_interactive_console()
