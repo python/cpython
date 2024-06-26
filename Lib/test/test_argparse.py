@@ -5743,6 +5743,9 @@ class TestExitOnError(TestCase):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
 
+    def test_exit_on_error_with_unrecognized_args(self):
+        with self.assertRaises(argparse.ArgumentError):
+            self.parser.parse_args('--foo bar'.split())
 
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
