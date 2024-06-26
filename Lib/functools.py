@@ -19,6 +19,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
+from types import MethodType
 from _thread import RLock
 
 # Avoid importing types, so we can speedup import time
@@ -380,6 +381,11 @@ class partial:
 
     __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
                  "__dict__", "__weakref__")
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return MethodType(self, obj)
 
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):

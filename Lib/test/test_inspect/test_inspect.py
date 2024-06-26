@@ -3681,7 +3681,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class CM(type):
-                __call__ = functools.partial(lambda x, a: (x, a), 2)
+                __call__ = staticmethod(functools.partial(lambda x, a: (x, a), 2))
             class C(metaclass=CM):
                 def __init__(self, b):
                     pass
@@ -3835,7 +3835,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __init__ = functools.partial(lambda x, a: None, 2)
+                __init__ = staticmethod(functools.partial(lambda x, a: None, 2))
 
             C(1)  # does not raise
             self.assertEqual(self.signature(C),
@@ -4093,7 +4093,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __call__ = functools.partial(lambda x, a: (x, a), 2)
+                __call__ = staticmethod(functools.partial(lambda x, a: (x, a), 2))
 
             self.assertEqual(C()(1), (2, 1))
             self.assertEqual(self.signature(C()),
