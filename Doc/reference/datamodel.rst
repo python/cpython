@@ -1643,6 +1643,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 
