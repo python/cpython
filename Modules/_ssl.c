@@ -187,7 +187,7 @@ extern const SSL_METHOD *TLSv1_2_method(void);
 #endif
 
 
-#if defined(OPENSSL_NO_TLS_PHA) || !defined(TLS1_3_VERSION) || defined(OPENSSL_NO_TLS1_3)
+#if !defined(SSL_VERIFY_POST_HANDSHAKE) || !defined(TLS1_3_VERSION) || defined(OPENSSL_NO_TLS1_3)
   #define PY_SSL_NO_POST_HS_AUTH
 #endif
 
