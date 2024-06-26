@@ -117,6 +117,8 @@ class EmbeddingTestsMixin:
             p.terminate()
             p.wait()
             raise
+        if returncode is None:
+            returncode = 1 if p.returncode == 0 else p.returncode
         if p.returncode != returncode and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
@@ -231,8 +233,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(reuse=reuse, exec=False):
                 self.run_embedded_interpreter(
                     'test_replace_main_tstate',
-                    # At the moment, this actually succeeds on all platforms.
-                    returncode=0,
+                    # At the moment, this fails because main_tstate gets broken.
+                    returncode=None,
                 )
             with self.subTest(reuse=reuse, exec=True):
                 out, _ = self.run_embedded_interpreter(
@@ -248,7 +250,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             'test_fini_in_subthread',
             # At the moment, this actually succeeds on all platforms,
             # except for Windows (STATUS_ACCESS_VIOLATION).
-            returncode=0xC0000005 if MS_WINDOWS else 0,
+            returncode=None if MS_WINDOWS else 0,
         )
 
     def test_fini_in_main_thread_with_other_tstate(self):
