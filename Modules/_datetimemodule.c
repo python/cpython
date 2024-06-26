@@ -7296,6 +7296,12 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
+    if (reloading) {
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
+            PyType_Modified(capi_types[i]);
+        }
+    }
+
     if (set_current_module(interp, module) < 0) {
         goto error;
     }

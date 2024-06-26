@@ -81,7 +81,7 @@ is_same(PyObject *left, PyObject *right)
 static int
 contains(PyObject **items, Py_ssize_t size, PyObject *obj)
 {
-    for (int i = 0; i < size; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         int is_duplicate = is_same(items[i], obj);
         if (is_duplicate) {  // -1 or 1
             return is_duplicate;
@@ -97,7 +97,7 @@ merge(PyObject **items1, Py_ssize_t size1,
     PyObject *tuple = NULL;
     Py_ssize_t pos = 0;
 
-    for (int i = 0; i < size2; i++) {
+    for (Py_ssize_t i = 0; i < size2; i++) {
         PyObject *arg = items2[i];
         int is_duplicate = contains(items1, size1, arg);
         if (is_duplicate < 0) {

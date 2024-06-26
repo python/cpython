@@ -307,14 +307,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     return frame;
 }
 
-static inline
-PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
-    return (PyGenObject *)(((char *)frame) - offset_in_gen);
-}
-
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,

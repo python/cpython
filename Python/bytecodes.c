@@ -1015,7 +1015,7 @@ dummy_func(
                 ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
             {
                 PyGenObject *gen = (PyGenObject *)receiver;
-                _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 STACK_SHRINK(1);
                 _PyFrame_StackPush(gen_frame, v);
                 gen->gi_frame_state = FRAME_EXECUTING;
@@ -1055,7 +1055,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(SEND, hit);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             STACK_SHRINK(1);
             _PyFrame_StackPush(gen_frame, v);
             gen->gi_frame_state = FRAME_EXECUTING;
@@ -1069,7 +1069,7 @@ dummy_func(
         inst(INSTRUMENTED_YIELD_VALUE, (retval -- unused)) {
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -1099,7 +1099,7 @@ dummy_func(
             assert(frame != &entry_frame);
             #endif
             frame->instr_ptr++;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -2799,7 +2799,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
-            gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            gen_frame = &gen->gi_iframe;
             _PyFrame_StackPush(gen_frame, Py_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -3940,7 +3940,7 @@ dummy_func(
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
@@ -4149,9 +4149,7 @@ dummy_func(
         }
 
         op(_JUMP_TO_TOP, (--)) {
-#ifndef _Py_JIT
-            next_uop = &current_executor->trace[1];
-#endif
+            JUMP_TO_JUMP_TARGET();
         }
 
         tier2 op(_SET_IP, (instr_ptr/4 --)) {

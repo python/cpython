@@ -1518,11 +1518,11 @@ switch_to_main_interpreter(PyThreadState *tstate)
     if (_Py_IsMainInterpreter(tstate->interp)) {
         return tstate;
     }
-    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    PyThreadState *main_tstate = _PyThreadState_NewBound(
+            _PyInterpreterState_Main(), _PyThreadState_WHENCE_EXEC);
     if (main_tstate == NULL) {
         return NULL;
     }
-    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
 #ifndef NDEBUG
     PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
     assert(old_tstate == tstate);
@@ -1967,8 +1967,6 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
-                // XXX There's a refleak somewhere with the filename.
-                // Until we can track it down, we intern it.
                 PyObject *filename = NULL;
                 if (switched) {
                     // The original filename may be allocated by subinterpreter's
@@ -1980,7 +1978,11 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                 } else {
                     filename = Py_NewRef(info->filename);
                 }
-                PyUnicode_InternInPlace(&filename);
+                // XXX There's a refleak somewhere with the filename.
+                // Until we can track it down, we immortalize it.
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &filename);
+
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }

@@ -396,9 +396,16 @@ Initializing and finalizing the interpreter
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
-   time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is ``0``.  If there were errors during finalization
-   (flushing buffered data), ``-1`` is returned.
+   time (without calling :c:func:`Py_Initialize` again first).
+
+   Since this is the reverse of :c:func:`Py_Initialize`, it should be called
+   in the same thread with the same interpreter active.  That means
+   the main thread and the main interpreter.
+   This should never be called while :c:func:`Py_RunMain` is running.
+
+   Normally the return value is ``0``.
+   If there were errors during finalization (flushing buffered data),
+   ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -2193,5 +2200,109 @@ The C-API provides a basic mutual exclusion lock.
 
    Unlock mutex *m*. The mutex must be locked --- otherwise, the function will
    issue a fatal error.
+
+   .. versionadded:: 3.13
+
+.. _python-critical-section-api:
+
+Python Critical Section API
+---------------------------
+
+The critical section API provides a deadlock avoidance layer on top of
+per-object locks for :term:`free-threaded <free threading>` CPython.  They are
+intended to replace reliance on the :term:`global interpreter lock`, and are
+no-ops in versions of Python with the global interpreter lock.
+
+Critical sections avoid deadlocks by implicitly suspending active critical
+sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
+When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
+is resumed, and its locks reacquired.  This means the critical section API
+provides weaker guarantees than traditional locks -- they are useful because
+their behavior is similar to the :term:`GIL`.
+
+The functions and structs used by the macros are exposed for cases
+where C macros are not available. They should only be used as in the
+given macro expansions. Note that the sizes and contents of the structures may
+change in future Python versions.
+
+.. note::
+
+   Operations that need to lock two objects at once must use
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION2`.  You *cannot* use nested critical
+   sections to lock more than one object at once, because the inner critical
+   section may suspend the outer critical sections.  This API does not provide
+   a way to lock more than two objects at once.
+
+Example usage::
+
+   static PyObject *
+   set_field(MyObject *self, PyObject *value)
+   {
+      Py_BEGIN_CRITICAL_SECTION(self);
+      Py_SETREF(self->field, Py_XNewRef(value));
+      Py_END_CRITICAL_SECTION();
+      Py_RETURN_NONE;
+   }
+
+In the above example, :c:macro:`Py_SETREF` calls :c:macro:`Py_DECREF`, which
+can call arbitrary code through an object's deallocation function.  The critical
+section API avoids potentital deadlocks due to reentrancy and lock ordering
+by allowing the runtime to temporarily suspend the critical section if the
+code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION(op)
+
+   Acquires the per-object lock for the object *op* and begins a
+   critical section.
+
+   In the free-threaded build, this macro expands to::
+
+      {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_Begin(&_py_cs, (PyObject*)(op))
+
+   In the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: Py_END_CRITICAL_SECTION()
+
+   Ends the critical section and releases the per-object lock.
+
+   In the free-threaded build, this macro expands to::
+
+          PyCriticalSection_End(&_py_cs);
+      }
+
+   In the default build, this macro expands to ``}``.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2(a, b)
+
+   Acquires the per-objects locks for the objects *a* and *b* and begins a
+   critical section.  The locks are acquired in a consistent order (lowest
+   address first) to avoid lock ordering deadlocks.
+
+   In the free-threaded build, this macro expands to::
+
+      {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
+
+   In the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: Py_END_CRITICAL_SECTION2()
+
+   Ends the critical section and releases the per-object locks.
+
+   In the free-threaded build, this macro expands to::
+
+          PyCriticalSection_End2(&_py_cs2);
+      }
+
+   In the default build, this macro expands to ``}``.
 
    .. versionadded:: 3.13

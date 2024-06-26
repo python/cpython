@@ -2808,8 +2808,6 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     if (!PyDict_Check(op))
         return 0;
 
-    ASSERT_DICT_LOCKED(op);
-
     mp = (PyDictObject *)op;
     i = *ppos;
     if (_PyDict_HasSplitTable(mp)) {
@@ -2882,11 +2880,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
 int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    res = _PyDict_Next(op, ppos, pkey, pvalue, NULL);
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
 }
 
 
@@ -3116,7 +3110,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
                 goto dict_iter_exit;
             }
         }
-dict_iter_exit:
+dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
     } else {
         while ((key = PyIter_Next(it)) != NULL) {
@@ -4923,7 +4917,8 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     kv = PyUnicode_FromString(key);
     if (kv == NULL)
         return -1;
-    PyUnicode_InternInPlace(&kv); /* XXX Should we really? */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &kv); /* XXX Should we really? */
     err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
@@ -5382,7 +5377,7 @@ fail:
 #ifdef Py_GIL_DISABLED
 
 // Grabs the key and/or value from the provided locations and if successful
-// returns them with an increased reference count.  If either one is unsucessful
+// returns them with an increased reference count.  If either one is unsuccessful
 // nothing is incref'd and returns -1.
 static int
 acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
