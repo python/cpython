@@ -507,7 +507,7 @@ class IOBase(metaclass=abc.ABCMeta):
         self._checkClosed()
         return False
 
-    ### Readline[s] and writelines ###
+    ### Readline[s], backreadline and writelines ###
 
     def readline(self, size=-1):
         r"""Read and return a line of bytes from the stream.
@@ -551,6 +551,34 @@ class IOBase(metaclass=abc.ABCMeta):
                 break
         return bytes(res)
 
+    def __iter__(self):
+        self._checkClosed()
+        return self
+
+    def __next__(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration
+        return line
+
+    def readlines(self, hint=None):
+        """Return a list of lines from the stream.
+
+        hint can be specified to control the number of lines read: no more
+        lines will be read if the total size (in bytes/characters) of all
+        lines so far exceeds hint.
+        """
+        if hint is None or hint <= 0:
+            return list(self)
+        n = 0
+        lines = []
+        for line in self:
+            lines.append(line)
+            n += len(line)
+            if n >= hint:
+                break
+        return lines
+
     def backreadline(self, size=-1):
         r"""Read and return a line of bytes from the end of the stream.
 
@@ -579,55 +607,26 @@ class IOBase(metaclass=abc.ABCMeta):
         # this would require importing 'collections', which is
         # an overkill for the Python implementation.
         rev_res, count = bytearray(), 0
-        eol = None  # decide whether a line break is included or not
+        eol = b""  # optional EOL character
         while size < 0 or count < size:
             b = self.backread(1)
             if not b:
                 break
-            rev_res += b
             count += 1
             if b == b"\n":
                 eol = b
                 break
+            rev_res += b
+        # reverse the characters in the line
         bytes_rev_res = bytes(rev_res)[::-1]
-        if eol is None:
-            return bytes_rev_res
-        # reverse the characters in the line, except the new line character
-        return bytes_rev_res[1:] + eol
-
-    def __iter__(self):
-        self._checkClosed()
-        return self
-
-    def __next__(self):
-        line = self.readline()
-        if not line:
-            raise StopIteration
-        return line
+        # add the EOL character, if any
+        return bytes_rev_res + eol
 
     def __reversed__(self):
         self._checkClosed()
         while line := self.backreadline():
             yield line
         raise StopIteration
-
-    def readlines(self, hint=None):
-        """Return a list of lines from the stream.
-
-        hint can be specified to control the number of lines read: no more
-        lines will be read if the total size (in bytes/characters) of all
-        lines so far exceeds hint.
-        """
-        if hint is None or hint <= 0:
-            return list(self)
-        n = 0
-        lines = []
-        for line in self:
-            lines.append(line)
-            n += len(line)
-            if n >= hint:
-                break
-        return lines
 
     def writelines(self, lines):
         """Write a list of lines to the stream.
