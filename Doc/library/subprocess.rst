@@ -1,5 +1,5 @@
-:mod:`subprocess` --- Subprocess management
-===========================================
+:mod:`!subprocess` --- Subprocess management
+============================================
 
 .. module:: subprocess
    :synopsis: Subprocess management.
@@ -52,10 +52,12 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to capture
-   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
-   instead of *capture_output*.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
+   The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
+   If you wish to capture and combine both streams into one,
+   set *stdout* to :data:`~subprocess.PIPE`
+   and *stderr* to :data:`~subprocess.STDOUT`,
+   instead of using *capture_output*.
 
    A *timeout* may be specified in seconds, it is internally passed on to
    :meth:`Popen.communicate`. If the timeout expires, the child process will be
@@ -69,7 +71,8 @@ underlying :class:`Popen` interface can be used directly.
    subprocess's stdin.  If used it must be a byte sequence, or a string if
    *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
-   ``stdin=PIPE``, and the *stdin* argument may not be used as well.
+   *stdin* set to :data:`~subprocess.PIPE`,
+   and the *stdin* argument may not be used as well.
 
    If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
@@ -751,8 +754,8 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 Security Considerations
 -----------------------
 
-Unlike some other popen functions, this implementation will never
-implicitly call a system shell.  This means that all characters,
+Unlike some other popen functions, this library will not
+implicitly choose to call a system shell.  This means that all characters,
 including shell metacharacters, can safely be passed to child processes.
 If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
@@ -760,6 +763,14 @@ quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
 to use :func:`shlex.quote` for this escaping.
+
+On Windows, batch files (:file:`*.bat` or :file:`*.cmd`) may be launched by the
+operating system in a system shell regardless of the arguments passed to this
+library. This could result in arguments being parsed according to shell rules,
+but without any escaping added by Python. If you are intentionally launching a
+batch file with arguments from untrusted sources, consider passing
+``shell=True`` to allow Python to escape special characters. See :gh:`114539`
+for additional discussion.
 
 
 Popen Objects
@@ -1054,6 +1065,22 @@ The :mod:`subprocess` module exposes the following constants.
 
    Specifies that the :attr:`STARTUPINFO.wShowWindow` attribute contains
    additional information.
+
+.. data:: STARTF_FORCEONFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the
+   *Working in Background* mouse cursor will be displayed while a
+   process is launching. This is the default behavior for GUI
+   processes.
+
+   .. versionadded:: 3.13
+
+.. data:: STARTF_FORCEOFFFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the mouse
+   cursor will not be changed when launching a process.
+
+   .. versionadded:: 3.13
 
 .. data:: CREATE_NEW_CONSOLE
 
@@ -1416,36 +1443,8 @@ Environment example::
 
 
 
-Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   (child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdin, child_stdout) = (p.stdin, p.stdout)
-
-::
-
-   (child_stdin,
-    child_stdout,
-    child_stderr) = os.popen3(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-   (child_stdin,
-    child_stdout,
-    child_stderr) = (p.stdin, p.stdout, p.stderr)
-
-::
-
-   (child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-   (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+Replacing :func:`os.popen`
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Return code handling translates as follows::
 
@@ -1460,44 +1459,6 @@ Return code handling translates as follows::
    process.stdin.close()
    if process.wait() != 0:
        print("There were some errors")
-
-
-Replacing functions from the :mod:`!popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   If the cmd argument to popen2 functions is a string, the command is executed
-   through /bin/sh.  If it is a list, the command is directly executed.
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
-   ==>
-   p = Popen("somestring", shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
-   ==>
-   p = Popen(["mycmd", "myarg"], bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-:class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as
-:class:`subprocess.Popen`, except that:
-
-* :class:`Popen` raises an exception if the execution fails.
-
-* The *capturestderr* argument is replaced with the *stderr* argument.
-
-* ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
-
-* popen2 closes all file descriptors by default, but you have to specify
-  ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
-  all platforms or past Python versions.
 
 
 Legacy Shell Invocation Functions

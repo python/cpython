@@ -151,6 +151,7 @@ class TestGeneratedCases(unittest.TestCase):
             value = stack_pointer[-1];
             spam();
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -171,6 +172,7 @@ class TestGeneratedCases(unittest.TestCase):
             spam();
             stack_pointer[0] = res;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -216,6 +218,7 @@ class TestGeneratedCases(unittest.TestCase):
             spam();
             stack_pointer[-2] = res;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -337,6 +340,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (cond) goto pop_2_label;
             stack_pointer[-2] = res;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -360,6 +364,7 @@ class TestGeneratedCases(unittest.TestCase):
             uint32_t extra = read_u32(&this_instr[2].cache);
             (void)extra;
             stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -425,6 +430,7 @@ class TestGeneratedCases(unittest.TestCase):
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -459,6 +465,7 @@ class TestGeneratedCases(unittest.TestCase):
             res = op3(arg2, left, right);
             stack_pointer[-3] = res;
             stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -485,7 +492,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_no_flags(self):
         input = """
-        pseudo(OP) = {
+        pseudo(OP, (in -- out1, out2)) = {
             OP1,
         };
 
@@ -504,7 +511,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_pseudo_instruction_with_flags(self):
         input = """
-        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+        pseudo(OP, (in1, in2 --), (HAS_ARG, HAS_JUMP)) = {
             OP1,
         };
 
@@ -540,6 +547,7 @@ class TestGeneratedCases(unittest.TestCase):
             below = stack_pointer[-2 - oparg*2];
             spam();
             stack_pointer += -2 - oparg*2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -564,6 +572,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[-2] = below;
             stack_pointer[-1 + oparg*3] = above;
             stack_pointer += oparg*3;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -586,6 +595,7 @@ class TestGeneratedCases(unittest.TestCase):
             spam(values, oparg);
             stack_pointer[0] = above;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -608,6 +618,7 @@ class TestGeneratedCases(unittest.TestCase):
             extra = stack_pointer[-1 - oparg];
             if (oparg == 0) { stack_pointer += -1 - oparg; goto somewhere; }
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -638,6 +649,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
             stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
             stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -679,6 +691,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg) stack_pointer[-2] = extra;
             stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
             stack_pointer += -1 + ((oparg) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
     """
@@ -712,6 +725,7 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer[0] = val1;
             stack_pointer[1] = val2;
             stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
         """
@@ -909,7 +923,6 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP2: {
             _Py_UopsSymbol *out;
             out = sym_new_not_null(ctx);
-            if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
             break;
         }
@@ -934,7 +947,6 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             _Py_UopsSymbol *out;
             out = sym_new_not_null(ctx);
-            if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
             break;
         }

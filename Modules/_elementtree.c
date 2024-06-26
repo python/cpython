@@ -1502,7 +1502,7 @@ element_bool(PyObject* self_)
 {
     ElementObject* self = (ElementObject*) self_;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Testing an element's truth value will raise an exception "
+                     "Testing an element's truth value will always return True "
                      "in future versions.  Use specific 'len(elem)' or "
                      "'elem is not None' test instead.",
                      1) < 0) {
@@ -4463,6 +4463,7 @@ error:
 static struct PyModuleDef_Slot elementtree_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

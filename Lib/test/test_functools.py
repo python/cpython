@@ -185,6 +185,19 @@ class TestPartial:
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
 
+    def test_nested_optimization_bug(self):
+        partial = self.partial
+        class Builder:
+            def __call__(self, tag, *children, **attrib):
+                return (tag, children, attrib)
+
+            def __getattr__(self, tag):
+                return partial(self, tag)
+
+        B = Builder()
+        m = B.m
+        assert m(1, 2, a=2) == ('m', (1, 2), dict(a=2))
+
     def test_nested_partial_with_attribute(self):
         # see issue 25137
         partial = self.partial
@@ -556,6 +569,14 @@ class TestPartialMethod(unittest.TestCase):
                 method = functools.partialmethod(func=capture, a=1)
 
     def test_repr(self):
+        self.assertEqual(repr(vars(self.A)['nothing']),
+                         'functools.partialmethod({})'.format(capture))
+        self.assertEqual(repr(vars(self.A)['positional']),
+                         'functools.partialmethod({}, 1)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['keywords']),
+                         'functools.partialmethod({}, a=2)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['spec_keywords']),
+                         'functools.partialmethod({}, self=1, func=2)'.format(capture))
         self.assertEqual(repr(vars(self.A)['both']),
                          'functools.partialmethod({}, 3, b=4)'.format(capture))
 
@@ -696,6 +717,14 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'max')
         self.assertTrue(wrapper.__doc__.startswith('max('))
         self.assertEqual(wrapper.__annotations__, {})
+
+    def test_update_type_wrapper(self):
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, type)
+        self.assertEqual(wrapper.__name__, 'type')
+        self.assertEqual(wrapper.__annotations__, {})
+        self.assertEqual(wrapper.__type_params__, ())
 
 
 class TestWraps(TestUpdateWrapper):
@@ -934,8 +963,13 @@ class TestCmpToKey:
     @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
-        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
-                         '(mycmp)')
+        sig = Signature.from_callable(self.cmp_to_key)
+        self.assertEqual(str(sig), '(mycmp)')
+        def mycmp(x, y):
+            return y - x
+        sig = Signature.from_callable(self.cmp_to_key(mycmp))
+        self.assertEqual(str(sig), '(obj)')
+
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1820,6 +1854,7 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
+    @support.suppress_immortalization()
     def test_lru_cache_weakrefable(self):
         @self.module.lru_cache
         def test_function(x):
@@ -1850,9 +1885,10 @@ class TestLRU:
             self.assertIsNone(ref())
 
     def test_common_signatures(self):
-        def orig(): ...
+        def orig(a, /, b, c=True): ...
         lru = self.module.lru_cache(1)(orig)
 
+        self.assertEqual(str(Signature.from_callable(lru)), '(a, /, b, c=True)')
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
@@ -1867,7 +1903,7 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
-            depth = support.Py_C_RECURSION_LIMIT*2//7
+            depth = support.get_c_recursion_limit()*2//7
             with support.infinite_recursion():
                 fib(depth)
         if self.module == c_functools:

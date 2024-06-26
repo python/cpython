@@ -191,6 +191,7 @@ Dictionary Objects
    to both *default_value* and *\*result* (if it's not ``NULL``).
    These may refer to the same object: in that case you hold two separate
    references to it.
+
    .. versionadded:: 3.13
 
 
@@ -288,6 +289,17 @@ Dictionary Objects
           }
           Py_DECREF(o);
       }
+
+   The function is not thread-safe in the :term:`free-threaded <free threading>`
+   build without external synchronization.  You can use
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
+   over it::
+
+      Py_BEGIN_CRITICAL_SECTION(self->dict);
+      while (PyDict_Next(self->dict, &pos, &key, &value)) {
+          ...
+      }
+      Py_END_CRITICAL_SECTION();
 
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)

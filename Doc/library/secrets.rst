@@ -1,5 +1,5 @@
-:mod:`secrets` --- Generate secure random numbers for managing secrets
-======================================================================
+:mod:`!secrets` --- Generate secure random numbers for managing secrets
+=======================================================================
 
 .. module:: secrets
    :synopsis: Generate secure random numbers for managing secrets.
@@ -42,13 +42,13 @@ randomness that your operating system provides.
    sources provided by the operating system.  See
    :class:`random.SystemRandom` for additional details.
 
-.. function:: choice(sequence)
+.. function:: choice(seq)
 
    Return a randomly chosen element from a non-empty sequence.
 
-.. function:: randbelow(n)
+.. function:: randbelow(exclusive_upper_bound)
 
-   Return a random int in the range [0, *n*).
+   Return a random int in the range [0, *exclusive_upper_bound*).
 
 .. function:: randbits(k)
 
@@ -155,7 +155,7 @@ Generate an eight-character alphanumeric password:
 .. note::
 
    Applications should not
-   `store passwords in a recoverable format <https://cwe.mitre.org/data/definitions/257.html>`_,
+   :cwe:`store passwords in a recoverable format <257>`,
    whether plain text or encrypted.  They should be salted and hashed
    using a cryptographically strong one-way (irreversible) hash function.
 

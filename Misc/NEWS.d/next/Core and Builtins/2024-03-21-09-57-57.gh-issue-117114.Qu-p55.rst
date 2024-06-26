@@ -1,1 +1,0 @@
-Make :func:`os.path.isdevdrive` available on all platforms. For those that do not offer Dev Drives, it will always return ``False``.

@@ -1,5 +1,5 @@
-:mod:`pprint` --- Data pretty printer
-=====================================
+:mod:`!pprint` --- Data pretty printer
+======================================
 
 .. module:: pprint
    :synopsis: Data pretty printer.
@@ -19,9 +19,8 @@ such as files, sockets or classes are included, as well as many other
 objects which are not representable as Python literals.
 
 The formatted representation keeps objects on a single line if it can, and
-breaks them onto multiple lines if they don't fit within the allowed width.
-Construct :class:`PrettyPrinter` objects explicitly if you need to adjust the
-width constraint.
+breaks them onto multiple lines if they don't fit within the allowed width,
+adjustable by the *width* parameter defaulting to 80 characters.
 
 Dictionaries are sorted by key before the display is computed.
 

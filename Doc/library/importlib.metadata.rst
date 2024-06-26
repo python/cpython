@@ -26,7 +26,7 @@ this package can eliminate the need to use the older and less efficient
 
 ``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
-`pip <https://pypi.org/project/pip/>`_.
+:pypi:`pip`.
 Specifically, it works with distributions with discoverable
 ``dist-info`` or ``egg-info`` directories,
 and metadata defined by the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_.
@@ -177,7 +177,7 @@ for more information on entry points, their definition, and usage.
    no parameters and always returned a dictionary of entry points, keyed
    by group. With ``importlib_metadata`` 5.0 and Python 3.12,
    ``entry_points`` always returns an ``EntryPoints`` object. See
-   `backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
+   :pypi:`backports.entry_points_selectable`
    for compatibility options.
 
 .. versionchanged:: 3.13
@@ -343,7 +343,7 @@ instance::
     >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
-For editable packages, an origin property may present :pep:`610`
+For editable packages, an ``origin`` property may present :pep:`610`
 metadata::
 
     >>> dist.origin.url
@@ -405,6 +405,84 @@ metadata in locations other than the file system, subclass
 ``Distribution`` and implement the abstract methods. Then from
 a custom finder, return instances of this derived ``Distribution`` in the
 ``find_distributions()`` method.
+
+Example
+-------
+
+Consider for example a custom finder that loads Python
+modules from a database::
+
+    class DatabaseImporter(importlib.abc.MetaPathFinder):
+        def __init__(self, db):
+            self.db = db
+
+        def find_spec(self, fullname, target=None) -> ModuleSpec:
+            return self.db.spec_from_name(fullname)
+
+    sys.meta_path.append(DatabaseImporter(connect_db(...)))
+
+That importer now presumably provides importable modules from a
+database, but it provides no metadata or entry points. For this
+custom importer to provide metadata, it would also need to implement
+``DistributionFinder``::
+
+    from importlib.metadata import DistributionFinder
+
+    class DatabaseImporter(DistributionFinder):
+        ...
+
+        def find_distributions(self, context=DistributionFinder.Context()):
+            query = dict(name=context.name) if context.name else {}
+            for dist_record in self.db.query_distributions(query):
+                yield DatabaseDistribution(dist_record)
+
+In this way, ``query_distributions`` would return records for
+each distribution served by the database matching the query. For
+example, if ``requests-1.0`` is in the database, ``find_distributions``
+would yield a ``DatabaseDistribution`` for ``Context(name='requests')``
+or ``Context(name=None)``.
+
+For the sake of simplicity, this example ignores ``context.path``\. The
+``path`` attribute defaults to ``sys.path`` and is the set of import paths to
+be considered in the search. A ``DatabaseImporter`` could potentially function
+without any concern for a search path. Assuming the importer does no
+partitioning, the "path" would be irrelevant. In order to illustrate the
+purpose of ``path``, the example would need to illustrate a more complex
+``DatabaseImporter`` whose behavior varied depending on
+``sys.path``/``PYTHONPATH``. In that case, the ``find_distributions`` should
+honor the ``context.path`` and only yield ``Distribution``\ s pertinent to that
+path.
+
+``DatabaseDistribution``, then, would look something like::
+
+    class DatabaseDistribution(importlib.metadata.Distributon):
+        def __init__(self, record):
+            self.record = record
+
+        def read_text(self, filename):
+            """
+            Read a file like "METADATA" for the current distribution.
+            """
+            if filename == "METADATA":
+                return f"""Name: {self.record.name}
+    Version: {self.record.version}
+    """
+            if filename == "entry_points.txt":
+                return "\n".join(
+                  f"""[{ep.group}]\n{ep.name}={ep.value}"""
+                  for ep in self.record.entry_points)
+
+        def locate_file(self, path):
+            raise RuntimeError("This distribution has no file system")
+
+This basic implementation should provide metadata and entry points for
+packages served by the ``DatabaseImporter``, assuming that the
+``record`` supplies suitable ``.name``, ``.version``, and
+``.entry_points`` attributes.
+
+The ``DatabaseDistribution`` may also provide other metadata files, like
+``RECORD`` (required for ``Distribution.files``) or override the
+implementation of ``Distribution.files``. See the source for more inspiration.
 
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points

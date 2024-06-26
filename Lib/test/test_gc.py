@@ -1,7 +1,10 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
+                          cpython_only, requires_subprocess,
+                          requires_gil_enabled, suppress_immortalization,
+                          Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -16,17 +19,16 @@ import time
 import weakref
 
 try:
+    import _testcapi
     from _testcapi import with_tp_del
+    from _testcapi import ContainerNoGC
 except ImportError:
+    _testcapi = None
     def with_tp_del(cls):
         class C(object):
             def __new__(cls, *args, **kwargs):
-                raise TypeError('requires _testcapi.with_tp_del')
+                raise unittest.SkipTest('requires _testcapi.with_tp_del')
         return C
-
-try:
-    from _testcapi import ContainerNoGC
-except ImportError:
     ContainerNoGC = None
 
 ### Support code
@@ -108,6 +110,7 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 2)
 
+    @suppress_immortalization()
     def test_class(self):
         class A:
             pass
@@ -116,6 +119,7 @@ class GCTests(unittest.TestCase):
         del A
         self.assertNotEqual(gc.collect(), 0)
 
+    @suppress_immortalization()
     def test_newstyleclass(self):
         class A(object):
             pass
@@ -132,6 +136,7 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
+    @suppress_immortalization()
     def test_newinstance(self):
         class A(object):
             pass
@@ -218,6 +223,7 @@ class GCTests(unittest.TestCase):
             self.fail("didn't find obj in garbage (finalizer)")
         gc.garbage.remove(obj)
 
+    @suppress_immortalization()
     def test_function(self):
         # Tricky: f -> d -> f, code should call d.clear() after the exec to
         # break the cycle.
@@ -225,7 +231,9 @@ class GCTests(unittest.TestCase):
         exec("def f(): pass\n", d)
         gc.collect()
         del d
-        self.assertEqual(gc.collect(), 2)
+        # In the free-threaded build, the count returned by `gc.collect()`
+        # is 3 because it includes f's code object.
+        self.assertIn(gc.collect(), (2, 3))
 
     def test_function_tp_clear_leaves_consistent_state(self):
         # https://github.com/python/cpython/issues/91636
@@ -363,7 +371,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
-    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
+    @requires_gil_enabled('needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
@@ -470,7 +478,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []
@@ -558,6 +566,7 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
+    @suppress_immortalization()
     def test_is_tracked(self):
         # Atomic built-in types are not tracked, user-defined objects and
         # mutable containers are.
@@ -595,7 +604,9 @@ class GCTests(unittest.TestCase):
         class UserIntSlots(int):
             __slots__ = ()
 
-        self.assertTrue(gc.is_tracked(gc))
+        if not Py_GIL_DISABLED:
+            # gh-117783: modules may be immortalized in free-threaded build
+            self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
         self.assertTrue(gc.is_tracked(UserInt()))
@@ -681,6 +692,7 @@ class GCTests(unittest.TestCase):
 
     @cpython_only
     @requires_subprocess()
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_garbage_at_shutdown(self):
         import subprocess
         code = """if 1:
@@ -815,7 +827,7 @@ class GCTests(unittest.TestCase):
                 any(l is element for element in gc.get_objects())
         )
 
-    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    @requires_gil_enabled('need generational GC')
     def test_get_objects_generations(self):
         gc.collect()
         l = []
@@ -1046,7 +1058,7 @@ class IncrementalGCTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
-    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    @requires_gil_enabled("Free threading does not support incremental GC")
     # Use small increments to emulate longer running process in a shorter time
     @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
@@ -1343,6 +1355,10 @@ class GCTogglingTests(unittest.TestCase):
         junk = []
         i = 0
         detector = GC_Detector()
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
@@ -1411,6 +1427,10 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         junk = []
         i = 0
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:

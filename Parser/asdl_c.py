@@ -979,14 +979,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         if (field_types == NULL) {
-            if (PyErr_WarnFormat(
-                PyExc_DeprecationWarning, 1,
-                "%.400s provides _fields but not _field_types. "
-                "This will become an error in Python 3.15.",
-                Py_TYPE(self)->tp_name
-            ) < 0) {
-                res = -1;
-            }
+            // Probably a user-defined subclass of AST that lacks _field_types.
+            // This will continue to work as it did before 3.13; i.e., attributes
+            // that are not passed in simply do not exist on the instance.
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
@@ -997,12 +992,21 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
             if (!type) {
-                if (!PyErr_Occurred()) {
-                    PyErr_SetObject(PyExc_KeyError, name);
+                if (PyErr_Occurred()) {
+                    goto set_remaining_cleanup;
                 }
-                goto set_remaining_cleanup;
+                else {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "Field '%U' is missing from %.400s._field_types. "
+                        "This will become an error in Python 3.15.",
+                        name, Py_TYPE(self)->tp_name
+                    ) < 0) {
+                        goto set_remaining_cleanup;
+                    }
+                }
             }
-            if (_PyUnion_Check(type)) {
+            else if (_PyUnion_Check(type)) {
                 // optional field
                 // do nothing, we'll have set a None default on the class
             }
@@ -1018,6 +1022,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
             }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
             else {
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
@@ -1026,8 +1037,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
-                    res = -1;
-                    goto cleanup;
+                    goto set_remaining_cleanup;
                 }
             }
         }
@@ -1054,17 +1064,22 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *remaining_dict = NULL, *positional_args = NULL;
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     PyObject *result = NULL;
     if (dict) {
-        // Serialize the fields as positional args if possible, because if we
-        // serialize them as a dict, during unpickling they are set only *after*
-        // the object is constructed, which will now trigger a DeprecationWarning
-        // if the AST type has required fields.
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -1072,11 +1087,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             Py_ssize_t numfields = PySequence_Size(fields);
             if (numfields == -1) {
                 Py_DECREF(dict);
-                goto cleanup;
-            }
-            remaining_dict = PyDict_Copy(dict);
-            Py_DECREF(dict);
-            if (!remaining_dict) {
                 goto cleanup;
             }
             positional_args = PyList_New(0);
@@ -1089,7 +1099,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                     goto cleanup;
                 }
                 PyObject *value;
-                int rc = PyDict_Pop(remaining_dict, name, &value);
+                int rc = PyDict_GetItemRef(dict, name, &value);
                 Py_DECREF(name);
                 if (rc < 0) {
                     goto cleanup;
@@ -1097,7 +1107,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!value) {
                     break;
                 }
-                rc = PyList_Append(positional_args, value);
+                rc = PyList_Append(positional_args, Py_None);
                 Py_DECREF(value);
                 if (rc < 0) {
                     goto cleanup;
@@ -1107,8 +1117,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
-                                   remaining_dict);
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -1119,8 +1128,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(remaining_fields);
-    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
     return result;
 }
@@ -1443,6 +1450,7 @@ class ASTModuleVisitor(PickleVisitor):
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -2,6 +2,9 @@
 #   include <alloca.h>
 #endif
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -70,9 +73,34 @@ typedef struct {
     PyObject *swapped_suffix;
 } ctypes_state;
 
-extern ctypes_state global_state;
 
-#define GLOBAL_STATE() (&global_state)
+extern struct PyModuleDef _ctypesmodule;
+
+
+static inline ctypes_state *
+get_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (ctypes_state *)state;
+}
+
+static inline ctypes_state *
+get_module_state_by_class(PyTypeObject *cls)
+{
+    ctypes_state *state = (ctypes_state *)_PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
+}
+
+static inline ctypes_state *
+get_module_state_by_def(PyTypeObject *cls)
+{
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
@@ -182,12 +210,17 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
+typedef enum {
+    LAYOUT_MODE_MS,
+    LAYOUT_MODE_GCC_SYSV,
+} LayoutMode;
 
 extern PyObject *
 PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int is_big_endian);
+                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
+                Py_ssize_t *palign,
+                int pack, int is_big_endian, LayoutMode layout_mode);
 
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
@@ -302,6 +335,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *module;
     int flags;                  /* calling convention and such */
 
     /* pep3118 fields, pointers need PyMem_Free */
@@ -313,6 +347,7 @@ typedef struct {
 } StgInfo;
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
+extern void ctype_clear_stginfo(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -383,13 +418,7 @@ struct basespec {
     char *adr;
 };
 
-extern char basespec_string[];
-
 extern ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj);
-
-extern char *_ctypes_conversion_encoding;
-extern char *_ctypes_conversion_errors;
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
@@ -464,6 +493,20 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
+/* A variant of PyStgInfo_FromType that doesn't need the state,
+ * so it can be called from finalization functions when the module
+ * state is torn down. Does no checks; cannot fail.
+ * This inlines the current implementation PyObject_GetTypeData,
+ * so it might break in the future.
+ */
+static inline StgInfo *
+_PyStgInfo_FromType_NoState(PyObject *type)
+{
+    size_t type_basicsize =_Py_SIZE_ROUND_UP(PyType_Type.tp_basicsize,
+                                             ALIGNOF_MAX_ALIGN_T);
+    return (StgInfo *)((char *)type + type_basicsize);
+}
+
 // Initialize StgInfo on a newly created type
 static inline StgInfo *
 PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
@@ -481,6 +524,12 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
                      type->tp_name);
         return NULL;
     }
+    PyObject *module = PyType_GetModule(state->PyCType_Type);
+    if (!module) {
+        return NULL;
+    }
+    info->module = Py_NewRef(module);
+
     info->initialized = 1;
     return info;
 }

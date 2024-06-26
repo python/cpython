@@ -6,7 +6,10 @@
 import sys
 import unittest
 from test.support.import_helper import import_module
-from _testcapi import get_feature_macros
+try:
+    from _testcapi import get_feature_macros
+except ImportError:
+    raise unittest.SkipTest("requires _testcapi")
 
 feature_macros = get_feature_macros()
 
@@ -224,6 +227,9 @@ SYMBOL_NAMES = (
     "PyEval_EvalFrameEx",
     "PyEval_GetBuiltins",
     "PyEval_GetFrame",
+    "PyEval_GetFrameBuiltins",
+    "PyEval_GetFrameGlobals",
+    "PyEval_GetFrameLocals",
     "PyEval_GetFuncDesc",
     "PyEval_GetFuncName",
     "PyEval_GetGlobals",
@@ -261,7 +267,6 @@ SYMBOL_NAMES = (
     "PyExc_IOError",
     "PyExc_ImportError",
     "PyExc_ImportWarning",
-    "PyExc_IncompleteInputError",
     "PyExc_IndentationError",
     "PyExc_IndexError",
     "PyExc_InterruptedError",
@@ -890,6 +895,7 @@ SYMBOL_NAMES = (
     "Py_SetProgramName",
     "Py_SetPythonHome",
     "Py_SetRecursionLimit",
+    "Py_TYPE",
     "Py_UTF8Mode",
     "Py_VaBuildValue",
     "Py_Version",

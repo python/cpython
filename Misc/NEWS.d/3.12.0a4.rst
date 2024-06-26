@@ -65,8 +65,8 @@ redundant.
 .. nonce: M2n6Kg
 .. section: Core and Builtins
 
-Fix :func:`int.__sizeof__` calculation to include the 1 element ob_digit
-array for 0 and False.
+Fix :func:`int.__sizeof__` calculation to include the 1-element ``ob_digit``
+array for ``0`` and ``False``.
 
 ..
 
@@ -830,7 +830,7 @@ Reduced the memory usage of :func:`urllib.parse.unquote` and
 .. section: Library
 
 ``inspect.signature`` was raising ``TypeError`` on call with mock objects.
-Now it correctly returns ``(*args, **kwargs)`` as infered signature.
+Now it correctly returns ``(*args, **kwargs)`` as inferred signature.
 
 ..
 

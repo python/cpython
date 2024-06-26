@@ -72,6 +72,9 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\critical_section.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -112,6 +115,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\listobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\lock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -205,6 +211,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\rangeobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\refcount.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\setobject.h">
@@ -372,6 +381,9 @@
     <ClInclude Include="..\Include\cpython\context.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\critical_section.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\descrobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -392,6 +404,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\lock.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\longintrepr.h">
       <Filter>Include</Filter>
@@ -663,6 +678,9 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_instruction_sequence.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_interp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -784,6 +802,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_stackref.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
@@ -1343,7 +1364,13 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\instruction_sequence.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instrumentation.c">
@@ -1389,6 +1416,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
@@ -1538,13 +1568,13 @@
     <ClCompile Include="..\Parser\peg_api.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c">
+    <ClCompile Include="..\Modules\_interpretersmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+    <ClCompile Include="..\Modules\_interpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
+    <ClCompile Include="..\Modules\_interpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

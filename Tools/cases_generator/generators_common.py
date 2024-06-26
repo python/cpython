@@ -4,14 +4,12 @@ from typing import TextIO
 from analyzer import (
     Instruction,
     Uop,
-    analyze_files,
     Properties,
-    Skip,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack
+from stack import Stack
 
 
 ROOT = Path(__file__).parent.parent.parent
@@ -234,8 +232,6 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
-    if p.passthrough:
-        flags.append("HAS_PASSTHROUGH_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
