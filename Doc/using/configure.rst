@@ -14,6 +14,8 @@ List all ``./configure`` script options using::
     ./configure --help
 
 See also the :file:`Misc/SpecialBuilds.txt` in the Python source distribution.
+After compilation, the :mod:`sysconfig` module can be used to programmatically check
+the configure options used to compile the Python interpreter.
 
 General Options
 ---------------
