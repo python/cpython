@@ -166,7 +166,6 @@
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
-    <ClInclude Include="..\Include\cpython\optimizer.h" />
     <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
     <ClInclude Include="..\Include\cpython\pyarena.h" />
