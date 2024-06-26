@@ -861,12 +861,14 @@ class TestMain(TestCase):
             fake_main = pathlib.Path(td, "foo.py")
             fake_main.write_text("FOO = 42", encoding="utf-8")
             output, exit_code = self.run_repl(
-                ["FOO", "exit"], main_module=str(fake_main)
+                ["f'{FOO=}'", "exit"], main_module=str(fake_main)
             )
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
-        self.assertIn("42", output)
+        self.assertIn("'FOO=42'", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
 
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
