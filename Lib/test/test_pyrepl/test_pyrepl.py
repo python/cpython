@@ -863,7 +863,7 @@ class TestMain(TestCase):
             output, exit_code = self.run_repl(
                 ["FOO", "exit"], main_module=str(fake_main)
             )
-        if "can\'t use pyrepl" in output:
+        if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn("42", output)
@@ -878,12 +878,12 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def run_repl(
-            self,
-            repl_input: str | list[str],
-            env: dict | None = None,
-            *,
-            main_module: str | None = None
-        ) -> tuple[str, int]:
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        main_module: str | None = None,
+    ) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
         repl_args = [sys.executable, "-u", "-i"]
         if main_module is not None:
