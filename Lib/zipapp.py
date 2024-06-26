@@ -186,13 +186,13 @@ def main(args=None):
             help="Display the interpreter from the archive.")
     parser.add_argument('--include-pattern', default=None,
             help=(
-                    "A regex of filenames to be included in archive."
+                    "Accept a regex filtering for files to be allowed in output archive."
                     " This will run first if --exclude is also used."
                     " Only applicable to directories."
                 ))
     parser.add_argument('--exclude-pattern', default=None,
             help=(
-                    "A regex of filenames to be excluded from archive."
+                    "Accept a regex filtering files to be denied inclusion in output archive."
                     " This will run second if --include is also used."
                     " Only applicable to directories."
                     " Usage example: `python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'`"
