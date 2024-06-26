@@ -11,7 +11,7 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
 #  include "../_complex.h"        // complex
 #endif
 
@@ -1091,7 +1091,7 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1620,7 +1620,7 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
     { 'C', C_set, C_get, NULL},
 #endif
     { 'g', g_set, g_get, NULL},
@@ -1673,7 +1673,7 @@ _ctypes_init_fielddesc(void)
         case 'B': fd->pffi_type = &ffi_type_uchar; break;
         case 'c': fd->pffi_type = &ffi_type_schar; break;
         case 'd': fd->pffi_type = &ffi_type_double; break;
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
         case 'C': fd->pffi_type = &ffi_type_complex_double; break;
 #endif
         case 'g': fd->pffi_type = &ffi_type_longdouble; break;

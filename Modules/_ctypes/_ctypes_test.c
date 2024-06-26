@@ -13,7 +13,7 @@
 
 #include <Python.h>
 
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
 #  include "../_complex.h"        // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
@@ -447,7 +447,7 @@ EXPORT(double) my_sqrt(double a)
     return sqrt(a);
 }
 
-#ifdef HAVE_C_COMPLEX
+#ifdef PY_HAVE_C_COMPLEX
 EXPORT(double complex) my_csqrt(double complex a)
 {
     return csqrt(a);

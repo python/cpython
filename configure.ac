@@ -3788,7 +3788,7 @@ int main(void)
 [ac_cv_c_complex_supported=no],
 [ac_cv_c_complex_supported=no])
 if test "$ac_cv_c_complex_supported" = "yes"; then
-    AC_DEFINE([HAVE_C_COMPLEX], [1],
+    AC_DEFINE([PY_HAVE_C_COMPLEX], [1],
               [Defined if _Complex C type is available.])
 fi
 

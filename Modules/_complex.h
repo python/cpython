@@ -1,7 +1,7 @@
 /* Workarounds for buggy complex number arithmetic implementations. */
 
-#ifndef HAVE_C_COMPLEX
-#  error "this header file should only be included if HAVE_C_COMPLEX is defined"
+#ifndef PY_HAVE_C_COMPLEX
+#  error "this header file should only be included if PY_HAVE_C_COMPLEX is defined"
 #endif
 
 #include <complex.h>
