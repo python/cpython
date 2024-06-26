@@ -1609,7 +1609,7 @@ then
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
   )
 fi
@@ -2289,6 +2289,11 @@ PYDEBUG_CFLAGS="-O0"
 AS_VAR_IF([ac_cv_cc_supports_og], [yes],
           [PYDEBUG_CFLAGS="-Og"])
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST([OPT])
@@ -2403,10 +2408,10 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
-    dnl gh-117645: Set the memory size to 20 MiB, the stack size to 8 MiB,
+    dnl gh-117645: Set the memory size to 40 MiB, the stack size to 16 MiB,
     dnl and move the stack first.
     dnl https://github.com/WebAssembly/wasi-libc/issues/233
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"])
   ]
 )
 
@@ -2432,7 +2437,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
   AC_CACHE_CHECK([m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3])], [py_var], [
     AS_VAR_COPY([py_cflags], [CFLAGS])
-    AS_VAR_APPEND([CFLAGS], ["-W$2 -Werror"])
+    AS_VAR_APPEND([CFLAGS], [" -W$2 -Werror"])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
                       [AS_VAR_SET([py_var], [yes])],
                       [AS_VAR_SET([py_var], [no])])
@@ -2445,6 +2450,11 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 AS_VAR_IF([with_strict_overflow], [yes],
           [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
           [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
+
+# Enable flags that warn and protect for potential security vulnerabilities.
+# These flags should be enabled by default for all builds.
+AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
 
 case $GCC in
 yes)

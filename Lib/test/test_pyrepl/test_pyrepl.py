@@ -862,6 +862,31 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+    @force_not_colorized
+    def test_python_basic_repl(self):
+        env = os.environ.copy()
+        commands = ("from test.support import initialized_with_pyrepl\n"
+                    "initialized_with_pyrepl()\n"
+                    "exit()\n")
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn("True", output)
+        self.assertNotIn("False", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(
@@ -890,5 +915,5 @@ class TestMain(TestCase):
             exit_code = process.wait(timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
             process.kill()
-            exit_code = process.returncode
+            exit_code = process.wait()
         return "\n".join(output), exit_code
