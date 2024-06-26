@@ -9609,13 +9609,13 @@ fi
 # These flags should be enabled by default for all builds.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
 printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
-if test ${ax_cv_check_cflags___Wimplicit_fallthrough+y}
+if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -Wimplicit-fallthrough"
+  CFLAGS="$CFLAGS -Werror -Wimplicit-fallthrough"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9629,16 +9629,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___Wimplicit_fallthrough=yes
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=yes
 else $as_nop
-  ax_cv_check_cflags___Wimplicit_fallthrough=no
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___Wimplicit_fallthrough" >&5
-printf "%s\n" "$ax_cv_check_cflags___Wimplicit_fallthrough" >&6; }
-if test "x$ax_cv_check_cflags___Wimplicit_fallthrough" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -Wimplicit-fallthrough"
 else $as_nop
@@ -9648,13 +9648,13 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
-if test ${ax_cv_check_cflags___fstack_protector_strong+y}
+if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fstack-protector-strong"
+  CFLAGS="$CFLAGS -Werror -fstack-protector-strong"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9668,16 +9668,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___fstack_protector_strong=yes
+  ax_cv_check_cflags__Werror__fstack_protector_strong=yes
 else $as_nop
-  ax_cv_check_cflags___fstack_protector_strong=no
+  ax_cv_check_cflags__Werror__fstack_protector_strong=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fstack_protector_strong" >&5
-printf "%s\n" "$ax_cv_check_cflags___fstack_protector_strong" >&6; }
-if test "x$ax_cv_check_cflags___fstack_protector_strong" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fstack_protector_strong" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
 else $as_nop
@@ -9685,18 +9685,15 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
 
-case $CC in
-  *gcc*)
-    # Add GCC-specific compiler flags
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
-if test ${ax_cv_check_cflags___Wtrampolines+y}
+if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -Wtrampolines"
+  CFLAGS="$CFLAGS -Werror -Wtrampolines"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9710,16 +9707,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___Wtrampolines=yes
+  ax_cv_check_cflags__Werror__Wtrampolines=yes
 else $as_nop
-  ax_cv_check_cflags___Wtrampolines=no
+  ax_cv_check_cflags__Werror__Wtrampolines=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___Wtrampolines" >&5
-printf "%s\n" "$ax_cv_check_cflags___Wtrampolines" >&6; }
-if test "x$ax_cv_check_cflags___Wtrampolines" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wtrampolines" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wtrampolines" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wtrampolines" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -Wtrampolines"
 else $as_nop
@@ -9727,7 +9724,6 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
-esac
 
 case $GCC in
 yes)
