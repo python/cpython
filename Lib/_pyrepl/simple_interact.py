@@ -80,23 +80,13 @@ REPL_COMMANDS = {
     "clear": _clear_screen,
 }
 
-DEFAULT_NAMESPACE: dict[str, Any] = {
-    '__name__': '__main__',
-    '__doc__': None,
-    '__package__': None,
-    '__loader__': None,
-    '__spec__': None,
-    '__annotations__': {},
-    '__builtins__': builtins,
-}
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None = None,
+    namespace: dict[str, Any],
     future_flags: int = 0,
     console: code.InteractiveConsole | None = None,
 ) -> None:
     from .readline import _setup
-    namespace = mainmodule.__dict__ if mainmodule else DEFAULT_NAMESPACE
     _setup(namespace)
 
     if console is None:
