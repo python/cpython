@@ -1999,7 +1999,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     _PyAtExit_Call(tstate->interp);
 
     assert(_PyThreadState_GET() == tstate);
-    finalize_subinterpreters();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -2080,6 +2079,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
+
+    /* Clean up any lingering subinterpreters. */
+    finalize_subinterpreters();
 
     /* Print debug stats if any */
     _PyEval_Fini();
