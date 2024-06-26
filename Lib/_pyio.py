@@ -591,6 +591,10 @@ class IOBase(metaclass=abc.ABCMeta):
         The line terminator is always b'\n' for binary files; for text
         files, the newlines argument to open can be used to select the
         line terminator(s) to be recognized.
+
+        If any, the line terminator is always put at the right of the result.
+        For instance, using 'backreadline()' or 'backreadline(4)' on '123\n456'
+        retursn '456\n' instead of '\n456'.
         """
         if size is None:
             size = -1
