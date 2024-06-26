@@ -2237,9 +2237,9 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
         stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
-        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2*sizeof(ffi_type));
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2 * sizeof(ffi_type));
         memcpy(stginfo->ffi_type_pointer.elements,
-               fmt->pffi_type->elements, 2*sizeof(ffi_type));
+               fmt->pffi_type->elements, 2 * sizeof(ffi_type));
     }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
