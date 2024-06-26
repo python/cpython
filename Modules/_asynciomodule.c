@@ -3947,8 +3947,8 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
-
-    _Py_SetImmortal((PyObject *)&state->asyncio_tasks.tail);
+    Py_SET_TYPE(&state->asyncio_tasks.tail, state->TaskType);
+    _Py_SetImmortalUntracked((PyObject *)&state->asyncio_tasks.tail);
     state->asyncio_tasks.head = &state->asyncio_tasks.tail;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
