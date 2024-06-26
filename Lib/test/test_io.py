@@ -669,9 +669,6 @@ class IOTest(unittest.TestCase):
     def test_backreadline(self):
         self.skipTest("TODO")
 
-    def test_backreadline_nonsizeable(self):
-        self.skipTest("TODO")
-
     def test_raw_bytes_io(self):
         f = self.BytesIO()
         self.write_ops(f)
