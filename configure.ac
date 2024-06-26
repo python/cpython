@@ -2457,8 +2457,15 @@ AX_CHECK_COMPILE_FLAG([-Wimplicit-fallthrough], [BASECFLAGS="$BASECFLAGS -Wimpli
 AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])])
 case $CC in
   *gcc*)
-    # Add GCC-specific compiler flags          
-    AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])])
+    # Add GCC-specific compiler flags
+    case $ac_sys_system in
+      Darwin*)
+        # apple clang does not support -Wtrampolines option
+        ;;
+      *)
+        AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])])
+        ;;
+    esac
 esac
 
 case $GCC in
