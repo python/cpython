@@ -21,7 +21,6 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
-#include "cpython/optimizer.h"
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"

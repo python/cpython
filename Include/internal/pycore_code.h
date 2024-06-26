@@ -9,6 +9,50 @@ extern "C" {
 #endif
 
 #include "pycore_lock.h"        // PyMutex
+#include "pycore_backoff.h"     // _Py_BackoffCounter
+
+
+/* Each instruction in a code object is a fixed-width value,
+ * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
+ * opcode allows for larger values but the current limit is 3 uses
+ * of EXTENDED_ARG (see Python/compile.c), for a maximum
+ * 32-bit value.  This aligns with the note in Python/compile.c
+ * (compiler_addop_i_line) indicating that the max oparg value is
+ * 2**32 - 1, rather than INT_MAX.
+ */
+
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t code;
+        uint8_t arg;
+    } op;
+    _Py_BackoffCounter counter;  // First cache entry of specializable op
+} _Py_CODEUNIT;
+
+
+/* These macros only remain defined for compatibility. */
+#define _Py_OPCODE(word) ((word).op.code)
+#define _Py_OPARG(word) ((word).op.arg)
+
+static inline _Py_CODEUNIT
+_py_make_codeunit(uint8_t opcode, uint8_t oparg)
+{
+    // No designated initialisers because of C++ compat
+    _Py_CODEUNIT word;
+    word.op.code = opcode;
+    word.op.arg = oparg;
+    return word;
+}
+
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->op.code = opcode;
+}
+
+#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
 
 
 // We hide some of the newer PyCodeObject fields behind macros.
