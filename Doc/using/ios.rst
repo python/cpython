@@ -317,7 +317,7 @@ App Store Compliance
 ====================
 
 The only mechanism for distributing apps to third-party iOS devices is to
-submit the app to the iOS App Store; app submitted for distribution must pass
+submit the app to the iOS App Store; apps submitted for distribution must pass
 Apple's app review process. This process includes a set of automated validation
 rules that inspect the submitted application bundle for problematic code.
 

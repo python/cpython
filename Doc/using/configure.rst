@@ -948,9 +948,9 @@ See :source:`Mac/README.rst`.
 .. option:: --with-app-store-compliance
 .. option:: --with-app-store-compliance=PATCH-FILE
 
-   The Python standard library contains strings that are known to cause
-   trigger automated inspection tools when submitted for distribution by
-   the macOS App Store. If enabled, this option will apply the list of
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
    patches that are known to correct app store compliance. A custom patch
    file can also be specified. This option is disabled by default.
 

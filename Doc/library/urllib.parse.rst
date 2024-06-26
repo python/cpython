@@ -27,12 +27,12 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``sftp``, ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``,
 ``telnet``, ``wais``, ``ws``, ``wss``.
 
-.. note::
+.. impl-detail::
 
    The inclusion of the ``itms-services`` URL scheme can prevent an app from
    passing Apple's App Store review process for the macOS and iOS App Stores.
    Handling for the ``itms-services`` scheme is always removed on iOS; on
-   macOS, it *may* be removed if Python has been built with the
+   macOS, it *may* be removed if CPython has been built with the
    ``--with-app-store-compliance`` option.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
