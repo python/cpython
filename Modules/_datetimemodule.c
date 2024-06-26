@@ -1967,6 +1967,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 year = PyTuple_GET_ITEM(timetuple, 0);
             }
             year_long = PyLong_AsLong(year);
+            if (ch == 'G') {
+                Py_DECREF(year);
+            }
             if (year_long == -1 && PyErr_Occurred() != NULL) {
                 goto Done;
             }
