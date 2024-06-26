@@ -264,7 +264,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             }
-            case _POP_FRAME:
+            case _RETURN_VALUE:
             {
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
@@ -300,6 +300,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
+#define STACK_SIZE()      ((int)(ctx->frame->stack_len))
+
+#define WITHIN_STACK_BOUNDS() \
+    (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE())
+
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
@@ -364,13 +369,13 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
-/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
+/* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _RETURN_VALUE || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
     if (operand == 0) {

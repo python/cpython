@@ -23,7 +23,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS

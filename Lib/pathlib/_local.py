@@ -782,9 +782,11 @@ class Path(PathBase, PurePath):
                 raise
 
     if copyfile:
-        def copy(self, target):
+        def copy(self, target, follow_symlinks=True):
             """
-            Copy the contents of this file to the given target.
+            Copy the contents of this file to the given target. If this file is a
+            symlink and follow_symlinks is false, a symlink will be created at the
+            target.
             """
             try:
                 target = os.fspath(target)
@@ -792,9 +794,9 @@ class Path(PathBase, PurePath):
                 if isinstance(target, PathBase):
                     # Target is an instance of PathBase but not os.PathLike.
                     # Use generic implementation from PathBase.
-                    return PathBase.copy(self, target)
+                    return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
                 raise
-            copyfile(os.fspath(self), target)
+            copyfile(os.fspath(self), target, follow_symlinks)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
