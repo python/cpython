@@ -2,13 +2,13 @@
 
 Each call to a Python function has an activation record, commonly known as a
 "frame". It contains information about the function being executed, consisting
-of four conceptual sections:
+of three conceptual sections:
 
 * Local variables (including arguments, cells and free variables)
-* Evaluation stack and instruction pointer
-* Specials: The per-frame object references needed by the VM: globals dict,
-  code object, etc.
-* Linkage: Pointer to the previous activation record, stack depth, etc.
+* Evaluation stack
+* Specials: The per-frame object references needed by the VM, including
+  globals dict, code object, instruction pointer, stack depth, the
+  previous frame, etc.
 
 The definition of the ``_PyInterpreterFrame`` struct is in
 [Include/internal/pycore_frame.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_frame.h).
@@ -27,22 +27,21 @@ objects, so are not allocated in the per-thread stack. See ``PyGenObject`` in
 
 ## Layout
 
-The specials and linkage sections have a fixed size, so are grouped together.
-
 Each activation record is laid out as:
-* Specials and linkage
+* Specials
 * Locals
 * Stack
 
 This seems to provide the best performance without excessive complexity.
-It needs the interpreter to hold two pointers, a frame pointer and a stack pointer.
+The specials have a fixed size, so the offset of the locals is know. The
+interpreter needs to hold two pointers, a frame pointer and a stack pointer.
 
 #### Alternative layout
 
 An alternative layout that was used for part of 3.11 alpha was:
 
 * Locals
-* Specials and linkage
+* Specials
 * Stack
 
 This has the advantage that no copying is required when making a call,
@@ -76,7 +75,7 @@ section. The `frame_obj` field is initially `NULL`.
 The `PyFrameObject` may outlive a stack-allocated `_PyInterpreterFrame`.
 If it does then `_PyInterpreterFrame` is copied into the `PyFrameObject`,
 except the evaluation stack which must be empty at this point.
-The linkage section is updated to reflect the new location of the frame.
+The previous frame link is updated to reflect the new location of the frame.
 
 This mechanism provides the appearance of persistent, heap-allocated
 frames for each activation, but with low runtime overhead.
