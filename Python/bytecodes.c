@@ -681,29 +681,38 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
-            DEOPT_IF(tstate->interp->eval_frame);
+        op(_BINARY_SUBSCR_CHECK_FUNC, (container, unused -- container, unused)) {
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-            PyObject *cached = ht->_spec_cache.getitem;
-            DEOPT_IF(cached == NULL);
-            assert(PyFunction_Check(cached));
-            PyFunctionObject *getitem = (PyFunctionObject *)cached;
+            PyObject *getitem = ht->_spec_cache.getitem;
+            DEOPT_IF(getitem == NULL);
+            assert(PyFunction_Check(getitem));
             uint32_t cached_version = ht->_spec_cache.getitem_version;
-            DEOPT_IF(getitem->func_version != cached_version);
-            PyCodeObject *code = (PyCodeObject *)getitem->func_code;
+            DEOPT_IF(((PyFunctionObject *)getitem)->func_version != cached_version);
+            PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem);
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(BINARY_SUBSCR, hit);
             Py_INCREF(getitem);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
-            STACK_SHRINK(2);
+        }
+
+        op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _PyInterpreterFrame* )) {
+            PyTypeObject *tp = Py_TYPE(container);
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+            PyObject *getitem = ht->_spec_cache.getitem;
+            new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
+
+        macro(BINARY_SUBSCR_GETITEM) =
+            unused/1 + // Skip over the counter
+            _CHECK_PEP_523 +
+            _BINARY_SUBSCR_CHECK_FUNC +
+            _BINARY_SUBSCR_INIT_CALL +
+            _PUSH_FRAME;
 
         inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
@@ -4289,6 +4298,10 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             DEOPT_IF(!((_PyExecutorObject *)executor)->vm_data.valid);
+        }
+
+        tier2 op(_GUARD_CODE, (version/2 -- )) {
+            DEOPT_IF(((PyCodeObject *)frame->f_executable)->co_version != version);
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

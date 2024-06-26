@@ -79,6 +79,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_SUBSCR_STR_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
     [_BINARY_SUBSCR_DICT] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SUBSCR_CHECK_FUNC] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_SUBSCR_INIT_CALL] = 0,
     [_LIST_APPEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_SET_ADD] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -256,6 +258,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
+    [_GUARD_CODE] = HAS_DEOPT_FLAG,
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
@@ -280,7 +283,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBTRACT_INT] = "_BINARY_OP_SUBTRACT_INT",
     [_BINARY_SLICE] = "_BINARY_SLICE",
     [_BINARY_SUBSCR] = "_BINARY_SUBSCR",
+    [_BINARY_SUBSCR_CHECK_FUNC] = "_BINARY_SUBSCR_CHECK_FUNC",
     [_BINARY_SUBSCR_DICT] = "_BINARY_SUBSCR_DICT",
+    [_BINARY_SUBSCR_INIT_CALL] = "_BINARY_SUBSCR_INIT_CALL",
     [_BINARY_SUBSCR_LIST_INT] = "_BINARY_SUBSCR_LIST_INT",
     [_BINARY_SUBSCR_STR_INT] = "_BINARY_SUBSCR_STR_INT",
     [_BINARY_SUBSCR_TUPLE_INT] = "_BINARY_SUBSCR_TUPLE_INT",
@@ -366,6 +371,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_GUARD_BOTH_UNICODE] = "_GUARD_BOTH_UNICODE",
     [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
+    [_GUARD_CODE] = "_GUARD_CODE",
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
@@ -635,6 +641,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_SUBSCR_TUPLE_INT:
             return 2;
         case _BINARY_SUBSCR_DICT:
+            return 2;
+        case _BINARY_SUBSCR_CHECK_FUNC:
+            return 2;
+        case _BINARY_SUBSCR_INIT_CALL:
             return 2;
         case _LIST_APPEND:
             return 2 + (oparg-1);
@@ -989,6 +999,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
+            return 0;
+        case _GUARD_CODE:
             return 0;
         case _FATAL_ERROR:
             return 0;

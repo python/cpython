@@ -823,6 +823,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
                         if (uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);
+                            if (opcode == FOR_ITER_GEN || opcode == BINARY_SUBSCR_GETITEM) {
+                                DPRINTF(2, "Bailing due to dynamic target\n");
+                                ADD_TO_TRACE(uop, oparg, 0, target);
+                                ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                goto done;
+                            }
                             int func_version_offset =
                                 offsetof(_PyCallCache, func_version)/sizeof(_Py_CODEUNIT)
                                 // Add one to account for the actual opcode/oparg pair:
@@ -854,12 +860,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
-                                if (opcode == FOR_ITER_GEN) {
-                                    DPRINTF(2, "Bailing due to dynamic target\n");
-                                    ADD_TO_TRACE(uop, oparg, 0, target);
-                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
-                                    goto done;
-                                }
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
@@ -880,9 +880,13 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     operand = 0;
                                 }
                                 ADD_TO_TRACE(uop, oparg, operand, target);
+                                /* We need to guard that the runtime code object is
+                                 * the same one we are projecting into */
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
+                                assert(code->co_version != 0);
+                                ADD_TO_TRACE(_GUARD_CODE, 0, code->co_version, 0);
                                 DPRINTF(2,
                                     "Continuing in %s (%s:%d) at byte offset %d\n",
                                     PyUnicode_AsUTF8(code->co_qualname),
@@ -931,7 +935,9 @@ done:
                 progress_needed ? "no progress" : "too short");
         return 0;
     }
-    if (trace[trace_length-1].opcode != _JUMP_TO_TOP) {
+    if (!is_terminator(&trace[trace_length-1])) {
+        /* Allow space for _EXIT_TRACE */
+        max_length += 2;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
     }
     DPRINTF(1,
@@ -1119,7 +1125,7 @@ sanity_check(_PyExecutorObject *executor)
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _COLD_EXIT) {
+        if (is_terminator(inst)) {
             ended = true;
             i++;
             break;
@@ -1257,9 +1263,7 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
         if (opcode == _NOP) {
             nop_count++;
         }
-        if (opcode == _EXIT_TRACE ||
-            opcode == _JUMP_TO_TOP ||
-            opcode == _COLD_EXIT) {
+        if (is_terminator(&buffer[i]) {
             return i+1-nop_count;
         }
     }
@@ -1308,7 +1312,7 @@ uop_optimize(
         else if (oparg < _PyUop_Replication[opcode]) {
             buffer[pc].opcode = opcode + oparg + 1;
         }
-        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        else if (is_terminator(&buffer[pc])) {
             break;
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
