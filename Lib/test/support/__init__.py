@@ -2607,3 +2607,9 @@ def force_not_colorized(func):
                 if value is not None:
                     os.environ[key] = value
     return wrapper
+
+
+def initialized_with_pyrepl():
+    """Detect whether PyREPL was used during Python initialization."""
+    # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
+    return hasattr(sys.modules["__main__"], "__file__")
