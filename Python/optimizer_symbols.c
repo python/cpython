@@ -125,10 +125,9 @@ _Py_uop_sym_is_null(_Py_UopsSymbol *sym)
 }
 
 bool
-_Py_uop_sym_is_a_class(_Py_UopsSymbol *sym)
+_Py_uop_sym_is_a_class(_Py_UopsSymbol *sym, unsigned int type_version)
 {
-    int res = sym->flags & IS_TYPE_SUBCLASS;
-    return res;
+    return (sym->flags & IS_TYPE_SUBCLASS) && (sym->type_version == type_version);
 }
 
 bool
@@ -218,12 +217,13 @@ _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
 }
 
 void
-_Py_uop_sym_set_is_a_class(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
+_Py_uop_sym_set_is_a_class(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int type_version)
 {
     if (sym->typ != NULL && !PyType_Check(sym->typ)) {
         sym_set_bottom(ctx, sym);
     }
     sym_set_flag(sym, IS_TYPE_SUBCLASS);
+    _Py_uop_sym_set_type_version(ctx, sym, type_version);
 }
 
 _Py_UopsSymbol *

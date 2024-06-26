@@ -330,7 +330,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
-#define sym_set_is_a_class(SYM) _Py_uop_sym_set_is_a_class(ctx, SYM)
+#define sym_set_is_a_class(SYM, VERSION) _Py_uop_sym_set_is_a_class(ctx, SYM, VERSION)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
@@ -424,7 +424,6 @@ optimize_uops(
     ctx->done = false;
     ctx->out_of_space = false;
     ctx->contradiction = false;
-    ctx->dependencies = dependencies;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
