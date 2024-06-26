@@ -1,2 +1,2 @@
-:func:`datetime.datetime.strftime` now 0-pads a year <= 999 for the format specifier ``%Y`` on Linux.
+:meth:`!datetime.datetime.strftime` now 0-pads a year <= 999 for the format specifier ``%Y`` on Linux.
 Patch by Ben Hsing
