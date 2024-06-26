@@ -275,7 +275,7 @@ except ImportError:
 ################################################################################
 
 
-class PlaceholderType:
+class _PlaceholderType:
     """The type of the Placeholder singleton.
 
     Used as a placeholder for partial arguments.
@@ -291,17 +291,13 @@ class PlaceholderType:
             cls.__instance = object.__new__(cls)
         return cls.__instance
 
-    def __bool__(self):
-        raise TypeError("Placeholder should not be used in a boolean context")
-
     def __repr__(self):
         return 'Placeholder'
 
     def __reduce__(self):
         return 'Placeholder'
 
-Placeholder = PlaceholderType()
-del PlaceholderType
+Placeholder = _PlaceholderType()
 
 def _partial_prepare_merger(args):
     j = len(args)
@@ -330,7 +326,7 @@ def _partial_prepare_new(cls, func, args, keywords):
                 tot_args = pto_merger(pto_args + args[:pto_phcount])
                 tot_args += args[pto_phcount:]
             else:
-                phcount = (pto_phcount - nargs)
+                phcount = pto_phcount - nargs
                 tot_args = pto_args + args + (Placeholder,) * phcount
                 tot_args = pto_merger(tot_args)
         elif pto_phcount:
@@ -353,24 +349,6 @@ def _partial_prepare_new(cls, func, args, keywords):
     if phcount and merger is None:
         merger = _partial_prepare_merger(tot_args)
     return func, tot_args, keywords, phcount, merger
-
-def _partial_prepare_call_args(self, args):
-    phcount = self._phcount
-    if phcount:
-        nargs = len(args)
-        if nargs < phcount:
-            raise TypeError(
-                "missing positional arguments "
-                "in 'partial' call; expected "
-                f"at least {phcount}, got {len(args)}")
-        if nargs > phcount:
-            merged_args = self._merger(self.args + args[:phcount])
-            return merged_args, args[phcount:]
-        else:
-            merged_args = self._merger(self.args + args)
-            return merged_args, ()
-    else:
-        return self.args, args
 
 # Purely functional, no descriptor behaviour
 class partial:
@@ -395,7 +373,17 @@ class partial:
         return self
 
     def __call__(self, /, *args, **keywords):
-        pto_args, args = _partial_prepare_call_args(self, args)
+        phcount = self._phcount
+        if phcount:
+            try:
+                pto_args = self._merger(self.args + args[:phcount])
+                args = args[phcount:]
+            except IndexError:
+                raise TypeError("missing positional arguments "
+                                "in 'partial' call; expected "
+                                f"at least {phcount}, got {len(args)}")
+        else:
+            pto_args = self.args
         keywords = {**self.keywords, **keywords}
         return self.func(*pto_args, *args, **keywords)
 
@@ -449,7 +437,7 @@ class partial:
         self._merger = merger
 
 try:
-    from _functools import partial, Placeholder
+    from _functools import partial, Placeholder, _PlaceholderType
 except ImportError:
     pass
 
@@ -490,7 +478,17 @@ class partialmethod:
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
-            pto_args, args = _partial_prepare_call_args(self, args)
+            phcount = self._phcount
+            if phcount:
+                try:
+                    pto_args = self._merger(self.args + args[:phcount])
+                    args = args[phcount:]
+                except IndexError:
+                    raise TypeError("missing positional arguments "
+                                    "in 'partial' call; expected "
+                                    f"at least {phcount}, got {len(args)}")
+            else:
+                pto_args = self.args
             keywords = {**self.keywords, **keywords}
             return self.func(cls_or_self, *pto_args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__

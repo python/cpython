@@ -97,27 +97,17 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return placeholder_instance;
 }
 
-static int
-placeholder_bool(PyObject *v)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "Placeholder should not be used in a boolean context");
-    return -1;
-}
-
 static PyType_Slot placeholder_type_slots[] = {
     {Py_tp_dealloc, placeholder_dealloc},
     {Py_tp_repr, placeholder_repr},
     {Py_tp_doc, (void *)placeholder_doc},
     {Py_tp_methods, placeholder_methods},
     {Py_tp_new, placeholder_new},
-    // Number protocol
-    {Py_nb_bool, placeholder_bool},
     {0, 0}
 };
 
 static PyType_Spec placeholder_type_spec = {
-    .name = "functools.PlaceholderType",
+    .name = "functools._PlaceholderType",
     .basicsize = sizeof(placeholderobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = placeholder_type_slots
