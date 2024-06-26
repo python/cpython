@@ -1952,12 +1952,14 @@ class FileIO(RawIOBase):
         curpos = os.lseek(self._fd, 0, SEEK_CUR)
         newpos = max(0, curpos - size)
         # go one chunk before and read size bytes (or less)
-        os.lseek(self._fd, newpos)
+        newpos = os.lseek(self._fd, newpos, SEEK_SET)
         try:
             res = os.read(self._fd, min(curpos, size))
         except BlockingIOError:
             return None
-        return res[::-1]
+        # go one chunk before for the next call
+        os.lseek(self._fd, newpos, SEEK_SET)
+        return res if size == 1 else res[::-1]
 
     def backreadall(self):
         """Read backwards all data from the file, returned as bytes.

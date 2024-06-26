@@ -667,7 +667,23 @@ class IOTest(unittest.TestCase):
         self.assertRaises(TypeError, R().readlines, 1)
 
     def test_backreadline(self):
-        self.skipTest("TODO")
+        # missing implementation for: RawIOBase and FileIO.backread
+        self.skipTest("TODO (C implementation of IOBase.backreadline & co)")
+
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(b"abc\ndef\nxyzzy\nfoo\x00bar\nanother line")
+        with self.open(os_helper.TESTFN, "rb") as f:
+            f.seek(0, 2)
+            self.assertEqual(f.backreadline(), b"another line\n")
+            self.assertEqual(f.backreadline(10), b"foo\x00bar\n")
+            self.assertEqual(f.backreadline(2), b"zy")
+            self.assertEqual(f.backreadline(4), b"xyz\n")
+            self.assertEqual(f.backreadline(), b"def\n")
+            self.assertEqual(f.backreadline(None), b"abc")
+            self.assertRaises(TypeError, f.backreadline, 5.3)
+
+        with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
+            self.assertRaises(io.UnsupportedOperation, f.backreadline, 5.3)
 
     def test_raw_bytes_io(self):
         f = self.BytesIO()
