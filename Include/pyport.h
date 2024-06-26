@@ -607,4 +607,19 @@ extern "C" {
 #  define _SGI_MP_SOURCE
 #endif
 
+// Explicit fallthrough in switch case.
+// Example:
+//
+//     switch(value)
+//     case 1: _Py_FALLTHROUGH;
+//     case 2: code; break;
+//     }
+//
+// __attribute__((fallthrough)) was introduced in GCC 7.
+#if defined(__has_attribute) && __has_attribute(fallthrough)
+#  define _Py_FALLTHROUGH __attribute__((fallthrough))
+#else
+#  define _Py_FALLTHROUGH do { } while (0)
+#endif
+
 #endif /* Py_PYPORT_H */
