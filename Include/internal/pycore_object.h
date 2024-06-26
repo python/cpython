@@ -159,21 +159,6 @@ static inline void _Py_ClearImmortal(PyObject *op)
         op = NULL; \
     } while (0)
 
-// Mark an object as supporting deferred reference counting. This is a no-op
-// in the default (with GIL) build. Objects that use deferred reference
-// counting should be tracked by the GC so that they are eventually collected.
-extern void _PyObject_SetDeferredRefcount(PyObject *op);
-
-static inline int
-_PyObject_HasDeferredRefcount(PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_DEFERRED);
-#else
-    return 0;
-#endif
-}
-
 #if !defined(Py_GIL_DISABLED)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)

@@ -100,6 +100,8 @@ MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
 
+USED_TAGS = 0b11
+
 ENCODING = locale.getpreferredencoding()
 
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
@@ -158,6 +160,8 @@ class PyObjectPtr(object):
     _typename = 'PyObject'
 
     def __init__(self, gdbval, cast_to=None):
+        # Clear the tagged pointer
+        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
         if cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:

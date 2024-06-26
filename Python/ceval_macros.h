@@ -264,9 +264,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
    This is because it is possible that during the DECREF the frame is
    accessed by other code (e.g. a __del__ method or gc.collect()) and the
    variable would be pointing to already-freed memory. */
-#define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
+#define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
-                                     Py_XDECREF(tmp); } while (0)
+                                     PyStackRef_XCLOSE(tmp); } while (0)
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
@@ -449,3 +449,34 @@ do { \
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
+
+/* Stackref macros */
+
+/* How much scratch space to give stackref to PyObject* conversion. */
+#define MAX_STACKREF_SCRATCH 10
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
+    /* +1 because vectorcall might use -1 to write self */ \
+    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+#else
+#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
+    PyObject **NAME = (PyObject **)ARGS; \
+    assert(NAME != NULL);
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    /* +1 because we +1 previously */ \
+    _PyObjectArray_Free(NAME - 1, NAME##_temp);
+#else
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    (void)(NAME);
+#endif
+
+#ifdef Py_GIL_DISABLED
+#define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+#else
+#define CONVERSION_FAILED(NAME) (0)
+#endif
