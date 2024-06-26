@@ -373,14 +373,13 @@ class partialmethod(object):
             self.keywords = keywords
 
     def __repr__(self):
-        module = self.__class__.__module__
-        typename = self.__class__.__qualname__
-        args = ", ".join(map(repr, self.args))
-        keywords = ", ".join(f"{k}={v!r}" for k, v in self.keywords.items())
-        arguments = ", ".join(filter(None, (args, keywords)))
-        if arguments:
-            return f"{module}.{typename}({self.func}, {arguments})"
-        return f"{module}.{typename}({self.func})"
+        cls = type(self)
+        module = cls.__module__
+        qualname = cls.__qualname__
+        args = [repr(self.func)]
+        args.extend(map(repr, self.args))
+        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+        return f"{module}.{qualname}({', '.join(args)})"
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
