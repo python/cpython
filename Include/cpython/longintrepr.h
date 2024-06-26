@@ -119,7 +119,7 @@ PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
 
 
 static inline int
-_PyLong_IsCompact(const PyLongObject* op) {
+_PyLong_IsCompact(PyLongObject* op) {
     assert(PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS));
     return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
 }
@@ -127,7 +127,7 @@ _PyLong_IsCompact(const PyLongObject* op) {
 #define PyUnstable_Long_IsCompact _PyLong_IsCompact
 
 static inline Py_ssize_t
-_PyLong_CompactValue(const PyLongObject *op)
+_PyLong_CompactValue(PyLongObject *op)
 {
     Py_ssize_t sign;
     assert(PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS));
