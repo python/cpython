@@ -223,9 +223,6 @@
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
 
-/* Defined if _Complex C type is available. */
-#undef PY_HAVE_C_COMPLEX
-
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
 
@@ -1629,6 +1626,9 @@
 
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
+
+/* Defined if _Complex C type is available. */
+#undef PY_HAVE_C_COMPLEX
 
 /* Define to 1 if you have the perf trampoline. */
 #undef PY_HAVE_PERF_TRAMPOLINE
