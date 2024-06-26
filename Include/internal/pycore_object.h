@@ -126,8 +126,8 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
-extern void _Py_SetImmortal(PyObject *op);
-extern void _Py_SetImmortalUntracked(PyObject *op);
+PyAPI_FUNC(void) _Py_SetImmortal(PyObject *op);
+PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
