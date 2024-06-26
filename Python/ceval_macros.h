@@ -469,7 +469,7 @@ do { \
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
-    _PyObjectArray_Free(NAME, NAME##_temp + 1);
+    _PyObjectArray_Free(NAME - 1, NAME##_temp);
 #else
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     (void)(NAME);
