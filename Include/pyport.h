@@ -607,10 +607,12 @@ extern "C" {
 #  define _SGI_MP_SOURCE
 #endif
 
-// Explicit fallthrough in switch case.
-// Example:
+// Explicit fallthrough in switch case to avoid warnings
+// with compiler flag -Wimplicit-fallthrough.
 //
-//     switch(value)
+// Usage example:
+//
+//     switch (value)
 //     case 1: _Py_FALLTHROUGH;
 //     case 2: code; break;
 //     }
