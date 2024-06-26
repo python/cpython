@@ -19,7 +19,6 @@
 #include "datetime.h"
 
 
-#include <stdlib.h>
 #include <time.h>
 
 #ifdef MS_WINDOWS
@@ -1833,14 +1832,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
               PyObject *tzinfoarg)
 {
     PyObject *result = NULL;            /* guilty until proved innocent */
+    PyObject *strftime = NULL;          /* time.strftime */
 
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 #ifdef NORMALIZE_CENTURY
-    long year;                          /* year of timetuple as long */
-    char year_formatted[12];            /* formatted year with century for %Y */
+    PyObject *year;                     /* year of timetuple */
+    long year_long;                     /* year of timetuple as long int */
+    char year_formatted[12];            /* formatted year with century for %Y/G */
 #endif
 
     const char *pin;            /* pointer to next char in input format */
@@ -1878,10 +1879,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
-
-    if (strftime == NULL)
+    strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
         goto Done;
+    }
 
     while ((ch = *pin++) != '\0') {
         if (ch != '%') {
@@ -1953,15 +1954,23 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == 'Y' || ch == 'G') {
             /* 0-pad year with century as necessary */
             if (ch == 'G') {
-                format = PyUnicode_FromString("%G");
-                result = PyObject_CallFunctionObjArgs(strftime, format,
-                                                      timetuple, NULL);
-                year = atoi(PyUnicode_AsUTF8(result));
-                Py_DECREF(format);
+                result = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
+                if (result == NULL) {
+                    goto Done;
+                }
+                year = PyNumber_Long(result);
+                if (year == NULL) {
+                    goto Done;
+                }
                 Py_DECREF(result);
-            } else
-                year = PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0));
-            ntoappend = sprintf(year_formatted, "%04ld", year);
+            } else {
+                year = PyTuple_GET_ITEM(timetuple, 0);
+            }
+            year_long = PyLong_AsLong(year);
+            if (year_long == -1 && PyErr_Occurred() != NULL) {
+                goto Done;
+            }
+            ntoappend = sprintf(year_formatted, "%04ld", year_long);
             ptoappend = year_formatted;
         }
 #endif
@@ -2005,7 +2014,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
         }
-        Py_DECREF(strftime);
     }
  Done:
     Py_XDECREF(freplacement);
@@ -2013,6 +2021,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
+    Py_XDECREF(strftime);
     return result;
 }
 
