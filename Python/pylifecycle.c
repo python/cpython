@@ -1983,8 +1983,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    finalize_subinterpreters();
-
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
@@ -1999,6 +1997,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
      */
 
     _PyAtExit_Call(tstate->interp);
+
+    assert(_PyThreadState_GET() == tstate);
+    finalize_subinterpreters();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
