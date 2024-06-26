@@ -8,10 +8,6 @@ from ctypes import (byref, sizeof, alignment,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble, c_bool)
-try:
-    from ctypes import c_double_complex
-except ImportError:
-    pass
 
 
 def valid_ranges(*types):
@@ -117,7 +113,7 @@ class NumberTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
-        for t in [c_double_complex]:
+        for t in [ctypes.c_double_complex]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
             self.assertEqual(t(1+0.125j).value, 1+0.125j)

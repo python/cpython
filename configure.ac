@@ -3772,11 +3772,18 @@ esac
 # of __STDC_IEC_559_COMPLEX__.
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
+#define test(type, out)                                \
+{                                                      \
+    type complex z = 1 + 2*I; z = z*z;                 \
+    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
+}
 int main(void)
 {
-    double complex z = 1 + 2*I;
-    z = z + z*I;
-    return (creal(z) != -1) || (cimag(z) != 3);
+   int res = 0;
+   test(float, res);
+   test(double, res);
+   test(long double, res);
+   return res;
 }]])], [ac_cv_c_complex_supported=yes],
 [ac_cv_c_complex_supported=no],
 [ac_cv_c_complex_supported=no])

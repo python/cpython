@@ -1096,11 +1096,11 @@ static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     Py_complex c = PyComplex_AsCComplex(value);
-    double complex x = CMPLX(c.real, c.imag);
 
     if (c.real == -1 && PyErr_Occurred()) {
         return NULL;
     }
+    double complex x = CMPLX(c.real, c.imag);
     memcpy(ptr, &x, sizeof(x));
     _RET(value);
 }
