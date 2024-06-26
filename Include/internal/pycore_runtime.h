@@ -209,6 +209,8 @@ typedef struct pyruntimestate {
     unsigned long main_thread;
     PyThreadState *main_tstate;
 
+    int is_pymain;
+
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability

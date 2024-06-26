@@ -1,0 +1,3 @@
+Calling :c:func:`Py_Finalize` while :c:func:`Py_RunMain` is running is now a
+failure.  When used, ``Py_RunMain()`` is solely responsible for finalizing
+the runtime.

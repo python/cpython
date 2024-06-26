@@ -1908,17 +1908,27 @@ finalize_interp_delete(PyInterpreterState *interp)
 
 
 int
-Py_FinalizeEx(void)
+_Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
     int status = 0;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
+    /* Bail out early if already finalized. */
     if (!runtime->initialized) {
+        assert(!runtime->is_pymain);
         return status;
     }
 
-    /* Get current thread state and interpreter pointer */
+    /* Make sure Py_RunMain() users aren't calling Py_Finalize(). */
+    if (args->check_pymain && runtime->is_pymain) {
+        fprintf(stderr,
+                "%s() should not be called while Py_RunMain() is running\n",
+                args->caller);
+        return -1;
+    }
+
+    /* Get final thread state pointer. */
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->interp->runtime == runtime);
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
@@ -2140,10 +2150,39 @@ Py_FinalizeEx(void)
     return status;
 }
 
+/* _Py_FinalizeMain() is used exclusively by Py_RunMain(). */
+int
+_Py_FinalizeMain(void)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    assert(runtime->is_pymain);
+    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+    assert(_Py_IsMainThread());
+    assert(_PyThreadState_GET() == runtime->main_tstate);
+    struct pyfinalize_args args = {
+        .caller = "Py_RunMain",
+    };
+    return _Py_Finalize(runtime, &args);
+}
+
+int
+Py_FinalizeEx(void)
+{
+    struct pyfinalize_args args = {
+        .caller = "Py_FinalizeEx",
+        .check_pymain = 1,
+    };
+    return _Py_Finalize(&_PyRuntime, &args);
+}
+
 void
 Py_Finalize(void)
 {
-    Py_FinalizeEx();
+    struct pyfinalize_args args = {
+        .caller = "Py_Finalize",
+        .check_pymain = 1,
+    };
+    (void)_Py_Finalize(&_PyRuntime, &args);
 }
 
 
@@ -3216,7 +3255,11 @@ Py_Exit(int sts)
     if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
     }
-    if (Py_FinalizeEx() < 0) {
+    struct pyfinalize_args args = {
+        .caller = "Py_Exit",
+        /* We don't worry about checking if Py_RunMain() is running. */
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) < 0) {
         sts = 120;
     }
 
