@@ -523,7 +523,7 @@ complex_div(PyObject *v, PyObject *w)
     errno = 0;
     quot = _Py_c_quot(a, b);
     if (errno == EDOM) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
+        PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
         return NULL;
     }
     return PyComplex_FromCComplex(quot);
@@ -554,7 +554,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "0.0 to a negative or complex power");
+                        "zero to a negative or complex power");
         return NULL;
     }
     else if (errno == ERANGE) {
@@ -912,7 +912,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
  * handles the case of no arguments and one positional argument, and calls
  * complex_new(), implemented with Argument Clinic, to handle the remaining
  * cases: 'real' and 'imag' arguments.  This separation is well suited
- * for different constructor roles: convering a string or number to a complex
+ * for different constructor roles: converting a string or number to a complex
  * number and constructing a complex number from real and imaginary parts.
  */
 static PyObject *

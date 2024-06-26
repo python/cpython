@@ -1622,6 +1622,7 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
         }
         self->items[i].literal = Py_XNewRef(literal);
     }
+    PyObject_GC_Track(self);
     return (PyObject*) self;
 
 bad_template:
@@ -2216,6 +2217,8 @@ match_getindex(MatchObject* self, PyObject* index)
         return -1;
     }
 
+    // Check that i*2 cannot overflow to make static analyzers happy
+    assert(i <= SRE_MAXGROUPS);
     return i;
 }
 
@@ -2368,7 +2371,7 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
             goto exit;
         }
     }
-exit:
+exit:;
     Py_END_CRITICAL_SECTION();
 
     return result;

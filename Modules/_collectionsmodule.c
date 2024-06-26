@@ -2575,7 +2575,11 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, one);
+            if (oldval == zero) {
+                newval = Py_NewRef(one);
+            } else {
+                newval = PyNumber_Add(oldval, one);
+            }
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;

@@ -5,9 +5,11 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "internal/pycore_code.h"
-#include "internal/pycore_compile.h"
-#include "internal/pycore_intrinsics.h"
+#include "pycore_ceval.h"
+#include "pycore_code.h"
+#include "pycore_compile.h"
+#include "pycore_intrinsics.h"
+#include "pycore_optimizer.h"     // _Py_GetExecutor()
 
 /*[clinic input]
 module _opcode
@@ -349,6 +351,32 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
 
 /*[clinic input]
 
+_opcode.get_special_method_names
+
+Return a list of special method names.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_special_method_names_impl(PyObject *module)
+/*[clinic end generated code: output=fce72614cd988d17 input=25f2115560bdf163]*/
+{
+    PyObject *list = PyList_New(SPECIAL_MAX + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= SPECIAL_MAX; i++) {
+        PyObject *name = _Py_SpecialMethods[i].name;
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+/*[clinic input]
+
 _opcode.get_executor
 
   code: object
@@ -368,7 +396,7 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
         return NULL;
     }
 #ifdef _Py_TIER2
-    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
+    return (PyObject *)_Py_GetExecutor((PyCodeObject *)code, offset);
 #else
     PyErr_Format(PyExc_RuntimeError,
                  "Executors are not available in this build");
@@ -392,6 +420,7 @@ opcode_functions[] =  {
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
     _OPCODE_GET_EXECUTOR_METHODDEF
+    _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
