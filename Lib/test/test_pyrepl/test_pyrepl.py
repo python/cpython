@@ -875,6 +875,7 @@ class TestMain(TestCase):
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn("True", output)
+        self.assertNotIn("False", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
@@ -882,6 +883,7 @@ class TestMain(TestCase):
         output, exit_code = self.run_repl(commands, env=env)
         self.assertEqual(exit_code, 0)
         self.assertIn("False", output)
+        self.assertNotIn("True", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
