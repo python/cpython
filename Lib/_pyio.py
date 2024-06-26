@@ -630,7 +630,6 @@ class IOBase(metaclass=abc.ABCMeta):
         self._checkClosed()
         while line := self.backreadline():
             yield line
-        raise StopIteration
 
     def writelines(self, lines):
         """Write a list of lines to the stream.
