@@ -9,22 +9,22 @@ def test_reversed_threading(self):
     # Test reading out the iterator with multiple threads cannot corrupt
     # the reversed iterator.
     # The reversed iterator is not guaranteed to be thread safe
+
+    size = 4_000
     def work(r, output):
         while True:
             try:
-                value = next(r)
+                 l = r.__length_hint__()
+                 next(r)
             except StopIteration:
                 break
-            else:
-                output.append(value)
-
+            assert 0 <= l <= size
     number_of_threads = 10
-    x = tuple(range(4_000))
+    x = tuple(range(size))
     r = reversed(x)
     worker_threads = []
-    output = []
     for ii in range(number_of_threads):
-        worker_threads.append(Thread(target=work, args=[r, output]))
+        worker_threads.append(Thread(target=work, args=[r]))
     _ = [t.start() for t in worker_threads]
     _ = [t.join() for t in worker_threads]
 
