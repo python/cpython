@@ -9607,45 +9607,6 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
-printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
-if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -Wimplicit-fallthrough"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=yes
-else $as_nop
-  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&5
-printf "%s\n" "$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&6; }
-if test "x$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" = xyes
-then :
-  BASECFLAGS="$BASECFLAGS -Wimplicit-fallthrough"
-else $as_nop
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wimplicit-fallthrough not supported" >&5
-printf "%s\n" "$as_me: WARNING: -Wimplicit-fallthrough not supported" >&2;}
-fi
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
