@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "cpython/optimizer.h"
 #include "pycore_code.h"
 #include "pycore_frame.h"
 #include "pycore_long.h"

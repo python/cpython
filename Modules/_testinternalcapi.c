@@ -991,13 +991,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewCounter();
+    return _PyOptimizer_NewCounter();
 }
 
 static PyObject *
 new_uop_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewUOpOptimizer();
+    return _PyOptimizer_NewUOpOptimizer();
 }
 
 static PyObject *
@@ -1006,7 +1006,7 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1017,7 +1017,7 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *opt = NULL;
 #ifdef _Py_TIER2
-    opt = (PyObject *)PyUnstable_GetOptimizer();
+    opt = (PyObject *)_Py_GetOptimizer();
 #endif
     if (opt == NULL) {
         Py_RETURN_NONE;
