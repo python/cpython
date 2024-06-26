@@ -2567,16 +2567,13 @@ def _signature_from_callable(obj, *,
                                         skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str)
 
-    if isinstance(obj, functools.partial):
-        # Must be before _signature_is_builtin
-        #   as it uses `ismethoddescriptor`
-        #   while partial has __get__ implemented
-        wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
-
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
+
+    if isinstance(obj, functools.partial):
+        wrapped_sig = _get_signature_of(obj.func)
+        return _signature_get_partial(wrapped_sig, obj)
 
     if isinstance(obj, type):
         # obj is a class or a metaclass
