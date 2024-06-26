@@ -1959,10 +1959,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
                 year = PyNumber_Long(result);
+                Py_DECREF(result);
                 if (year == NULL) {
                     goto Done;
                 }
-                Py_DECREF(result);
             } else {
                 year = PyTuple_GET_ITEM(timetuple, 0);
             }
