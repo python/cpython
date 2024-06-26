@@ -4847,7 +4847,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            value = PyStackRef_FromPyObjectImmortal(ptr);
+            value = PyStackRef_FromPyObjectSteal(ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4860,7 +4860,7 @@
             pop = stack_pointer[-1];
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             PyStackRef_CLOSE(pop);
-            value = PyStackRef_FromPyObjectImmortal(ptr);
+            value = PyStackRef_FromPyObjectSteal(ptr);
             stack_pointer[-1] = value;
             break;
         }
@@ -4882,7 +4882,7 @@
             _PyStackRef value;
             _PyStackRef null;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            value = PyStackRef_FromPyObjectImmortal(ptr);
+            value = PyStackRef_FromPyObjectSteal(ptr);
             null = PyStackRef_NULL;
             stack_pointer[0] = value;
             stack_pointer[1] = null;
