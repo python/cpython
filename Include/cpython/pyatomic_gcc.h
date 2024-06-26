@@ -296,7 +296,7 @@ _Py_atomic_load_ssize(const Py_ssize_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_SEQ_CST); }
 
 static inline void *
-_Py_atomic_load_ptr(const void *obj)
+_Py_atomic_load_ptr(void *obj)
 { return (void *)__atomic_load_n((void **)obj, __ATOMIC_SEQ_CST); }
 
 
@@ -355,8 +355,8 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_RELAXED); }
 
 static inline void *
-_Py_atomic_load_ptr_relaxed(const void *obj)
-{ return (void *)__atomic_load_n((const void **)obj, __ATOMIC_RELAXED); }
+_Py_atomic_load_ptr_relaxed(void *obj)
+{ return (void *)__atomic_load_n((void **)obj, __ATOMIC_RELAXED); }
 
 static inline unsigned long long
 _Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
@@ -489,12 +489,12 @@ _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
 static inline void *
-_Py_atomic_load_ptr_acquire(const void *obj)
+_Py_atomic_load_ptr_acquire(void *obj)
 { return (void *)__atomic_load_n((void **)obj, __ATOMIC_ACQUIRE); }
 
 static inline uintptr_t
 _Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
-{ return (uintptr_t)__atomic_load_n((uintptr_t *)obj, __ATOMIC_ACQUIRE); }
+{ return (uintptr_t)__atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
 static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)

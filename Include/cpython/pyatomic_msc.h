@@ -595,12 +595,12 @@ _Py_atomic_load_int64(const int64_t *obj)
 }
 
 static inline void*
-_Py_atomic_load_ptr(const void *obj)
+_Py_atomic_load_ptr(void *obj)
 {
 #if SIZEOF_VOID_P == 8
-    return (void*)_Py_atomic_load_uint64((const uint64_t *)obj);
+    return (void*)_Py_atomic_load_uint64((uint64_t *)obj);
 #else
-    return (void*)_Py_atomic_load_uint32((const uint32_t *)obj);
+    return (void*)_Py_atomic_load_uint32((uint32_t *)obj);
 #endif
 }
 
@@ -707,7 +707,7 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
 }
 
 static inline void*
-_Py_atomic_load_ptr_relaxed(const void *obj)
+_Py_atomic_load_ptr_relaxed(void *obj)
 {
     return *(void * volatile *)obj;
 }
@@ -903,7 +903,7 @@ _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
 static inline void *
-_Py_atomic_load_ptr_acquire(const void *obj)
+_Py_atomic_load_ptr_acquire(void *obj)
 {
 #if defined(_M_X64) || defined(_M_IX86)
     return *(void * volatile *)obj;
