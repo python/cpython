@@ -453,7 +453,7 @@ do { \
 /* Stackref macros */
 
 /* How much scratch space to give stackref to PyObject* conversion. */
-#define MAX_STACKREF_SCRATCH 8
+#define MAX_STACKREF_SCRATCH 10
 
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
@@ -468,6 +468,7 @@ do { \
 
 #ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
+    /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME, NAME##_temp + 1);
 #else
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
