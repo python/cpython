@@ -9,6 +9,24 @@
 #endif
 
 
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
+// Preprocessor check for a compiler __attribute__. Always return 0
+// if __has_attribute() macro is not defined.
+#ifdef __has_attribute
+#  define _Py__has_attribute(x) __has_attribute(x)
+#else
+#  define _Py__has_attribute(x) 0
+#endif
+
 // Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
@@ -532,16 +550,6 @@ extern "C" {
 #endif
 
 
-// Preprocessor check for a builtin preprocessor function. Always return 0
-// if __has_builtin() macro is not defined.
-//
-// __has_builtin() is available on clang and GCC 10.
-#ifdef __has_builtin
-#  define _Py__has_builtin(x) __has_builtin(x)
-#else
-#  define _Py__has_builtin(x) 0
-#endif
-
 // _Py_TYPEOF(expr) gets the type of an expression.
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
@@ -618,7 +626,7 @@ extern "C" {
 //     }
 //
 // __attribute__((fallthrough)) was introduced in GCC 7.
-#if defined(__has_attribute) && __has_attribute(fallthrough)
+#if _Py__has_attribute(fallthrough)
 #  define _Py_FALLTHROUGH __attribute__((fallthrough))
 #else
 #  define _Py_FALLTHROUGH do { } while (0)
