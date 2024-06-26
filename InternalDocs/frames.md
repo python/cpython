@@ -21,8 +21,8 @@ of reference, most frames are allocated contiguously in a per-thread stack
 (see ``_PyThreadState_PushFrame`` in
 [Python/pystate.c](https://github.com/python/cpython/blob/main/Python/pystate.c)).
 
-Frames of generators and coroutines are allocated on the heap, embedded in the
-generator and coroutine objects. See ``PyGenObject`` in
+Frames of generators and coroutines are embedded in the generator and coroutine
+objects, so are not allocated in the per-thread stack. See ``PyGenObject`` in
 [Include/internal/pycore_genobject.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_genobject.h).
 
 ## Layout
@@ -49,19 +49,6 @@ This has the advantage that no copying is required when making a call,
 as the arguments on the stack are (usually) already in the correct
 location for the parameters. However, it requires the VM to maintain
 an extra pointer for the locals, which can hurt performance.
-
-A variant that only needs two pointers is to reverse the numbering
-of the locals, so that the last one is numbered `0`, and the first in memory
-is numbered `N-1`.
-This allows the locals, specials and linkage to accessed from the frame pointer.
-We may implement this in the future.
-
-#### Note:
-
-> In a contiguous stack, we would need to save one fewer registers, as the
-> top of the caller's activation record would be the same as the base of the
-> callee's. However, since some activation records are kept on the heap we
-> cannot do this.
 
 ### Generators and Coroutines
 
