@@ -229,7 +229,7 @@ and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
 Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
 event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
 when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
-performance reasons, but may generate a RAISE event with a :exc:`StopIteration`.
+performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
 
 Turning events on and off
 -------------------------

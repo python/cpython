@@ -854,8 +854,10 @@ class ExceptionMonitoringTest(CheckEvents):
         recorders=(ExceptionRecorder, StopiterationRecorder,)
         expected = [("raise", StopIteration)]
 
-        # Make specialization fail, so that we can test the unspecialized
-        # version of the loop first.
+        # Make sure that the loop is unspecialized, and that it will not
+        # re-specialize immediately, so that we can we can test the
+        # unspecialized version of the loop first.
+        # Note: this assumes that we don't specialize loops over sets.
         implicit_stop_iteration(set(range(100)))
 
         # This will record a RAISE event for the StopIteration.
