@@ -3472,8 +3472,8 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     }
 
     switch(self->protocol) {
-    case PY_SSL_VERSION_TLS_CLIENT:  /* fall through */
-    case PY_SSL_VERSION_TLS_SERVER:  /* fall through */
+    case PY_SSL_VERSION_TLS_CLIENT: _Py_FALLTHROUGH;
+    case PY_SSL_VERSION_TLS_SERVER: _Py_FALLTHROUGH;
     case PY_SSL_VERSION_TLS:
         break;
     default:
