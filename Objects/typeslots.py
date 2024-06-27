@@ -13,7 +13,9 @@ def generate_typeslots(out=sys.stdout):
             continue
 
         member = m.group(1)
-        if member.startswith("tp_"):
+        if member == "tp_token":
+            member = '{-1, offsetof(PyHeapTypeObject, ht_token)}'
+        elif member.startswith("tp_"):
             member = f'{{-1, offsetof(PyTypeObject, {member})}}'
         elif member.startswith("am_"):
             member = (f'{{offsetof(PyAsyncMethods, {member}),'+

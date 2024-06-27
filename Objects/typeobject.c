@@ -3909,6 +3909,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_token = NULL;
 
     _PyObject_SetDeferredRefcount((PyObject *)et);
 
@@ -4931,6 +4932,11 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_tp_token:
+            {
+                res->ht_token = slot->pfunc ? slot->pfunc : spec;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
@@ -5927,6 +5933,7 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+    et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 

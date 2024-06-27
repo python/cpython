@@ -86,3 +86,8 @@
 /* New in 3.10 */
 #define Py_am_send 81
 #endif
+#if !defined(Py_LIMITED_API)
+/* New in 3.14 */
+#define Py_tp_token 82
+#define Py_TP_USE_SPEC NULL
+#endif
