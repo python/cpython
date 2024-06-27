@@ -778,7 +778,7 @@ quoted appropriately to avoid
 vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
 to use :func:`shlex.quote` for this escaping.
 
-The functions :func:`shell()` and :func:`getstatusoutput()` always use
+The functions :func:`shell` and :func:`getstatusoutput` always use
 ``shell=True``.
 
 On Windows, batch files (:file:`*.bat` or :file:`*.cmd`) may be launched by the
