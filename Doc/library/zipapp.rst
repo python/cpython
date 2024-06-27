@@ -101,7 +101,7 @@ The following options are understood:
 
 .. option:: --exclude-pattern
 
-   Accept a regex filtering files to be denied inclusion in output archive. This will 
+   Accept a regex filtering files to be denied inclusion in output archive. This will
    run second if :option:`--include-pattern` is also used.
 
 
@@ -251,8 +251,8 @@ of :option:`--exclude-pattern` and/or :option:`--include-pattern`.
 
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
-    extracting: extracted_myapp/__main__.py  
-    extracting: extracted_myapp/helper.py  
+    extracting: extracted_myapp/__main__.py
+    extracting: extracted_myapp/helper.py
 
    $ ls extracted_myapp
    __main__.py helper.py
