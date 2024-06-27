@@ -11343,34 +11343,33 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     length = Py_MIN(length, _PY_READ_MAX);
 
 
-	// TODO: check if someone read less than pipe size or malloc use new vma size
 #ifndef MS_WINDOWS
-    struct stat statbuffer;
-    fstat(fd, &statbuffer);
-    if (S_ISFIFO(statbuffer.st_mode)) {
-	static int ps;
-	if (ps == 0)
-		ps = fcntl(fd, F_GETPIPE_SZ);
-	length = Py_MIN(ps, length);
+    // check if read size is bigger than malloc limit to create new VMA
+    if(length > 131072) {
+            struct stat statbuffer;
+            fstat(fd, &statbuffer);
+            if (S_ISFIFO(statbuffer.st_mode)) {
+		// cache pipe size
+                static int ps;
+                if (ps == 0)
+                        ps = fcntl(fd, F_GETPIPE_SZ);
+                length = Py_MIN(ps, length);
+            }
     }
 #endif
 
-    // TODO: check other fd types
-    // heap default mäßig immer nur 64KiB größer gemacht
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
         return NULL;
 
     n = _Py_read(fd, PyBytes_AS_STRING(buffer), length);
 
-//    printf("%ld:%p\n", (long)getpid(),(void*)buffer);
 
     if (n == -1) {
         Py_DECREF(buffer);
         return NULL;
-    }	
+    }   
     
-    // mmap lock & page table flushes. 
     if (n != length) 
         _PyBytes_Resize(&buffer, n);
     
