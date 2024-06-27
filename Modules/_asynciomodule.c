@@ -6,6 +6,7 @@
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _Py_SetImmortalUntracked
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -3706,6 +3707,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(eager_iter);
     TaskObj *head = state->asyncio_tasks.head;
+    Py_INCREF(head);
     assert(head != NULL);
     assert(head->prev == NULL);
     TaskObj *tail = &state->asyncio_tasks.tail;
@@ -3714,10 +3716,11 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         if (add_one_task(state, tasks, (PyObject *)head, loop) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
+            Py_DECREF(head);
             return NULL;
         }
-        head = head->next;
-        assert(head != NULL);
+        Py_INCREF(head->next);
+        Py_SETREF(head, head->next);
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
@@ -3944,6 +3947,8 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
+    Py_SET_TYPE(&state->asyncio_tasks.tail, state->TaskType);
+    _Py_SetImmortalUntracked((PyObject *)&state->asyncio_tasks.tail);
     state->asyncio_tasks.head = &state->asyncio_tasks.tail;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
