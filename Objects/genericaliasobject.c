@@ -51,16 +51,15 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
+ga_repr_item(PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = NULL;
     PyObject *module = NULL;
-    PyObject *r = NULL;
     int rc;
 
     if (p == Py_Ellipsis) {
         // The Ellipsis object
-        r = PyUnicode_FromString("...");
+        rc = PyUnicodeWriter_WriteUTF8(writer, "...", 3);
         goto done;
     }
 
@@ -71,17 +70,17 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto use_repr;
     }
     if (rc < 0) {
-        goto done;
+        goto error;
     }
 
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
-        goto done;
+        goto error;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
-        goto done;
+        goto error;
     }
     if (module == NULL || module == Py_None) {
         goto use_repr;
@@ -92,45 +91,42 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         _PyUnicode_EqualToASCIIString(module, "builtins"))
     {
         // builtins don't need a module name
-        r = PyObject_Str(qualname);
+        rc = PyUnicodeWriter_WriteStr(writer, qualname);
         goto done;
     }
     else {
-        r = PyUnicode_FromFormat("%S.%S", module, qualname);
+        rc = PyUnicodeWriter_Format(writer, "%S.%S", module, qualname);
         goto done;
     }
 
+error:
+    rc = -1;
+    goto done;
+
 use_repr:
-    r = PyObject_Repr(p);
+    rc = PyUnicodeWriter_WriteRepr(writer, p);
+    goto done;
 
 done:
     Py_XDECREF(qualname);
     Py_XDECREF(module);
-    if (r == NULL) {
-        // error if any of the above PyObject_Repr/PyUnicode_From* fail
-        rc = -1;
-    }
-    else {
-        rc = _PyUnicodeWriter_WriteStr(writer, r);
-        Py_DECREF(r);
-    }
     return rc;
 }
 
 static int
-ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
+ga_repr_items_list(PyUnicodeWriter *writer, PyObject *p)
 {
     assert(PyList_CheckExact(p));
 
     Py_ssize_t len = PyList_GET_SIZE(p);
 
-    if (_PyUnicodeWriter_WriteASCIIString(writer, "[", 1) < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
         return -1;
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 return -1;
             }
         }
@@ -140,7 +136,7 @@ ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyUnicodeWriter_WriteASCIIString(writer, "]", 1) < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         return -1;
     }
 
@@ -153,49 +149,55 @@ ga_repr(PyObject *self)
     gaobject *alias = (gaobject *)self;
     Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
+    // Estimation based on the shortest format: "int[int, int, int]"
+    Py_ssize_t estimate = (len <= PY_SSIZE_T_MAX / 5) ? len * 5 : len;
+    estimate = 3 + 1 + estimate + 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(estimate);
+    if (writer == NULL) {
+        return NULL;
+    }
 
     if (alias->starred) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, "*", 1) < 0) {
+        if (PyUnicodeWriter_WriteChar(writer, '*') < 0) {
             goto error;
         }
     }
-    if (ga_repr_item(&writer, alias->origin) < 0) {
+    if (ga_repr_item(writer, alias->origin) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "[", 1) < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
         goto error;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
         if (PyList_CheckExact(p)) {
             // Looks like we are working with ParamSpec's list of type args:
-            if (ga_repr_items_list(&writer, p) < 0) {
+            if (ga_repr_items_list(writer, p) < 0) {
                 goto error;
             }
         }
-        else if (ga_repr_item(&writer, p) < 0) {
+        else if (ga_repr_item(writer, p) < 0) {
             goto error;
         }
     }
     if (len == 0) {
         // for something like tuple[()] we should print a "()"
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, "()", 2) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, "()", 2) < 0) {
             goto error;
         }
     }
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "]", 1) < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         goto error;
     }
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
+
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 

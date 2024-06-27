@@ -1586,8 +1586,8 @@ exec_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     PyObject *res = NULL;
-    PyThreadState *tstate = PyThreadState_New(interp);
-    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
+    PyThreadState *tstate =
+        _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
 
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
@@ -2014,7 +2014,6 @@ type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
     }
     assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
     _PyType_SetVersion(type, version);
-    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     Py_RETURN_NONE;
 }
 

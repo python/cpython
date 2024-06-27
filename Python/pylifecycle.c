@@ -10,7 +10,6 @@
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -678,7 +677,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
+                                               _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -2234,7 +2233,7 @@ new_interpreter(PyThreadState **tstate_p,
         goto error;
     }
 
-    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         status = _PyStatus_NO_MEMORY();
         goto error;

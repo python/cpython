@@ -3090,7 +3090,7 @@ static PyDateTime_Delta *
 look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
 {
     if (days == 0 && seconds == 0 && microseconds == 0
-            && type == zero_delta.ob_base.ob_type)
+            && type == Py_TYPE(&zero_delta))
     {
         return &zero_delta;
     }
@@ -7295,6 +7295,12 @@ _datetime_exec(PyObject *module)
      */
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
+
+    if (reloading) {
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
+            PyType_Modified(capi_types[i]);
+        }
+    }
 
     if (set_current_module(interp, module) < 0) {
         goto error;

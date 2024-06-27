@@ -29,13 +29,10 @@ race_top:_PyEval_EvalFrameDefault
 race_top:assign_version_tag
 race_top:insertdict
 race_top:lookup_tp_dict
-race_top:PyMember_GetOne
-race_top:PyMember_SetOne
 race_top:new_reference
 race_top:set_contains_key
 # https://gist.github.com/colesbury/d13d033f413b4ad07929d044bed86c35
 race_top:set_discard_entry
-race_top:set_inheritable
 race_top:_PyDict_CheckConsistency
 race_top:_Py_dict_lookup_threadsafe
 race_top:_multiprocessing_SemLock_acquire_impl

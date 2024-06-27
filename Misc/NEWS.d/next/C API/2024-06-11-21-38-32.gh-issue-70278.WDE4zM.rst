@@ -1,0 +1,4 @@
+:c:func:`PyUnicode_FromFormat` no longer produces the ending ``\ufffd``
+character for truncated C string when use precision with ``%s`` and ``%V``.
+It now truncates the string before the start of truncated multibyte
+sequences.
