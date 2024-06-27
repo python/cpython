@@ -11,6 +11,7 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
+
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
     CFLAGS = [
@@ -25,8 +26,11 @@ if not support.MS_WINDOWS:
             '-Werror=declaration-after-statement',
         )
 else:
-    # Don't pass any compiler flag to MSVC
-    CFLAGS = []
+    # MSVC compiler flags
+    CFLAGS = [
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
 
 
 def main():
