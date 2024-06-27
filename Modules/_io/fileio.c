@@ -54,6 +54,9 @@
 #  define SMALLCHUNK BUFSIZ
 #endif
 
+/* Size at which a buffer is considered "large" and behavior should change to
+   avoid excessive memory allocation */
+#define LARGE_BUFFER_CUTOFF_SIZE 65536
 
 /*[clinic input]
 module _io
@@ -689,7 +692,7 @@ new_buffersize(fileio *self, size_t currentsize)
        giving us amortized linear-time behavior.  For bigger sizes, use a
        less-than-double growth factor to avoid excessive allocation. */
     assert(currentsize <= PY_SSIZE_T_MAX);
-    if (currentsize > 65536)
+    if (currentsize > LARGE_BUFFER_CUTOFF_SIZE)
         addend = currentsize >> 3;
     else
         addend = 256 + currentsize;
@@ -739,7 +742,7 @@ _io_FileIO_readall_impl(fileio *self)
         then calls readall() to get the rest, which would result in allocating
         more than required. Guard against that for larger files where we expect
         the I/O time to dominate anyways while keeping small files fast. */
-        if (bufsize > 65536) {
+        if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
             Py_BEGIN_ALLOW_THREADS
             _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
