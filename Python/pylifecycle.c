@@ -2898,26 +2898,27 @@ fatal_error_exit(int status)
 }
 
 static inline int
-acquire_dict_lock_for_dump(PyObject *obj) {
+acquire_dict_lock_for_dump(PyObject *obj)
+{
 #ifdef Py_GIL_DISABLED
     PyMutex *mutex = &obj->ob_mutex;
     if (_PyMutex_LockTimed(mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        return 0;
+        return 1;
     }
-    return -1;
-#else
     return 0;
+#else
+    return 1;
 #endif
 }
 
 static inline void
-release_dict_lock_for_dump(PyObject *obj) {
+release_dict_lock_for_dump(PyObject *obj)
+{
 #ifdef Py_GIL_DISABLED
     PyMutex *mutex = &obj->ob_mutex;
-    uint8_t expected = _Py_LOCKED;
     // We can not call PyMutex_Unlock because it's not async-signal-safe.
-    // So not to wake up other threads, we just use a simple CAS in here.
-    _Py_atomic_compare_exchange_uint8(&mutex->_bits, &expected, _Py_UNLOCKED);
+    // So not to wake up other threads, we just use a simple atomic store in here.
+    _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
 #else
     return;
 #endif
@@ -2949,7 +2950,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        if (acquire_dict_lock_for_dump(interp->sysdict) < 0) {
+        if (!acquire_dict_lock_for_dump(interp->sysdict)) {
             // If we cannot acquire the lock, just don't dump the list of extension modules.
             return;
         }
@@ -2972,7 +2973,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    if (acquire_dict_lock_for_dump(modules) < 0) {
+    if (!acquire_dict_lock_for_dump(modules)) {
         // If we cannot acquire the lock, just don't dump the list of extension modules.
         return;
     }
