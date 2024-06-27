@@ -620,7 +620,7 @@ extern "C" {
 //
 // Usage example:
 //
-//     switch (value)
+//     switch (value) {
 //     case 1: _Py_FALLTHROUGH;
 //     case 2: code; break;
 //     }
