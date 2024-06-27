@@ -5101,8 +5101,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     }
     int slot_offset = pyslot_offsets[slot].slot_offset;
 
-    if (slot_offset >= (int)sizeof(PyTypeObject)) {
-        assert(slot == Py_tp_token);  // REMOVE ME LATER
+    if (slot_offset >= sizeof(PyTypeObject)) {
         if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
             return NULL;
         }
