@@ -121,6 +121,14 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+tracemalloc
+-----------
+
+* Add :func:`tracemalloc.dump_snapshot` and :func:`tracemalloc.load_snapshot`
+  functions to dump and load a snapshot. Implemented in C, these functions
+  don't allocate memory in Python, and so don't add traces to the snapshot.
+  (Contributed by Victor Stinner in :gh:`121120`.)
+
 
 Optimizations
 =============
@@ -135,6 +143,15 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+Pending Removal in Python 3.16
+------------------------------
+
+* :mod:`tracemalloc`: The :meth:`~tracemalloc.Snapshot.dump` and
+  :meth:`~tracemalloc.Snapshot.load` methods of :class:`tracemalloc.Snapshot`
+  are deprecated. Use :func:`tracemalloc.dump_snapshot` and
+  :func:`tracemalloc.load_snapshot` functions instead.
+  (Contributed by Victor Stinner in :gh:`121120`.)
 
 
 Removed

@@ -4,10 +4,11 @@ import fnmatch
 import linecache
 import os.path
 import pickle
+import struct
 
 # Import types and functions implemented in C
 from _tracemalloc import *
-from _tracemalloc import _get_object_traceback, _get_traces
+from _tracemalloc import _get_object_traceback, _get_traces, _dump
 
 
 def _format_size(size, sign):
@@ -276,7 +277,8 @@ class Trace:
     __slots__ = ("_trace",)
 
     def __init__(self, trace):
-        # trace is a tuple: (domain: int, size: int, traceback: tuple).
+        # trace is a tuple:
+        # (domain: int, size: int, traceback: tuple, total_nframe: int).
         # See Traceback constructor for the format of the traceback tuple.
         self._trace = trace
 
@@ -427,6 +429,12 @@ class Snapshot:
         """
         Write the snapshot into a file.
         """
+        import warnings
+        warnings._deprecated("Snapshot.dump",
+                             "{name} is deprecated and will be removed in "
+                             "Python {remove}. Use dump_snapshot() instead",
+                             remove=(3, 16))
+
         with open(filename, "wb") as fp:
             pickle.dump(self, fp, pickle.HIGHEST_PROTOCOL)
 
@@ -435,6 +443,12 @@ class Snapshot:
         """
         Load a snapshot from a file.
         """
+        import warnings
+        warnings._deprecated("Snapshot.load",
+                             "{name} is deprecated and will be removed in "
+                             "Python {remove}. Use load_snapshot() instead",
+                             remove=(3, 16))
+
         with open(filename, "rb") as fp:
             return pickle.load(fp)
 
@@ -558,3 +572,85 @@ def take_snapshot():
     traces = _get_traces()
     traceback_limit = get_traceback_limit()
     return Snapshot(traces, traceback_limit)
+
+
+def dump_snapshot(filename):
+    _dump(filename)
+
+
+assert struct.calcsize('>I') == 4
+assert struct.calcsize('>Q') == 8
+
+class _SnapshotReader:
+    def __init__(self, fp):
+        self.fp = fp
+        self._intern_frames = {}
+
+    def read(self, size):
+        data = self.fp.read(size)
+        if len(data) != size:
+            raise ValueError("truncated file")
+        return data
+
+    def read_uint32(self):
+        data = self.read(4)
+        return struct.unpack('>I', data)[0]
+
+    def read_uint64(self):
+        data = self.read(8)
+        return struct.unpack('>Q', data)[0]
+
+    def read_str(self):
+        size = self.read_uint32()
+        data = self.read(size)
+        return data.decode('utf8')
+
+    def read_frame(self):
+        filename = self.read_str()
+        lineno = self.read_uint32()
+        frame = (filename, lineno)
+        key = frame
+        try:
+            return self._intern_frames[key]
+        except KeyError:
+            pass
+
+        self._intern_frames[key] = frame
+        return frame
+
+    def read_traceback(self):
+        nframe = self.read_uint32()
+        total_nframe = self.read_uint32()
+        frames = []
+        for _ in range(nframe):
+            frame = self.read_frame()
+            frames.append(frame)
+        return (tuple(frames), total_nframe)
+
+    def read_trace(self):
+        domain = self.read_uint64()
+        size = self.read_uint64()
+        trace_traceback, total_nframe = self.read_traceback()
+        return (domain, size, trace_traceback, total_nframe)
+
+    def read_snapshot(self):
+        self.fp.seek(0, 2)
+        size = self.fp.tell()
+        self.fp.seek(0)
+
+        header = self.read(11)
+        if header != b'tracemalloc':
+            raise ValueError("invalid header")
+        traceback_limit = self.read_uint32()
+
+        traces = []
+        while self.fp.tell() < size:
+            trace = self.read_trace()
+            traces.append(trace)
+
+        return Snapshot(tuple(traces), traceback_limit)
+
+
+def load_snapshot(filename):
+    with open(filename, "rb") as fp:
+        return _SnapshotReader(fp).read_snapshot()

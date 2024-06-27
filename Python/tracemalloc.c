@@ -1502,6 +1502,219 @@ finally:
     return get_traces.list;
 }
 
+typedef struct {
+    _Py_hashtable_t *traces;
+    _Py_hashtable_t *domains;
+    FILE *fp;
+    unsigned int domain;
+} dump_t;
+
+static int
+tracemalloc_write(FILE *fp, const char *data, size_t len)
+{
+    size_t res = fwrite(data, 1, len, fp);
+    if (res != len) {
+        PyErr_SetString(PyExc_ValueError, "write failed");
+        return -1;
+    }
+    return 0;
+}
+
+static int
+tracemalloc_write_uint32(FILE *fp, uint32_t value)
+{
+    // Encode to big endian
+    char bytes[sizeof(uint32_t)];
+    bytes[0] = (char)((value >> 24) & 0xff);
+    bytes[1] = (char)((value >> 16) & 0xff);
+    bytes[2] = (char)((value >>  8) & 0xff);
+    bytes[3] = (char)( value        & 0xff);
+    return tracemalloc_write(fp, bytes, sizeof(bytes));
+}
+
+static int
+tracemalloc_write_uint64(FILE *fp, uint64_t value)
+{
+    // Encode to big endian
+    char bytes[sizeof(uint64_t)];
+    bytes[0] = (char)((value >> 56) & 0xff);
+    bytes[1] = (char)((value >> 48) & 0xff);
+    bytes[2] = (char)((value >> 40) & 0xff);
+    bytes[3] = (char)((value >> 32) & 0xff);
+    bytes[4] = (char)((value >> 24) & 0xff);
+    bytes[5] = (char)((value >> 16) & 0xff);
+    bytes[6] = (char)((value >>  8) & 0xff);
+    bytes[7] = (char)( value        & 0xff);
+    return tracemalloc_write(fp, bytes, sizeof(bytes));
+}
+
+static int
+tracemalloc_write_str(FILE *fp, PyObject *str)
+{
+    Py_ssize_t len;
+    const char *utf8 = PyUnicode_AsUTF8AndSize(str, &len);
+    if (utf8 == NULL) {
+        return -1;
+    }
+    if (len > UINT32_MAX) {
+        // Hope that filename longer than 4 GiB are rare enough
+        PyErr_SetString(PyExc_ValueError, "filename is too long");
+        return -1;
+    }
+    if (tracemalloc_write_uint32(fp, (size_t)len) < 0) {
+        return -1;
+    }
+    return tracemalloc_write(fp, utf8, len);
+}
+
+static int
+tracemalloc_write_frame(FILE *fp, frame_t *frame)
+{
+    if (tracemalloc_write_str(fp, frame->filename) < 0) {
+        return -1;
+    }
+    if (tracemalloc_write_uint32(fp, frame->lineno) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+tracemalloc_write_traceback(FILE *fp, traceback_t *traceback)
+{
+    if (tracemalloc_write_uint32(fp, traceback->nframe) < 0) {
+        return -1;
+    }
+    if (tracemalloc_write_uint32(fp, traceback->total_nframe) < 0) {
+        return -1;
+    }
+    for (int i=0; i < traceback->nframe; i++) {
+        if (tracemalloc_write_frame(fp, &traceback->frames[i]) < 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+tracemalloc_dump_trace(_Py_hashtable_t *traces,
+                       const void *key, const void *value,
+                       void *user_data)
+{
+    dump_t *dump = user_data;
+    const trace_t *trace = (const trace_t *)value;
+    FILE *fp = dump->fp;
+
+    if (tracemalloc_write_uint64(fp, dump->domain) < 0) {
+        return 1;
+    }
+    if (tracemalloc_write_uint64(fp, trace->size) < 0) {
+        return 1;
+    }
+    if (tracemalloc_write_traceback(fp, trace->traceback) < 0) {
+        return 1;
+    }
+    return 0;
+}
+
+static int
+tracemalloc_dump_domain(_Py_hashtable_t *domains,
+                        const void *key, const void *value,
+                        void *user_data)
+{
+    dump_t *dump = user_data;
+
+    unsigned int domain = (unsigned int)FROM_PTR(key);
+    _Py_hashtable_t *traces = (_Py_hashtable_t *)value;
+
+    dump->domain = domain;
+    return _Py_hashtable_foreach(traces,
+                                 tracemalloc_dump_trace,
+                                 dump);
+}
+
+int
+_PyTraceMalloc_Dump(const char *filename)
+{
+    if (!tracemalloc_config.tracing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "the tracemalloc module must be tracing memory "
+                        "allocations to dump a snapshot");
+        return -1;
+    }
+
+    FILE *fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    dump_t dump;
+    dump.domain = DEFAULT_DOMAIN;
+    dump.traces = NULL;
+    dump.domains = NULL;
+    dump.fp = fp;
+
+    int return_value = -1;
+
+    // Copy all traces so tracemalloc_dump_trace() doesn't have to disable
+    // temporarily tracemalloc which would impact other threads and so would
+    // miss allocations while dump() is called.
+    TABLES_LOCK();
+    dump.traces = tracemalloc_copy_traces(tracemalloc_traces);
+    TABLES_UNLOCK();
+    if (dump.traces == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+
+    TABLES_LOCK();
+    dump.domains = tracemalloc_copy_domains(tracemalloc_domains);
+    TABLES_UNLOCK();
+    if (dump.domains == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+
+    // File header
+    if (tracemalloc_write(dump.fp, "tracemalloc", 11) < 0) {
+        goto done;
+    }
+    int limit = _PyTraceMalloc_GetTracebackLimit();
+    if (tracemalloc_write_uint32(dump.fp, limit) < 0) {
+        goto done;
+    }
+
+    // Write traces
+    set_reentrant(1);
+    int err = _Py_hashtable_foreach(dump.traces,
+                                    tracemalloc_dump_trace,
+                                    &dump);
+    if (!err) {
+        err = _Py_hashtable_foreach(dump.domains,
+                                    tracemalloc_dump_domain,
+                                    &dump);
+    }
+    set_reentrant(0);
+    if (err) {
+        goto done;
+    }
+
+    return_value = 0;
+    goto done;
+
+done:
+    if (dump.traces != NULL) {
+        _Py_hashtable_destroy(dump.traces);
+    }
+    if (dump.domains != NULL) {
+        _Py_hashtable_destroy(dump.domains);
+    }
+    fclose(dump.fp);
+
+    return return_value;
+}
+
 PyObject *
 _PyTraceMalloc_GetObjectTraceback(PyObject *obj)
 /*[clinic end generated code: output=41ee0553a658b0aa input=29495f1b21c53212]*/
