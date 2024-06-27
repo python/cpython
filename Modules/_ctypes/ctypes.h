@@ -102,6 +102,7 @@ get_module_state_by_def(PyTypeObject *cls)
 }
 
 
+extern PyType_Spec pyctype_type_spec;
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
@@ -505,6 +506,23 @@ _PyStgInfo_FromType_NoState(PyObject *type)
     size_t type_basicsize =_Py_SIZE_ROUND_UP(PyType_Type.tp_basicsize,
                                              ALIGNOF_MAX_ALIGN_T);
     return (StgInfo *)((char *)type + type_basicsize);
+}
+
+static inline StgInfo *
+_PyStgInfo_FromType_NoState2(PyObject *type)
+{
+    PyTypeObject *PyCType_Type;
+    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
+        return NULL;
+    }
+    if (PyCType_Type == NULL) {
+        PyErr_SetString(PyExc_TypeError, "PyCType_Type expected");
+        return NULL;
+    }
+    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
+    Py_DECREF(PyCType_Type);
+    assert(info == _PyStgInfo_FromType_NoState(type));
+    return info;
 }
 
 // Initialize StgInfo on a newly created type

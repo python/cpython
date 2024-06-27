@@ -454,7 +454,7 @@ class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
@@ -485,7 +485,7 @@ ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
@@ -498,7 +498,7 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    StgInfo *info = _PyStgInfo_FromType_NoState(self);
+    StgInfo *info = _PyStgInfo_FromType_NoState2(self);
     if (!info) {
         PyErr_WriteUnraisable(self);
     }
@@ -564,12 +564,13 @@ static PyType_Slot ctype_type_slots[] = {
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
     {Py_tp_methods, ctype_methods},
+    {Py_tp_token, Py_TP_USE_SPEC},
     // Sequence protocol.
     {Py_sq_repeat, CType_Type_repeat},
     {0, NULL},
 };
 
-static PyType_Spec pyctype_type_spec = {
+PyType_Spec pyctype_type_spec = {
     .name = "_ctypes.CType_Type",
     .basicsize = -(Py_ssize_t)sizeof(StgInfo),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
