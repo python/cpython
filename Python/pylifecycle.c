@@ -2949,19 +2949,18 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        if (acquire_dict_lock_for_dump(interp->sysdict) == 0) {
-            while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
-                if (PyUnicode_Check(key)
-                    && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
-                    stdlib_module_names = value;
-                    break;
-                }
-            }
-            release_dict_lock_for_dump(interp->sysdict);
-        }
-        else {
+        if (acquire_dict_lock_for_dump(interp->sysdict) < 0) {
+            // If we cannot acquire the lock, just don't dump the list of extension modules.
             return;
         }
+        while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
+            if (PyUnicode_Check(key)
+                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+                stdlib_module_names = value;
+                break;
+            }
+        }
+        release_dict_lock_for_dump(interp->sysdict);
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
@@ -2973,53 +2972,52 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    if (acquire_dict_lock_for_dump(modules) == 0) {
-        while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
-            if (!PyUnicode_Check(key)) {
-                continue;
-            }
-            if (!_PyModule_IsExtension(value)) {
-                continue;
-            }
-            // Use the module name from the sys.modules key,
-            // don't attempt to get the module object name.
-            if (stdlib_module_names != NULL) {
-                int is_stdlib_ext = 0;
-
-                Py_ssize_t i = 0;
-                PyObject *item;
-                Py_hash_t hash;
-                // if stdlib_module_names is not NULL, it is always a frozenset.
-                while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
-                    if (PyUnicode_Check(item)
-                        && PyUnicode_Compare(key, item) == 0)
-                    {
-                        is_stdlib_ext = 1;
-                        break;
-                    }
-                }
-                if (is_stdlib_ext) {
-                    // Ignore stdlib extension
-                    continue;
-                }
-            }
-
-            if (header) {
-                PUTS(fd, "\nExtension modules: ");
-                header = 0;
-            }
-            else {
-                PUTS(fd, ", ");
-            }
-
-            _Py_DumpASCII(fd, key);
-            count++;
-        }
-        release_dict_lock_for_dump(modules);
-    }
-    else {
+    if (acquire_dict_lock_for_dump(modules) < 0) {
+        // If we cannot acquire the lock, just don't dump the list of extension modules.
         return;
     }
+    while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
+        if (!PyUnicode_Check(key)) {
+            continue;
+        }
+        if (!_PyModule_IsExtension(value)) {
+            continue;
+        }
+        // Use the module name from the sys.modules key,
+        // don't attempt to get the module object name.
+        if (stdlib_module_names != NULL) {
+            int is_stdlib_ext = 0;
+
+            Py_ssize_t i = 0;
+            PyObject *item;
+            Py_hash_t hash;
+            // if stdlib_module_names is not NULL, it is always a frozenset.
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
+                if (PyUnicode_Check(item)
+                    && PyUnicode_Compare(key, item) == 0)
+                {
+                    is_stdlib_ext = 1;
+                    break;
+                }
+            }
+            if (is_stdlib_ext) {
+                // Ignore stdlib extension
+                continue;
+            }
+        }
+
+        if (header) {
+            PUTS(fd, "\nExtension modules: ");
+            header = 0;
+        }
+        else {
+            PUTS(fd, ", ");
+        }
+
+        _Py_DumpASCII(fd, key);
+        count++;
+    }
+    release_dict_lock_for_dump(modules);
 
     if (count) {
         PUTS(fd, " (total: ");
