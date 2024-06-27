@@ -269,7 +269,7 @@ underlying :class:`Popen` interface can be used directly.
    Run a shell command. Wait for command to complete, then return a
    :class:`CompletedProcess` instance.
 
-   *cmd* type must :class:`str`.
+   The *cmd* must be a :class:`str`.
 
    See the :func:`run` function documentation for optional parameters.
 
