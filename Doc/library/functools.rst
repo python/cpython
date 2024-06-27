@@ -390,8 +390,8 @@ The :mod:`functools` module defines the following functions:
 
 .. data:: Placeholder
 
-   A singleton object used as a sentinel to represent a
-   "gap" in positional arguments when calling :func:`partial`
+   A singleton object used as a sentinel to reserve a place
+   for positional arguments when calling :func:`partial`
    and :func:`partialmethod`.
 
 .. class:: partialmethod(func, /, *args, **keywords)
