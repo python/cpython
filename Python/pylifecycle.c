@@ -2919,8 +2919,6 @@ release_dict_lock_for_dump(PyObject *obj)
     // We can not call PyMutex_Unlock because it's not async-signal-safe.
     // So not to wake up other threads, we just use a simple atomic store in here.
     _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
-#else
-    return;
 #endif
 }
 
