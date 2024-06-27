@@ -3036,6 +3036,30 @@ fatal_error_exit(int status)
     }
 }
 
+static inline int
+acquire_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    if (_PyMutex_LockTimed(mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        return 1;
+    }
+    return 0;
+#else
+    return 1;
+#endif
+}
+
+static inline void
+release_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    // We can not call PyMutex_Unlock because it's not async-signal-safe.
+    // So not to wake up other threads, we just use a simple atomic store in here.
+    _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
+#endif
+}
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
 // (sys.stdlib_module_names), into fd file descriptor.
@@ -3063,13 +3087,18 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (!acquire_dict_lock_for_dump(interp->sysdict)) {
+            // If we cannot acquire the lock, just don't dump the list of extension modules.
+            return;
+        }
+        while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
             if (PyUnicode_Check(key)
                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
                 stdlib_module_names = value;
                 break;
             }
         }
+        release_dict_lock_for_dump(interp->sysdict);
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
@@ -3081,7 +3110,11 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
+    if (!acquire_dict_lock_for_dump(modules)) {
+        // If we cannot acquire the lock, just don't dump the list of extension modules.
+        return;
+    }
+    while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
         if (!PyUnicode_Check(key)) {
             continue;
         }
@@ -3122,6 +3155,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         _Py_DumpASCII(fd, key);
         count++;
     }
+    release_dict_lock_for_dump(modules);
 
     if (count) {
         PUTS(fd, " (total: ");
