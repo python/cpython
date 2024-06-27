@@ -1177,10 +1177,16 @@ class CAPITest(unittest.TestCase):
         # no token in static types
         STATIC = type(1)
         self.assertEqual(get_token(STATIC), 0)
+        found1, found2 = getbase(STATIC, tokenA1)
+        self.assertIs(found1, None)
+        self.assertIs(found1, found2)
 
         # no token in pure subtypes
         class A2(A1): pass
         self.assertEqual(get_token(A2), 0)
+        found1, found2 = getbase(A2, tokenA1)
+        self.assertIs(found1, A1)
+        self.assertIs(found1, found2)
 
         # find A1
         class Z(STATIC, B1, A2): pass
