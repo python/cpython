@@ -1923,6 +1923,9 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
     assert(tstate->interp->runtime == runtime);
     assert(tstate->thread_id == PyThread_get_thread_ident());
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    PyThreadState *main_tstate = runtime->main_tstate;
+
+    /* First we report unexpected Py_Finalize() usage. */
 
 #define PRINT_ERROR(msg)                                \
     if (args->verbose) {                                \
@@ -1931,9 +1934,10 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 
     /* The main tstate is set by Py_Initialize(), but can be unset
      * or even replaced in unlikely cases. */
-    PyThreadState *main_tstate = runtime->main_tstate;
     if (main_tstate == NULL) {
         PRINT_ERROR("main thread state not set");
+        /* Ideally, we would make sure a main tstate is set.
+           For now we leave it unset. */
     }
     else {
         assert(main_tstate->thread_id == runtime->main_thread);
@@ -1949,48 +1953,51 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
         }
     }
 
-    if (_Py_IsMainThread()) {
+    if (!_Py_IsMainThread()) {
+        PRINT_ERROR("expected to be in the main thread");
+    }
+
+    if (tstate->interp != main_interp) {
+        PRINT_ERROR("expected main interpreter to be active");
+    }
+
+#undef PRINT_ERROR
+
+    /* Then we decide the thread state we should use for finalization. */
+
+    PyThreadState *final_tstate = tstate;
+    if (_Py_IsMainThread() && main_tstate != NULL) {
         if (tstate != main_tstate) {
             /* This implies that Py_Finalize() was called while
                a non-main interpreter was active or while the main
                tstate was temporarily swapped out with another.
                Neither case should be allowed, but, until we get around
                to fixing that (and Py_Exit()), we're letting it go. */
-            if (tstate->interp != main_interp) {
-                PRINT_ERROR("expected main interpreter to be active");
-            }
-            (void)PyThreadState_Swap(main_tstate);
+            final_tstate = main_tstate;
         }
     }
     else {
-        PRINT_ERROR("expected to be in the main thread");
         /* This is another unfortunate case where Py_Finalize() was
            called when it shouldn't have been.  We can't simply switch
            over to the main thread.  At the least, however, we can make
            sure the main interpreter is active. */
-        if (!_Py_IsMainInterpreter(tstate->interp)) {
-            PRINT_ERROR("expected main interpreter to be active");
+        if (tstate->interp != main_interp) {
             /* We don't go to the trouble of updating runtime->main_tstate
                since it will be dead soon anyway. */
-            main_tstate =
+            final_tstate =
                 _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
-            if (main_tstate != NULL) {
-                _PyThreadState_Bind(main_tstate);
-                (void)PyThreadState_Swap(main_tstate);
+            if (final_tstate != NULL) {
+                _PyThreadState_Bind(final_tstate);
             }
-            else {
-                /* Fall back to the current tstate.  It's better than nothing. */
-                main_tstate = tstate;
-            }
+            /* Otherwise we fall back to the current tstate.
+               It's better than nothing. */
         }
     }
-    assert(main_tstate != NULL);
+    assert(final_tstate != NULL);
 
-    /* We might want to warn if main_tstate->current_frame != NULL. */
+    /* We might want to warn if final_tstate->current_frame != NULL. */
 
-    return main_tstate;
-
-#undef PRINT_ERROR
+    return final_tstate;
 }
 
 int
@@ -2003,8 +2010,11 @@ _Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
         return status;
     }
 
-    /* Get final thread state pointer. */
+    /* Get/attach the final thread state pointer. */
     PyThreadState *tstate = resolve_final_tstate(runtime, args);
+    if (tstate != _PyThreadState_GET()) {
+        (void)PyThreadState_Swap(tstate);
+    }
 
     // Block some operations.
     tstate->interp->finalizing = 1;
