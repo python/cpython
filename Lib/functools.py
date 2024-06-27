@@ -300,9 +300,11 @@ class _PlaceholderType:
 Placeholder = _PlaceholderType()
 
 def _partial_prepare_merger(args):
+    nargs = len(args)
+    if not nargs:
+        return 0, None
     order = list()
-    nargs = j = len(args)
-    i = 0
+    i, j = 0, nargs
     for a in args:
         if a is Placeholder:
             order.append(j)
@@ -311,9 +313,7 @@ def _partial_prepare_merger(args):
             order.append(i)
         i += 1
     phcount = j - nargs
-    merger = None
-    if phcount:
-        merger = itemgetter(*order)
+    merger = itemgetter(*order) if phcount else None
     return phcount, merger
 
 def _partial_prepare_new(cls, func, args, keywords):
@@ -321,35 +321,27 @@ def _partial_prepare_new(cls, func, args, keywords):
         raise TypeError("trailing Placeholders are not allowed")
     if isinstance(func, cls):
         pto_phcount = func._phcount
-        if pto_phcount and args:
-            # merge args with args of `func` which is `partial`
-            nargs = len(args)
-            tot_args = func.args + args
-            if nargs < pto_phcount:
-                tot_args += (Placeholder,) * (pto_phcount - nargs)
-            tot_args = func._merger(tot_args)
-            if nargs > pto_phcount:
-                tot_args += args[pto_phcount:]
+        tot_args = func.args
+        if args:
+            tot_args += args
+            if pto_phcount:
+                # merge args with args of `func` which is `partial`
+                nargs = len(args)
+                if nargs < pto_phcount:
+                    tot_args += (Placeholder,) * (pto_phcount - nargs)
+                tot_args = func._merger(tot_args)
+                if nargs > pto_phcount:
+                    tot_args += args[pto_phcount:]
             phcount, merger = _partial_prepare_merger(tot_args)
-        elif pto_phcount:
-            # and not args
-            tot_args = func.args
-            phcount = pto_phcount
-            merger = func._merger
-        elif args:
-            # and not pto_phcount
-            tot_args = func.args + args
-            phcount, merger = _partial_prepare_merger(tot_args)
-        else:
-            # not pto_phcount and not args
-            tot_args = func.args
+        elif pto_phcount:   # not args
+            phcount, merger = pto_phcount, func._merger
+        else:               # not args and not pto_phcount
             phcount, merger = 0, None
         keywords = {**func.keywords, **keywords}
         func = func.func
-    elif tot_args := args:
-        phcount, merger = _partial_prepare_merger(tot_args)
     else:
-        phcount, merger = 0, None
+        tot_args = args
+        phcount, merger = _partial_prepare_merger(tot_args)
     return func, tot_args, keywords, phcount, merger
 
 def _partial_repr(self):
@@ -415,12 +407,9 @@ class partial:
                 (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
-        if args:
-            if args[-1] is Placeholder:
-                raise TypeError("trailing Placeholders are not allowed")
-            phcount, merger = _partial_prepare_merger(args)
-        else:
-            phcount, merger = 0, None
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
+        phcount, merger = _partial_prepare_merger(args)
 
         args = tuple(args) # just in case it's a subclass
         if kwds is None:
