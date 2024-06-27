@@ -2221,3 +2221,16 @@ class Popen:
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
+
+
+def shell(cmd, **kwargs):
+    """
+    Run a shell command.
+
+    Read the Security Considerations section of the documentation before using
+    this function.
+    """
+    if not isinstance(cmd, (str, bytes)):
+        raise TypeError("cmd type must be str or bytes")
+
+    return run(cmd, shell=True, **kwargs)

@@ -264,6 +264,18 @@ underlying :class:`Popen` interface can be used directly.
         *stdout* and *stderr* attributes added
 
 
+.. function:: shell(cmd, **kwargs)
+
+   Run a shell command. Wait for command to complete, then return a
+   :class:`CompletedProcess` instance.
+
+   See the :func:`run` function documentation for optional parameters.
+
+   Read the `Security Considerations`_ section before using this function.
+
+   .. versionadded:: 3.14
+
+
 .. _frequently-used-arguments:
 
 Frequently Used Arguments
@@ -763,6 +775,9 @@ quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
 to use :func:`shlex.quote` for this escaping.
+
+The functions :func:`shell()` and :func:`getstatusoutput()` always use
+``shell=True``.
 
 On Windows, batch files (:file:`*.bat` or :file:`*.cmd`) may be launched by the
 operating system in a system shell regardless of the arguments passed to this
