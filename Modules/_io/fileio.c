@@ -754,7 +754,7 @@ _io_FileIO_readall_impl(fileio *self)
             Py_END_ALLOW_THREADS
 
             if (end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
-                bufsize = bufsize - (size_t)(pos);
+                bufsize = bufsize - Py_SAFE_DOWNCAST(pos, Py_off_t, size_t);
             }
         }
     }
