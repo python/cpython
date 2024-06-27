@@ -1954,6 +1954,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #ifdef NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G') {
             /* 0-pad year with century as necessary */
+            year_long = PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0));
+            if (year_long == -1 && PyErr_Occurred()) {
+                goto Done;
+            }
+            if (year_long > 1000) {
+                goto PassThrough;
+            }
             if (ch == 'G') {
                 year_str = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
                 if (year_str == NULL) {
@@ -1964,16 +1971,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 if (year == NULL) {
                     goto Done;
                 }
-            }
-            else {
-                year = PyTuple_GET_ITEM(timetuple, 0);
-            }
-            year_long = PyLong_AsLong(year);
-            if (ch == 'G') {
+                year_long = PyLong_AsLong(year);
                 Py_DECREF(year);
-            }
-            if (year_long == -1 && PyErr_Occurred()) {
-                goto Done;
+                if (year_long == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
             }
             ntoappend = sprintf(year_formatted, "%04ld", year_long);
             ptoappend = year_formatted;
@@ -1981,6 +1983,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #endif
         else {
             /* percent followed by something else */
+#ifdef NORMALIZE_CENTURY
+ PassThrough:
+#endif
             ptoappend = pin - 2;
             ntoappend = 2;
         }
