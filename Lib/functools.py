@@ -350,6 +350,15 @@ def _partial_prepare_new(cls, func, args, keywords):
         merger = _partial_prepare_merger(tot_args)
     return func, tot_args, keywords, phcount, merger
 
+def _partial_repr(self):
+    cls = type(self)
+    module = cls.__module__
+    qualname = cls.__qualname__
+    args = [repr(self.func)]
+    args.extend(map(repr, self.args))
+    args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+    return f"{module}.{qualname}({', '.join(args)})"
+
 # Purely functional, no descriptor behaviour
 class partial:
     """New function with partial application of the given arguments
@@ -387,15 +396,7 @@ class partial:
         keywords = {**self.keywords, **keywords}
         return self.func(*pto_args, *args, **keywords)
 
-    @recursive_repr()
-    def __repr__(self):
-        cls = type(self)
-        module = cls.__module__
-        qualname = cls.__qualname__
-        args = [repr(self.func)]
-        args.extend(map(repr, self.args))
-        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+    __repr__ = recursive_repr()(_partial_repr)
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -467,14 +468,7 @@ class partialmethod:
         self._merger = merger
         return self
 
-    def __repr__(self):
-        cls = type(self)
-        module = cls.__module__
-        qualname = cls.__qualname__
-        args = [repr(self.func)]
-        args.extend(map(repr, self.args))
-        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
-        return f"{module}.{qualname}({', '.join(args)})"
+    __repr__ = _partial_repr
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
