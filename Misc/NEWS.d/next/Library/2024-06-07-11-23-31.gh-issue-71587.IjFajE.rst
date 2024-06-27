@@ -1,2 +1,0 @@
-Fix crash in C version of :meth:`datetime.datetime.strptime` when called again
-on the restarted interpreter.
