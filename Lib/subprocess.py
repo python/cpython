@@ -2230,7 +2230,7 @@ def shell(cmd, **kwargs):
     Read the Security Considerations section of the documentation before using
     this function.
     """
-    if not isinstance(cmd, (str, bytes)):
-        raise TypeError("cmd type must be str or bytes")
+    if not isinstance(cmd, str):
+        raise TypeError("cmd type must be str")
 
     return run(cmd, shell=True, **kwargs)

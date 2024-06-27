@@ -1825,17 +1825,14 @@ class RunFuncTestCase(BaseTestCase):
         self.assertTrue(lines[2].startswith(b"<string>:3: EncodingWarning: "))
 
     def test_shell(self):
-        # Unicode command
+        # Test basic echo command
         proc = subprocess.shell("echo Python", stdout=subprocess.PIPE, text=True)
         self.assertEqual(proc.returncode, 0)
         self.assertEqual(proc.stdout.rstrip(), "Python")
 
-        # Bytes command
-        proc = subprocess.shell(b"echo Python", stdout=subprocess.PIPE, text=True)
-        self.assertEqual(proc.returncode, 0)
-        self.assertEqual(proc.stdout.rstrip(), "Python")
-
-        # cmd type must be str or bytes, not list
+        # cmd type must be str
+        with self.assertRaises(TypeError):
+            subprocess.shell(b"echo Python")
         with self.assertRaises(TypeError):
             subprocess.shell(["echo", "Python"])
 
