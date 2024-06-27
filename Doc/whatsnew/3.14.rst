@@ -292,6 +292,12 @@ Porting to Python 3.14
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and D. Grigonis in :gh:`121027`.)
 
 Build Changes
 =============
