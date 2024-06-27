@@ -186,12 +186,10 @@ class RotatingFileHandler(BaseRotatingHandler):
         if not self.delay:
             self.stream = self._open()
 
-    def shouldRollover(self, record):
+    def shouldRollover(self, _):
         """
-        Determine if rollover should occur.
-
-        Basically, see if the supplied record would cause the file to exceed
-        the size limit we have.
+        Determine if the file has exceeded the size limit we have,
+        and therefore we should roll over.
         """
         # See bpo-45401: Never rollover anything other than regular files
         if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
@@ -199,9 +197,8 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
-            msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if self.stream.tell() >= self.maxBytes:
                 return True
         return False
 
