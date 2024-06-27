@@ -2955,7 +2955,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         }
         while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
             if (PyUnicode_Check(key)
-                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+               && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
                 stdlib_module_names = value;
                 break;
             }
