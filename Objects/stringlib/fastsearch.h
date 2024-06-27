@@ -402,22 +402,24 @@ STRINGLIB(prepare_search)(STRINGLIB(prework) *pw,
     int dir = reversed ? -1 : 1;
     Py_ssize_t stt = reversed ? m - 1 : 0;
     Py_ssize_t end = reversed ? 0 : m - 1;
+    Py_ssize_t j, jp;
     // 1. Containment mask and Full "Good Suffix" gap for last character
     if (bloom_mask_and_true_gap) {
         const STRINGLIB_CHAR p_last = p[end];
         pw->mask = 0;
         pw->true_gap = m;
         // Note: true_gap("___aa") = 1
-        Py_ssize_t jp;
         STRINGLIB_CHAR p_tmp;
         STRINGLIB_BLOOM_ADD(pw->mask, p_last);
-        for (Py_ssize_t j = 1; j < m; j++) {
-            jp = end + (reversed ? j : -j);
+        j = 1;
+        jp = end - dir * j;
+        for (; j < m; j++) {
             p_tmp = p[jp];
             STRINGLIB_BLOOM_ADD(pw->mask, p_tmp);
             if (pw->true_gap == m && p_tmp == p_last) {
                 pw->true_gap = j;
             }
+            jp -= dir;
         }
         LOG("Good Suffix Full Gap: %ld\n", pw->true_gap);
     }
@@ -425,25 +427,31 @@ STRINGLIB(prepare_search)(STRINGLIB(prework) *pw,
     if (bc_table_and_gap) {
         // 2.1. Fill a compressed Boyer-Moore "Bad Character" table
         Py_ssize_t not_found_shift = Py_MIN(m, MAX_SHIFT);
-        for (Py_ssize_t i = 0; i < (Py_ssize_t)TABLE_SIZE; i++) {
-            pw->table[i] = Py_SAFE_DOWNCAST(not_found_shift,
+        for (Py_ssize_t j = 0; j < (Py_ssize_t)TABLE_SIZE; j++) {
+            pw->table[j] = Py_SAFE_DOWNCAST(not_found_shift,
                                             Py_ssize_t, SHIFT_TYPE);
         }
-        for (Py_ssize_t i = m - not_found_shift; i < m; i++) {
-            SHIFT_TYPE shift = Py_SAFE_DOWNCAST(m - 1 - i,
+        j = m - not_found_shift;
+        jp = stt + dir * j;
+        for (; j < m; j++) {
+            SHIFT_TYPE shift = Py_SAFE_DOWNCAST(m - 1 - j,
                                                 Py_ssize_t, SHIFT_TYPE);
-            pw->table[p[stt + dir*i] & TABLE_MASK] = shift;
+            pw->table[p[jp] & TABLE_MASK] = shift;
+            jp += dir;
         }
         // 2.2. Initialize "Good Suffix" Last Character Gap
         // Note: gap("___aa") = 1
         pw->gap = m;
         STRINGLIB_CHAR last = p[end] & TABLE_MASK;
-        for (Py_ssize_t i = 1; i < m; i++) {
-            STRINGLIB_CHAR x = p[end - dir*i] & TABLE_MASK;
+        j = 1;
+        jp = end - dir * j;
+        for (; j < m; j++) {
+            STRINGLIB_CHAR x = p[jp] & TABLE_MASK;
             if (x == last) {
-                pw->gap = i;
+                pw->gap = j;
                 break;
             }
+            jp -= dir;
         }
         LOG("Good Suffix Partial Gap: %ld\n", pw->gap);
     }
@@ -579,9 +587,9 @@ STRINGLIB(two_way_find)(const STRINGLIB_CHAR *haystack,
         assert((ss[ip] & TABLE_MASK) == (p[m - 1] & TABLE_MASK));
         j_off = ip - p_end;
         j = is_periodic ? Py_MAX(cut, memory) : cut;
+        jp = p_stt + dir * j;
         for (; j < m; j++) {
             ihits++;
-            jp = p_stt + (reversed ? -j : j);
             LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
             if (ss[j_off + jp] != p[jp]) {
                 if (j < gap_jump_end) {
@@ -597,15 +605,16 @@ STRINGLIB(two_way_find)(const STRINGLIB_CHAR *haystack,
                 memory = 0;
                 break;
             }
+            jp += dir;
         }
         if (j != m) {
             continue;
         }
 
         j = Py_MIN(memory, cut);    // Needed for j == cut below to be correct
+        jp = p_stt + dir * j;
         for (; j < cut; j++) {
             ihits++;
-            jp = p_stt + (reversed ? -j : j);
             LOG2("Checking j=%ld: %c vs %c\n", j, ss[j_off + jp], p[jp]);
             if (ss[j_off + jp] != p[jp]) {
                 LOG("First half does not match.\n");
@@ -616,6 +625,7 @@ STRINGLIB(two_way_find)(const STRINGLIB_CHAR *haystack,
                 i += period;
                 break;
             }
+            jp += dir;
         }
         if (j == cut) {
             LOG("Found a match!\n");
