@@ -98,6 +98,7 @@ functools
 * :func:`functools.partial` and :func:`functools.partialmethod` now support
   :data:`functools.Placeholder` sentinels to reserve a place for
   positional arguments.
+  (Contributed by Dominykas Grigonis in :gh:`119127`)
 
 os
 --
