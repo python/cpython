@@ -273,6 +273,55 @@ Type Objects
 
    .. versionadded:: 3.12
 
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+
+   Find a class whose token is valid and equal to the given one,
+   from the type and superclasses.
+
+   * If found, set *\*result* to a new :term:`strong reference`
+     to the first type and return ``1``.
+   * If not found, set *\*result* to ``NULL`` and return ``0``.
+   * On error, set *\*result* to ``NULL`` and return ``-1`` with an exception.
+   * The ``result`` argument accepts ``NULL`` if you need only the return value.
+
+   The token is a memory layout ID to identify the class.
+   You can store the preferred one in a heap type through
+   :c:func:`PyType_FromMetaclass()`, if you know that:
+
+   * The pointer outlives the class, so it's not reused for something else
+     while the class exists.
+   * It "belongs" to the extension module where the class lives, so it will not
+     clash with other extensions.
+
+   For the entry, enable the ``Py_tp_token`` slot::
+
+      PyType_Slot foo_slots[] = {
+          ...
+          {Py_tp_token, &pointee_in_the_module},
+      }
+
+   The slot accepts ``NULL`` **via** the ``Py_TP_USE_SPEC`` identifier,
+   with which a heap type holds the ``spec`` pointer passed to
+   :c:func:`PyType_FromMetaclass()`::
+
+      // Be careful when the spec is dynamically created
+      {Py_tp_token, Py_TP_USE_SPEC},
+
+   To disable the feature, remove the slot.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyType_GetToken(PyTypeObject *type, void **result)
+
+   Retrieve the token stored in the type. See :c:func:`PyType_GetBaseByToken()`
+   for the entry.
+
+   * On error, set *\*result* to ``NULL``, set an exception, return ``-1``.
+   * If there's no token: set *\*result* to ``NULL``, return ``0``.
+   * Otherwise: set *\*result* to the non-NULL token, return ``1``.
+
+   .. versionadded:: 3.14
+
 
 Creating Heap-Allocated Types
 .............................
