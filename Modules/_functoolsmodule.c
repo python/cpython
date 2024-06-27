@@ -197,6 +197,21 @@ partial_dealloc(partialobject *pto)
     Py_DECREF(tp);
 }
 
+static PyObject *
+partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    if (obj == Py_None || obj == NULL) {
+        return Py_NewRef(self);
+    }
+    if (PyErr_WarnEx(PyExc_FutureWarning,
+                     "functools.partial will be a method descriptor in "
+                     "future Python versions; wrap it in staticmethod() "
+                     "if you want to preserve the old behavior", 1) < 0)
+    {
+        return NULL;
+    }
+    return Py_NewRef(self);
+}
 
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
@@ -514,6 +529,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
+    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}

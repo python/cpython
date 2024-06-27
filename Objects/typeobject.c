@@ -2699,15 +2699,6 @@ _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or
     return res;
 }
 
-PyObject *
-_PyObject_LookupSpecialId(PyObject *self, _Py_Identifier *attrid)
-{
-    PyObject *attr = _PyUnicode_FromId(attrid);   /* borrowed */
-    if (attr == NULL)
-        return NULL;
-    return _PyObject_LookupSpecial(self, attr);
-}
-
 static PyObject *
 lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound)
 {
@@ -5488,16 +5479,6 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     PyObject *res = _PyType_LookupRef(type, name);
     Py_XDECREF(res);
     return res;
-}
-
-PyObject *
-_PyType_LookupId(PyTypeObject *type, _Py_Identifier *name)
-{
-    PyObject *oname;
-    oname = _PyUnicode_FromId(name);   /* borrowed */
-    if (oname == NULL)
-        return NULL;
-    return _PyType_Lookup(type, oname);
 }
 
 static void
@@ -11411,7 +11392,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     }
 
     assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
-    PyObject *firstarg = _PyFrame_GetLocalsArray(cframe)[0];
+    PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[0]);
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
@@ -11439,7 +11420,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_Equal(name, &_Py_ID(__class__))) {
-            PyObject *cell = _PyFrame_GetLocalsArray(cframe)[i];
+            PyObject *cell = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[i]);
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");

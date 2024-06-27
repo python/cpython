@@ -969,7 +969,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 {
     assert(!PyErr_Occurred());
     switch (code) {
-    case _PyXI_ERR_NO_ERROR:  // fall through
+    case _PyXI_ERR_NO_ERROR: _Py_FALLTHROUGH;
     case _PyXI_ERR_UNCAUGHT_EXCEPTION:
         // There is nothing to apply.
 #ifdef Py_DEBUG
