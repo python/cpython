@@ -1839,8 +1839,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 #ifdef NORMALIZE_CENTURY
-    PyObject *year;                     /* year of timetuple */
-    long year_long;                     /* year of timetuple as long int */
+    PyObject *year_str;                 /* py string, year */
+    PyObject *year;                     /* py int, year */
+    long year_long;                     /* year as long int */
     char year_formatted[12];            /* formatted year with century for %Y/G */
 #endif
 
@@ -1954,23 +1955,24 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == 'Y' || ch == 'G') {
             /* 0-pad year with century as necessary */
             if (ch == 'G') {
-                result = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
-                if (result == NULL) {
+                year_str = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
+                if (year_str == NULL) {
                     goto Done;
                 }
-                year = PyNumber_Long(result);
-                Py_DECREF(result);
+                year = PyNumber_Long(year_str);
+                Py_DECREF(year_str);
                 if (year == NULL) {
                     goto Done;
                 }
-            } else {
+            }
+            else {
                 year = PyTuple_GET_ITEM(timetuple, 0);
             }
             year_long = PyLong_AsLong(year);
             if (ch == 'G') {
                 Py_DECREF(year);
             }
-            if (year_long == -1 && PyErr_Occurred() != NULL) {
+            if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
             ntoappend = sprintf(year_formatted, "%04ld", year_long);
