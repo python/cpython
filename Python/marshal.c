@@ -1156,7 +1156,7 @@ r_object(RFILE *p)
 
     case TYPE_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_ASCII:
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
@@ -1170,7 +1170,7 @@ r_object(RFILE *p)
 
     case TYPE_SHORT_ASCII_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_SHORT_ASCII:
         n = r_byte(p);
         if (n == EOF) {
@@ -1198,7 +1198,7 @@ r_object(RFILE *p)
 
     case TYPE_INTERNED:
         is_interned = 1;
-        /* fall through */
+        _Py_FALLTHROUGH;
     case TYPE_UNICODE:
         {
         const char *buffer;

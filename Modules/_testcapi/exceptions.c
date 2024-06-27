@@ -34,11 +34,11 @@ err_restore(PyObject *self, PyObject *args) {
         case 3:
             traceback = PyTuple_GetItem(args, 2);
             Py_INCREF(traceback);
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 2:
             value = PyTuple_GetItem(args, 1);
             Py_INCREF(value);
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 1:
             type = PyTuple_GetItem(args, 0);
             Py_INCREF(type);

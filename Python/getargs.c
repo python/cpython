@@ -2676,7 +2676,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 goto err;
             format++;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
 
     case 's': /* string */
     case 'z': /* string or None */

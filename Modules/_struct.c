@@ -1373,7 +1373,7 @@ whichtable(const char **pfmt)
     }
     default:
         --*pfmt; /* Back out of pointer increment */
-        /* Fall through */
+        _Py_FALLTHROUGH;
     case '@':
         return native_table;
     }
@@ -1475,7 +1475,7 @@ prepare_s(PyStructObject *self)
             return -1;
 
         switch (c) {
-            case 's': /* fall through */
+            case 's': _Py_FALLTHROUGH;
             case 'p': len++; ncodes++; break;
             case 'x': break;
             default: len += num; if (num) ncodes++; break;
