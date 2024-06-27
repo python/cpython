@@ -1151,6 +1151,57 @@ class CAPITest(unittest.TestCase):
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
+    def test_get_base_by_token(self):
+        def getbase(src, key):
+            found_in_mro = find_first_type(src, key, True)
+            found_in_bases = find_first_type(src, key, False)
+            return found_in_mro, found_in_bases
+
+        create_type = _testcapi.create_type_with_token
+        get_token = _testcapi.pytype_gettoken
+        find_first_type = _testcapi.pytype_getbasebytoken
+        Py_TP_USE_SPEC = 0
+
+        A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
+        self.assertTrue(get_token(A1) != Py_TP_USE_SPEC)
+
+        B1 = create_type('_testcapi.B1', id(self))
+        self.assertTrue(get_token(B1) == id(self))
+
+        tokenA1 = get_token(A1)
+        # match exactly
+        found1, found2 = getbase(A1, tokenA1)
+        self.assertIs(found1, A1)
+        self.assertIs(found1, found2)
+
+        # no token in static types
+        STATIC = type(1)
+        self.assertEqual(get_token(STATIC), 0)
+
+        # no token in pure subtypes
+        class A2(A1): pass
+        self.assertEqual(get_token(A2), 0)
+
+        # find A1
+        class Z(STATIC, B1, A2): pass
+        found1, found2 = getbase(Z, tokenA1)
+        self.assertIs(found1, A1)
+        self.assertIs(found1, found2)
+
+        # NULL finds nothing
+        found1, found2 = getbase(Z, 0)
+        self.assertIs(found1, None)
+        self.assertIs(found1, found2)
+
+        # share the token with A1
+        B1 = create_type('_testcapi.B1', tokenA1)
+        self.assertTrue(get_token(B1) == tokenA1)
+
+        # find first B1 by shared token
+        class Z(B1, A1): pass
+        found1, found2 = getbase(Z, tokenA1)
+        self.assertIs(found1, B1)
+        self.assertIs(found1, found2)
 
     def test_gen_get_code(self):
         def genf(): yield

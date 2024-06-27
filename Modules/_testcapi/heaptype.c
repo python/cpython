@@ -410,6 +410,90 @@ pyobject_getitemdata(PyObject *self, PyObject *o)
 }
 
 
+static PyObject *
+create_type_with_token(PyObject *self, PyObject *args)
+{
+    assert(Py_TP_USE_SPEC == NULL);
+    const char *name;
+    PyObject *py_token;
+    if (!PyArg_ParseTuple(args, "sO", &name, &py_token)) {
+        return NULL;
+    }
+
+    void *token = PyLong_AsVoidPtr(py_token);
+    PyType_Slot slots[] = {
+        {Py_tp_token, token},
+        {0},
+    };
+    PyType_Spec spec = {
+        .name = name,
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        .slots = slots,
+    };
+    PyTypeObject *type = (PyTypeObject *)PyType_FromSpec(&spec);
+    if (!type) {
+        return NULL;
+    }
+    if (token == Py_TP_USE_SPEC && PyType_GetSlot(type, Py_tp_token) != &spec) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "failed to convert token from Py_TP_USE_SPEC");
+        Py_DECREF(type);
+        return NULL;
+    }
+    return (PyObject *)type;
+}
+
+static PyObject *
+pytype_gettoken(PyObject *self, PyObject *type)
+{
+    void *token;
+    if (PyType_GetToken((PyTypeObject *)type, &token) < 0) {
+        return NULL;
+    }
+    if (token != PyType_GetSlot((PyTypeObject *)type, Py_tp_token)) {
+        PyErr_SetString(PyExc_AssertionError,
+                     "PyType_GetSlot returned different token from GetToken");
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(token);
+}
+
+static PyObject *
+pytype_getbasebytoken(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    PyObject *py_token, *use_mro;
+    if (!PyArg_ParseTuple(args, "OOO", &type, &py_token, &use_mro)) {
+        return NULL;
+    }
+    assert(PyType_Check(type));
+
+    PyObject *mro_save = NULL;
+    if (use_mro != Py_True) {
+        mro_save = type->tp_mro;
+        type->tp_mro = NULL;
+    }
+
+    void *token = PyLong_AsVoidPtr(py_token);
+    PyTypeObject *result;
+    int ret = PyType_GetBaseByToken(type, token, &result);
+
+    if (mro_save != NULL) {
+        type->tp_mro = mro_save;
+    }
+
+    if (ret < 0) {
+        return NULL;
+    }
+    if (result == NULL) {
+        assert(ret == 0);
+        Py_RETURN_NONE;
+    }
+    assert(ret == 1);
+    return (PyObject *)result;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
@@ -423,6 +507,9 @@ static PyMethodDef TestMethods[] = {
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
     {"make_type_with_base", make_type_with_base, METH_O},
     {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
+    {"create_type_with_token", create_type_with_token, METH_VARARGS},
+    {"pytype_gettoken", pytype_gettoken, METH_O},
+    {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
     {NULL},
 };
 
