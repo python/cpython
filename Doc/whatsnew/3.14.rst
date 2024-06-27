@@ -94,7 +94,8 @@ Added :func:`ast.compare` for comparing two ASTs.
 
 functools
 ---------
-* :func:`functools.partial` and :functools:`partialmethod` now support
+
+* :func:`functools.partial` and :func:`functools.partialmethod` now support
   :data:`functools.Placeholder` sentinels to reserve a place for
   positional arguments.
 
