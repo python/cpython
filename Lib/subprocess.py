@@ -62,7 +62,7 @@ except ImportError:
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
+           "SubprocessError", "TimeoutExpired", "CompletedProcess", "shell"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
