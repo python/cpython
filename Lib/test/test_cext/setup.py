@@ -17,6 +17,9 @@ if not support.MS_WINDOWS:
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+
+        # gh-120593: Check the 'const' qualifier
+        '-Wcast-qual',
     ]
     if not support.Py_GIL_DISABLED:
         CFLAGS.append(
