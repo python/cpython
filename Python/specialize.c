@@ -2364,7 +2364,8 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
-    PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(iter));
+    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+    PyTypeObject *tp = Py_TYPE(iter_o);
     if (tp == &PyListIter_Type) {
         instr->op.code = FOR_ITER_LIST;
         goto success;
@@ -2389,7 +2390,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
         goto success;
     }
     SPECIALIZATION_FAIL(FOR_ITER,
-                        _PySpecialization_ClassifyIterator(iter));
+                        _PySpecialization_ClassifyIterator(iter_o));
 failure:
     STAT_INC(FOR_ITER, failure);
     instr->op.code = FOR_ITER;
