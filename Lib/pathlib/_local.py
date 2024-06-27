@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile, get_file_metadata, set_file_metadata
+from ._os import copyfile, file_metadata_keys, get_file_metadata, set_file_metadata
 
 
 __all__ = [
@@ -781,6 +781,7 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _metadata_keys = file_metadata_keys
     _get_metadata = get_file_metadata
     _set_metadata = set_file_metadata
 
