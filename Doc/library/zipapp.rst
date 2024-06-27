@@ -244,11 +244,11 @@ To filter an allow-list or deny-list of files in the directory being zipped, mak
 of :option:`--exclude-pattern` and/or :option:`--include-pattern`.
 
 .. code-block:: shell-session
+
    $ ls myapp
    __main__.py helper.py   notthis.py
 
    $ python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'
-
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
     extracting: extracted_myapp/__main__.py
