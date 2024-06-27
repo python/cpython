@@ -5279,7 +5279,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token,
         return 0;
     }
     assert(PyType_Check(type));
-    PyObject *mro = lookup_tp_mro(type);
+    PyObject *mro = type->tp_mro;
     if (mro == NULL) {
         PyTypeObject *base = get_base_by_token_recursive(type, token, 1);
         if (base == NULL) {
