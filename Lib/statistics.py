@@ -248,6 +248,7 @@ def geometric_mean(data):
                 found_zero = True
             else:
                 raise StatisticsError('No negative inputs allowed', x)
+
     total = fsum(map(log, count_positive(data)))
 
     if not n:
@@ -710,6 +711,7 @@ def correlation(x, y, /, *, method='linear'):
         start = (n - 1) / -2            # Center rankings around zero
         x = _rank(x, start=start)
         y = _rank(y, start=start)
+
     else:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
@@ -1476,11 +1478,13 @@ def _sum(data):
     types_add = types.add
     partials = {}
     partials_get = partials.get
+
     for typ, values in groupby(data, type):
         types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
+
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
@@ -1489,6 +1493,7 @@ def _sum(data):
     else:
         # Sum all the partial sums using builtin sum.
         total = sum(Fraction(n, d) for d, n in partials.items())
+
     T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
@@ -1511,6 +1516,7 @@ def _ss(data, c=None):
     types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
+
     for typ, values in groupby(data, type):
         types_add(typ)
         for n, d in map(_exact_ratio, values):
@@ -1520,11 +1526,13 @@ def _ss(data, c=None):
 
     if not count:
         ssd = c = Fraction(0)
+
     elif None in sx_partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         ssd = c = sx_partials[None]
         assert not _isfinite(ssd)
+
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
@@ -1608,8 +1616,10 @@ def _convert(value, T):
         # This covers the cases where T is Fraction, or where value is
         # a NAN or INF (Decimal or float).
         return value
+
     if issubclass(T, int) and value.denominator != 1:
         T = float
+
     try:
         # FIXME: what do we do if this overflows?
         return T(value)
