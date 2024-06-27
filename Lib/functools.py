@@ -403,8 +403,8 @@ class partial:
             raise TypeError(f"expected 4 items in state, got {len(state)}")
         func, args, kwds, namespace = state
         if (not callable(func) or not isinstance(args, tuple) or
-                (kwds is not None and not isinstance(kwds, dict)) or
-                (namespace is not None and not isinstance(namespace, dict))):
+           (kwds is not None and not isinstance(kwds, dict)) or
+           (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
         if args and args[-1] is Placeholder:
