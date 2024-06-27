@@ -272,7 +272,7 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
-                elif ch in 'YG' and _need_normalize_century():
+                elif ch in 'YG' and object.year <= 1000 and _need_normalize_century():
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:

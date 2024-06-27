@@ -1839,10 +1839,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 #ifdef NORMALIZE_CENTURY
-    PyObject *year_str;                 /* py string, year */
-    PyObject *year;                     /* py int, year */
-    long year_long;                     /* year as long int */
-    char year_formatted[12];            /* formatted year with century for %Y/G */
+    PyObject *year_str;                     /* py string, year */
+    PyObject *year;                         /* py int, year */
+    long year_long;                         /* year as long int */
+    char year_formatted[SIZEOF_LONG*5/2+2]; /* formatted year for %Y/%G */
 #endif
 
     const char *pin;            /* pointer to next char in input format */
