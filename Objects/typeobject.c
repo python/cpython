@@ -5237,6 +5237,94 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
     return module;
 }
 
+
+static PyTypeObject *
+get_base_by_token_recursive(PyTypeObject *type, void *token, int initial)
+{
+    if (initial) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+        if (((PyHeapTypeObject*)type)->ht_token == token) {
+            return type;
+        }
+    }
+    PyObject *bases = type->tp_bases;
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+        base = get_base_by_token_recursive(base, token, 0);
+        if (base) {
+            return base;
+        }
+    }
+    return NULL;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token,
+                      PyTypeObject **result)
+{
+    if (result != NULL) {
+        *result = NULL;
+    }
+    if (token == NULL) {
+        // We scan only heaptypes that contains a token
+        return 0;
+    }
+    assert(PyType_Check(type));
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL) {
+        PyTypeObject *base = get_base_by_token_recursive(type, token, 1);
+        if (base == NULL) {
+            return 0;
+        }
+        if (result != NULL) {
+            *result = (PyTypeObject *)Py_NewRef(base);
+        }
+        return 1;
+    }
+    assert(PyTuple_Check(mro));
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            if (i) {
+                continue;
+            }
+            // Static type MRO contains no heap type,
+            // which type_ready_mro() ensures.
+            assert(base == type);
+            return 0;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            if (result != NULL) {
+                *result = (PyTypeObject *)Py_NewRef(base);
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int
+PyType_GetToken(PyTypeObject *type, void **result)
+{
+    assert(PyType_Check(type));
+    if(_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        *result = ((PyHeapTypeObject*)type)->ht_token;
+        return *result ? 1 : 0;
+    }
+    *result = NULL;
+    return 0;
+}
+
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
 {
