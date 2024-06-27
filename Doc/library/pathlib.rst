@@ -1560,22 +1560,13 @@ Copying, renaming and deleting
       other platforms, the :func:`~Path.rmtree` implementation is susceptible
       to a symlink attack: given proper timing and circumstances, attackers
       can manipulate symlinks on the filesystem to delete files they wouldn't
-      be able to access otherwise.  Applications can use the
-      :data:`Path.rmtree.avoids_symlink_attacks` function attribute to
-      determine which case applies.
+      be able to access otherwise.
 
    If the optional argument *on_error* is specified, it should be a callable;
    it will be called with one argument, an :exc:`OSError` instance. The
    callable can handle the error to continue the deletion process or re-raise
    it to stop. Note that the filename is available as the ``filename``
    attribute of the exception object.
-
-   .. attribute:: Path.rmtree.avoids_symlink_attacks
-
-      Indicates whether the current platform and implementation provides a
-      symlink attack resistant version of :meth:`~Path.rmtree`.  Currently
-      this is only true for platforms supporting fd-based directory access
-      functions.
 
    .. versionadded:: 3.14
 
