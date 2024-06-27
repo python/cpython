@@ -285,7 +285,7 @@ class partial:
         if not callable(func):
             raise TypeError("the first argument must be callable")
 
-        if hasattr(func, "func"):
+        if isinstance(func, partial):
             args = func.args + args
             keywords = {**func.keywords, **keywords}
             func = func.func
@@ -310,6 +310,16 @@ class partial:
         args.extend(repr(x) for x in self.args)
         args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
         return f"{module}.{qualname}({', '.join(args)})"
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        import warnings
+        warnings.warn('functools.partial will be a method descriptor in '
+                      'future Python versions; wrap it in staticmethod() '
+                      'if you want to preserve the old behavior',
+                      FutureWarning, 2)
+        return self
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -373,15 +383,13 @@ class partialmethod(object):
             self.keywords = keywords
 
     def __repr__(self):
-        args = ", ".join(map(repr, self.args))
-        keywords = ", ".join("{}={!r}".format(k, v)
-                                 for k, v in self.keywords.items())
-        format_string = "{module}.{cls}({func}, {args}, {keywords})"
-        return format_string.format(module=self.__class__.__module__,
-                                    cls=self.__class__.__qualname__,
-                                    func=self.func,
-                                    args=args,
-                                    keywords=keywords)
+        cls = type(self)
+        module = cls.__module__
+        qualname = cls.__qualname__
+        args = [repr(self.func)]
+        args.extend(map(repr, self.args))
+        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+        return f"{module}.{qualname}({', '.join(args)})"
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
@@ -394,7 +402,7 @@ class partialmethod(object):
     def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
-        if get is not None:
+        if get is not None and not isinstance(self.func, partial):
             new_func = get(obj, cls)
             if new_func is not self.func:
                 # Assume __get__ returning something new indicates the
@@ -673,7 +681,7 @@ def cache(user_function, /):
 def _c3_merge(sequences):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
-    Adapted from https://www.python.org/download/releases/2.3/mro/.
+    Adapted from https://docs.python.org/3/howto/mro.html.
 
     """
     result = []

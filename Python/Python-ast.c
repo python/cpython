@@ -203,6 +203,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->conversion);
     Py_CLEAR(state->ctx);
     Py_CLEAR(state->decorator_list);
+    Py_CLEAR(state->default_value);
     Py_CLEAR(state->defaults);
     Py_CLEAR(state->elt);
     Py_CLEAR(state->elts);
@@ -311,6 +312,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->conversion = PyUnicode_InternFromString("conversion")) == NULL) return -1;
     if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return -1;
     if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return -1;
+    if ((state->default_value = PyUnicode_InternFromString("default_value")) == NULL) return -1;
     if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return -1;
     if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return -1;
     if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return -1;
@@ -809,12 +811,15 @@ static PyObject* ast2obj_type_param(struct ast_state *state, struct validator
 static const char * const TypeVar_fields[]={
     "name",
     "bound",
+    "default_value",
 };
 static const char * const ParamSpec_fields[]={
     "name",
+    "default_value",
 };
 static const char * const TypeVarTuple_fields[]={
     "name",
+    "default_value",
 };
 
 
@@ -4913,6 +4918,22 @@ add_ast_annotations(struct ast_state *state)
             return 0;
         }
     }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVar_annotations, "default_value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
     cond = PyObject_SetAttrString(state->TypeVar_type, "_field_types",
                                   TypeVar_annotations) == 0;
     if (!cond) {
@@ -4932,6 +4953,22 @@ add_ast_annotations(struct ast_state *state)
         PyObject *type = (PyObject *)&PyUnicode_Type;
         Py_INCREF(type);
         cond = PyDict_SetItemString(ParamSpec_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ParamSpec_annotations, "default_value",
+                                    type) == 0;
         Py_DECREF(type);
         if (!cond) {
             Py_DECREF(ParamSpec_annotations);
@@ -4958,6 +4995,22 @@ add_ast_annotations(struct ast_state *state)
         Py_INCREF(type);
         cond = PyDict_SetItemString(TypeVarTuple_annotations, "name", type) ==
                                     0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVarTuple_annotations, "default_value",
+                                    type) == 0;
         Py_DECREF(type);
         if (!cond) {
             Py_DECREF(TypeVarTuple_annotations);
@@ -5119,9 +5172,15 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t size = PySet_Size(remaining_fields);
     PyObject *field_types = NULL, *remaining_list = NULL;
     if (size > 0) {
-        if (!PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
-                                      &field_types)) {
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
+                                     &field_types) < 0) {
             res = -1;
+            goto cleanup;
+        }
+        if (field_types == NULL) {
+            // Probably a user-defined subclass of AST that lacks _field_types.
+            // This will continue to work as it did before 3.13; i.e., attributes
+            // that are not passed in simply do not exist on the instance.
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
@@ -5132,12 +5191,21 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
             if (!type) {
-                if (!PyErr_Occurred()) {
-                    PyErr_SetObject(PyExc_KeyError, name);
+                if (PyErr_Occurred()) {
+                    goto set_remaining_cleanup;
                 }
-                goto set_remaining_cleanup;
+                else {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "Field '%U' is missing from %.400s._field_types. "
+                        "This will become an error in Python 3.15.",
+                        name, Py_TYPE(self)->tp_name
+                    ) < 0) {
+                        goto set_remaining_cleanup;
+                    }
+                }
             }
-            if (_PyUnion_Check(type)) {
+            else if (_PyUnion_Check(type)) {
                 // optional field
                 // do nothing, we'll have set a None default on the class
             }
@@ -5153,6 +5221,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
             }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
             else {
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
@@ -5161,8 +5236,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
-                    res = -1;
-                    goto cleanup;
+                    goto set_remaining_cleanup;
                 }
             }
         }
@@ -5189,17 +5263,22 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *remaining_dict = NULL, *positional_args = NULL;
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     PyObject *result = NULL;
     if (dict) {
-        // Serialize the fields as positional args if possible, because if we
-        // serialize them as a dict, during unpickling they are set only *after*
-        // the object is constructed, which will now trigger a DeprecationWarning
-        // if the AST type has required fields.
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -5207,11 +5286,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             Py_ssize_t numfields = PySequence_Size(fields);
             if (numfields == -1) {
                 Py_DECREF(dict);
-                goto cleanup;
-            }
-            remaining_dict = PyDict_Copy(dict);
-            Py_DECREF(dict);
-            if (!remaining_dict) {
                 goto cleanup;
             }
             positional_args = PyList_New(0);
@@ -5223,27 +5297,26 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!name) {
                     goto cleanup;
                 }
-                PyObject *value = PyDict_GetItemWithError(remaining_dict, name);
+                PyObject *value;
+                int rc = PyDict_GetItemRef(dict, name, &value);
+                Py_DECREF(name);
+                if (rc < 0) {
+                    goto cleanup;
+                }
                 if (!value) {
-                    if (PyErr_Occurred()) {
-                        goto cleanup;
-                    }
                     break;
                 }
-                if (PyList_Append(positional_args, value) < 0) {
+                rc = PyList_Append(positional_args, Py_None);
+                Py_DECREF(value);
+                if (rc < 0) {
                     goto cleanup;
                 }
-                if (PyDict_DelItem(remaining_dict, name) < 0) {
-                    goto cleanup;
-                }
-                Py_DECREF(name);
             }
             PyObject *args_tuple = PyList_AsTuple(positional_args);
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
-                                   remaining_dict);
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -5254,8 +5327,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(remaining_fields);
-    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
     return result;
 }
@@ -6232,28 +6303,37 @@ init_types(struct ast_state *state)
     if (!state->TypeIgnore_type) return -1;
     state->type_param_type = make_type(state, "type_param", state->AST_type,
                                        NULL, 0,
-        "type_param = TypeVar(identifier name, expr? bound)\n"
-        "           | ParamSpec(identifier name)\n"
-        "           | TypeVarTuple(identifier name)");
+        "type_param = TypeVar(identifier name, expr? bound, expr? default_value)\n"
+        "           | ParamSpec(identifier name, expr? default_value)\n"
+        "           | TypeVarTuple(identifier name, expr? default_value)");
     if (!state->type_param_type) return -1;
     if (add_attributes(state, state->type_param_type, type_param_attributes, 4)
         < 0) return -1;
     state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
-                                    TypeVar_fields, 2,
-        "TypeVar(identifier name, expr? bound)");
+                                    TypeVar_fields, 3,
+        "TypeVar(identifier name, expr? bound, expr? default_value)");
     if (!state->TypeVar_type) return -1;
     if (PyObject_SetAttr(state->TypeVar_type, state->bound, Py_None) == -1)
         return -1;
+    if (PyObject_SetAttr(state->TypeVar_type, state->default_value, Py_None) ==
+        -1)
+        return -1;
     state->ParamSpec_type = make_type(state, "ParamSpec",
                                       state->type_param_type, ParamSpec_fields,
-                                      1,
-        "ParamSpec(identifier name)");
+                                      2,
+        "ParamSpec(identifier name, expr? default_value)");
     if (!state->ParamSpec_type) return -1;
+    if (PyObject_SetAttr(state->ParamSpec_type, state->default_value, Py_None)
+        == -1)
+        return -1;
     state->TypeVarTuple_type = make_type(state, "TypeVarTuple",
                                          state->type_param_type,
-                                         TypeVarTuple_fields, 1,
-        "TypeVarTuple(identifier name)");
+                                         TypeVarTuple_fields, 2,
+        "TypeVarTuple(identifier name, expr? default_value)");
     if (!state->TypeVarTuple_type) return -1;
+    if (PyObject_SetAttr(state->TypeVarTuple_type, state->default_value,
+        Py_None) == -1)
+        return -1;
 
     if (!add_ast_annotations(state)) {
         return -1;
@@ -8044,8 +8124,9 @@ _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena)
 }
 
 type_param_ty
-_PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
-               end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_TypeVar(identifier name, expr_ty bound, expr_ty default_value, int
+               lineno, int col_offset, int end_lineno, int end_col_offset,
+               PyArena *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -8059,6 +8140,7 @@ _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
     p->kind = TypeVar_kind;
     p->v.TypeVar.name = name;
     p->v.TypeVar.bound = bound;
+    p->v.TypeVar.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -8067,8 +8149,8 @@ _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
 }
 
 type_param_ty
-_PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
-                 int end_col_offset, PyArena *arena)
+_PyAST_ParamSpec(identifier name, expr_ty default_value, int lineno, int
+                 col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -8081,6 +8163,7 @@ _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
         return NULL;
     p->kind = ParamSpec_kind;
     p->v.ParamSpec.name = name;
+    p->v.ParamSpec.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -8089,8 +8172,9 @@ _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
 }
 
 type_param_ty
-_PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
-                    end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_TypeVarTuple(identifier name, expr_ty default_value, int lineno, int
+                    col_offset, int end_lineno, int end_col_offset, PyArena
+                    *arena)
 {
     type_param_ty p;
     if (!name) {
@@ -8103,6 +8187,7 @@ _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
         return NULL;
     p->kind = TypeVarTuple_kind;
     p->v.TypeVarTuple.name = name;
+    p->v.TypeVarTuple.default_value = default_value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -10068,6 +10153,11 @@ ast2obj_type_param(struct ast_state *state, struct validator *vstate, void* _o)
         if (PyObject_SetAttr(result, state->bound, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.TypeVar.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case ParamSpec_kind:
         tp = (PyTypeObject *)state->ParamSpec_type;
@@ -10078,6 +10168,11 @@ ast2obj_type_param(struct ast_state *state, struct validator *vstate, void* _o)
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.ParamSpec.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case TypeVarTuple_kind:
         tp = (PyTypeObject *)state->TypeVarTuple_type;
@@ -10086,6 +10181,11 @@ ast2obj_type_param(struct ast_state *state, struct validator *vstate, void* _o)
         value = ast2obj_identifier(state, vstate, o->v.TypeVarTuple.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, vstate, o->v.TypeVarTuple.default_value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->default_value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -16924,6 +17024,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     if (isinstance) {
         identifier name;
         expr_ty bound;
+        expr_ty default_value;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
             return -1;
@@ -16959,8 +17060,25 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_TypeVar(name, bound, lineno, col_offset, end_lineno,
-                              end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_TypeVar(name, bound, default_value, lineno, col_offset,
+                              end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -16971,6 +17089,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     }
     if (isinstance) {
         identifier name;
+        expr_ty default_value;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
             return -1;
@@ -16989,8 +17108,25 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_ParamSpec(name, lineno, col_offset, end_lineno,
-                                end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'ParamSpec' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_ParamSpec(name, default_value, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -17001,6 +17137,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     }
     if (isinstance) {
         identifier name;
+        expr_ty default_value;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
             return -1;
@@ -17019,8 +17156,25 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_TypeVarTuple(name, lineno, col_offset, end_lineno,
-                                   end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->default_value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            default_value = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'TypeVarTuple' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &default_value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_TypeVarTuple(name, default_value, lineno, col_offset,
+                                   end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -17441,6 +17595,7 @@ astmodule_exec(PyObject *m)
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

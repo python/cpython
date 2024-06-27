@@ -78,6 +78,40 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+
+static PyObject *
+BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
+                         size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *type = _PyType_CAST(type_obj);
+    if (!_PyArg_NoKwnames(type->tp_name, kwnames)) {
+        return NULL;
+    }
+
+    PyBaseExceptionObject *self;
+    self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+
+    // The dict is created on the fly in PyObject_GenericSetAttr()
+    self->dict = NULL;
+    self->notes = NULL;
+    self->traceback = NULL;
+    self->cause = NULL;
+    self->context = NULL;
+    self->suppress_context = 0;
+
+    self->args = _PyTuple_FromArray(args, PyVectorcall_NARGS(nargsf));
+    if (!self->args) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+
 static int
 BaseException_clear(PyBaseExceptionObject *self)
 {
@@ -486,6 +520,7 @@ static PyTypeObject _PyExc_BaseException = {
     (initproc)BaseException_init, /* tp_init */
     0,                          /* tp_alloc */
     BaseException_new,          /* tp_new */
+    .tp_vectorcall = BaseException_vectorcall,
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
 from the previous implementation and also allowing Python objects to be used
@@ -510,10 +545,10 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
-#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
-static PyTypeObject _PyExc_ ## EXCNAME = { \
+#define MiddlingExtendsExceptionEx(EXCBASE, EXCNAME, PYEXCNAME, EXCSTORE, EXCDOC) \
+PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
-    # EXCNAME, \
+    # PYEXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
     0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
@@ -522,8 +557,12 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
     (initproc)EXCSTORE ## _init, 0, 0, \
-}; \
-PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
+};
+
+#define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
+    static MiddlingExtendsExceptionEx( \
+        EXCBASE, EXCNAME, EXCNAME, EXCSTORE, EXCDOC); \
+    PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
@@ -2573,8 +2612,8 @@ MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
 /*
  *    IncompleteInputError extends SyntaxError
  */
-MiddlingExtendsException(PyExc_SyntaxError, IncompleteInputError, SyntaxError,
-                         "incomplete input.");
+MiddlingExtendsExceptionEx(PyExc_SyntaxError, IncompleteInputError, _IncompleteInputError,
+                           SyntaxError, "incomplete input.");
 
 /*
  *    LookupError extends Exception
@@ -3640,7 +3679,7 @@ static struct static_exception static_exceptions[] = {
 
     // Level 4: Other subclasses
     ITEM(IndentationError), // base: SyntaxError(Exception)
-    ITEM(IncompleteInputError), // base: SyntaxError(Exception)
+    {&_PyExc_IncompleteInputError, "_IncompleteInputError"}, // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
@@ -3675,6 +3714,11 @@ _PyExc_InitTypes(PyInterpreterState *interp)
         if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
+        if (exc->tp_new == BaseException_new
+            && exc->tp_init == (initproc)BaseException_init)
+        {
+            exc->tp_vectorcall = BaseException_vectorcall;
+        }
     }
     return 0;
 }
@@ -3685,7 +3729,7 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(interp, exc);
+        _PyStaticType_FiniBuiltin(interp, exc);
     }
 }
 

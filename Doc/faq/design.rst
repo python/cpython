@@ -259,9 +259,11 @@ is evaluated in all cases.
 Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
-You can do this easily enough with a sequence of ``if... elif... elif... else``.
-For literal values, or constants within a namespace, you can also use a
-``match ... case`` statement.
+In general, structured switch statements execute one block of code
+when an expression has a particular value or set of values.
+Since Python 3.10 one can easily match literal values, or constants
+within a namespace, with a ``match ... case`` statement.
+An older alternative is a sequence of ``if... elif... elif... else``.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
@@ -289,6 +291,9 @@ For calling methods on objects, you can simplify yet further by using the
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
 source, an attacker would be able to call any method on your object.
+
+Imitating switch with fallthrough, as with C's switch-case-default,
+is possible, much harder, and less needed.
 
 
 Can't you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?

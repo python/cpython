@@ -8,19 +8,11 @@ on:
   push:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
   pull_request:
     branches:
     - 'main'
-    - '3.12'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
 
 permissions:
   contents: read
@@ -62,7 +54,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
           # Check if we should run hypothesis tests
@@ -97,7 +89,7 @@ jobs:
       - name: Get a list of the changed documentation-related files
         if: github.event_name == 'pull_request'
         id: changed-docs-files
-        uses: Ana06/get-changed-files@v2.2.0
+        uses: Ana06/get-changed-files@v2.3.0
         with:
           filter: |
             Doc/**
@@ -137,6 +129,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: config.cache
+          # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
           key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
@@ -206,6 +199,9 @@ jobs:
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
+      # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+      # Cirrus used for upstream, macos-14 for forks.
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14", "macos-13"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -215,6 +211,9 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
+      # Cirrus and macos-14 are M1.
+      # Cirrus used for upstream, macos-14 for forks.
+      os-matrix: '["ghcr.io/cirruslabs/macos-runner:sonoma", "macos-14"]'
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -245,7 +244,7 @@ jobs:
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -301,9 +300,17 @@ jobs:
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
+  build_wasi:
+    name: 'WASI'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-wasi.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -383,7 +390,7 @@ jobs:
       id: cache-hypothesis-database
       uses: actions/cache@v4
       with:
-        path: ./hypothesis
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
         restore-keys: |
           - hypothesis-database-
@@ -411,12 +418,12 @@ jobs:
       if: always()
       with:
         name: hypothesis-example-db
-        path: .hypothesis/examples/
+        path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
@@ -472,6 +479,28 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
+  build_tsan:
+    name: 'Thread sanitizer'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
+      suppressions_path: Tools/tsan/supressions.txt
+      tsan_logs_artifact_name: tsan-logs-default
+
+  build_tsan_free_threading:
+    name: 'Thread sanitizer (free-threading)'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
+      suppressions_path: Tools/tsan/suppressions_free_threading.txt
+      tsan_logs_artifact_name: tsan-logs-free-threading
+
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
     name: CIFuzz
@@ -525,10 +554,13 @@ jobs:
     - build_ubuntu
     - build_ubuntu_free_threading
     - build_ubuntu_ssltests
+    - build_wasi
     - build_windows
     - build_windows_free_threading
     - test_hypothesis
     - build_asan
+    - build_tsan
+    - build_tsan_free_threading
     - cifuzz
 
     runs-on: ubuntu-latest
@@ -558,9 +590,12 @@ jobs:
             build_ubuntu,
             build_ubuntu_free_threading,
             build_ubuntu_ssltests,
+            build_wasi,
             build_windows,
             build_windows_free_threading,
             build_asan,
+            build_tsan,
+            build_tsan_free_threading,
             '
             || ''
           }}

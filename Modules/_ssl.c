@@ -29,7 +29,6 @@
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -392,8 +391,8 @@ typedef enum {
 // Return a borrowed reference.
 static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
     if (obj->Socket) {
-        PyObject *sock = _PyWeakref_GET_REF(obj->Socket);
-        if (sock != NULL) {
+        PyObject *sock;
+        if (PyWeakref_GetRef(obj->Socket, &sock)) {
             // GET_SOCKET() returns a borrowed reference
             Py_DECREF(sock);
         }
@@ -599,7 +598,7 @@ PySSL_ChainExceptions(PySSLSocket *sslsock) {
 }
 
 static PyObject *
-PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
+PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
 {
     PyObject *type;
     char *errstr = NULL;
@@ -612,7 +611,6 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
     _sslmodulestate *state = get_state_sock(sslsock);
     type = state->PySSLErrorObject;
 
-    assert(ret <= 0);
     e = ERR_peek_last_error();
 
     if (sslsock->ssl != NULL) {
@@ -645,32 +643,21 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
         case SSL_ERROR_SYSCALL:
         {
             if (e == 0) {
-                PySocketSockObject *s = GET_SOCKET(sslsock);
-                if (ret == 0 || (((PyObject *)s) == Py_None)) {
+                /* underlying BIO reported an I/O error */
+                ERR_clear_error();
+#ifdef MS_WINDOWS
+                if (err.ws) {
+                    return PyErr_SetFromWindowsErr(err.ws);
+                }
+#endif
+                if (err.c) {
+                    errno = err.c;
+                    return PyErr_SetFromErrno(PyExc_OSError);
+                }
+                else {
                     p = PY_SSL_ERROR_EOF;
                     type = state->PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
-                } else if (s && ret == -1) {
-                    /* underlying BIO reported an I/O error */
-                    ERR_clear_error();
-#ifdef MS_WINDOWS
-                    if (err.ws) {
-                        return PyErr_SetFromWindowsErr(err.ws);
-                    }
-#endif
-                    if (err.c) {
-                        errno = err.c;
-                        return PyErr_SetFromErrno(PyExc_OSError);
-                    }
-                    else {
-                        p = PY_SSL_ERROR_EOF;
-                        type = state->PySSLEOFErrorObject;
-                        errstr = "EOF occurred in violation of protocol";
-                    }
-                } else { /* possible? */
-                    p = PY_SSL_ERROR_SYSCALL;
-                    type = state->PySSLSyscallErrorObject;
-                    errstr = "Some I/O error occurred";
                 }
             } else {
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
@@ -1030,7 +1017,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
              err.ssl == SSL_ERROR_WANT_WRITE);
     Py_XDECREF(sock);
     if (ret < 1)
-        return PySSL_SetError(self, ret, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
         return NULL;
     Py_RETURN_NONE;
@@ -2217,8 +2204,8 @@ PySSL_get_owner(PySSLSocket *self, void *c)
     if (self->owner == NULL) {
         Py_RETURN_NONE;
     }
-    PyObject *owner = _PyWeakref_GET_REF(self->owner);
-    if (owner == NULL) {
+    PyObject *owner;
+    if (!PyWeakref_GetRef(self->owner, &owner)) {
         Py_RETURN_NONE;
     }
     return owner;
@@ -2437,7 +2424,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     Py_XDECREF(sock);
     if (retval == 0)
-        return PySSL_SetError(self, retval, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
         return NULL;
     return PyLong_FromSize_t(count);
@@ -2467,7 +2454,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
     self->err = err;
 
     if (count < 0)
-        return PySSL_SetError(self, count, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     else
         return PyLong_FromLong(count);
 }
@@ -2590,7 +2577,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
              err.ssl == SSL_ERROR_WANT_WRITE);
 
     if (retval == 0) {
-        PySSL_SetError(self, retval, __FILE__, __LINE__);
+        PySSL_SetError(self, __FILE__, __LINE__);
         goto error;
     }
     if (self->exc != NULL)
@@ -2716,7 +2703,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
     }
     if (ret < 0) {
         Py_XDECREF(sock);
-        PySSL_SetError(self, ret, __FILE__, __LINE__);
+        PySSL_SetError(self, __FILE__, __LINE__);
         return NULL;
     }
     if (self->exc != NULL)
@@ -3178,7 +3165,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
     }
     if (result == 0) {
-        Py_DECREF(self);
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
@@ -3486,8 +3472,8 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     }
 
     switch(self->protocol) {
-    case PY_SSL_VERSION_TLS_CLIENT:  /* fall through */
-    case PY_SSL_VERSION_TLS_SERVER:  /* fall through */
+    case PY_SSL_VERSION_TLS_CLIENT: _Py_FALLTHROUGH;
+    case PY_SSL_VERSION_TLS_SERVER: _Py_FALLTHROUGH;
     case PY_SSL_VERSION_TLS:
         break;
     default:
@@ -4446,9 +4432,9 @@ _servername_callback(SSL *s, int *al, void *args)
      * will be passed. If both do not exist only then the C-level object is
      * passed. */
     if (ssl->owner)
-        ssl_socket = _PyWeakref_GET_REF(ssl->owner);
+        PyWeakref_GetRef(ssl->owner, &ssl_socket);
     else if (ssl->Socket)
-        ssl_socket = _PyWeakref_GET_REF(ssl->Socket);
+        PyWeakref_GetRef(ssl->Socket, &ssl_socket);
     else
         ssl_socket = Py_NewRef(ssl);
 
@@ -5343,7 +5329,11 @@ PySSLSession_clear(PySSLSession *self)
 
 static PyObject *
 PySSLSession_get_time(PySSLSession *self, void *closure) {
+#if OPENSSL_VERSION_NUMBER >= 0x30300000L
+    return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
+#else
     return PyLong_FromLong(SSL_SESSION_get_time(self->session));
+#endif
 }
 
 PyDoc_STRVAR(PySSLSession_get_time_doc,
@@ -6525,6 +6515,7 @@ static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_lock},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

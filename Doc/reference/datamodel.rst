@@ -170,9 +170,12 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
-   it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
-   It will raise a :exc:`TypeError` in a future version of Python.
+   Evaluating :data:`NotImplemented` in a boolean context was deprecated.
+
+.. versionchanged:: 3.14
+   Evaluating :data:`NotImplemented` in a boolean context now raises a :exc:`TypeError`.
+   It previously evaluated to :const:`True` and emitted a :exc:`DeprecationWarning`
+   since Python 3.9.
 
 
 Ellipsis
@@ -299,14 +302,17 @@ Sequences
 These represent finite ordered sets indexed by non-negative numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``.
+..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
+including built-in sequences, interpret negative subscripts by adding the
+sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
+item of sequence a with length ``n``.
 
 .. index:: single: slicing
 
 Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
 that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type.  This implies that the index set is renumbered so
-that it starts at 0.
+sequence of the same type. The comment above about negative indexes also applies
+to negative slice positions.
 
 Some sequences also support "extended slicing" with a third "step" parameter:
 ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
@@ -929,11 +935,8 @@ name is not found there, the attribute search continues in the base classes.
 This search of the base classes uses the C3 method resolution order which
 behaves correctly even in the presence of 'diamond' inheritance structures
 where there are multiple inheritance paths leading back to a common ancestor.
-Additional details on the C3 MRO used by Python can be found in the
-documentation accompanying the 2.3 release at
-https://www.python.org/download/releases/2.3/mro/.
-
-.. XXX: Could we add that MRO doc as an appendix to the language ref?
+Additional details on the C3 MRO used by Python can be found at
+:ref:`python_2.3_mro`.
 
 .. index::
    pair: object; class
@@ -970,6 +973,8 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
+   single: __firstlineno__ (class attribute)
 
 Special attributes:
 
@@ -999,6 +1004,13 @@ Special attributes:
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
+
+   :attr:`~class.__static_attributes__`
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
+
+   :attr:`__firstlineno__`
+      The line number of the first line of the class definition, including decorators.
 
 
 Class instances
@@ -1231,7 +1243,7 @@ Methods on code objects
 
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
-   position of the source code that compiled to the *i-th* instruction.
+   position of the source code that compiled to the *i-th* code unit.
    Column information is 0-indexed utf-8 byte offsets on the given source
    line.
 
@@ -1335,8 +1347,13 @@ Special read-only attributes
        ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
    * - .. attribute:: frame.f_locals
-     - The dictionary used by the frame to look up
-       :ref:`local variables <naming>`
+     - The mapping used by the frame to look up
+       :ref:`local variables <naming>`.
+       If the frame refers to an :term:`optimized scope`,
+       this may return a write-through proxy object.
+
+       .. versionchanged:: 3.13
+          Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
      - The dictionary used by the frame to look up
@@ -1650,6 +1667,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 
@@ -3110,11 +3129,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
-   :meth:`__int__` nor :meth:`__index__` is defined.
-
-   .. versionchanged:: 3.11
-      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 
 .. _context-managers:

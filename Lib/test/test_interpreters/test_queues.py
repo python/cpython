@@ -1,23 +1,94 @@
+import importlib
+import pickle
 import threading
 from textwrap import dedent
 import unittest
-import time
 
-from test.support import import_helper
+from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
-_queues = import_helper.import_module('_xxinterpqueues')
+_queues = import_helper.import_module('_interpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues
-from .utils import _run_output, TestBase
+from .utils import _run_output, TestBase as _TestBase
 
 
-class TestBase(TestBase):
+def get_num_queues():
+    return len(_queues.list_all())
+
+
+class TestBase(_TestBase):
     def tearDown(self):
-        for qid in _queues.list_all():
+        for qid, _ in _queues.list_all():
             try:
                 _queues.destroy(qid)
             except Exception:
                 pass
+
+
+class LowLevelTests(TestBase):
+
+    # The behaviors in the low-level module are important in as much
+    # as they are exercised by the high-level module.  Therefore the
+    # most important testing happens in the high-level tests.
+    # These low-level tests cover corner cases that are not
+    # encountered by the high-level module, thus they
+    # mostly shouldn't matter as much.
+
+    def test_highlevel_reloaded(self):
+        # See gh-115490 (https://github.com/python/cpython/issues/115490).
+        importlib.reload(queues)
+
+    def test_create_destroy(self):
+        qid = _queues.create(2, 0)
+        _queues.destroy(qid)
+        self.assertEqual(get_num_queues(), 0)
+        with self.assertRaises(queues.QueueNotFoundError):
+            _queues.get(qid)
+        with self.assertRaises(queues.QueueNotFoundError):
+            _queues.destroy(qid)
+
+    def test_not_destroyed(self):
+        # It should have cleaned up any remaining queues.
+        stdout, stderr = self.assert_python_ok(
+            '-c',
+            dedent(f"""
+                import {_queues.__name__} as _queues
+                _queues.create(2, 0)
+                """),
+        )
+        self.assertEqual(stdout, '')
+        if Py_DEBUG:
+            self.assertNotEqual(stderr, '')
+        else:
+            self.assertEqual(stderr, '')
+
+    def test_bind_release(self):
+        with self.subTest('typical'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.release(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('bind too much'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.bind(qid)
+            _queues.release(qid)
+            _queues.destroy(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('nested'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.bind(qid)
+            _queues.release(qid)
+            _queues.release(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('release without binding'):
+            qid = _queues.create(2, 0)
+            with self.assertRaises(queues.QueueError):
+                _queues.release(qid)
 
 
 class QueueTests(TestBase):
@@ -111,6 +182,12 @@ class QueueTests(TestBase):
         queue2 = queues.create()
         self.assertEqual(queue1, queue1)
         self.assertNotEqual(queue1, queue2)
+
+    def test_pickle(self):
+        queue = queues.create()
+        data = pickle.dumps(queue)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, queue)
 
 
 class TestQueueOps(TestBase):

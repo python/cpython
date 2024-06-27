@@ -13,6 +13,9 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
+# Fail if NEWS nit found before this line number
+NEWS_NIT_THRESHOLD = 200
+
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.
 EXCLUDE_FILES = {
@@ -245,6 +248,32 @@ def fail_if_improved(
     return 0
 
 
+def fail_if_new_news_nit(warnings: list[str], threshold: int) -> int:
+    """
+    Ensure no warnings are found in the NEWS file before a given line number.
+    """
+    news_nits = (
+        warning
+        for warning in warnings
+        if "/build/NEWS:" in warning
+    )
+
+    # Nits found before the threshold line
+    new_news_nits = [
+        nit
+        for nit in news_nits
+        if int(nit.split(":")[1]) <= threshold
+    ]
+
+    if new_news_nits:
+        print("\nError: new NEWS nits:\n")
+        for warning in new_news_nits:
+            print(warning)
+        return -1
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -263,6 +292,14 @@ def main(argv: list[str] | None = None) -> int:
         "--fail-if-improved",
         action="store_true",
         help="Fail if new files with no nits are found",
+    )
+    parser.add_argument(
+        "--fail-if-new-news-nit",
+        metavar="threshold",
+        type=int,
+        nargs="?",
+        const=NEWS_NIT_THRESHOLD,
+        help="Fail if new NEWS nit found before threshold line number",
     )
 
     args = parser.parse_args(argv)
@@ -303,6 +340,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.fail_if_improved:
         exit_code += fail_if_improved(files_with_expected_nits, files_with_nits)
+
+    if args.fail_if_new_news_nit:
+        exit_code += fail_if_new_news_nit(warnings, args.fail_if_new_news_nit)
 
     return exit_code
 

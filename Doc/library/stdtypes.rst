@@ -1220,7 +1220,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 Notes:
 
 (1)
-   *t* must have the same length as the slice it is replacing.
+   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
    The optional argument *i* defaults to ``-1``, so that by default the last
@@ -1491,13 +1491,12 @@ objects that compare equal might have different :attr:`~range.start`,
    sequence of values they define (instead of comparing based on
    object identity).
 
-.. versionadded:: 3.3
-   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   Added the :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
 .. seealso::
 
-   * The `linspace recipe <https://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://code.activestate.com/recipes/579000-equally-spaced-numbers-linspace/>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1769,7 +1768,7 @@ expression support in the :mod:`re` module).
       cases.
 
 
-.. method:: str.format_map(mapping)
+.. method:: str.format_map(mapping, /)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
@@ -2340,7 +2339,13 @@ String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
 Given ``format % values`` (where *format* is a string), ``%`` conversion
 specifications in *format* are replaced with zero or more elements of *values*.
-The effect is similar to using the :c:func:`sprintf` in the C language.
+The effect is similar to using the :c:func:`sprintf` function in the C language.
+For example:
+
+.. doctest::
+
+   >>> print('%s has %d quote types.' % ('Python', 2))
+   Python has 2 quote types.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -4560,7 +4565,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable[, value])
+   .. classmethod:: fromkeys(iterable, value=None)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
@@ -4570,7 +4575,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key[, default])
+   .. method:: get(key, default=None)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4612,7 +4617,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key[, default])
+   .. method:: setdefault(key, default=None)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -5056,7 +5061,6 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
-* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5537,6 +5541,13 @@ types, where they are relevant.  Some of these are not reported by the
       [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
+.. attribute:: class.__static_attributes__
+
+      A tuple containing names of attributes of this class which are accessed
+      through ``self.X`` from any function in its body.
+
+      .. versionadded:: 3.13
+
 .. _int_max_str_digits:
 
 Integer string conversion length limitation
@@ -5554,8 +5565,7 @@ a string to a binary integer or a binary integer to a string in linear time,
 have sub-quadratic complexity. Converting a large value such as ``int('1' *
 500_000)`` can take over a second on a fast CPU.
 
-Limiting conversion size offers a practical way to avoid `CVE-2020-10735
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+Limiting conversion size offers a practical way to avoid :cve:`2020-10735`.
 
 The limit is applied to the number of digit characters in the input or output
 string when a non-linear conversion algorithm would be involved.  Underscores

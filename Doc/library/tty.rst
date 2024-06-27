@@ -1,5 +1,5 @@
-:mod:`tty` --- Terminal control functions
-=========================================
+:mod:`!tty` --- Terminal control functions
+==========================================
 
 .. module:: tty
    :platform: Unix
@@ -53,7 +53,7 @@ The :mod:`tty` module defines the following functions:
    is saved before setting *fd* to raw mode; this value is returned.
 
    .. versionchanged:: 3.12
-      The return value is now the original tty attributes, instead of None.
+      The return value is now the original tty attributes, instead of ``None``.
 
 
 .. function:: setcbreak(fd, when=termios.TCSAFLUSH)
@@ -67,7 +67,7 @@ The :mod:`tty` module defines the following functions:
    the minimum input to 1 byte with no delay.
 
    .. versionchanged:: 3.12
-      The return value is now the original tty attributes, instead of None.
+      The return value is now the original tty attributes, instead of ``None``.
 
    .. versionchanged:: 3.12.2
       The ``ICRNL`` flag is no longer cleared. This restores the behavior

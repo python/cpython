@@ -1,1 +1,0 @@
-Fixed :func:`ast.unparse` to handle format_spec with ``"``, ``'`` or ``\\``. Patched by Frank Hoffmann.

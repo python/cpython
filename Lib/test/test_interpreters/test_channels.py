@@ -1,3 +1,5 @@
+import importlib
+import pickle
 import threading
 from textwrap import dedent
 import unittest
@@ -5,10 +7,28 @@ import time
 
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-_channels = import_helper.import_module('_xxinterpchannels')
+_channels = import_helper.import_module('_interpchannels')
 from test.support import interpreters
 from test.support.interpreters import channels
 from .utils import _run_output, TestBase
+
+
+class LowLevelTests(TestBase):
+
+    # The behaviors in the low-level module is important in as much
+    # as it is exercised by the high-level module.  Therefore the
+    # most # important testing happens in the high-level tests.
+    # These low-level tests cover corner cases that are not
+    # encountered by the high-level module, thus they
+    # mostly shouldn't matter as much.
+
+    # Additional tests are found in Lib/test/test__interpchannels.py.
+    # XXX Those should be either moved to LowLevelTests or eliminated
+    # in favor of high-level tests in this file.
+
+    def test_highlevel_reloaded(self):
+        # See gh-115490 (https://github.com/python/cpython/issues/115490).
+        importlib.reload(channels)
 
 
 class TestChannels(TestBase):
@@ -81,6 +101,12 @@ class TestRecvChannelAttrs(TestBase):
         self.assertEqual(ch1, ch1)
         self.assertNotEqual(ch1, ch2)
 
+    def test_pickle(self):
+        ch, _ = channels.create()
+        data = pickle.dumps(ch)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, ch)
+
 
 class TestSendChannelAttrs(TestBase):
 
@@ -105,6 +131,12 @@ class TestSendChannelAttrs(TestBase):
         _, ch2 = channels.create()
         self.assertEqual(ch1, ch1)
         self.assertNotEqual(ch1, ch2)
+
+    def test_pickle(self):
+        _, ch = channels.create()
+        data = pickle.dumps(ch)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, ch)
 
 
 class TestSendRecv(TestBase):
