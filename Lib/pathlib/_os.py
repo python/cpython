@@ -160,6 +160,9 @@ def copyfileobj(source_f, target_f):
 
 
 def get_file_metadata(path, follow_symlinks):
+    """
+    Returns local path metadata as a dict with string keys.
+    """
     st = os.stat(path, follow_symlinks=follow_symlinks)
     result = {
         'mode': stat.S_IMODE(st.st_mode),
@@ -180,6 +183,9 @@ def get_file_metadata(path, follow_symlinks):
 
 
 def set_file_metadata(path, metadata, follow_symlinks):
+    """
+    Sets local path metadata from the given dict with string keys.
+    """
     def _nop(*args, ns=None, follow_symlinks=None):
         pass
 

@@ -781,6 +781,9 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _get_metadata = get_file_metadata
+    _set_metadata = set_file_metadata
+
     if copyfile:
         def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
             """
@@ -799,9 +802,6 @@ class Path(PathBase, PurePath):
                                          preserve_metadata=preserve_metadata)
                 raise
             copyfile(os.fspath(self), target, follow_symlinks)
-
-    _get_metadata = get_file_metadata
-    _set_metadata = set_file_metadata
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

@@ -790,6 +790,18 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
+    def _get_metadata(self, follow_symlinks):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        return {}
+
+    def _set_metadata(self, metadata, follow_symlinks):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        pass
+
     def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
         Copy the contents of this file to the given target. If this file is a
@@ -818,12 +830,6 @@ class PathBase(PurePathBase):
                     raise
         if preserve_metadata:
             target._set_metadata(self._get_metadata(True), True)
-
-    def _get_metadata(self, follow_symlinks):
-        return {}
-
-    def _set_metadata(self, metadata, follow_symlinks):
-        pass
 
     def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
                  ignore=None, on_error=None):
