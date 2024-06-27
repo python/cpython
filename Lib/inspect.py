@@ -2556,6 +2556,10 @@ def _signature_from_callable(obj, *,
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
+    if isinstance(obj, functools.partial):
+        wrapped_sig = _get_signature_of(obj.func)
+        return _signature_get_partial(wrapped_sig, obj)
+
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
@@ -2566,10 +2570,6 @@ def _signature_from_callable(obj, *,
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
-
-    if isinstance(obj, functools.partial):
-        wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
 
     if isinstance(obj, type):
         # obj is a class or a metaclass
