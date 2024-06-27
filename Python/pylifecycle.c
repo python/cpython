@@ -1966,8 +1966,14 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
     /* Then we decide the thread state we should use for finalization. */
 
     PyThreadState *final_tstate = tstate;
-    if (_Py_IsMainThread() && main_tstate != NULL) {
-        if (tstate != main_tstate) {
+    if (_Py_IsMainThread()) {
+        if (main_tstate == NULL) {
+            if (tstate->interp != main_interp) {
+                /* We will swap in a tstate for the main interpreter. */
+                final_tstate = NULL;
+            }
+        }
+        else if (tstate != main_tstate) {
             /* This implies that Py_Finalize() was called while
                a non-main interpreter was active or while the main
                tstate was temporarily swapped out with another.
@@ -1982,18 +1988,23 @@ resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
            over to the main thread.  At the least, however, we can make
            sure the main interpreter is active. */
         if (tstate->interp != main_interp) {
-            /* We don't go to the trouble of updating runtime->main_tstate
-               since it will be dead soon anyway. */
-            final_tstate =
-                _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
-            if (final_tstate != NULL) {
-                _PyThreadState_Bind(final_tstate);
-            }
-            /* Otherwise we fall back to the current tstate.
-               It's better than nothing. */
+            final_tstate = NULL;
         }
     }
-    assert(final_tstate != NULL);
+    if (final_tstate == NULL) {
+        /* We don't go to the trouble of updating runtime->main_tstate
+           since it will be dead soon anyway. */
+        final_tstate =
+            _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
+        if (final_tstate == NULL) {
+            /* Fall back to the current tstate.  It's better than nothing. */
+            final_tstate = tstate;
+        }
+        else {
+            _PyThreadState_Bind(final_tstate);
+        }
+    }
+    assert(final_tstate->interp == main_interp);
 
     /* We might want to warn if final_tstate->current_frame != NULL. */
 
