@@ -237,16 +237,25 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle,
     // The period of the right half.
     Py_ssize_t period = 1;
     STRINGLIB_CHAR a, b;
+    // directional indexers for candidate & max_suffix
+    // It is more efficient way to achieve:
+    //      a = needle[stt + dir * (candidate + k)];
+    //      b = needle[stt + dir * (max_suffix + k)];
+    Py_ssize_t cp, sp;
+    cp = stt + dir * candidate;
+    sp = stt + dir * max_suffix;
     while (candidate + k < needle_len) {
         // each loop increases (in chosen direction) candidate + k + max_suffix
-        a = needle[stt + dir*(candidate + k)];
-        b = needle[stt + dir*(max_suffix + k)];
+        a = needle[cp];
+        b = needle[sp];
         // check if the suffix at candidate is better than max_suffix
         if (invert_alphabet ? (b < a) : (a < b)) {
             // Fell short of max_suffix.
             // The next k + 1 characters are non-increasing
             // from candidate, so they won't start a maximal suffix.
             candidate += k + 1;
+            cp += dir;
+            sp -= dir * k;
             k = 0;
             // We've ruled out any period smaller than what's
             // been scanned since max_suffix.
@@ -256,11 +265,15 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle,
             if (k + 1 != period) {
                 // Keep scanning the equal strings
                 k++;
+                cp += dir;
+                sp += dir;
             }
             else {
                 // Matched a whole period.
                 // Start matching the next period.
                 candidate += period;
+                cp = stt + dir * candidate;
+                sp -= dir * k;
                 k = 0;
             }
         }
@@ -270,6 +283,8 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle,
             candidate++;
             k = 0;
             period = 1;
+            cp = stt + dir * candidate;
+            sp = stt + dir * max_suffix;
         }
     }
     *return_period = period;
