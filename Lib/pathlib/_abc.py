@@ -906,35 +906,33 @@ class PathBase(PurePathBase):
         the caller.
         """
         if ignore_errors:
-            def on_error(error):
+            def on_error(err):
                 pass
         elif on_error is None:
-            def on_error(error):
-                raise
+            def on_error(err):
+                raise err
         try:
             if self.is_symlink() or self.is_junction():
                 raise OSError("Cannot call rmtree on a symbolic link")
             results = self.walk(
-                top_down=False,
                 on_error=on_error,
+                top_down=False,
                 follow_symlinks=False)
             for dirpath, dirnames, filenames in results:
                 for name in filenames:
-                    child = dirpath / name
                     try:
-                        child.unlink()
-                    except OSError as error:
-                        on_error(error)
+                        dirpath.joinpath(name).unlink()
+                    except OSError as err:
+                        on_error(err)
                 for name in dirnames:
-                    child = dirpath / name
                     try:
-                        child.rmdir()
-                    except OSError as error:
-                        on_error(error)
+                        dirpath.joinpath(name).rmdir()
+                    except OSError as err:
+                        on_error(err)
             self.rmdir()
-        except OSError as error:
-            error.filename = str(self)
-            on_error(error)
+        except OSError as err:
+            err.filename = str(self)
+            on_error(err)
 
     def owner(self, *, follow_symlinks=True):
         """
