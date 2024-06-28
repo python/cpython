@@ -1,9 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5(), uuid6(), uuid7(), and uuid8() for
-generating version 1 to 8 UUIDs as specified in RFC 4122 (superseeded
-by RFC 9562 but still referred to as RFC 4122 for compatibility purposes).
+uuid1(), uuid3(), uuid4(), uuid5() and uuid6() for generating version 1, 3,
+4, 5, and 6 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
+referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -130,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 8, meaningful only
+        version     the UUID version number (1 through 6, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -215,7 +215,7 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 8:
+            if not 1 <= version <= 6:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
@@ -763,53 +763,6 @@ def uuid6(node=None, clock_seq=None):
     int_uuid_6 |= node & 0xffffffffffff
     return UUID(int=int_uuid_6, version=6)
 
-_last_timestamp_v7 = None
-
-def uuid7():
-    """Generate a UUID from a Unix timestamp in milliseconds and random bits."""
-    global _last_timestamp_v7
-    import time
-    nanoseconds = time.time_ns()
-    timestamp_ms = nanoseconds // 1_000_000
-    if _last_timestamp_v7 is not None and timestamp_ms <= _last_timestamp_v7:
-        timestamp_ms = _last_timestamp_v7 + 1
-    _last_timestamp_v7 = timestamp_ms
-    int_uuid_7 = (timestamp_ms & 0xffffffffffff) << 80
-    # Ideally, we would have 'rand_a' = first 12 bits of 'rand'
-    # and 'rand_b' = lowest 62 bits, but it is easier to test
-    # when we pick 'rand_a' from the lowest bits of 'rand' and
-    # 'rand_b' from the next 62 bits, ignoring the 6 first bits
-    # of 'rand'.
-    rand = int.from_bytes(os.urandom(10))  # 80 random bits (ignore 6 first)
-    int_uuid_7 |= (rand & 0x0fff) << 64  # rand_a
-    int_uuid_7 |= (rand >> 12) & 0x3fffffffffffffff  # rand_b
-    return UUID(int=int_uuid_7, version=7)
-
-def uuid8(a=None, b=None, c=None):
-    """Generate a UUID from three custom blocks.
-
-    'a' is the first 48-bit chunk of the UUID (octets 0-5);
-    'b' is the mid 12-bit chunk (octets 6-7);
-    'c' is the last 62-bit chunk (octets 8-15).
-
-    When a value is not specified, a random value is generated.
-    """
-    if a is None:
-        import random
-        a = random.getrandbits(48)
-    if b is None:
-        import random
-        b = random.getrandbits(12)
-    if c is None:
-        import random
-        c = random.getrandbits(62)
-
-    int_uuid_8 = (a & 0xffffffffffff) << 80
-    int_uuid_8 |= (b & 0xfff) << 64
-    int_uuid_8 |= c & 0x3fffffffffffffff
-    return UUID(int=int_uuid_8, version=8)
-
-
 def main():
     """Run the uuid command line interface."""
     uuid_funcs = {
@@ -818,8 +771,6 @@ def main():
         "uuid4": uuid4,
         "uuid5": uuid5,
         "uuid6": uuid6,
-        "uuid7": uuid7,
-        "uuid8": uuid8,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {

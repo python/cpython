@@ -121,12 +121,8 @@ symtable
 uuid
 ----
 
-* Add support for UUID versions 6, 7, and 8 as specified by
-  :rfc:`9562` to the :mod:`uuid` module:
-
-  * :func:`~uuid.uuid6`
-  * :func:`~uuid.uuid7`
-  * :func:`~uuid.uuid8`
+* Add support for UUID version 6 via :func:`uuid.uuid6` as specified
+  in :rfc:`9562`.
 
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
