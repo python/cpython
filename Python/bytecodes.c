@@ -885,10 +885,10 @@ dummy_func(
             switch (oparg) {
             case 2:
                 cause = PyStackRef_AsPyObjectSteal(args[1]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 1:
                 exc = PyStackRef_AsPyObjectSteal(args[0]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 0:
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
