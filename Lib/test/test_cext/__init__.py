@@ -86,6 +86,8 @@ class TestExt(unittest.TestCase):
         cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
+        if support.verbose:
+            cmd.append('-v')
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python
