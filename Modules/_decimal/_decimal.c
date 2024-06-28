@@ -5746,8 +5746,55 @@ static PyType_Spec context_spec = {
 };
 
 
+static void *
+_getslot_recursive(PyTypeObject *type, int depth, int n)
+{
+    void *token = PyType_GetSlot(type, Py_tp_token);
+    if (n < depth && token != _getslot_recursive(type, depth, n+1)) {
+        token = NULL;
+    }
+    return token;
+}
+
+static void *
+_gettoken_recursive(PyTypeObject *type, int depth, int n)
+{
+    void *token;
+    PyType_GetToken(type, &token);
+    if (n < depth && token != _gettoken_recursive(type, depth, n+1)) {
+        token = NULL;
+    }
+    return token;
+}
+
+static PyObject *
+test_perf_getslot(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    PyObject *depth;
+    if (!PyArg_ParseTuple(args, "OO", &type, &depth)) {
+        return NULL;
+    }
+    void *token = _getslot_recursive(type, PyLong_AsLong(depth), 1);
+    return PyLong_FromVoidPtr(token);
+}
+
+static PyObject *
+test_perf_gettoken(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    PyObject *depth;
+    if (!PyArg_ParseTuple(args, "OO", &type, &depth)) {
+        return NULL;
+    }
+    void *token = _gettoken_recursive(type, PyLong_AsLong(depth), 1);
+    return PyLong_FromVoidPtr(token);
+}
+
 static PyMethodDef _decimal_methods [] =
 {
+  { "test_perf_getslot", test_perf_getslot, METH_VARARGS},
+  { "test_perf_gettoken", test_perf_gettoken, METH_VARARGS},
   { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
   { "setcontext", (PyCFunction)PyDec_SetCurrentContext, METH_O, doc_setcontext},
   { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
