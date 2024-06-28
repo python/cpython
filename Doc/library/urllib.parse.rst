@@ -33,7 +33,7 @@ Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
    passing Apple's App Store review process for the macOS and iOS App Stores.
    Handling for the ``itms-services`` scheme is always removed on iOS; on
    macOS, it *may* be removed if CPython has been built with the
-   ``--with-app-store-compliance`` option.
+   :option:`--with-app-store-compliance` option.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in

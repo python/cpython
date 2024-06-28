@@ -204,7 +204,7 @@ The Python source tree contains
 :source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
 all code that is known to cause issues with the App Store review process. This
 patch is applied automatically when CPython is configured with the
-``--with-app-store-compliance`` option.
+:option:`--with-app-store-compliance` option.
 
 This patch is not normally required to use CPython on a Mac; nor is it required
 if you are distributing an app *outside* the macOS App Store. It is *only*
