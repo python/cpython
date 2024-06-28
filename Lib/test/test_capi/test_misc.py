@@ -1155,7 +1155,11 @@ class CAPITest(unittest.TestCase):
         def get_base_by_token(src, key, comparable=True):
             def run(use_mro):
                 find_first = _testcapi.pytype_getbasebytoken
-                result = find_first(src, key, use_mro)
+                ret1, result = find_first(src, key, use_mro, True)
+                ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertEqual(ret1, result is not None)
+                self.assertEqual(ret1, ret2)
+                self.assertIsNone(no_result)
                 return result
 
             found_in_mro = run(True)

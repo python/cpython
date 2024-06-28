@@ -462,8 +462,9 @@ static PyObject *
 pytype_getbasebytoken(PyObject *self, PyObject *args)
 {
     PyTypeObject *type;
-    PyObject *py_token, *use_mro;
-    if (!PyArg_ParseTuple(args, "OOO", &type, &py_token, &use_mro)) {
+    PyObject *py_token, *use_mro, *need_result;
+    if (!PyArg_ParseTuple(args, "OOOO",
+                          &type, &py_token, &use_mro, &need_result)) {
         return NULL;
     }
     assert(PyType_Check(type));
@@ -475,22 +476,31 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
     }
 
     void *token = PyLong_AsVoidPtr(py_token);
-    PyTypeObject *result;
-    int ret = PyType_GetBaseByToken(type, token, &result);
+    PyObject *result;
+    int ret;
+    if (need_result == Py_True) {
+        ret = PyType_GetBaseByToken(type, token, (PyTypeObject **)&result);
+    }
+    else {
+        result = NULL;
+        ret = PyType_GetBaseByToken(type, token, NULL);
+    }
 
     if (mro_save != NULL) {
         type->tp_mro = mro_save;
     }
 
-    if (ret < 0) {
+    if (ret < 0 || ret > 1) {
         return NULL;
     }
-    if (result == NULL) {
-        assert(ret == 0);
-        Py_RETURN_NONE;
+    PyObject *tuple = PyTuple_New(2);
+    if (tuple == NULL) {
+        Py_XDECREF(result);
+        return NULL;
     }
-    assert(ret == 1);
-    return (PyObject *)result;
+    PyTuple_SET_ITEM(tuple, 0, ret ? Py_True : Py_False);
+    PyTuple_SET_ITEM(tuple, 1, result ? result : Py_None);
+    return tuple;
 }
 
 
