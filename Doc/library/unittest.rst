@@ -1326,7 +1326,7 @@ Test cases
    | :meth:`assertSetEqual(a, b)             | sets or frozensets          | 3.1          |
    | <TestCase.assertSetEqual>`              |                             |              |
    +-----------------------------------------+-----------------------------+--------------+
-   | :meth:`assertMappingEqual(a, b)         | mappings                    | 3.13         |
+   | :meth:`assertMappingEqual(a, b)         | mappings                    | 3.14         |
    | <TestCase.assertMappingEqual>`          |                             |              |
    +-----------------------------------------+-----------------------------+--------------+
    | :meth:`assertDictEqual(a, b)            | dicts                       | 3.1          |
