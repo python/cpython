@@ -837,7 +837,7 @@ error:
     return _PyStatus_ERR("can't initialize builtins module");
 }
 
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+#if defined(Py_STACKREF_DEBUG) && defined(Py_GIL_DISABLED)
 static PyStatus
 pycore_init_stackrefs(PyInterpreterState *interp)
 {
@@ -866,7 +866,7 @@ pycore_interp_init(PyThreadState *tstate)
     PyStatus status;
     PyObject *sysmod = NULL;
 
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+#if defined(Py_STACKREF_DEBUG) && defined(Py_GIL_DISABLED)
     status = pycore_init_stackrefs(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

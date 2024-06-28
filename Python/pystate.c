@@ -904,7 +904,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
     interp->active_code_watchers = 0;
 
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+#if defined(Py_STACKREF_DEBUG) && defined(Py_GIL_DISABLED)
     PyMem_Free(interp->stackref_state.entries);
 #endif
     // XXX Once we have one allocator per interpreter (i.e.
