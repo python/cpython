@@ -1953,7 +1953,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
-            if (year_long > 1000) {
+            if (year_long >= 1000) {
                 goto PassThrough;
             }
             if (ch == 'G') {
