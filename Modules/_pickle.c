@@ -6623,11 +6623,13 @@ load_additems(PickleState *state, UnpicklerObject *self)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SET_SIZE(self->stack, mark);
+                Py_DECREF(add_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SET_SIZE(self->stack, mark);
+        Py_DECREF(add_func);
     }
 
     return 0;
