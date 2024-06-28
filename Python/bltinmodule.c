@@ -2516,6 +2516,41 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 
+/* Improved Kahan–Babuška algorithm by Arnold Neumaier
+   Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+   zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+   54: 39-51. https://doi.org/10.1002/zamm.19740540106
+   https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
+ */
+
+typedef struct {
+    double sum;  /* accumulator */
+    double c;  /* a running compensation for lost low-order bits */
+} _csum;
+
+static inline void
+_csum_neumaier_step(_csum *v, double x)
+{
+    double t = v->sum + x;
+    if (fabs(v->sum) >= fabs(x)) {
+        v->c += (v->sum - t) + x;
+    } else {
+        v->c += (x - t) + v->sum;
+    }
+    v->sum = t;
+}
+
+static inline void
+_csum_neumaier_finalize(_csum *v)
+{
+    /* Avoid losing the sign on a negative result,
+       and don't let adding the compensation convert
+       an infinite or overflowed sum to a NaN. */
+    if (v->c && isfinite(v->c)) {
+        v->sum += v->c;
+    }
+}
+
 /*[clinic input]
 sum as builtin_sum
 
@@ -2628,8 +2663,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (PyFloat_CheckExact(result)) {
-        double f_result = PyFloat_AS_DOUBLE(result);
-        double c = 0.0;
+        _csum f_result = {PyFloat_AS_DOUBLE(result), 0.0};
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2637,28 +2671,11 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                /* Avoid losing the sign on a negative result,
-                   and don't let adding the compensation convert
-                   an infinite or overflowed sum to a NaN. */
-                if (c && isfinite(c)) {
-                    f_result += c;
-                }
-                return PyFloat_FromDouble(f_result);
+                _csum_neumaier_finalize(&f_result);
+                return PyFloat_FromDouble(f_result.sum);
             }
             if (PyFloat_CheckExact(item)) {
-                // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
-                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
-                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
-                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
-                double x = PyFloat_AS_DOUBLE(item);
-                double t = f_result + x;
-                if (fabs(f_result) >= fabs(x)) {
-                    c += (f_result - t) + x;
-                } else {
-                    c += (x - t) + f_result;
-                }
-                f_result = t;
+                _csum_neumaier_step(&f_result, PyFloat_AS_DOUBLE(item));
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2667,15 +2684,72 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    f_result += (double)value;
+                    f_result.sum += (double)value;
                     Py_DECREF(item);
                     continue;
                 }
             }
-            if (c && isfinite(c)) {
-                f_result += c;
+            _csum_neumaier_finalize(&f_result);
+            result = PyFloat_FromDouble(f_result.sum);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
             }
-            result = PyFloat_FromDouble(f_result);
+            temp = PyNumber_Add(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+
+    if (PyComplex_CheckExact(result)) {
+        Py_complex z = PyComplex_AsCComplex(result);
+        _csum cr_result = {z.real, 0.0};
+        _csum ci_result = {z.imag, 0.0};
+        Py_SETREF(result, NULL);
+        while(result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred())
+                    return NULL;
+                _csum_neumaier_finalize(&cr_result);
+                _csum_neumaier_finalize(&ci_result);
+                return PyComplex_FromDoubles(cr_result.sum, ci_result.sum);
+            }
+            if (PyComplex_CheckExact(item)) {
+                z = PyComplex_AsCComplex(item);
+                _csum_neumaier_step(&cr_result, z.real);
+                _csum_neumaier_step(&ci_result, z.imag);
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
+                continue;
+            }
+            if (PyLong_Check(item)) {
+                long value;
+                int overflow;
+                value = PyLong_AsLongAndOverflow(item, &overflow);
+                if (!overflow) {
+                    cr_result.sum += (double)value;
+                    ci_result.sum += 0.0;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            if (PyFloat_Check(item)) {
+                double value = PyFloat_AS_DOUBLE(item);
+                cr_result.sum += value;
+                ci_result.sum += 0.0;
+                Py_DECREF(item);
+                continue;
+            }
+            _csum_neumaier_finalize(&cr_result);
+            _csum_neumaier_finalize(&ci_result);
+            result = PyComplex_FromDoubles(cr_result.sum, ci_result.sum);
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
