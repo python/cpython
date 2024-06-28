@@ -487,7 +487,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    passed, its :meth:`~object.__index__` will be used to convert. This may
    result in Python code executing and other threads being allowed to run, which
    could cause changes to other objects or values in use. When *flags* is
-   ``-1``, this option is not set.
+   ``-1``, this option is not set, and non-integer values will raise
+   :exc:`TypeError`.
 
    .. note::
 
