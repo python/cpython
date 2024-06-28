@@ -755,7 +755,6 @@ Instance methods:
    Format codes referring to hours, minutes or seconds will see 0 values.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
-
 .. method:: date.__format__(format)
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
@@ -2539,6 +2538,10 @@ differences between platforms in handling of unsupported format specifiers.
 
 .. versionadded:: 3.12
    ``%:z`` was added.
+
+.. versionchanged:: 3.14
+   ``%Y`` and ``%G`` are now guaranteed to 0-pad year with century to 4 digits. Previously
+   they would not 0-pad years less than 1000 on certain platforms such as Linux.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
