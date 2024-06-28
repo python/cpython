@@ -1957,14 +1957,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 goto PassThrough;
             }
             if (ch == 'G') {
-                PyObject *year_str;              /* py string, year */
-                PyObject *year;                  /* py int, year */
-
-                year_str = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
+                PyObject *year_str = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
                 if (year_str == NULL) {
                     goto Done;
                 }
-                year = PyNumber_Long(year_str);
+                PyObject *year = PyNumber_Long(year_str);
                 Py_DECREF(year_str);
                 if (year == NULL) {
                     goto Done;
