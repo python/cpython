@@ -1121,7 +1121,7 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
-        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
         if hasattr(socket, 'if_nameindex'):
@@ -1182,11 +1182,11 @@ class GeneralModuleTests(unittest.TestCase):
         import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
-        l_bad_values = [-1, -2, 1<<32, 1<<1000]
+        neg_values = [-1, -2, -(1<<15)-1, -(1<<31)-1, -(1<<63)-1, -1<<1000]
+        l_bad_values = [1<<32, 1<<1000]
         s_bad_values = (
             l_bad_values +
-            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
-            [1 << 16, _testcapi.INT_MAX]
+            [1 << 16, _testcapi.INT_MAX, _testcapi.INT_MAX+1]
         )
         for k in s_good_values:
             socket.ntohs(k)
@@ -1194,6 +1194,11 @@ class GeneralModuleTests(unittest.TestCase):
         for k in l_good_values:
             socket.ntohl(k)
             socket.htonl(k)
+        for k in neg_values:
+            self.assertRaises(ValueError, socket.ntohs, k)
+            self.assertRaises(ValueError, socket.htons, k)
+            self.assertRaises(ValueError, socket.ntohl, k)
+            self.assertRaises(ValueError, socket.htonl, k)
         for k in s_bad_values:
             self.assertRaises(OverflowError, socket.ntohs, k)
             self.assertRaises(OverflowError, socket.htons, k)

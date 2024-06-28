@@ -236,7 +236,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, asunsignedlong, Index(42))
         self.assertRaises(TypeError, asunsignedlong, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, asunsignedlong, -1)
+        self.assertRaises(ValueError, asunsignedlong, -1)
         self.assertRaises(OverflowError, asunsignedlong, ULONG_MAX + 1)
         self.assertRaises(TypeError, asunsignedlong, 1.0)
         self.assertRaises(TypeError, asunsignedlong, b'2')
@@ -314,7 +314,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, asunsignedlonglong, Index(42))
         self.assertRaises(TypeError, asunsignedlonglong, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, asunsignedlonglong, -1)
+        self.assertRaises(ValueError, asunsignedlonglong, -1)
         self.assertRaises(OverflowError, asunsignedlonglong, ULLONG_MAX + 1)
         self.assertRaises(TypeError, asunsignedlonglong, 1.0)
         self.assertRaises(TypeError, asunsignedlonglong, b'2')
@@ -374,7 +374,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, as_size_t, Index(42))
         self.assertRaises(TypeError, as_size_t, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, as_size_t, -1)
+        self.assertRaises(ValueError, as_size_t, -1)
         self.assertRaises(OverflowError, as_size_t, SIZE_MAX + 1)
         self.assertRaises(TypeError, as_size_t, 1.0)
         self.assertRaises(TypeError, as_size_t, b'2')

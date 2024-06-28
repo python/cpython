@@ -636,7 +636,9 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     unsigned int y;
     if (get_ulong(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             RANGE_ERROR(state, f, 1);
         }
         return -1;
@@ -669,7 +671,9 @@ np_ulong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     if (get_ulong(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             RANGE_ERROR(state, f, 1);
         }
         return -1;
@@ -697,7 +701,9 @@ np_size_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     size_t x;
     if (get_size_t(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             RANGE_ERROR(state, f, 1);
         }
         return -1;
@@ -729,7 +735,9 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 {
     unsigned long long x;
     if (get_ulonglong(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             PyErr_Format(state->StructError,
                          "'%c' format requires 0 <= number <= %llu",
                          f->format,
@@ -970,7 +978,9 @@ bp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_ulong(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             RANGE_ERROR(state, f, 1);
         }
         return -1;
@@ -1232,7 +1242,9 @@ lp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_ulong(state, v, &x) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError))
+        {
             RANGE_ERROR(state, f, 1);
         }
         return -1;
@@ -1991,9 +2003,13 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
             } else {
                 if (e->pack(state, res, v, e) < 0) {
-                    if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
+                    if (PyLong_Check(v) &&
+                        (PyErr_ExceptionMatches(PyExc_OverflowError) ||
+                         PyErr_ExceptionMatches(PyExc_ValueError)))
+                    {
                         PyErr_SetString(state->StructError,
                                         "int too large to convert");
+                    }
                     return -1;
                 }
             }

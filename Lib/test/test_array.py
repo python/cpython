@@ -1326,8 +1326,9 @@ class NumberTest(BaseTest):
         a = array.array(self.typecode, [lower])
         a[0] = lower
         # should overflow assigning less than lower limit
-        self.assertRaises(OverflowError, array.array, self.typecode, [lower-1])
-        self.assertRaises(OverflowError, a.__setitem__, 0, lower-1)
+        exc = ValueError if int(lower) == 0 else OverflowError
+        self.assertRaises(exc, array.array, self.typecode, [lower-1])
+        self.assertRaises(exc, a.__setitem__, 0, lower-1)
         # should not overflow assigning upper limit
         a = array.array(self.typecode, [upper])
         a[0] = upper

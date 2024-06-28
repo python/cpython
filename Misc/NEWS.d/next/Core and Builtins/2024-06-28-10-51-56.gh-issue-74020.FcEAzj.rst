@@ -1,0 +1,2 @@
+Converting negative Python integer to a C unsigned integer type now raises
+:exc:`ValueError`, not :exc:`OverflowError`.

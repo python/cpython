@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
@@ -102,16 +103,15 @@ PyDoc_STRVAR(_socket_socket_ntohs__doc__,
     {"ntohs", (PyCFunction)_socket_socket_ntohs, METH_O, _socket_socket_ntohs__doc__},
 
 static PyObject *
-_socket_socket_ntohs_impl(PySocketSockObject *self, int x);
+_socket_socket_ntohs_impl(PySocketSockObject *self, unsigned short x);
 
 static PyObject *
 _socket_socket_ntohs(PySocketSockObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int x;
+    unsigned short x;
 
-    x = PyLong_AsInt(arg);
-    if (x == -1 && PyErr_Occurred()) {
+    if (!_PyLong_UnsignedShort_Converter(arg, &x)) {
         goto exit;
     }
     return_value = _socket_socket_ntohs_impl(self, x);
@@ -130,16 +130,15 @@ PyDoc_STRVAR(_socket_socket_htons__doc__,
     {"htons", (PyCFunction)_socket_socket_htons, METH_O, _socket_socket_htons__doc__},
 
 static PyObject *
-_socket_socket_htons_impl(PySocketSockObject *self, int x);
+_socket_socket_htons_impl(PySocketSockObject *self, unsigned short x);
 
 static PyObject *
 _socket_socket_htons(PySocketSockObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int x;
+    unsigned short x;
 
-    x = PyLong_AsInt(arg);
-    if (x == -1 && PyErr_Occurred()) {
+    if (!_PyLong_UnsignedShort_Converter(arg, &x)) {
         goto exit;
     }
     return_value = _socket_socket_htons_impl(self, x);
@@ -259,4 +258,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=eb37b5d88a1e4661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23dc8d4d0982eada input=a9049054013a1b77]*/

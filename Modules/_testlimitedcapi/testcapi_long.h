@@ -96,10 +96,10 @@ TESTNAME(PyObject *error(const char*))
         if (uout != (unsigned TYPENAME)-1 || !PyErr_Occurred())
             return error(
                 "PyLong_AsUnsignedXXX(-1) didn't complain");
-        if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+        if (!PyErr_ExceptionMatches(PyExc_ValueError))
             return error(
                 "PyLong_AsUnsignedXXX(-1) raised "
-                "something other than OverflowError");
+                "something other than ValueError");
         PyErr_Clear();
         UNBIND(x);
 

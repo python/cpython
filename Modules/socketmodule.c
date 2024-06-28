@@ -6332,28 +6332,24 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 
 /*[clinic input]
 _socket.socket.ntohs
-    x: int
+    x: unsigned_short(bitwise=False)
     /
 
 Convert a 16-bit unsigned integer from network to host byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+_socket_socket_ntohs_impl(PySocketSockObject *self, unsigned short x)
+/*[clinic end generated code: output=fea6a7f0ed6b5319 input=a64696ca0e7e61ab]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "ntohs: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
+#if SIZEOF_SHORT > 2
     if (x > 0xffff) {
         PyErr_SetString(PyExc_OverflowError,
                         "ntohs: Python int too large to convert to C "
                         "16-bit unsigned integer");
         return NULL;
     }
+#endif
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
 
@@ -6394,28 +6390,24 @@ Convert a 32-bit integer from network to host byte order.");
 
 /*[clinic input]
 _socket.socket.htons
-    x: int
+    x: unsigned_short(bitwise=False)
     /
 
 Convert a 16-bit unsigned integer from host to network byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_htons_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+_socket_socket_htons_impl(PySocketSockObject *self, unsigned short x)
+/*[clinic end generated code: output=051e2c88a1e143fe input=45f8ada592cbbc8c]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "htons: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
+#if SIZEOF_SHORT > 2
     if (x > 0xffff) {
         PyErr_SetString(PyExc_OverflowError,
                         "htons: Python int too large to convert to C "
                         "16-bit unsigned integer");
         return NULL;
     }
+#endif
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
 

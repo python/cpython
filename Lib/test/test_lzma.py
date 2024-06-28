@@ -647,9 +647,9 @@ class FileTestCase(unittest.TestCase):
             LZMAFile(BytesIO(), "w", preset=10)
         with self.assertRaises(LZMAError):
             LZMAFile(BytesIO(), "w", preset=23)
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w", preset=-1)
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w", preset=-7)
         with self.assertRaises(TypeError):
             LZMAFile(BytesIO(), "w", preset="foo")
