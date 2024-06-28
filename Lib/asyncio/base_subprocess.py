@@ -1,6 +1,8 @@
 import collections
 import subprocess
 import warnings
+import os
+import signal
 
 from . import protocols
 from . import transports
@@ -144,15 +146,16 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
     def send_signal(self, signal):
         self._check_proc()
-        self._proc.send_signal(signal)
+        try:
+            os.kill(self._proc.pid, signal)
+        except ProcessLookupError:
+            pass
 
     def terminate(self):
-        self._check_proc()
-        self._proc.terminate()
+        self.send_signal(signal.SIGTERM)
 
     def kill(self):
-        self._check_proc()
-        self._proc.kill()
+        self.send_signal(signal.SIGKILL)
 
     async def _connect_pipes(self, waiter):
         try:
