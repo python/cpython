@@ -1,0 +1,4 @@
+Added a new ``--with-pystackrefs`` configure build option for CPython. This
+option is fully experimental and may be modified or removed without prior
+notice. Enabling the option turns on internal handle-like debugging for
+CPython's main interpreter loop.
