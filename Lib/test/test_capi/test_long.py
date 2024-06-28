@@ -503,7 +503,6 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
 
-
         # Test that we populate n=2 bytes but do not overwrite more.
         buffer = bytearray(b"\x99"*3)
         self.assertEqual(2, asnativebytes(4, buffer, 2, 0),  # BE
