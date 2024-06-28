@@ -1490,10 +1490,22 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    existing interned string that is the same as :c:expr:`*p_unicode`, it sets :c:expr:`*p_unicode` to
    it (releasing the reference to the old string object and creating a new
    :term:`strong reference` to the interned string object), otherwise it leaves
-   :c:expr:`*p_unicode` alone and interns it (creating a new :term:`strong reference`).
+   :c:expr:`*p_unicode` alone and interns it.
+
    (Clarification: even though there is a lot of talk about references, think
-   of this function as reference-neutral; you own the object after the call
-   if and only if you owned it before the call.)
+   of this function as reference-neutral. You must own the object you pass in;
+   after the call you no longer own the passed-in reference, but you newly own
+   the result.)
+
+   This function never raises an exception.
+   On error, it leaves its argument unchanged without interning it.
+
+   Instances of subclasses of :py:class:`str` may not be interned, that is,
+   :c:expr:`PyUnicode_CheckExact(*p_unicode)` must be true. If it is not,
+   then -- as with any other error -- the argument is left unchanged.
+
+   Note that interned strings are not “immortal”.
+   You must keep a reference to the result to benefit from interning.
 
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)
