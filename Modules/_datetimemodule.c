@@ -1858,6 +1858,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (!pin)
         return NULL;
 
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto Done;
+    }
+
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
      * is expensive, don't unless they're actually used.
@@ -1872,11 +1877,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     if (newfmt == NULL) goto Done;
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
-
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
-    if (strftime == NULL) {
-        goto Done;
-    }
 
     while ((ch = *pin++) != '\0') {
         if (ch != '%') {
