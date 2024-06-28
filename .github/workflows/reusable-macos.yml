@@ -68,4 +68,4 @@ jobs:
     - name: Tests
       # Stackref debug is 2.5x slower than normal CPython,
       # so we only run it on a restricted subset of tests.
-      run: ${{ inputs.stackref-debug && './python -m test test_asyncio' || 'make test' }}
+      run: ${{ inputs.stackref-debug && './python.exe -m test test_asyncio test_typing' || 'make test' }}
