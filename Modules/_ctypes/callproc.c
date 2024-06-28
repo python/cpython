@@ -106,7 +106,7 @@ module _ctypes
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
 #ifdef Py_HAVE_C_COMPLEX
-#include "../complex.h"           // complex
+#include "../_complex.h"          // complex
 #endif
 
 #include "clinic/callproc.c.h"

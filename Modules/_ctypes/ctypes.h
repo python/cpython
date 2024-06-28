@@ -6,7 +6,7 @@
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #ifdef Py_HAVE_C_COMPLEX
-#   include "../complex.h"        // complex
+#   include "../_complex.h"       // complex
 #endif
 
 #ifndef MS_WIN32
