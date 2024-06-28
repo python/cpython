@@ -1838,12 +1838,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
-#ifdef NORMALIZE_CENTURY
-    PyObject *year_str;                     /* py string, year */
-    PyObject *year;                         /* py int, year */
-    long year_long;                         /* year as long int */
-    char year_formatted[SIZEOF_LONG*5/2+2]; /* formatted year for %Y/%G */
-#endif
 
     const char *pin;            /* pointer to next char in input format */
     Py_ssize_t flen;            /* length of input format */
@@ -1951,9 +1945,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
-#ifdef NORMALIZE_CENTURY
+#ifdef Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G') {
             /* 0-pad year with century as necessary */
+            PyObject *year_str;                     /* py string, year */
+            PyObject *year;                         /* py int, year */
+            long year_long;                         /* year as long int */
+            char year_formatted[SIZEOF_LONG*5/2+2]; /* formatted year for %Y/%G */
+
             year_long = PyLong_AsLong(PyTuple_GET_ITEM(timetuple, 0));
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
@@ -1983,7 +1982,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 #endif
         else {
             /* percent followed by something else */
-#ifdef NORMALIZE_CENTURY
+#ifdef Py_NORMALIZE_CENTURY
  PassThrough:
 #endif
             ptoappend = pin - 2;
