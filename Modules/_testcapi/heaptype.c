@@ -490,7 +490,7 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
         type->tp_mro = mro_save;
     }
 
-    if (ret < 0 || ret > 1) {
+    if (ret < 0) {
         return NULL;
     }
     PyObject *tuple = PyTuple_New(2);
@@ -498,7 +498,7 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
         Py_XDECREF(result);
         return NULL;
     }
-    PyTuple_SET_ITEM(tuple, 0, ret ? Py_True : Py_False);
+    PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong(ret));
     PyTuple_SET_ITEM(tuple, 1, result ? result : Py_None);
     return tuple;
 }

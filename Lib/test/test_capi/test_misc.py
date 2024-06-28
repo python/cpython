@@ -1157,6 +1157,7 @@ class CAPITest(unittest.TestCase):
                 find_first = _testcapi.pytype_getbasebytoken
                 ret1, result = find_first(src, key, use_mro, True)
                 ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertIn(ret1, (0, 1))
                 self.assertEqual(ret1, result is not None)
                 self.assertEqual(ret1, ret2)
                 self.assertIsNone(no_result)
@@ -1203,13 +1204,16 @@ class CAPITest(unittest.TestCase):
         self.assertIs(found, None)
 
         # share the token with A1
-        B1 = create_type('_testcapi.B1', tokenA1)
-        self.assertTrue(get_token(B1) == tokenA1)
+        C1 = create_type('_testcapi.C1', tokenA1)
+        self.assertTrue(get_token(C1) == tokenA1)
 
-        # find first B1 by shared token
-        class Z(B1, A1): pass
+        # find first C1 by shared token
+        class Z(C1, A2): pass
         found = get_base_by_token(Z, tokenA1)
-        self.assertIs(found, B1)
+        self.assertIs(found, C1)
+        # B1 not found
+        found = get_base_by_token(Z, get_token(B1))
+        self.assertIs(found, None)
 
     def test_gen_get_code(self):
         def genf(): yield
