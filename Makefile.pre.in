@@ -473,6 +473,7 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/stackref.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \

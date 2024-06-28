@@ -837,6 +837,27 @@ error:
     return _PyStatus_ERR("can't initialize builtins module");
 }
 
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+static PyStatus
+pycore_init_stackrefs(PyInterpreterState *interp)
+{
+    interp->stackref_state.entries = PyMem_Malloc(sizeof(struct _Py_stackref_entry) * 1024);
+    if (interp->stackref_state.entries == NULL) {
+        goto error;
+    }
+    interp->stackref_state.next_ref = 0;
+    interp->stackref_state.n_entries = 1024;
+    // Reserve NULL, True, False, None
+    _Py_object_to_stackref_transition(NULL, Py_TAG_DEFERRED, STEAL);
+    _Py_object_to_stackref_transition(Py_True, Py_TAG_DEFERRED, STEAL);
+    _Py_object_to_stackref_transition(Py_False, Py_TAG_DEFERRED, STEAL);
+    _Py_object_to_stackref_transition(Py_None, Py_TAG_DEFERRED, STEAL);
+    return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("can't initialize stackrefs to pyobject mapping");
+}
+#endif
 
 static PyStatus
 pycore_interp_init(PyThreadState *tstate)
@@ -844,6 +865,13 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
+
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    status = pycore_init_stackrefs(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)

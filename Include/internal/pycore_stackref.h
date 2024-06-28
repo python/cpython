@@ -52,11 +52,36 @@ typedef union {
     uintptr_t bits;
 } _PyStackRef;
 
+struct _Py_stackref_entry {
+    PyObject *obj;
+    int is_live;
+};
+
+struct _Py_stackref_state {
+    PyMutex lock;
+    size_t n_entries;
+    struct _Py_stackref_entry *entries;
+    size_t next_ref;
+};
+
+typedef enum _PyStackRef_OpKind {
+    BORROW,
+    STEAL,
+    NEW,
+} _PyStackRef_OpKind;
+
+PyObject *_Py_stackref_to_object_transition(_PyStackRef stackref, _PyStackRef_OpKind op);
+_PyStackRef _Py_object_to_stackref_transition(PyObject *obj, char tag, _PyStackRef_OpKind op);
+PyAPI_FUNC(int) _PyStackRef_IsLive(_PyStackRef stackref);
+PyAPI_FUNC(void) _PyStackRef_Close(_PyStackRef stackref);
+PyAPI_FUNC(_PyStackRef) _PyStackRef_Dup(_PyStackRef stackref);
 
 #define Py_TAG_DEFERRED (1)
 
 #define Py_TAG_PTR      (0)
 #define Py_TAG_BITS     (1)
+
+#define RESERVED_BITS 1
 
 #ifdef Py_GIL_DISABLED
     static const _PyStackRef PyStackRef_NULL = { .bits = 0 | Py_TAG_DEFERRED};
@@ -64,23 +89,36 @@ typedef union {
     static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 #endif
 
-#define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
-
 
 #ifdef Py_GIL_DISABLED
-#   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
+#   ifdef Py_STACKREF_DEBUG
+    // From pycore_init_stackrefs in pylifecycle.c
+    static const _PyStackRef PyStackRef_True = { .bits = 1 << RESERVED_BITS };
+#   else
+#       define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
+#   endif
 #else
 #   define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) })
 #endif
 
 #ifdef Py_GIL_DISABLED
-#   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
+#   ifdef Py_STACKREF_DEBUG
+    // From pycore_init_stackrefs in pylifecycle.c
+    static const _PyStackRef PyStackRef_False = { .bits = 2 << RESERVED_BITS };
+#   else
+#       define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
+#   endif
 #else
 #   define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
 #endif
 
 #ifdef Py_GIL_DISABLED
+#   ifdef Py_STACKREF_DEBUG
+    // From pycore_init_stackrefs in pylifecycle.c
+    static const _PyStackRef PyStackRef_None = { .bits = 3 << RESERVED_BITS };
+#   else
 #   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
+#endif
 #else
 #   define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
 #endif
@@ -88,7 +126,18 @@ typedef union {
 
 static inline int
 PyStackRef_Is(_PyStackRef a, _PyStackRef b) {
+#if defined(Py_STACKREF_DEBUG) && defined(Py_GIL_DISABLED)
+    // Note: stackrefs are unique. So even immortal objects will produce different stackrefs.
+    return _Py_stackref_to_object_transition(a, BORROW) == _Py_stackref_to_object_transition(b, BORROW);
+#else
     return a.bits == b.bits;
+#endif
+}
+
+static inline int
+PyStackRef_IsNull(_PyStackRef stackref)
+{
+    return PyStackRef_Is(stackref, PyStackRef_NULL);
 }
 
 static inline int
@@ -102,8 +151,13 @@ static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
 #ifdef Py_GIL_DISABLED
+#   if defined(Py_STACKREF_DEBUG)
+    return _Py_stackref_to_object_transition(stackref, BORROW);
+#   else
     PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
     return cleared;
+#   endif
+
 #else
     return ((PyObject *)(stackref).bits);
 #endif
@@ -115,10 +169,14 @@ static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
 #ifdef Py_GIL_DISABLED
+#   ifdef Py_STACKREF_DEBUG
+    return _Py_stackref_to_object_transition(stackref, STEAL);
+#   else
     if (!PyStackRef_IsNull(stackref) && PyStackRef_IsDeferred(stackref)) {
         return Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref));
     }
     return PyStackRef_AsPyObjectBorrow(stackref);
+#   endif
 #else
     return PyStackRef_AsPyObjectBorrow(stackref);
 #endif
@@ -146,7 +204,11 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
+#   ifdef Py_STACKREF_DEBUG
+    return _Py_object_to_stackref_transition(obj, tag, STEAL);
+#   else
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+#   endif
 #else
     return ((_PyStackRef){.bits = ((uintptr_t)(obj))});
 #endif
@@ -165,10 +227,18 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     assert(obj != NULL);
     // TODO (gh-117139): Add deferred objects later.
     if (_Py_IsImmortal(obj)) {
+#   ifdef Py_STACKREF_DEBUG
+        return _Py_object_to_stackref_transition(obj, Py_TAG_DEFERRED, NEW);
+#   else
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+#   endif
     }
     else {
+#   ifdef Py_STACKREF_DEBUG
+        return _Py_object_to_stackref_transition(Py_NewRef(obj), Py_TAG_PTR, NEW);
+#   else
         return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
+#   endif
     }
 #else
     return ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) });
@@ -186,7 +256,11 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
     assert(_Py_IsImmortal(obj));
+#   ifdef Py_STACKREF_DEBUG
+    return _Py_object_to_stackref_transition(obj, Py_TAG_DEFERRED, NEW);
+#   else
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+#   endif
 #else
     assert(_Py_IsImmortal(obj));
     return ((_PyStackRef){ .bits = (uintptr_t)(obj) });
@@ -216,6 +290,9 @@ PyStackRef_CLOSE(_PyStackRef stackref)
         return;
     }
     Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
+#   ifdef Py_STACKREF_DEBUG
+    _PyStackRef_Close(stackref);
+#   endif
 #else
     Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
 #endif
@@ -234,6 +311,9 @@ static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
 #ifdef Py_GIL_DISABLED
+#   ifdef Py_STACKREF_DEBUG
+    stackref = _PyStackRef_Dup(stackref);
+#   endif
     if (PyStackRef_IsDeferred(stackref)) {
         assert(PyStackRef_IsNull(stackref) ||
             _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)));

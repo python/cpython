@@ -1700,6 +1700,22 @@ then
   ABIFLAGS="${ABIFLAGS}t"
 fi
 
+# Check for --with-pystackrefdebug
+AC_MSG_CHECKING([for --with-pystackrefdebug])
+AC_ARG_WITH([pystackrefdebug],
+  [AS_HELP_STRING([--with-pystackrefdebug], [build with Py_STACKREF_DEBUG defined (default is no)]) ],
+[
+if test "$withval" != no
+then
+  AC_DEFINE([Py_STACKREF_DEBUG], [1],
+  [Define if you want to build an interpreter with stack reference checks on (WARNING: EXPERIMENTAL).])
+  AC_MSG_RESULT([yes]);
+  Py_STACKREF_DEBUG='true'
+  ABIFLAGS="${ABIFLAGS}d"
+else AC_MSG_RESULT([no]); Py_STACKREF_DEBUG='false'
+fi],
+[AC_MSG_RESULT([no])])
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],

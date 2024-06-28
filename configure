@@ -1084,6 +1084,7 @@ enable_shared
 with_static_libpython
 enable_profiling
 enable_gil
+with_pystackrefdebug
 with_pydebug
 with_trace_refs
 enable_pystats
@@ -1862,6 +1863,7 @@ Optional Packages:
   --without-static-libpython
                           do not build libpythonMAJOR.MINOR.a and do not
                           install python.o (default is yes)
+  --with-pystackrefdebug  build with Py_STACKREF_DEBUG defined (default is no)
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -8120,6 +8122,32 @@ printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
 fi
+
+# Check for --with-pystackrefdebug
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pystackrefdebug" >&5
+printf %s "checking for --with-pystackrefdebug... " >&6; }
+
+# Check whether --with-pystackrefdebug was given.
+if test ${with_pystackrefdebug+y}
+then :
+  withval=$with_pystackrefdebug;
+if test "$withval" != no
+then
+
+printf "%s\n" "#define Py_STACKREF_DEBUG 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; };
+  Py_STACKREF_DEBUG='true'
+  ABIFLAGS="${ABIFLAGS}d"
+else { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }; Py_STACKREF_DEBUG='false'
+fi
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
 
 # Check for --with-pydebug
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pydebug" >&5

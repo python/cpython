@@ -86,6 +86,17 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#define STACKREF_CHECK() \
+    do { \
+        if (frame->f_executable && PyCode_Check(frame->f_executable)) { \
+            _PyEval_StackIsAllLive(_PyFrame_Stackbase(frame), stack_pointer); \
+        }; \
+    } while (0);
+#else
+#define STACKREF_CHECK() ((void)(0))
+#endif
+
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
@@ -110,13 +121,15 @@ do { \
     { \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
+        STACKREF_CHECK(); \
         DISPATCH_GOTO(); \
     }
 
 #define DISPATCH_SAME_OPARG() \
     { \
         opcode = next_instr->op.code; \
-        PRE_DISPATCH_GOTO(); \
+        PRE_DISPATCH_GOTO();  \
+        STACKREF_CHECK(); \
         DISPATCH_GOTO(); \
     }
 

@@ -726,6 +726,16 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+static int
+_PyEval_StackIsAllLive(_PyStackRef *stack_base, _PyStackRef *stack_pointer)
+{
+    while (stack_pointer > stack_base) {
+        assert(_PyStackRef_IsLive(stack_pointer[-1]));
+        stack_pointer--;
+    }
+    return 1;
+}
+
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
@@ -1619,7 +1629,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 goto kw_fail;
             }
 
-            if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectSteal(value_stackref)) == -1) {
+            if (PyDict_SetItem(kwdict, keyword, PyStackRef_AsPyObjectBorrow(value_stackref)) == -1) {
                 goto kw_fail;
             }
             PyStackRef_CLOSE(value_stackref);

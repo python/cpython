@@ -275,6 +275,10 @@ struct _is {
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     Py_ssize_t _interactive_src_count;
+
+#if defined(Py_STACKREF_DEBUG) && defined(Py_GIL_DISABLED)
+    struct _Py_stackref_state stackref_state;
+#endif
 };
 
 

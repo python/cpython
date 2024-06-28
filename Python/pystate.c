@@ -903,6 +903,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
+
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    PyMem_Free(interp->stackref_state.entries);
+#endif
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.

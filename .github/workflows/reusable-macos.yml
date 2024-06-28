@@ -8,6 +8,10 @@ on:
         required: false
         type: boolean
         default: false
+      stackref-debug:
+        required: false
+        type: boolean
+        default: false
       os-matrix:
         required: false
         type: string
@@ -54,6 +58,7 @@ jobs:
           --config-cache \
           --with-pydebug \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
+          ${{ inputs.stackref-debug && '--with-pystackrefdebug' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
@@ -61,4 +66,6 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: make test
+      # Stackref debug is 2.5x slower than normal CPython,
+      # so we only run it on a restricted subset of tests.
+      run: ${{ inputs.stackref-debug && './python -m test test_asyncio' || 'make test' }}
