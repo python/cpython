@@ -1700,8 +1700,17 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # Test that years less than 1000 are 0-padded; note that the beginning
         # of an ISO 8601 year may fall in an ISO week of the year before, and
         # therefore needs an offset of -1 when formatting with '%G'.
-        for y, o in ((1, 0), (49, -1), (70, 0), (99, 0), (100, -1), (999, 0),
-                     (1000, 0), (1970, 0)):
+        dataset = (
+            (1, 0),
+            (49, -1),
+            (70, 0),
+            (99, 0),
+            (100, -1),
+            (999, 0),
+            (1000, 0),
+            (1970, 0),
+        )
+        for year, offset in dataset:
             for s in 'YG':
                 with self.subTest(year=y, specifier=s):
                     d = self.theclass(y, 1, 1)
