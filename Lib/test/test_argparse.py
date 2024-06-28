@@ -2126,7 +2126,9 @@ class TestAddSubparsers(TestCase):
         else:
             subparsers_kwargs['help'] = 'command help'
         subparsers = parser.add_subparsers(**subparsers_kwargs)
-        self.assertArgumentParserError(parser.add_subparsers)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'cannot have multiple subparser arguments',
+                               parser.add_subparsers)
 
         # add first sub-parser
         parser1_kwargs = dict(description='1 description')
@@ -5732,7 +5734,8 @@ class TestWrappingMetavar(TestCase):
 class TestExitOnError(TestCase):
 
     def setUp(self):
-        self.parser = argparse.ArgumentParser(exit_on_error=False)
+        self.parser = argparse.ArgumentParser(exit_on_error=False,
+                                              fromfile_prefix_chars='@')
         self.parser.add_argument('--integers', metavar='N', type=int)
 
     def test_exit_on_error_with_good_args(self):
@@ -5743,9 +5746,44 @@ class TestExitOnError(TestCase):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
 
-    def test_exit_on_error_with_unrecognized_args(self):
-        with self.assertRaises(argparse.ArgumentError):
-            self.parser.parse_args('--foo bar'.split())
+    def test_unrecognized_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_args, '--foo bar'.split())
+
+    def test_unrecognized_intermixed_args(self):
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'unrecognized arguments: --foo bar',
+                               self.parser.parse_intermixed_args, '--foo bar'.split())
+
+    def test_required_args(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, baz',
+                               self.parser.parse_args, [])
+
+    def test_required_mutually_exclusive_args(self):
+        group = self.parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--bar')
+        group.add_argument('--baz')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'one of the arguments --bar --baz is required',
+                               self.parser.parse_args, [])
+
+    def test_ambiguous_option(self):
+        self.parser.add_argument('--foobaz')
+        self.parser.add_argument('--fooble', action='store_true')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "ambiguous option: --foob could match --foobaz, --fooble",
+                               self.parser.parse_args, ['--foob'])
+
+    def test_os_error(self):
+        self.parser.add_argument('file')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               "No such file or directory: 'no-such-file'",
+                               self.parser.parse_args, ['@no-such-file'])
+
 
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
