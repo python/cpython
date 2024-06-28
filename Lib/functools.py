@@ -316,7 +316,19 @@ def _partial_prepare_merger(args):
     merger = itemgetter(*order) if phcount else None
     return phcount, merger
 
-def _partial_prepare_new(cls, func, args, keywords):
+def _partial_new(cls, func, /, *args, **keywords):
+    if issubclass(cls, partial):
+        if not callable(func):
+            raise TypeError("the first argument must be callable")
+    else:
+        # assert issubclass(cls, partialmethod)
+        if not callable(func) and not hasattr(func, "__get__"):
+            raise TypeError(f"{func!r} is not callable or a descriptor")
+            # func could be a descriptor like classmethod which isn't callable,
+            # so we can't inherit from partial (it verifies func is callable)
+            # flattening is mandatory in order to place cls/self before all
+            # other arguments
+            # it's also more efficient since only one function will be called
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
     if isinstance(func, cls):
@@ -342,7 +354,14 @@ def _partial_prepare_new(cls, func, args, keywords):
     else:
         tot_args = args
         phcount, merger = _partial_prepare_merger(tot_args)
-    return func, tot_args, keywords, phcount, merger
+
+    self = object.__new__(cls)
+    self.func = func
+    self.args = tot_args
+    self.keywords = keywords
+    self._phcount = phcount
+    self._merger = merger
+    return self
 
 def _partial_repr(self):
     cls = type(self)
@@ -362,22 +381,11 @@ class partial:
     __slots__ = ("func", "args", "keywords", "_phcount", "_merger",
                  "__dict__", "__weakref__")
 
-    def __new__(cls, func, /, *args, **keywords):
-        if not callable(func):
-            raise TypeError("the first argument must be callable")
-        func, args, keywords, phcount, merger = _partial_prepare_new(
-            cls, func, args, keywords)
-        self = super().__new__(cls)
-        self.func = func
-        self.args = args
-        self.keywords = keywords
-        self._phcount = phcount
-        self._merger = merger
-        return self
+    __new__ = _partial_new
+    __repr__ = recursive_repr()(_partial_repr)
 
     def __call__(self, /, *args, **keywords):
-        phcount = self._phcount
-        if phcount:
+        if phcount := self._phcount:
             try:
                 pto_args = self._merger(self.args + args)
                 args = args[phcount:]
@@ -389,8 +397,6 @@ class partial:
             pto_args = self.args
         keywords = {**self.keywords, **keywords}
         return self.func(*pto_args, *args, **keywords)
-
-    __repr__ = recursive_repr()(_partial_repr)
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -439,30 +445,12 @@ class partialmethod:
     Supports wrapping existing descriptors and handles non-descriptor
     callables as instance methods.
     """
-    def __new__(cls, func, /, *args, **keywords):
-        if not callable(func) and not hasattr(func, "__get__"):
-            raise TypeError(f"{func!r} is not callable or a descriptor")
-        # func could be a descriptor like classmethod which isn't callable,
-        # so we can't inherit from partial (it verifies func is callable)
-        # flattening is mandatory in order to place cls/self before all
-        # other arguments
-        # it's also more efficient since only one function will be called
-        func, args, keywords, phcount, merger = _partial_prepare_new(
-            cls, func, args, keywords)
-        self = super().__new__(cls)
-        self.func = func
-        self.args = args
-        self.keywords = keywords
-        self._phcount = phcount
-        self._merger = merger
-        return self
-
+    __new__ = _partial_new
     __repr__ = _partial_repr
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
-            phcount = self._phcount
-            if phcount:
+            if phcount := self._phcount:
                 try:
                     pto_args = self._merger(self.args + args)
                     args = args[phcount:]
