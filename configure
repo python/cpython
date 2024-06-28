@@ -25898,7 +25898,10 @@ int main(void)
     .tm_mon = 0,
     .tm_mday = 1
   };
-  exit(strftime(year, sizeof year, "%Y", &date) && !strcmp(year, "0099"));
+  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
+    return 1;
+  }
+  return 0;
 }
 
 _ACEOF
