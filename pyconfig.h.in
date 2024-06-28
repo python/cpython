@@ -1627,9 +1627,6 @@
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
-/* Defined if _Complex C type is available. */
-#undef PY_HAVE_C_COMPLEX
-
 /* Define to 1 if you have the perf trampoline. */
 #undef PY_HAVE_PERF_TRAMPOLINE
 
@@ -1661,6 +1658,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Defined if _Complex C type is available. */
+#undef Py_HAVE_C_COMPLEX
 
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS

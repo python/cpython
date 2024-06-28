@@ -5,7 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
-#ifdef PY_HAVE_C_COMPLEX
+#ifdef Py_HAVE_C_COMPLEX
 #   include "../complex.h"        // complex
 #endif
 
@@ -397,7 +397,7 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
-#ifdef PY_HAVE_C_COMPLEX
+#ifdef Py_HAVE_C_COMPLEX
         double complex C;
 #endif
     } value;

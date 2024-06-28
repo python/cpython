@@ -105,7 +105,7 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#ifdef PY_HAVE_C_COMPLEX
+#ifdef Py_HAVE_C_COMPLEX
 #include "../complex.h"           // complex
 #endif
 
@@ -655,7 +655,7 @@ union result {
     double d;
     float f;
     void *p;
-#ifdef PY_HAVE_C_COMPLEX
+#ifdef Py_HAVE_C_COMPLEX
     double complex C;
 #endif
 };

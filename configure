@@ -13886,7 +13886,7 @@ fi
 
 if test "$ac_cv_c_complex_supported" = "yes"; then
 
-printf "%s\n" "#define PY_HAVE_C_COMPLEX 1" >>confdefs.h
+printf "%s\n" "#define Py_HAVE_C_COMPLEX 1" >>confdefs.h
 
 fi
 
