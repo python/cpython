@@ -1711,12 +1711,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1970, 0),
         )
         for year, offset in dataset:
-            for s in 'YG':
-                with self.subTest(year=y, specifier=s):
-                    d = self.theclass(y, 1, 1)
-                    if s == 'G':
-                        y += o
-                    self.assertEqual(d.strftime("%" + s), '%04d' % y)
+            for specifier in 'YG':
+                with self.subTest(year=year, specifier=specifier):
+                    d = self.theclass(year, 1, 1)
+                    if specifier == 'G':
+                        year += offset
+                    self.assertEqual(d.strftime(f"%{specifier}"), f"{year:04d}")
 
     def test_replace(self):
         cls = self.theclass
