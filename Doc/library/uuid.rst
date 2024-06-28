@@ -12,7 +12,7 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`9562`.
+generating version 1, 3, 4, 5, and 7 UUIDs as specified in :rfc:`9562`.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -149,7 +149,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.version
 
-   The UUID version number (1 through 5, meaningful only when the variant is
+   The UUID version number (1 through 7, meaningful only when the variant is
    :const:`RFC_4122`).
 
 .. attribute:: UUID.is_safe
@@ -215,6 +215,14 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 .. index:: single: uuid5
+
+
+.. function:: uuid7()
+
+   TODO
+
+.. index:: single: uuid7
+
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
