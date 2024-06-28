@@ -25871,7 +25871,6 @@ printf "%s\n" "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
-# Check if year with century should be normalized for strftime
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether year with century should be normalized for strftime" >&5
 printf %s "checking whether year with century should be normalized for strftime... " >&6; }
 if test ${ac_cv_normalize_century+y}

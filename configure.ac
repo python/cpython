@@ -6572,7 +6572,6 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
-# Check if year with century should be normalized for strftime
 AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <time.h>
