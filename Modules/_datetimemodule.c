@@ -1832,7 +1832,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
               PyObject *tzinfoarg)
 {
     PyObject *result = NULL;            /* guilty until proved innocent */
-    PyObject *strftime = NULL;          /* time.strftime */
 
     PyObject *zreplacement = NULL;      /* py string, replacement for %z */
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
@@ -1874,7 +1873,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
 
-    strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
     if (strftime == NULL) {
         goto Done;
     }
