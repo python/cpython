@@ -265,6 +265,14 @@ class TestLongMessage(unittest.TestCase):
                              r'^None unexpectedly found in \[None\]$',
                              r'^None unexpectedly found in \[None\] : oops$'])
 
+    def testAssertMappingEqual(self):
+        class M(dict):
+            pass
+        self.assertMessages('assertMappingEqual', (M({}), M({'key': 'value'})),
+                            [r"\+ \{'key': 'value'\}$", "^oops$",
+                             r"\+ \{'key': 'value'\}$",
+                             r"\+ \{'key': 'value'\} : oops$"])
+
     def testAssertDictEqual(self):
         self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
                             [r"\+ \{'key': 'value'\}$", "^oops$",
