@@ -359,8 +359,9 @@ class LocalWinregTests(BaseWinregTests):
         # the value set was not -1.
         try:
             with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
-                with self.assertRaises(OverflowError):
+                with self.assertRaises(ValueError):
                     SetValueEx(ck, "test_name_dword", None, REG_DWORD, -1)
+                with self.assertRaises(ValueError):
                     SetValueEx(ck, "test_name_qword", None, REG_QWORD, -1)
                 self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_dword")
                 self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_qword")

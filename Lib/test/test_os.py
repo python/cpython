@@ -3445,7 +3445,7 @@ class PidTests(unittest.TestCase):
         # invalid values
         with self.assertRaises(ValueError):
             os.waitstatus_to_exitcode((max_exitcode + 1) << 8)
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             os.waitstatus_to_exitcode(-1)
 
     # Skip the test on Windows
