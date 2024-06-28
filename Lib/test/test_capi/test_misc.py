@@ -1152,9 +1152,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
     def test_get_base_by_token(self):
-        def getbase(src, key, comparable=True):
-            found_in_mro = find_first_type(src, key, True)
-            found_in_bases = find_first_type(src, key, False)
+        def get_base_by_token(src, key, comparable=True):
+            def run(use_mro):
+                find_first = _testcapi.pytype_getbasebytoken
+                result = find_first(src, key, use_mro)
+                return result
+
+            found_in_mro = run(True)
+            found_in_bases = run(False)
             if comparable:
                 self.assertIs(found_in_mro, found_in_bases)
                 return found_in_mro
@@ -1162,7 +1167,6 @@ class CAPITest(unittest.TestCase):
 
         create_type = _testcapi.create_type_with_token
         get_token = _testcapi.pytype_gettoken
-        find_first_type = _testcapi.pytype_getbasebytoken
         Py_TP_USE_SPEC = 0
 
         A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
@@ -1173,13 +1177,13 @@ class CAPITest(unittest.TestCase):
 
         tokenA1 = get_token(A1)
         # match exactly
-        found = getbase(A1, tokenA1)
+        found = get_base_by_token(A1, tokenA1)
         self.assertIs(found, A1)
 
         # no token in static types
         STATIC = type(1)
         self.assertEqual(get_token(STATIC), 0)
-        found = getbase(STATIC, tokenA1)
+        found = get_base_by_token(STATIC, tokenA1)
         self.assertIs(found, None)
 
         # no token in pure subtypes
@@ -1187,11 +1191,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(get_token(A2), 0)
         # find A1
         class Z(STATIC, B1, A2): pass
-        found = getbase(Z, tokenA1)
+        found = get_base_by_token(Z, tokenA1)
         self.assertIs(found, A1)
 
         # NULL finds nothing
-        found = getbase(Z, 0)
+        found = get_base_by_token(Z, 0)
         self.assertIs(found, None)
 
         # share the token with A1
@@ -1200,7 +1204,7 @@ class CAPITest(unittest.TestCase):
 
         # find first B1 by shared token
         class Z(B1, A1): pass
-        found = getbase(Z, tokenA1)
+        found = get_base_by_token(Z, tokenA1)
         self.assertIs(found, B1)
 
     def test_gen_get_code(self):
