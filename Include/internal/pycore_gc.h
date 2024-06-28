@@ -388,6 +388,9 @@ extern void _Py_RunGC(PyThreadState *tstate);
 extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
 #endif
 
+extern int _Py_visit_decref(PyObject *op, void *arg);
+extern int _Py_visit_decref_unreachable(PyObject *op, void *data);
+
 #ifdef __cplusplus
 }
 #endif
