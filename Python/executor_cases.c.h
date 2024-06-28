@@ -54,7 +54,7 @@
             _PyStackRef value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -66,7 +66,7 @@
             _PyStackRef value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -78,7 +78,7 @@
             _PyStackRef value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -90,7 +90,7 @@
             _PyStackRef value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -102,7 +102,7 @@
             _PyStackRef value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -114,7 +114,7 @@
             _PyStackRef value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -126,7 +126,7 @@
             _PyStackRef value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -138,7 +138,7 @@
             _PyStackRef value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -149,7 +149,7 @@
         case _LOAD_FAST: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -757,7 +757,7 @@
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
                 Py_DECREF(slice);
             }
             PyStackRef_CLOSE(v);
@@ -939,7 +939,7 @@
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectSteal(v));
+                                PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -955,7 +955,7 @@
             container = stack_pointer[-2];
             v = stack_pointer[-3];
             /* container[sub] = v */
-            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectSteal(sub), PyStackRef_AsPyObjectSteal(v));
+            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectBorrow(sub), PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             PyStackRef_CLOSE(container);
             PyStackRef_CLOSE(sub);
@@ -1281,7 +1281,7 @@
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
-                       PyStackRef_AsPyObjectBorrow(exc_value) == Py_None
+                       PyStackRef_Is(exc_value, PyStackRef_None)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1338,9 +1338,9 @@
                 if (true) JUMP_TO_ERROR();
             }
             if (PyDict_CheckExact(ns))
-            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+            err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             else
-            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+            err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1483,7 +1483,7 @@
             v = stack_pointer[-2];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
-                                       name, PyStackRef_AsPyObjectSteal(v));
+                                       name, PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             PyStackRef_CLOSE(owner);
             if (err) JUMP_TO_ERROR();
