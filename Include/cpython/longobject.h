@@ -10,6 +10,7 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 #define Py_ASNATIVEBYTES_NATIVE_ENDIAN 3
 #define Py_ASNATIVEBYTES_UNSIGNED_BUFFER 4
 #define Py_ASNATIVEBYTES_REJECT_NEGATIVE 8
+#define Py_ASNATIVEBYTES_ALLOW_INDEX 16
 
 /* PyLong_AsNativeBytes: Copy the integer value to a native variable.
    buffer points to the first byte of the variable.
@@ -20,8 +21,10 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
    * 2 - native endian
    * 4 - unsigned destination (e.g. don't reject copying 255 into one byte)
    * 8 - raise an exception for negative inputs
-   If flags is -1 (all bits set), native endian is used and value truncation
-   behaves most like C (allows negative inputs and allow MSB set).
+   * 16 - call __index__ on non-int types
+   If flags is -1 (all bits set), native endian is used, value truncation
+   behaves most like C (allows negative inputs and allow MSB set), and non-int
+   objects will raise a TypeError.
    Big endian mode will write the most significant byte into the address
    directly referenced by buffer; little endian will write the least significant
    byte into that address.
