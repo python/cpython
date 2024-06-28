@@ -1,8 +1,8 @@
-:mod:`!uuid` --- UUID objects according to :rfc:`4122`
+:mod:`!uuid` --- UUID objects according to :rfc:`9562`
 ======================================================
 
 .. module:: uuid
-   :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
+   :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
@@ -12,7 +12,7 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`4122`.
+generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`9562`.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -65,7 +65,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to :rfc:`4122`, overriding bits in the
+   variant and version number set according to :rfc:`9562`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
    Comparison of UUID objects are made by way of comparing their
@@ -137,7 +137,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in :rfc:`4122`.
+   The UUID as a URN as specified in :rfc:`9562`.
 
 
 .. attribute:: UUID.variant
@@ -168,7 +168,7 @@ The :mod:`uuid` module defines the following functions:
    runs, it may launch a separate program, which could be quite slow.  If all
    attempts to obtain the hardware address fail, we choose a random 48-bit
    number with the multicast bit (least significant bit of the first octet)
-   set to 1 as recommended in :rfc:`4122`.  "Hardware address" means the MAC
+   set to 1 as recommended in :rfc:`9562`.  "Hardware address" means the MAC
    address of a network interface.  On a machine with multiple network
    interfaces, universally administered MAC addresses (i.e. where the second
    least significant bit of the first octet is *unset*) will be preferred over
@@ -252,7 +252,12 @@ of the :attr:`~UUID.variant` attribute:
 
 .. data:: RFC_4122
 
-   Specifies the UUID layout given in :rfc:`4122`.
+   Specifies the UUID layout given in :rfc:`9562`.
+
+   .. note::
+
+      For compatibility reasons, the content of the :data:`!RFC_4122` constant
+      is not updated to reflect the new RFC number.
 
 
 .. data:: RESERVED_MICROSOFT
@@ -267,7 +272,7 @@ of the :attr:`~UUID.variant` attribute:
 
 .. seealso::
 
-   :rfc:`4122` - A Universally Unique IDentifier (UUID) URN Namespace
+   :rfc:`9562` - A Universally Unique IDentifier (UUID) URN Namespace
       This specification defines a Uniform Resource Name namespace for UUIDs, the
       internal format of UUIDs, and methods of generating UUIDs.
 
