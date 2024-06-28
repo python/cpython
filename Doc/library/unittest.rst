@@ -1390,7 +1390,7 @@ Test cases
       supplied, both *first* and *second* must be instances of *mapping_type* or
       a failure will be raised.
 
-      .. versionadded:: 3.13
+      .. versionadded:: 3.14
 
 
    .. method:: assertDictEqual(first, second, msg=None)
