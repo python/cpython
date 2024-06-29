@@ -1223,9 +1223,8 @@ class CopyTests(unittest.TestCase):
 
             fields = set(klass._fields)
             with self.subTest(klass=klass, fields=fields):
-                # check shallow copy
                 node = klass(**dict.fromkeys(fields))
-                # positional not allowed
+                # forbid positional arguments in replace()
                 self.assertRaises(TypeError, copy.replace, node, 1)
                 self.assertRaises(TypeError, node.__replace__, 1)
 
@@ -1302,17 +1301,18 @@ class CopyTests(unittest.TestCase):
         node = ast.Name(id=nid, ctx=ctx)
         node.extra = old_extra = object()  # add the 'extra' field
         self.assertIs(node.extra, old_extra)
-        # assert shallow copy of extra fields as well
+        # assert shallow copy of extra field
         repl = copy.replace(node)
         self.assertIs(node.extra, old_extra)
         self.assertIs(repl.extra, old_extra)
 
         new_extra = object()
         repl = copy.replace(node, extra=new_extra)
+        # assert independence
         self.assertIs(node.id, nid)
         self.assertIs(node.ctx, ctx)
         self.assertIs(node.extra, old_extra)
-
+        # assert changes
         self.assertIs(repl.id, nid)
         self.assertIs(repl.ctx, ctx)
         self.assertIs(repl.extra, new_extra)
