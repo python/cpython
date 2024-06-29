@@ -945,7 +945,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         spec = importer.find_spec("a.b.c")
         mod = importlib.util.module_from_spec(spec)
         importer.exec_module(mod)
-        self.assertEqual(mod.foo(), "bar")
+        self.assertEqual(mod.foo(), "foo")
 
 
 @support.requires_zlib()
