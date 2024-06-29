@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -193,6 +193,10 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
+   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
+   changes to the environment made by :func:`os.putenv`, by
+   :func:`os.unsetenv`, or made outside Python in the same process.
+
    This mapping may be used to modify the environment as well as query the
    environment.  :func:`putenv` will be called automatically when the mapping
    is modified.
@@ -224,6 +228,9 @@ process and user.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.14
+      Added the :meth:`!os.environ.refresh()` method.
 
 
 .. data:: environb
@@ -561,6 +568,8 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
@@ -809,6 +818,8 @@ process and user.
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
 
+   See also the :data:`os.environ.refresh() <os.environ>` method.
+
    .. audit-event:: os.unsetenv key os.unsetenv
 
    .. versionchanged:: 3.9
@@ -923,7 +934,7 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
    In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
@@ -1718,7 +1729,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
    pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with

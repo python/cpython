@@ -1,8 +1,0 @@
-When a builtin or extension module is imported for the first time, while a
-subinterpreter is active, the module's init function is now run by the main
-interpreter first before import continues in the subinterpreter.
-Consequently, single-phase init modules now fail in an isolated
-subinterpreter without the init function running under that interpreter,
-whereas before it would run under the subinterpreter *before* failing,
-potentially leaving behind global state and callbacks and otherwise leaving
-the module in an inconsistent state.

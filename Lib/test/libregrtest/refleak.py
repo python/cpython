@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 from inspect import isabstract
@@ -21,6 +22,30 @@ except ImportError:
         registry_weakrefs = set(weakref.ref(obj) for obj in cls._abc_registry)
         return (registry_weakrefs, cls._abc_cache,
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
+
+
+def save_support_xml(filename):
+    if support.junit_xml_list is None:
+        return
+
+    import pickle
+    with open(filename, 'xb') as fp:
+        pickle.dump(support.junit_xml_list, fp)
+    support.junit_xml_list = None
+
+
+def restore_support_xml(filename):
+    try:
+        fp = open(filename, 'rb')
+    except FileNotFoundError:
+        return
+
+    import pickle
+    with fp:
+        xml_list = pickle.load(fp)
+    os.unlink(filename)
+
+    support.junit_xml_list = xml_list
 
 
 def runtest_refleak(test_name, test_func,
@@ -85,7 +110,7 @@ def runtest_refleak(test_name, test_func,
     getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = interned_before = 0
+    rc_before = alloc_before = fd_before = interned_immortal_before = 0
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
@@ -95,7 +120,8 @@ def runtest_refleak(test_name, test_func,
         numbers = numbers[:warmups] + ':' + numbers[warmups:]
         print(numbers, file=sys.stderr, flush=True)
 
-    results = None
+    xml_filename = 'refleak-xml.tmp'
+    result = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     support.gc_collect()
 
@@ -103,10 +129,11 @@ def runtest_refleak(test_name, test_func,
         current = refleak_helper._hunting_for_refleaks
         refleak_helper._hunting_for_refleaks = True
         try:
-            results = test_func()
+            result = test_func()
         finally:
             refleak_helper._hunting_for_refleaks = current
 
+        save_support_xml(xml_filename)
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
 
@@ -114,9 +141,11 @@ def runtest_refleak(test_name, test_func,
         # Also, readjust the reference counts and alloc blocks by ignoring
         # any strings that might have been interned during test_func. These
         # strings will be deallocated at runtime shutdown
-        interned_after = getunicodeinternedsize()
-        alloc_after = getallocatedblocks() - interned_after
-        rc_after = gettotalrefcount() - interned_after * 2
+        interned_immortal_after = getunicodeinternedsize(
+            # Use an internal-only keyword argument that mypy doesn't know yet
+            _only_immortal=True)  # type: ignore[call-arg]
+        alloc_after = getallocatedblocks() - interned_immortal_after
+        rc_after = gettotalrefcount() - interned_immortal_after * 2
         fd_after = fd_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -143,7 +172,9 @@ def runtest_refleak(test_name, test_func,
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
-        interned_before = interned_after
+        interned_immortal_before = interned_immortal_after
+
+        restore_support_xml(xml_filename)
 
     if not quiet:
         print(file=sys.stderr)
@@ -189,7 +220,7 @@ def runtest_refleak(test_name, test_func,
                 failed = True
             else:
                 print(' (this is fine)', file=sys.stderr, flush=True)
-    return (failed, results)
+    return (failed, result)
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
@@ -211,7 +242,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.update(zdc)
 
     # Clear ABC registries, restoring previously saved ABC registries.
-    # ignore deprecation warning for collections.abc.ByteString
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:

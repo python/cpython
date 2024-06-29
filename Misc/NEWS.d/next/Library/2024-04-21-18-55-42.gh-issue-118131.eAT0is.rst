@@ -1,2 +1,0 @@
-Add command-line interface for the :mod:`random` module. Patch by Hugo van
-Kemenade.

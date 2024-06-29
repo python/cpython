@@ -1,5 +1,5 @@
-:mod:`webbrowser` --- Convenient web-browser controller
-=======================================================
+:mod:`!webbrowser` --- Convenient web-browser controller
+========================================================
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.

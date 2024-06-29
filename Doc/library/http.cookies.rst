@@ -1,5 +1,5 @@
-:mod:`http.cookies` --- HTTP state management
-=============================================
+:mod:`!http.cookies` --- HTTP state management
+==============================================
 
 .. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).

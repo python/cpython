@@ -1,5 +1,5 @@
-:mod:`shutil` --- High-level file operations
-============================================
+:mod:`!shutil` --- High-level file operations
+=============================================
 
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
@@ -338,7 +338,7 @@ Directory and files operations
       before removing the junction.
 
    .. versionchanged:: 3.11
-      The *dir_fd* parameter.
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.12
       Added the *onexc* parameter, deprecated *onerror*.

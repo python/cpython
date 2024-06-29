@@ -306,7 +306,8 @@ class socket(_socket.socket):
         """makefile(...) -> an I/O stream connected to the socket
 
         The arguments are as for io.open() after the filename, except the only
-        supported mode values are 'r' (default), 'w' and 'b'.
+        supported mode values are 'r' (default), 'w', 'b', or a combination of
+        those.
         """
         # XXX refactor to share code?
         if not set(mode) <= {"r", "w", "b"}:

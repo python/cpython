@@ -290,9 +290,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
@@ -441,6 +447,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -587,11 +594,11 @@ Miscellaneous options
 
      .. versionadded:: 3.12
 
-   * ``-X perfjit`` enables support for the Linux ``perf`` profiler with DWARF
+   * ``-X perf_jit`` enables support for the Linux ``perf`` profiler with DWARF
      support. When this option is provided, the ``perf`` profiler will be able
-     to report Python calls using DWARF ifnormation. This option is only available on
+     to report Python calls using DWARF information. This option is only available on
      some platforms and will do nothing if is not supported on the current
-     system. The default value is "off". See also :envvar:`PYTHONPERFJITSUPPORT`
+     system. The default value is "off". See also :envvar:`PYTHON_PERF_JIT_SUPPORT`
      and :ref:`perf_profiling`.
 
      .. versionadded:: 3.13
@@ -616,7 +623,8 @@ Miscellaneous options
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
      respectively. Only available in builds configured with
-     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
+     :ref:`free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -908,6 +916,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -1137,7 +1146,7 @@ conflict.
 
    .. versionadded:: 3.12
 
-.. envvar:: PYTHONPERFJITSUPPORT
+.. envvar:: PYTHON_PERF_JIT_SUPPORT
 
    If this variable is set to a nonzero value, it enables support for
    the Linux ``perf`` profiler so Python calls can be detected by it
@@ -1145,7 +1154,7 @@ conflict.
 
    If set to ``0``, disable Linux ``perf`` profiler support.
 
-   See also the :option:`-X perfjit <-X>` command-line option
+   See also the :option:`-X perf_jit <-X>` command-line option
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.13
@@ -1206,7 +1215,7 @@ conflict.
    forced on. Setting it to ``0`` forces the GIL off.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable.
+   precedence over this variable, and :ref:`free-threaded-cpython`.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 

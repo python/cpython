@@ -5,6 +5,7 @@
 #include "pycore_abstract.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"
 #include "pycore_dict.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"

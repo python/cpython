@@ -1,5 +1,5 @@
-:mod:`datetime` --- Basic date and time types
-=============================================
+:mod:`!datetime` --- Basic date and time types
+==============================================
 
 .. module:: datetime
    :synopsis: Basic date and time types.
@@ -635,7 +635,7 @@ Notes:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -1257,7 +1257,7 @@ Supported operations:
 .. versionchanged:: 3.13
    Comparison between :class:`.datetime` object and an instance of
    the :class:`date` subclass that is not a :class:`!datetime` subclass
-   no longer coverts the latter to :class:`!date`, ignoring the time part
+   no longer converts the latter to :class:`!date`, ignoring the time part
    and the time zone.
    The default behavior can be changed by overriding the special comparison
    methods in subclasses.
@@ -2153,7 +2153,7 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
 
 .. method:: tzinfo.fromutc(dt)
 
-   This is called from the default :class:`datetime.astimezone()`
+   This is called from the default :meth:`datetime.astimezone`
    implementation. When called from that, ``dt.tzinfo`` is *self*, and *dt*'s
    date and time data are to be viewed as expressing a UTC time. The purpose
    of :meth:`fromutc` is to adjust the date and time data, returning an

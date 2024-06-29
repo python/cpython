@@ -6,7 +6,6 @@ import tempfile
 import test.support
 import unittest
 import unittest.mock
-from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import ensurepip

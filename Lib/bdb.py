@@ -165,6 +165,11 @@ class Bdb:
             # The user issued a 'next' or 'until' command.
             if self.stopframe is frame and self.stoplineno != -1:
                 self._set_stopinfo(None, None)
+            # The previous frame might not have f_trace set, unless we are
+            # issuing a command that does not expect to stop, we should set
+            # f_trace
+            if self.stoplineno != -1:
+                self._set_caller_tracefunc(frame)
         return self.trace_dispatch
 
     def dispatch_exception(self, frame, arg):
@@ -320,15 +325,14 @@ class Bdb:
         self.stoplineno = stoplineno
         self._set_trace_opcodes(opcode)
 
-    def _set_caller_tracefunc(self):
+    def _set_caller_tracefunc(self, current_frame):
         # Issue #13183: pdb skips frames after hitting a breakpoint and running
         # step commands.
         # Restore the trace function in the caller (that may not have been set
         # for performance reasons) when returning from the current frame.
-        if self.frame_returning:
-            caller_frame = self.frame_returning.f_back
-            if caller_frame and not caller_frame.f_trace:
-                caller_frame.f_trace = self.trace_dispatch
+        caller_frame = current_frame.f_back
+        if caller_frame and not caller_frame.f_trace:
+            caller_frame.f_trace = self.trace_dispatch
 
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
@@ -343,12 +347,10 @@ class Bdb:
 
     def set_step(self):
         """Stop after one line of code."""
-        self._set_caller_tracefunc()
         self._set_stopinfo(None, None)
 
     def set_stepinstr(self):
         """Stop before the next instruction."""
-        self._set_caller_tracefunc()
         self._set_stopinfo(None, None, opcode=True)
 
     def set_next(self, frame):

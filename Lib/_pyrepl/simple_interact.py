@@ -25,17 +25,27 @@ allowing multiline input and multiline history entries.
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
 import _sitebuiltins
 import linecache
+import builtins
 import sys
 import code
 from types import ModuleType
 
-from .console import Event
+from .console import InteractiveColoredConsole
 from .readline import _get_reader, multiline_input
-from .unix_console import _error
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
+
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import _error
+except ModuleNotFoundError:
+    from .windows_console import _error
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
@@ -57,38 +67,32 @@ def _strip_final_indent(text: str) -> str:
     return text
 
 
+def _clear_screen():
+    reader = _get_reader()
+    reader.scheduled_commands.append("clear_screen")
+
+
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
+    "clear": _clear_screen,
 }
-
-class InteractiveColoredConsole(code.InteractiveConsole):
-    def __init__(
-        self,
-        locals: dict[str, object] | None = None,
-        filename: str = "<console>",
-        *,
-        local_exit: bool = False,
-    ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
-        self.can_colorize = _colorize.can_colorize()
-
-    def showtraceback(self):
-        super().showtraceback(colorize=self.can_colorize)
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None= None, future_flags: int = 0
+    namespace: dict[str, Any],
+    future_flags: int = 0,
+    console: code.InteractiveConsole | None = None,
 ) -> None:
-    import code
-    import __main__
     from .readline import _setup
-    _setup()
+    _setup(namespace)
 
-    mainmodule = mainmodule or __main__
-    console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
+    if console is None:
+        console = InteractiveColoredConsole(
+            namespace, filename="<stdin>"
+        )
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
@@ -146,11 +150,11 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
-            more = console.push(_strip_final_indent(statement), filename=input_name)  # type: ignore[call-arg]
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:
-            console.write("\nKeyboardInterrupt\n")
+            console.write("KeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")

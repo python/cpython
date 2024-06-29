@@ -553,12 +553,12 @@ get_stack_trace(PyObject* self, PyObject* args)
     if (bytes_read == -1) {
         return NULL;
     }
-    off_t thread_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
+    off_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
 
     void* address_of_interpreter_state;
     bytes_read = read_memory(
             pid,
-            (void*)(runtime_start_address + thread_state_list_head),
+            (void*)(runtime_start_address + interpreter_state_list_head),
             sizeof(void*),
             &address_of_interpreter_state);
     if (bytes_read == -1) {

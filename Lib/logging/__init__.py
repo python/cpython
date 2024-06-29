@@ -340,11 +340,14 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
-
         # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
         # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
         # Convert to float by adding 0.0 for historical reasons. See gh-89047
         self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
+        if self.msecs == 999.0 and int(self.created) != ct // 1_000_000_000:
+            # ns -> sec conversion can round up, e.g:
+            # 1_677_903_920_999_999_900 ns --> 1_677_903_921.0 sec
+            self.msecs = 0.0
 
         self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:

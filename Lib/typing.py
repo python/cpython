@@ -64,7 +64,6 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'ByteString',
     'Container',
     'ContextManager',
     'Hashable',
@@ -257,15 +256,15 @@ def _type_repr(obj):
     return repr(obj)
 
 
-def _collect_parameters(args):
-    """Collect all type variables and parameter specifications in args
+def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
+    """Collect all type parameters in args
     in order of first appearance (lexicographic order).
 
     For example::
 
         >>> P = ParamSpec('P')
         >>> T = TypeVar('T')
-        >>> _collect_parameters((T, Callable[P, T]))
+        >>> _collect_type_parameters((T, Callable[P, T]))
         (~T, ~P)
     """
     # required type parameter cannot appear after parameter with default
@@ -281,20 +280,21 @@ def _collect_parameters(args):
             # `t` might be a tuple, when `ParamSpec` is substituted with
             # `[T, int]`, or `[int, *Ts]`, etc.
             for x in t:
-                for collected in _collect_parameters([x]):
+                for collected in _collect_type_parameters([x]):
                     if collected not in parameters:
                         parameters.append(collected)
         elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
-                if type_var_tuple_encountered and t.has_default():
-                    raise TypeError('Type parameter with a default'
-                                    ' follows TypeVarTuple')
+                if enforce_default_ordering:
+                    if type_var_tuple_encountered and t.has_default():
+                        raise TypeError('Type parameter with a default'
+                                        ' follows TypeVarTuple')
 
-                if t.has_default():
-                    default_encountered = True
-                elif default_encountered:
-                    raise TypeError(f'Type parameter {t!r} without a default'
-                                    ' follows type parameter with a default')
+                    if t.has_default():
+                        default_encountered = True
+                    elif default_encountered:
+                        raise TypeError(f'Type parameter {t!r} without a default'
+                                        ' follows type parameter with a default')
 
                 parameters.append(t)
         else:
@@ -320,7 +320,7 @@ def _check_generic_specialization(cls, arguments):
         if actual_len < expected_len:
             # If the parameter at index `actual_len` in the parameters list
             # has a default, then all parameters after it must also have
-            # one, because we validated as much in _collect_parameters().
+            # one, because we validated as much in _collect_type_parameters().
             # That means that no error needs to be raised here, despite
             # the number of arguments being passed not matching the number
             # of parameters: all parameters that aren't explicitly
@@ -437,13 +437,38 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
-def _eval_type(t, globalns, localns, type_params=None, *, recursive_guard=frozenset()):
+def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
+    import warnings
+
+    depr_message = (
+        f"Failing to pass a value to the 'type_params' parameter "
+        f"of {funcname!r} is deprecated, as it leads to incorrect behaviour "
+        f"when calling {funcname} on a stringified annotation "
+        f"that references a PEP 695 type parameter. "
+        f"It will be disallowed in Python 3.15."
+    )
+    warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
+
+
+class _Sentinel:
+    __slots__ = ()
+    def __repr__(self):
+        return '<sentinel>'
+
+
+_sentinel = _Sentinel()
+
+
+def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
+    if type_params is _sentinel:
+        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
+        type_params = ()
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, type_params, recursive_guard=recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
@@ -1018,7 +1043,10 @@ class ForwardRef(_Final, _root=True):
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
-    def _evaluate(self, globalns, localns, type_params=None, *, recursive_guard):
+    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
+        if type_params is _sentinel:
+            _deprecation_warning_for_no_type_params_passed("typing.ForwardRef._evaluate")
+            type_params = ()
         if self.__forward_arg__ in recursive_guard:
             return self
         if not self.__forward_evaluated__ or localns is not globalns:
@@ -1032,15 +1060,24 @@ class ForwardRef(_Final, _root=True):
                 globalns = getattr(
                     sys.modules.get(self.__forward_module__, None), '__dict__', globalns
                 )
+
+            # type parameters require some special handling,
+            # as they exist in their own scope
+            # but `eval()` does not have a dedicated parameter for that scope.
+            # For classes, names in type parameter scopes should override
+            # names in the global scope (which here are called `localns`!),
+            # but should in turn be overridden by names in the class scope
+            # (which here are called `globalns`!)
             if type_params:
-                # "Inject" type parameters into the local namespace
-                # (unless they are shadowed by assignments *in* the local namespace),
-                # as a way of emulating annotation scopes when calling `eval()`
-                locals_to_pass = {param.__name__: param for param in type_params} | localns
-            else:
-                locals_to_pass = localns
+                globalns, localns = dict(globalns), dict(localns)
+                for param in type_params:
+                    param_name = param.__name__
+                    if not self.__forward_is_class__ or param_name not in globalns:
+                        globalns[param_name] = param
+                        localns.pop(param_name, None)
+
             type_ = _type_check(
-                eval(self.__forward_code__, globalns, locals_to_pass),
+                eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
                 allow_special_forms=self.__forward_is_class__,
@@ -1227,7 +1264,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
     if error:
         raise TypeError("Cannot inherit from plain Generic")
     if '__orig_bases__' in cls.__dict__:
-        tvars = _collect_parameters(cls.__orig_bases__)
+        tvars = _collect_type_parameters(cls.__orig_bases__)
         # Look for Generic[T1, ..., Tn].
         # If found, tvars must be a subset of it.
         # If not found, tvars is it.
@@ -1388,7 +1425,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
-        self.__parameters__ = _collect_parameters(args)
+        enforce_default_ordering = origin in (Generic, Protocol)
+        self.__parameters__ = _collect_type_parameters(
+            args,
+            enforce_default_ordering=enforce_default_ordering,
+        )
         if not name:
             self.__module__ = origin.__module__
 
@@ -1637,21 +1678,6 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         return Union[left, self]
 
 
-class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
-    def __init__(
-        self, origin, nparams, *, removal_version, inst=True, name=None
-    ):
-        super().__init__(origin, nparams, inst=inst, name=name)
-        self._removal_version = removal_version
-
-    def __instancecheck__(self, inst):
-        import warnings
-        warnings._deprecated(
-            f"{self.__module__}.{self._name}", remove=self._removal_version
-        )
-        return super().__instancecheck__(inst)
-
-
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -1872,6 +1898,7 @@ _SPECIAL_NAMES = frozenset({
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
     '__match_args__', '__static_attributes__', '__firstlineno__',
+    '__annotate__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -2394,7 +2421,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
                 base_globals = globalns
-            ann = base.__dict__.get('__annotations__', {})
+            ann = getattr(base, '__annotations__', {})
             if isinstance(ann, types.GetSetDescriptorType):
                 ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
@@ -2795,9 +2822,6 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
-ByteString = _DeprecatedGenericAlias(
-    collections.abc.ByteString, 0, removal_version=(3, 14)  # Not generic.
-)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
@@ -2955,7 +2979,12 @@ class NamedTupleMeta(type):
                 raise TypeError(
                     'can only inherit from a NamedTuple type and Generic')
         bases = tuple(tuple if base is _NamedTuple else base for base in bases)
-        types = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            types = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            types = ns["__annotate__"](1)  # VALUE
+        else:
+            types = {}
         default_names = []
         for field_name in types:
             if field_name in ns:
@@ -2996,15 +3025,6 @@ class NamedTupleMeta(type):
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl
-
-
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
-_sentinel = _Sentinel()
 
 
 def NamedTuple(typename, fields=_sentinel, /, **kwargs):
@@ -3125,7 +3145,12 @@ class _TypedDictMeta(type):
             tp_dict.__orig_bases__ = bases
 
         annotations = {}
-        own_annotations = ns.get('__annotations__', {})
+        if "__annotations__" in ns:
+            own_annotations = ns["__annotations__"]
+        elif "__annotate__" in ns:
+            own_annotations = ns["__annotate__"](1)  # VALUE
+        else:
+            own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
             n: _type_check(tp, msg, module=tp_dict.__module__)
@@ -3137,7 +3162,12 @@ class _TypedDictMeta(type):
         mutable_keys = set()
 
         for base in bases:
-            annotations.update(base.__dict__.get('__annotations__', {}))
+            # TODO: Avoid eagerly evaluating annotations in VALUE format.
+            # Instead, evaluate in FORWARDREF format to figure out which
+            # keys have Required/NotRequired/ReadOnly qualifiers, and create
+            # a new __annotate__ function for the resulting TypedDict that
+            # combines the annotations from this class and its parents.
+            annotations.update(base.__annotations__)
 
             base_required = base.__dict__.get('__required_keys__', set())
             required_keys |= base_required
@@ -3764,7 +3794,17 @@ def __getattr__(attr):
         obj = _alias(getattr(re, attr), 1)
     elif attr in {"ContextManager", "AsyncContextManager"}:
         import contextlib
-        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
+        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 2, name=attr, defaults=(bool | None,))
+    elif attr == "_collect_parameters":
+        import warnings
+
+        depr_message = (
+            "The private _collect_parameters function is deprecated and will be"
+            " removed in a future version of Python. Any use of private functions"
+            " is discouraged and may break in the future."
+        )
+        warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
+        obj = _collect_type_parameters
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj
