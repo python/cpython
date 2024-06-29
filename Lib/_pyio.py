@@ -1668,6 +1668,11 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
+        # Cap read size so we don't try reading larger than a long on x86
+        # can hold.
+        if bufsize > sys.maxsize:
+            bufsize = sys.maxsize
+
         result = bytearray()
         while True:
             if len(result) >= bufsize:
