@@ -641,6 +641,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
         if (res != tmp) {
             goto overflow;
         }
+        return res;
 #else
         return (unsigned long)(size_t)_PyLong_CompactValue(v);
 #endif
