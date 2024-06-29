@@ -936,13 +936,10 @@ $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 # applied in a dry-run mode (validating, but not applying the patch) on builds
 # that *have* a compliance patch, but where compliance has not been enabled.
 build/app-store-compliant:
-	patch @APP_STORE_COMPLIANCE_PATCH_FLAGS@ --forward --strip=1 --directory="$(srcdir)" --input "$(APP_STORE_COMPLIANCE_PATCH)" ; \
-	if test "@APP_STORE_COMPLIANCE_PATCH_FLAGS@" == ""; then \
-		echo "Source tree has been patched for app store compliance."; \
+	patch @APP_STORE_COMPLIANCE_PATCH_FLAGS@ --forward --strip=1 --directory="$(srcdir)" --input "$(APP_STORE_COMPLIANCE_PATCH)"
+	@if test "@APP_STORE_COMPLIANCE_PATCH_FLAGS@" == ""; then \
 		mkdir -p build ; \
 		echo "$(APP_STORE_COMPLIANCE_PATCH)" > build/app-store-compliant ; \
-	else \
-		echo "App store compliance patch has been verified, but not applied."; \
 	fi
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
