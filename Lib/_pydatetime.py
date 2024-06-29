@@ -273,8 +273,8 @@ def _wrap_strftime(object, format, timetuple):
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
                 elif ch in 'YG' and object.year < 1000 and _need_normalize_century():
-                    # note that datetime(1000, 1, 1).strftime('%G') == '1000' so
-                    # year 1000 for %G can go on the fast path
+                    # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
+                    # year 1000 for %G can go on the fast path.
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
