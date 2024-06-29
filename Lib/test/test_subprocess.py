@@ -3468,8 +3468,6 @@ class POSIXProcessTestCase(BaseTestCase):
         # Test that each individual thing that would disable the use of vfork
         # actually disables it.
         for sub_name, preamble, sp_kwarg, expect_permission_error in (
-                # FIXME(cmaloney): _USE_VFORK doesn't work currently.
-                # ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
                 ("preexec", "", "preexec_fn=lambda: None", False),
                 ("setgid", "", f"group={os.getgid()}", True),
                 ("setuid", "", f"user={os.getuid()}", True),
