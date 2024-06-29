@@ -1734,6 +1734,12 @@ class ZipFile:
             self.fp.seek(self.start_dir)
         zinfo.header_offset = self.fp.tell()
 
+        #ZIP64 is needed to reference header offset over ZIP64_LIMIT
+        if zinfo.header_offset > ZIP64_LIMIT:
+            zinfo.extract_version = max(
+                zinfo.extract_version, ZIP64_VERSION
+            )
+
         self._writecheck(zinfo)
         self._didModify = True
 
