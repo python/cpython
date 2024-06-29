@@ -31494,8 +31494,8 @@ fi
   if test "x$py_cv_module__ctypes_test" = xyes
 then :
 
-
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$LIBFFI_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBFFI_LIBS $LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then

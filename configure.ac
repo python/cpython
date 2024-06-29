@@ -7790,7 +7790,7 @@ PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
-  [], [$LIBM])
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS $LIBM])
 
 dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.
