@@ -864,6 +864,7 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
+    @unittest.skipIf(sys.platform != 'linux', "Linux only")
     def test_subprocess_send_signal_race(self):
         # See https://github.com/python/cpython/issues/87744
         async def main():
