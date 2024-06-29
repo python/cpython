@@ -13845,7 +13845,7 @@ printf "%s\n" "$AIX_BUILDDATE" >&6; }
 	*) ;;
 esac
 
-# check for _Complex C type
+# check for _Complex C type and it's support by libffi
 #
 # Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
 # none properly support C11+ Annex G (where pure imaginary types
@@ -13860,6 +13860,9 @@ else $as_nop
 /* end confdefs.h.  */
 
 #include <complex.h>
+#ifndef FFI_TYPE_COMPLEX
+#error "libffi version has no support for _Complex type"
+#endif
 #define test(type, out)                                \
 {                                                      \
     type complex z = 1 + 2*I; z = z*z;                 \
