@@ -1959,7 +1959,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 goto PassThrough;
             }
             if (ch == 'G') {
-                PyObject *year_str = PyObject_CallFunction(strftime, "sO", "%G", timetuple);
+                PyObject *year_str = PyObject_CallFunction(strftime, "sO",
+                                                           "%G", timetuple);
                 if (year_str == NULL) {
                     goto Done;
                 }
