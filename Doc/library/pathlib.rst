@@ -26,10 +26,7 @@ inherit from pure paths but also provide I/O operations.
          PurePosixPath, PureWindowsPath, and Path. Further to these four
          classes, there are two classes that use multiple inheritance:
          PosixPath subclasses PurePosixPath and Path, and WindowsPath
-         subclasses PureWindowsPath and Path. The upper part of the diagram
-         shows the three pure classes, starting with PurePath, and the lower
-         part shows the three concrete classes, ending with PosixPath and
-         WindowsPath.
+         subclasses PureWindowsPath and Path.
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
