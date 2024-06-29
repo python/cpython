@@ -1473,7 +1473,7 @@ Renaming and deleting
    Remove this directory.  The directory must be empty.
 
 
-Ownership and permissions
+Permissions and ownership
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.owner()
