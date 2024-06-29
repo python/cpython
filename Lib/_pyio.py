@@ -1575,9 +1575,9 @@ class FileIO(RawIOBase):
                 # don't exist.
                 pass
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
-            self._estimated_size = getattr(fdfstat, 'st_size', -1)
             if self._blksize <= 1:
                 self._blksize = DEFAULT_BUFFER_SIZE
+            self._estimated_size = fdfstat.st_size
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1668,11 +1668,6 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        # Cap read size so we don't try reading larger than a long on x86
-        # can hold.
-        if bufsize > sys.maxsize:
-            bufsize = sys.maxsize
-
         result = bytearray()
         while True:
             if len(result) >= bufsize:
@@ -1747,6 +1742,7 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
+        self._estimated_size = size
         return size
 
     def close(self):
