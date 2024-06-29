@@ -383,8 +383,8 @@ class AutoFileTests:
             """,
             _strace_flags
         )
-        assert calls == ['openat', 'fstat', 'ioctl', 'lseek', 'lseek', 'fstat',
-                         'read', 'read', 'close']
+        self.assertEqual(calls, ['openat', 'fstat', 'ioctl', 'lseek',
+                                 'lseek', 'fstat', 'read', 'read', 'close'])
 
         # Focus on just `read()`
         calls = strace_helper.get_syscalls(
@@ -393,7 +393,7 @@ class AutoFileTests:
             cleanup="f.close()",
             strace_flags=_strace_flags
         )
-        assert calls == ['lseek', 'fstat', 'read', 'read']
+        self.assertEqual(calls, ['lseek', 'fstat', 'read', 'read'])
 
         # Readall in binary mode
         calls = strace_helper.get_syscalls(
@@ -404,8 +404,8 @@ class AutoFileTests:
             """,
             _strace_flags
         )
-        assert calls == ['openat', 'fstat', 'ioctl', 'lseek', 'lseek', 'fstat',
-                         'read', 'read', 'close']
+        self.assertEqual(calls, ['openat', 'fstat', 'ioctl', 'lseek', 'lseek',
+                                 'fstat', 'read', 'read', 'close'])
 
         # Readall in text mode
         calls = strace_helper.get_syscalls(
@@ -416,8 +416,8 @@ class AutoFileTests:
             """,
             _strace_flags
         )
-        assert calls == ['openat', 'fstat', 'ioctl', 'lseek', 'lseek', 'fstat',
-                         'read', 'read', 'close']
+        self.assertEqual(calls, ['openat', 'fstat', 'ioctl', 'lseek', 'lseek',
+                                 'fstat', 'read', 'read', 'close'])
 
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
