@@ -1618,6 +1618,9 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if year with century should be normalized for strftime. */
+#undef Py_NORMALIZE_CENTURY
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
