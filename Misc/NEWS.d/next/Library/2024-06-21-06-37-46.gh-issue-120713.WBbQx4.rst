@@ -1,0 +1,2 @@
+:meth:`datetime.datetime.strftime` now 0-pads years with less than four digits for the format specifiers ``%Y`` and ``%G`` on Linux.
+Patch by Ben Hsing
