@@ -939,9 +939,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             z.writestr("a/__init__.py", b'')
             z.mkdir("a/b")
             z.mkdir("a/b/c")
-
-        # Bug with ZipFile - cannot use writestr() on deeply nested directories (that were created with mkdir())
-        with ZipFile(TEMP_ZIP, "a") as z:
             z.writestr("a/b/c/__init__.py", b'def foo(): return "foo"')
 
         importer = zipimport.zipimporter(TEMP_ZIP)
