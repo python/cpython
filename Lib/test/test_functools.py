@@ -395,6 +395,23 @@ class TestPartial:
         f = self.partial(object)
         self.assertRaises(TypeError, f.__setstate__, BadSequence())
 
+    def test_partial_as_method(self):
+        class A:
+            meth = self.partial(capture, 1, a=2)
+            cmeth = classmethod(self.partial(capture, 1, a=2))
+            smeth = staticmethod(self.partial(capture, 1, a=2))
+
+        a = A()
+        self.assertEqual(A.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        with self.assertWarns(FutureWarning) as w:
+            self.assertEqual(a.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(w.filename, __file__)
+        self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+
+
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:

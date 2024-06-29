@@ -1887,12 +1887,14 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
 #ifdef AF_DIVERT
     case AF_DIVERT:
-        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+        /* FreeBSD divert(4) sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
 #endif /* AF_DIVERT */
 
     case AF_INET:
@@ -2214,7 +2216,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
-        /* fall-through */
+            _Py_FALLTHROUGH;
 #endif
 #ifdef CAN_BCM
         case CAN_BCM:
@@ -2590,7 +2592,8 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+       _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
     case AF_INET:

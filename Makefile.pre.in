@@ -1193,7 +1193,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_global_strings.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
-		$(srcdir)/Include/internal/pycore_identifier.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_importdl.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \

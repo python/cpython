@@ -230,7 +230,7 @@ dummy_func(
         }
 
         replicate(8) pure inst(LOAD_FAST, (-- value)) {
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
@@ -673,7 +673,7 @@ dummy_func(
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
                 Py_DECREF(slice);
             }
             PyStackRef_CLOSE(v);
@@ -789,7 +789,7 @@ dummy_func(
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectSteal(v));
+                                PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -813,7 +813,7 @@ dummy_func(
 
         op(_STORE_SUBSCR, (v, container, sub -- )) {
             /* container[sub] = v */
-            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectSteal(sub), PyStackRef_AsPyObjectSteal(v));
+            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectBorrow(sub), PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -885,10 +885,10 @@ dummy_func(
             switch (oparg) {
             case 2:
                 cause = PyStackRef_AsPyObjectSteal(args[1]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 1:
                 exc = PyStackRef_AsPyObjectSteal(args[0]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 0:
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
@@ -1235,7 +1235,7 @@ dummy_func(
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
-                PyStackRef_AsPyObjectBorrow(exc_value) == Py_None
+                   PyStackRef_Is(exc_value, PyStackRef_None)
                     ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
         }
 
@@ -1330,9 +1330,9 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             if (PyDict_CheckExact(ns))
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             else
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1450,7 +1450,7 @@ dummy_func(
         op(_STORE_ATTR, (v, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
-                                       name, PyStackRef_AsPyObjectSteal(v));
+                                       name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
