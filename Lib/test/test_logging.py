@@ -3927,6 +3927,50 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        from multiprocessing import Queue as MQ
+
+        q1 = {"()": "queue.Queue", "maxsize": -1}
+        q2 = MQ()
+        q3 = queue.Queue()
+
+        for qspec in (q1, q2, q3):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": qspec,
+                        },
+                    },
+                }
+            )
+            manager.assert_not_called()
+
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        with self.assertRaises(ValueError):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": object(),
+                        },
+                    },
+                }
+            )
+        manager.assert_not_called()
+
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
         # See gh-119819

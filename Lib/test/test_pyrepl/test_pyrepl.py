@@ -843,15 +843,26 @@ class TestPasteEvent(TestCase):
 class TestMain(TestCase):
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
-        expected_output = (
-            "[\'__annotations__\', \'__builtins__\', \'__doc__\', \'__loader__\', "
-            "\'__name__\', \'__package__\', \'__spec__\']"
-        )
+        pre = "['__annotations__', '__builtins__'"
+        post = "'__loader__', '__name__', '__package__', '__spec__']"
         output, exit_code = self.run_repl(["sorted(dir())", "exit"])
-        if "can\'t use pyrepl" in output:
+        if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
-        self.assertIn(expected_output, output)
+
+        # if `__main__` is not a file (impossible with pyrepl)
+        case1 = f"{pre}, '__doc__', {post}" in output
+
+        # if `__main__` is an uncached .py file (no .pyc)
+        case2 = f"{pre}, '__doc__', '__file__', {post}" in output
+
+        # if `__main__` is a cached .pyc file and the .py source exists
+        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+
+        # if `__main__` is a cached .pyc file but there's no .py source file
+        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+
+        self.assertTrue(case1 or case2 or case3 or case4, output)
 
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
@@ -859,6 +870,31 @@ class TestMain(TestCase):
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
         self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    @force_not_colorized
+    def test_python_basic_repl(self):
+        env = os.environ.copy()
+        commands = ("from test.support import initialized_with_pyrepl\n"
+                    "initialized_with_pyrepl()\n"
+                    "exit()\n")
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn("True", output)
+        self.assertNotIn("False", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 

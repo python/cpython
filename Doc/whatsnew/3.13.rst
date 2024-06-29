@@ -2250,6 +2250,12 @@ Changes in the Python API
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
+* :class:`functools.partial` now emits a :exc:`FutureWarning` when it is
+  used as a method.
+  Its behavior will be changed in future Python versions.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`121027`.)
+
 .. _pep667-porting-notes-py:
 
 * Calling :func:`locals` in an :term:`optimized scope` now produces an
