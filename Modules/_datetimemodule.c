@@ -1953,8 +1953,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
-            /* note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
-               1000 for %G can go on the fast path */
+            /* Note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
+               1000 for %G can go on the fast path. */
             if (year_long >= 1000) {
                 goto PassThrough;
             }
