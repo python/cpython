@@ -1,0 +1,1 @@
+Ensured extract_version in local file headers is set to a minimum of the ZIP64_VERSION if offset further than the ZIP64_LIMIT when creating files with zipfile.
