@@ -1851,6 +1851,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     const char *ptoappend;      /* ptr to string to append to output buffer */
     Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
 
+#ifdef NORMALIZE_CENTURY
+    /* Buffer of maximum size of formatted year permitted by long. */
+    char buf[SIZEOF_LONG*5/2+2];
+#endif
+
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
@@ -1976,11 +1981,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 }
             }
 
-/* Maximum size of formatted year permitted by long. */
-#define MAX_YEAR_BUFFER_LEN SIZEOF_LONG*5/2+2
-            char buf[MAX_YEAR_BUFFER_LEN];
-
-            ntoappend = PyOS_snprintf(buf, MAX_YEAR_BUFFER_LEN, "%04ld", year_long);
+            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
             ptoappend = buf;
         }
 #endif
