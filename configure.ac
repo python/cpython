@@ -3763,7 +3763,7 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
 	*) ;;
 esac
 
-# check for _Complex C type and it's support by libffi
+# check for _Complex C type
 #
 # Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
 # none properly support C11+ Annex G (where pure imaginary types
@@ -3772,9 +3772,6 @@ esac
 # of __STDC_IEC_559_COMPLEX__.
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <complex.h>
-#ifndef FFI_TYPE_COMPLEX
-#error "libffi version has no support for _Complex type"
-#endif
 #define test(type, out)                                \
 {                                                      \
     type complex z = 1 + 2*I; z = z*z;                 \
