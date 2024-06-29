@@ -1750,7 +1750,7 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
-#ifdef Py_HAVE_C_COMPLEX
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCfuzZqQPXOv?g";
 #else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
