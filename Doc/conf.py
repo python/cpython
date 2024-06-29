@@ -12,6 +12,8 @@ import time
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
+from pyspecific import SOURCE_URI
+
 # General configuration
 # ---------------------
 
@@ -24,6 +26,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -64,6 +67,12 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 import patchlevel
 version, release = patchlevel.get_version_info()
 
+rst_epilog = f"""
+.. |python_version_literal| replace:: ``Python {version}``
+.. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+"""
+
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
 today = ''
@@ -95,11 +104,13 @@ nitpick_ignore = [
     ('c:func', 'dlopen'),
     ('c:func', 'exec'),
     ('c:func', 'fcntl'),
+    ('c:func', 'flock'),
     ('c:func', 'fork'),
     ('c:func', 'free'),
     ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
     ('c:func', 'grantpt'),
+    ('c:func', 'ioctl'),
     ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
@@ -120,6 +131,7 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
@@ -135,11 +147,14 @@ nitpick_ignore = [
     ('c:type', 'wchar_t'),
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
+    ('c:type', 'double'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
     ('c:struct', 'stat'),
     ('c:struct', 'statvfs'),
+    ('c:struct', 'timeval'),
+    ('c:struct', 'timespec'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
@@ -266,15 +281,16 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
+    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
-# gh-106948: Copy standard C types declared in the "c:type" domain to the
-# "c:identifier" domain, since "c:function" markup looks for types in the
-# "c:identifier" domain. Use list() to not iterate on items which are being
-# added
+# gh-106948: Copy standard C types declared in the "c:type" domain and C
+# structures declared in the "c:struct" domain to the "c:identifier" domain,
+# since "c:function" markup looks for types in the "c:identifier" domain. Use
+# list() to not iterate on items which are being added
 for role, name in list(nitpick_ignore):
-    if role == 'c:type':
+    if role in ('c:type', 'c:struct'):
         nitpick_ignore.append(('c:identifier', name))
 del role, name
 
@@ -283,8 +299,8 @@ smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
 }
 
-# Avoid a warning with Sphinx >= 2.0
-master_doc = 'contents'
+# Avoid a warning with Sphinx >= 4.0
+root_doc = 'contents'
 
 # Allow translation of index directives
 gettext_additional_targets = [
@@ -323,7 +339,8 @@ repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
     "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
     "repository_url": repository_url.removesuffix(".git") if repository_url else None,
-    "pr_id": os.getenv("READTHEDOCS_VERSION")
+    "pr_id": os.getenv("READTHEDOCS_VERSION"),
+    "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
@@ -358,6 +375,8 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+# Split pot files one per reST file
+gettext_compact = False
 
 # Options for LaTeX output
 # ------------------------
@@ -418,6 +437,10 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+
+# index pages are not valid xhtml
+# https://github.com/sphinx-doc/sphinx/issues/12359
+epub_use_index = False
 
 # Options for the coverage checker
 # --------------------------------
@@ -501,6 +524,19 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+# Options for sphinx.ext.extlinks
+# -------------------------------
+
+# This config is a dictionary of external sites,
+# mapping unique short aliases to a base URL and a prefix.
+# https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
+extlinks = {
+    "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
+    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "source": (SOURCE_URI, "%s"),
+}
+extlinks_detect_hardcoded_links = True
 
 # Options for extensions
 # ----------------------

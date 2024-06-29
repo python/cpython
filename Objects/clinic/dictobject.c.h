@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(dict_fromkeys__doc__,
@@ -93,7 +94,9 @@ dict_get(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_get_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -130,7 +133,9 @@ dict_setdefault(PyDictObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_setdefault_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -209,7 +214,13 @@ dict_popitem_impl(PyDictObject *self);
 static PyObject *
 dict_popitem(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return dict_popitem_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dict_popitem_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(dict___sizeof____doc__,
@@ -301,4 +312,4 @@ dict_values(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl(self);
 }
-/*[clinic end generated code: output=f3ac47dfbf341b23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3dd5f3fb8122aef input=a9049054013a1b77]*/

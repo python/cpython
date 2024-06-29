@@ -1,17 +1,15 @@
-"""Generate uop metedata.
+"""Generate opcode metadata.
 Reads the instruction definitions from bytecodes.c.
-Writes the metadata to pycore_uop_metadata.h by default.
+Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
+    PseudoInstruction,
     analyze_files,
-    Skip,
     Uop,
 )
 from generators_common import (
@@ -19,7 +17,6 @@ from generators_common import (
     ROOT,
     write_header,
     cflags,
-    StackOffset,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -50,8 +47,11 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "EXIT",
     "PURE",
     "PASSTHROUGH",
+    "OPARG_AND_1",
+    "ERROR_NO_POP",
 ]
 
 
@@ -91,12 +91,18 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
-    for inst in analysis.instructions.values():
+    def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
         pushed = (stack.top_offset - stack.base_offset).to_c()
         popped_data.append((inst.name, popped))
         pushed_data.append((inst.name, pushed))
+
+    for inst in analysis.instructions.values():
+        add(inst)
+    for pseudo in analysis.pseudos.values():
+        add(pseudo)
+
     emit_stack_effect_function(out, "popped", sorted(popped_data))
     emit_stack_effect_function(out, "pushed", sorted(pushed_data))
 
@@ -282,7 +288,7 @@ def is_viable_expansion(inst: Instruction) -> bool:
                 continue
             if "replaced" in part.annotations:
                 continue
-            if part.properties.tier_one_only or not part.is_viable():
+            if part.properties.tier == 1 or not part.is_viable():
                 return False
     return True
 

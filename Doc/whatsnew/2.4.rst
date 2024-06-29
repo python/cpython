@@ -1081,7 +1081,7 @@ complete list of changes, or look through the CVS logs for all the details.
   :func:`nsmallest` that use heaps to find the N largest or smallest values in a
   dataset without the expense of a full sort.  (Contributed by Raymond Hettinger.)
 
-* The :mod:`httplib` module now contains constants for HTTP status codes defined
+* The :mod:`httplib <http>` module now contains constants for HTTP status codes defined
   in various HTTP-related RFC documents.  Constants have names such as
   :const:`OK`, :const:`CREATED`, :const:`CONTINUE`, and
   :const:`MOVED_PERMANENTLY`; use pydoc to get a full list.  (Contributed by
@@ -1218,10 +1218,10 @@ complete list of changes, or look through the CVS logs for all the details.
   now include the string ``'%default'``, which will be replaced by the option's
   default value.  (Contributed by Greg Ward.)
 
-* The long-term plan is to deprecate the :mod:`rfc822` module in some future
+* The long-term plan is to deprecate the :mod:`!rfc822` module in some future
   Python release in favor of the :mod:`email` package. To this end, the
-  :func:`email.Utils.formatdate` function has been changed to make it usable as a
-  replacement for :func:`rfc822.formatdate`.  You may want to write new e-mail
+  :func:`email.Utils.formatdate <email.utils.formatdate>` function has been changed to make it usable as a
+  replacement for :func:`!rfc822.formatdate`.  You may want to write new e-mail
   processing code with this in mind.  (Change implemented by Anthony Baxter.)
 
 * A new ``urandom(n)`` function was added to the :mod:`os` module, returning
@@ -1308,7 +1308,7 @@ complete list of changes, or look through the CVS logs for all the details.
   sockets, and regular expression pattern objects. (Contributed by Raymond
   Hettinger.)
 
-* The :mod:`xmlrpclib` module now supports a multi-call extension for
+* The :mod:`xmlrpclib <xmlrpc.client>` module now supports a multi-call extension for
   transmitting multiple XML-RPC calls in a single HTTP operation. (Contributed by
   Brian Quinlan.)
 
@@ -1323,8 +1323,8 @@ complete list of changes, or look through the CVS logs for all the details.
 cookielib
 ---------
 
-The :mod:`cookielib` library supports client-side handling for HTTP cookies,
-mirroring the :mod:`Cookie` module's server-side cookie support. Cookies are
+The :mod:`cookielib <http.cookiejar>` library supports client-side handling for HTTP cookies,
+mirroring the :mod:`Cookie <http.cookies>` module's server-side cookie support. Cookies are
 stored in cookie jars; the library transparently stores cookies offered by the
 web server in the cookie jar, and fetches the cookie from the jar when
 connecting to the server. As in web browsers, policy objects control whether
@@ -1335,7 +1335,7 @@ are provided: one that stores cookies in the Netscape format so applications can
 use the Mozilla or Lynx cookie files, and one that stores cookies in the same
 format as the Perl libwww library.
 
-:mod:`urllib2` has been changed to interact with :mod:`cookielib`:
+:mod:`urllib2 <urllib.request>` has been changed to interact with :mod:`cookielib <http.cookiejar>`:
 :class:`HTTPCookieProcessor` manages a cookie jar that is used when accessing
 URLs.
 

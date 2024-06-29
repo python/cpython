@@ -1,5 +1,5 @@
-:mod:`ftplib` --- FTP protocol client
-=====================================
+:mod:`!ftplib` --- FTP protocol client
+======================================
 
 .. module:: ftplib
    :synopsis: FTP protocol client (requires sockets).
@@ -104,7 +104,7 @@ FTP objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|
@@ -178,7 +178,7 @@ FTP objects
       :param timeout:
          A timeout in seconds for the connection attempt
          (default: the global default timeout setting).
-      :type timeout: int | None
+      :type timeout: float | None
 
       :param source_address:
          |param_doc_source_address|
@@ -232,8 +232,8 @@ FTP objects
    .. method:: FTP.voidcmd(cmd)
 
       Send a simple command string to the server and handle the response.  Return
-      nothing if a response code corresponding to success (codes in the range
-      200--299) is received.  Raise :exc:`error_reply` otherwise.
+      the response string if the response code corresponds to success (codes in
+      the range 200--299).  Raise :exc:`error_reply` otherwise.
 
       .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
@@ -483,7 +483,7 @@ FTP_TLS objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`~FTP.connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|

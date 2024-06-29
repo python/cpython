@@ -285,7 +285,7 @@ class partial:
         if not callable(func):
             raise TypeError("the first argument must be callable")
 
-        if hasattr(func, "func"):
+        if isinstance(func, partial):
             args = func.args + args
             keywords = {**func.keywords, **keywords}
             func = func.func
@@ -303,13 +303,23 @@ class partial:
 
     @recursive_repr()
     def __repr__(self):
-        qualname = type(self).__qualname__
+        cls = type(self)
+        qualname = cls.__qualname__
+        module = cls.__module__
         args = [repr(self.func)]
         args.extend(repr(x) for x in self.args)
         args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
-        if type(self).__module__ == "functools":
-            return f"functools.{qualname}({', '.join(args)})"
-        return f"{qualname}({', '.join(args)})"
+        return f"{module}.{qualname}({', '.join(args)})"
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        import warnings
+        warnings.warn('functools.partial will be a method descriptor in '
+                      'future Python versions; wrap it in staticmethod() '
+                      'if you want to preserve the old behavior',
+                      FutureWarning, 2)
+        return self
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -373,28 +383,26 @@ class partialmethod(object):
             self.keywords = keywords
 
     def __repr__(self):
-        args = ", ".join(map(repr, self.args))
-        keywords = ", ".join("{}={!r}".format(k, v)
-                                 for k, v in self.keywords.items())
-        format_string = "{module}.{cls}({func}, {args}, {keywords})"
-        return format_string.format(module=self.__class__.__module__,
-                                    cls=self.__class__.__qualname__,
-                                    func=self.func,
-                                    args=args,
-                                    keywords=keywords)
+        cls = type(self)
+        module = cls.__module__
+        qualname = cls.__qualname__
+        args = [repr(self.func)]
+        args.extend(map(repr, self.args))
+        args.extend(f"{k}={v!r}" for k, v in self.keywords.items())
+        return f"{module}.{qualname}({', '.join(args)})"
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
             keywords = {**self.keywords, **keywords}
             return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method._partialmethod = self
+        _method.__partialmethod__ = self
         return _method
 
     def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
-        if get is not None:
+        if get is not None and not isinstance(self.func, partial):
             new_func = get(obj, cls)
             if new_func is not self.func:
                 # Assume __get__ returning something new indicates the
@@ -422,6 +430,17 @@ class partialmethod(object):
 def _unwrap_partial(func):
     while isinstance(func, partial):
         func = func.func
+    return func
+
+def _unwrap_partialmethod(func):
+    prev = None
+    while func is not prev:
+        prev = func
+        while isinstance(getattr(func, "__partialmethod__", None), partialmethod):
+            func = func.__partialmethod__
+        while isinstance(func, partialmethod):
+            func = getattr(func, 'func')
+        func = _unwrap_partial(func)
     return func
 
 ################################################################################
@@ -662,7 +681,7 @@ def cache(user_function, /):
 def _c3_merge(sequences):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
-    Adapted from https://www.python.org/download/releases/2.3/mro/.
+    Adapted from https://docs.python.org/3/howto/mro.html.
 
     """
     result = []
@@ -907,7 +926,6 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-
         return dispatch(args[0].__class__)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
@@ -957,7 +975,11 @@ class singledispatchmethod:
                 return _method
 
         dispatch = self.dispatcher.dispatch
+        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
         def _method(*args, **kwargs):
+            if not args:
+                raise TypeError(f'{funcname} requires at least '
+                                '1 positional argument')
             return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__

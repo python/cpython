@@ -222,6 +222,10 @@ annotations = {
     "register",
     "replaced",
     "pure",
+    "split",
+    "replicate",
+    "tier1",
+    "tier2",
 }
 
 __all__ = []

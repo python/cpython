@@ -5,9 +5,11 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "internal/pycore_code.h"
-#include "internal/pycore_compile.h"
-#include "internal/pycore_intrinsics.h"
+#include "pycore_ceval.h"
+#include "pycore_code.h"
+#include "pycore_compile.h"
+#include "pycore_intrinsics.h"
+#include "pycore_optimizer.h"     // _Py_GetExecutor()
 
 /*[clinic input]
 module _opcode
@@ -347,6 +349,60 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
     return list;
 }
 
+/*[clinic input]
+
+_opcode.get_special_method_names
+
+Return a list of special method names.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_special_method_names_impl(PyObject *module)
+/*[clinic end generated code: output=fce72614cd988d17 input=25f2115560bdf163]*/
+{
+    PyObject *list = PyList_New(SPECIAL_MAX + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= SPECIAL_MAX; i++) {
+        PyObject *name = _Py_SpecialMethods[i].name;
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+/*[clinic input]
+
+_opcode.get_executor
+
+  code: object
+  offset: int
+
+Return the executor object at offset in code if exists, None otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
+/*[clinic end generated code: output=c035c7a47b16648f input=85eff93ea7aac282]*/
+{
+    if (!PyCode_Check(code)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a code object, not '%.100s'",
+                     Py_TYPE(code)->tp_name);
+        return NULL;
+    }
+#ifdef _Py_TIER2
+    return (PyObject *)_Py_GetExecutor((PyCodeObject *)code, offset);
+#else
+    PyErr_Format(PyExc_RuntimeError,
+                 "Executors are not available in this build");
+    return NULL;
+#endif
+}
 
 static PyMethodDef
 opcode_functions[] =  {
@@ -363,6 +419,8 @@ opcode_functions[] =  {
     _OPCODE_GET_NB_OPS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
+    _OPCODE_GET_EXECUTOR_METHODDEF
+    _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
@@ -377,6 +435,7 @@ _opcode_exec(PyObject *m) {
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

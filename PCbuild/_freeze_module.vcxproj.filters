@@ -46,6 +46,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\boolobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -89,6 +92,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
@@ -226,6 +232,10 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\instruction_sequence.c">
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -236,9 +246,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\lock.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">
@@ -307,6 +314,9 @@
     <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -371,6 +381,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pytime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">

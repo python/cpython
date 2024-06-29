@@ -66,11 +66,22 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
-
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
+def _sizeof_pyobject():
+    return gdb.lookup_type('PyObject').sizeof
 
+def _managed_dict_offset():
+    # See pycore_object.h
+    pyobj = gdb.lookup_type("PyObject")
+    if any(field.name == "ob_ref_local" for field in pyobj.fields()):
+        return -1 * _sizeof_void_p()
+    else:
+        return -3 * _sizeof_void_p()
+
+
+Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
@@ -88,6 +99,8 @@ FRAME_OWNED_BY_CSTACK = 3
 MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
+
+USED_TAGS = 0b11
 
 ENCODING = locale.getpreferredencoding()
 
@@ -147,6 +160,8 @@ class PyObjectPtr(object):
     _typename = 'PyObject'
 
     def __init__(self, gdbval, cast_to=None):
+        # Clear the tagged pointer
+        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
         if cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
@@ -244,7 +259,7 @@ class PyObjectPtr(object):
 
         Derived classes will override this.
 
-        For example, a PyIntObject* with ob_ival 42 in the inferior process
+        For example, a PyLongObjectPtr* with long_value 42 in the inferior process
         should result in an int(42) in this process.
 
         visited: a set of all gdb.Value pyobject pointers already visited
@@ -457,7 +472,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
                 if dictoffset < 0:
                     if int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT:
                         assert dictoffset == -1
-                        dictoffset = -3 * _sizeof_void_p()
+                        dictoffset = _managed_dict_offset()
                     else:
                         type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
                         tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
@@ -485,12 +500,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        charptrptr_t = _type_char_ptr().pointer()
-        ptr = self._gdbval.cast(charptrptr_t) - 3
-        char_ptr = ptr.dereference()
-        if (int(char_ptr) & 1) == 0:
+        obj_ptr = self._gdbval.cast(_type_char_ptr())
+        dict_ptr_ptr = obj_ptr + _managed_dict_offset()
+        dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
+        if int(dict_ptr):
             return None
-        char_ptr += 1
+        char_ptr = obj_ptr + _sizeof_pyobject()
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -856,7 +871,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longobjrep.h has this declaration:
+        Python's Include/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -865,14 +880,18 @@ class PyLongObjectPtr(PyObjectPtr):
 
             struct _longobject {
                 PyObject_HEAD
-               _PyLongValue long_value;
+                _PyLongValue long_value;
             };
 
         with this description:
             The absolute value of a number is equal to
-                 SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-            Negative numbers are represented with ob_size < 0;
-            zero is represented by ob_size == 0.
+                SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+            The sign of the value is stored in the lower 2 bits of lv_tag.
+                - 0: Positive
+                - 1: Zero
+                - 2: Negative
+            The third lowest bit of lv_tag is reserved for an immortality flag, but is
+            not currently used.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -1746,8 +1765,11 @@ class Frame(object):
             return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame gc_collect_main() within the garbage-collector?'''
-        return self._gdbframe.name() in ('collect', 'gc_collect_main')
+        '''Is this frame a collector within the garbage-collector?'''
+        return self._gdbframe.name() in (
+            'collect', 'gc_collect_full', 'gc_collect_main',
+            'gc_collect_young', 'gc_collect_increment',
+        )
 
     def get_pyop(self):
         try:

@@ -1,0 +1,2 @@
+Soft deprecate the :c:macro:`!Py_MEMCPY` macro: use directly ``memcpy()``
+instead.  Patch by Victor Stinner.

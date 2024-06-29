@@ -1,6 +1,8 @@
 #ifndef Py_INTERNAL_OBJECT_STACK_H
 #define Py_INTERNAL_OBJECT_STACK_H
 
+#include "pycore_freelist.h"        // _PyFreeListState
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,9 +33,6 @@ _PyObjectStackChunk_New(void);
 
 extern void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *);
-
-extern void
-_PyObjectStackChunk_ClearFreeList(_PyFreeListState *state, int is_finalization);
 
 // Push an item onto the stack. Return -1 on allocation failure, 0 on success.
 static inline int
@@ -73,6 +72,10 @@ _PyObjectStack_Pop(_PyObjectStack *stack)
     }
     return obj;
 }
+
+// Merge src into dst, leaving src empty
+extern void
+_PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src);
 
 // Remove all items from the stack
 extern void

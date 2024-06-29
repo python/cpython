@@ -157,6 +157,9 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if the system has the type `clock_t'. */
+#undef HAVE_CLOCK_T
+
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
 
@@ -473,6 +476,9 @@
 
 /* Define to 1 if you have the `getgid' function. */
 #undef HAVE_GETGID
+
+/* Define to 1 if you have the `getgrent' function. */
+#undef HAVE_GETGRENT
 
 /* Define to 1 if you have the `getgrgid' function. */
 #undef HAVE_GETGRGID
@@ -930,11 +936,18 @@
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
 
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
+
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
 /* Define to 1 if you have the `pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
+/* Define to 1 if you have the `pthread_cond_timedwait_relative_np' function.
+   */
+#undef HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP
 
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
@@ -1002,7 +1015,7 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
-/* Define if readline supports rl_compdisp_func_t */
+/* Define to 1 if the system has the type `rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
 
 /* Define if you have readline 2.2 */
@@ -1188,13 +1201,16 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
-/* Define if your compiler provides ssize_t */
+/* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T
 
 /* Define to 1 if you have the `statvfs' function. */
@@ -1561,6 +1577,9 @@
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 
+/* Define to 1 if the system has the type `__uint128_t'. */
+#undef HAVE___UINT128_T
+
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
@@ -1639,6 +1658,12 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if year with century should be normalized for strftime. */
+#undef Py_NORMALIZE_CENTURY
+
+/* Define if rl_startup_hook takes arguments */
+#undef Py_RL_STARTUP_HOOK_TAKES_ARGS
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
@@ -1925,7 +1950,7 @@
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
 
-/* Define to 'long' if <time.h> doesn't define. */
+/* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
 /* Define to empty if `const' does not conform to ANSI C. */
@@ -1949,7 +1974,7 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-/* Define to `int' if <sys/socket.h> does not define. */
+/* Define to 'int' if <sys/socket.h> does not define. */
 #undef socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */

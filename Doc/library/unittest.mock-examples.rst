@@ -1,5 +1,5 @@
-:mod:`unittest.mock` --- getting started
-========================================
+:mod:`!unittest.mock` --- getting started
+=========================================
 
 .. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock

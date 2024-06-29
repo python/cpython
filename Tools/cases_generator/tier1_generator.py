@@ -4,8 +4,6 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
@@ -14,7 +12,6 @@ from analyzer import (
     Part,
     analyze_files,
     Skip,
-    StackItem,
     analysis_error,
 )
 from generators_common import (
@@ -24,9 +21,8 @@ from generators_common import (
     emit_tokens,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
-from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from typing import TextIO
+from stack import Stack, SizeMismatch
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -41,20 +37,25 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         if isinstance(uop, Uop):
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
-                    type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        if var.is_array():
+                            out.emit(f"{var.type}{space}{var.name};\n")
+                        else:
+                            out.emit(f"{type}{space}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
-                    type = var.type if var.type else "PyObject *"
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type}{space}{var.name};\n")
 
 
 def write_uop(
@@ -87,6 +88,8 @@ def write_uop(
                 out.emit(
                     f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
                 )
+                if inst.family is None:
+                    out.emit(f"(void){cache.name};\n")
             offset += cache.size
         emit_tokens(out, uop, stack, inst)
         if uop.properties.stores_sp:
@@ -131,8 +134,10 @@ def generate_tier1(
         needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
+        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if needs_this and not inst.is_target:
             out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
         out.emit(f"next_instr += {inst.size};\n")
@@ -141,6 +146,7 @@ def generate_tier1(
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(unused_guard)
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"

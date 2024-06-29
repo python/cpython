@@ -13,6 +13,7 @@ import types
 import weakref
 import gc
 import shutil
+import subprocess
 from unittest import mock
 
 import unittest
@@ -62,16 +63,10 @@ class TestLowLevelInternals(unittest.TestCase):
             tempfile._infer_return_type(b'', None, '')
 
     def test_infer_return_type_pathlib(self):
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+        self.assertIs(str, tempfile._infer_return_type(os_helper.FakePath('/')))
 
     def test_infer_return_type_pathlike(self):
-        class Path:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
+        Path = os_helper.FakePath
         self.assertIs(str, tempfile._infer_return_type(Path('/')))
         self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
         self.assertIs(str, tempfile._infer_return_type('', Path('')))
@@ -442,7 +437,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
-            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
+            self.do_create(dir=os_helper.FakePath(dir)).write(b"blat")
         finally:
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
@@ -680,7 +675,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
-            self.do_create(dir=pathlib.Path(dir))
+            self.do_create(dir=os_helper.FakePath(dir))
         finally:
             os.rmdir(dir)
 
@@ -781,7 +776,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
-            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
+            os.rmdir(self.do_create(dir=os_helper.FakePath(dir)))
         finally:
             os.rmdir(dir)
 
@@ -802,6 +797,33 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             self.assertEqual(mode, expected)
         finally:
             os.rmdir(dir)
+
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_mode_win32(self):
+        # Use icacls.exe to extract the users with some level of access
+        # Main thing we are testing is that the BUILTIN\Users group has
+        # no access. The exact ACL is going to vary based on which user
+        # is running the test.
+        dir = self.do_create()
+        try:
+            out = subprocess.check_output(["icacls.exe", dir], encoding="oem").casefold()
+        finally:
+            os.rmdir(dir)
+
+        dir = dir.casefold()
+        users = set()
+        found_user = False
+        for line in out.strip().splitlines():
+            acl = None
+            # First line of result includes our directory
+            if line.startswith(dir):
+                acl = line.removeprefix(dir).strip()
+            elif line and line[:1].isspace():
+                acl = line.strip()
+            if acl:
+                users.add(acl.partition(":")[0])
+
+        self.assertNotIn(r"BUILTIN\Users".casefold(), users)
 
     def test_collision_with_existing_file(self):
         # mkdtemp tries another name when a file with

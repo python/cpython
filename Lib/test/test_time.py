@@ -43,8 +43,8 @@ class _PyTime(enum.IntEnum):
     ROUND_UP = 3
 
 # _PyTime_t is int64_t
-_PyTime_MIN = -2 ** 63
-_PyTime_MAX = 2 ** 63 - 1
+PyTime_MIN = -2 ** 63
+PyTime_MAX = 2 ** 63 - 1
 
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
@@ -277,6 +277,8 @@ class TimeTestCase(unittest.TestCase):
                           'j', 'm', 'M', 'p', 'S',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
+            if directive == 'd':
+                format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
                 time.strptime(strf_output, format)
@@ -298,6 +300,12 @@ class TimeTestCase(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             time.strptime('19', '%Y %')
         self.assertIs(e.exception.__suppress_context__, True)
+
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            time.strptime('02-07 18:28', '%m-%d %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
@@ -511,7 +519,7 @@ class TimeTestCase(unittest.TestCase):
 
     def test_thread_time(self):
         if not hasattr(time, 'thread_time'):
-            if sys.platform.startswith(('linux', 'win')):
+            if sys.platform.startswith(('linux', 'android', 'win')):
                 self.fail("time.thread_time() should be available on %r"
                           % (sys.platform,))
             else:
@@ -934,7 +942,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                 _PyTime_FromSecondsObject(float('nan'), time_rnd)
 
     def test_AsSecondsDouble(self):
-        from _testinternalcapi import _PyTime_AsSecondsDouble
+        from _testcapi import PyTime_AsSecondsDouble
 
         def float_converter(ns):
             if abs(ns) % SEC_TO_NS == 0:
@@ -942,14 +950,9 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             else:
                 return float(ns) / SEC_TO_NS
 
-        self.check_int_rounding(lambda ns, rnd: _PyTime_AsSecondsDouble(ns),
+        self.check_int_rounding(lambda ns, rnd: PyTime_AsSecondsDouble(ns),
                                 float_converter,
                                 NS_TO_SEC)
-
-        # test nan
-        for time_rnd, _ in ROUNDING_MODES:
-            with self.assertRaises(TypeError):
-                _PyTime_AsSecondsDouble(float('nan'))
 
     def create_decimal_converter(self, denominator):
         denom = decimal.Decimal(denominator)
@@ -1009,7 +1012,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             tv_sec_max = self.time_t_max
             tv_sec_min = self.time_t_min
 
-        for t in (_PyTime_MIN, _PyTime_MAX):
+        for t in (PyTime_MIN, PyTime_MAX):
             ts = _PyTime_AsTimeval_clamp(t, _PyTime.ROUND_CEILING)
             with decimal.localcontext() as context:
                 context.rounding = decimal.ROUND_CEILING
@@ -1028,7 +1031,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
     def test_AsTimespec_clamp(self):
         from _testinternalcapi import _PyTime_AsTimespec_clamp
 
-        for t in (_PyTime_MIN, _PyTime_MAX):
+        for t in (PyTime_MIN, PyTime_MAX):
             ts = _PyTime_AsTimespec_clamp(t)
             tv_sec, tv_nsec = divmod(t, NS_TO_SEC)
             if self.time_t_max < tv_sec:

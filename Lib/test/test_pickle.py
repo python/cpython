@@ -564,11 +564,12 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
+                           PythonFinalizationError,
                            RecursionError,
                            EncodingWarning,
                            BaseExceptionGroup,
                            ExceptionGroup,
-                           IncompleteInputError):
+                           _IncompleteInputError):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
