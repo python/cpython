@@ -793,6 +793,99 @@ Some concrete path methods can raise an :exc:`OSError` if a system call fails
 (for example because the path doesn't exist).
 
 
+Expanding and resolving paths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
+.. classmethod:: Path.cwd()
+
+   Return a new path object representing the current directory (as returned
+   by :func:`os.getcwd`)::
+
+      >>> Path.cwd()
+      PosixPath('/home/antoine/pathlib')
+
+
+.. method:: Path.absolute()
+
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
+
+      >>> p = Path('tests')
+      >>> p
+      PosixPath('tests')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/tests')
+
+
+.. method:: Path.resolve(strict=False)
+
+   Make the path absolute, resolving any symlinks.  A new path object is
+   returned::
+
+      >>> p = Path()
+      >>> p
+      PosixPath('.')
+      >>> p.resolve()
+      PosixPath('/home/antoine/pathlib')
+
+   "``..``" components are also eliminated (this is the only method to do so)::
+
+      >>> p = Path('docs/../setup.py')
+      >>> p.resolve()
+      PosixPath('/home/antoine/pathlib/setup.py')
+
+   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
+   is raised.  If *strict* is ``False``, the path is resolved as far as possible
+   and any remainder is appended without checking whether it exists.  If an
+   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
+   is raised.
+
+   .. versionchanged:: 3.6
+      The *strict* parameter was added (pre-3.6 behavior is strict).
+
+
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+
 Querying file type and status
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1420,100 +1513,6 @@ Ownership and permissions
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
-
-
-Other methods
-^^^^^^^^^^^^^
-
-.. classmethod:: Path.cwd()
-
-   Return a new path object representing the current directory (as returned
-   by :func:`os.getcwd`)::
-
-      >>> Path.cwd()
-      PosixPath('/home/antoine/pathlib')
-
-
-.. classmethod:: Path.home()
-
-   Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> Path.home()
-      PosixPath('/home/antoine')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.expanduser()
-
-   Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`. If a home directory can't be
-   resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> p = PosixPath('~/films/Monty Python')
-      >>> p.expanduser()
-      PosixPath('/home/eric/films/Monty Python')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.readlink()
-
-   Return the path to which the symbolic link points (as returned by
-   :func:`os.readlink`)::
-
-      >>> p = Path('mylink')
-      >>> p.symlink_to('setup.py')
-      >>> p.readlink()
-      PosixPath('setup.py')
-
-   .. versionadded:: 3.9
-
-
-.. method:: Path.absolute()
-
-   Make the path absolute, without normalization or resolving symlinks.
-   Returns a new path object::
-
-      >>> p = Path('tests')
-      >>> p
-      PosixPath('tests')
-      >>> p.absolute()
-      PosixPath('/home/antoine/pathlib/tests')
-
-
-.. method:: Path.resolve(strict=False)
-
-   Make the path absolute, resolving any symlinks.  A new path object is
-   returned::
-
-      >>> p = Path()
-      >>> p
-      PosixPath('.')
-      >>> p.resolve()
-      PosixPath('/home/antoine/pathlib')
-
-   "``..``" components are also eliminated (this is the only method to do so)::
-
-      >>> p = Path('docs/../setup.py')
-      >>> p.resolve()
-      PosixPath('/home/antoine/pathlib/setup.py')
-
-   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised.  If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.  If an
-   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
-   is raised.
-
-   .. versionchanged:: 3.6
-      The *strict* parameter was added (pre-3.6 behavior is strict).
-
 
 
 Correspondence to tools in the :mod:`os` module
