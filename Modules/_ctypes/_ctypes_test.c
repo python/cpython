@@ -13,6 +13,8 @@
 
 #include <Python.h>
 
+#include <ffi.h>                  // FFI_TYPE_COMPLEX
+
 #if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
 #  include "../_complex.h"        // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h

@@ -11,13 +11,12 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
-#  include "../_complex.h"        // complex
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
+#  include "../_complex.h"        // complex
+#endif
 
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
 

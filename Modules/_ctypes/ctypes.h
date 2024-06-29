@@ -2,6 +2,8 @@
 #   include <alloca.h>
 #endif
 
+#include <ffi.h>                  // FFI_TYPE_COMPLEX
+
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
