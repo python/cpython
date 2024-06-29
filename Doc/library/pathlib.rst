@@ -21,6 +21,12 @@ inherit from pure paths but also provide I/O operations.
 .. image:: pathlib-inheritance.png
    :align: center
    :class: invert-in-dark-mode
+   :alt: Inheritance diagram showing the classes available in pathlib. The
+         most basic class is PurePath, which has three direct subclasses:
+         PurePosixPath, PureWindowsPath, and Path. Further to these four
+         classes, there are two classes that use multiple inheritance:
+         PosixPath subclasses PurePosixPath and Path, and WindowsPath
+         subclasses PureWindowsPath and Path.
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
