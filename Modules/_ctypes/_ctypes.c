@@ -2230,7 +2230,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (fmt->pffi_type->type != FFI_TYPE_COMPLEX) {
+    if (!fmt->pffi_type->elements) {
         stginfo->ffi_type_pointer = *fmt->pffi_type;
     }
     else {
