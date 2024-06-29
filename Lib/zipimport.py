@@ -311,7 +311,7 @@ def _get_module_path(self, fullname):
     # Originally, this *only* used rpartition('.')[2] to find
     # the last item in a namespace package, but that made it basically
     # impossible to use nested submodules.
-    for suffix, _, _ in _zip_searchorder:
+    for suffix, _, _ in [*_zip_searchorder, (path_sep, False, False)]:
         if (path + suffix) in self._get_files():
             # OK, we found it the old way. Let's return it.
             return path
