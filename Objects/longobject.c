@@ -485,8 +485,12 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
     if (_PyLong_IsCompact(v)) {
 #if SIZEOF_LONG < SIZEOF_SIZE_T
         Py_ssize_t tmp = _PyLong_CompactValue(v);
-        if ((unsigned long)(size_t)tmp != (size_t)tmp) {
-            *overflow = tmp < 0 ? -1 : 1;
+        if (tmp < LONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LONG_MAX) {
+            *overflow = 1;
             res = -1;
         }
         else {
@@ -1668,8 +1672,12 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     if (_PyLong_IsCompact(v)) {
 #if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
         Py_ssize_t tmp = _PyLong_CompactValue(v);
-        if ((unsigned long long)(size_t)tmp != (size_t)tmp) {
-            *overflow = tmp < 0 ? -1 : 1;
+        if (tmp < LLONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LLONG_MAX) {
+            *overflow = 1;
             res = -1;
         }
         else {
