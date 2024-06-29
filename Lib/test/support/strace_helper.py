@@ -94,6 +94,9 @@ def strace_python(code: str,
     except OSError as err:
         return _make_error("Caught OSError", err)
 
+    if check and res.rc:
+        res.fail(cmd_line)
+
     # Get out program returncode
     decoded = res.err.decode().strip()
 
@@ -108,7 +111,7 @@ def strace_python(code: str,
                            output[1][:50])
 
     python_returncode = int(returncode_match["returncode"])
-    if check and (res.rc or python_returncode):
+    if check and python_returncode:
         res.fail(cmd_line)
 
     return StraceResult(strace_returncode=res.rc,
