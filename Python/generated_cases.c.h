@@ -692,11 +692,11 @@
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
+                PyObject *item = PyStackRef_AsPyObjectBorrow(values[i]);
                 if (err == 0) {
                     err = PySet_Add(set_o, item);
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
@@ -6309,11 +6309,10 @@
             sub_st = stack_pointer[-1];
             dict_st = stack_pointer[-2];
             value = stack_pointer[-3];
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, PyStackRef_AsPyObjectSteal(value));
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectSteal(sub_st), PyStackRef_AsPyObjectSteal(value));
             PyStackRef_CLOSE(dict_st);
             if (err) goto pop_3_error;
             stack_pointer += -3;

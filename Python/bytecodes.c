@@ -843,12 +843,11 @@ dummy_func(
         }
 
         inst(STORE_SUBSCR_DICT, (unused/1, value, dict_st, sub_st -- )) {
-            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
-            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, PyStackRef_AsPyObjectSteal(value));
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, PyStackRef_AsPyObjectSteal(sub_st), PyStackRef_AsPyObjectSteal(value));
             PyStackRef_CLOSE(dict_st);
             ERROR_IF(err, error);
         }
@@ -1838,11 +1837,11 @@ dummy_func(
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = PyStackRef_AsPyObjectSteal(values[i]);
+                PyObject *item = PyStackRef_AsPyObjectBorrow(values[i]);
                 if (err == 0) {
                     err = PySet_Add(set_o, item);
                 }
-                Py_DECREF(item);
+                PyStackRef_CLOSE(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set_o);
