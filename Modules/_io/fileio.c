@@ -735,7 +735,12 @@ _io_FileIO_readall_impl(fileio *self)
         buffer one byte larger than the rest of the file.  If the
         calculation is right then we should get EOF without having
         to enlarge the buffer. */
-        bufsize = (size_t)(end) + 1;
+        if (end >= _PY_READ_MAX) {
+            bufsize = _PY_READ_MAX;
+        }
+        else {
+            bufsize = Py_SAFE_DOWNCAST(end, Py_off_t, size_t) + 1;
+        }
 
         /* While a lot of code does open().read() to get the whole contents
         of a file it is possible a caller seeks/reads a ways into the file
@@ -753,11 +758,12 @@ _io_FileIO_readall_impl(fileio *self)
             _Py_END_SUPPRESS_IPH
             Py_END_ALLOW_THREADS
 
-            if (end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
-                bufsize = bufsize - Py_SAFE_DOWNCAST(pos, Py_off_t, size_t);
+            if (end >= pos && pos >= 0 && end - pos < _PY_READ_MAX) {
+                bufsize = Py_SAFE_DOWNCAST(end - pos, Py_off_t, size_t) + 1;
             }
         }
     }
+
 
     result = PyBytes_FromStringAndSize(NULL, bufsize);
     if (result == NULL)
