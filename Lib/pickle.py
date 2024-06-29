@@ -191,7 +191,7 @@ READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
 
-# Data larger that this will be read in chunks, to prevent extreme
+# Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
 SAFE_BUF_SIZE = (1 << 20)
 
