@@ -1130,6 +1130,23 @@ class AST_Tests(unittest.TestCase):
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
 
+    @staticmethod
+    def iter_ast_classes():
+        """Iterate over the subclasses of ast.AST recursively.
+
+        This excludes the special class ast.Index since its constructor
+        returns an integer.
+        """
+        def do(cls):
+            if cls is ast.Index:
+                return
+
+            yield cls
+            for sub in cls.__subclasses__():
+                yield from do(sub)
+
+        yield from do(ast.AST)
+
     def test_pickling(self):
         import pickle
 
@@ -1198,6 +1215,118 @@ class CopyTests(unittest.TestCase):
                     ast.expr_context, ast.boolop, ast.unaryop, ast.cmpop, ast.operator,
                 )):
                     self.assertEqual(to_tuple(child.parent), to_tuple(node))
+
+    def test_replace_interface(self):
+        for klass in self.iter_ast_classes():
+            with self.subTest(klass=klass):
+                self.assertTrue(hasattr(klass, '__replace__'))
+
+            fields = set(klass._fields)
+            with self.subTest(klass=klass, fields=fields):
+                # check shallow copy
+                node = klass(**dict.fromkeys(fields))
+                # positional not allowed
+                self.assertRaises(TypeError, copy.replace, node, 1)
+                self.assertRaises(TypeError, node.__replace__, 1)
+
+    def test_replace_native(self):
+        for klass in self.iter_ast_classes():
+            fields = set(klass._fields)
+            with self.subTest(klass=klass, fields=fields):
+                # use of object() to ensure that '==' and 'is'
+                # behave similarly in ast.compare(node, repl)
+                old_value, new_value = object(), object()
+
+                # check shallow copy
+                node = klass(**dict.fromkeys(fields, old_value))
+                repl = copy.replace(node)
+                self.assertTrue(ast.compare(node, repl, compare_attributes=True))
+
+                for field in fields:
+                    node = klass(**dict.fromkeys(fields, old_value))
+                    # only change a single field
+                    repl = copy.replace(node, **{field: new_value})
+                    for f in fields:
+                        self.assertIs(getattr(node, f), old_value)
+                        if f != field:
+                            self.assertIs(getattr(repl, f), old_value)
+                        else:
+                            self.assertIs(getattr(repl, f), new_value)
+
+                    self.assertFalse(ast.compare(node, repl, compare_attributes=True))
+
+    def test_replace_accept_known_native_fields(self):
+        nid, ctx = object(), object()
+
+        node = ast.Name(id=nid, ctx=ctx)
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+
+        new_nid = object()
+        repl = copy.replace(node, id=new_nid)
+        # assert independence
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+        # assert changes
+        self.assertIs(repl.id, new_nid)
+        self.assertIs(repl.ctx, node.ctx)  # no changes
+
+    def test_replace_accept_known_native_attributes(self):
+        node = ast.parse('x').body[0].value
+        self.assertEqual(node.id, 'x')
+        self.assertEqual(node.lineno, 1)
+
+        # constructor allows any type so replace() should do the same
+        lineno = object()
+        repl = copy.replace(node, lineno=lineno)
+        # assert independence
+        self.assertEqual(node.lineno, 1)
+        # check changes
+        self.assertEqual(repl.id, node.id)
+        self.assertEqual(repl.ctx, node.ctx)
+        self.assertEqual(repl.lineno, lineno)
+
+        _, _, state = node.__reduce__()
+        self.assertEqual(state['id'], 'x')
+        self.assertEqual(state['ctx'], node.ctx)
+        self.assertEqual(state['lineno'], 1)
+
+        _, _, state = repl.__reduce__()
+        self.assertEqual(state['id'], 'x')
+        self.assertEqual(state['ctx'], node.ctx)
+        self.assertEqual(state['lineno'], lineno)
+
+    def test_replace_accept_known_custom_fields(self):
+        nid, ctx = object(), object()
+
+        node = ast.Name(id=nid, ctx=ctx)
+        node.extra = old_extra = object()  # add the 'extra' field
+        self.assertIs(node.extra, old_extra)
+        # assert shallow copy of extra fields as well
+        repl = copy.replace(node)
+        self.assertIs(node.extra, old_extra)
+        self.assertIs(repl.extra, old_extra)
+
+        new_extra = object()
+        repl = copy.replace(node, extra=new_extra)
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+        self.assertIs(node.extra, old_extra)
+
+        self.assertIs(repl.id, nid)
+        self.assertIs(repl.ctx, ctx)
+        self.assertIs(repl.extra, new_extra)
+
+    def test_replace_reject_unknown_custom_fields(self):
+        nid, ctx = object(), object()
+        node = ast.Name(id=nid, ctx=ctx)
+        with self.assertRaisesRegex(TypeError, "got an unexpected field name: 'extra'"):
+            # cannot replace a non-existing field
+            copy.replace(node, extra=1)
+        # check that we did not have a side-effect
+        self.assertIs(node.id, nid)
+        self.assertIs(node.ctx, ctx)
+        self.assertRaises(AttributeError, getattr, node, 'extra')
 
 
 class ASTHelpers_Test(unittest.TestCase):
