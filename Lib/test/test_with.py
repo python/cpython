@@ -5,6 +5,7 @@ __author__ = "Mike Bland"
 __email__ = "mbland at acm dot org"
 
 import sys
+import traceback
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager, nullcontext
@@ -748,6 +749,49 @@ class NestedWith(unittest.TestCase):
             self.assertEqual(2, a2)
             self.assertEqual(10, b1)
             self.assertEqual(20, b2)
+
+    def testExceptionLocation(self):
+        # The location of an exception raised from
+        # __init__, __enter__ or __exit__ of a context
+        # manager should be just the context manager expression,
+        # pinpointing the precise context manager in case there
+        # is more than one.
+
+        def init_raises():
+            try:
+                with self.Dummy(), self.InitRaises() as cm, self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        def enter_raises():
+            try:
+                with self.EnterRaises(), self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        def exit_raises():
+            try:
+                with self.ExitRaises(), self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "self.InitRaises()"),
+                               (enter_raises, "self.EnterRaises()"),
+                               (exit_raises, "self.ExitRaises()"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
+
 
 if __name__ == '__main__':
     unittest.main()

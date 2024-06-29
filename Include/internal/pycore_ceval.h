@@ -131,11 +131,10 @@ extern int _PyEval_ThreadsInitialized(void);
 extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-// Acquire the GIL and return 1. In free-threaded builds, this function may
-// return 0 to indicate that the GIL was disabled and therefore not acquired.
-extern int _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
 
-extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *,
+                                int final_release);
 
 #ifdef Py_GIL_DISABLED
 // Returns 0 or 1 if the GIL for the given thread's interpreter is disabled or
@@ -146,7 +145,8 @@ extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
 static inline int
 _PyEval_IsGILEnabled(PyThreadState *tstate)
 {
-    return tstate->interp->ceval.gil->enabled != 0;
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+    return _Py_atomic_load_int_relaxed(&gil->enabled) != 0;
 }
 
 // Enable or disable the GIL used by the interpreter that owns tstate, which
@@ -245,6 +245,13 @@ typedef PyObject *(*conversion_func)(PyObject *);
 PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
 PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
 
+typedef struct _special_method {
+    PyObject *name;
+    const char *error;
+} _Py_SpecialMethod;
+
+PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
+
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
@@ -254,8 +261,11 @@ PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *c
 PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
-PyAPI_FUNC(int) _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
+
+PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
 
 
 /* Bits that can be set in PyThreadState.eval_breaker */

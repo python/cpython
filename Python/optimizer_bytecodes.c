@@ -21,11 +21,13 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
@@ -111,6 +113,29 @@ dummy_func(void) {
         }
         sym_set_type(left, &PyLong_Type);
         sym_set_type(right, &PyLong_Type);
+    }
+
+    op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
+        assert(type_version);
+        if (sym_matches_type_version(owner, type_version)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        } else {
+            // add watcher so that whenever the type changes we invalidate this
+            PyTypeObject *type = _PyType_LookupByVersion(type_version);
+            // if the type is null, it was not found in the cache (there was a conflict)
+            // with the key, in which case we can't trust the version
+            if (type) {
+                // if the type version was set properly, then add a watcher
+                // if it wasn't this means that the type version was previously set to something else
+                // and we set the owner to bottom, so we don't need to add a watcher because we must have
+                // already added one earlier.
+                if (sym_set_type_version(owner, type_version)) {
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
+
+        }
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
@@ -519,10 +544,9 @@ dummy_func(void) {
         self = sym_new_not_null(ctx);
     }
 
-    op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
-        (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
@@ -564,16 +588,12 @@ dummy_func(void) {
             argcount++;
         }
 
-        _Py_UopsSymbol **localsplus_start = ctx->n_consumed;
-        int n_locals_already_filled = 0;
-        // Can determine statically, so we interleave the new locals
-        // and make the current stack the new locals.
-        // This also sets up for true call inlining.
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            localsplus_start = args;
-            n_locals_already_filled = argcount;
+            new_frame = frame_new(ctx, co, 0, args, argcount);
+        } else {
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
+
         }
-        new_frame = frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -581,12 +601,11 @@ dummy_func(void) {
         (void)callable;
         (void)self_or_null;
         (void)args;
-        first_valid_check_stack = NULL;
         new_frame = NULL;
         ctx->done = true;
     }
 
-    op(_POP_FRAME, (retval -- res)) {
+    op(_RETURN_VALUE, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
@@ -754,6 +773,12 @@ dummy_func(void) {
         }
     }
 
+    op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+        self_or_null = sym_new_unknown(ctx);
+    }
+
     op(_JUMP_TO_TOP, (--)) {
         ctx->done = true;
     }
@@ -761,7 +786,6 @@ dummy_func(void) {
     op(_EXIT_TRACE, (--)) {
         ctx->done = true;
     }
-
 
 // END BYTECODES //
 
