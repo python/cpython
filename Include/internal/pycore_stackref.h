@@ -156,6 +156,8 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 
 
 // Converts a PyObject * to a PyStackRef, with a new reference
+// IMPORTANT: The result of this operation must be immediately assigned to localsplus.
+// There must be no interfering Py_DECREF calls or such between this operation and that.
 static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {

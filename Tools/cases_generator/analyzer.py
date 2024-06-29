@@ -426,7 +426,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
     "Py_FatalError",
-    "STACKREFS_TO_PYOBJECTS",
+    "STACKREFS_TO_PYOBJECTS_BORROW",
     "STACKREFS_TO_PYOBJECTS_CLEANUP",
     "CONVERSION_FAILED",
     "_PyList_FromArraySteal",

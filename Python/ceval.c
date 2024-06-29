@@ -698,7 +698,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 
 
 PyObject **
-_PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch)
+_PyObjectArray_FromStackRefArrayBorrow(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch)
 {
     PyObject **result;
     if (nargs > MAX_STACKREF_SCRATCH) {
@@ -714,6 +714,27 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
     }
     for (int i = 0; i < nargs; i++) {
         result[i] = PyStackRef_AsPyObjectBorrow(input[i]);
+    }
+    return result;
+}
+
+PyObject **
+_PyObjectArray_FromStackRefArraySteal(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch)
+{
+    PyObject **result;
+    if (nargs > MAX_STACKREF_SCRATCH) {
+        // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
+        result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
+        if (result == NULL) {
+            return NULL;
+        }
+        result++;
+    }
+    else {
+        result = scratch;
+    }
+    for (int i = 0; i < nargs; i++) {
+        result[i] = PyStackRef_AsPyObjectSteal(input[i]);
     }
     return result;
 }
@@ -1520,7 +1541,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            STACKREFS_TO_PYOBJECTS((_PyStackRef *)args, argcount, args_o);
+            STACKREFS_TO_PYOBJECTS_STEAL((_PyStackRef *)args, argcount, args_o);
             if (args_o == NULL) {
                 goto fail_pre_positional;
             }
