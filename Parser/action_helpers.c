@@ -1444,8 +1444,16 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         conversion_val = (int)'r';
     }
 
+    expr_ty format_expr = format ? (expr_ty) format->result : NULL;
+    if (format_expr && format_expr->kind == JoinedStr_kind && asdl_seq_LEN(format_expr->v.JoinedStr.values) == 1) {
+        expr_ty format_value = asdl_seq_GET(format_expr->v.JoinedStr.values, 0);
+        if (format_value->kind == JoinedStr_kind) {
+            format_expr = format_value;
+        }
+    }
+
     expr_ty formatted_value = _PyAST_FormattedValue(
-        expression, conversion_val, format ? (expr_ty) format->result : NULL,
+        expression, conversion_val, format_expr,
         lineno, col_offset, end_lineno,
         end_col_offset, arena
     );
