@@ -1851,7 +1851,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     const char *ptoappend;      /* ptr to string to append to output buffer */
     Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
 
-#ifdef NORMALIZE_CENTURY
+#ifdef Py_NORMALIZE_CENTURY
     /* Buffer of maximum size of formatted year permitted by long. */
     char buf[SIZEOF_LONG*5/2+2];
 #endif
