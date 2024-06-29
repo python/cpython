@@ -1976,11 +1976,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 }
             }
 
-            /* Maximum size of formatted year permitted by long. */
-            size_t buf_size = SIZEOF_LONG*5/2+2;
-            char buf[buf_size];                  /* formatted year for %Y/%G */
+            /* Buffer of maximum size of formatted year permitted by long. */
+            char buf[SIZEOF_LONG*5/2+2];
 
-            ntoappend = PyOS_snprintf(buf, buf_size, "%04ld", year_long);
+            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
             ptoappend = buf;
         }
 #endif
