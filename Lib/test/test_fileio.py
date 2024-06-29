@@ -389,8 +389,10 @@ class AutoFileTests:
         # system using a variant, allow that
         fstat = next((sc for sc in calls if 'fstat' in sc), 'fstat')
 
-        self.assertEqual(calls, ['openat', fstat, 'ioctl', 'lseek',
-                                 'lseek', fstat, 'read', 'read', 'close'])
+        readall_calls = ['openat', fstat, 'ioctl', 'lseek', 'lseek', fstat,
+                         'read', 'read', 'close']
+
+        self.assertEqual(calls, readall_calls)
 
         # Focus on just `read()`
         calls = strace_helper.get_syscalls(
@@ -410,20 +412,33 @@ class AutoFileTests:
             """,
             _strace_flags
         )
-        self.assertEqual(calls, ['openat', fstat, 'ioctl', 'lseek', 'lseek',
-                                 fstat, 'read', 'read', 'close'])
+        self.assertEqual(calls, readall_calls)
 
         # Readall in text mode
         calls = strace_helper.get_syscalls(
             f"""
-            f = open('{TESTFN}', 'rb')
+            f = open('{TESTFN}', 'rt')
             f.read()
             f.close()
             """,
             _strace_flags
         )
-        self.assertEqual(calls, ['openat', fstat, 'ioctl', 'lseek', 'lseek',
-                                 fstat, 'read', 'read', 'close'])
+        self.assertEqual(calls, readall_calls)
+
+        # text and binary mode, but using pathlib
+        calls = strace_helper.get_syscalls(
+            """p.read_bytes()""",
+            _strace_flags,
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+        self.assertEqual(calls, readall_calls)
+
+        calls = strace_helper.get_syscalls(
+            """p.read_text()""",
+            _strace_flags,
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+        self.assertEqual(calls, readall_calls)
 
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
