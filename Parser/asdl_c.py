@@ -1132,40 +1132,6 @@ cleanup:
     return result;
 }
 
-static inline int /* bool */
-ast_type_replace_check(PyObject *__dict__, PyObject *kwargs) {
-    if (kwargs == NULL) {
-        return true;
-    }
-
-    int rc, ok = true;
-    PyObject *keys = NULL, *keys_iter = NULL, *key = NULL;
-    if (!(keys = PyDict_Keys(kwargs))) {
-        goto error;
-    }
-    if (!(keys_iter = PyObject_GetIter(keys))) {
-        goto error;
-    }
-    while ((key = PyIter_Next(keys_iter)) != NULL) {
-        // check if the field can be indeed replaced
-        if ((rc = PyDict_Contains(__dict__, key)) < 0) {
-            goto error;
-        }
-        if (rc == 0) {
-            PyErr_Format(PyExc_TypeError, "got an unexpected field name: %R", key);
-            goto error;
-        }
-    }
-done:
-    Py_XDECREF(keys_iter);
-    Py_XDECREF(keys);
-    Py_XDECREF(key);
-    return ok;
-error:
-    ok = false;
-    goto done;
-}
-
 /* copy.replace() support (shallow copy) */
 static PyObject *
 ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -1178,114 +1144,67 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
         return NULL;
     }
 
-    PyObject *__dict__ = NULL;
-    if (PyObject_GetOptionalAttr(self, state->__dict__, &__dict__) < 0) {
-        return NULL;
-    }
-
+    PyObject *result = NULL;
+    // known AST class fields
     PyObject *fields = NULL;
+    // current instance dictionary
+    PyObject *__dict__ = NULL;
+    // constructor positional and keyword arguments
+    PyObject *empty_tuple = NULL, *payload = NULL;
+    // for iterating over 'fields' and 'kwargs'
+    PyObject *key = NULL, *value = NULL;
+
     PyTypeObject *type = Py_TYPE(self);
     if (PyObject_GetOptionalAttr((PyObject *)type, state->_fields, &fields) < 0) {
-        Py_DECREF(__dict__);
-        return NULL;
-    }
-
-    PyObject *result = NULL;
-    PyObject *posargs = NULL;   // constructor positional arguments
-    PyObject *poslist = NULL;   // temporary list for building posargs
-
-    // check that the keywords arguments are supported
-    if (!ast_type_replace_check(__dict__, kwargs)) {
         goto cleanup;
     }
-
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &__dict__) < 0) {
+        goto cleanup;
+    }
+    if (!(empty_tuple = PyTuple_New(0))) {
+        goto cleanup;
+    }
+    if (!(payload = PyDict_New())) {
+        goto cleanup;
+    }
     if (fields) {
         Py_ssize_t numfields = PySequence_Size(fields);
         if (numfields == -1) {
             goto cleanup;
         }
-        if (!(poslist = PyList_New(0))) {
-            goto cleanup;
-        }
-        int rc;
-        PyObject *key, *value;
         for (Py_ssize_t i = 0; i < numfields; i++) {
             if (!(key = PySequence_GetItem(fields, i))) {
                 goto cleanup;
             }
-            if (kwargs) {
-                if ((rc = PyDict_Contains(kwargs, key)) < 0) {
-                    Py_DECREF(key);
-                    goto cleanup;
-                }
-                // use the supplied user-defined field, if any
-                rc = rc == 1 ? PyDict_Pop(kwargs, key, &value)
-                             : PyDict_GetItemRef(__dict__, key, &value);
-            }
-            else {
-                rc = PyDict_GetItemRef(__dict__, key, &value);
-            }
-            Py_DECREF(key);
-            if (rc < 0) {
+            if (PyDict_GetItemRef(__dict__, key, &value) < 0) {
                 goto cleanup;
             }
             if (!value) {
                 break;
             }
-            rc = PyList_Append(poslist, value);
-            Py_DECREF(value);
-            if (rc < 0) {
+            if (PyDict_SetItem(payload, key, value) < 0) {
                 goto cleanup;
             }
         }
-        if (!(posargs = PyList_AsTuple(poslist))) {
-            goto cleanup;
-        }
     }
-    else {
-        if (!(posargs = PyTuple_New(0))) {
-            goto cleanup;
-        }
-    }
-
-    if (!(result = type->tp_new(type, posargs, NULL))) {
+    if (kwargs && PyDict_Update(payload, kwargs) < 0) {
         goto cleanup;
     }
-    if (ast_type_init(result, posargs, NULL) < 0) {
+    if (!(result = type->tp_new(type, empty_tuple, payload))) {
+        Py_CLEAR(result);
         goto cleanup;
     }
-    // In Python 3.15, the constructor of AST nodes only accept known
-    // fields and thus we update extra fields using the underlying dict
-    // instead (it should still be allowed to do node.extra = ...).
-    //
-    // The current result's dict is either NULL or only contains the
-    // native fields (no custom fields yet since the constructor does
-    // not allow specifying them yet).
-    AST_object *node = (AST_object *)(result);
-    if (node->dict) {
-        // merge the current dict into the new one,
-        // but do not override existing native fields
-        if (PyDict_Merge(node->dict, __dict__, 0) < 0) {
-            Py_CLEAR(result);
-            goto cleanup;
-        }
-    }
-    else {
-        // no dict set yet on the result, so we copy the current one
-        if (!(node->dict = PyDict_Copy(__dict__))) {
-            Py_CLEAR(result);
-            goto cleanup;
-        }
-    }
-    if (kwargs && PyDict_Update(node->dict, kwargs) < 0) {
+    if (ast_type_init(result, empty_tuple, payload) < 0) {
         Py_CLEAR(result);
         goto cleanup;
     }
 cleanup:
-    Py_XDECREF(poslist);
-    Py_XDECREF(posargs);
-    Py_XDECREF(fields);
+    Py_XDECREF(value);
+    Py_XDECREF(key);
+    Py_XDECREF(payload);
+    Py_XDECREF(empty_tuple);
     Py_XDECREF(__dict__);
+    Py_XDECREF(fields);
     return result;
 }
 
