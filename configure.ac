@@ -695,6 +695,64 @@ AC_SUBST([INSTALLTARGETS])
 AC_DEFINE_UNQUOTED([_PYTHONFRAMEWORK], ["${PYTHONFRAMEWORK}"],
                    [framework name])
 
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+AC_MSG_CHECKING([for --with-app-store-compliance])
+AC_ARG_WITH(
+  [app_store_compliance],
+  [AS_HELP_STRING(
+    [--with-app-store-compliance=@<:@PATCH-FILE@:>@],
+    [Enable any patches required for compiliance with app stores.
+     Optional PATCH-FILE specifies the custom patch to apply.]
+  )],[
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
+      esac
+      AC_MSG_RESULT([applying default app store compliance patch])
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+      APP_STORE_COMPLIANCE_PATCH_FLAGS=
+      AC_MSG_RESULT([applying custom app store compliance patch])
+      ;;
+    esac
+  ],[
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([applying default app store compliance patch])
+        ;;
+      Darwin)
+        # Always *check* the compliance patch on macOS
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
+        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
+        ;;
+      *)
+        # No app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        APP_STORE_COMPLIANCE_PATCH_TARGET=
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([not patching for app store compliance])
+        ;;
+    esac
+])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
+
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
 	case "$host" in
