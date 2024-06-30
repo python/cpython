@@ -1624,7 +1624,7 @@ example because the path doesn't exist).
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
 
-   If *missing_ok* is false (the default), this method propagates any 
+   If *missing_ok* is false (the default), this method propagates any
    :exc:`OSError` from the operating system, including :exc:`FileNotFoundError`.
 
    If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
