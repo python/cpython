@@ -396,12 +396,38 @@ class HandleErrorTest(unittest.TestCase):
             self.assertIn('IndexError', msg)
             eq(func.called, 2)
 
-a = []
-x = a.append
+
 class ExecRuncodeTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(setattr,run,'print_exception',run.print_exception)
+        cls.prt = Func()  # Need reference.
+        run.print_exception = cls.prt
+        mockrpc = mock.Mock()
+        mockrpc.console.getvar = Func(result=False)
+        cls.ex = run.Executive(mockrpc)
+
+    @classmethod
+    def tearDownClass(cls):
+        assert sys.excepthook == sys.__excepthook__
+
     def test_exceptions(self):
-        x(lambda a:a)
+        ex = self.ex
+        ex.runcode('1/0')
+        self.assertIs(ex.user_exc_info[0], ZeroDivisionError)
+
+        self.addCleanup(setattr, sys, 'excepthook', sys.__excepthook__)
+        sys.excepthook = lambda t, e, tb: run.print_exception(t)
+        ex.runcode('1/0')
+        self.assertIs(self.prt.args[0], ZeroDivisionError)
+
+        sys.excepthook = lambda: None
+        ex.runcode('1/0')
+        t, e, tb = ex.user_exc_info
+        self.assertIs(t, TypeError)
+        self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
