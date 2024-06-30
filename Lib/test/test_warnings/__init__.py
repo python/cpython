@@ -161,7 +161,7 @@ class FilterTests(BaseTest):
                     module=self.module) as w:
                 self.module.resetwarnings()
                 self.module.filterwarnings(mode, category=UserWarning)
-                message = "FilterTests.test_always"
+                message = "FilterTests.test_always_and_all"
                 def f():
                     self.module.warn(message, UserWarning)
                 f()
@@ -176,7 +176,7 @@ class FilterTests(BaseTest):
             with original_warnings.catch_warnings(record=True,
                     module=self.module) as w:
                 self.module.resetwarnings()
-                message = "FilterTests.test_always_after_ignore"
+                message = "FilterTests.test_always_and_all_after_ignore"
                 def f():
                     self.module.warn(message, UserWarning)
                 f()
