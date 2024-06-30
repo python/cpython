@@ -246,9 +246,12 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            for ref in abcs.get(obj, set()):
-                if ref() is not None:
-                    obj.register(ref())
+            refs = abcs.get(obj, None)
+            if refs is not None:
+                obj._abc_registry_clear()
+                for ref in refs:
+                    if ref() is not None:
+                        obj.register(ref())
             obj._abc_caches_clear()
 
     # Clear caches
