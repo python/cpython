@@ -10,17 +10,34 @@ __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
+#
+# By construction, the filenames being stored are truthy.
 cache = {}
+
+
+# The filenames for which we failed to get a result and the reason.
+#
+# The value being stored is a tuple (size, mtime_ns, fullname),
+# possibly size=None and st_mtime_ns=None if they are unavailable.
+#
+# By convention, falsey filenames are not cached and treated as failures.
+failures = {}
 
 
 def clearcache():
     """Clear the cache entirely."""
     cache.clear()
+    failures.clear()
 
 
 def getline(filename, lineno, module_globals=None):
     """Get a line for a Python source file from the cache.
-    Update the cache if it doesn't contain an entry for this file already."""
+    Update the cache if it doesn't contain an entry for this file already.
+    Previous failures are cached and must be invalidated via checkcache().
+    """
+
+    if filename in failures:
+        return ''
 
     lines = getlines(filename, module_globals)
     if 1 <= lineno <= len(lines):
@@ -30,12 +47,18 @@ def getline(filename, lineno, module_globals=None):
 
 def getlines(filename, module_globals=None):
     """Get the lines for a Python source file from the cache.
-    Update the cache if it doesn't contain an entry for this file already."""
+    Update the cache if it doesn't contain an entry for this file already.
+    Previous failures are cached and must be invalidated via checkcache().
+    """
 
     if filename in cache:
+        assert filename not in failures
         entry = cache[filename]
         if len(entry) != 1:
             return cache[filename][2]
+
+    if filename in failures:
+        return []
 
     try:
         return updatecache(filename, module_globals)
@@ -45,13 +68,19 @@ def getlines(filename, module_globals=None):
 
 
 def checkcache(filename=None):
-    """Discard cache entries that are out of date.
-    (This is not checked upon each call!)"""
+    """Discard cache entries that are out of date or now available for reading.
+    (This is not checked upon each call!).
+    """
 
     if filename is None:
         filenames = list(cache.keys())
+        failed_filenames = list(failures.keys())
     elif filename in cache:
         filenames = [filename]
+        failed_filenames = []
+    elif filename in failures:
+        filenames = []
+        failed_filenames = [filename]
     else:
         return
 
@@ -71,16 +100,43 @@ def checkcache(filename=None):
         try:
             stat = os.stat(fullname)
         except OSError:
+            # a cached entry is now a failure
+            assert filename not in failed_filenames
+            failures[filename] = (None, None, fullname)
             cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
             cache.pop(filename, None)
 
+    for filename in failed_filenames:
+        size, mtime_ns, fullname = failures[filename]
+        try:
+            # This import can fail if the interpreter is shutting down
+            import os
+        except ImportError:
+            return
+        try:
+            stat = os.stat(fullname)
+        except OSError:
+            if size is not None and mtime_ns is not None:
+                # Previous failure was a decoding error,
+                # this failure is due to os.stat() error.
+                failures[filename] = (None, None, fullname)
+            continue  # still unreadable
+
+        if size is None or mtime_ns is None:
+            # we may now be able to read the file
+            failures.pop(filename, None)
+        elif size != stat.st_size or mtime_ns != stat.st_mtime_ns:
+            # the file might have been updated
+            failures.pop(filename, None)
+
 
 def updatecache(filename, module_globals=None):
     """Update a cache entry and return its list of lines.
-    If something's wrong, print a message, discard the cache entry,
-    and return an empty list."""
+
+    If something's wrong, possibly print a message, discard the cache entry,
+    add the file name to the known failures, and return an empty list."""
 
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
@@ -113,6 +169,8 @@ def updatecache(filename, module_globals=None):
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []
+
+                failures.pop(filename, None)
                 cache[filename] = (
                     len(data),
                     None,
@@ -124,6 +182,8 @@ def updatecache(filename, module_globals=None):
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.
         if os.path.isabs(filename):
+            # os.stat() failed, so we won't read it
+            failures[filename] = (None, None, fullname)
             return []
 
         for dirname in sys.path:
@@ -138,11 +198,37 @@ def updatecache(filename, module_globals=None):
             except OSError:
                 pass
         else:
+            failures[filename] = (None, None, fullname)
             return []
+    else:
+        if filename in failures:
+            size, mtime_ns, _ = failures[filename]
+            if size is None or mtime_ns is None:
+                # we may now be able to read the file
+                failures.pop(filename, None)
+            if size != stat.st_size or mtime_ns != stat.st_mtime_ns:
+                # the file might have been updated
+                failures.pop(filename, None)
+            del size, mtime_ns  # to avoid using them
+
+    if filename in failures:
+        return []
+
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except (OSError, UnicodeDecodeError, SyntaxError):
+    except OSError:
+        # The file might have been deleted and thus, we need to
+        # be sure that the next time checkcache() or updatecache()
+        # is called, we do not trust the old os.stat() values.
+        failures[filename] = (None, None, fullname)
+        return []
+    except (UnicodeDecodeError, SyntaxError):
+        # The file content is incorrect but at least we could
+        # read it. The next time checkcache() or updatecache()
+        # is called, we can forget reading the file if nothing
+        # was modified.
+        failures[filename] = (stat.st_size, stat.st_mtime_ns, fullname)
         return []
     if not lines:
         lines = ['\n']
@@ -150,6 +236,7 @@ def updatecache(filename, module_globals=None):
         lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
+    failures.pop(filename, None)
     return lines
 
 
@@ -186,6 +273,10 @@ def lazycache(filename, module_globals):
             def get_lines(name=name, *args, **kwargs):
                 return get_source(name, *args, **kwargs)
             cache[filename] = (get_lines,)
+            # It might happen that a file is marked as a failure
+            # before lazycache() is being called but should not
+            # be a failure after (but before calling getlines()).
+            failures.pop(filename, None)
             return True
     return False
 
