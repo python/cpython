@@ -2525,7 +2525,7 @@ With an argument, equivalent to object.__dict__.");
 
 typedef struct {
     double sum;  /* accumulator */
-    double c;  /* a running compensation for lost low-order bits */
+    double c;    /* a running compensation for lost low-order bits */
 } _csum;
 
 static inline void
@@ -2534,7 +2534,8 @@ _csum_neumaier_step(_csum *v, double x)
     double t = v->sum + x;
     if (fabs(v->sum) >= fabs(x)) {
         v->c += (v->sum - t) + x;
-    } else {
+    }
+    else {
         v->c += (x - t) + v->sum;
     }
     v->sum = t;
@@ -2712,12 +2713,13 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         _csum cr_result = {z.real, 0.0};
         _csum ci_result = {z.imag, 0.0};
         Py_SETREF(result, NULL);
-        while(result == NULL) {
+        while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
-                if (PyErr_Occurred())
+                if (PyErr_Occurred()) {
                     return NULL;
+                }
                 _csum_neumaier_finalize(&cr_result);
                 _csum_neumaier_finalize(&ci_result);
                 return PyComplex_FromDoubles(cr_result.sum, ci_result.sum);
