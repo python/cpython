@@ -60,6 +60,33 @@ _tracemalloc__get_traces_impl(PyObject *module)
 
 
 /*[clinic input]
+_tracemalloc._dump
+
+    filename: unicode
+
+Dump traces into a file.
+[clinic start generated code]*/
+
+static PyObject *
+_tracemalloc__dump_impl(PyObject *module, PyObject *filename)
+/*[clinic end generated code: output=18aeb59053c8560d input=b33fcf36fafef453]*/
+{
+    PyObject *bytes = PyUnicode_EncodeFSDefault(filename);
+    if (bytes == NULL) {
+        return NULL;
+    }
+
+    int res = _PyTraceMalloc_Dump(PyBytes_AS_STRING(bytes));
+    Py_DECREF(bytes);
+
+    if (res < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 _tracemalloc._get_object_traceback
 
     obj: object
@@ -196,6 +223,7 @@ static PyMethodDef module_methods[] = {
     _TRACEMALLOC_GET_TRACEMALLOC_MEMORY_METHODDEF
     _TRACEMALLOC_GET_TRACED_MEMORY_METHODDEF
     _TRACEMALLOC_RESET_PEAK_METHODDEF
+    _TRACEMALLOC__DUMP_METHODDEF
     /* sentinel */
     {NULL, NULL}
 };

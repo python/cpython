@@ -525,6 +525,22 @@ Frame
 Snapshot
 ^^^^^^^^
 
+.. function:: dump_snapshot(filename)
+
+   Write a snapshot into the file *filename*.
+
+   Use :func:`load_snapshot` to load the snapshot.
+
+   .. versionadded:: 3.14
+
+
+.. function:: load_snapshot(filename)
+
+   Load a snapshot from the file *filename* written by :func:`dump_snapshot`.
+
+   .. versionadded:: 3.14
+
+
 .. class:: Snapshot
 
    Snapshot of traces of memory blocks allocated by Python.
@@ -551,6 +567,9 @@ Snapshot
 
       Use :meth:`load` to reload the snapshot.
 
+      .. deprecated:: 3.14
+         Use the :func:`dump_snapshot` function instead.
+
 
    .. method:: filter_traces(filters)
 
@@ -572,6 +591,9 @@ Snapshot
       Load a snapshot from a file.
 
       See also :meth:`dump`.
+
+      .. deprecated:: 3.14
+         Use the :func:`load_snapshot` function instead.
 
 
    .. method:: statistics(key_type: str, cumulative: bool=False)

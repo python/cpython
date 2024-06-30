@@ -164,6 +164,9 @@ extern PyObject* _PyTraceMalloc_GetTracedMemory(void);
 /* Set the peak size of traced memory blocks to the current size */
 extern void _PyTraceMalloc_ResetPeak(void);
 
+/* Dump traces into a file */
+extern int _PyTraceMalloc_Dump(const char *filename);
+
 #ifdef __cplusplus
 }
 #endif

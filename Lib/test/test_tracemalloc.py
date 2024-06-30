@@ -3,6 +3,7 @@ import os
 import sys
 import tracemalloc
 import unittest
+import warnings
 from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
@@ -312,12 +313,22 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertGreater(snapshot.traces[1].traceback.total_nframe, 10)
 
         # write on disk
-        snapshot.dump(os_helper.TESTFN)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            snapshot.dump(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
         # load from disk
-        snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
         self.assertEqual(snapshot2.traces, snapshot.traces)
+
+        # check deprecations
+        with self.assertWarns(DeprecationWarning):
+            snapshot.dump(os_helper.TESTFN)
+        with self.assertWarns(DeprecationWarning):
+            snapshot.load(os_helper.TESTFN)
 
         # tracemalloc must be tracing memory allocations to take a snapshot
         tracemalloc.stop()
@@ -327,16 +338,47 @@ class TestTracemallocEnabled(unittest.TestCase):
                          "the tracemalloc module must be tracing memory "
                          "allocations to take a snapshot")
 
-    def test_snapshot_save_attr(self):
-        # take a snapshot with a new attribute
-        snapshot = tracemalloc.take_snapshot()
-        snapshot.test_attr = "new"
-        snapshot.dump(os_helper.TESTFN)
+    def test_dump_snapshot(self):
+        # test dump_snapshot() and load_snapshot()
+        size = 123_456
+        obj, source = allocate_bytes(size)
+
+        # write a snapshot on disk
+        tracemalloc.dump_snapshot(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        # load() should recreate the attribute
-        snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
-        self.assertEqual(snapshot2.test_attr, "new")
+        # load snapshot from disk
+        snapshot = tracemalloc.load_snapshot(os_helper.TESTFN)
+
+        # search the trace
+        for trace in snapshot.traces:
+            if trace.traceback == source:
+                self.assertEqual(trace.size, size)
+                break
+        else:
+            self.fail("unable to find the trace")
+
+        # tracemalloc must be tracing memory allocations to take a snapshot
+        tracemalloc.stop()
+        with self.assertRaises(RuntimeError) as cm:
+            tracemalloc.dump_snapshot(os_helper.TESTFN)
+        self.assertEqual(str(cm.exception),
+                         "the tracemalloc module must be tracing memory "
+                         "allocations to dump a snapshot")
+
+    def test_snapshot_save_attr(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+
+            # take a snapshot with a new attribute
+            snapshot = tracemalloc.take_snapshot()
+            snapshot.test_attr = "new"
+            snapshot.dump(os_helper.TESTFN)
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+            # load() should recreate the attribute
+            snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
+            self.assertEqual(snapshot2.test_attr, "new")
 
     def fork_child(self):
         if not tracemalloc.is_tracing():

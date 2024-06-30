@@ -1,0 +1,4 @@
+Add :func:`tracemalloc.dump_snapshot` and :func:`tracemalloc.load_snapshot`
+functions to dump and load a snapshot. Implemented in C, these functions
+don't allocate memory in Python, and so don't add traces to the snapshot.
+Patch by Victor Stinner.

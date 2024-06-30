@@ -2,7 +2,11 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
@@ -61,6 +65,65 @@ static PyObject *
 _tracemalloc__get_traces(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc__get_traces_impl(module);
+}
+
+PyDoc_STRVAR(_tracemalloc__dump__doc__,
+"_dump($module, /, filename)\n"
+"--\n"
+"\n"
+"Dump traces into a file.");
+
+#define _TRACEMALLOC__DUMP_METHODDEF    \
+    {"_dump", _PyCFunction_CAST(_tracemalloc__dump), METH_FASTCALL|METH_KEYWORDS, _tracemalloc__dump__doc__},
+
+static PyObject *
+_tracemalloc__dump_impl(PyObject *module, PyObject *filename);
+
+static PyObject *
+_tracemalloc__dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(filename), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filename", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_dump",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *filename;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_dump", "argument 'filename'", "str", args[0]);
+        goto exit;
+    }
+    filename = args[0];
+    return_value = _tracemalloc__dump_impl(module, filename);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_tracemalloc__get_object_traceback__doc__,
@@ -214,4 +277,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=9d4d884b156c2ddb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e42f1d788a080cce input=a9049054013a1b77]*/
