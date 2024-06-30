@@ -79,9 +79,19 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 .. function:: filter(names, pat)
 
    Construct a list from those elements of the :term:`iterable` *names*
-   that match pattern *pat*.
+   that match the pattern *pat*.
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
+
+
+.. function:: filterfalse(names, pat)
+
+   Construct a list from those elements of the :term:`iterable` *names*
+   that do not match the pattern *pat*.
+   It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
+   but implemented more efficiently.
+
+   .. versionadded:: 3.14
 
 
 .. function:: translate(pat)
