@@ -1,4 +1,5 @@
 from collections import abc
+from itertools import combinations
 import array
 import gc
 import math
@@ -17,6 +18,15 @@ ISBIGENDIAN = sys.byteorder == "big"
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
 
+INF = float('inf')
+NAN = float('nan')
+
+try:
+    struct.pack('C', 1j)
+    have_c_complex = True
+except struct.error:
+    have_c_complex = False
+
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
         for byteorder in byteorders:
@@ -34,6 +44,34 @@ def bigendian_to_native(value):
         return string_reverse(value)
 
 class StructTest(unittest.TestCase):
+    # from Lib/test/test_complex.py
+    def assertFloatsAreIdentical(self, x, y):
+        """assert that floats x and y are identical, in the sense that:
+        (1) both x and y are nans, or
+        (2) both x and y are infinities, with the same sign, or
+        (3) both x and y are zeros, with the same sign, or
+        (4) x and y are both finite and nonzero, and x == y
+
+        """
+        msg = 'floats {!r} and {!r} are not identical'
+
+        if math.isnan(x) or math.isnan(y):
+            if math.isnan(x) and math.isnan(y):
+                return
+        elif x == y:
+            if x != 0.0:
+                return
+            # both zero; check that signs match
+            elif math.copysign(1.0, x) == math.copysign(1.0, y):
+                return
+            else:
+                msg += ': zeros have different signs'
+        self.fail(msg.format(x, y))
+
+    def assertComplexesAreIdentical(self, x, y):
+        self.assertFloatsAreIdentical(x.real, y.real)
+        self.assertFloatsAreIdentical(x.imag, y.imag)
+
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
@@ -773,6 +811,17 @@ class StructTest(unittest.TestCase):
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
+
+    @unittest.skipUnless(have_c_complex, "requires C11 complex type")
+    def test_c_complex_round_trip(self):
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        for z in values:
+            for f in ['E', 'C', '>E', '>C', '<E', '<C']:
+                with self.subTest(z=z, format=f):
+                    round_trip = struct.unpack(f, struct.pack(f, z))[0]
+                    self.assertComplexesAreIdentical(z, round_trip)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

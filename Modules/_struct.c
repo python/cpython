@@ -12,6 +12,9 @@
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
+#ifdef Py_HAVE_C_COMPLEX
+#  include "_complex.h"           // complex
+#endif
 #include <stddef.h>               // offsetof()
 
 /*[clinic input]
@@ -80,6 +83,10 @@ typedef struct { char c; int x; } st_int;
 typedef struct { char c; long x; } st_long;
 typedef struct { char c; float x; } st_float;
 typedef struct { char c; double x; } st_double;
+#ifdef Py_HAVE_C_COMPLEX
+typedef struct { char c; float complex x; } st_float_complex;
+typedef struct { char c; double complex x; } st_double_complex;
+#endif
 typedef struct { char c; void *x; } st_void_p;
 typedef struct { char c; size_t x; } st_size_t;
 typedef struct { char c; _Bool x; } st_bool;
@@ -89,6 +96,10 @@ typedef struct { char c; _Bool x; } st_bool;
 #define LONG_ALIGN (sizeof(st_long) - sizeof(long))
 #define FLOAT_ALIGN (sizeof(st_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
+#ifdef Py_HAVE_C_COMPLEX
+#define FLOAT_COMPLEX_ALIGN (sizeof(st_float_complex) - sizeof(float complex))
+#define DOUBLE_COMPLEX_ALIGN (sizeof(st_double_complex) - sizeof(double complex))
+#endif
 #define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
 #define SIZE_T_ALIGN (sizeof(st_size_t) - sizeof(size_t))
 #define BOOL_ALIGN (sizeof(st_bool) - sizeof(_Bool))
@@ -518,6 +529,26 @@ nu_double(_structmodulestate *state, const char *p, const formatdef *f)
     return PyFloat_FromDouble(x);
 }
 
+#ifdef Py_HAVE_C_COMPLEX
+static PyObject *
+nu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    float complex x;
+
+    memcpy(&x, p, sizeof(x));
+    return PyComplex_FromDoubles(creal(x), cimag(x));
+}
+
+static PyObject *
+nu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    double complex x;
+
+    memcpy(&x, p, sizeof(x));
+    return PyComplex_FromDoubles(creal(x), cimag(x));
+}
+#endif
+
 static PyObject *
 nu_void_p(_structmodulestate *state, const char *p, const formatdef *f)
 {
@@ -791,6 +822,40 @@ np_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return 0;
 }
 
+#ifdef Py_HAVE_C_COMPLEX
+static int
+np_float_complex(_structmodulestate *state, char *p, PyObject *v,
+                 const formatdef *f)
+{
+    Py_complex c = PyComplex_AsCComplex(v);
+    float complex x = CMPLXF((float)c.real, (float)c.imag);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    memcpy(p, (char *)&x, sizeof(x));
+    return 0;
+}
+
+static int
+np_double_complex(_structmodulestate *state, char *p, PyObject *v,
+                  const formatdef *f)
+{
+    Py_complex c = PyComplex_AsCComplex(v);
+    double complex x = CMPLX(c.real, c.imag);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    memcpy(p, (char *)&x, sizeof(x));
+    return 0;
+}
+#endif
+
 static int
 np_void_p(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
@@ -829,6 +894,10 @@ static const formatdef native_table[] = {
     {'e',       sizeof(short),  SHORT_ALIGN,    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  FLOAT_ALIGN,    nu_float,       np_float},
     {'d',       sizeof(double), DOUBLE_ALIGN,   nu_double,      np_double},
+#ifdef Py_HAVE_C_COMPLEX
+    {'E',       sizeof(float complex), FLOAT_COMPLEX_ALIGN, nu_float_complex, np_float_complex},
+    {'C',       sizeof(double complex), DOUBLE_COMPLEX_ALIGN, nu_double_complex, np_double_complex},
+#endif
     {'P',       sizeof(void *), VOID_P_ALIGN,   nu_void_p,      np_void_p},
     {0}
 };
@@ -928,6 +997,40 @@ bu_double(_structmodulestate *state, const char *p, const formatdef *f)
 {
     return unpack_double(p, 0);
 }
+
+#ifdef Py_HAVE_C_COMPLEX
+static PyObject *
+bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    double x, y;
+
+    x = PyFloat_Unpack4(p, 0);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_Unpack4(p + 4, 0);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyComplex_FromDoubles(x, y);
+}
+
+static PyObject *
+bu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    double x, y;
+
+    x = PyFloat_Unpack8(p, 0);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_Unpack8(p + 8, 0);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyComplex_FromDoubles(x, y);
+}
+#endif
 
 static PyObject *
 bu_bool(_structmodulestate *state, const char *p, const formatdef *f)
@@ -1068,6 +1171,38 @@ bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return PyFloat_Pack8(x, p, 0);
 }
 
+#ifdef Py_HAVE_C_COMPLEX
+static int
+bp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    Py_complex x = PyComplex_AsCComplex(v);
+    if (x.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    if (PyFloat_Pack4(x.real, p, 0)) {
+        return -1;
+    }
+    return PyFloat_Pack4(x.imag, p + 4, 0);
+}
+
+static int
+bp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    Py_complex x = PyComplex_AsCComplex(v);
+    if (x.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    if (PyFloat_Pack8(x.real, p, 0)) {
+        return -1;
+    }
+    return PyFloat_Pack8(x.imag, p + 8, 0);
+}
+#endif
+
 static int
 bp_bool(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
@@ -1098,6 +1233,10 @@ static formatdef bigendian_table[] = {
     {'e',       2,              0,              bu_halffloat,   bp_halffloat},
     {'f',       4,              0,              bu_float,       bp_float},
     {'d',       8,              0,              bu_double,      bp_double},
+#ifdef Py_HAVE_C_COMPLEX
+    {'E',       8,              0,              bu_float_complex, bp_float_complex},
+    {'C',       16,             0,              bu_double_complex, bp_double_complex},
+#endif
     {0}
 };
 
@@ -1196,6 +1335,40 @@ lu_double(_structmodulestate *state, const char *p, const formatdef *f)
 {
     return unpack_double(p, 1);
 }
+
+#ifdef Py_HAVE_C_COMPLEX
+static PyObject *
+lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    double x, y;
+
+    x = PyFloat_Unpack4(p, 1);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_Unpack4(p + 4, 1);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyComplex_FromDoubles(x, y);
+}
+
+static PyObject *
+lu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    double x, y;
+
+    x = PyFloat_Unpack8(p, 1);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_Unpack8(p + 8, 1);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyComplex_FromDoubles(x, y);
+}
+#endif
 
 static int
 lp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
@@ -1330,6 +1503,39 @@ lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return PyFloat_Pack8(x, p, 1);
 }
 
+#ifdef Py_HAVE_C_COMPLEX
+static int
+lp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    Py_complex x = PyComplex_AsCComplex(v);
+    if (x.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    if (PyFloat_Pack4(x.real, p, 1)) {
+        return -1;
+    }
+    return PyFloat_Pack4(x.imag, p + 4, 1);
+
+}
+
+static int
+lp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
+{
+    Py_complex x = PyComplex_AsCComplex(v);
+    if (x.real == -1 && PyErr_Occurred()) {
+        PyErr_SetString(state->StructError,
+                        "required argument is not a complex");
+        return -1;
+    }
+    if (PyFloat_Pack8(x.real, p, 1)) {
+        return -1;
+    }
+    return PyFloat_Pack8(x.imag, p + 4, 1);
+}
+#endif
+
 static formatdef lilendian_table[] = {
     {'x',       1,              0,              NULL},
     {'b',       1,              0,              nu_byte,        np_byte},
@@ -1350,6 +1556,10 @@ static formatdef lilendian_table[] = {
     {'e',       2,              0,              lu_halffloat,   lp_halffloat},
     {'f',       4,              0,              lu_float,       lp_float},
     {'d',       8,              0,              lu_double,      lp_double},
+#ifdef Py_HAVE_C_COMPLEX
+    {'E',       8,              0,              lu_float_complex, lp_float_complex},
+    {'C',       16,             0,              lu_double_complex, lp_double_complex},
+#endif
     {0}
 };
 
