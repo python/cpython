@@ -1878,12 +1878,12 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
+   starred_expression: ["*"] `or_expr`
+   flexible_expression: `assignment_expression` | `starred_expression`
    expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
    yield_list: `expression` ["," `starred_expression_list`]
                | `starred_expression` "," [`starred_expression_list`]
-   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
-   flexible_expression: `assignment_expression` | `starred_expression`
-   starred_expression: ["*"] `or_expr`
 
 .. index:: pair: object; tuple
 
