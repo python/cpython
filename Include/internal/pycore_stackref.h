@@ -70,8 +70,8 @@ typedef enum _PyStackRef_OpKind {
     NEW,
 } _PyStackRef_OpKind;
 
-PyObject *_Py_stackref_to_object_transition(_PyStackRef stackref, _PyStackRef_OpKind op);
-_PyStackRef _Py_object_to_stackref_transition(PyObject *obj, char tag, _PyStackRef_OpKind op);
+PyAPI_FUNC(PyObject *)_Py_stackref_to_object_transition(_PyStackRef stackref, _PyStackRef_OpKind op);
+PyAPI_FUNC(_PyStackRef) _Py_object_to_stackref_transition(PyObject *obj, char tag, _PyStackRef_OpKind op);
 PyAPI_FUNC(int) _PyStackRef_IsLive(_PyStackRef stackref);
 PyAPI_FUNC(void) _PyStackRef_Close(_PyStackRef stackref);
 PyAPI_FUNC(_PyStackRef) _PyStackRef_Dup(_PyStackRef stackref);

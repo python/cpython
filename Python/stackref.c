@@ -5,14 +5,6 @@
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_critical_section.h"
 
-int
-_PyStackRef_IsLive(_PyStackRef stackref)
-{
-    _Py_stackref_to_object_transition(stackref, BORROW);
-    return 1;
-}
-
-
 #if defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 PyObject *
 _Py_stackref_to_object_transition(_PyStackRef stackref, _PyStackRef_OpKind op)
@@ -100,3 +92,12 @@ _PyStackRef_Dup(_PyStackRef stackref)
     return _Py_object_to_stackref_transition(val, tag, NEW);
 }
 #endif
+
+int
+_PyStackRef_IsLive(_PyStackRef stackref)
+{
+#if Py_STACKREF_DEBUG
+    _Py_stackref_to_object_transition(stackref, BORROW);
+#endif
+    return 1;
+}
