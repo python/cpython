@@ -62,11 +62,11 @@
 #define SUCCESS 0
 #define ERROR -1
 
-#define RETURN_IF_ERROR(X) \
-    do { \
-        if ((X) == -1) {        \
-            return ERROR;       \
-        } \
+#define RETURN_IF_ERROR(X)  \
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
     } while (0)
 
 #define IS_TOP_LEVEL_AWAIT(C) ( \
