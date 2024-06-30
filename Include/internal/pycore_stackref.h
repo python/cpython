@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object_deferred.h"
+#include "pycore_hashtable.h"
 
 #include <stddef.h>
 
@@ -59,8 +60,7 @@ struct _Py_stackref_entry {
 
 struct _Py_stackref_state {
     PyMutex lock;
-    size_t n_entries;
-    struct _Py_stackref_entry *entries;
+    _Py_hashtable_t *entries;
     size_t next_ref;
 };
 

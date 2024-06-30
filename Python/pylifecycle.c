@@ -841,14 +841,22 @@ error:
 static PyStatus
 pycore_init_stackrefs(PyInterpreterState *interp)
 {
-    interp->stackref_state.entries = PyMem_Malloc(sizeof(struct _Py_stackref_entry) * 1024);
+    _Py_hashtable_allocator_t alloc = {
+        .malloc = PyMem_Malloc,
+        .free = PyMem_Free,
+    };
+    interp->stackref_state.entries = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+    _Py_hashtable_compare_direct,
+        NULL,
+        NULL,
+        &alloc
+    );
     if (interp->stackref_state.entries == NULL) {
         goto error;
     }
-    interp->stackref_state.next_ref = 0;
-    interp->stackref_state.n_entries = 1024;
-    // Reserve NULL, True, False, None
-    _Py_object_to_stackref_transition(NULL, Py_TAG_DEFERRED, STEAL);
+    interp->stackref_state.next_ref = 1;
+    // Reserve True, False, None
     _Py_object_to_stackref_transition(Py_True, Py_TAG_DEFERRED, STEAL);
     _Py_object_to_stackref_transition(Py_False, Py_TAG_DEFERRED, STEAL);
     _Py_object_to_stackref_transition(Py_None, Py_TAG_DEFERRED, STEAL);
