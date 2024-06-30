@@ -14,7 +14,7 @@
 #include <ffi.h>
 #include "ctypes.h"
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
 #  include "../_complex.h"        // complex
 #endif
 
@@ -1090,7 +1090,7 @@ d_get(void *ptr, Py_ssize_t size)
     return PyFloat_FromDouble(val);
 }
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
 static PyObject *
 C_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1619,7 +1619,7 @@ static struct fielddesc formattable[] = {
     { 'B', B_set, B_get, NULL},
     { 'c', c_set, c_get, NULL},
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
     { 'C', C_set, C_get, NULL},
 #endif
     { 'g', g_set, g_get, NULL},
@@ -1672,7 +1672,7 @@ _ctypes_init_fielddesc(void)
         case 'B': fd->pffi_type = &ffi_type_uchar; break;
         case 'c': fd->pffi_type = &ffi_type_schar; break;
         case 'd': fd->pffi_type = &ffi_type_double; break;
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TYPE_COMPLEX)
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
         case 'C': fd->pffi_type = &ffi_type_complex_double; break;
 #endif
         case 'g': fd->pffi_type = &ffi_type_longdouble; break;
