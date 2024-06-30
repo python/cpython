@@ -1119,6 +1119,8 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(ValueError, dumped)
 
     def itersize(self, start, stop):
+        # Produce geometrical increasing sequence from start to stop
+        # (inclusively) for tests.
         size = start
         while size < stop:
             yield size

@@ -155,7 +155,7 @@ enum {
     PREFETCH = 8192 * 16,
     /* Data larger that this will be read in chunks, to prevent extreme
        overallocation. */
-    SAFE_BUF_SIZE = 1 << 20,
+    MIN_READ_BUF_SIZE = 1 << 20,
 
     FRAME_SIZE_MIN = 4,
     FRAME_SIZE_TARGET = 64 * 1024,
@@ -1358,7 +1358,7 @@ _Unpickler_ReadFromFile(PickleState *state, UnpicklerObject *self, Py_ssize_t n)
                     return n;
             }
         }
-        Py_ssize_t cursize = Py_MIN(n, SAFE_BUF_SIZE);
+        Py_ssize_t cursize = Py_MIN(n, MIN_READ_BUF_SIZE);
         len = PyLong_FromSsize_t(cursize);
         if (len == NULL)
             return -1;
@@ -1562,7 +1562,14 @@ _Unpickler_MemoPut(PickleState *st, UnpicklerObject *self, size_t idx, PyObject 
     PyObject *old_item;
 
     if (idx >= self->memo_size) {
-        if (idx > self->memo_len * 2 + (1 << 17)) {
+        /* MAX_MEMO_INDICES_GAP was introduced mainly for making testing of
+         * PUT, BINPUT and LONG_BINPUT opcodes simpler.  It should be more
+         * than 1<<16 for LONG_BINPUT.
+         * The standard pickler never produces data that requires more than 0.
+         * The Python code does not have such limitation.
+         */
+        const int MAX_MEMO_INDICES_GAP = 1 << 17;
+        if (idx > self->memo_len * 2 + MAX_MEMO_INDICES_GAP) {
             PyErr_SetString(st->UnpicklingError, "too sparse memo indices");
             return -1;
         }
@@ -5485,7 +5492,7 @@ load_counted_binbytes(PickleState *state, UnpicklerObject *self, int nbytes)
         return -1;
     }
 
-    Py_ssize_t cursize = Py_MIN(size, SAFE_BUF_SIZE);
+    Py_ssize_t cursize = Py_MIN(size, MIN_READ_BUF_SIZE);
     Py_ssize_t prevsize = 0;
     bytes = PyBytes_FromStringAndSize(NULL, cursize);
     if (bytes == NULL) {
@@ -5531,7 +5538,7 @@ load_counted_bytearray(PickleState *state, UnpicklerObject *self)
         return -1;
     }
 
-    Py_ssize_t cursize = Py_MIN(size, SAFE_BUF_SIZE);
+    Py_ssize_t cursize = Py_MIN(size, MIN_READ_BUF_SIZE);
     Py_ssize_t prevsize = 0;
     bytearray = PyByteArray_FromStringAndSize(NULL, cursize);
     if (bytearray == NULL) {

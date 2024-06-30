@@ -193,7 +193,7 @@ __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
-SAFE_BUF_SIZE = (1 << 20)
+_MIN_READ_BUF_SIZE = (1 << 20)
 
 
 class _Framer:
@@ -294,7 +294,7 @@ class _Unframer:
                     "pickle exhausted before end of frame")
             return data
         else:
-            return self.safe_file_read(n)
+            return self._chunked_file_read(n)
 
     def readline(self):
         if self.current_frame:
@@ -309,8 +309,8 @@ class _Unframer:
         else:
             return self.file_readline()
 
-    def safe_file_read(self, size):
-        cursize = min(size, SAFE_BUF_SIZE)
+    def _chunked_file_read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
         b = self.file_read(cursize)
         while cursize < size and len(b) == cursize:
             delta = min(cursize, size - cursize)
@@ -322,7 +322,7 @@ class _Unframer:
         if self.current_frame and self.current_frame.read() != b'':
             raise UnpicklingError(
                 "beginning of a new frame before end of current frame")
-        data = self.safe_file_read(frame_size)
+        data = self._chunked_file_read(frame_size)
         if len(data) < frame_size:
             raise EOFError
         self.current_frame = io.BytesIO(data)
@@ -1419,7 +1419,7 @@ class _Unpickler:
         if size > maxsize:
             raise UnpicklingError("BYTEARRAY8 exceeds system's maximum size "
                                   "of %d bytes" % maxsize)
-        cursize = min(size, SAFE_BUF_SIZE)
+        cursize = min(size, _MIN_READ_BUF_SIZE)
         b = bytearray(cursize)
         if self.readinto(b) == cursize:
             while cursize < size and len(b) == cursize:
