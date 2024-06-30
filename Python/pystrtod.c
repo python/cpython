@@ -3,7 +3,8 @@
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include <locale.h>
+
+#include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
    lower-case.  Returns 1 for a successful match, 0 otherwise. */
@@ -23,44 +24,6 @@ case_insensitive_match(const char *s, const char *t)
    return the NaN or Infinity as a double and set *endptr to point just beyond
    the successfully parsed portion of the string.  On failure, return -1.0 and
    set *endptr to point to the start of the string. */
-
-#if _PY_SHORT_FLOAT_REPR == 1
-
-double
-_Py_parse_inf_or_nan(const char *p, char **endptr)
-{
-    double retval;
-    const char *s;
-    int negate = 0;
-
-    s = p;
-    if (*s == '-') {
-        negate = 1;
-        s++;
-    }
-    else if (*s == '+') {
-        s++;
-    }
-    if (case_insensitive_match(s, "inf")) {
-        s += 3;
-        if (case_insensitive_match(s, "inity"))
-            s += 5;
-        retval = _Py_dg_infinity(negate);
-    }
-    else if (case_insensitive_match(s, "nan")) {
-        s += 3;
-        retval = _Py_dg_stdnan(negate);
-    }
-    else {
-        s = p;
-        retval = -1.0;
-    }
-    *endptr = (char *)s;
-    return retval;
-}
-
-#else
-
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
 {
@@ -84,7 +47,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
     }
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
-        retval = negate ? -Py_NAN : Py_NAN;
+        retval = negate ? -fabs(Py_NAN) : fabs(Py_NAN);
     }
     else {
         s = p;
@@ -94,7 +57,6 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
     return retval;
 }
 
-#endif
 
 /**
  * _PyOS_ascii_strtod:
@@ -880,7 +842,7 @@ char * PyOS_double_to_string(double val,
 
     */
 
-    if (Py_IS_NAN(val) || Py_IS_INFINITY(val))
+    if (isnan(val) || isinf(val))
         /* 3 for 'inf'/'nan', 1 for sign, 1 for '\0' */
         bufsize = 5;
     else {
@@ -898,10 +860,10 @@ char * PyOS_double_to_string(double val,
     }
 
     /* Handle nan and inf. */
-    if (Py_IS_NAN(val)) {
+    if (isnan(val)) {
         strcpy(buf, "nan");
         t = Py_DTST_NAN;
-    } else if (Py_IS_INFINITY(val)) {
+    } else if (isinf(val)) {
         if (copysign(1., val) == 1.)
             strcpy(buf, "inf");
         else
@@ -1272,7 +1234,7 @@ char * PyOS_double_to_string(double val,
     case 'E':
         float_strings = uc_float_strings;
         format_code = 'e';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'e':
         mode = 2;
         precision++;
@@ -1282,7 +1244,7 @@ char * PyOS_double_to_string(double val,
     case 'F':
         float_strings = uc_float_strings;
         format_code = 'f';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'f':
         mode = 3;
         break;
@@ -1291,7 +1253,7 @@ char * PyOS_double_to_string(double val,
     case 'G':
         float_strings = uc_float_strings;
         format_code = 'g';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'g':
         mode = 2;
         /* precision 0 makes no sense for 'g' format; interpret as 1 */

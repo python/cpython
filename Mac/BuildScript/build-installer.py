@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1n",
-              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
-              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
+              name="OpenSSL 3.0.13",
+              url="https://www.openssl.org/source/openssl-3.0.13.tar.gz",
+              checksum='88525753f79d3bec27d2fa7c66aa0b92b3aa9498dafd93d7cfa4b3780cdae313',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -261,14 +261,14 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.12'
-            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
+            tcl_tk_ver='8.6.14'
+            tcl_checksum='5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66'
 
-            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
-            tk_patches = [ ]
+            tk_checksum='8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94'
+            tk_patches = []
 
 
         base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.38.4",
-              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
-              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
+              name="SQLite 3.45.3",
+              url="https://sqlite.org/2024/sqlite-autoconf-3450300.tar.gz",
+              checksum="b2809ca53124c19c60f42bf627736eae011afdcc205bb48270a5ee9a38191531",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -376,6 +376,15 @@ def library_recipes():
                   '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
+              ]
+          ),
+          dict(
+              name="libmpdec 4.0.0",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
+              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              configure_pre=[
+                  "--disable-cxx",
+                  "MACHINE=universal",
               ]
           ),
         ])
@@ -797,10 +806,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """
@@ -1141,7 +1156,10 @@ def buildPython():
     # will find them during its extension import sanity checks.
 
     print("Running configure...")
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
+               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "
@@ -1484,7 +1502,7 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 

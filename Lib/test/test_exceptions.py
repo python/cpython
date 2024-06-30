@@ -12,11 +12,19 @@ from textwrap import dedent
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
-                          SuppressCrashReport)
+                          SuppressCrashReport,
+                          force_not_colorized)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
 from test import support
+
+try:
+    import _testcapi
+    from _testcapi import INT_MAX
+except ImportError:
+    _testcapi = None
+    INT_MAX = 2**31 - 1
 
 
 class NaiveException(Exception):
@@ -33,6 +41,7 @@ class BrokenStrException(Exception):
         raise Exception("str() is broken")
 
 # XXX This is not really enough, each *operation* should be tested!
+
 
 class ExceptionTests(unittest.TestCase):
 
@@ -155,6 +164,7 @@ class ExceptionTests(unittest.TestCase):
 
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
+        ckmsg("f'{6 0}'", "invalid syntax. Perhaps you forgot a comma?")
 
     def testSyntaxErrorMissingParens(self):
         def ckmsg(src, msg, exception=SyntaxError):
@@ -227,7 +237,7 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -252,7 +262,7 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
-        # Errors thrown by tokenizer.c
+        # Errors thrown by the tokenizer
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
         check('0010 + 2', 1, 1)
@@ -294,6 +304,7 @@ class ExceptionTests(unittest.TestCase):
             {
             6
             0="""''', 5, 13)
+        check('b"fooжжж"'.encode(), 1, 1, 1, 10)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
@@ -317,6 +328,14 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
+    @unittest.skipIf(INT_MAX >= sys.maxsize, "Downcasting to int is safe for col_offset")
+    @support.requires_resource('cpu')
+    @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
+    def testMemoryErrorBigSource(self, size):
+        src = b"if True:\n%*s" % (size, b"pass")
+        with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
+            compile(src, '<fragment>', 'exec')
+
     @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
@@ -329,24 +348,23 @@ class ExceptionTests(unittest.TestCase):
         class InvalidException:
             pass
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi1():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
-                exc, err, tb = sys.exc_info()
-                co = tb.tb_frame.f_code
+                co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi2():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
-                exc, err, tb = sys.exc_info()
+                tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
@@ -355,15 +373,14 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi3():
-            import _testcapi
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
-        if not sys.platform.startswith('java'):
-            test_capi1()
-            test_capi2()
-            test_capi3()
+        test_capi1()
+        test_capi2()
+        test_capi3()
 
     def test_WindowsError(self):
         try:
@@ -418,45 +435,45 @@ class ExceptionTests(unittest.TestCase):
         # test that exception attributes are happy
 
         exceptionList = [
-            (BaseException, (), {'args' : ()}),
-            (BaseException, (1, ), {'args' : (1,)}),
-            (BaseException, ('foo',),
+            (BaseException, (), {}, {'args' : ()}),
+            (BaseException, (1, ), {}, {'args' : (1,)}),
+            (BaseException, ('foo',), {},
                 {'args' : ('foo',)}),
-            (BaseException, ('foo', 1),
+            (BaseException, ('foo', 1), {},
                 {'args' : ('foo', 1)}),
-            (SystemExit, ('foo',),
+            (SystemExit, ('foo',), {},
                 {'args' : ('foo',), 'code' : 'foo'}),
-            (OSError, ('foo',),
+            (OSError, ('foo',), {},
                 {'args' : ('foo',), 'filename' : None, 'filename2' : None,
                  'errno' : None, 'strerror' : None}),
-            (OSError, ('foo', 'bar'),
+            (OSError, ('foo', 'bar'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : None, 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz'),
+            (OSError, ('foo', 'bar', 'baz'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : 'baz', 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz', None, 'quux'),
+            (OSError, ('foo', 'bar', 'baz', None, 'quux'), {},
                 {'args' : ('foo', 'bar'), 'filename' : 'baz', 'filename2': 'quux'}),
-            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'), {},
                 {'args' : ('errnoStr', 'strErrorStr'),
                  'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
                  'filename' : 'filenameStr'}),
-            (OSError, (1, 'strErrorStr', 'filenameStr'),
+            (OSError, (1, 'strErrorStr', 'filenameStr'), {},
                 {'args' : (1, 'strErrorStr'), 'errno' : 1,
                  'strerror' : 'strErrorStr',
                  'filename' : 'filenameStr', 'filename2' : None}),
-            (SyntaxError, (), {'msg' : None, 'text' : None,
+            (SyntaxError, (), {}, {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
                 'end_offset': None, 'print_file_and_line' : None}),
-            (SyntaxError, ('msgStr',),
+            (SyntaxError, ('msgStr',), {},
                 {'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_offset': None}),
             (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'endLinenoStr', 'endOffsetStr')),
+                           'textStr', 'endLinenoStr', 'endOffsetStr')), {},
                 {'offset' : 'offsetStr', 'text' : 'textStr',
                  'args' : ('msgStr', ('filenameStr', 'linenoStr',
                                       'offsetStr', 'textStr',
@@ -466,7 +483,7 @@ class ExceptionTests(unittest.TestCase):
                  'end_lineno': 'endLinenoStr', 'end_offset': 'endOffsetStr'}),
             (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
-                           'print_file_and_lineStr'),
+                           'print_file_and_lineStr'), {},
                 {'text' : None,
                  'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
@@ -474,38 +491,40 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_lineno': None, 'end_offset': None}),
-            (UnicodeError, (), {'args' : (),}),
+            (UnicodeError, (), {}, {'args' : (),}),
             (UnicodeEncodeError, ('ascii', 'a', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', bytearray(b'\xff'), 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', bytearray(b'\xff'), 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', b'\xff', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', b'\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"), {},
                 {'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
-            (NaiveException, ('foo',),
+            (NaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
-            (SlottedNaiveException, ('foo',),
+            (SlottedNaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
+            (AttributeError, ('foo',), dict(name='name', obj='obj'),
+                dict(args=('foo',), name='name', obj='obj')),
         ]
         try:
             # More tests are in test_WindowsError
             exceptionList.append(
-                (WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                (WindowsError, (1, 'strErrorStr', 'filenameStr'), {},
                     {'args' : (1, 'strErrorStr'),
                      'strerror' : 'strErrorStr', 'winerror' : None,
                      'errno' : 1,
@@ -514,11 +533,11 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for exc, args, expected in exceptionList:
+        for exc, args, kwargs, expected in exceptionList:
             try:
-                e = exc(*args)
+                e = exc(*args, **kwargs)
             except:
-                print("\nexc=%r, args=%r" % (exc, args), file=sys.stderr)
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
                 # raise
             else:
                 # Verify module name
@@ -541,7 +560,12 @@ class ExceptionTests(unittest.TestCase):
                         new = p.loads(s)
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
+                            if exc == AttributeError and checkArgName == 'obj':
+                                # See GH-103352, we're not pickling
+                                # obj at this point. So verify it's None.
+                                want = repr(None)
+                            else:
+                                want = repr(expected[checkArgName])
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
@@ -599,8 +623,8 @@ class ExceptionTests(unittest.TestCase):
     def testWithTraceback(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = BaseException().with_traceback(tb)
         self.assertIsInstance(e, BaseException)
@@ -653,8 +677,8 @@ class ExceptionTests(unittest.TestCase):
     def testNoneClearsTracebackAttr(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = Exception()
         e.__traceback__ = tb
@@ -888,28 +912,28 @@ class ExceptionTests(unittest.TestCase):
             try:
                 raise KeyError("caught")
             except KeyError:
-                yield sys.exc_info()[0]
-                yield sys.exc_info()[0]
-            yield sys.exc_info()[0]
+                yield sys.exception()
+                yield sys.exception()
+            yield sys.exception()
         g = yield_raise()
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), None)
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsNone(next(g))
 
         # Same test, but inside an exception handler
         try:
             raise TypeError("foo")
         except TypeError:
             g = yield_raise()
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), TypeError)
             del g
-            self.assertEqual(sys.exc_info()[0], TypeError)
+            self.assertIsInstance(sys.exception(), TypeError)
 
     def test_generator_leaking2(self):
         # See issue 12475.
@@ -924,7 +948,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         except StopIteration:
             pass
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking3(self):
         # See issue #23353.  When gen.throw() is called, the caller's
@@ -933,17 +957,17 @@ class ExceptionTests(unittest.TestCase):
             try:
                 yield
             except ZeroDivisionError:
-                yield sys.exc_info()[1]
+                yield sys.exception()
         it = g()
         next(it)
         try:
             1/0
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             gen_exc = it.throw(e)
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             self.assertIs(gen_exc, e)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking4(self):
         # See issue #23353.  When an exception is raised by a generator,
@@ -952,7 +976,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 1/0
             except ZeroDivisionError:
-                yield sys.exc_info()[0]
+                yield sys.exception()
                 raise
         it = g()
         try:
@@ -960,7 +984,7 @@ class ExceptionTests(unittest.TestCase):
         except TypeError:
             # The caller's exception state (TypeError) is temporarily
             # saved in the generator.
-            tp = next(it)
+            tp = type(next(it))
         self.assertIs(tp, ZeroDivisionError)
         try:
             next(it)
@@ -968,15 +992,15 @@ class ExceptionTests(unittest.TestCase):
             # with an exception, it shouldn't have restored the old
             # exception state (TypeError).
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
         # We used to find TypeError here.
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_doesnt_retain_old_exc(self):
         def g():
-            self.assertIsInstance(sys.exc_info()[1], RuntimeError)
+            self.assertIsInstance(sys.exception(), RuntimeError)
             yield
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
         it = g()
         try:
             raise RuntimeError
@@ -984,7 +1008,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         self.assertRaises(StopIteration, next, it)
 
-    def test_generator_finalizing_and_exc_info(self):
+    def test_generator_finalizing_and_sys_exception(self):
         # See #7173
         def simple_gen():
             yield 1
@@ -996,7 +1020,7 @@ class ExceptionTests(unittest.TestCase):
                 return next(gen)
         run_gen()
         gc_collect()
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def _check_generator_cleanup_exc_state(self, testfunc):
         # Issue #12791: exception state is cleaned up as soon as a generator
@@ -1067,14 +1091,14 @@ class ExceptionTests(unittest.TestCase):
         class MyObject:
             def __del__(self):
                 nonlocal e
-                e = sys.exc_info()
+                e = sys.exception()
         e = ()
         try:
             raise Exception(MyObject())
         except:
             pass
         gc_collect()  # For PyPy or other GCs.
-        self.assertEqual(e, (None, None, None))
+        self.assertIsNone(e)
 
     def test_raise_does_not_create_context_chain_cycle(self):
         class A(Exception):
@@ -1135,7 +1159,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(exc.__context__, ValueError)
         self.assertIs(exc.__context__.__context__, exc.__context__)
 
-    @unittest.skip("See issue 44895")
     def test_no_hang_on_context_chain_cycle2(self):
         # See issue 25782. Cycle at head of context chain.
 
@@ -1337,14 +1360,15 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RecursionError:
-                return sys.exc_info()
-        e, v, tb = g()
-        self.assertIsInstance(v, RecursionError, type(v))
-        self.assertIn("maximum recursion depth exceeded", str(v))
+            except RecursionError as e:
+                return e
+        exc = g()
+        self.assertIsInstance(exc, RecursionError, type(exc))
+        self.assertIn("maximum recursion depth exceeded", str(exc))
 
 
     @cpython_only
+    @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
         # See bpo-33930
 
@@ -1360,6 +1384,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_recursion_normalizing_exception(self):
+        import_module("_testinternalcapi")
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
         # equal to recursion_limit in PyErr_NormalizeException() and check
@@ -1372,6 +1397,7 @@ class ExceptionTests(unittest.TestCase):
         code = """if 1:
             import sys
             from _testinternalcapi import get_recursion_depth
+            from test import support
 
             class MyException(Exception): pass
 
@@ -1399,13 +1425,8 @@ class ExceptionTests(unittest.TestCase):
             generator = gen()
             next(generator)
             recursionlimit = sys.getrecursionlimit()
-            depth = get_recursion_depth()
             try:
-                # Upon the last recursive invocation of recurse(),
-                # tstate->recursion_depth is equal to (recursion_limit - 1)
-                # and is equal to recursion_limit when _gen_throw() calls
-                # PyErr_NormalizeException().
-                recurse(setrecursionlimit(depth + 2) - depth)
+                recurse(support.exceeds_recursion_limit())
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
@@ -1418,10 +1439,11 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
-        # PyErr_NormalizeException() maximum recursion depth has been
-        # exceeded.
+        # maximum recursion depth has been exceeded when creating
+        # an exception
         code = """if 1:
             import _testcapi
             try:
@@ -1431,8 +1453,8 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
-                      b'while normalizing an exception', err)
+        expected = b'RecursionError: maximum recursion depth exceeded'
+        self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
 
@@ -1484,6 +1506,10 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1506,6 +1532,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertIn(b'MemoryError', err)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_MemoryError(self):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
@@ -1525,8 +1552,8 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(tb1, tb2)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_exception_with_doc(self):
-        import _testcapi
         doc2 = "This is a test docstring."
         doc4 = "This is another test docstring."
 
@@ -1565,6 +1592,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(error5.__doc__, "")
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.
@@ -1652,6 +1680,10 @@ class ExceptionTests(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1698,7 +1730,7 @@ class ExceptionTests(unittest.TestCase):
                 raise ValueError
             except ValueError:
                 yield 1
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
             yield 2
 
         gen = g()
@@ -1770,7 +1802,44 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
-global_for_suggestions = None
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_memory_error_in_subinterp(self):
+        # gh-109894: subinterpreters shouldn't count on last resort memory error
+        # when MemoryError is raised through PyErr_NoMemory() call,
+        # and should preallocate memory errors as does the main interpreter.
+        # interp.static_objects.last_resort_memory_error.args
+        # should be initialized to empty tuple to avoid crash on attempt to print it.
+        code = f"""if 1:
+            import _testcapi
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
+            exit(0)
+        """
+        rc, _, err = script_helper.assert_python_ok("-c", code)
+        self.assertIn(b'MemoryError', err)
+
+    def test_keyerror_context(self):
+        # Make sure that _PyErr_SetKeyError() chains exceptions
+        try:
+            err1 = None
+            err2 = None
+            try:
+                d = {}
+                try:
+                    raise ValueError("bug")
+                except Exception as exc:
+                    err1 = exc
+                    d[1]
+            except Exception as exc:
+                err2 = exc
+
+            self.assertIsInstance(err1, ValueError)
+            self.assertIsInstance(err2, KeyError)
+            self.assertEqual(err2.__context__, err1)
+        finally:
+            # Break any potential reference cycle
+            exc1 = None
+            exc2 = None
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -1778,272 +1847,6 @@ class NameErrorTests(unittest.TestCase):
             bluch
         except NameError as exc:
             self.assertEqual("bluch", exc.name)
-
-    def test_name_error_suggestions(self):
-        def Substitution():
-            noise = more_noise = a = bc = None
-            blech = None
-            print(bluch)
-
-        def Elimination():
-            noise = more_noise = a = bc = None
-            blch = None
-            print(bluch)
-
-        def Addition():
-            noise = more_noise = a = bc = None
-            bluchin = None
-            print(bluch)
-
-        def SubstitutionOverElimination():
-            blach = None
-            bluc = None
-            print(bluch)
-
-        def SubstitutionOverAddition():
-            blach = None
-            bluchi = None
-            print(bluch)
-
-        def EliminationOverAddition():
-            blucha = None
-            bluc = None
-            print(bluch)
-
-        for func, suggestion in [(Substitution, "'blech'?"),
-                                (Elimination, "'blch'?"),
-                                (Addition, "'bluchin'?"),
-                                (EliminationOverAddition, "'blucha'?"),
-                                (SubstitutionOverElimination, "'blach'?"),
-                                (SubstitutionOverAddition, "'blach'?")]:
-            err = None
-            try:
-                func()
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertIn(suggestion, err.getvalue())
-
-    def test_name_error_suggestions_from_globals(self):
-        def func():
-            print(global_for_suggestio)
-        try:
-            func()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-        self.assertIn("'global_for_suggestions'?", err.getvalue())
-
-    def test_name_error_suggestions_from_builtins(self):
-        def func():
-            print(ZeroDivisionErrrrr)
-        try:
-            func()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-        self.assertIn("'ZeroDivisionError'?", err.getvalue())
-
-    def test_name_error_suggestions_do_not_trigger_for_long_names(self):
-        def f():
-            somethingverywronghehehehehehe = None
-            print(somethingverywronghe)
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("somethingverywronghehe", err.getvalue())
-
-    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        vvv = mom = w = id = pytho = None
-
-        with self.subTest(name="b"):
-            try:
-                b
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="v"):
-            try:
-                v
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="m"):
-            try:
-                m
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="py"):
-            try:
-                py
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-    def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
-        def f():
-            # Mutating locals() is unreliable, so we need to do it by hand
-            a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = a10 = \
-            a11 = a12 = a13 = a14 = a15 = a16 = a17 = a18 = a19 = a20 = \
-            a21 = a22 = a23 = a24 = a25 = a26 = a27 = a28 = a29 = a30 = \
-            a31 = a32 = a33 = a34 = a35 = a36 = a37 = a38 = a39 = a40 = \
-            a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = a50 = \
-            a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = a60 = \
-            a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = a70 = \
-            a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = a80 = \
-            a81 = a82 = a83 = a84 = a85 = a86 = a87 = a88 = a89 = a90 = \
-            a91 = a92 = a93 = a94 = a95 = a96 = a97 = a98 = a99 = a100 = \
-            a101 = a102 = a103 = a104 = a105 = a106 = a107 = a108 = a109 = a110 = \
-            a111 = a112 = a113 = a114 = a115 = a116 = a117 = a118 = a119 = a120 = \
-            a121 = a122 = a123 = a124 = a125 = a126 = a127 = a128 = a129 = a130 = \
-            a131 = a132 = a133 = a134 = a135 = a136 = a137 = a138 = a139 = a140 = \
-            a141 = a142 = a143 = a144 = a145 = a146 = a147 = a148 = a149 = a150 = \
-            a151 = a152 = a153 = a154 = a155 = a156 = a157 = a158 = a159 = a160 = \
-            a161 = a162 = a163 = a164 = a165 = a166 = a167 = a168 = a169 = a170 = \
-            a171 = a172 = a173 = a174 = a175 = a176 = a177 = a178 = a179 = a180 = \
-            a181 = a182 = a183 = a184 = a185 = a186 = a187 = a188 = a189 = a190 = \
-            a191 = a192 = a193 = a194 = a195 = a196 = a197 = a198 = a199 = a200 = \
-            a201 = a202 = a203 = a204 = a205 = a206 = a207 = a208 = a209 = a210 = \
-            a211 = a212 = a213 = a214 = a215 = a216 = a217 = a218 = a219 = a220 = \
-            a221 = a222 = a223 = a224 = a225 = a226 = a227 = a228 = a229 = a230 = \
-            a231 = a232 = a233 = a234 = a235 = a236 = a237 = a238 = a239 = a240 = \
-            a241 = a242 = a243 = a244 = a245 = a246 = a247 = a248 = a249 = a250 = \
-            a251 = a252 = a253 = a254 = a255 = a256 = a257 = a258 = a259 = a260 = \
-            a261 = a262 = a263 = a264 = a265 = a266 = a267 = a268 = a269 = a270 = \
-            a271 = a272 = a273 = a274 = a275 = a276 = a277 = a278 = a279 = a280 = \
-            a281 = a282 = a283 = a284 = a285 = a286 = a287 = a288 = a289 = a290 = \
-            a291 = a292 = a293 = a294 = a295 = a296 = a297 = a298 = a299 = a300 = \
-            a301 = a302 = a303 = a304 = a305 = a306 = a307 = a308 = a309 = a310 = \
-            a311 = a312 = a313 = a314 = a315 = a316 = a317 = a318 = a319 = a320 = \
-            a321 = a322 = a323 = a324 = a325 = a326 = a327 = a328 = a329 = a330 = \
-            a331 = a332 = a333 = a334 = a335 = a336 = a337 = a338 = a339 = a340 = \
-            a341 = a342 = a343 = a344 = a345 = a346 = a347 = a348 = a349 = a350 = \
-            a351 = a352 = a353 = a354 = a355 = a356 = a357 = a358 = a359 = a360 = \
-            a361 = a362 = a363 = a364 = a365 = a366 = a367 = a368 = a369 = a370 = \
-            a371 = a372 = a373 = a374 = a375 = a376 = a377 = a378 = a379 = a380 = \
-            a381 = a382 = a383 = a384 = a385 = a386 = a387 = a388 = a389 = a390 = \
-            a391 = a392 = a393 = a394 = a395 = a396 = a397 = a398 = a399 = a400 = \
-            a401 = a402 = a403 = a404 = a405 = a406 = a407 = a408 = a409 = a410 = \
-            a411 = a412 = a413 = a414 = a415 = a416 = a417 = a418 = a419 = a420 = \
-            a421 = a422 = a423 = a424 = a425 = a426 = a427 = a428 = a429 = a430 = \
-            a431 = a432 = a433 = a434 = a435 = a436 = a437 = a438 = a439 = a440 = \
-            a441 = a442 = a443 = a444 = a445 = a446 = a447 = a448 = a449 = a450 = \
-            a451 = a452 = a453 = a454 = a455 = a456 = a457 = a458 = a459 = a460 = \
-            a461 = a462 = a463 = a464 = a465 = a466 = a467 = a468 = a469 = a470 = \
-            a471 = a472 = a473 = a474 = a475 = a476 = a477 = a478 = a479 = a480 = \
-            a481 = a482 = a483 = a484 = a485 = a486 = a487 = a488 = a489 = a490 = \
-            a491 = a492 = a493 = a494 = a495 = a496 = a497 = a498 = a499 = a500 = \
-            a501 = a502 = a503 = a504 = a505 = a506 = a507 = a508 = a509 = a510 = \
-            a511 = a512 = a513 = a514 = a515 = a516 = a517 = a518 = a519 = a520 = \
-            a521 = a522 = a523 = a524 = a525 = a526 = a527 = a528 = a529 = a530 = \
-            a531 = a532 = a533 = a534 = a535 = a536 = a537 = a538 = a539 = a540 = \
-            a541 = a542 = a543 = a544 = a545 = a546 = a547 = a548 = a549 = a550 = \
-            a551 = a552 = a553 = a554 = a555 = a556 = a557 = a558 = a559 = a560 = \
-            a561 = a562 = a563 = a564 = a565 = a566 = a567 = a568 = a569 = a570 = \
-            a571 = a572 = a573 = a574 = a575 = a576 = a577 = a578 = a579 = a580 = \
-            a581 = a582 = a583 = a584 = a585 = a586 = a587 = a588 = a589 = a590 = \
-            a591 = a592 = a593 = a594 = a595 = a596 = a597 = a598 = a599 = a600 = \
-            a601 = a602 = a603 = a604 = a605 = a606 = a607 = a608 = a609 = a610 = \
-            a611 = a612 = a613 = a614 = a615 = a616 = a617 = a618 = a619 = a620 = \
-            a621 = a622 = a623 = a624 = a625 = a626 = a627 = a628 = a629 = a630 = \
-            a631 = a632 = a633 = a634 = a635 = a636 = a637 = a638 = a639 = a640 = \
-            a641 = a642 = a643 = a644 = a645 = a646 = a647 = a648 = a649 = a650 = \
-            a651 = a652 = a653 = a654 = a655 = a656 = a657 = a658 = a659 = a660 = \
-            a661 = a662 = a663 = a664 = a665 = a666 = a667 = a668 = a669 = a670 = \
-            a671 = a672 = a673 = a674 = a675 = a676 = a677 = a678 = a679 = a680 = \
-            a681 = a682 = a683 = a684 = a685 = a686 = a687 = a688 = a689 = a690 = \
-            a691 = a692 = a693 = a694 = a695 = a696 = a697 = a698 = a699 = a700 = \
-            a701 = a702 = a703 = a704 = a705 = a706 = a707 = a708 = a709 = a710 = \
-            a711 = a712 = a713 = a714 = a715 = a716 = a717 = a718 = a719 = a720 = \
-            a721 = a722 = a723 = a724 = a725 = a726 = a727 = a728 = a729 = a730 = \
-            a731 = a732 = a733 = a734 = a735 = a736 = a737 = a738 = a739 = a740 = \
-            a741 = a742 = a743 = a744 = a745 = a746 = a747 = a748 = a749 = a750 = \
-            a751 = a752 = a753 = a754 = a755 = a756 = a757 = a758 = a759 = a760 = \
-            a761 = a762 = a763 = a764 = a765 = a766 = a767 = a768 = a769 = a770 = \
-            a771 = a772 = a773 = a774 = a775 = a776 = a777 = a778 = a779 = a780 = \
-            a781 = a782 = a783 = a784 = a785 = a786 = a787 = a788 = a789 = a790 = \
-            a791 = a792 = a793 = a794 = a795 = a796 = a797 = a798 = a799 = a800 \
-                = None
-            print(a0)
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotRegex(err.getvalue(), r"NameError.*a1")
-
-    def test_name_error_with_custom_exceptions(self):
-        def f():
-            blech = None
-            raise NameError()
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-        def f():
-            blech = None
-            raise NameError
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_unbound_local_error_doesn_not_match(self):
-        def foo():
-            something = 3
-            print(somethong)
-            somethong = 3
-
-        try:
-            foo()
-        except UnboundLocalError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("something", err.getvalue())
 
     def test_issue45826(self):
         # regression test for bpo-45826
@@ -2056,6 +1859,8 @@ class NameErrorTests(unittest.TestCase):
         except self.failureException:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
+        else:
+            self.fail("assertRaisesRegex should have failed.")
 
         self.assertIn("aab", err.getvalue())
 
@@ -2075,6 +1880,15 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertIn("nonsense", err.getvalue())
         self.assertIn("ZeroDivisionError", err.getvalue())
+
+    def test_gh_111654(self):
+        def f():
+            class TestClass:
+                TestClass
+
+        self.assertRaises(NameError, f)
+
+    # Note: name suggestion tests live in `test_traceback`.
 
 
 class AttributeErrorTests(unittest.TestCase):
@@ -2099,6 +1913,11 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+        try:
+            object.__getattribute__(obj, "bluch")
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
 
     def test_getattr_has_name_and_obj_for_method(self):
         class A:
@@ -2112,239 +1931,7 @@ class AttributeErrorTests(unittest.TestCase):
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
 
-    def test_getattr_suggestions(self):
-        class Substitution:
-            noise = more_noise = a = bc = None
-            blech = None
-
-        class Elimination:
-            noise = more_noise = a = bc = None
-            blch = None
-
-        class Addition:
-            noise = more_noise = a = bc = None
-            bluchin = None
-
-        class SubstitutionOverElimination:
-            blach = None
-            bluc = None
-
-        class SubstitutionOverAddition:
-            blach = None
-            bluchi = None
-
-        class EliminationOverAddition:
-            blucha = None
-            bluc = None
-
-        for cls, suggestion in [(Substitution, "'blech'?"),
-                                (Elimination, "'blch'?"),
-                                (Addition, "'bluchin'?"),
-                                (EliminationOverAddition, "'bluc'?"),
-                                (SubstitutionOverElimination, "'blach'?"),
-                                (SubstitutionOverAddition, "'blach'?")]:
-            try:
-                cls().bluch
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-
-            self.assertIn(suggestion, err.getvalue())
-
-    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
-        class A:
-            blech = None
-
-        try:
-            A().somethingverywrong
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        class MyClass:
-            vvv = mom = w = id = pytho = None
-
-        with self.subTest(name="b"):
-            try:
-                MyClass.b
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="v"):
-            try:
-                MyClass.v
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="m"):
-            try:
-                MyClass.m
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="py"):
-            try:
-                MyClass.py
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-
-    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
-        class A:
-            blech = None
-        # A class with a very big __dict__ will not be consider
-        # for suggestions.
-        for index in range(2000):
-            setattr(A, f"index_{index}", None)
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_getattr_suggestions_no_args(self):
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError()
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertIn("blech", err.getvalue())
-
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertIn("blech", err.getvalue())
-
-    def test_getattr_suggestions_invalid_args(self):
-        class NonStringifyClass:
-            __str__ = None
-            __repr__ = None
-
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError(NonStringifyClass())
-
-        class B:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError("Error", 23)
-
-        class C:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError(23)
-
-        for cls in [A, B, C]:
-            try:
-                cls().bluch
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-
-            self.assertIn("blech", err.getvalue())
-
-    def test_getattr_suggestions_for_same_name(self):
-        class A:
-            def __dir__(self):
-                return ['blech']
-        try:
-            A().blech
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("Did you mean", err.getvalue())
-
-    def test_attribute_error_with_failing_dict(self):
-        class T:
-            bluch = 1
-            def __dir__(self):
-                raise AttributeError("oh no!")
-
-        try:
-            T().blich
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-        self.assertNotIn("oh no!", err.getvalue())
-
-    def test_attribute_error_with_bad_name(self):
-        try:
-            raise AttributeError(name=12, obj=23)
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("?", err.getvalue())
-
-    def test_attribute_error_inside_nested_getattr(self):
-        class A:
-            bluch = 1
-
-        class B:
-            def __getattribute__(self, attr):
-                a = A()
-                return a.blich
-
-        try:
-            B().something
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertIn("Did you mean", err.getvalue())
-        self.assertIn("bluch", err.getvalue())
+    # Note: name suggestion tests live in `test_traceback`.
 
 
 class ImportErrorTests(unittest.TestCase):
@@ -2367,7 +1954,7 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
-        msg = "'invalid' is an invalid keyword argument for ImportError"
+        msg = r"ImportError\(\) got an unexpected keyword argument 'invalid'"
         with self.assertRaisesRegex(TypeError, msg):
             ImportError('test', invalid='keyword')
 
@@ -2423,7 +2010,128 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
 
+
+class AssertionErrorTests(unittest.TestCase):
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def write_source(self, source):
+        with open(TESTFN, 'w') as testfile:
+            testfile.write(dedent(source))
+        _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+        return err.decode('utf-8').splitlines()
+
+    @force_not_colorized
+    def test_assertion_error_location(self):
+        cases = [
+            ('assert None',
+                [
+                    '    assert None',
+                    '           ^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 0',
+                [
+                    '    assert 0',
+                    '           ^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2',
+                [
+                    '    assert 1 > 2',
+                    '           ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2 and 3 > 2',
+                [
+                    '    assert 1 > 2 and 3 > 2',
+                    '           ^^^^^^^^^^^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2, "message"',
+                [
+                    '    assert 1 > 2, "message"',
+                    '           ^^^^^',
+                    'AssertionError: message',
+                ],
+            ),
+
+            # Multiline:
+            ("""
+             assert (
+                 1 > 2)
+             """,
+                [
+                    '    1 > 2)',
+                    '    ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), "Message"
+             """,
+                [
+                    '    1 > 2), "Message"',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), \\
+                 "Message"
+             """,
+                [
+                    '    1 > 2), \\',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-3:], expected)
+
+    @force_not_colorized
+    def test_multiline_not_highlighted(self):
+        cases = [
+            ("""
+             assert (
+                 1 > 2
+             )
+             """,
+                [
+                    '    1 > 2',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 < 2 and
+                 3 > 4
+             )
+             """,
+                [
+                    '    1 < 2 and',
+                    '    3 > 4',
+                    'AssertionError',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-len(expected):], expected)
+
+
 class SyntaxErrorTests(unittest.TestCase):
+    @force_not_colorized
     def test_range_of_offsets(self):
         cases = [
             # Basic range from 2->7

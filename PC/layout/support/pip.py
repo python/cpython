@@ -67,7 +67,6 @@ def extract_pip_files(ns):
             "--no-color",
             "install",
             "pip",
-            "setuptools",
             "--upgrade",
             "--target",
             str(dest),

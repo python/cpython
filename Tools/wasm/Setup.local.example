@@ -1,9 +1,7 @@
 # Module/Setup.local with reduced stdlib
 *disabled*
 _asyncio
-audioop
 _bz2
-_crypt
 _decimal
 _pickle
 pyexpat _elementtree

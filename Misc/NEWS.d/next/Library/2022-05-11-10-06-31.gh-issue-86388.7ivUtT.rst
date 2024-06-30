@@ -1,5 +1,0 @@
-Removed randrange() functionality deprecated since Python 3.10.  Formerly,
-randrange(10.0) losslessly converted to randrange(10). Now, it raises a
-TypeError. Also, the exception raised for non-integral values such as
-randrange(10.5) or randrange('10') has been changed from ValueError to
-TypeError.

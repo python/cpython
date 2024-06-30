@@ -1,5 +1,5 @@
-:mod:`textwrap` --- Text wrapping and filling
-=============================================
+:mod:`!textwrap` --- Text wrapping and filling
+==============================================
 
 .. module:: textwrap
    :synopsis: Text wrapping and filling
@@ -60,7 +60,7 @@ functions should be good enough; otherwise, you should use an instance of
    First the whitespace in *text* is collapsed (all whitespace is replaced by
    single spaces).  If the result fits in the *width*, it is returned.
    Otherwise, enough words are dropped from the end so that the remaining words
-   plus the :attr:`placeholder` fit within :attr:`width`::
+   plus the *placeholder* fit within *width*::
 
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'
@@ -154,7 +154,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       wrapper = TextWrapper()
       wrapper.initial_indent = "* "
 
-   You can re-use the same :class:`TextWrapper` object many times, and you can
+   You can reuse the same :class:`TextWrapper` object many times, and you can
    change any of its options through direct assignment to instance attributes
    between uses.
 
@@ -173,7 +173,7 @@ hyphenated words; only then will long words be broken if necessary, unless
    .. attribute:: expand_tabs
 
       (default: ``True``) If true, then all tab characters in *text* will be
-      expanded to spaces using the :meth:`expandtabs` method of *text*.
+      expanded to spaces using the :meth:`~str.expandtabs` method of *text*.
 
 
    .. attribute:: tabsize
@@ -238,7 +238,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       However, the sentence detection algorithm is imperfect: it assumes that a
       sentence ending consists of a lowercase letter followed by one of ``'.'``,
       ``'!'``, or ``'?'``, possibly followed by one of ``'"'`` or ``"'"``,
-      followed by a space.  One problem with this is algorithm is that it is
+      followed by a space.  One problem with this algorithm is that it is
       unable to detect the difference between "Dr." in ::
 
          [...] Dr. Frankenstein's monster [...]

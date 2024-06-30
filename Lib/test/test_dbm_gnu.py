@@ -118,6 +118,20 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
 
+    def test_bool_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(gdbm.error, bool, db)
+
     def test_bytes(self):
         with gdbm.open(filename, 'c') as db:
             db[b'bytes key \xbd'] = b'bytes value \xbd'
@@ -177,6 +191,20 @@ class TestGdbm(unittest.TestCase):
 
     def test_open_with_pathlib_bytes_path(self):
         gdbm.open(FakePath(os.fsencode(filename)), "c").close()
+
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with gdbm.open(filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
 
 
 if __name__ == '__main__':

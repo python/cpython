@@ -1,19 +1,27 @@
 import ast
 import builtins
+import copy
 import dis
 import enum
 import os
+import re
 import sys
+import textwrap
 import types
 import unittest
-import warnings
 import weakref
 from textwrap import dedent
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
+from test.support import os_helper, script_helper
+from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, complex)) or t is Ellipsis:
+    if t is None or isinstance(t, (str, int, complex, float, bytes)) or t is Ellipsis:
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -28,12 +36,13 @@ def to_tuple(t):
         result.append(to_tuple(getattr(t, f)))
     return tuple(result)
 
+STDLIB = os.path.dirname(ast.__file__)
+STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
+STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
 
 # These tests are compiled through "exec"
 # There should be at least one test per statement
 exec_tests = [
-    # None
-    "None",
     # Module docstring
     "'module docstring'",
     # FunctionDef
@@ -66,8 +75,11 @@ exec_tests = [
     "class C: 'docstring for class C'",
     # ClassDef, new style class
     "class C(object): pass",
+    # Classdef with multiple bases
+    "class C(A, B): pass",
     # Return
     "def f():return 1",
+    "def f():return",
     # Delete
     "del v",
     # Assign
@@ -75,38 +87,72 @@ exec_tests = [
     "a,b = c",
     "(a,b) = c",
     "[a,b] = c",
+    "a[b] = c",
     # AnnAssign with unpacked types
     "x: tuple[*Ts]",
     "x: tuple[int, *Ts]",
     "x: tuple[int, *tuple[str, ...]]",
     # AugAssign
     "v += 1",
+    "v -= 1",
+    "v *= 1",
+    "v @= 1",
+    "v /= 1",
+    "v %= 1",
+    "v **= 1",
+    "v <<= 1",
+    "v >>= 1",
+    "v |= 1",
+    "v ^= 1",
+    "v &= 1",
+    "v //= 1",
     # For
     "for v in v:pass",
+    # For-Else
+    "for v in v:\n  pass\nelse:\n  pass",
     # While
     "while v:pass",
-    # If
-    "if v:pass",
-    # If-Elif
-    "if a:\n  pass\nelif b:\n  pass",
+    # While-Else
+    "while v:\n  pass\nelse:\n  pass",
     # If-Elif-Else
+    "if v:pass",
+    "if a:\n  pass\nelif b:\n  pass",
+    "if a:\n  pass\nelse:\n  pass",
     "if a:\n  pass\nelif b:\n  pass\nelse:\n  pass",
+    "if a:\n  pass\nelif b:\n  pass\nelif b:\n  pass\nelif b:\n  pass\nelse:\n  pass",
     # With
+    "with x: pass",
+    "with x, y: pass",
     "with x as y: pass",
     "with x as y, z as q: pass",
+    "with (x as y): pass",
+    "with (x, y): pass",
     # Raise
+    "raise",
     "raise Exception('string')",
+    "raise Exception",
+    "raise Exception('string') from None",
     # TryExcept
     "try:\n  pass\nexcept Exception:\n  pass",
+    "try:\n  pass\nexcept Exception as exc:\n  pass",
     # TryFinally
     "try:\n  pass\nfinally:\n  pass",
     # TryStarExcept
     "try:\n  pass\nexcept* Exception:\n  pass",
+    "try:\n  pass\nexcept* Exception as exc:\n  pass",
+    # TryExceptFinallyElse
+    "try:\n  pass\nexcept Exception:\n  pass\nelse:  pass\nfinally:\n  pass",
+    "try:\n  pass\nexcept Exception as exc:\n  pass\nelse:  pass\nfinally:\n  pass",
+    "try:\n  pass\nexcept* Exception as exc:\n  pass\nelse:  pass\nfinally:\n  pass",
     # Assert
     "assert v",
+    # Assert with message
+    "assert v, 'message'",
     # Import
     "import sys",
+    "import foo as bar",
     # ImportFrom
+    "from sys import x as y",
     "from sys import v",
     # Global
     "global v",
@@ -151,6 +197,9 @@ exec_tests = [
     # PEP 448: Additional Unpacking Generalizations
     "{**{1:2}, 2:3}",
     "{*{1, 2}, 3}",
+    # Function with yield (from)
+    "def f(): yield 1",
+    "def f(): yield from []",
     # Asynchronous comprehensions
     "async def f():\n [i async for b in c]",
     # Decorated FunctionDef
@@ -165,6 +214,10 @@ exec_tests = [
     "@a.b.c\ndef f(): pass",
     # Simple assignment expression
     "(a := 1)",
+    # Assignment expression in if statement
+    "if a := foo(): pass",
+    # Assignment expression in while
+    "while a := foo(): pass",
     # Positional-only arguments
     "def f(a, /,): pass",
     "def f(a, /, c, d, e): pass",
@@ -177,7 +230,29 @@ exec_tests = [
     "def f(a=1, /, b=2, *, c): pass",
     "def f(a=1, /, b=2, *, c=4, **kwargs): pass",
     "def f(a=1, /, b=2, *, c, **kwargs): pass",
-
+    # Type aliases
+    "type X = int",
+    "type X[T] = int",
+    "type X[T, *Ts, **P] = (T, Ts, P)",
+    "type X[T: int, *Ts, **P] = (T, Ts, P)",
+    "type X[T: (int, str), *Ts, **P] = (T, Ts, P)",
+    "type X[T: int = 1, *Ts = 2, **P =3] = (T, Ts, P)",
+    # Generic classes
+    "class X[T]: pass",
+    "class X[T, *Ts, **P]: pass",
+    "class X[T: int, *Ts, **P]: pass",
+    "class X[T: (int, str), *Ts, **P]: pass",
+    "class X[T: int = 1, *Ts = 2, **P = 3]: pass",
+    # Generic functions
+    "def f[T](): pass",
+    "def f[T, *Ts, **P](): pass",
+    "def f[T: int, *Ts, **P](): pass",
+    "def f[T: (int, str), *Ts, **P](): pass",
+    "def f[T: int = 1, *Ts = 2, **P = 3](): pass",
+    # Match
+    "match x:\n\tcase 1:\n\t\tpass",
+    # Match with _
+    "match x:\n\tcase 1:\n\t\tpass\n\tcase _:\n\t\tpass",
 ]
 
 # These are compiled through "single"
@@ -190,14 +265,34 @@ single_tests = [
 # These are compiled through "eval"
 # It should test all expressions
 eval_tests = [
-  # None
+  # Constant(value=None)
   "None",
+  # True
+  "True",
+  # False
+  "False",
   # BoolOp
   "a and b",
+  "a or b",
   # BinOp
   "a + b",
+  "a - b",
+  "a * b",
+  "a / b",
+  "a @ b",
+  "a // b",
+  "a ** b",
+  "a % b",
+  "a >> b",
+  "a << b",
+  "a ^ b",
+  "a | b",
+  "a & b",
   # UnaryOp
   "not v",
+  "+v",
+  "-v",
+  "~v",
   # Lambda
   "lambda:None",
   # Dict
@@ -212,10 +307,31 @@ eval_tests = [
         :
           2
      }""",
+  # Multiline list
+  """[
+      1
+       ,
+        1
+     ]""",
+  # Multiline tuple
+  """(
+      1
+       ,
+     )""",
+  # Multiline set
+  """{
+      1
+       ,
+        1
+     }""",
   # ListComp
   "[a for b in c if d]",
   # GeneratorExp
   "(a for b in c if d)",
+  # SetComp
+  "{a for b in c if d}",
+  # DictComp
+  "{k: v for k, v in c if d}",
   # Comprehensions with multiple for targets
   "[(a,b) for a,b in c]",
   "[(a,b) for (a,b) in c]",
@@ -226,19 +342,33 @@ eval_tests = [
   "((a,b) for a,b in c)",
   "((a,b) for (a,b) in c)",
   "((a,b) for [a,b] in c)",
+  # Async comprehensions - async comprehensions can't work outside an asynchronous function
+  #
   # Yield - yield expressions can't work outside a function
   #
   # Compare
   "1 < 2 < 3",
+  "a == b",
+  "a <= b",
+  "a >= b",
+  "a != b",
+  "a is b",
+  "a is not b",
+  "a in b",
+  "a not in b",
+  # Call without argument
+  "f()",
   # Call
   "f(1,2,c=3,*d,**e)",
   # Call with multi-character starred
   "f(*[0, 1])",
   # Call with a generator argument
   "f(a for a in b)",
-  # Num
+  # Constant(value=int())
   "10",
-  # Str
+  # Complex num
+  "1j",
+  # Constant(value=str())
   "'string'",
   # Attribute
   "a.b",
@@ -258,13 +388,23 @@ eval_tests = [
   "()",
   # Combination
   "a.b.c.d(a.b[1:2])",
-
+  # Slice
+  "[5][1:]",
+  "[5][:1]",
+  "[5][::1]",
+  "[5][1:1:1]",
+  # IfExp
+  "foo() if x else bar()",
+  # JoinedStr and FormattedValue
+  "f'{a}'",
+  "f'{a:.2f}'",
+  "f'{a!r}'",
+  "f'foo({a})'",
 ]
 
-# TODO: expr_context, slice, boolop, operator, unaryop, cmpop, comprehension
-# excepthandler, arguments, keywords, alias
 
 class AST_Tests(unittest.TestCase):
+    maxDiff = None
 
     def _is_ast_node(self, name, node):
         if not isinstance(node, type):
@@ -335,6 +475,38 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
+
+    def test_optimization_levels__debug__(self):
+        cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval, expected=expected):
+                res1 = ast.parse("__debug__", optimize=optval)
+                res2 = ast.parse(ast.parse("__debug__"), optimize=optval)
+                for res in [res1, res2]:
+                    self.assertIsInstance(res.body[0], ast.Expr)
+                    if isinstance(expected, bool):
+                        self.assertIsInstance(res.body[0].value, ast.Constant)
+                        self.assertEqual(res.body[0].value.value, expected)
+                    else:
+                        self.assertIsInstance(res.body[0].value, ast.Name)
+                        self.assertEqual(res.body[0].value.id, expected)
+
+    def test_optimization_levels_const_folding(self):
+        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
+        not_folded = ('Expr', (1, 0, 1, 5),
+                         ('BinOp', (1, 0, 1, 5),
+                             ('Constant', (1, 0, 1, 1), 1, None),
+                             ('Add',),
+                             ('Constant', (1, 4, 1, 5), 2, None)))
+
+        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval):
+                tree1 = ast.parse("1 + 2", optimize=optval)
+                tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
+                for tree in [tree1, tree2]:
+                    res = to_tuple(tree.body[0])
+                    self.assertEqual(res, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [
@@ -407,6 +579,24 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(alias.col_offset, 16)
         self.assertEqual(alias.end_col_offset, 17)
 
+        im = ast.parse("from bar import y as z").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, "y")
+        self.assertEqual(alias.asname, "z")
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 22)
+
+        im = ast.parse("import bar as foo").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, "bar")
+        self.assertEqual(alias.asname, "foo")
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 7)
+        self.assertEqual(alias.end_col_offset, 17)
+
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
         self.assertTrue(issubclass(ast.Name, ast.expr))
@@ -417,22 +607,42 @@ class AST_Tests(unittest.TestCase):
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
+            # constructor has a different signature
+            if name == 'Index':
+                continue
             if self._is_ast_node(name, item):
-                if name == 'Index':
-                    # Index(value) just returns value now.
-                    # The argument is required.
-                    continue
-                x = item()
+                x = self._construct_ast_class(item)
                 if isinstance(x, ast.AST):
-                    self.assertEqual(type(x._fields), tuple)
+                    self.assertIs(type(x._fields), tuple)
+
+    def _construct_ast_class(self, cls):
+        kwargs = {}
+        for name, typ in cls.__annotations__.items():
+            if typ is str:
+                kwargs[name] = 'capybara'
+            elif typ is int:
+                kwargs[name] = 42
+            elif typ is object:
+                kwargs[name] = b'capybara'
+            elif isinstance(typ, type) and issubclass(typ, ast.AST):
+                kwargs[name] = self._construct_ast_class(typ)
+        return cls(**kwargs)
 
     def test_arguments(self):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
+        self.assertEqual(x.__annotations__, {
+            'posonlyargs': list[ast.arg],
+            'args': list[ast.arg],
+            'vararg': ast.arg | None,
+            'kwonlyargs': list[ast.arg],
+            'kw_defaults': list[ast.expr],
+            'kwarg': ast.arg | None,
+            'defaults': list[ast.expr],
+        })
 
-        with self.assertRaises(AttributeError):
-            x.args
+        self.assertEqual(x.args, [])
         self.assertIsNone(x.vararg)
 
         x = ast.arguments(*range(1, 8))
@@ -440,24 +650,21 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.vararg, 3)
 
     def test_field_attr_writable(self):
-        x = ast.Num()
+        x = ast.Constant(1)
         # We can assign to _fields
         x._fields = 666
         self.assertEqual(x._fields, 666)
 
     def test_classattrs(self):
-        x = ast.Num()
+        with self.assertWarns(DeprecationWarning):
+            x = ast.Constant()
         self.assertEqual(x._fields, ('value', 'kind'))
 
         with self.assertRaises(AttributeError):
             x.value
 
-        with self.assertRaises(AttributeError):
-            x.n
-
-        x = ast.Num(42)
+        x = ast.Constant(42)
         self.assertEqual(x.value, 42)
-        self.assertEqual(x.n, 42)
 
         with self.assertRaises(AttributeError):
             x.lineno
@@ -465,35 +672,23 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.foobar
 
-        x = ast.Num(lineno=2)
+        x = ast.Constant(lineno=2, value=3)
         self.assertEqual(x.lineno, 2)
 
-        x = ast.Num(42, lineno=0)
+        x = ast.Constant(42, lineno=0)
         self.assertEqual(x.lineno, 0)
         self.assertEqual(x._fields, ('value', 'kind'))
         self.assertEqual(x.value, 42)
-        self.assertEqual(x.n, 42)
 
-        self.assertRaises(TypeError, ast.Num, 1, None, 2)
-        self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
+        self.assertRaises(TypeError, ast.Constant, 1, None, 2)
+        self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
 
-        # Arbitrary keyword arguments are supported
-        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
-        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+        # Arbitrary keyword arguments are supported (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
 
-        with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
-            ast.Num(1, n=2)
         with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
             ast.Constant(1, value=2)
-
-        self.assertEqual(ast.Num(42).n, 42)
-        self.assertEqual(ast.Num(4.25).n, 4.25)
-        self.assertEqual(ast.Num(4.25j).n, 4.25j)
-        self.assertEqual(ast.Str('42').s, '42')
-        self.assertEqual(ast.Bytes(b'42').s, b'42')
-        self.assertIs(ast.NameConstant(True).value, True)
-        self.assertIs(ast.NameConstant(False).value, False)
-        self.assertIs(ast.NameConstant(None).value, None)
 
         self.assertEqual(ast.Constant(42).value, 42)
         self.assertEqual(ast.Constant(4.25).value, 4.25)
@@ -505,100 +700,43 @@ class AST_Tests(unittest.TestCase):
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
 
-    def test_realtype(self):
-        self.assertEqual(type(ast.Num(42)), ast.Constant)
-        self.assertEqual(type(ast.Num(4.25)), ast.Constant)
-        self.assertEqual(type(ast.Num(4.25j)), ast.Constant)
-        self.assertEqual(type(ast.Str('42')), ast.Constant)
-        self.assertEqual(type(ast.Bytes(b'42')), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(True)), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(False)), ast.Constant)
-        self.assertEqual(type(ast.NameConstant(None)), ast.Constant)
-        self.assertEqual(type(ast.Ellipsis()), ast.Constant)
-
-    def test_isinstance(self):
-        self.assertTrue(isinstance(ast.Num(42), ast.Num))
-        self.assertTrue(isinstance(ast.Num(4.2), ast.Num))
-        self.assertTrue(isinstance(ast.Num(4.2j), ast.Num))
-        self.assertTrue(isinstance(ast.Str('42'), ast.Str))
-        self.assertTrue(isinstance(ast.Bytes(b'42'), ast.Bytes))
-        self.assertTrue(isinstance(ast.NameConstant(True), ast.NameConstant))
-        self.assertTrue(isinstance(ast.NameConstant(False), ast.NameConstant))
-        self.assertTrue(isinstance(ast.NameConstant(None), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Ellipsis(), ast.Ellipsis))
-
-        self.assertTrue(isinstance(ast.Constant(42), ast.Num))
-        self.assertTrue(isinstance(ast.Constant(4.2), ast.Num))
-        self.assertTrue(isinstance(ast.Constant(4.2j), ast.Num))
-        self.assertTrue(isinstance(ast.Constant('42'), ast.Str))
-        self.assertTrue(isinstance(ast.Constant(b'42'), ast.Bytes))
-        self.assertTrue(isinstance(ast.Constant(True), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(False), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(None), ast.NameConstant))
-        self.assertTrue(isinstance(ast.Constant(...), ast.Ellipsis))
-
-        self.assertFalse(isinstance(ast.Str('42'), ast.Num))
-        self.assertFalse(isinstance(ast.Num(42), ast.Str))
-        self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
-        self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
-        self.assertFalse(isinstance(ast.NameConstant(True), ast.Num))
-        self.assertFalse(isinstance(ast.NameConstant(False), ast.Num))
-
-        self.assertFalse(isinstance(ast.Constant('42'), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(42), ast.Str))
-        self.assertFalse(isinstance(ast.Constant('42'), ast.Bytes))
-        self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
-        self.assertFalse(isinstance(ast.Constant(True), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(False), ast.Num))
-
-        self.assertFalse(isinstance(ast.Constant(), ast.Num))
-        self.assertFalse(isinstance(ast.Constant(), ast.Str))
-        self.assertFalse(isinstance(ast.Constant(), ast.Bytes))
-        self.assertFalse(isinstance(ast.Constant(), ast.NameConstant))
-        self.assertFalse(isinstance(ast.Constant(), ast.Ellipsis))
-
-        class S(str): pass
-        self.assertTrue(isinstance(ast.Constant(S('42')), ast.Str))
-        self.assertFalse(isinstance(ast.Constant(S('42')), ast.Num))
-
-    def test_subclasses(self):
-        class N(ast.Num):
+    def test_constant_subclasses(self):
+        class N(ast.Constant):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.z = 'spam'
-        class N2(ast.Num):
+        class N2(ast.Constant):
             pass
 
         n = N(42)
-        self.assertEqual(n.n, 42)
+        self.assertEqual(n.value, 42)
         self.assertEqual(n.z, 'spam')
         self.assertEqual(type(n), N)
         self.assertTrue(isinstance(n, N))
-        self.assertTrue(isinstance(n, ast.Num))
+        self.assertTrue(isinstance(n, ast.Constant))
         self.assertFalse(isinstance(n, N2))
-        self.assertFalse(isinstance(ast.Num(42), N))
-        n = N(n=42)
-        self.assertEqual(n.n, 42)
+        self.assertFalse(isinstance(ast.Constant(42), N))
+        n = N(value=42)
+        self.assertEqual(n.value, 42)
         self.assertEqual(type(n), N)
 
     def test_module(self):
-        body = [ast.Num(42)]
+        body = [ast.Constant(42)]
         x = ast.Module(body, [])
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitly allowed
-        x = ast.BinOp()
+        # Zero arguments constructor explicitly allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp()
         self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         # Random attribute allowed too
         x.foobarbaz = 5
         self.assertEqual(x.foobarbaz, 5)
 
-        n1 = ast.Num(1)
-        n3 = ast.Num(3)
+        n1 = ast.Constant(1)
+        n3 = ast.Constant(3)
         addop = ast.Add()
         x = ast.BinOp(n1, addop, n3)
         self.assertEqual(x.left, n1)
@@ -628,29 +766,15 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs also allowed
-        x = ast.BinOp(1, 2, 3, foobarbaz=42)
+        # Random kwargs also allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp(1, 2, 3, foobarbaz=42)
         self.assertEqual(x.foobarbaz, 42)
 
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
         x = ast.Sub()
         self.assertEqual(x._fields, ())
-
-    def test_pickling(self):
-        import pickle
-        mods = [pickle]
-        try:
-            import cPickle
-            mods.append(cPickle)
-        except ImportError:
-            pass
-        protocols = [0, 1, 2]
-        for mod in mods:
-            for protocol in protocols:
-                for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                    ast2 = mod.loads(mod.dumps(ast, protocol))
-                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
@@ -738,23 +862,170 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
-    def test_parenthesized_with_feature_version(self):
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
-        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
-        with self.assertRaises(SyntaxError):
-            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
-        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
+    def test_compare_basics(self):
+        self.assertTrue(ast.compare(ast.parse("x = 10"), ast.parse("x = 10")))
+        self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("")))
+        self.assertFalse(ast.compare(ast.parse("x = 10"), ast.parse("x")))
+        self.assertFalse(
+            ast.compare(ast.parse("x = 10;y = 20"), ast.parse("class C:pass"))
+        )
 
-    def test_issue40614_feature_version(self):
-        ast.parse('f"{x=}"', feature_version=(3, 8))
+    def test_compare_modified_ast(self):
+        # The ast API is a bit underspecified. The objects are mutable,
+        # and even _fields and _attributes are mutable. The compare() does
+        # some simple things to accommodate mutability.
+        a = ast.parse("m * x + b", mode="eval")
+        b = ast.parse("m * x + b", mode="eval")
+        self.assertTrue(ast.compare(a, b))
+
+        a._fields = a._fields + ("spam",)
+        a.spam = "Spam"
+        self.assertNotEqual(a._fields, b._fields)
+        self.assertFalse(ast.compare(a, b))
+        self.assertFalse(ast.compare(b, a))
+
+        b._fields = a._fields
+        b.spam = a.spam
+        self.assertTrue(ast.compare(a, b))
+        self.assertTrue(ast.compare(b, a))
+
+        b._attributes = b._attributes + ("eggs",)
+        b.eggs = "eggs"
+        self.assertNotEqual(a._attributes, b._attributes)
+        self.assertFalse(ast.compare(a, b, compare_attributes=True))
+        self.assertFalse(ast.compare(b, a, compare_attributes=True))
+
+        a._attributes = b._attributes
+        a.eggs = b.eggs
+        self.assertTrue(ast.compare(a, b, compare_attributes=True))
+        self.assertTrue(ast.compare(b, a, compare_attributes=True))
+
+    def test_compare_literals(self):
+        constants = (
+            -20,
+            20,
+            20.0,
+            1,
+            1.0,
+            True,
+            0,
+            False,
+            frozenset(),
+            tuple(),
+            "ABCD",
+            "abcd",
+            "中文字",
+            1e1000,
+            -1e1000,
+        )
+        for next_index, constant in enumerate(constants[:-1], 1):
+            next_constant = constants[next_index]
+            with self.subTest(literal=constant, next_literal=next_constant):
+                self.assertTrue(
+                    ast.compare(ast.Constant(constant), ast.Constant(constant))
+                )
+                self.assertFalse(
+                    ast.compare(
+                        ast.Constant(constant), ast.Constant(next_constant)
+                    )
+                )
+
+        same_looking_literal_cases = [
+            {1, 1.0, True, 1 + 0j},
+            {0, 0.0, False, 0 + 0j},
+        ]
+        for same_looking_literals in same_looking_literal_cases:
+            for literal in same_looking_literals:
+                for same_looking_literal in same_looking_literals - {literal}:
+                    self.assertFalse(
+                        ast.compare(
+                            ast.Constant(literal),
+                            ast.Constant(same_looking_literal),
+                        )
+                    )
+
+    def test_compare_fieldless(self):
+        self.assertTrue(ast.compare(ast.Add(), ast.Add()))
+        self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
+
+    def test_compare_modes(self):
+        for mode, sources in (
+            ("exec", exec_tests),
+            ("eval", eval_tests),
+            ("single", single_tests),
+        ):
+            for source in sources:
+                a = ast.parse(source, mode=mode)
+                b = ast.parse(source, mode=mode)
+                self.assertTrue(
+                    ast.compare(a, b), f"{ast.dump(a)} != {ast.dump(b)}"
+                )
+
+    def test_compare_attributes_option(self):
+        def parse(a, b):
+            return ast.parse(a), ast.parse(b)
+
+        a, b = parse("2 + 2", "2+2")
+        self.assertTrue(ast.compare(a, b))
+        self.assertTrue(ast.compare(a, b, compare_attributes=False))
+        self.assertFalse(ast.compare(a, b, compare_attributes=True))
+
+    def test_positional_only_feature_version(self):
+        ast.parse('def foo(x, /): ...', feature_version=(3, 8))
+        ast.parse('def bar(x=1, /): ...', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
-            ast.parse('f"{x=}"', feature_version=(3, 7))
+            ast.parse('def foo(x, /): ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('def bar(x=1, /): ...', feature_version=(3, 7))
+
+        ast.parse('lambda x, /: ...', feature_version=(3, 8))
+        ast.parse('lambda x=1, /: ...', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x, /: ...', feature_version=(3, 7))
+        with self.assertRaises(SyntaxError):
+            ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
 
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
+
+    def test_conditional_context_managers_parse_with_low_feature_version(self):
+        # regression test for gh-115881
+        ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
+
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
+    def test_type_params_feature_version(self):
+        samples = [
+            "type X = int",
+            "class X[T]: pass",
+            "def f[T](): pass",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 11))
+
+    def test_type_params_default_feature_version(self):
+        samples = [
+            "type X[*Ts=int] = int",
+            "class X[T=int]: pass",
+            "def f[**P=int](): pass",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 12))
 
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
@@ -801,9 +1072,12 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        fail_depth = support.exceeds_recursion_limit()
+        crash_depth = 100_000
+        success_depth = int(support.get_c_recursion_limit() * 0.8)
+        if _testinternalcapi is not None:
+            remaining = _testinternalcapi.get_c_recursion_remaining()
+            success_depth = min(success_depth, remaining)
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
@@ -813,12 +1087,117 @@ class AST_Tests(unittest.TestCase):
                 details = "Compiling ({!r} + {!r} * {})".format(
                             prefix, repeated, depth)
                 with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+                    with support.infinite_recursion():
+                        ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
+
+    def test_null_bytes(self):
+        with self.assertRaises(SyntaxError,
+            msg="source code string cannot contain null bytes"):
+            ast.parse("a\0b")
+
+    def assert_none_check(self, node: type[ast.AST], attr: str, source: str) -> None:
+        with self.subTest(f"{node.__name__}.{attr}"):
+            tree = ast.parse(source)
+            found = 0
+            for child in ast.walk(tree):
+                if isinstance(child, node):
+                    setattr(child, attr, None)
+                    found += 1
+            self.assertEqual(found, 1)
+            e = re.escape(f"field '{attr}' is required for {node.__name__}")
+            with self.assertRaisesRegex(ValueError, f"^{e}$"):
+                compile(tree, "<test>", "exec")
+
+    def test_none_checks(self) -> None:
+        tests = [
+            (ast.alias, "name", "import spam as SPAM"),
+            (ast.arg, "arg", "def spam(SPAM): spam"),
+            (ast.comprehension, "target", "[spam for SPAM in spam]"),
+            (ast.comprehension, "iter", "[spam for spam in SPAM]"),
+            (ast.keyword, "value", "spam(**SPAM)"),
+            (ast.match_case, "pattern", "match spam:\n case SPAM: spam"),
+            (ast.withitem, "context_expr", "with SPAM: spam"),
+        ]
+        for node, attr, source in tests:
+            self.assert_none_check(node, attr, source)
+
+
+class CopyTests(unittest.TestCase):
+    """Test copying and pickling AST nodes."""
+
+    def test_pickling(self):
+        import pickle
+
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            for code in exec_tests:
+                with self.subTest(code=code, protocol=protocol):
+                    tree = compile(code, "?", "exec", 0x400)
+                    ast2 = pickle.loads(pickle.dumps(tree, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(tree))
+
+    def test_copy_with_parents(self):
+        # gh-120108
+        code = """
+        ('',)
+        while i < n:
+            if ch == '':
+                ch = format[i]
+                if ch == '':
+                    if freplace is None:
+                        '' % getattr(object)
+                elif ch == '':
+                    if zreplace is None:
+                        if hasattr:
+                            offset = object.utcoffset()
+                            if offset is not None:
+                                if offset.days < 0:
+                                    offset = -offset
+                                h = divmod(timedelta(hours=0))
+                                if u:
+                                    zreplace = '' % (sign,)
+                                elif s:
+                                    zreplace = '' % (sign,)
+                                else:
+                                    zreplace = '' % (sign,)
+                elif ch == '':
+                    if Zreplace is None:
+                        Zreplace = ''
+                        if hasattr(object):
+                            s = object.tzname()
+                            if s is not None:
+                                Zreplace = s.replace('')
+                    newformat.append(Zreplace)
+                else:
+                    push('')
+            else:
+                push(ch)
+
+        """
+        tree = ast.parse(textwrap.dedent(code))
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                child.parent = node
+        try:
+            with support.infinite_recursion(200):
+                tree2 = copy.deepcopy(tree)
+        finally:
+            # Singletons like ast.Load() are shared; make sure we don't
+            # leave them mutated after this test.
+            for node in ast.walk(tree):
+                if hasattr(node, "parent"):
+                    del node.parent
+
+        for node in ast.walk(tree2):
+            for child in ast.iter_child_nodes(node):
+                if hasattr(child, "parent") and not isinstance(child, (
+                    ast.expr_context, ast.boolop, ast.unaryop, ast.cmpop, ast.operator,
+                )):
+                    self.assertEqual(to_tuple(child.parent), to_tuple(node))
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -841,21 +1220,20 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
-            "keywords=[]))], type_ignores=[])"
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese')], []))], [])"
+            "Constant('and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
             "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
-            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
+            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
-            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)])"
         )
 
     def test_dump_indent(self):
@@ -868,9 +1246,7 @@ Module(
             func=Name(id='spam', ctx=Load()),
             args=[
                Name(id='eggs', ctx=Load()),
-               Constant(value='and cheese')],
-            keywords=[]))],
-   type_ignores=[])""")
+               Constant(value='and cheese')]))])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
 Module(
 \t[
@@ -879,9 +1255,7 @@ Module(
 \t\t\t\tName('spam', Load()),
 \t\t\t\t[
 \t\t\t\t\tName('eggs', Load()),
-\t\t\t\t\tConstant('and cheese')],
-\t\t\t\t[]))],
-\t[])""")
+\t\t\t\t\tConstant('and cheese')]))])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
 Module(
    body=[
@@ -908,7 +1282,6 @@ Module(
                   col_offset=11,
                   end_lineno=1,
                   end_col_offset=23)],
-            keywords=[],
             lineno=1,
             col_offset=0,
             end_lineno=1,
@@ -916,8 +1289,7 @@ Module(
          lineno=1,
          col_offset=0,
          end_lineno=1,
-         end_col_offset=24)],
-   type_ignores=[])""")
+         end_col_offset=24)])""")
 
     def test_dump_incomplete(self):
         node = ast.Raise(lineno=3, col_offset=4)
@@ -947,18 +1319,132 @@ Module(
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Raise(cause=Name('e', Load()))"
         )
+        # Arguments:
+        node = ast.arguments(args=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')])",
+        )
+        node = ast.arguments(posonlyargs=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments(args=[ast.arg("x")], kwonlyargs=[ast.arg('y')])
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments([], [arg('x')], kwonlyargs=[arg('y')])",
+        )
+        node = ast.arguments()
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "arguments()",
+        )
+        # Classes:
+        node = ast.ClassDef(
+            'T',
+            [],
+            [ast.keyword('a', ast.Constant(None))],
+            [],
+            [ast.Name('dataclass', ctx=ast.Load())],
+        )
+        self.assertEqual(ast.dump(node),
+            "ClassDef(name='T', keywords=[keyword(arg='a', value=Constant(value=None))], decorator_list=[Name(id='dataclass', ctx=Load())])",
+        )
+        self.assertEqual(ast.dump(node, annotate_fields=False),
+            "ClassDef('T', [], [keyword('a', Constant(None))], [], [Name('dataclass', Load())])",
+        )
+
+    def test_dump_show_empty(self):
+        def check_node(node, empty, full, **kwargs):
+            with self.subTest(show_empty=False):
+                self.assertEqual(
+                    ast.dump(node, show_empty=False, **kwargs),
+                    empty,
+                )
+            with self.subTest(show_empty=True):
+                self.assertEqual(
+                    ast.dump(node, show_empty=True, **kwargs),
+                    full,
+                )
+
+        def check_text(code, empty, full, **kwargs):
+            check_node(ast.parse(code), empty, full, **kwargs)
+
+        check_node(
+            ast.arguments(),
+            empty="arguments()",
+            full="arguments(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])",
+        )
+
+        check_node(
+            # Corner case: there are no real `Name` instances with `id=''`:
+            ast.Name(id='', ctx=ast.Load()),
+            empty="Name(id='', ctx=Load())",
+            full="Name(id='', ctx=Load())",
+        )
+
+        check_node(
+            ast.MatchSingleton(value=None),
+            empty="MatchSingleton(value=None)",
+            full="MatchSingleton(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=None),
+            empty="Constant(value=None)",
+            full="Constant(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=''),
+            empty="Constant(value='')",
+            full="Constant(value='')",
+        )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))])])",
+            full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))], decorator_list=[], type_params=[])], type_ignores=[])",
+        )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            empty="Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)])",
+            full="Module(body=[FunctionDef(name='a', args=arguments(posonlyargs=[], args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], decorator_list=[], type_params=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)], type_ignores=[])",
+            include_attributes=True,
+        )
+
+        check_text(
+            'spam(eggs, "and cheese")',
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])",
+            full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], keywords=[]))], type_ignores=[])",
+        )
+
+        check_text(
+            'spam(eggs, text="and cheese")',
+            empty="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))])",
+            full="Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))], type_ignores=[])",
+        )
+
+        check_text(
+            "import _ast as ast; from module import sub",
+            empty="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
+            full="Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)], type_ignores=[])",
+        )
 
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
-        src.body.right = ast.copy_location(ast.Num(2), src.body.right)
+        src.body.right = ast.copy_location(ast.Constant(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
             'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
             'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
-        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
-        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        func = ast.Name('spam', ast.Load())
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1, func=func)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None, func=func))
         self.assertIsNone(new.end_lineno)
         self.assertIsNone(new.end_col_offset)
         self.assertEqual(new.lineno, 1)
@@ -967,21 +1453,20 @@ Module(
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
         src.body.append(ast.Expr(ast.Call(ast.Name('spam', ast.Load()),
-                                          [ast.Str('eggs')], [])))
+                                          [ast.Constant('eggs')], [])))
         self.assertEqual(src, ast.fix_missing_locations(src))
         self.maxDiff = None
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
             "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
-            "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=12)], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
             "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], "
-            "type_ignores=[])"
+            "end_col_offset=0)], lineno=1, col_offset=0, end_lineno=1, "
+            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)])"
         )
 
     def test_increment_lineno(self):
@@ -1007,6 +1492,18 @@ Module(
         )
         self.assertEqual(ast.increment_lineno(src).lineno, 2)
         self.assertIsNone(ast.increment_lineno(src).end_lineno)
+
+    def test_increment_lineno_on_module(self):
+        src = ast.parse(dedent("""\
+        a = 1
+        b = 2 # type: ignore
+        c = 3
+        d = 4 # type: ignore@tag
+        """), type_comments=True)
+        ast.increment_lineno(src, n=5)
+        self.assertEqual(src.type_ignores[0].lineno, 7)
+        self.assertEqual(src.type_ignores[1].lineno, 9)
+        self.assertEqual(src.type_ignores[1].tag, '@tag')
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
@@ -1121,6 +1618,14 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
 
+    def test_literal_eval_str_int_limit(self):
+        with support.adjust_int_max_str_digits(4000):
+            ast.literal_eval('3'*4000)  # no error
+            with self.assertRaises(SyntaxError) as err_ctx:
+                ast.literal_eval('3'*4001)
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+            self.assertIn(' Consider hexadecimal ', str(err_ctx.exception))
+
     def test_literal_eval_complex(self):
         # Issue #4907
         self.assertEqual(ast.literal_eval('6j'), 6j)
@@ -1197,15 +1702,15 @@ Module(
         self.assertIn('sleep', ns)
 
     def test_recursion_direct(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
     def test_recursion_indirect(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
-        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = f
         f.operand = e
         with self.assertRaises(RecursionError):
@@ -1260,9 +1765,9 @@ class ASTValidatorTests(unittest.TestCase):
         check(arguments(args=args), "must have Load context")
         check(arguments(posonlyargs=args), "must have Load context")
         check(arguments(kwonlyargs=args), "must have Load context")
-        check(arguments(defaults=[ast.Num(3)]),
+        check(arguments(defaults=[ast.Constant(3)]),
                        "more positional defaults than args")
-        check(arguments(kw_defaults=[ast.Num(4)]),
+        check(arguments(kw_defaults=[ast.Constant(4)]),
                        "length of kwonlyargs is not the same as kw_defaults")
         args = [ast.arg("x", ast.Name("x", ast.Load()))]
         check(arguments(args=args, defaults=[ast.Name("x", ast.Store())]),
@@ -1275,20 +1780,43 @@ class ASTValidatorTests(unittest.TestCase):
 
     def test_funcdef(self):
         a = ast.arguments([], [], None, [], [], None, [])
-        f = ast.FunctionDef("x", a, [], [], None)
+        f = ast.FunctionDef("x", a, [], [], None, None, [])
         self.stmt(f, "empty body on FunctionDef")
-        f = ast.FunctionDef("x", a, [ast.Pass()], [ast.Name("x", ast.Store())],
-                            None)
+        f = ast.FunctionDef("x", a, [ast.Pass()], [ast.Name("x", ast.Store())], None, None, [])
         self.stmt(f, "must have Load context")
         f = ast.FunctionDef("x", a, [ast.Pass()], [],
-                            ast.Name("x", ast.Store()))
+                            ast.Name("x", ast.Store()), None, [])
         self.stmt(f, "must have Load context")
+        f = ast.FunctionDef("x", ast.arguments(), [ast.Pass()])
+        self.stmt(f)
         def fac(args):
-            return ast.FunctionDef("x", args, [ast.Pass()], [], None)
+            return ast.FunctionDef("x", args, [ast.Pass()], [], None, None, [])
         self._check_arguments(fac, self.stmt)
 
+    def test_funcdef_pattern_matching(self):
+        # gh-104799: New fields on FunctionDef should be added at the end
+        def matcher(node):
+            match node:
+                case ast.FunctionDef("foo", ast.arguments(args=[ast.arg("bar")]),
+                                     [ast.Pass()],
+                                     [ast.Name("capybara", ast.Load())],
+                                     ast.Name("pacarana", ast.Load())):
+                    return True
+                case _:
+                    return False
+
+        code = """
+            @capybara
+            def foo(bar) -> pacarana:
+                pass
+        """
+        source = ast.parse(textwrap.dedent(code))
+        funcdef = source.body[0]
+        self.assertIsInstance(funcdef, ast.FunctionDef)
+        self.assertTrue(matcher(funcdef))
+
     def test_classdef(self):
-        def cls(bases=None, keywords=None, body=None, decorator_list=None):
+        def cls(bases=None, keywords=None, body=None, decorator_list=None, type_params=None):
             if bases is None:
                 bases = []
             if keywords is None:
@@ -1297,8 +1825,10 @@ class ASTValidatorTests(unittest.TestCase):
                 body = [ast.Pass()]
             if decorator_list is None:
                 decorator_list = []
+            if type_params is None:
+                type_params = []
             return ast.ClassDef("myclass", bases, keywords,
-                                body, decorator_list)
+                                body, decorator_list, type_params)
         self.stmt(cls(bases=[ast.Name("x", ast.Store())]),
                   "must have Load context")
         self.stmt(cls(keywords=[ast.keyword("x", ast.Name("x", ast.Store()))]),
@@ -1315,9 +1845,9 @@ class ASTValidatorTests(unittest.TestCase):
                   "must have Del context")
 
     def test_assign(self):
-        self.stmt(ast.Assign([], ast.Num(3)), "empty targets on Assign")
-        self.stmt(ast.Assign([None], ast.Num(3)), "None disallowed")
-        self.stmt(ast.Assign([ast.Name("x", ast.Load())], ast.Num(3)),
+        self.stmt(ast.Assign([], ast.Constant(3)), "empty targets on Assign")
+        self.stmt(ast.Assign([None], ast.Constant(3)), "None disallowed")
+        self.stmt(ast.Assign([ast.Name("x", ast.Load())], ast.Constant(3)),
                   "must have Store context")
         self.stmt(ast.Assign([ast.Name("x", ast.Store())],
                                 ast.Name("y", ast.Store())),
@@ -1345,39 +1875,39 @@ class ASTValidatorTests(unittest.TestCase):
         self.stmt(ast.For(x, y, [p], [e]), "must have Load context")
 
     def test_while(self):
-        self.stmt(ast.While(ast.Num(3), [], []), "empty body on While")
+        self.stmt(ast.While(ast.Constant(3), [], []), "empty body on While")
         self.stmt(ast.While(ast.Name("x", ast.Store()), [ast.Pass()], []),
                   "must have Load context")
-        self.stmt(ast.While(ast.Num(3), [ast.Pass()],
+        self.stmt(ast.While(ast.Constant(3), [ast.Pass()],
                              [ast.Expr(ast.Name("x", ast.Store()))]),
                              "must have Load context")
 
     def test_if(self):
-        self.stmt(ast.If(ast.Num(3), [], []), "empty body on If")
+        self.stmt(ast.If(ast.Constant(3), [], []), "empty body on If")
         i = ast.If(ast.Name("x", ast.Store()), [ast.Pass()], [])
         self.stmt(i, "must have Load context")
-        i = ast.If(ast.Num(3), [ast.Expr(ast.Name("x", ast.Store()))], [])
+        i = ast.If(ast.Constant(3), [ast.Expr(ast.Name("x", ast.Store()))], [])
         self.stmt(i, "must have Load context")
-        i = ast.If(ast.Num(3), [ast.Pass()],
+        i = ast.If(ast.Constant(3), [ast.Pass()],
                    [ast.Expr(ast.Name("x", ast.Store()))])
         self.stmt(i, "must have Load context")
 
     def test_with(self):
         p = ast.Pass()
         self.stmt(ast.With([], [p]), "empty items on With")
-        i = ast.withitem(ast.Num(3), None)
+        i = ast.withitem(ast.Constant(3), None)
         self.stmt(ast.With([i], []), "empty body on With")
         i = ast.withitem(ast.Name("x", ast.Store()), None)
         self.stmt(ast.With([i], [p]), "must have Load context")
-        i = ast.withitem(ast.Num(3), ast.Name("x", ast.Load()))
+        i = ast.withitem(ast.Constant(3), ast.Name("x", ast.Load()))
         self.stmt(ast.With([i], [p]), "must have Store context")
 
     def test_raise(self):
-        r = ast.Raise(None, ast.Num(3))
+        r = ast.Raise(None, ast.Constant(3))
         self.stmt(r, "Raise with cause but no exception")
         r = ast.Raise(ast.Name("x", ast.Store()), None)
         self.stmt(r, "must have Load context")
-        r = ast.Raise(ast.Num(4), ast.Name("x", ast.Store()))
+        r = ast.Raise(ast.Constant(4), ast.Name("x", ast.Store()))
         self.stmt(r, "must have Load context")
 
     def test_try(self):
@@ -1448,11 +1978,11 @@ class ASTValidatorTests(unittest.TestCase):
     def test_boolop(self):
         b = ast.BoolOp(ast.And(), [])
         self.expr(b, "less than 2 values")
-        b = ast.BoolOp(ast.And(), [ast.Num(3)])
+        b = ast.BoolOp(ast.And(), [ast.Constant(3)])
         self.expr(b, "less than 2 values")
-        b = ast.BoolOp(ast.And(), [ast.Num(4), None])
+        b = ast.BoolOp(ast.And(), [ast.Constant(4), None])
         self.expr(b, "None disallowed")
-        b = ast.BoolOp(ast.And(), [ast.Num(4), ast.Name("x", ast.Store())])
+        b = ast.BoolOp(ast.And(), [ast.Constant(4), ast.Name("x", ast.Store())])
         self.expr(b, "must have Load context")
 
     def test_unaryop(self):
@@ -1540,11 +2070,11 @@ class ASTValidatorTests(unittest.TestCase):
         left = ast.Name("x", ast.Load())
         comp = ast.Compare(left, [ast.In()], [])
         self.expr(comp, "no comparators")
-        comp = ast.Compare(left, [ast.In()], [ast.Num(4), ast.Num(5)])
+        comp = ast.Compare(left, [ast.In()], [ast.Constant(4), ast.Constant(5)])
         self.expr(comp, "different number of comparators and operands")
-        comp = ast.Compare(ast.Num("blah"), [ast.In()], [left])
+        comp = ast.Compare(ast.Constant("blah"), [ast.In()], [left])
         self.expr(comp)
-        comp = ast.Compare(left, [ast.In()], [ast.Num("blah")])
+        comp = ast.Compare(left, [ast.In()], [ast.Constant("blah")])
         self.expr(comp)
 
     def test_call(self):
@@ -1559,24 +2089,12 @@ class ASTValidatorTests(unittest.TestCase):
         call = ast.Call(func, args, bad_keywords)
         self.expr(call, "must have Load context")
 
-    def test_num(self):
-        class subint(int):
-            pass
-        class subfloat(float):
-            pass
-        class subcomplex(complex):
-            pass
-        for obj in "0", "hello":
-            self.expr(ast.Num(obj))
-        for obj in subint(), subfloat(), subcomplex():
-            self.expr(ast.Num(obj), "invalid type", exc=TypeError)
-
     def test_attribute(self):
         attr = ast.Attribute(ast.Name("x", ast.Store()), "y", ast.Load())
         self.expr(attr, "must have Load context")
 
     def test_subscript(self):
-        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Num(3),
+        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Constant(3),
                             ast.Load())
         self.expr(sub, "must have Load context")
         x = ast.Name("x", ast.Load())
@@ -1596,7 +2114,7 @@ class ASTValidatorTests(unittest.TestCase):
     def test_starred(self):
         left = ast.List([ast.Starred(ast.Name("x", ast.Load()), ast.Store())],
                         ast.Store())
-        assign = ast.Assign([left], ast.Num(4))
+        assign = ast.Assign([left], ast.Constant(4))
         self.stmt(assign, "must have Store context")
 
     def _sequence(self, fac):
@@ -1610,20 +2128,17 @@ class ASTValidatorTests(unittest.TestCase):
     def test_tuple(self):
         self._sequence(ast.Tuple)
 
-    def test_nameconstant(self):
-        self.expr(ast.NameConstant(4))
-
+    @support.requires_resource('cpu')
     def test_stdlib_validates(self):
-        stdlib = os.path.dirname(ast.__file__)
-        tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
-        tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
-        for module in tests:
+        for module in STDLIB_FILES:
             with self.subTest(module):
-                fn = os.path.join(stdlib, module)
+                fn = os.path.join(STDLIB, module)
                 with open(fn, "r", encoding="utf-8") as fp:
                     source = fp.read()
                 mod = ast.parse(source, fn)
                 compile(mod, fn, "exec")
+                mod2 = ast.parse(source, fn)
+                self.assertTrue(ast.compare(mod, mod2))
 
     constant_1 = ast.Constant(1)
     pattern_1 = ast.MatchValue(constant_1)
@@ -1728,6 +2243,12 @@ class ASTValidatorTests(unittest.TestCase):
             patterns=[],
             kwd_attrs=[],
             kwd_patterns=[ast.MatchStar()]
+        ),
+        ast.MatchClass(
+            constant_true,  # invalid name
+            patterns=[],
+            kwd_attrs=['True'],
+            kwd_patterns=[pattern_1]
         ),
         ast.MatchSequence(
             [
@@ -1839,7 +2360,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST':
+            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
                 consts.append(instr.argval)
         return consts
 
@@ -2236,6 +2757,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_newlines(self):
+        s = 'def f():\n  pass\ndef g():\r  pass\r\ndef h():\r\n  pass\r\n'
+        f, g, h = ast.parse(s).body
+        self._check_content(s, f, 'def f():\n  pass')
+        self._check_content(s, g, 'def g():\r  pass')
+        self._check_content(s, h, 'def h():\r\n  pass')
+
+        s = 'def f():\n  a = 1\r  b = 2\r\n  c = 3\n'
+        f = ast.parse(s).body[0]
+        self._check_content(s, f, s.rstrip())
+
     def test_source_segment_missing_info(self):
         s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
         v, w, x, y = ast.parse(s).body
@@ -2248,54 +2780,229 @@ class EndPositionTests(unittest.TestCase):
         self.assertIsNone(ast.get_source_segment(s, x))
         self.assertIsNone(ast.get_source_segment(s, y))
 
-class NodeVisitorTests(unittest.TestCase):
-    def test_old_constant_nodes(self):
-        class Visitor(ast.NodeVisitor):
-            def visit_Num(self, node):
-                log.append((node.lineno, 'Num', node.n))
-            def visit_Str(self, node):
-                log.append((node.lineno, 'Str', node.s))
-            def visit_Bytes(self, node):
-                log.append((node.lineno, 'Bytes', node.s))
-            def visit_NameConstant(self, node):
-                log.append((node.lineno, 'NameConstant', node.value))
-            def visit_Ellipsis(self, node):
-                log.append((node.lineno, 'Ellipsis', ...))
-        mod = ast.parse(dedent('''\
-            i = 42
-            f = 4.25
-            c = 4.25j
-            s = 'string'
-            b = b'bytes'
-            t = True
-            n = None
-            e = ...
-            '''))
-        visitor = Visitor()
-        log = []
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            visitor.visit(mod)
-        self.assertEqual(log, [
-            (1, 'Num', 42),
-            (2, 'Num', 4.25),
-            (3, 'Num', 4.25j),
-            (4, 'Str', 'string'),
-            (5, 'Bytes', b'bytes'),
-            (6, 'NameConstant', True),
-            (7, 'NameConstant', None),
-            (8, 'Ellipsis', ...),
-        ])
-        self.assertEqual([str(w.message) for w in wlog], [
-            'visit_Num is deprecated; add visit_Constant',
-            'visit_Num is deprecated; add visit_Constant',
-            'visit_Num is deprecated; add visit_Constant',
-            'visit_Str is deprecated; add visit_Constant',
-            'visit_Bytes is deprecated; add visit_Constant',
-            'visit_NameConstant is deprecated; add visit_Constant',
-            'visit_NameConstant is deprecated; add visit_Constant',
-            'visit_Ellipsis is deprecated; add visit_Constant',
-        ])
+
+class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
+    def assertASTTransformation(self, tranformer_class,
+                                initial_code, expected_code):
+        initial_ast = ast.parse(dedent(initial_code))
+        expected_ast = ast.parse(dedent(expected_code))
+
+        tranformer = tranformer_class()
+        result_ast = ast.fix_missing_locations(tranformer.visit(initial_ast))
+
+        self.assertASTEqual(result_ast, expected_ast)
+
+    def test_node_remove_single(self):
+        code = 'def func(arg) -> SomeType: ...'
+        expected = 'def func(arg): ...'
+
+        # Since `FunctionDef.returns` is defined as a single value, we test
+        # the `if isinstance(old_value, AST):` branch here.
+        class SomeTypeRemover(ast.NodeTransformer):
+            def visit_Name(self, node: ast.Name):
+                self.generic_visit(node)
+                if node.id == 'SomeType':
+                    return None
+                return node
+
+        self.assertASTTransformation(SomeTypeRemover, code, expected)
+
+    def test_node_remove_from_list(self):
+        code = """
+        def func(arg):
+            print(arg)
+            yield arg
+        """
+        expected = """
+        def func(arg):
+            print(arg)
+        """
+
+        # Since `FunctionDef.body` is defined as a list, we test
+        # the `if isinstance(old_value, list):` branch here.
+        class YieldRemover(ast.NodeTransformer):
+            def visit_Expr(self, node: ast.Expr):
+                self.generic_visit(node)
+                if isinstance(node.value, ast.Yield):
+                    return None  # Remove `yield` from a function
+                return node
+
+        self.assertASTTransformation(YieldRemover, code, expected)
+
+    def test_node_return_list(self):
+        code = """
+        class DSL(Base, kw1=True): ...
+        """
+        expected = """
+        class DSL(Base, kw1=True, kw2=True, kw3=False): ...
+        """
+
+        class ExtendKeywords(ast.NodeTransformer):
+            def visit_keyword(self, node: ast.keyword):
+                self.generic_visit(node)
+                if node.arg == 'kw1':
+                    return [
+                        node,
+                        ast.keyword('kw2', ast.Constant(True)),
+                        ast.keyword('kw3', ast.Constant(False)),
+                    ]
+                return node
+
+        self.assertASTTransformation(ExtendKeywords, code, expected)
+
+    def test_node_mutate(self):
+        code = """
+        def func(arg):
+            print(arg)
+        """
+        expected = """
+        def func(arg):
+            log(arg)
+        """
+
+        class PrintToLog(ast.NodeTransformer):
+            def visit_Call(self, node: ast.Call):
+                self.generic_visit(node)
+                if isinstance(node.func, ast.Name) and node.func.id == 'print':
+                    node.func.id = 'log'
+                return node
+
+        self.assertASTTransformation(PrintToLog, code, expected)
+
+    def test_node_replace(self):
+        code = """
+        def func(arg):
+            print(arg)
+        """
+        expected = """
+        def func(arg):
+            logger.log(arg, debug=True)
+        """
+
+        class PrintToLog(ast.NodeTransformer):
+            def visit_Call(self, node: ast.Call):
+                self.generic_visit(node)
+                if isinstance(node.func, ast.Name) and node.func.id == 'print':
+                    return ast.Call(
+                        func=ast.Attribute(
+                            ast.Name('logger', ctx=ast.Load()),
+                            attr='log',
+                            ctx=ast.Load(),
+                        ),
+                        args=node.args,
+                        keywords=[ast.keyword('debug', ast.Constant(True))],
+                    )
+                return node
+
+        self.assertASTTransformation(PrintToLog, code, expected)
+
+
+class ASTConstructorTests(unittest.TestCase):
+    """Test the autogenerated constructors for AST nodes."""
+
+    def test_FunctionDef(self):
+        args = ast.arguments()
+        self.assertEqual(args.args, [])
+        self.assertEqual(args.posonlyargs, [])
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
+            node = ast.FunctionDef(args=args)
+        self.assertFalse(hasattr(node, "name"))
+        self.assertEqual(node.decorator_list, [])
+        node = ast.FunctionDef(name='foo', args=args)
+        self.assertEqual(node.name, 'foo')
+        self.assertEqual(node.decorator_list, [])
+
+    def test_expr_context(self):
+        name = ast.Name("x")
+        self.assertEqual(name.id, "x")
+        self.assertIsInstance(name.ctx, ast.Load)
+
+        name2 = ast.Name("x", ast.Store())
+        self.assertEqual(name2.id, "x")
+        self.assertIsInstance(name2.ctx, ast.Store)
+
+        name3 = ast.Name("x", ctx=ast.Del())
+        self.assertEqual(name3.id, "x")
+        self.assertIsInstance(name3.ctx, ast.Del)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"Name\.__init__ missing 1 required positional argument: 'id'"):
+            name3 = ast.Name()
+
+    def test_custom_subclass_with_no_fields(self):
+        class NoInit(ast.AST):
+            pass
+
+        obj = NoInit()
+        self.assertIsInstance(obj, NoInit)
+        self.assertEqual(obj.__dict__, {})
+
+    def test_fields_but_no_field_types(self):
+        class Fields(ast.AST):
+            _fields = ('a',)
+
+        obj = Fields()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = Fields(a=1)
+        self.assertEqual(obj.a, 1)
+
+    def test_fields_and_types(self):
+        class FieldsAndTypes(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int | None}
+            a: int | None = None
+
+        obj = FieldsAndTypes()
+        self.assertIs(obj.a, None)
+        obj = FieldsAndTypes(a=1)
+        self.assertEqual(obj.a, 1)
+
+    def test_fields_and_types_no_default(self):
+        class FieldsAndTypesNoDefault(ast.AST):
+            _fields = ('a',)
+            _field_types = {'a': int}
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'\."):
+            obj = FieldsAndTypesNoDefault()
+        with self.assertRaises(AttributeError):
+            obj.a
+        obj = FieldsAndTypesNoDefault(a=1)
+        self.assertEqual(obj.a, 1)
+
+    def test_incomplete_field_types(self):
+        class MoreFieldsThanTypes(ast.AST):
+            _fields = ('a', 'b')
+            _field_types = {'a': int | None}
+            a: int | None = None
+            b: int | None = None
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"Field 'b' is missing from MoreFieldsThanTypes\._field_types"
+        ):
+            obj = MoreFieldsThanTypes()
+        self.assertIs(obj.a, None)
+        self.assertIs(obj.b, None)
+
+        obj = MoreFieldsThanTypes(a=1, b=2)
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, 2)
+
+    def test_complete_field_types(self):
+        class _AllFieldTypes(ast.AST):
+            _fields = ('a', 'b')
+            _field_types = {'a': int | None, 'b': list[str]}
+            # This must be set explicitly
+            a: int | None = None
+            # This will add an implicit empty list default
+            b: list[str]
+
+        obj = _AllFieldTypes()
+        self.assertIs(obj.a, None)
+        self.assertEqual(obj.b, [])
 
 
 @support.cpython_only
@@ -2380,6 +3087,25 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
+class ASTMainTests(unittest.TestCase):
+    # Tests `ast.main()` function.
+
+    def test_cli_file_input(self):
+        code = "print(1, 2, 3)"
+        expected = ast.dump(ast.parse(code), indent=3)
+
+        with os_helper.temp_dir() as tmp_dir:
+            filename = os.path.join(tmp_dir, "test_module.py")
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(code)
+            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+
+        self.assertEqual(res.err, b"")
+        self.assertEqual(expected.splitlines(),
+                         res.out.decode("utf8").splitlines())
+        self.assertEqual(res.rc, 0)
+
+
 def main():
     if __name__ != '__main__':
         return
@@ -2397,47 +3123,80 @@ def main():
 
 #### EVERYTHING BELOW IS GENERATED BY python Lib/test/test_ast.py -g  #####
 exec_results = [
-('Module', [('Expr', (1, 0, 1, 4), ('Constant', (1, 0, 1, 4), None, None))], []),
 ('Module', [('Expr', (1, 0, 1, 18), ('Constant', (1, 0, 1, 18), 'module docstring', None))], []),
-('Module', [('FunctionDef', (1, 0, 1, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 9, 1, 13))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (1, 9, 1, 29), ('Constant', (1, 9, 1, 29), 'function docstring', None))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 14), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, []), [('Pass', (1, 10, 1, 14))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, [('Constant', (1, 8, 1, 9), 0, None)]), [('Pass', (1, 12, 1, 16))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 11), 'args', None, None), [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 23), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 16), 'args', ('Starred', (1, 13, 1, 16), ('Name', (1, 14, 1, 16), 'Ts', ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 19, 1, 23))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Constant', (1, 25, 1, 28), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Starred', (1, 25, 1, 28), ('Name', (1, 26, 1, 28), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 21), 'f', ('arguments', [], [], None, [], [], ('arg', (1, 8, 1, 14), 'kwargs', None, None), []), [('Pass', (1, 17, 1, 21))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 71), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None), ('arg', (1, 9, 1, 10), 'b', None, None), ('arg', (1, 14, 1, 15), 'c', None, None), ('arg', (1, 22, 1, 23), 'd', None, None), ('arg', (1, 28, 1, 29), 'e', None, None)], ('arg', (1, 35, 1, 39), 'args', None, None), [('arg', (1, 41, 1, 42), 'f', None, None)], [('Constant', (1, 43, 1, 45), 42, None)], ('arg', (1, 49, 1, 55), 'kwargs', None, None), [('Constant', (1, 11, 1, 12), 1, None), ('Constant', (1, 16, 1, 20), None, None), ('List', (1, 24, 1, 26), [], ('Load',)), ('Dict', (1, 30, 1, 32), [], [])]), [('Expr', (1, 58, 1, 71), ('Constant', (1, 58, 1, 71), 'doc for f()', None))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 27), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 23, 1, 27))], [], ('Subscript', (1, 11, 1, 21), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 20), [('Starred', (1, 17, 1, 20), ('Name', (1, 18, 1, 20), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 32), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 28, 1, 32))], [], ('Subscript', (1, 11, 1, 26), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 25), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 25), ('Name', (1, 23, 1, 25), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 45), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 41, 1, 45))], [], ('Subscript', (1, 11, 1, 39), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 38), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 38), ('Subscript', (1, 23, 1, 38), ('Name', (1, 23, 1, 28), 'tuple', ('Load',)), ('Tuple', (1, 29, 1, 37), [('Name', (1, 29, 1, 32), 'int', ('Load',)), ('Constant', (1, 34, 1, 37), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',))], ('Load',)), ('Load',)), None)], []),
-('Module', [('ClassDef', (1, 0, 1, 12), 'C', [], [], [('Pass', (1, 8, 1, 12))], [])], []),
-('Module', [('ClassDef', (1, 0, 1, 32), 'C', [], [], [('Expr', (1, 9, 1, 32), ('Constant', (1, 9, 1, 32), 'docstring for class C', None))], [])], []),
-('Module', [('ClassDef', (1, 0, 1, 21), 'C', [('Name', (1, 8, 1, 14), 'object', ('Load',))], [], [('Pass', (1, 17, 1, 21))], [])], []),
-('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [], None, [], [], None, []), [('Return', (1, 8, 1, 16), ('Constant', (1, 15, 1, 16), 1, None))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 9, 1, 13))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (1, 9, 1, 29), ('Constant', (1, 9, 1, 29), 'function docstring', None))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 14), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, []), [('Pass', (1, 10, 1, 14))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None)], None, [], [], None, [('Constant', (1, 8, 1, 9), 0, None)]), [('Pass', (1, 12, 1, 16))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 11), 'args', None, None), [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 23), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 16), 'args', ('Starred', (1, 13, 1, 16), ('Name', (1, 14, 1, 16), 'Ts', ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 19, 1, 23))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Constant', (1, 25, 1, 28), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 36), 'f', ('arguments', [], [], ('arg', (1, 7, 1, 29), 'args', ('Starred', (1, 13, 1, 29), ('Subscript', (1, 14, 1, 29), ('Name', (1, 14, 1, 19), 'tuple', ('Load',)), ('Tuple', (1, 20, 1, 28), [('Name', (1, 20, 1, 23), 'int', ('Load',)), ('Starred', (1, 25, 1, 28), ('Name', (1, 26, 1, 28), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), ('Load',)), None), [], [], None, []), [('Pass', (1, 32, 1, 36))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 21), 'f', ('arguments', [], [], None, [], [], ('arg', (1, 8, 1, 14), 'kwargs', None, None), []), [('Pass', (1, 17, 1, 21))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 71), 'f', ('arguments', [], [('arg', (1, 6, 1, 7), 'a', None, None), ('arg', (1, 9, 1, 10), 'b', None, None), ('arg', (1, 14, 1, 15), 'c', None, None), ('arg', (1, 22, 1, 23), 'd', None, None), ('arg', (1, 28, 1, 29), 'e', None, None)], ('arg', (1, 35, 1, 39), 'args', None, None), [('arg', (1, 41, 1, 42), 'f', None, None)], [('Constant', (1, 43, 1, 45), 42, None)], ('arg', (1, 49, 1, 55), 'kwargs', None, None), [('Constant', (1, 11, 1, 12), 1, None), ('Constant', (1, 16, 1, 20), None, None), ('List', (1, 24, 1, 26), [], ('Load',)), ('Dict', (1, 30, 1, 32), [], [])]), [('Expr', (1, 58, 1, 71), ('Constant', (1, 58, 1, 71), 'doc for f()', None))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 27), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 23, 1, 27))], [], ('Subscript', (1, 11, 1, 21), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 20), [('Starred', (1, 17, 1, 20), ('Name', (1, 18, 1, 20), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 32), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 28, 1, 32))], [], ('Subscript', (1, 11, 1, 26), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 25), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 25), ('Name', (1, 23, 1, 25), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 45), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 41, 1, 45))], [], ('Subscript', (1, 11, 1, 39), ('Name', (1, 11, 1, 16), 'tuple', ('Load',)), ('Tuple', (1, 17, 1, 38), [('Name', (1, 17, 1, 20), 'int', ('Load',)), ('Starred', (1, 22, 1, 38), ('Subscript', (1, 23, 1, 38), ('Name', (1, 23, 1, 28), 'tuple', ('Load',)), ('Tuple', (1, 29, 1, 37), [('Name', (1, 29, 1, 32), 'int', ('Load',)), ('Constant', (1, 34, 1, 37), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, [])], []),
+('Module', [('ClassDef', (1, 0, 1, 12), 'C', [], [], [('Pass', (1, 8, 1, 12))], [], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 32), 'C', [], [], [('Expr', (1, 9, 1, 32), ('Constant', (1, 9, 1, 32), 'docstring for class C', None))], [], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 21), 'C', [('Name', (1, 8, 1, 14), 'object', ('Load',))], [], [('Pass', (1, 17, 1, 21))], [], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 19), 'C', [('Name', (1, 8, 1, 9), 'A', ('Load',)), ('Name', (1, 11, 1, 12), 'B', ('Load',))], [], [('Pass', (1, 15, 1, 19))], [], [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [], None, [], [], None, []), [('Return', (1, 8, 1, 16), ('Constant', (1, 15, 1, 16), 1, None))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 14), 'f', ('arguments', [], [], None, [], [], None, []), [('Return', (1, 8, 1, 14), None)], [], None, None, [])], []),
 ('Module', [('Delete', (1, 0, 1, 5), [('Name', (1, 4, 1, 5), 'v', ('Del',))])], []),
 ('Module', [('Assign', (1, 0, 1, 5), [('Name', (1, 0, 1, 1), 'v', ('Store',))], ('Constant', (1, 4, 1, 5), 1, None), None)], []),
 ('Module', [('Assign', (1, 0, 1, 7), [('Tuple', (1, 0, 1, 3), [('Name', (1, 0, 1, 1), 'a', ('Store',)), ('Name', (1, 2, 1, 3), 'b', ('Store',))], ('Store',))], ('Name', (1, 6, 1, 7), 'c', ('Load',)), None)], []),
 ('Module', [('Assign', (1, 0, 1, 9), [('Tuple', (1, 0, 1, 5), [('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Name', (1, 3, 1, 4), 'b', ('Store',))], ('Store',))], ('Name', (1, 8, 1, 9), 'c', ('Load',)), None)], []),
 ('Module', [('Assign', (1, 0, 1, 9), [('List', (1, 0, 1, 5), [('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Name', (1, 3, 1, 4), 'b', ('Store',))], ('Store',))], ('Name', (1, 8, 1, 9), 'c', ('Load',)), None)], []),
+('Module', [('Assign', (1, 0, 1, 8), [('Subscript', (1, 0, 1, 4), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Store',))], ('Name', (1, 7, 1, 8), 'c', ('Load',)), None)], []),
 ('Module', [('AnnAssign', (1, 0, 1, 13), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 13), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 12), [('Starred', (1, 9, 1, 12), ('Name', (1, 10, 1, 12), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
 ('Module', [('AnnAssign', (1, 0, 1, 18), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 18), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 17), [('Name', (1, 9, 1, 12), 'int', ('Load',)), ('Starred', (1, 14, 1, 17), ('Name', (1, 15, 1, 17), 'Ts', ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
 ('Module', [('AnnAssign', (1, 0, 1, 31), ('Name', (1, 0, 1, 1), 'x', ('Store',)), ('Subscript', (1, 3, 1, 31), ('Name', (1, 3, 1, 8), 'tuple', ('Load',)), ('Tuple', (1, 9, 1, 30), [('Name', (1, 9, 1, 12), 'int', ('Load',)), ('Starred', (1, 14, 1, 30), ('Subscript', (1, 15, 1, 30), ('Name', (1, 15, 1, 20), 'tuple', ('Load',)), ('Tuple', (1, 21, 1, 29), [('Name', (1, 21, 1, 24), 'str', ('Load',)), ('Constant', (1, 26, 1, 29), Ellipsis, None)], ('Load',)), ('Load',)), ('Load',))], ('Load',)), ('Load',)), None, 1)], []),
 ('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Add',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Sub',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Mult',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('MatMult',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Div',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Mod',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 7), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('Pow',), ('Constant', (1, 6, 1, 7), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 7), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('LShift',), ('Constant', (1, 6, 1, 7), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 7), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('RShift',), ('Constant', (1, 6, 1, 7), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('BitOr',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('BitXor',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('BitAnd',), ('Constant', (1, 5, 1, 6), 1, None))], []),
+('Module', [('AugAssign', (1, 0, 1, 7), ('Name', (1, 0, 1, 1), 'v', ('Store',)), ('FloorDiv',), ('Constant', (1, 6, 1, 7), 1, None))], []),
 ('Module', [('For', (1, 0, 1, 15), ('Name', (1, 4, 1, 5), 'v', ('Store',)), ('Name', (1, 9, 1, 10), 'v', ('Load',)), [('Pass', (1, 11, 1, 15))], [], None)], []),
+('Module', [('For', (1, 0, 4, 6), ('Name', (1, 4, 1, 5), 'v', ('Store',)), ('Name', (1, 9, 1, 10), 'v', ('Load',)), [('Pass', (2, 2, 2, 6))], [('Pass', (4, 2, 4, 6))], None)], []),
 ('Module', [('While', (1, 0, 1, 12), ('Name', (1, 6, 1, 7), 'v', ('Load',)), [('Pass', (1, 8, 1, 12))], [])], []),
+('Module', [('While', (1, 0, 4, 6), ('Name', (1, 6, 1, 7), 'v', ('Load',)), [('Pass', (2, 2, 2, 6))], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('If', (1, 0, 1, 9), ('Name', (1, 3, 1, 4), 'v', ('Load',)), [('Pass', (1, 5, 1, 9))], [])], []),
 ('Module', [('If', (1, 0, 4, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('If', (3, 0, 4, 6), ('Name', (3, 5, 3, 6), 'b', ('Load',)), [('Pass', (4, 2, 4, 6))], [])])], []),
+('Module', [('If', (1, 0, 4, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('If', (1, 0, 6, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('If', (3, 0, 6, 6), ('Name', (3, 5, 3, 6), 'b', ('Load',)), [('Pass', (4, 2, 4, 6))], [('Pass', (6, 2, 6, 6))])])], []),
+('Module', [('If', (1, 0, 10, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('If', (3, 0, 10, 6), ('Name', (3, 5, 3, 6), 'b', ('Load',)), [('Pass', (4, 2, 4, 6))], [('If', (5, 0, 10, 6), ('Name', (5, 5, 5, 6), 'b', ('Load',)), [('Pass', (6, 2, 6, 6))], [('If', (7, 0, 10, 6), ('Name', (7, 5, 7, 6), 'b', ('Load',)), [('Pass', (8, 2, 8, 6))], [('Pass', (10, 2, 10, 6))])])])])], []),
+('Module', [('With', (1, 0, 1, 12), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), None)], [('Pass', (1, 8, 1, 12))], None)], []),
+('Module', [('With', (1, 0, 1, 15), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), None), ('withitem', ('Name', (1, 8, 1, 9), 'y', ('Load',)), None)], [('Pass', (1, 11, 1, 15))], None)], []),
 ('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',)))], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('With', (1, 0, 1, 25), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',))), ('withitem', ('Name', (1, 13, 1, 14), 'z', ('Load',)), ('Name', (1, 18, 1, 19), 'q', ('Store',)))], [('Pass', (1, 21, 1, 25))], None)], []),
+('Module', [('With', (1, 0, 1, 19), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), ('Name', (1, 11, 1, 12), 'y', ('Store',)))], [('Pass', (1, 15, 1, 19))], None)], []),
+('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), None), ('withitem', ('Name', (1, 9, 1, 10), 'y', ('Load',)), None)], [('Pass', (1, 13, 1, 17))], None)], []),
+('Module', [('Raise', (1, 0, 1, 5), None, None)], []),
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
+('Module', [('Raise', (1, 0, 1, 15), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), None)], []),
+('Module', [('Raise', (1, 0, 1, 35), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), ('Constant', (1, 31, 1, 35), None, None))], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
+('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('TryStar', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
+('Module', [('TryStar', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [], [])], []),
+('Module', [('Try', (1, 0, 7, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [('Pass', (5, 7, 5, 11))], [('Pass', (7, 2, 7, 6))])], []),
+('Module', [('Try', (1, 0, 7, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [('Pass', (5, 7, 5, 11))], [('Pass', (7, 2, 7, 6))])], []),
+('Module', [('TryStar', (1, 0, 7, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 8, 3, 17), 'Exception', ('Load',)), 'exc', [('Pass', (4, 2, 4, 6))])], [('Pass', (5, 7, 5, 11))], [('Pass', (7, 2, 7, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
+('Module', [('Assert', (1, 0, 1, 19), ('Name', (1, 7, 1, 8), 'v', ('Load',)), ('Constant', (1, 10, 1, 19), 'message', None))], []),
 ('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
+('Module', [('Import', (1, 0, 1, 17), [('alias', (1, 7, 1, 17), 'foo', 'bar')])], []),
+('Module', [('ImportFrom', (1, 0, 1, 22), 'sys', [('alias', (1, 16, 1, 22), 'x', 'y')], 0)], []),
 ('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
@@ -2452,44 +3211,89 @@ exec_results = [
 ('Module', [('Expr', (1, 0, 1, 20), ('DictComp', (1, 0, 1, 20), ('Name', (1, 1, 1, 2), 'a', ('Load',)), ('Name', (1, 5, 1, 6), 'b', ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 14), [('Name', (1, 11, 1, 12), 'v', ('Store',)), ('Name', (1, 13, 1, 14), 'w', ('Store',))], ('Store',)), ('Name', (1, 18, 1, 19), 'x', ('Load',)), [], 0)]))], []),
 ('Module', [('Expr', (1, 0, 1, 19), ('SetComp', (1, 0, 1, 19), ('Name', (1, 1, 1, 2), 'r', ('Load',)), [('comprehension', ('Name', (1, 7, 1, 8), 'l', ('Store',)), ('Name', (1, 12, 1, 13), 'x', ('Load',)), [('Name', (1, 17, 1, 18), 'g', ('Load',))], 0)]))], []),
 ('Module', [('Expr', (1, 0, 1, 16), ('SetComp', (1, 0, 1, 16), ('Name', (1, 1, 1, 2), 'r', ('Load',)), [('comprehension', ('Tuple', (1, 7, 1, 10), [('Name', (1, 7, 1, 8), 'l', ('Store',)), ('Name', (1, 9, 1, 10), 'm', ('Store',))], ('Store',)), ('Name', (1, 14, 1, 15), 'x', ('Load',)), [], 0)]))], []),
-('Module', [('AsyncFunctionDef', (1, 0, 3, 18), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (2, 1, 2, 17), ('Constant', (2, 1, 2, 17), 'async function', None)), ('Expr', (3, 1, 3, 18), ('Await', (3, 1, 3, 18), ('Call', (3, 7, 3, 18), ('Name', (3, 7, 3, 16), 'something', ('Load',)), [], [])))], [], None, None)], []),
-('Module', [('AsyncFunctionDef', (1, 0, 3, 8), 'f', ('arguments', [], [], None, [], [], None, []), [('AsyncFor', (2, 1, 3, 8), ('Name', (2, 11, 2, 12), 'e', ('Store',)), ('Name', (2, 16, 2, 17), 'i', ('Load',)), [('Expr', (2, 19, 2, 20), ('Constant', (2, 19, 2, 20), 1, None))], [('Expr', (3, 7, 3, 8), ('Constant', (3, 7, 3, 8), 2, None))], None)], [], None, None)], []),
-('Module', [('AsyncFunctionDef', (1, 0, 2, 21), 'f', ('arguments', [], [], None, [], [], None, []), [('AsyncWith', (2, 1, 2, 21), [('withitem', ('Name', (2, 12, 2, 13), 'a', ('Load',)), ('Name', (2, 17, 2, 18), 'b', ('Store',)))], [('Expr', (2, 20, 2, 21), ('Constant', (2, 20, 2, 21), 1, None))], None)], [], None, None)], []),
+('Module', [('AsyncFunctionDef', (1, 0, 3, 18), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (2, 1, 2, 17), ('Constant', (2, 1, 2, 17), 'async function', None)), ('Expr', (3, 1, 3, 18), ('Await', (3, 1, 3, 18), ('Call', (3, 7, 3, 18), ('Name', (3, 7, 3, 16), 'something', ('Load',)), [], [])))], [], None, None, [])], []),
+('Module', [('AsyncFunctionDef', (1, 0, 3, 8), 'f', ('arguments', [], [], None, [], [], None, []), [('AsyncFor', (2, 1, 3, 8), ('Name', (2, 11, 2, 12), 'e', ('Store',)), ('Name', (2, 16, 2, 17), 'i', ('Load',)), [('Expr', (2, 19, 2, 20), ('Constant', (2, 19, 2, 20), 1, None))], [('Expr', (3, 7, 3, 8), ('Constant', (3, 7, 3, 8), 2, None))], None)], [], None, None, [])], []),
+('Module', [('AsyncFunctionDef', (1, 0, 2, 21), 'f', ('arguments', [], [], None, [], [], None, []), [('AsyncWith', (2, 1, 2, 21), [('withitem', ('Name', (2, 12, 2, 13), 'a', ('Load',)), ('Name', (2, 17, 2, 18), 'b', ('Store',)))], [('Expr', (2, 20, 2, 21), ('Constant', (2, 20, 2, 21), 1, None))], None)], [], None, None, [])], []),
 ('Module', [('Expr', (1, 0, 1, 14), ('Dict', (1, 0, 1, 14), [None, ('Constant', (1, 10, 1, 11), 2, None)], [('Dict', (1, 3, 1, 8), [('Constant', (1, 4, 1, 5), 1, None)], [('Constant', (1, 6, 1, 7), 2, None)]), ('Constant', (1, 12, 1, 13), 3, None)]))], []),
 ('Module', [('Expr', (1, 0, 1, 12), ('Set', (1, 0, 1, 12), [('Starred', (1, 1, 1, 8), ('Set', (1, 2, 1, 8), [('Constant', (1, 3, 1, 4), 1, None), ('Constant', (1, 6, 1, 7), 2, None)]), ('Load',)), ('Constant', (1, 10, 1, 11), 3, None)]))], []),
-('Module', [('AsyncFunctionDef', (1, 0, 2, 21), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (2, 1, 2, 21), ('ListComp', (2, 1, 2, 21), ('Name', (2, 2, 2, 3), 'i', ('Load',)), [('comprehension', ('Name', (2, 14, 2, 15), 'b', ('Store',)), ('Name', (2, 19, 2, 20), 'c', ('Load',)), [], 1)]))], [], None, None)], []),
-('Module', [('FunctionDef', (4, 0, 4, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 9, 4, 13))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], None, None)], []),
-('Module', [('AsyncFunctionDef', (4, 0, 4, 19), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 15, 4, 19))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], None, None)], []),
-('Module', [('ClassDef', (4, 0, 4, 13), 'C', [], [], [('Pass', (4, 9, 4, 13))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])])], []),
-('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Call', (1, 1, 1, 19), ('Name', (1, 1, 1, 5), 'deco', ('Load',)), [('GeneratorExp', (1, 5, 1, 19), ('Name', (1, 6, 1, 7), 'a', ('Load',)), [('comprehension', ('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 17, 1, 18), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
-('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Attribute', (1, 1, 1, 6), ('Attribute', (1, 1, 1, 4), ('Name', (1, 1, 1, 2), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',))], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (1, 9, 1, 16), ('Yield', (1, 9, 1, 16), ('Constant', (1, 15, 1, 16), 1, None)))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 22), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (1, 9, 1, 22), ('YieldFrom', (1, 9, 1, 22), ('List', (1, 20, 1, 22), [], ('Load',))))], [], None, None, [])], []),
+('Module', [('AsyncFunctionDef', (1, 0, 2, 21), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (2, 1, 2, 21), ('ListComp', (2, 1, 2, 21), ('Name', (2, 2, 2, 3), 'i', ('Load',)), [('comprehension', ('Name', (2, 14, 2, 15), 'b', ('Store',)), ('Name', (2, 19, 2, 20), 'c', ('Load',)), [], 1)]))], [], None, None, [])], []),
+('Module', [('FunctionDef', (4, 0, 4, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 9, 4, 13))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], None, None, [])], []),
+('Module', [('AsyncFunctionDef', (4, 0, 4, 19), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 15, 4, 19))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], None, None, [])], []),
+('Module', [('ClassDef', (4, 0, 4, 13), 'C', [], [], [('Pass', (4, 9, 4, 13))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], [])], []),
+('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Call', (1, 1, 1, 19), ('Name', (1, 1, 1, 5), 'deco', ('Load',)), [('GeneratorExp', (1, 5, 1, 19), ('Name', (1, 6, 1, 7), 'a', ('Load',)), [('comprehension', ('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 17, 1, 18), 'b', ('Load',)), [], 0)])], [])], None, None, [])], []),
+('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Attribute', (1, 1, 1, 6), ('Attribute', (1, 1, 1, 4), ('Name', (1, 1, 1, 2), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',))], None, None, [])], []),
 ('Module', [('Expr', (1, 0, 1, 8), ('NamedExpr', (1, 1, 1, 7), ('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Constant', (1, 6, 1, 7), 1, None)))], []),
-('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [], None, [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 26), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None), ('arg', (1, 15, 1, 16), 'd', None, None), ('arg', (1, 18, 1, 19), 'e', None, None)], None, [], [], None, []), [('Pass', (1, 22, 1, 26))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None)], None, [('arg', (1, 18, 1, 19), 'd', None, None), ('arg', (1, 21, 1, 22), 'e', None, None)], [None, None], None, []), [('Pass', (1, 25, 1, 29))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 39), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None)], None, [('arg', (1, 18, 1, 19), 'd', None, None), ('arg', (1, 21, 1, 22), 'e', None, None)], [None, None], ('arg', (1, 26, 1, 32), 'kwargs', None, None), []), [('Pass', (1, 35, 1, 39))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 20), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [], None, [], [], None, [('Constant', (1, 8, 1, 9), 1, None)]), [('Pass', (1, 16, 1, 20))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None), ('arg', (1, 19, 1, 20), 'c', None, None)], None, [], [], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None), ('Constant', (1, 21, 1, 22), 4, None)]), [('Pass', (1, 25, 1, 29))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 32), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [('Constant', (1, 24, 1, 25), 4, None)], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 28, 1, 32))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 30), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 26, 1, 30))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 42), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [('Constant', (1, 24, 1, 25), 4, None)], ('arg', (1, 29, 1, 35), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 38, 1, 42))], [], None, None)], []),
-('Module', [('FunctionDef', (1, 0, 1, 40), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], ('arg', (1, 27, 1, 33), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 36, 1, 40))], [], None, None)], []),
+('Module', [('If', (1, 0, 1, 19), ('NamedExpr', (1, 3, 1, 13), ('Name', (1, 3, 1, 4), 'a', ('Store',)), ('Call', (1, 8, 1, 13), ('Name', (1, 8, 1, 11), 'foo', ('Load',)), [], [])), [('Pass', (1, 15, 1, 19))], [])], []),
+('Module', [('While', (1, 0, 1, 22), ('NamedExpr', (1, 6, 1, 16), ('Name', (1, 6, 1, 7), 'a', ('Store',)), ('Call', (1, 11, 1, 16), ('Name', (1, 11, 1, 14), 'foo', ('Load',)), [], [])), [('Pass', (1, 18, 1, 22))], [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [], None, [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 26), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None), ('arg', (1, 15, 1, 16), 'd', None, None), ('arg', (1, 18, 1, 19), 'e', None, None)], None, [], [], None, []), [('Pass', (1, 22, 1, 26))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None)], None, [('arg', (1, 18, 1, 19), 'd', None, None), ('arg', (1, 21, 1, 22), 'e', None, None)], [None, None], None, []), [('Pass', (1, 25, 1, 29))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 39), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None)], None, [('arg', (1, 18, 1, 19), 'd', None, None), ('arg', (1, 21, 1, 22), 'e', None, None)], [None, None], ('arg', (1, 26, 1, 32), 'kwargs', None, None), []), [('Pass', (1, 35, 1, 39))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 20), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [], None, [], [], None, [('Constant', (1, 8, 1, 9), 1, None)]), [('Pass', (1, 16, 1, 20))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 29), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None), ('arg', (1, 19, 1, 20), 'c', None, None)], None, [], [], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None), ('Constant', (1, 21, 1, 22), 4, None)]), [('Pass', (1, 25, 1, 29))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 32), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [('Constant', (1, 24, 1, 25), 4, None)], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 28, 1, 32))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 30), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 26, 1, 30))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 42), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [('Constant', (1, 24, 1, 25), 4, None)], ('arg', (1, 29, 1, 35), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 38, 1, 42))], [], None, None, [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 40), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], ('arg', (1, 27, 1, 33), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 36, 1, 40))], [], None, None, [])], []),
+('Module', [('TypeAlias', (1, 0, 1, 12), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [], ('Name', (1, 9, 1, 12), 'int', ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 15), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 8), 'T', None, None)], ('Name', (1, 12, 1, 15), 'int', ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 32), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 8), 'T', None, None), ('TypeVarTuple', (1, 10, 1, 13), 'Ts', None), ('ParamSpec', (1, 15, 1, 18), 'P', None)], ('Tuple', (1, 22, 1, 32), [('Name', (1, 23, 1, 24), 'T', ('Load',)), ('Name', (1, 26, 1, 28), 'Ts', ('Load',)), ('Name', (1, 30, 1, 31), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 37), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 13), 'T', ('Name', (1, 10, 1, 13), 'int', ('Load',)), None), ('TypeVarTuple', (1, 15, 1, 18), 'Ts', None), ('ParamSpec', (1, 20, 1, 23), 'P', None)], ('Tuple', (1, 27, 1, 37), [('Name', (1, 28, 1, 29), 'T', ('Load',)), ('Name', (1, 31, 1, 33), 'Ts', ('Load',)), ('Name', (1, 35, 1, 36), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 44), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 20), 'T', ('Tuple', (1, 10, 1, 20), [('Name', (1, 11, 1, 14), 'int', ('Load',)), ('Name', (1, 16, 1, 19), 'str', ('Load',))], ('Load',)), None), ('TypeVarTuple', (1, 22, 1, 25), 'Ts', None), ('ParamSpec', (1, 27, 1, 30), 'P', None)], ('Tuple', (1, 34, 1, 44), [('Name', (1, 35, 1, 36), 'T', ('Load',)), ('Name', (1, 38, 1, 40), 'Ts', ('Load',)), ('Name', (1, 42, 1, 43), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 48), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 17), 'T', ('Name', (1, 10, 1, 13), 'int', ('Load',)), ('Constant', (1, 16, 1, 17), 1, None)), ('TypeVarTuple', (1, 19, 1, 26), 'Ts', ('Constant', (1, 25, 1, 26), 2, None)), ('ParamSpec', (1, 28, 1, 34), 'P', ('Constant', (1, 33, 1, 34), 3, None))], ('Tuple', (1, 38, 1, 48), [('Name', (1, 39, 1, 40), 'T', ('Load',)), ('Name', (1, 42, 1, 44), 'Ts', ('Load',)), ('Name', (1, 46, 1, 47), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('ClassDef', (1, 0, 1, 16), 'X', [], [], [('Pass', (1, 12, 1, 16))], [], [('TypeVar', (1, 8, 1, 9), 'T', None, None)])], []),
+('Module', [('ClassDef', (1, 0, 1, 26), 'X', [], [], [('Pass', (1, 22, 1, 26))], [], [('TypeVar', (1, 8, 1, 9), 'T', None, None), ('TypeVarTuple', (1, 11, 1, 14), 'Ts', None), ('ParamSpec', (1, 16, 1, 19), 'P', None)])], []),
+('Module', [('ClassDef', (1, 0, 1, 31), 'X', [], [], [('Pass', (1, 27, 1, 31))], [], [('TypeVar', (1, 8, 1, 14), 'T', ('Name', (1, 11, 1, 14), 'int', ('Load',)), None), ('TypeVarTuple', (1, 16, 1, 19), 'Ts', None), ('ParamSpec', (1, 21, 1, 24), 'P', None)])], []),
+('Module', [('ClassDef', (1, 0, 1, 38), 'X', [], [], [('Pass', (1, 34, 1, 38))], [], [('TypeVar', (1, 8, 1, 21), 'T', ('Tuple', (1, 11, 1, 21), [('Name', (1, 12, 1, 15), 'int', ('Load',)), ('Name', (1, 17, 1, 20), 'str', ('Load',))], ('Load',)), None), ('TypeVarTuple', (1, 23, 1, 26), 'Ts', None), ('ParamSpec', (1, 28, 1, 31), 'P', None)])], []),
+('Module', [('ClassDef', (1, 0, 1, 43), 'X', [], [], [('Pass', (1, 39, 1, 43))], [], [('TypeVar', (1, 8, 1, 18), 'T', ('Name', (1, 11, 1, 14), 'int', ('Load',)), ('Constant', (1, 17, 1, 18), 1, None)), ('TypeVarTuple', (1, 20, 1, 27), 'Ts', ('Constant', (1, 26, 1, 27), 2, None)), ('ParamSpec', (1, 29, 1, 36), 'P', ('Constant', (1, 35, 1, 36), 3, None))])], []),
+('Module', [('FunctionDef', (1, 0, 1, 16), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 12, 1, 16))], [], None, None, [('TypeVar', (1, 6, 1, 7), 'T', None, None)])], []),
+('Module', [('FunctionDef', (1, 0, 1, 26), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 22, 1, 26))], [], None, None, [('TypeVar', (1, 6, 1, 7), 'T', None, None), ('TypeVarTuple', (1, 9, 1, 12), 'Ts', None), ('ParamSpec', (1, 14, 1, 17), 'P', None)])], []),
+('Module', [('FunctionDef', (1, 0, 1, 31), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 27, 1, 31))], [], None, None, [('TypeVar', (1, 6, 1, 12), 'T', ('Name', (1, 9, 1, 12), 'int', ('Load',)), None), ('TypeVarTuple', (1, 14, 1, 17), 'Ts', None), ('ParamSpec', (1, 19, 1, 22), 'P', None)])], []),
+('Module', [('FunctionDef', (1, 0, 1, 38), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 34, 1, 38))], [], None, None, [('TypeVar', (1, 6, 1, 19), 'T', ('Tuple', (1, 9, 1, 19), [('Name', (1, 10, 1, 13), 'int', ('Load',)), ('Name', (1, 15, 1, 18), 'str', ('Load',))], ('Load',)), None), ('TypeVarTuple', (1, 21, 1, 24), 'Ts', None), ('ParamSpec', (1, 26, 1, 29), 'P', None)])], []),
+('Module', [('FunctionDef', (1, 0, 1, 43), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 39, 1, 43))], [], None, None, [('TypeVar', (1, 6, 1, 16), 'T', ('Name', (1, 9, 1, 12), 'int', ('Load',)), ('Constant', (1, 15, 1, 16), 1, None)), ('TypeVarTuple', (1, 18, 1, 25), 'Ts', ('Constant', (1, 24, 1, 25), 2, None)), ('ParamSpec', (1, 27, 1, 34), 'P', ('Constant', (1, 33, 1, 34), 3, None))])], []),
+('Module', [('Match', (1, 0, 3, 6), ('Name', (1, 6, 1, 7), 'x', ('Load',)), [('match_case', ('MatchValue', (2, 6, 2, 7), ('Constant', (2, 6, 2, 7), 1, None)), None, [('Pass', (3, 2, 3, 6))])])], []),
+('Module', [('Match', (1, 0, 5, 6), ('Name', (1, 6, 1, 7), 'x', ('Load',)), [('match_case', ('MatchValue', (2, 6, 2, 7), ('Constant', (2, 6, 2, 7), 1, None)), None, [('Pass', (3, 2, 3, 6))]), ('match_case', ('MatchAs', (4, 6, 4, 7), None, None), None, [('Pass', (5, 2, 5, 6))])])], []),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0, 1, 3), ('BinOp', (1, 0, 1, 3), ('Constant', (1, 0, 1, 1), 1, None), ('Add',), ('Constant', (1, 2, 1, 3), 2, None)))]),
 ]
 eval_results = [
 ('Expression', ('Constant', (1, 0, 1, 4), None, None)),
+('Expression', ('Constant', (1, 0, 1, 4), True, None)),
+('Expression', ('Constant', (1, 0, 1, 5), False, None)),
 ('Expression', ('BoolOp', (1, 0, 1, 7), ('And',), [('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Name', (1, 6, 1, 7), 'b', ('Load',))])),
+('Expression', ('BoolOp', (1, 0, 1, 6), ('Or',), [('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Name', (1, 5, 1, 6), 'b', ('Load',))])),
 ('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Add',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Sub',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Mult',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Div',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('MatMult',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('FloorDiv',), ('Name', (1, 5, 1, 6), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Pow',), ('Name', (1, 5, 1, 6), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Mod',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('RShift',), ('Name', (1, 5, 1, 6), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('LShift',), ('Name', (1, 5, 1, 6), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('BitXor',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('BitOr',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
+('Expression', ('BinOp', (1, 0, 1, 5), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('BitAnd',), ('Name', (1, 4, 1, 5), 'b', ('Load',)))),
 ('Expression', ('UnaryOp', (1, 0, 1, 5), ('Not',), ('Name', (1, 4, 1, 5), 'v', ('Load',)))),
+('Expression', ('UnaryOp', (1, 0, 1, 2), ('UAdd',), ('Name', (1, 1, 1, 2), 'v', ('Load',)))),
+('Expression', ('UnaryOp', (1, 0, 1, 2), ('USub',), ('Name', (1, 1, 1, 2), 'v', ('Load',)))),
+('Expression', ('UnaryOp', (1, 0, 1, 2), ('Invert',), ('Name', (1, 1, 1, 2), 'v', ('Load',)))),
 ('Expression', ('Lambda', (1, 0, 1, 11), ('arguments', [], [], None, [], [], None, []), ('Constant', (1, 7, 1, 11), None, None))),
 ('Expression', ('Dict', (1, 0, 1, 7), [('Constant', (1, 2, 1, 3), 1, None)], [('Constant', (1, 4, 1, 5), 2, None)])),
 ('Expression', ('Dict', (1, 0, 1, 2), [], [])),
 ('Expression', ('Set', (1, 0, 1, 7), [('Constant', (1, 1, 1, 5), None, None)])),
 ('Expression', ('Dict', (1, 0, 5, 6), [('Constant', (2, 6, 2, 7), 1, None)], [('Constant', (4, 10, 4, 11), 2, None)])),
+('Expression', ('List', (1, 0, 5, 6), [('Constant', (2, 6, 2, 7), 1, None), ('Constant', (4, 8, 4, 9), 1, None)], ('Load',))),
+('Expression', ('Tuple', (1, 0, 4, 6), [('Constant', (2, 6, 2, 7), 1, None)], ('Load',))),
+('Expression', ('Set', (1, 0, 5, 6), [('Constant', (2, 6, 2, 7), 1, None), ('Constant', (4, 8, 4, 9), 1, None)])),
 ('Expression', ('ListComp', (1, 0, 1, 19), ('Name', (1, 1, 1, 2), 'a', ('Load',)), [('comprehension', ('Name', (1, 7, 1, 8), 'b', ('Store',)), ('Name', (1, 12, 1, 13), 'c', ('Load',)), [('Name', (1, 17, 1, 18), 'd', ('Load',))], 0)])),
 ('Expression', ('GeneratorExp', (1, 0, 1, 19), ('Name', (1, 1, 1, 2), 'a', ('Load',)), [('comprehension', ('Name', (1, 7, 1, 8), 'b', ('Store',)), ('Name', (1, 12, 1, 13), 'c', ('Load',)), [('Name', (1, 17, 1, 18), 'd', ('Load',))], 0)])),
+('Expression', ('SetComp', (1, 0, 1, 19), ('Name', (1, 1, 1, 2), 'a', ('Load',)), [('comprehension', ('Name', (1, 7, 1, 8), 'b', ('Store',)), ('Name', (1, 12, 1, 13), 'c', ('Load',)), [('Name', (1, 17, 1, 18), 'd', ('Load',))], 0)])),
+('Expression', ('DictComp', (1, 0, 1, 25), ('Name', (1, 1, 1, 2), 'k', ('Load',)), ('Name', (1, 4, 1, 5), 'v', ('Load',)), [('comprehension', ('Tuple', (1, 10, 1, 14), [('Name', (1, 10, 1, 11), 'k', ('Store',)), ('Name', (1, 13, 1, 14), 'v', ('Store',))], ('Store',)), ('Name', (1, 18, 1, 19), 'c', ('Load',)), [('Name', (1, 23, 1, 24), 'd', ('Load',))], 0)])),
 ('Expression', ('ListComp', (1, 0, 1, 20), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 14), [('Name', (1, 11, 1, 12), 'a', ('Store',)), ('Name', (1, 13, 1, 14), 'b', ('Store',))], ('Store',)), ('Name', (1, 18, 1, 19), 'c', ('Load',)), [], 0)])),
 ('Expression', ('ListComp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('ListComp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
@@ -2500,10 +3304,20 @@ eval_results = [
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('Compare', (1, 0, 1, 9), ('Constant', (1, 0, 1, 1), 1, None), [('Lt',), ('Lt',)], [('Constant', (1, 4, 1, 5), 2, None), ('Constant', (1, 8, 1, 9), 3, None)])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('Eq',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('LtE',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('GtE',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('NotEq',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('Is',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('IsNot',)], [('Name', (1, 9, 1, 10), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('In',)], [('Name', (1, 5, 1, 6), 'b', ('Load',))])),
+('Expression', ('Compare', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'a', ('Load',)), [('NotIn',)], [('Name', (1, 9, 1, 10), 'b', ('Load',))])),
+('Expression', ('Call', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [], [])),
 ('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', (1, 6, 1, 9), 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', (1, 13, 1, 16), None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
 ('Expression', ('Call', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Starred', (1, 2, 1, 9), ('List', (1, 3, 1, 9), [('Constant', (1, 4, 1, 5), 0, None), ('Constant', (1, 7, 1, 8), 1, None)], ('Load',)), ('Load',))], [])),
 ('Expression', ('Call', (1, 0, 1, 15), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('GeneratorExp', (1, 1, 1, 15), ('Name', (1, 2, 1, 3), 'a', ('Load',)), [('comprehension', ('Name', (1, 8, 1, 9), 'a', ('Store',)), ('Name', (1, 13, 1, 14), 'b', ('Load',)), [], 0)])], [])),
 ('Expression', ('Constant', (1, 0, 1, 2), 10, None)),
+('Expression', ('Constant', (1, 0, 1, 2), 1j, None)),
 ('Expression', ('Constant', (1, 0, 1, 8), 'string', None)),
 ('Expression', ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',))),
 ('Expression', ('Subscript', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Slice', (1, 2, 1, 5), ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Name', (1, 4, 1, 5), 'c', ('Load',)), None), ('Load',))),
@@ -2514,5 +3328,14 @@ eval_results = [
 ('Expression', ('Tuple', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 2), [], ('Load',))),
 ('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', (1, 12, 1, 15), ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
+('Expression', ('Subscript', (1, 0, 1, 7), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 6), ('Constant', (1, 4, 1, 5), 1, None), None, None), ('Load',))),
+('Expression', ('Subscript', (1, 0, 1, 7), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 6), None, ('Constant', (1, 5, 1, 6), 1, None), None), ('Load',))),
+('Expression', ('Subscript', (1, 0, 1, 8), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 7), None, None, ('Constant', (1, 6, 1, 7), 1, None)), ('Load',))),
+('Expression', ('Subscript', (1, 0, 1, 10), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 9), ('Constant', (1, 4, 1, 5), 1, None), ('Constant', (1, 6, 1, 7), 1, None), ('Constant', (1, 8, 1, 9), 1, None)), ('Load',))),
+('Expression', ('IfExp', (1, 0, 1, 21), ('Name', (1, 9, 1, 10), 'x', ('Load',)), ('Call', (1, 0, 1, 5), ('Name', (1, 0, 1, 3), 'foo', ('Load',)), [], []), ('Call', (1, 16, 1, 21), ('Name', (1, 16, 1, 19), 'bar', ('Load',)), [], []))),
+('Expression', ('JoinedStr', (1, 0, 1, 6), [('FormattedValue', (1, 2, 1, 5), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, None)])),
+('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
+('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
+('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('FormattedValue', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
 ]
 main()

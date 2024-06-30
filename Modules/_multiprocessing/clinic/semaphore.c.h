@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 #if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
@@ -21,8 +28,31 @@ static PyObject *
 _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "acquire", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acquire",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
@@ -36,8 +66,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -46,7 +76,9 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     }
     timeout_obj = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock_acquire_impl(self, blocking, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -71,7 +103,13 @@ _multiprocessing_SemLock_release_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock_release_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock_release_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS) */
@@ -95,8 +133,31 @@ static PyObject *
 _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "acquire", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acquire",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int blocking = 1;
@@ -110,8 +171,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -120,7 +181,9 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
     }
     timeout_obj = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock_acquire_impl(self, blocking, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -145,7 +208,13 @@ _multiprocessing_SemLock_release_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock_release_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock_release_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) && !defined(MS_WINDOWS) */
@@ -160,8 +229,31 @@ static PyObject *
 _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(kind), &_Py_ID(value), &_Py_ID(maxvalue), &_Py_ID(name), &_Py_ID(unlink), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"kind", "value", "maxvalue", "name", "unlink", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "SemLock", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "SemLock",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -175,15 +267,15 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    kind = _PyLong_AsInt(fastargs[0]);
+    kind = PyLong_AsInt(fastargs[0]);
     if (kind == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    value = _PyLong_AsInt(fastargs[1]);
+    value = PyLong_AsInt(fastargs[1]);
     if (value == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    maxvalue = _PyLong_AsInt(fastargs[2]);
+    maxvalue = PyLong_AsInt(fastargs[2]);
     if (maxvalue == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -200,8 +292,8 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    unlink = _PyLong_AsInt(fastargs[4]);
-    if (unlink == -1 && PyErr_Occurred()) {
+    unlink = PyObject_IsTrue(fastargs[4]);
+    if (unlink < 0) {
         goto exit;
     }
     return_value = _multiprocessing_SemLock_impl(type, kind, value, maxvalue, name, unlink);
@@ -265,7 +357,13 @@ _multiprocessing_SemLock__count_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__count(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__count_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock__count_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -375,7 +473,13 @@ _multiprocessing_SemLock___enter___impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock___enter__(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock___enter___impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock___enter___impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -420,7 +524,9 @@ _multiprocessing_SemLock___exit__(SemLockObject *self, PyObject *const *args, Py
     }
     exc_tb = args[2];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _multiprocessing_SemLock___exit___impl(self, exc_type, exc_value, exc_tb);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -467,4 +573,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=64ba32544811c9e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dea36482d23a355f input=a9049054013a1b77]*/

@@ -3,6 +3,10 @@
 
 #if defined(__EMSCRIPTEN__)
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 void
 _Py_CheckEmscriptenSignals(void);
 
@@ -14,6 +18,7 @@ _Py_CheckEmscriptenSignalsPeriodically(void);
 #define _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY() _Py_CheckEmscriptenSignalsPeriodically()
 
 extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
+extern int _Py_emscripten_signal_clock;
 
 #else
 

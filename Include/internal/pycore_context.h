@@ -5,7 +5,8 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hamt.h"   /* PyHamtObject */
+#include "pycore_freelist.h"      // _PyFreeListState
+#include "pycore_hamt.h"          // PyHamtObject
 
 
 extern PyTypeObject _PyContextTokenMissing_Type;
@@ -13,27 +14,13 @@ extern PyTypeObject _PyContextTokenMissing_Type;
 /* runtime lifecycle */
 
 PyStatus _PyContext_Init(PyInterpreterState *);
-void _PyContext_Fini(PyInterpreterState *);
 
 
 /* other API */
 
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyContext_MAXFREELIST 0
-#endif
-
-#ifndef PyContext_MAXFREELIST
-#  define PyContext_MAXFREELIST 255
-#endif
-
-struct _Py_context_state {
-#if PyContext_MAXFREELIST > 0
-    // List of free PyContext objects
-    PyContext *freelist;
-    int numfree;
-#endif
-};
+typedef struct {
+    PyObject_HEAD
+} _PyContextTokenMissing;
 
 struct _pycontextobject {
     PyObject_HEAD
@@ -62,6 +49,11 @@ struct _pycontexttokenobject {
     PyObject *tok_oldval;
     int tok_used;
 };
+
+
+// _testinternalcapi.hamt() used by tests.
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
 
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

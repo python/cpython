@@ -102,7 +102,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT"):
             name = name.lower()
             return name, f"self.{name}()"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER"):
             # Avoid using names that can be Python keywords
             return "_" + name.lower(), f"self.expect({name!r})"
         return name, f"self.{name}()"
@@ -116,7 +116,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         if len(node.alts) == 1 and len(node.alts[0].items) == 1:
             self.cache[node] = self.visit(node.alts[0].items[0])
         else:
-            name = self.gen.artifical_rule_from_rhs(node)
+            name = self.gen.artificial_rule_from_rhs(node)
             self.cache[node] = name, f"self.{name}()"
         return self.cache[node]
 
@@ -168,7 +168,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
     def visit_Gather(self, node: Gather) -> Tuple[str, str]:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.artifical_rule_from_gather(node)
+        name = self.gen.artificial_rule_from_gather(node)
         self.cache[node] = name, f"self.{name}()"  # No trailing comma here either!
         return self.cache[node]
 

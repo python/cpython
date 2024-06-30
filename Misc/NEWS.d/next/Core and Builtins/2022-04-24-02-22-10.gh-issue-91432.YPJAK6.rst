@@ -1,1 +1,0 @@
-Specialized the :opcode:`FOR_ITER` opcode using the PEP 659 machinery

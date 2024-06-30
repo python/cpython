@@ -27,7 +27,7 @@
 #if defined(HAVE_SSE2)
 #include <emmintrin.h>
 // MSVC only defines  _mm_set_epi64x for x86_64...
-#if defined(_MSC_VER) && !defined(_M_X64)
+#if defined(_MSC_VER) && !defined(_M_X64) && !defined(__clang__)
 static inline __m128i _mm_set_epi64x( const uint64_t u1, const uint64_t u0 )
 {
   return _mm_set_epi32( u1 >> 32, u1, u0 >> 32, u0 );
