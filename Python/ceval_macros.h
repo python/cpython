@@ -86,7 +86,7 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#ifdef Py_STACKREF_DEBUG
 #define STACKREF_CHECK() \
     do { \
         if (frame->f_executable && PyCode_Check(frame->f_executable)) { \
