@@ -1624,12 +1624,12 @@ example because the path doesn't exist).
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
 
-   This method propagates any :exc:`OSError` encountered during removal.
-   For example: If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
-   raised if the path does not exist.
+   If *missing_ok* is false (the default), this method propagates any 
+   :exc:`OSError` from the operating system, including :exc:`FileNotFoundError`.
 
    If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
-   ignored (same behavior as the POSIX ``rm -f`` command).
+   ignored (same behavior as the POSIX ``rm -f`` command), any other
+   :exc:`OSError` which is encountered will continue to be propogated.
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
