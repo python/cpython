@@ -5,7 +5,7 @@ import os
 import string
 import warnings
 
-from fnmatch import fnmatch, fnmatchcase, translate, filter
+from fnmatch import fnmatch, fnmatchcase, translate, filter, filterfalse
 
 class FnmatchTestCase(unittest.TestCase):
 
@@ -257,6 +257,12 @@ class FilterTestCase(unittest.TestCase):
                          ['Python', 'Perl'])
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
+
+    def test_filterfalse(self):
+        actual = filterfalse(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*')
+        self.assertListEqual(actual, ['Ruby', 'Tcl'])
+        actual = filterfalse([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*')
+        self.assertListEqual(actual, [b'Ruby', b'Tcl'])
 
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filter, ['test'], b'*')
