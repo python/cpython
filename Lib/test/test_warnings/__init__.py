@@ -155,40 +155,42 @@ class FilterTests(BaseTest):
             f()
             self.assertEqual(len(w), 1)
 
-    def test_always(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            self.module.filterwarnings("always", category=UserWarning)
-            message = "FilterTests.test_always"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                self.module.filterwarnings(mode, category=UserWarning)
+                message = "FilterTests.test_always_and_all"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
 
-    def test_always_after_default(self):
-        with original_warnings.catch_warnings(record=True,
-                module=self.module) as w:
-            self.module.resetwarnings()
-            message = "FilterTests.test_always_after_ignore"
-            def f():
-                self.module.warn(message, UserWarning)
-            f()
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 1)
-            self.module.filterwarnings("always", category=UserWarning)
-            f()
-            self.assertEqual(len(w), 2)
-            self.assertEqual(w[-1].message.args[0], message)
-            f()
-            self.assertEqual(len(w), 3)
-            self.assertEqual(w[-1].message.args[0], message)
+    def test_always_and_all_after_default(self):
+        for mode in {"always", "all"}:
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.resetwarnings()
+                message = "FilterTests.test_always_and_all_after_ignore"
+                def f():
+                    self.module.warn(message, UserWarning)
+                f()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 1)
+                self.module.filterwarnings(mode, category=UserWarning)
+                f()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[-1].message.args[0], message)
+                f()
+                self.assertEqual(len(w), 3)
+                self.assertEqual(w[-1].message.args[0], message)
 
     def test_default(self):
         with original_warnings.catch_warnings(record=True,
