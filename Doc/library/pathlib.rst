@@ -1625,6 +1625,8 @@ example because the path doesn't exist).
    use :func:`Path.rmdir` instead.
 
    This method propagates any :exc:`OSError` encountered during removal.
+   For example: If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
 
    If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
    ignored (same behavior as the POSIX ``rm -f`` command).
