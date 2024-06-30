@@ -253,7 +253,7 @@ A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
 .. productionlist:: python-grammar
-   list_display: "[" [`starred_list` | `comprehension`] "]"
+   list_display: "[" [`expression_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -278,7 +278,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist:: python-grammar
-   set_display: "{" (`starred_list` | `comprehension`) "}"
+   set_display: "{" (`expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -455,8 +455,8 @@ generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
 suspended again, returning the value of
-:token:`~python-grammar:flexible_expression_list` to the generator's caller,
-or ``None`` if :token:`~python-grammar:flexible_expression_list` is omitted.
+:token:`~python-grammar:expression_list` to the generator's caller,
+or ``None`` if :token:`~python-grammar:expression_list` is omitted.
 By suspended, we mean that all local state is
 retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
@@ -545,7 +545,7 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:flexible_expression_list` is returned to
+   :token:`~python-grammar:expression_list` is returned to
    :meth:`__next__`'s caller.  If the generator exits without yielding another
    value, a :exc:`StopIteration` exception is raised.
 
@@ -664,7 +664,7 @@ how a generator object would be used in a :keyword:`for` statement.
 Calling one of the asynchronous generator's methods returns an :term:`awaitable`
 object, and the execution starts when this object is awaited on. At that time,
 the execution proceeds to the first yield expression, where it is suspended
-again, returning the value of :token:`~python-grammar:flexible_expression_list`
+again, returning the value of :token:`~python-grammar:expression_list`
 to the awaiting coroutine. As with a generator, suspension means that all local
 state is retained, including the current bindings of local variables, the
 instruction pointer, the internal evaluation stack, and the state of any
@@ -728,7 +728,7 @@ which are used to control the execution of a generator function.
    asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in the
    returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:flexible_expression_list`
+   expression. The value of the :token:`~python-grammar:expression_list`
    of the yield expression is the value of the :exc:`StopIteration` exception
    raised by the completing coroutine.  If the asynchronous generator exits
    without yielding another value, the awaitable instead raises a
@@ -861,7 +861,7 @@ will generally select an element from the container. The subscription of a
 :ref:`GenericAlias <types-genericalias>` object.
 
 .. productionlist:: python-grammar
-   subscription: `primary` "[" `flexible_expression_list` "]"
+   subscription: `primary` "[" `expression_list` "]"
 
 When an object is subscripted, the interpreter will evaluate the primary and
 the expression list.
@@ -1879,11 +1879,11 @@ Expression lists
 
 .. productionlist:: python-grammar
 
-   starred_item: "*" `or_expr`
-   flexible_expression: `expression` | `assignment_expression` | `starred_item`
-   flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
-   yield_list: `expression` ["," `flexible_expression_list`]
-               | `starred_item` "," [`flexible_expression_list`]
+   expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   yield_list: `expression` ["," `expression_list`]
+               | `starred_expression` "," [`expression_list`]
+   flexible_expression: `assignment_expression` | `starred_expression`
+   starred_expression: "*" `or_expr`
 
 .. index:: pair: object; tuple
 
