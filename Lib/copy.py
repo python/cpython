@@ -123,11 +123,11 @@ def deepcopy(x, memo=None, _nil=[]):
 
     cls = type(x)
 
-    if cls in _atomic_types or (cls in _immutable_iterables and len(x) == 0):
+    if cls in _atomic_types:
         return x
 
     if memo is None:
-        if cls in _mutable_iterables and len(x) == 0:
+        if cls in _builtin_iterables and len(x) == 0:
             return cls()
         d = id(x)
         memo = {}
@@ -137,7 +137,7 @@ def deepcopy(x, memo=None, _nil=[]):
         if y is not _nil:
             return y
 
-    if cls in _mutable_iterables and len(x) == 0:
+    if cls in _builtin_iterables and len(x) == 0:
         y = cls()
     elif copier := _deepcopy_dispatch.get(cls):
         y = copier(x, memo)
@@ -177,8 +177,7 @@ def deepcopy(x, memo=None, _nil=[]):
 _atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
-_mutable_iterables = {list, dict, set}
-_immutable_iterables = {tuple, frozenset}
+_builtin_iterables = {tuple, list, dict, set, frozenset}
 
 _deepcopy_dispatch = d = {}
 
