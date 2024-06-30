@@ -1246,7 +1246,9 @@ class CopyTests(unittest.TestCase):
                     # only change a single field
                     repl = copy.replace(node, **{field: new_value})
                     for f in fields:
+                        # assert that there is no side-effect
                         self.assertIs(getattr(node, f), old_value)
+                        # check the changes
                         if f != field:
                             self.assertIs(getattr(repl, f), old_value)
                         else:
@@ -1254,7 +1256,7 @@ class CopyTests(unittest.TestCase):
 
                     self.assertFalse(ast.compare(node, repl, compare_attributes=True))
 
-    def test_replace_accept_known_native_fields(self):
+    def test_replace_accept_known_class_fields(self):
         nid, ctx = object(), object()
 
         node = ast.Name(id=nid, ctx=ctx)
@@ -1263,14 +1265,14 @@ class CopyTests(unittest.TestCase):
 
         new_nid = object()
         repl = copy.replace(node, id=new_nid)
-        # assert independence
+        # assert that there is no side-effect
         self.assertIs(node.id, nid)
         self.assertIs(node.ctx, ctx)
-        # assert changes
+        # assert the changes
         self.assertIs(repl.id, new_nid)
         self.assertIs(repl.ctx, node.ctx)  # no changes
 
-    def test_replace_accept_known_native_attributes(self):
+    def test_replace_accept_known_class_attributes(self):
         node = ast.parse('x').body[0].value
         self.assertEqual(node.id, 'x')
         self.assertEqual(node.lineno, 1)
@@ -1278,9 +1280,9 @@ class CopyTests(unittest.TestCase):
         # constructor allows any type so replace() should do the same
         lineno = object()
         repl = copy.replace(node, lineno=lineno)
-        # assert independence
+        # assert that there is no side-effect
         self.assertEqual(node.lineno, 1)
-        # check changes
+        # check the changes
         self.assertEqual(repl.id, node.id)
         self.assertEqual(repl.ctx, node.ctx)
         self.assertEqual(repl.lineno, lineno)
@@ -1295,39 +1297,132 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(state['ctx'], node.ctx)
         self.assertEqual(state['lineno'], lineno)
 
-    def test_replace_accept_known_custom_fields(self):
-        nid, ctx = object(), object()
+    def test_replace_accept_known_custom_class_fields(self):
+        class MyNode(ast.AST):
+            _fields = ('name', 'data',)
+            __annotations__ = {'name': str, 'data': object}
+            __match_args__ = ('name', 'data',)
 
-        node = ast.Name(id=nid, ctx=ctx)
-        node.extra = old_extra = object()  # add the 'extra' field
-        self.assertIs(node.extra, old_extra)
-        # assert shallow copy of extra field
+        name, data = 'name', object()
+
+        node = MyNode(name, data)
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check shallow copy
         repl = copy.replace(node)
-        self.assertIs(node.extra, old_extra)
-        self.assertIs(repl.extra, old_extra)
+        # assert that there is no side-effect
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check the shallow copy
+        self.assertIs(repl.name, name)
+        self.assertIs(repl.data, data)
 
-        new_extra = object()
-        repl = copy.replace(node, extra=new_extra)
-        # assert independence
-        self.assertIs(node.id, nid)
-        self.assertIs(node.ctx, ctx)
-        self.assertIs(node.extra, old_extra)
-        # assert changes
-        self.assertIs(repl.id, nid)
-        self.assertIs(repl.ctx, ctx)
-        self.assertIs(repl.extra, new_extra)
+        node = MyNode(name, data)
+        repl_data = object()
+        # replace custom but known field
+        repl = copy.replace(node, data=repl_data)
+        # assert that there is no side-effect
+        self.assertIs(node.name, name)
+        self.assertIs(node.data, data)
+        # check the changes
+        self.assertIs(repl.name, node.name)
+        self.assertIs(repl.data, repl_data)
 
-    def test_replace_reject_unknown_custom_fields(self):
-        nid, ctx = object(), object()
-        node = ast.Name(id=nid, ctx=ctx)
-        with self.assertRaisesRegex(TypeError, "got an unexpected field name: 'extra'"):
-            # cannot replace a non-existing field
-            copy.replace(node, extra=1)
-        # check that we did not have a side-effect
-        self.assertIs(node.id, nid)
-        self.assertIs(node.ctx, ctx)
-        self.assertRaises(AttributeError, getattr, node, 'extra')
+    def test_replace_reject_known_custom_class_attributes(self):
+        class MyNode(ast.AST):
+            x = 0
+            y = 1
+            _attributes = ('x', 'y',)
 
+        node = MyNode()
+        self.assertEqual(node.x, 0)
+        self.assertEqual(node.y, 1)
+
+        y = object()
+        # Currently, we emit a warning (and thus the changes are committed)
+        # and only support hard-coded attributes 'lineno', 'col_offset',
+        # 'end_lineno', and 'end_col_offset'.
+        msg = (
+            "MyNode.__init__ got an unexpected keyword argument 'y'. "
+            "Support for arbitrary keyword arguments is deprecated and "
+            "will be removed in Python 3.15."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
+            repl = copy.replace(node, y=y)
+        # assert that there is no side-effect
+        self.assertEqual(node.x, 0)
+        self.assertEqual(node.y, 1)
+        # check the changes ('repl' will not be available in 3.15+)
+        self.assertEqual(repl.x, 0)
+        self.assertEqual(repl.y, y)
+
+    def test_replace_ignore_known_custom_instance_fields(self):
+        node = ast.parse('x').body[0].value
+        node.extra = extra = object()  # add instance 'extra' field
+        context = node.ctx
+
+        # assert initial values
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # shallow copy, but drops extra fields
+        repl = copy.replace(node)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # verify that the 'extra' field is not kept
+        self.assertIs(repl.id, 'x')
+        self.assertIs(repl.ctx, context)
+        self.assertRaises(AttributeError, getattr, repl, 'extra')
+
+        # change known native field
+        repl = copy.replace(node, id='y')
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # verify that the 'extra' field is not kept
+        self.assertIs(repl.id, 'y')
+        self.assertIs(repl.ctx, context)
+        self.assertRaises(AttributeError, getattr, repl, 'extra')
+
+    def test_replace_reject_known_custom_instance_fields_commits(self):
+        node = ast.parse('x').body[0].value
+        node.extra = extra = object()  # add instance 'extra' field
+        context = node.ctx
+
+        # explicit rejection of known instance fields
+        self.assertTrue(hasattr(node, 'extra'))
+        msg = "Name.__init__ got an unexpected keyword argument 'extra'."
+        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
+            repl = copy.replace(node, extra=1)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertIs(node.extra, extra)
+        # check the changes ('repl' will not be available in 3.15+)
+        self.assertIs(repl.id, 'x')
+        self.assertIs(repl.ctx, context)
+        self.assertIs(repl.extra, 1)
+
+    def test_replace_reject_unknown_instance_fields(self):
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+
+        # explicit rejection of unknown extra fields
+        self.assertRaises(AttributeError, getattr, node, 'unknown')
+        msg = "Name.__init__ got an unexpected keyword argument 'unknown'."
+        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
+            repl = copy.replace(node, unknown=1)
+        # assert that there is no side-effect
+        self.assertIs(node.id, 'x')
+        self.assertIs(node.ctx, context)
+        self.assertRaises(AttributeError, getattr, node, 'unknown')
+        # check the changes ('repl' will not be available in 3.15+)
+        self.assertIs(repl.id, 'x')
+        self.assertIs(repl.ctx, context)
+        self.assertIs(repl.unknown, 1)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
