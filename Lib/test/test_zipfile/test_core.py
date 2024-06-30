@@ -1194,13 +1194,17 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
         file_size = zipfile.ZIP64_LIMIT + 1
 
-        def make_zip(fp):
+        def make_zip(fp, with_trailing_file=False):
             with zipfile.ZipFile(fp, mode="w", allowZip64=True) as zf:
                 # pretend zipfile.ZipInfo.from_file was used to get the name and filesize
                 info = zipfile.ZipInfo("text.txt")
                 info.file_size = file_size
                 with zf.open(info, mode="w", force_zip64=False) as zi:
                     zi.write(b"_" * file_size)
+                if with_trailing_file:
+                    info = zipfile.ZipInfo("small.txt")
+                    with zf.open(info, mode="w", force_zip64=False) as zi:
+                        zi.write(b"_" * 10)
             return fp
 
         # check seekable file information
@@ -1225,6 +1229,19 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(ex_usize, file_size)  # uncompressed size
         self.assertEqual(ex_csize, file_size)  # compressed size
         self.assertEqual(cd_sig, b"PK\x01\x02") # ensure the central directory header is next
+
+        # check seekable file information after big file
+        seekable_fp = make_zip(io.BytesIO(), with_trailing_file=True)
+        seekable_fp.seek(0)
+        fp_bytes = seekable_fp.getvalue()
+        with zipfile.ZipFile(seekable_fp) as zf:
+            zinfo = zf.infolist()[1]
+            self.assertGreaterEqual(zinfo.extract_version, zipfile.ZIP64_VERSION)
+            local_extract_version, = struct.unpack(
+                "<B",
+                fp_bytes[zinfo.header_offset + 4:zinfo.header_offset + 5],
+            )
+            self.assertGreaterEqual(local_extract_version, zipfile.ZIP64_VERSION)
 
         # check unseekable file information
         unseekable_data = make_zip(Unseekable(io.BytesIO())).fp.getvalue()
