@@ -69,12 +69,11 @@ def filterfalse(names, pat):
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
         for name in names:
-            # using lambda function is usually worse than using explicit 'not'
-            if not match(name):
+            if match(name) is None:
                 result.append(name)
     else:
         for name in names:
-            if not match(os.path.normcase(name)):
+            if match(os.path.normcase(name)) is None:
                 result.append(name)
     return result
 
