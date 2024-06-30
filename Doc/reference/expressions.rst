@@ -874,12 +874,12 @@ passed to one of these methods. For more details on when ``__class_getitem__``
 is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
 If the expression list contains at least one comma, or if any of the expressions
-is starred, the expression list will evaluate to a :class:`tuple` containing the
-items of the expression list. Otherwise, the expression list will evaluate to
-the value of the list's sole member.
+are starred, the expression list will evaluate to a :class:`tuple` containing
+the items of the expression list. Otherwise, the expression list will evaluate
+to the value of the list's sole member.
 
 .. versionchanged:: 3.11
-   Expressions in an expression list may be starred. See :pep:`646` for details.
+   Expressions in an expression list may be starred. See :pep:`646`.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:

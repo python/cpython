@@ -1341,7 +1341,7 @@ a different order than they appear in the source code.
 
 .. versionchanged:: 3.11
    Parameters of the form "``*identifier``" may have an annotation
-   "``: *expression``". See :pep:`646` for details.
+   "``: *expression``". See :pep:`646`.
 
 .. index:: pair: lambda; expression
 
