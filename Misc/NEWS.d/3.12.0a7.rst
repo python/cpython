@@ -200,7 +200,7 @@ Bachmann.
 .. section: Core and Builtins
 
 Deprecate ``co_lnotab`` in code objects, schedule it for removal in Python
-3.14
+3.14 or later.
 
 ..
 
