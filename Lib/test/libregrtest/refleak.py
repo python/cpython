@@ -250,8 +250,9 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
             if refs is not None:
                 obj._abc_registry_clear()
                 for ref in refs:
-                    if ref() is not None:
-                        obj.register(ref())
+                    subclass = ref()
+                    if subclass is not None:
+                        obj.register(subclass)
             obj._abc_caches_clear()
 
     # Clear caches
