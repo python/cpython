@@ -2,6 +2,7 @@
 
 import linecache
 import unittest
+import unittest.mock
 import os.path
 import tempfile
 import tokenize
@@ -47,6 +48,9 @@ class TempFile:
             self.file_name = fp.name
             fp.write(self.file_byte_string)
         self.addCleanup(os_helper.unlink, self.file_name)
+        # ensure that the cache is empty between tests
+        linecache.cache.clear()
+        linecache.failures.clear()
 
 
 class GetLineTestsGoodData(TempFile):
@@ -75,9 +79,61 @@ class GetLineTestsBadData(TempFile):
 
     def test_getline(self):
         self.assertEqual(linecache.getline(self.file_name, 1), '')
+        self.assertDictEqual(linecache.cache, {})
+
+        size, mtime, fullname = linecache.failures[self.file_name]
+        self.assertIsInstance(size, int)
+        self.assertIsInstance(mtime, int)
 
     def test_getlines(self):
         self.assertEqual(linecache.getlines(self.file_name), [])
+        self.assertDictEqual(linecache.cache, {})
+
+        size, mtime, fullname = linecache.failures[self.file_name]
+        self.assertIsInstance(size, int)
+        self.assertIsInstance(mtime, int)
+
+    def test_getline_called_once(self):
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            self.assertEqual(linecache.getline(self.file_name, 1), '')
+            tok.assert_called_once_with(self.file_name)
+            self.assertDictEqual(linecache.cache, {})
+
+            size, mtime, fullname = linecache.failures[self.file_name]
+            self.assertIsInstance(size, int)
+            self.assertIsInstance(mtime, int)
+
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            self.assertEqual(linecache.getline(self.file_name, 1), '')
+            tok.assert_not_called()
+            self.assertEqual(linecache.getline(self.file_name, 1), '')
+            tok.assert_not_called()
+            self.assertDictEqual(linecache.cache, {})
+
+            failure = linecache.failures[self.file_name]
+            self.assertEqual(failure[0], size)
+            self.assertAlmostEqual(failure[1], mtime)
+
+    def test_getlines_called_once(self):
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            self.assertEqual(linecache.getlines(self.file_name), [])
+            tok.assert_called_once_with(self.file_name)
+            self.assertDictEqual(linecache.cache, {})
+
+            size, mtime, fullname = linecache.failures[self.file_name]
+            self.assertIsInstance(size, int)
+            self.assertIsInstance(mtime, int)
+
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            self.assertEqual(linecache.getlines(self.file_name), [])
+            tok.assert_not_called()
+            self.assertEqual(linecache.getlines(self.file_name), [])
+            tok.assert_not_called()
+            self.assertDictEqual(linecache.cache, {})
+
+            failure = linecache.failures[self.file_name]
+            self.assertEqual(failure[0], size)
+            self.assertAlmostEqual(failure[1], mtime)
 
 
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
@@ -163,6 +219,22 @@ class LineCacheTests(unittest.TestCase):
         cached_empty = [fn for fn in cached if fn in linecache.cache]
         self.assertEqual(cached_empty, [])
 
+    def test_clearcache_failures(self):
+        # assert that the cache is cleared at the beginning of the test
+        linecache.clearcache()
+        self.assertListEqual(list(linecache.cache), [])
+        self.assertListEqual(list(linecache.failures), [])
+
+        # try to cache a failure
+        linecache.getline(NONEXISTENT_FILENAME, 1)
+        self.assertListEqual(list(linecache.cache), [])
+        self.assertListEqual(list(linecache.failures), [NONEXISTENT_FILENAME])
+
+        # check that the cache is cleared
+        linecache.clearcache()
+        self.assertListEqual(list(linecache.cache), [])
+        self.assertListEqual(list(linecache.failures), [])
+
     def test_checkcache(self):
         getline = linecache.getline
         # Create a source file and cache its contents
@@ -195,6 +267,42 @@ class LineCacheTests(unittest.TestCase):
             for index, line in enumerate(source):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
+
+    def test_checkcache_removed(self):
+        linecache.clearcache()
+        # case: check that a cached file is never a failure even when removed
+        filename = os_helper.TESTFN + '.py'
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w', encoding='utf-8') as source:
+            source.write(SOURCE_1)
+        # get the cached data
+        self.assertNotIn(filename, linecache.cache)
+        self.assertNotIn(filename, linecache.failures)
+        data = linecache.getlines(filename)
+        self.assertIn(filename, linecache.cache)
+        self.assertNotIn(filename, linecache.failures)
+        # remove the file
+        os_helper.unlink(filename)
+        # check that the data is still cached
+        data = linecache.getlines(filename)
+        self.assertIn(filename, linecache.cache)
+        self.assertNotIn(filename, linecache.failures)
+        # invalidate previous failures
+        linecache.checkcache(filename)
+        # no more cached
+        self.assertNotIn(filename, linecache.cache)
+        # the file is not stat()'able!
+        self.assertIn(filename, linecache.failures)
+        self.assertIsNone(linecache.failures[filename][0])
+        self.assertIsNone(linecache.failures[filename][1])
+        with unittest.mock.patch('os.stat') as statfn:
+            lines = linecache.getlines(filename)
+            statfn.assert_not_called()
+            self.assertListEqual(lines, [])
+        self.assertNotIn(filename, linecache.cache)
+        self.assertIn(filename, linecache.failures)
+        self.assertIsNone(linecache.failures[filename][0])
+        self.assertIsNone(linecache.failures[filename][1])
 
     def test_lazycache_no_globals(self):
         lines = linecache.getlines(FILENAME)
@@ -321,6 +429,86 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class LineCacheUpdateTests(unittest.TestCase):
+
+    def setUp(self):
+        linecache.clearcache()
+        self.filename = os_helper.TESTFN + '.py'
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    def write_good_data(self):
+        with open(self.filename, 'w', encoding='utf-8') as source:
+            source.write(SOURCE_1)
+        with open(self.filename, encoding='utf-8') as source:
+            return source.readlines()
+
+    def write_bad_data(self):
+        with open(self.filename, 'wb') as source:
+            source.write(b'\n\x80')
+
+    def test_updatecache_with_missing_file(self):
+        # remove the filename
+        os_helper.unlink(self.filename)
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            for _ in range(3):
+                linecache.updatecache(self.filename)
+                tok.assert_not_called()
+                self.assertDictEqual(linecache.cache, {})
+                self.assertIn(self.filename, linecache.failures)
+                failure = linecache.failures[self.filename]
+                self.assertIsNone(failure[0])
+                self.assertIsNone(failure[1])
+
+    def test_updatecache_after_fix_missing(self):
+        # remove the filename
+        os_helper.unlink(self.filename)
+        linecache.updatecache(self.filename)
+        self.assertDictEqual(linecache.cache, {})
+        self.assertIn(self.filename, linecache.failures)
+        failure = linecache.failures[self.filename]
+        self.assertIsNone(failure[0])
+        self.assertIsNone(failure[1])
+        # patch the failure
+        data = self.write_good_data()
+        linecache.updatecache(self.filename)
+        self.assertDictEqual(linecache.failures, {})
+        self.assertIn(self.filename, linecache.cache)
+        self.assertListEqual(linecache.getlines(self.filename), data)
+
+    def test_updatecache_after_fix_decoding(self):
+        self.write_bad_data()
+        # mark it as a failure
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            linecache.updatecache(self.filename)
+            tok.assert_called_once_with(self.filename)
+
+        self.assertDictEqual(linecache.cache, {})
+        self.assertIn(self.filename, linecache.failures)
+        failure = linecache.failures[self.filename]
+        # failure but still with known stats
+        self.assertIsInstance(failure[0], int)
+        self.assertIsInstance(failure[1], int)
+        size, mtime, fullname = failure
+
+        with unittest.mock.patch('tokenize.open', wraps=tokenize.open) as tok:
+            for _ in range(3):
+                linecache.updatecache(self.filename)
+                tok.assert_not_called()
+                self.assertDictEqual(linecache.cache, {})
+                self.assertIn(self.filename, linecache.failures)
+                failure = linecache.failures[self.filename]
+                # failure but still with same stats
+                self.assertEqual(failure[0], size)
+                self.assertAlmostEqual(failure[1], mtime)
+
+        # patch the unicode content
+        data = self.write_good_data()
+        linecache.updatecache(self.filename)
+        self.assertDictEqual(linecache.failures, {})
+        self.assertIn(self.filename, linecache.cache)
+        self.assertListEqual(linecache.getlines(self.filename), data)
 
 
 if __name__ == "__main__":
