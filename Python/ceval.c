@@ -726,6 +726,18 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+#if Py_STACKREF_DEBUG
+static int
+_PyEval_StackIsAllLive(_PyStackRef *stack_base, _PyStackRef *stack_pointer)
+{
+    while (stack_pointer > stack_base) {
+        assert(_PyStackRef_IsLive(stack_pointer[-1]));
+        stack_pointer--;
+    }
+    return 1;
+}
+#endif
+
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
