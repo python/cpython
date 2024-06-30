@@ -3385,7 +3385,9 @@ dummy_func(
             /* Callable is not a normal Python function */
             STACKREFS_TO_PYOBJECTS_BORROW(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
-                DECREF_INPUTS();
+                for (int i = 0; i < total_args; i++) {
+                    PyStackRef_CLOSE(args[i]);
+                }
                 ERROR_IF(true, error);
             }
             PyObject *res_o = PyObject_Vectorcall(

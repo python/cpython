@@ -869,10 +869,8 @@
                 /* Callable is not a normal Python function */
                 STACKREFS_TO_PYOBJECTS_BORROW(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
-                    PyStackRef_CLOSE(callable);
-                    PyStackRef_CLOSE(self_or_null);
-                    for (int _i = oparg; --_i >= 0;) {
-                        PyStackRef_CLOSE(args[_i]);
+                    for (int i = 0; i < total_args; i++) {
+                        PyStackRef_CLOSE(args[i]);
                     }
                     if (true) { stack_pointer += -2 - oparg; goto error; }
                 }
