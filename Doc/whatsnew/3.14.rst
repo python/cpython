@@ -92,6 +92,13 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
 os
 --
 
