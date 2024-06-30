@@ -178,6 +178,9 @@ EXPORTSFROM=	@EXPORTSFROM@
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
+# Name of the patch file to apply for app store compliance
+APP_STORE_COMPLIANCE_PATCH=@APP_STORE_COMPLIANCE_PATCH@
+
 # Short name and location for Mac OS X Python framework
 UNIVERSALSDK=@UNIVERSALSDK@
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
@@ -692,7 +695,7 @@ list-targets:
 	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
 
 .PHONY: build_all
-build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
+build_all:	check-clean-src @APP_STORE_COMPLIANCE_PATCH_TARGET@ $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: build_wasm
@@ -927,6 +930,18 @@ gdbhooks: $(BUILDPYTHON)-gdb.py
 SRC_GDB_HOOKS=$(srcdir)/Tools/gdb/libpython.py
 $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 	$(INSTALL_DATA) $(SRC_GDB_HOOKS) $(BUILDPYTHON)-gdb.py
+
+# Compliance with app stores (such as iOS and macOS) sometimes requires making
+# modifications to the Python standard library. If enabled, apply the patch of
+# known modifications to the source tree before building. The patch will be
+# applied in a dry-run mode (validating, but not applying the patch) on builds
+# that *have* a compliance patch, but where compliance has not been enabled.
+build/app-store-compliant:
+	patch @APP_STORE_COMPLIANCE_PATCH_FLAGS@ --forward --strip=1 --directory="$(srcdir)" --input "$(APP_STORE_COMPLIANCE_PATCH)"
+	@if test "@APP_STORE_COMPLIANCE_PATCH_FLAGS@" == ""; then \
+		mkdir -p build ; \
+		echo "$(APP_STORE_COMPLIANCE_PATCH)" > build/app-store-compliant ; \
+	fi
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current

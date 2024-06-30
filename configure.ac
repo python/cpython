@@ -695,6 +695,64 @@ AC_SUBST([INSTALLTARGETS])
 AC_DEFINE_UNQUOTED([_PYTHONFRAMEWORK], ["${PYTHONFRAMEWORK}"],
                    [framework name])
 
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+AC_MSG_CHECKING([for --with-app-store-compliance])
+AC_ARG_WITH(
+  [app_store_compliance],
+  [AS_HELP_STRING(
+    [--with-app-store-compliance=@<:@PATCH-FILE@:>@],
+    [Enable any patches required for compiliance with app stores.
+     Optional PATCH-FILE specifies the custom patch to apply.]
+  )],[
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
+      esac
+      AC_MSG_RESULT([applying default app store compliance patch])
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+      APP_STORE_COMPLIANCE_PATCH_FLAGS=
+      AC_MSG_RESULT([applying custom app store compliance patch])
+      ;;
+    esac
+  ],[
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([applying default app store compliance patch])
+        ;;
+      Darwin)
+        # Always *check* the compliance patch on macOS
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
+        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
+        ;;
+      *)
+        # No app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        APP_STORE_COMPLIANCE_PATCH_TARGET=
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([not patching for app store compliance])
+        ;;
+    esac
+])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
+
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
 	case "$host" in
@@ -6591,6 +6649,34 @@ if test "$ac_cv_stat_tv_nsec2" = yes
 then
   AC_DEFINE([HAVE_STAT_TV_NSEC2], [1],
   [Define if you have struct stat.st_mtimensec])
+fi
+
+AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char year[5];
+  struct tm date = {
+    .tm_year = -1801,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
+    return 1;
+  }
+  return 0;
+}
+]])],
+[ac_cv_normalize_century=yes],
+[ac_cv_normalize_century=no],
+[ac_cv_normalize_century=yes])])
+if test "$ac_cv_normalize_century" = yes
+then
+  AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
+  [Define if year with century should be normalized for strftime.])
 fi
 
 dnl check for ncurses/ncursesw and panel/panelw
