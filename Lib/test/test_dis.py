@@ -209,6 +209,29 @@ dis_bug42562 = """\
           RETURN_CONST             0 (None)
 """
 
+
+def bug45191():
+    obj \
+        .m(a)
+
+
+dis_bug45191 = """\
+%3d           RESUME                   0
+
+%3d           LOAD_GLOBAL              0 (obj)
+
+%3d           LOAD_ATTR                3 (m + NULL|self)
+              LOAD_GLOBAL              4 (a)
+
+%3d           CALL                     1
+              POP_TOP
+              RETURN_CONST             0 (None)
+""" % (bug45191.__code__.co_firstlineno + 0,
+       bug45191.__code__.co_firstlineno + 1,
+       bug45191.__code__.co_firstlineno + 2,
+       bug45191.__code__.co_firstlineno + 1)
+
+
 # Extended arg followed by NOP
 code_bug_45757 = bytes([
         opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
@@ -964,6 +987,9 @@ class DisTests(DisTestBase):
 
     def test_bug_42562(self):
         self.do_disassembly_test(bug42562, dis_bug42562)
+
+    def test_bug_45191(self):
+        self.do_disassembly_test(bug45191, dis_bug45191)
 
     def test_bug_45757(self):
         # Extended arg followed by NOP
