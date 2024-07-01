@@ -41,24 +41,18 @@ typedef struct {
  * the 32 bits between the oparg and operand are:
  * UOP_FORMAT_TARGET:
  *    uint32_t target;
- * UOP_FORMAT_EXIT
- *    uint16_t exit_index;
- *    uint16_t error_target;
  * UOP_FORMAT_JUMP
  *    uint16_t jump_target;
  *    uint16_t error_target;
  */
 typedef struct {
-    uint16_t opcode:14;
-    uint16_t format:2;
+    uint16_t opcode:15;
+    uint16_t format:1;
     uint16_t oparg;
     union {
         uint32_t target;
         struct {
-            union {
-                uint16_t exit_index;
-                uint16_t jump_target;
-            };
+            uint16_t jump_target;
             uint16_t error_target;
         };
     };
@@ -160,20 +154,12 @@ struct _Py_UopsSymbol {
 };
 
 #define UOP_FORMAT_TARGET 0
-#define UOP_FORMAT_EXIT 1
-#define UOP_FORMAT_JUMP 2
-#define UOP_FORMAT_UNUSED 3
+#define UOP_FORMAT_JUMP 1
 
 static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
 {
     assert(inst->format == UOP_FORMAT_TARGET);
     return inst->target;
-}
-
-static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
-{
-    assert(inst->format == UOP_FORMAT_EXIT);
-    return inst->exit_index;
 }
 
 static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)

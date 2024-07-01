@@ -144,18 +144,6 @@ _Py_GetOptimizer(void)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
-static int
-init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
-
-/* It is impossible for the number of exits to reach 1/4 of the total length,
- * as the number of exits cannot reach 1/3 of the number of non-exits, due to
- * the presence of CHECK_VALIDITY checks and instructions to produce the values
- * being checked in exits. */
-#define COLD_EXIT_COUNT (UOP_MAX_TRACE_LENGTH/4)
-
-static int cold_exits_initialized = 0;
-static _PyExecutorObject COLD_EXITS[COLD_EXIT_COUNT] = { 0 };
-
 static const _PyBloomFilter EMPTY_FILTER = { 0 };
 
 _PyOptimizerObject *
@@ -163,14 +151,6 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
-    }
-    else if (cold_exits_initialized == 0) {
-        cold_exits_initialized = 1;
-        for (int i = 0; i < COLD_EXIT_COUNT; i++) {
-            if (init_cold_exit_executor(&COLD_EXITS[i], i)) {
-                return NULL;
-            }
-        }
     }
     _PyOptimizerObject *old = interp->optimizer;
     if (old == NULL) {
@@ -315,12 +295,6 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
             printf(" (%d, jump_target=%d, operand=%#" PRIx64,
                 uop->oparg,
                 uop->jump_target,
-                (uint64_t)uop->operand);
-            break;
-        case UOP_FORMAT_EXIT:
-            printf(" (%d, exit_index=%d, operand=%#" PRIx64,
-                uop->oparg,
-                uop->exit_index,
                 (uint64_t)uop->operand);
             break;
         default:
@@ -1094,7 +1068,7 @@ sanity_check(_PyExecutorObject *executor)
     }
     bool ended = false;
     uint32_t i = 0;
-    CHECK(executor->trace[0].opcode == _START_EXECUTOR || executor->trace[0].opcode == _COLD_EXIT);
+    CHECK(executor->trace[0].opcode == _START_EXECUTOR);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
@@ -1104,22 +1078,15 @@ sanity_check(_PyExecutorObject *executor)
             case UOP_FORMAT_TARGET:
                 CHECK(target_unused(opcode));
                 break;
-            case UOP_FORMAT_EXIT:
-                CHECK(opcode == _EXIT_TRACE);
-                CHECK(inst->exit_index < executor->exit_count);
-                break;
             case UOP_FORMAT_JUMP:
                 CHECK(inst->jump_target < executor->code_size);
-                break;
-            case UOP_FORMAT_UNUSED:
-                CHECK(0);
                 break;
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _COLD_EXIT) {
+        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             ended = true;
             i++;
             break;
@@ -1133,9 +1100,6 @@ sanity_check(_PyExecutorObject *executor)
             opcode == _DEOPT ||
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
-        if (opcode == _EXIT_TRACE) {
-            CHECK(inst->format == UOP_FORMAT_EXIT);
-        }
     }
 }
 
@@ -1157,9 +1121,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 
     /* Initialize exits */
-    assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
-        executor->exits[i].executor = &COLD_EXITS[i];
+        executor->exits[i].executor = NULL;
         executor->exits[i].temperature = initial_temperature_backoff_counter();
     }
     int next_exit = exit_count-1;
@@ -1173,8 +1136,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
         if (opcode == _EXIT_TRACE) {
             executor->exits[next_exit].target = buffer[i].target;
-            dest->exit_index = next_exit;
-            dest->format = UOP_FORMAT_EXIT;
+            dest->oparg = next_exit;
             next_exit--;
         }
         if (opcode == _DYNAMIC_EXIT) {
@@ -1216,36 +1178,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     return executor;
 }
 
-static int
-init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
-{
-    _Py_SetImmortalUntracked((PyObject *)executor);
-    Py_SET_TYPE(executor, &_PyUOpExecutor_Type);
-    executor->trace = (_PyUOpInstruction *)executor->exits;
-    executor->code_size = 1;
-    executor->exit_count = 0;
-    _PyUOpInstruction *inst = (_PyUOpInstruction *)&executor->trace[0];
-    inst->opcode = _COLD_EXIT;
-    inst->oparg = oparg;
-    executor->vm_data.valid = true;
-    executor->vm_data.linked = false;
-    for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
-        assert(executor->vm_data.bloom.bits[i] == 0);
-    }
-#ifdef Py_DEBUG
-    sanity_check(executor);
-#endif
-#ifdef _Py_JIT
-    executor->jit_code = NULL;
-    executor->jit_side_entry = NULL;
-    executor->jit_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, 1)) {
-        return -1;
-    }
-#endif
-    return 0;
-}
-
 #ifdef Py_STATS
 /* Returns the effective trace length.
  * Ignores NOPs and trailing exit and error handling.*/
@@ -1258,8 +1190,7 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
             nop_count++;
         }
         if (opcode == _EXIT_TRACE ||
-            opcode == _JUMP_TO_TOP ||
-            opcode == _COLD_EXIT) {
+            opcode == _JUMP_TO_TOP) {
             return i+1-nop_count;
         }
     }
@@ -1624,13 +1555,8 @@ executor_clear(_PyExecutorObject *executor)
      */
     Py_INCREF(executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
-        const _PyExecutorObject *cold = &COLD_EXITS[i];
-        const _PyExecutorObject *side = executor->exits[i].executor;
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
-        if (side != cold) {
-            executor->exits[i].executor = cold;
-            Py_DECREF(side);
-        }
+        Py_CLEAR(executor->exits[i].executor);
     }
     _Py_ExecutorDetach(executor);
     Py_DECREF(executor);
