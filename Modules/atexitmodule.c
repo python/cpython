@@ -283,11 +283,20 @@ atexit_unregister(PyObject *module, PyObject *func)
             continue;
         }
 
+        /*
+         * Increment refcounts of func and cb->func because equality check may
+         * unregister one or both
+         */
+        PyObject *cb_func = Py_NewRef(cb->func);
+        PyObject *cur_func = Py_NewRef(func);
         int eq = PyObject_RichCompareBool(cb->func, func, Py_EQ);
+        Py_DECREF(cb_func);
+        Py_DECREF(cur_func);
         if (eq < 0) {
             return NULL;
         }
-        if (eq) {
+        // Equality comparison might have already deleted this callback
+        if (eq && state->callbacks[i] != NULL) {
             atexit_delete_cb(state, i);
         }
     }
