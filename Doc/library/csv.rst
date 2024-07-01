@@ -322,8 +322,8 @@ The :mod:`csv` module defines the following constants:
 
 .. data:: QUOTE_MINIMAL
 
-   Instructs :class:`writer` objects to only quote those fields which contain
-   special characters such as *delimiter*, *quotechar* or any of the characters in
+   Instructs :class:`writer` objects to only quote those fields which contain the
+   special characters *delimiter*, *quotechar* or any of the characters in
    *lineterminator*.
 
 
