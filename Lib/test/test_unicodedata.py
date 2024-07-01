@@ -235,6 +235,12 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
+    def test_issue40243(self):
+        # BENGALI CURRENCY NUMERATOR FOUR
+        u09f7 = '\u09f7'
+        self.assertEqual(self.db.numeric(u09f7), 0.25)
+        self.assertEqual(self.db.ucd_3_2_0.numeric(u09f7), 4.0)
+
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, b'a')
