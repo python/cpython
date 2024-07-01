@@ -2292,7 +2292,7 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(testcase.get('result'), 'completed')
         self.assertGreater(float(testcase.get('time')), 0)
         for out in testcase.iter('system-out'):
-            self.assertEqual(out.text, "abc &#27; def")
+            self.assertEqual(out.text, r"abc \x1b def")
 
 
 class TestUtils(unittest.TestCase):
@@ -2477,21 +2477,23 @@ class TestUtils(unittest.TestCase):
             self.assertTrue(match_test(test_chdir))
             self.assertFalse(match_test(test_copy))
 
-    def test_escape_xml(self):
-        escape_xml = utils.escape_xml
+    def test_sanitize_xml(self):
+        sanitize_xml = utils.sanitize_xml
 
         # escape invalid XML characters
-        self.assertEqual(escape_xml('abc \x1b def'),
-                         'abc &#27; def')
-        self.assertEqual(escape_xml('nul:\x00, bell:\x07'),
-                         'nul:&#0;, bell:&#7;')
-        self.assertEqual(escape_xml('surrogate:\uDC80'),
-                         'surrogate:&#56448;')
-        self.assertEqual(escape_xml('illegal \uFFFE and \uFFFF'),
-                         'illegal &#65534; and &#65535;')
+        self.assertEqual(sanitize_xml('abc \x1b\x1f def'),
+                         r'abc \x1b\x1f def')
+        self.assertEqual(sanitize_xml('nul:\x00, bell:\x07'),
+                         r'nul:\x00, bell:\x07')
+        self.assertEqual(sanitize_xml('surrogate:\uDC80'),
+                         r'surrogate:\udc80')
+        self.assertEqual(sanitize_xml('illegal \uFFFE and \uFFFF'),
+                         r'illegal \ufffe and \uffff')
 
         # no escape for valid XML characters
-        self.assertEqual(escape_xml('valid t\xe9xt \u20ac'),
+        self.assertEqual(sanitize_xml('a\n\tb'),
+                         'a\n\tb')
+        self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
                          'valid t\xe9xt \u20ac')
 
 

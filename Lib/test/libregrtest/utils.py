@@ -717,15 +717,20 @@ def get_signal_name(exitcode):
 
 ILLEGAL_XML_CHARS_RE = re.compile(
     '['
-    '\x00-\x1F'      # ASCII control characters
-    '\uD800-\uDFFF'  # surrogate characters
+    # Control characters; newline (\x0A and \x0D) and TAB (\x09) are legal
+    '\x00-\x08\x0B\x0C\x0E-\x1F'
+    # Surrogate characters
+    '\uD800-\uDFFF'
+    # Special Unicode characters
     '\uFFFE'
     '\uFFFF'
-    ']')
+    # Match multiple sequential invalid characters for better effiency
+    ']+')
 
-def _escape_xml_replace(regs):
-    code_point = ord(regs[0])
-    return f"&#{code_point};"
+def _sanitize_xml_replace(regs):
+    text = regs[0]
+    return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
+                   for ch in text)
 
-def escape_xml(text):
-    return ILLEGAL_XML_CHARS_RE.sub(_escape_xml_replace, text)
+def sanitize_xml(text):
+    return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)
