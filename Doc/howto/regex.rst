@@ -180,7 +180,7 @@ engine will try to repeat it as many times as possible. If later portions of the
 pattern don't match, the matching engine will then back up and try again with
 fewer repetitions.
 
-A step-by-step example will make this more obvious.  Let's consider the
+A step-by-step example will make this clearer.  Let's consider the
 expression ``a[bcd]*b``.  This matches the letter ``'a'``, zero or more letters
 from the class ``[bcd]``, and finally ends with a ``'b'``.  Now imagine matching
 this RE against the string ``'abcbd'``.
@@ -335,7 +335,7 @@ expressions will often be written in Python code using this raw string notation.
 
 In addition, special escape sequences that are valid in regular expressions,
 but not valid as Python string literals, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`,
 which means the sequences will be invalid if raw string notation or escaping
 the backslashes isn't used.
 
@@ -362,20 +362,24 @@ for a complete listing.
 +------------------+-----------------------------------------------+
 | Method/Attribute | Purpose                                       |
 +==================+===============================================+
+| ``fullmatch()``  | Determine if the RE matches the entire string |
+|                  | exactly.                                      |
++------------------+-----------------------------------------------+
 | ``match()``      | Determine if the RE matches at the beginning  |
 |                  | of the string.                                |
 +------------------+-----------------------------------------------+
 | ``search()``     | Scan through a string, looking for any        |
-|                  | location where this RE matches.               |
+|                  | location where the RE matches.                |
 +------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
 |                  | returns them as a list.                       |
 +------------------+-----------------------------------------------+
-| ``finditer()``   | Find all substrings where the RE matches, and |
-|                  | returns them as an :term:`iterator`.          |
+| ``finditer()``   | Returns an :term:`iterator` yielding          |
+|                  | :ref:`match objects <match-objects>` for all  |
+|                  | matches of the RE.                            |
 +------------------+-----------------------------------------------+
 
-:meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
+:meth:`~re.Pattern.match`, :meth:`~re.Pattern.search`, and :meth:`~re.Pattern.fullmatch` return ``None`` if no match can be found.  If
 they're successful, a :ref:`match object <match-objects>` instance is returned,
 containing information about the match: where it starts and ends, the substring
 it matched, and more.
@@ -452,6 +456,16 @@ case. ::
    >>> m.span()
    (4, 11)
 
+The :meth:`~re.Pattern.fullmatch` method checks if the RE matches the entire
+string exactly::
+
+   >>> p = re.compile('[a-z]+')
+   >>> p.search(' words ')
+   <re.Match object; span=(1, 6), match='words'>
+   >>> p.fullmatch(' textual ')  # Fails to match and returns None
+   >>> p.fullmatch('textual')
+   <re.Match object; span=(0, 7), match='textual'>
+
 In actual programs, the most common style is to store the
 :ref:`match object <match-objects>` in a variable, and then check if it was
 ``None``.  This usually looks like::
@@ -459,6 +473,15 @@ In actual programs, the most common style is to store the
    p = re.compile( ... )
    m = p.match( 'string goes here' )
    if m:
+       print('Match found: ', m.group())
+   else:
+       print('No match')
+
+Python 3.8 added assignment expressions that shorten the above pattern
+by a line::
+
+   p = re.compile( ... )
+   if (m := p.match( 'string goes here' )):
        print('Match found: ', m.group())
    else:
        print('No match')
@@ -471,9 +494,9 @@ Two pattern methods return all of the matches for a pattern.
    ['12', '11', '10']
 
 The ``r`` prefix, making the literal a raw string literal, is needed in this
-example because escape sequences in a normal "cooked" string literal that are
-not recognized by Python, as opposed to regular expressions, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+example because ``\d`` is not an escape sequence recognized in Python string literals.
+Such unrecognized sequences now produce a
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`.  See
 :ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
@@ -496,7 +519,7 @@ Module-Level Functions
 
 You don't have to create a pattern object and call its methods; the
 :mod:`re` module also provides top-level functions called :func:`~re.match`,
-:func:`~re.search`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
+:func:`~re.search`, :func:`~re.fullmatch`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
 take the same arguments as the corresponding pattern method with
 the RE string added as the first argument, and still return either ``None`` or a
 :ref:`match object <match-objects>` instance. ::
@@ -524,12 +547,22 @@ Compilation Flags
 .. currentmodule:: re
 
 Compilation flags let you modify some aspects of how regular expressions work.
-Flags are available in the :mod:`re` module under two names, a long name such as
-:const:`IGNORECASE` and a short, one-letter form such as :const:`I`.  (If you're
-familiar with Perl's pattern modifiers, the one-letter forms use the same
-letters; the short form of :const:`re.VERBOSE` is :const:`re.X`, for example.)
-Multiple flags can be specified by bitwise OR-ing them; ``re.I | re.M`` sets
-both the :const:`I` and :const:`M` flags, for example.
+They can be passed as an argument to functions such as :func:`re.compile` and
+:func:`re.sub` or you can specify them in the regex pattern.
+
+Flags are available in the :mod:`re` module under two names, a long
+name such as :const:`IGNORECASE` and a short, one-letter form such as
+:const:`I`. Multiple flags can be specified by bitwise OR-ing them;
+``re.IGNORECASE | re.MULTILINE`` sets both the :const:`IGNORECASE` and
+:const:`MULTILINE` flags, for example.
+
+To specify them in the pattern, you can write them as an embedded
+modifier at the start of the pattern that uses the short one-letter
+form: `(?i)` for a single flag or `(?mxi)` to enable multiple flags.
+(If you're familiar with Perl's pattern modifiers, the one-letter
+forms use the same letters; the short form of :const:`re.VERBOSE` is
+:const:`re.X` because Perl calls these "extended regular expressions",
+for example.)
 
 Here's a table of the available flags, followed by a more detailed explanation
 of each one.
@@ -589,6 +622,7 @@ of each one.
    If your system is configured properly and a French locale is selected,
    certain C functions will tell the program that the byte corresponding to
    ``é`` should also be considered a letter.
+
    Setting the :const:`LOCALE` flag when compiling a regular expression will cause
    the resulting compiled object to use these C functions for ``\w``; this is
    slower, but also enables ``\w+`` to match French words as you'd expect.
@@ -673,7 +707,7 @@ More Pattern Power
 ==================
 
 So far we've only covered a part of the features of regular expressions.  In
-this section, we'll cover some new metacharacters, and how to use groups to
+this section, we'll cover some additional metacharacters and how to
 retrieve portions of the text that was matched.
 
 
@@ -682,16 +716,8 @@ retrieve portions of the text that was matched.
 More Metacharacters
 -------------------
 
-There are some metacharacters that we haven't covered yet.  Most of them will be
-covered in this section.
-
-Some of the remaining metacharacters to be discussed are :dfn:`zero-width
-assertions`.  They don't cause the engine to advance through the string;
-instead, they consume no characters at all, and simply succeed or fail.  For
-example, ``\b`` is an assertion that the current position is located at a word
-boundary; the position isn't changed by the ``\b`` at all.  This means that
-zero-width assertions should never be repeated, because if they match once at a
-given location, they can obviously be matched an infinite number of times.
+There are more metacharacters that provide different capabilities. The first one
+allows matching two possible sub-patterns.
 
 ``|``
    Alternation, or the "or" operator.   If *A* and *B* are regular expressions,
@@ -702,6 +728,17 @@ given location, they can obviously be matched an infinite number of times.
 
    To match a literal ``'|'``, use ``\|``, or enclose it inside a character class,
    as in ``[|]``.
+
+The following metacharacters are all :dfn:`zero-width assertions`.
+They don't cause the engine to advance through the string;
+instead, they consume no characters at all and simply succeed or fail.  For
+example, ``\b`` is an assertion that the current position is located at a word
+boundary; the position isn't changed by the ``\b`` at all.
+
+Zero-width assertions can't be repeated, because if they match once at
+a given location, they could be matched an infinite number of times,
+so it's meaningless to repeat them. A pattern such as `^*` will raise
+an exception when you try to compile it.
 
 ``^``
    Matches at the beginning of lines.  Unless the :const:`MULTILINE` flag has been
@@ -853,19 +890,28 @@ subgroups, from 1 up to however many there are. ::
    >>> m.groups()
    ('abc', 'b')
 
-Backreferences in a pattern allow you to specify that the contents of an earlier
-capturing group must also be found at the current location in the string.  For
-example, ``\1`` will succeed if the exact contents of group 1 can be found at
-the current position, and fails otherwise.  Remember that Python's string
-literals also use a backslash followed by numbers to allow including arbitrary
-characters in a string, so be sure to use a raw string when incorporating
-backreferences in a RE.
+Backreferences in a pattern allow you to specify that the contents of an
+earlier capturing group must also be found at the current location in the
+string. For example, ``\2`` will reference the substring matched by group 2,
+succeeding only if those exact contents are found at the current position
+within the string.
+
+(Remember that Python's string literals also use a backslash followed by
+numbers for including arbitrary characters in a string, so be sure to use a
+raw string when incorporating backreferences in a RE.)
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'\b(\w+)\s+\1\b')
+   >>> p = re.compile(r'\b(\w+)\b\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
+
+The first part of the pattern, ``\b(\w+)\b``, will match an entire word and
+capture the word as group 1. The pattern then matches some whitespace with
+``\s+`` and checks for the word again with ``\1\b``. The second \b is
+necessary to ensure that the backreference is matching an entire word;
+without it, the pattern would match when word #2 contains word #1 as its
+beginning, as in the string "the theropod".
 
 Backreferences like this aren't often useful for just searching through a string
 --- there are few text formats which repeat data in this way --- but you'll soon
@@ -929,15 +975,17 @@ A more significant feature is named groups: instead of referring to them by
 numbers, groups can be referenced by a name.
 
 The syntax for a named group is one of the Python-specific extensions:
-``(?P<name>...)``.  *name* is, obviously, the name of the group.  Named groups
-behave exactly like capturing groups, and additionally associate a name
-with a group.  The :ref:`match object <match-objects>` methods that deal with
-capturing groups all accept either integers that refer to the group by number
-or strings that contain the desired group's name.  Named groups are still
-given numbers, so you can retrieve information about a group in two ways::
+``(?P<name>...)``. Named groups behave exactly like capturing groups, and
+additionally associate *name* with the group so that *name* can be used to
+refer to the group in other contexts. Names should look like a Python
+identifier andonly contain letters, digits and underscores. The :ref:`match
+object <match-objects>` methods that deal with capturing groups all accept
+either integers that refer to the group by number or strings that contain the
+desired group's name. Named groups are still given numbers, so you can
+retrieve information about a group in two ways::
 
    >>> p = re.compile(r'(?P<word>\b\w+\b)')
-   >>> m = p.search( '(((( Lots of punctuation )))' )
+   >>> m = p.search( '((( Lots of punctuation )))' )
    >>> m.group('word')
    'Lots'
    >>> m.group(1)
@@ -961,7 +1009,7 @@ module::
            r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
            r'"')
 
-It's obviously much easier to retrieve ``m.group('zonem')``, instead of having
+It's much easier to write ``m.group('zonem')``, instead of having
 to remember to retrieve group 9.
 
 The syntax for backreferences in an expression such as ``(...)\1`` refers to the
@@ -1087,13 +1135,14 @@ whitespace or by a fixed string.  As you'd expect, there's a module-level
 :func:`re.split` function, too.
 
 
-.. method:: .split(string [, maxsplit=0])
+.. method:: .split(string [, maxsplit=0, flags=0])
    :noindex:
 
    Split *string* by the matches of the regular expression.  If capturing
    parentheses are used in the RE, then their contents will also be returned as
    part of the resulting list.  If *maxsplit* is nonzero, at most *maxsplit* splits
-   are performed.
+   are performed.  The *flags* argument is optional and may contain flag values such as
+   `re.MULTILINE` or `re.VERBOSE`.
 
 You can limit the number of splits made, by passing a value for *maxsplit*.
 When *maxsplit* is nonzero, at most *maxsplit* splits will be made, and the
@@ -1137,7 +1186,7 @@ Another common task is to find all the matches for a pattern, and replace them
 with a different string.  The :meth:`~re.Pattern.sub` method takes a replacement value,
 which can be either a string or a function, and the string to be processed.
 
-.. method:: .sub(replacement, string[, count=0])
+.. method:: .sub(replacement, string[, count=0, flags=0])
    :noindex:
 
    Returns the string obtained by replacing the leftmost non-overlapping
@@ -1146,7 +1195,8 @@ which can be either a string or a function, and the string to be processed.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  The default value of 0 means
-   to replace all occurrences.
+   to replace all occurrences.  The *flags* argument is also optional and may contain
+   flag values such as `re.MULTILINE` or `re.VERBOSE`.
 
 Here's a simple example of using the :meth:`~re.Pattern.sub` method.  It replaces colour
 names with the word ``colour``::
@@ -1223,10 +1273,7 @@ hexadecimal::
    'Call 0xffd2 for printing, 0xc000 for user code.'
 
 When using the module-level :func:`re.sub` function, the pattern is passed as
-the first argument.  The pattern may be provided as an object or as a string; if
-you need to specify regular expression flags, you must either use a
-pattern object as the first parameter, or use embedded modifiers in the
-pattern string, e.g. ``sub("(?i)b+", "x", "bbbb BBBB")`` returns ``'x x'``.
+the first argument.  The pattern may be provided as an object or as a string.
 
 
 Common Problems
