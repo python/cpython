@@ -1,0 +1,3 @@
+Keep a reference to original PyCursesWindowObject in subwindows so
+that the original WINDOW does not get deleted before the subwindow
+WINDOW.

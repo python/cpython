@@ -67,10 +67,11 @@ extern "C" {
 
 /* Type declarations */
 
-typedef struct {
+typedef struct PyCursesWindowObject {
     PyObject_HEAD
     WINDOW *win;
     char *encoding;
+    struct PyCursesWindowObject *orig;
 } PyCursesWindowObject;
 
 #define PyCursesWindow_Check(v) Py_IS_TYPE((v), &PyCursesWindow_Type)
