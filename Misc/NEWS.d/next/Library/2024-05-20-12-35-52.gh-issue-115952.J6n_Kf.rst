@@ -1,0 +1,2 @@
+:mod:`pickle` now avoids allocation of arbitrary large amount of memory
+when unpickling specially crafted data.
