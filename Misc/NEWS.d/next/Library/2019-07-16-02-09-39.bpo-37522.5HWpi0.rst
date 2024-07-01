@@ -1,0 +1,1 @@
+Updated the way Set-Cookie is read to conform to RFC6265 specifications

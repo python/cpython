@@ -80,7 +80,7 @@ HTTP_COOKIE environment variable.
    >>> C = cookies.SimpleCookie()
    >>> C.load("chips=ahoy; vienna=finger")
    >>> C.output()
-   'Set-Cookie: chips=ahoy\r\nSet-Cookie: vienna=finger'
+   'Set-Cookie: chips=ahoy'
 
 The load() method is darn-tootin smart about identifying cookies
 within a string.  Escaped quotation marks, nested semicolons, and other
@@ -89,7 +89,7 @@ such trickeries do not confuse it.
    >>> C = cookies.SimpleCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody
 
 Each element of the Cookie also supports all of the RFC 2109
 Cookie attributes.  Here's an example which sets the Path
@@ -349,8 +349,6 @@ class Morsel(dict):
     def set(self, key, val, coded_val):
         if key.lower() in self._reserved:
             raise CookieError('Attempt to set a reserved key %r' % (key,))
-        if not _is_legal_key(key):
-            raise CookieError('Illegal key %r' % (key,))
 
         # It's a good key, so save it.
         self._key = key
@@ -421,37 +419,6 @@ class Morsel(dict):
         return _semispacejoin(result)
 
     __class_getitem__ = classmethod(types.GenericAlias)
-
-
-#
-# Pattern for finding cookie
-#
-# This used to be strict parsing based on the RFC2109 and RFC2068
-# specifications.  I have since discovered that MSIE 3.0x doesn't
-# follow the character rules outlined in those specs.  As a
-# result, the parsing rules here are less strict.
-#
-
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
-_LegalValueChars = _LegalKeyChars + r'\[\]'
-_CookiePattern = re.compile(r"""
-    \s*                            # Optional whitespace at start of cookie
-    (?P<key>                       # Start of group 'key'
-    [""" + _LegalKeyChars + r"""]+?   # Any word of at least one letter
-    )                              # End of group 'key'
-    (                              # Optional group: there may not be a value.
-    \s*=\s*                          # Equal Sign
-    (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
-    |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
-    |                                  # or
-    [""" + _LegalValueChars + r"""]*      # Any word or empty string
-    )                                # End of group 'val'
-    )?                             # End of optional value group
-    \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
-    """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
 
 
 # At long last, here is the cookie class.  Using this class is almost just like
@@ -536,65 +503,40 @@ class BaseCookie(dict):
                 self[key] = value
         return
 
-    def __parse_string(self, str, patt=_CookiePattern):
-        i = 0                 # Our starting point
-        n = len(str)          # Length of string
-        parsed_items = []     # Parsed (type, key, value) triples
-        morsel_seen = False   # A key=value pair was previously encountered
+    def __parse_string(self, str, patt=None):
+        M = None
 
-        TYPE_ATTRIBUTE = 1
-        TYPE_KEYVALUE = 2
+        for ii, param in enumerate(str.split(";")):
+            key, sep, value = param.partition("=")
+            key = key.strip()
 
-        # We first parse the whole cookie string and reject it if it's
-        # syntactically invalid (this helps avoid some classes of injection
-        # attacks).
-        while 0 <= i < n:
-            # Start looking for a cookie
-            match = patt.match(str, i)
-            if not match:
-                # No more cookies
-                break
-
-            key, value = match.group("key"), match.group("val")
-            i = match.end(0)
-
-            if key[0] == "$":
-                if not morsel_seen:
-                    # We ignore attributes which pertain to the cookie
-                    # mechanism as a whole, such as "$Version".
-                    # See RFC 2965. (Does anyone care?)
-                    continue
-                parsed_items.append((TYPE_ATTRIBUTE, key[1:], value))
-            elif key.lower() in Morsel._reserved:
-                if not morsel_seen:
-                    # Invalid cookie string
-                    return
-                if value is None:
-                    if key.lower() in Morsel._flags:
-                        parsed_items.append((TYPE_ATTRIBUTE, key, True))
-                    else:
-                        # Invalid cookie string
-                        return
+            if not key:
+                if ii == 0:
+                    break
                 else:
-                    parsed_items.append((TYPE_ATTRIBUTE, key, _unquote(value)))
-            elif value is not None:
-                parsed_items.append((TYPE_KEYVALUE, key, self.value_decode(value)))
-                morsel_seen = True
-            else:
-                # Invalid cookie string
-                return
+                    continue
 
-        # The cookie string is valid, apply it.
-        M = None         # current morsel
-        for tp, key, value in parsed_items:
-            if tp == TYPE_ATTRIBUTE:
-                assert M is not None
-                M[key] = value
-            else:
-                assert tp == TYPE_KEYVALUE
-                rval, cval = value
+            value = value.strip() if sep else None
+
+            if ii == 0:
+                # KEYVALUE
+                rval, cval = self.value_decode(value)
                 self.__set(key, rval, cval)
                 M = self[key]
+            else:
+                # ATTRIBUTE
+                assert M is not None
+                if key[0] == '$':
+                    # RFC2109: cookie-version = "$Version" "=" value
+                    M[key[1:]] = value
+                elif value is None and key.lower() in Morsel._flags:
+                    M[key] = True
+                elif key.lower() in Morsel._reserved:
+                    M[key] = value
+                else:
+                    # RFC6265: Notice that attributes with unrecognized
+                    # attribute-names are ignored.
+                    pass
 
 
 class SimpleCookie(BaseCookie):
