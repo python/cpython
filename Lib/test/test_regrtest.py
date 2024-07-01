@@ -2479,8 +2479,20 @@ class TestUtils(unittest.TestCase):
 
     def test_escape_xml(self):
         escape_xml = utils.escape_xml
+
+        # escape invalid XML characters
         self.assertEqual(escape_xml('abc \x1b def'),
                          'abc &#27; def')
+        self.assertEqual(escape_xml('nul:\x00, bell:\x07'),
+                         'nul:&#0;, bell:&#7;')
+        self.assertEqual(escape_xml('surrogate:\uDC80'),
+                         'surrogate:&#56448;')
+        self.assertEqual(escape_xml('illegal \uFFFE and \uFFFF'),
+                         'illegal &#65534; and &#65535;')
+
+        # no escape for valid XML characters
+        self.assertEqual(escape_xml('valid t\xe9xt \u20ac'),
+                         'valid t\xe9xt \u20ac')
 
 
 if __name__ == '__main__':
