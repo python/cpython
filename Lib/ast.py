@@ -455,7 +455,7 @@ def compare(
             b_field = getattr(b, field, sentinel)
             if a_field is sentinel and b_field is sentinel:
                 # both nodes are missing a field at runtime
-                return True
+                continue
             if a_field is sentinel or b_field is sentinel:
                 # one of the node is missing a field
                 return False
@@ -473,7 +473,7 @@ def compare(
             b_attr = getattr(b, attr, sentinel)
             if a_attr is sentinel and b_attr is sentinel:
                 # both nodes are missing an attribute at runtime
-                return True
+                continue
             if a_attr != b_attr:
                 return False
         else:
