@@ -1,0 +1,2 @@
+Add :c:func:`PyContext_AddWatcher` and :c:func:`PyContext_ClearWatcher` APIs to
+register callbacks to receive notification on enter and exit of context objects.
