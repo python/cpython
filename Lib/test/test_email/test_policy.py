@@ -26,6 +26,7 @@ class PolicyAPITests(unittest.TestCase):
         'raise_on_defect':          False,
         'mangle_from_':             True,
         'message_factory':          None,
+        'rstrip_whitespace':        False,
         }
     # These default values are the ones set on email.policy.default.
     # If any of these defaults change, the docs must be updated.
@@ -38,6 +39,7 @@ class PolicyAPITests(unittest.TestCase):
         'content_manager':          email.policy.EmailPolicy.content_manager,
         'mangle_from_':             False,
         'message_factory':          email.message.EmailMessage,
+        'rstrip_whitespace':        False,
         })
 
     # For each policy under test, we give here what we expect the defaults to
@@ -52,9 +54,11 @@ class PolicyAPITests(unittest.TestCase):
         email.policy.SMTPUTF8: make_defaults(policy_defaults,
                                              {'linesep': '\r\n',
                                               'utf8': True}),
-        email.policy.HTTP: make_defaults(policy_defaults,
+        email.policy.HTTP: make_defaults(compat32_defaults,
                                          {'linesep': '\r\n',
-                                          'max_line_length': None}),
+                                          'max_line_length': None,
+                                          'rstrip_whitespace': True
+                                          }),
         email.policy.strict: make_defaults(policy_defaults,
                                            {'raise_on_defect': True}),
         new_policy: make_defaults(policy_defaults, {}),

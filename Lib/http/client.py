@@ -78,6 +78,7 @@ import socket
 import sys
 import collections.abc
 from urllib.parse import urlsplit
+from email import policy
 
 # HTTPMessage, parse_headers(), and the HTTP status code constants are
 # intentionally omitted for simplicity
@@ -240,7 +241,7 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
 
     """
     hstring = b''.join(header_lines).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=_class, policy=policy.HTTP).parsestr(hstring)
 
 def parse_headers(fp, _class=HTTPMessage):
     """Parses only RFC2822 headers from a file pointer."""
