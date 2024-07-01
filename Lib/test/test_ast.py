@@ -1268,7 +1268,7 @@ class CopyTests(unittest.TestCase):
         # assert that there is no side-effect
         self.assertIs(node.id, nid)
         self.assertIs(node.ctx, ctx)
-        # assert the changes
+        # check the changes
         self.assertIs(repl.id, new_nid)
         self.assertIs(repl.ctx, node.ctx)  # no changes
 
@@ -1386,6 +1386,40 @@ class CopyTests(unittest.TestCase):
         self.assertIs(repl.id, 'y')
         self.assertIs(repl.ctx, context)
         self.assertRaises(AttributeError, getattr, repl, 'extra')
+
+    def test_replace_reject_missing_field(self):
+        # case: warn if deleted field is not replaced
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+        del node.id
+
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        msg = (
+            "Name.__init__ missing 1 required positional argument: 'id'. "
+            "This will become an error in Python 3.15."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
+            repl = copy.replace(node)
+        # assert that there is no side-effect
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        self.assertRaises(AttributeError, getattr, repl, 'id')
+        self.assertIs(repl.ctx, context)
+
+        # case: do not warn if deleted field is replaced
+        node = ast.parse('x').body[0].value
+        context = node.ctx
+        del node.id
+
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        repl = copy.replace(node, id='y')
+        # assert that there is no side-effect
+        self.assertRaises(AttributeError, getattr, node, 'id')
+        self.assertIs(node.ctx, context)
+        self.assertIs(repl.id, 'y')
+        self.assertIs(repl.ctx, context)
 
     def test_replace_reject_known_custom_instance_fields_commits(self):
         node = ast.parse('x').body[0].value
