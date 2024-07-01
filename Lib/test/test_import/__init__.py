@@ -3053,6 +3053,13 @@ class SinglephaseInitTests(unittest.TestCase):
     def test_basic_multiple_interpreters_reset_each(self):
         # resetting between each interpreter
 
+        if Py_TRACE_REFS:
+            # It's a Py_TRACE_REFS build.
+            # This test breaks interpreter isolation a little,
+            # which causes problems on Py_TRACE_REF builds.
+            # See gh-121110.
+            raise unittest.SkipTest('crashes on Py_TRACE_REFS builds')
+
         # At this point:
         #  * alive in 0 interpreters
         #  * module def may or may not be loaded already
