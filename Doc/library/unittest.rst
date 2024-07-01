@@ -2403,16 +2403,19 @@ Class and Module Fixtures
 -------------------------
 
 Class and module level fixtures are implemented in :class:`TestSuite`. When
-the test suite encounters a test from a new class then :meth:`tearDownClass`
-from the previous class (if there is one) is called, followed by
+the test suite encounters a test that is from a different class from the previous
+test, then :meth:`tearDownClass` from the previous class is called, followed by
 :meth:`setUpClass` from the new class.
 
-Similarly if a test is from a different module from the previous test then
-``tearDownModule`` from the previous module is run, followed by
+Similarly if a test is from a different module from the previous test, then
+``tearDownModule`` from the previous module is called, followed by
 ``setUpModule`` from the new module.
 
 After all the tests have run the final ``tearDownClass`` and
 ``tearDownModule`` are run.
+
+The abovementioned calls are only executed,
+if the corresponding method or function is found.
 
 Note that shared fixtures do not play well with [potential] features like test
 parallelization and they break test isolation. They should be used with care.
@@ -2452,9 +2455,10 @@ These must be implemented as class methods::
         def tearDownClass(cls):
             cls._connection.destroy()
 
-If you want the ``setUpClass`` and ``tearDownClass`` on base classes called
-then you must call up to them yourself. The implementations in
-:class:`TestCase` are empty.
+The implementations in :class:`TestCase` are present, but empty.
+That means the implemenation is executed for classes descending from
+:class:`TestCase`, but the implementation does not do anything,
+unless overriden as in the example.
 
 If an exception is raised during a ``setUpClass`` then the tests in the class
 are not run and the ``tearDownClass`` is not run. Skipped classes will not
