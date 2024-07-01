@@ -43,8 +43,9 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
            "parse_qsl", "quote", "quote_plus", "quote_from_bytes",
            "unquote", "unquote_plus", "unquote_to_bytes",
-           "DefragResult", "ParseResult", "SplitResult",
-           "DefragResultBytes", "ParseResultBytes", "SplitResultBytes"]
+           "unquote_to_bytes_plus", "DefragResult", "ParseResult",
+           "SplitResult", "DefragResultBytes", "ParseResultBytes",
+           "SplitResultBytes"]
 
 # A classification of schemes.
 # The empty string classifies URLs with no scheme specified,
@@ -815,6 +816,15 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
     """
     string = string.replace('+', ' ')
     return unquote(string, encoding, errors)
+
+def unquote_to_bytes_plus(string):
+    """Like unquote_to_bytes(), but also replace plus signs with spaces, as
+    required for unquoting HTML form values.
+
+    unquote_to_bytes_plus('%7e/abc+def') -> b'~/abc def'
+    """
+    string = string.replace('+', ' ')
+    return unquote_to_bytes(string)
 
 _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'abcdefghijklmnopqrstuvwxyz'

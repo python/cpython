@@ -1219,6 +1219,12 @@ class UrlParseTestCase(unittest.TestCase):
         result = urllib.parse.unquote_to_bytes('')
         self.assertEqual(result, b'')
 
+    def test_unquote_to_bytes_plus(self):
+        result = urllib.parse.unquote_to_bytes_plus('abc%20def')
+        self.assertEqual(result, b'abc def')
+        result = urllib.parse.unquote_to_bytes_plus('abc+def')
+        self.assertEqual(result, b'abc def')
+
     def test_quote_errors(self):
         self.assertRaises(TypeError, urllib.parse.quote, b'foo',
                           encoding='utf-8')
