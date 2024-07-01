@@ -1177,10 +1177,13 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
+        # as per https://tools.ietf.org/html/rfc3230#section-4.1.1
+        # algorithm is case insensitive
+        upper_algorithm = algorithm.upper()
         # lambdas assume digest modules are imported at the top level
-        if algorithm == 'MD5':
+        if upper_algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
-        elif algorithm == 'SHA':
+        elif upper_algorithm == 'SHA':
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
         # XXX MD5-sess
         else:

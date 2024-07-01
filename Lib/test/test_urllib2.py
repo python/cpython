@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import hashlib_helper
 from test.support import os_helper
 from test.support import requires_subprocess
 from test.support import warnings_helper
@@ -1957,6 +1958,14 @@ class MiscTests(unittest.TestCase):
             str(exc.exception),
             "Unsupported digest authentication algorithm 'invalid'"
         )
+
+    @hashlib_helper.requires_hashdigest('sha1')
+    def test_lowercase_algorithm(self):
+        handler = AbstractDigestAuthHandler()
+        # make sure both algorithms are equivalent
+        self.assertEqual(
+            handler.get_algorithm_impls('sha')[0]("TEST"),
+            handler.get_algorithm_impls('SHA')[0]("TEST"))
 
 
 class RequestTests(unittest.TestCase):
