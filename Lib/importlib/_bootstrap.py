@@ -730,7 +730,59 @@ def _spec_from_module(module, loader=None, origin=None):
     return spec
 
 
+ProxyModule = None
+
+def _setup_proxy():
+    global ProxyModule
+    class ProxyModule(type(sys)):
+        def __setattr__(self, name, value):
+            if (spec := object.__getattribute__(self, '__spec__')) is None:
+                object.__setattr__(self, name, value)
+                return
+            match name:
+                case '__name__':
+                    spec.name = value
+                case '__package__':
+                    # This isn't right because module.__package__ and
+                    # module.__spec__.parent have subtly different sematics.
+                    # The latter is read-only while the former is writable.
+                    # I'm not sure if that's intended or how to resolve it.
+                    # Maybe we should relax the constraint on .parent?
+                    spec.__dict__['parent'] = value
+                case '__loader__':
+                    spec.loader = value
+                case '__file__':
+                    spec.origin = value
+                case '__path__':
+                    spec.submodule_search_location = value
+                case '__cached__':
+                    spec.cached = value
+                case _:
+                    object.__setattr__(self, name, value)
+
+        def __getattribute__(self, name):
+            if (spec := object.__getattribute__(self, '__spec__')) is None:
+                return object.__getattribute__(self, name)
+            match name:
+                case '__name__':
+                    return spec.name
+                case '__package__':
+                    return spec.parent
+                case '__loader__':
+                    return spec.loader
+                case '__file__':
+                    return spec.origin
+                case '__path__':
+                    return spec.submodule_search_location
+                case '__cached__':
+                    return spec.cached
+                case _:
+                    return object.__getattribute__(self, name)
+
+
 def _init_module_attrs(spec, module, *, override=False):
+    if ProxyModule is None:
+        _setup_proxy()
     # The passed-in module may be not support attribute assignment,
     # in which case we simply don't set the attributes.
     # __name__
@@ -800,6 +852,8 @@ def _init_module_attrs(spec, module, *, override=False):
                     module.__cached__ = spec.cached
                 except AttributeError:
                     pass
+    if module.__class__ is type(sys):
+        module.__class__ = ProxyModule
     return module
 
 
