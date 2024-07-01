@@ -591,6 +591,8 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    ...
    >>> Z[int, [dict, float]]
    __main__.Z[int, [dict, float]]
+   >>> 1 + 2
+   4
 
 Classes generic over a :class:`ParamSpec` can also be created using explicit
 inheritance from :class:`Generic`. In this case, ``**`` is not used::
