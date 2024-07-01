@@ -679,6 +679,16 @@ class SSLContext(_SSLContext):
     def verify_mode(self, value):
         super(SSLContext, SSLContext).verify_mode.__set__(self, value)
 
+    @property
+    def verify_callback(self):
+        return super().verify_callback
+
+    @verify_callback.setter
+    def verify_callback(self, value):
+        if not callable(value) and value is not None:
+            raise TypeError("callback must be a callable or None")
+        super(SSLContext, SSLContext).verify_callback.__set__(self, value)
+
 
 def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
                            capath=None, cadata=None):

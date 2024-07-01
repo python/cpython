@@ -3457,6 +3457,84 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+static int get_callback_ex_data_idx()
+{
+    static int callback_ex_data_idx = -1;
+    if (callback_ex_data_idx == -1) {
+        callback_ex_data_idx = SSL_CTX_get_ex_new_index(0, "verify_callback", NULL, NULL, NULL);
+    }
+    return callback_ex_data_idx;
+}
+
+int verify_callback_wrapper(int preverify_ok, X509_STORE_CTX *x509_ctx)
+{
+    SSL *ssl;
+    SSL_CTX *ctx;
+    PyGILState_STATE gstate;
+    PyObject *callback;
+    PyObject *args;
+    int result;
+
+    // Get a reference to our callback function
+    ssl = X509_STORE_CTX_get_ex_data(x509_ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+    ctx = SSL_get_SSL_CTX(ssl);
+    callback = SSL_CTX_get_ex_data(ctx, get_callback_ex_data_idx());
+
+    // Get the GIL to call our python function
+    gstate = PyGILState_Ensure();
+    args = PyTuple_New(1);
+    PyObject *py_preverify_ok = PyLong_FromLong((long) preverify_ok);
+    PyTuple_SET_ITEM(args, 0, py_preverify_ok);
+    PyObject *py_result = PyObject_Call(callback, args, NULL);
+    Py_DECREF(args);
+    Py_DECREF(py_preverify_ok);
+
+    result = PyObject_IsTrue(py_result);
+
+    // Release the GIL again
+    PyGILState_Release(gstate);
+
+    return result;
+
+}
+
+static PyObject *
+get_verify_callback(PySSLContext *self, void *c)
+{
+    PyObject *callback = (PyObject*) SSL_CTX_get_ex_data(self->ctx, get_callback_ex_data_idx());
+    if (callback == NULL) {
+        Py_RETURN_NONE;
+    }
+    else {
+        Py_INCREF(callback);
+        return callback;
+    }
+}
+
+static int
+set_verify_callback(PySSLContext *self, PyObject *value, void *c)
+{
+    SSL_verify_cb callback;
+    PyObject *old_value;
+
+    old_value = (PyObject*) SSL_CTX_get_ex_data(self->ctx, get_callback_ex_data_idx());
+    Py_XDECREF(old_value);
+
+    if (value == Py_None) {
+        callback = NULL;
+        SSL_CTX_set_ex_data(self->ctx, get_callback_ex_data_idx(), NULL);
+    }
+    else {
+        callback = verify_callback_wrapper;
+        Py_INCREF(value);
+        SSL_CTX_set_ex_data(self->ctx, get_callback_ex_data_idx(), value);
+    }
+    int verify_mode = SSL_CTX_get_verify_mode(self->ctx);
+    SSL_CTX_set_verify(self->ctx, verify_mode, callback);
+    return 0;
+}
+
+
 /* Getter and setter for protocol version */
 static int
 set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
@@ -4978,6 +5056,8 @@ static PyGetSetDef context_getsetlist[] = {
                      (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
+    {"verify_callback", (getter) get_verify_callback,
+                        (setter) set_verify_callback, NULL},
     {"security_level", (getter) get_security_level,
                        NULL, PySSLContext_security_level_doc},
     {NULL},            /* sentinel */
