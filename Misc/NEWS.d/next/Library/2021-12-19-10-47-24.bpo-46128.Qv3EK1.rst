@@ -1,0 +1,2 @@
+Strip :class:`unittest.IsolatedAsyncioTestCase` stack frames from reported
+stacktraces.
