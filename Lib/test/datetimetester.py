@@ -3336,6 +3336,9 @@ class TestDateTime(TestDate):
             ('2025-01-02T03:04:05,678+00:00:10',
              self.theclass(2025, 1, 2, 3, 4, 5, 678000,
                            tzinfo=timezone(timedelta(seconds=10)))),
+            ('2025-01-02T24:00:00', self.theclass(2025, 1, 3, 0, 0, 0)),
+            ('2025-01-31T24:00:00', self.theclass(2025, 2, 1, 0, 0, 0)),
+            ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0))
         ]
 
         for input_str, expected in examples:
@@ -3372,6 +3375,11 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.123456-05:00a',    # Extra text
             '2009-04-19T12:30:45.123-05:00a',       # Extra text
             '2009-04-19T12:30:45-05:00a',           # Extra text
+            '2009-04-19T24:00:00.000001',  # Has non-zero microseconds on 24:00
+            '2009-04-19T24:00:01.000000',  # Has non-zero seconds on 24:00
+            '2009-04-19T24:01:00.000000',  # Has non-zero minutes on 24:00
+            '2009-04-32T24:00:00.000000',  # Day is invalid before wrapping due to 24:00
+            '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
         ]
 
         for bad_str in bad_strs:
@@ -4306,7 +4314,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
             with self.subTest(tstr=tstr):
                 t_rt = self.theclass.fromisoformat(tstr)
-                assert t == t_rt, t_rt
+                assert t == t_rt
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
