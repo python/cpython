@@ -1302,7 +1302,17 @@ class Namespace(_AttributeHolder):
         return vars(self) == vars(other)
 
     def __contains__(self, key):
-        return key in self.__dict__
+        return key in self.__dict__ or key.replace('-', '_') in self.__dict__
+
+    def __getattr__(self, name):
+        # Compatibility for people doing getattr(args, 'foo-bar') instead of
+        # args.foo_bar. This might lead to some false positives, but this
+        # is unlikely.
+        try:
+            return self.__dict__[name.replace('-', '_')]
+        except KeyError:
+            msg = "'%s' object has no attribute '%s'"
+            raise AttributeError(msg % (type(self).__name__, name))
 
 
 class _ActionsContainer(object):
@@ -1528,6 +1538,9 @@ class _ActionsContainer(object):
             kwargs['required'] = True
         if kwargs.get('nargs') == ZERO_OR_MORE and 'default' not in kwargs:
             kwargs['required'] = True
+
+        # make dest attribute-accessible, 'foo-bar' -> 'foo_bar'
+        dest = dest.replace('-', '_')
 
         # return the keyword arguments with no option strings
         return dict(kwargs, dest=dest, option_strings=[])

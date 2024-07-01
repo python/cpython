@@ -1305,6 +1305,16 @@ class TestPositionalsNargsOptionalOneOrMore(ParserTestCase):
     ]
 
 
+class TestPositionalDest(ParserTestCase):
+    """Tests setting destination"""
+
+    argument_signatures = [Sig("foo-bar")]
+    failures = []
+    successes = [
+        ("biz", NS(foo_bar="biz")),
+    ]
+
+
 class TestPositionalsChoicesString(ParserTestCase):
     """Test a set of single-character choices"""
 

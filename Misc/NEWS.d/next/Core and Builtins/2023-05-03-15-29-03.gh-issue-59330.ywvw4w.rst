@@ -1,0 +1,1 @@
+Hyphens in positional arguments in argparse module are automatically replaced with underscores. Patch by Simon Law and Furkan Onder.
