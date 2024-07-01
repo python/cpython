@@ -615,10 +615,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
-
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
             iter = sym_new_not_null(ctx);
@@ -645,8 +641,6 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         /* _SEND_GEN is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
@@ -2011,6 +2005,8 @@
             stack_pointer[-1] = bottom;
             break;
         }
+
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 */
 

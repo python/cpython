@@ -1104,10 +1104,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 because it is instrumented */
-
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 because it is instrumented */
-
         case _GET_AITER: {
             _PyStackRef obj;
             _PyStackRef iter;
@@ -1228,8 +1224,6 @@
         /* _SEND is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         /* _SEND_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
-
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
         case _YIELD_VALUE: {
             _PyStackRef retval;
@@ -4718,6 +4712,8 @@
             stack_pointer[-1] = bottom;
             break;
         }
+
+        /* _INSTRUMENTED_LINE is not a viable micro-op for tier 2 because it is instrumented */
 
         /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 because it is instrumented */
 
