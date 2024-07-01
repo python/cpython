@@ -351,9 +351,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv4_mapped
 
-      For addresses that appear to be IPv4 mapped addresses (starting with
-      ``::FFFF/96``), this property will report the embedded IPv4 address.
-      For any other address, this property will be ``None``.
+      For addresses that appear to be IPv4 mapped addresses in the range
+      ``::FFFF:0:0/96`` as defined by :RFC:`4291`, this property reports the
+      embedded IPv4 address. For any other address, this property will be ``None``.
 
    .. attribute:: scope_id
 
