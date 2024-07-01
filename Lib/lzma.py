@@ -19,6 +19,7 @@ __all__ = [
 
     "LZMACompressor", "LZMADecompressor", "LZMAFile", "LZMAError",
     "open", "compress", "decompress", "is_check_supported",
+    "LZMA_VERSION", "lzma_version", "LZMA_RUNTIME_VERSION", "lzma_runtime_version",
 ]
 
 import builtins

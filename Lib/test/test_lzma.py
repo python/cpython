@@ -1495,6 +1495,43 @@ class OpenTestCase(unittest.TestCase):
 
 class MiscellaneousTestCase(unittest.TestCase):
 
+    def _test_lzma_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 4)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v[3], str)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertIsInstance(v.stability, str)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertEqual(v[3], v.stability)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+        self.assertIn(v.stability, {'alpha', 'beta', 'stable'})
+
+        if v.stability == 'stable':
+            self.assertEqual(string, '%d.%d.%d' % v[:3])
+        else:
+            self.assertTrue(string.startswith('%d.%d.%d%s' % v))
+
+    def test_lzma_version(self):
+        if support.verbose:
+            print(f'LZMA_VERSION = {lzma.LZMA_VERSION}', flush=True)
+            print(f'lzma_version = {lzma.lzma_version}', flush=True)
+        self._test_lzma_version(lzma.lzma_version, lzma.LZMA_VERSION)
+
+    def test_lzma_runtime_version(self):
+        if support.verbose:
+            print(f'LZMA_RUNTIME_VERSION = {lzma.LZMA_RUNTIME_VERSION}', flush=True)
+            print(f'lzma_runtime_version = {lzma.lzma_runtime_version}', flush=True)
+        self._test_lzma_version(lzma.lzma_runtime_version, lzma.LZMA_RUNTIME_VERSION)
+
     def test_is_check_supported(self):
         # CHECK_NONE and CHECK_CRC32 should always be supported,
         # regardless of the options liblzma was compiled with.

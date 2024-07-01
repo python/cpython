@@ -310,6 +310,31 @@ One-shot (de)compression
    .. versionchanged:: 3.3
       Support for multi-stream inputs was added.
 
+
+Miscellaneous
+-------------
+
+Information about the version of the bzlib library in use is available through
+the following constants:
+
+
+.. data:: BZLIB_VERSION
+
+   The version string of the bzlib library.
+
+   .. versionadded:: 3.13
+
+
+.. data:: bzlib_version
+
+   A named tuple containing the three components of the bzlib library version:
+   *major*, *minor*, and *patch*.  All values are integers.
+   The components can also be accessed by name, so ``bz2.bzlib_version[0]``
+   is equivalent to ``bz2.bzlib_version.major`` and so on.
+
+   .. versionadded:: 3.13
+
+
 .. _bz2-usage-examples:
 
 Examples of usage

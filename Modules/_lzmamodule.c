@@ -1499,6 +1499,62 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
     return result;
 }
 
+
+PyDoc_STRVAR(lzma_version__doc__,
+"_lzma.lzma_version\n\
+\n\
+Lzma version information as a named tuple.");
+
+static PyStructSequence_Field lzma_version_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {"stability", "'alpha', 'beta', or 'stable'"},
+    {0}
+};
+
+static PyStructSequence_Desc lzma_version_desc = {
+    "_lzma.lzma_version",   /* name */
+    lzma_version__doc__,    /* doc */
+    lzma_version_fields,    /* fields */
+    4
+};
+
+static PyObject *
+make_lzma_version(PyTypeObject *type, unsigned int number)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = number / 10000000u;
+    unsigned int minor = (number % 10000000u) / 10000u;
+    unsigned int patch = (number % 10000u) / 10u;
+    unsigned int stability = number % 10u;
+    const char *stability_string = (stability == 0) ? "alpha"
+                                 : (stability == 1) ? "beta"
+                                 : "stable";
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(patch))
+    SetItem(PyUnicode_FromString(stability_string))
+#undef SetItem
+
+    return version;
+}
+
+
 /* Some of our constants are more than 32 bits wide, so PyModule_AddIntConstant
    would not work correctly on platforms with 32-bit longs. */
 static int
@@ -1591,6 +1647,33 @@ lzma_exec(PyObject *module)
         return -1;
     }
 
+    /* lzma_version */
+    if (PyModule_Add(module, "LZMA_VERSION",
+                     PyUnicode_FromString(LZMA_VERSION_STRING)) < 0) {
+        return -1;
+    }
+    if (PyModule_Add(module, "LZMA_RUNTIME_VERSION",
+                     PyUnicode_FromString(lzma_version_string())) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&lzma_version_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "lzma_version",
+            make_lzma_version(version_type, LZMA_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "lzma_runtime_version",
+            make_lzma_version(version_type, lzma_version_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
     return 0;
 }
 
