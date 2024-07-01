@@ -4579,7 +4579,8 @@ can be used interchangeably to index the same dictionary entry.
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
-      never raises a :exc:`KeyError`.
+      never raises a :exc:`KeyError`. Note that :meth:`get` does not call
+      :meth:`__missing__` if value does not exist.
 
    .. method:: items()
 
@@ -4645,6 +4646,12 @@ can be used interchangeably to index the same dictionary entry.
          >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
+
+   .. method:: __missing__(key)
+
+      Not implemented by default. Called by :class:`dict`\ .\ :meth:`__getitem__`
+      to implement ``self[key]`` for dict subclasses when key is not in the
+      dictionary. See ``d[key]`` above.
 
    .. describe:: d | other
 
