@@ -3202,14 +3202,29 @@ class NoneInfoExtractTests(ReadTest):
     @contextmanager
     def extract_with_none(self, *attr_names):
         DIR = pathlib.Path(TEMPDIR) / "extractall_none"
+
         self.tar.errorlevel = 0
-        for member in self.tar.getmembers():
-            for attr_name in attr_names:
-                setattr(member, attr_name, None)
+
+        filter_function = self.tar._get_filter_function(self.extraction_filter)
+
         with os_helper.temp_dir(DIR):
-            self.tar.extractall(DIR, filter='fully_trusted')
+
+            # this makes sure we only test files which would have been extracted
+            # prior to changing metadata
+            # for example, special files are not extracted with the data filter,
+            # but 'mode' is required to identify them
+            filtered_members = []
+
+            for member in self.tar.getmembers():
+                member = self.tar._get_extract_tarinfo(member, filter_function, DIR)
+                if member is not None:
+                    for attr_name in attr_names:
+                        setattr(member, attr_name, None)
+                    filtered_members.append(member)
+            self.tar.extractall(DIR, members = filtered_members, filter=self.extraction_filter)
             self.check_files_present(DIR)
             yield DIR
+
 
     def test_extractall_none_mtime(self):
         # mtimes of extracted files should be later than 'now' -- the mtime
@@ -3540,6 +3555,14 @@ class TestExtractionFilters(unittest.TestCase):
             self.assertEqual(path.stat().st_size, size)
         for parent in path.parents:
             self.expected_paths.discard(parent)
+
+    def expect_file_skipped(self, name):
+        """ Check a single file extraction is skipped. E.g. due to a filter. """
+        if self.raised_exception:
+            raise self.raised_exception
+        # use normpath() rather than resolve() so we don't follow symlinks
+        path = pathlib.Path(os.path.normpath(self.destdir / name))
+        self.assertNotIn(path, self.expected_paths)
 
     def expect_exception(self, exc_type, message_re='.'):
         with self.assertRaisesRegex(exc_type, message_re):
@@ -4134,9 +4157,6 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel=0), extracterror_filter):
             self.expect_file('file')
 
-        with self.check_context(arc.open(errorlevel=0), filtererror_filter):
-            self.expect_file('file')
-
         with self.check_context(arc.open(errorlevel=0), oserror_filter):
             self.expect_file('file')
 
@@ -4145,6 +4165,11 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(errorlevel=0), valueerror_filter):
             self.expect_exception(ValueError)
+
+        # If errorlevel is 0, FilterErrors are logged and member is skipped
+
+        with self.check_context(arc.open(errorlevel=0), filtererror_filter):
+            self.expect_file_skipped('file')
 
         # If 1, all fatal errors are raised
 
