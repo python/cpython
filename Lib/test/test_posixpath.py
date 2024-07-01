@@ -1,6 +1,7 @@
 import inspect
 import os
 import posixpath
+import posixpath.pure
 import sys
 import unittest
 from posixpath import realpath, abspath, dirname, basename
@@ -745,6 +746,18 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(TypeError, posixpath.relpath, "str", b"bytes")
         finally:
             os.getcwdb = real_getcwdb
+
+    def test_pure_relpath(self):
+        self.assertRaises(ValueError, posixpath.pure.relpath, 'foo', 'bar')
+        self.assertRaises(ValueError, posixpath.pure.relpath, 'foo', '/bar')
+        self.assertRaises(ValueError, posixpath.pure.relpath, '/foo', 'bar')
+        self.assertEqual(posixpath.pure.relpath('/foo', '/bar'), '../foo')
+
+    def test_pure_relpath_bytes(self):
+        self.assertRaises(ValueError, posixpath.pure.relpath, b'foo', b'bar')
+        self.assertRaises(ValueError, posixpath.pure.relpath, b'foo', b'/bar')
+        self.assertRaises(ValueError, posixpath.pure.relpath, b'/foo', b'bar')
+        self.assertEqual(posixpath.pure.relpath(b'/foo', b'/bar'), b'../foo')
 
     def test_commonpath(self):
         def check(paths, expected):

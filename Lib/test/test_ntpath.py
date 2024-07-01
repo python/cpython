@@ -1,5 +1,6 @@
 import inspect
 import ntpath
+import ntpath.pure
 import os
 import string
 import subprocess
@@ -862,6 +863,17 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.relpath("/a", "/a")', '.')
         tester('ntpath.relpath("/a/b", "/a/b")', '.')
         tester('ntpath.relpath("c:/foo", "C:/FOO")', '.')
+
+    def test_pure_relpath(self):
+        self.assertRaises(ValueError, ntpath.pure.relpath, 'foo', 'bar')
+        self.assertRaises(ValueError, ntpath.pure.relpath, 'foo', 'C:/bar')
+        self.assertRaises(ValueError, ntpath.pure.relpath, 'C:/foo', 'bar')
+        tester('ntpath.pure.relpath("C:/foo", "C:/bar")', r'..\foo')
+
+        # test bytes
+        self.assertRaises(ValueError, ntpath.pure.relpath, b'foo', b'bar')
+        self.assertRaises(ValueError, ntpath.pure.relpath, b'foo', b'C:/bar')
+        self.assertRaises(ValueError, ntpath.pure.relpath, b'C:/foo', b'bar')
 
     def test_commonpath(self):
         def check(paths, expected):

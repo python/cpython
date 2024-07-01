@@ -1,0 +1,1 @@
+Add the :mod:`ntpath.pure`, :mod:`os.path.pure`, :mod:`posixpath.pure` modules for low-level path manipulation.
