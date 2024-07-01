@@ -3274,6 +3274,26 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
     Py_RETURN_NONE;
 }
 
+
+static PyObject *
+_ssl_SSLContext_set_ciphers_tls3_impl(PySSLContext *self, const char* cipherlist)
+{
+	int ret = SSL_CTX_set_ciphersuites(self->ctx, cipherlist);
+	if (ret == 0)
+	{
+		/* Similar to TLS 1.2 cipher suites, and OpenSSL versions, otherwise the error can be
+		 * reported again.
+		 */
+		ERR_clear_error();
+		PyErr_SetString(get_state_ctx(self)->PySSLErrorObject, "No TLSv1.3 cipher could be selected");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+
+
 /*[clinic input]
 _ssl._SSLContext.get_ciphers
 [clinic start generated code]*/
@@ -4987,6 +5007,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+	_SSL__SSLCONTEXT_SET_CIPHERSUITES_TLSV13_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF

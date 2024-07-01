@@ -487,6 +487,46 @@ exit:
     return return_value;
 }
 
+#define _SSL__SSLCONTEXT_SET_CIPHERSUITES_TLSV13_METHODDEF \
+		{"set_cipher_suites", _ssl__SSLContext_set_ciphers_suites_tlsv13, METH_O, "Set cipher suites and use it for TLS v1.3 cipher suites"},
+
+
+static PyObject *
+_ssl_SSLContext_set_ciphers_tls3_impl(PySSLContext *self, const char* cipherlist);
+
+
+static PyObject* _ssl__SSLContext_set_ciphers_suites_tlsv13(PySSLContext* self, PyObject* arg)
+{
+	PyObject *return_val = NULL;
+	const char* cipherlist;
+
+	// Check whether we got a unicode string input
+
+	if (!PyUnicode_Check(arg))
+	{
+		_PyArg_BadArgument("set_ciphers_suites", "argument", "str", arg);
+		return return_val;
+	}
+
+	Py_ssize_t cipherlist_length;
+
+	cipherlist = PyUnicode_AsUTF8AndSize(arg, &cipherlist_length);
+
+	if (cipherlist == NULL)
+		return NULL;
+
+	if (strlen(cipherlist) != (size_t)cipherlist_length)
+	{
+		PyErr_SetString(PyExc_ValueError, "We have an embedded null character");
+		return return_val;
+	}
+
+	return_val = _ssl_SSLContext_set_ciphers_tls3_impl(self, cipherlist);
+
+	return return_val;
+
+}
+
 PyDoc_STRVAR(_ssl__SSLContext_get_ciphers__doc__,
 "get_ciphers($self, /)\n"
 "--\n"
