@@ -109,6 +109,8 @@ pathlib
 * Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
   another.
   (Contributed by Barney Gale in :gh:`73991`.)
+* Add :meth:`pathlib.Path.rmtree`, which recursively removes a directory.
+  (Contributed by Barney Gale in :gh:`73991`.)
 
 symtable
 --------
