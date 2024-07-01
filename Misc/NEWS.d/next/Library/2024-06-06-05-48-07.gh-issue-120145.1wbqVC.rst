@@ -1,0 +1,1 @@
+Speed up symlink lookup for :func:`os.path.realpath` on Unix.

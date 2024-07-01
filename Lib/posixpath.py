@@ -428,13 +428,14 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
 
     while rest:
         name = rest.pop()
-        if name is None:
-            # resolved symlink target
-            seen[rest.pop()] = path
-            continue
         if not name or name == curdir:
-            # current dir
-            continue
+            if name is None:
+                # resolved symlink target
+                seen[rest.pop()] = path
+                continue
+            else:
+                # current dir
+                continue
         if name == pardir:
             # parent dir
             path = path[:path.rindex(sep)] or sep
@@ -443,6 +444,17 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
             newpath = path + name
         else:
             newpath = path + sep + name
+        if seen and newpath in seen:
+            # Already seen this symlink
+            path = seen[newpath]
+            if path is not None:
+                # use cached value
+                continue
+            # The symlink is not resolved, so we must have a symlink loop.
+            if strict:
+                raise OSError(errno.ELOOP, os.strerror(errno.ELOOP), filename)
+            path = newpath
+            continue
         try:
             st = lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
@@ -453,21 +465,9 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 if link_count > maxlinks:
                     if strict:
                         raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                      newpath)
+                                      filename)
                     path = newpath
                     continue
-            elif newpath in seen:
-                # Already seen this path
-                path = seen[newpath]
-                if path is not None:
-                    # use cached value
-                    continue
-                # The symlink is not resolved, so we must have a symlink loop.
-                if strict:
-                    raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                  newpath)
-                path = newpath
-                continue
             target = readlink(newpath)
         except OSError:
             if strict:
