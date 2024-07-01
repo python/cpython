@@ -996,6 +996,11 @@ AbstractBasicAuthHandler Objects
    authority must not contain a userinfo component (so, ``"python.org"`` and
    ``"python.org:80"`` are fine, ``"joe:password@python.org"`` is not).
 
+   Headers object can be created as follows::
+
+      import email
+      headers = email.message.Message()
+      headers['Content-type'] = 'text/plain'
 
 .. _http-basic-auth-handler:
 
