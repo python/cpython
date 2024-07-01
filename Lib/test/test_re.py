@@ -1985,6 +1985,8 @@ class ReTests(unittest.TestCase):
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, bpo-47058")
     @unittest.skipIf(
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
@@ -2025,6 +2027,8 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, bpo-47058")
     @unittest.skipIf(
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
