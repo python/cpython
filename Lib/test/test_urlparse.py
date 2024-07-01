@@ -1160,8 +1160,16 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_parse_qsl_false_value(self):
         kwargs = dict(keep_blank_values=True, strict_parsing=True)
-        for x in '', b'', None, 0, 0.0, [], {}, memoryview(b''):
+        for x in '', b'', None, memoryview(b''):
             self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
+        for x in 0, 0.0, [], {}:
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertEqual(cm.filename, __file__)
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertEqual(urllib.parse.parse_qs(x, **kwargs), {})
+            self.assertEqual(cm.filename, __file__)
             self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
 
     def test_parse_qsl_errors(self):

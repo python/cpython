@@ -725,7 +725,8 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields, separator=separator)
+                      max_num_fields=max_num_fields, separator=separator,
+                      _stacklevel=2)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -735,7 +736,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
+              encoding='utf-8', errors='replace', max_num_fields=None, separator='&', *, _stacklevel=1):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -763,7 +764,6 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
 
         Returns a list, as G-d intended.
     """
-
     if not separator or not isinstance(separator, (str, bytes)):
         raise ValueError("Separator must be of type string or bytes.")
     if isinstance(qs, str):
@@ -772,12 +772,21 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         eq = '='
         def _unquote(s):
             return unquote_plus(s, encoding=encoding, errors=errors)
+    elif qs is None:
+        return []
     else:
-        if not qs:
-            return []
-        # Use memoryview() to reject integers and iterables,
-        # acceptable by the bytes constructor.
-        qs = bytes(memoryview(qs))
+        try:
+            # Use memoryview() to reject integers and iterables,
+            # acceptable by the bytes constructor.
+            qs = bytes(memoryview(qs))
+        except TypeError:
+            if not qs:
+                warnings.warn(f"Accepting {type(qs).__name__} objects with "
+                              f"false value in urllib.parse.parse_qsl() is "
+                              f"deprecated as of 3.13",
+                              DeprecationWarning, stacklevel=_stacklevel + 1)
+                return []
+            raise
         if isinstance(separator, str):
             separator = bytes(separator, 'ascii')
         eq = b'='
