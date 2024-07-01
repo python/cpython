@@ -4,8 +4,6 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
@@ -14,7 +12,6 @@ from analyzer import (
     Part,
     analyze_files,
     Skip,
-    StackItem,
     analysis_error,
 )
 from generators_common import (
@@ -24,9 +21,8 @@ from generators_common import (
     emit_tokens,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
-from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from typing import TextIO
+from stack import Stack, SizeMismatch
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -41,20 +37,25 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         if isinstance(uop, Uop):
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
-                    type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        if var.is_array():
+                            out.emit(f"{var.type}{space}{var.name};\n")
+                        else:
+                            out.emit(f"{type}{space}{var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
-                    type = var.type if var.type else "PyObject *"
+                    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+                    space = " " if type[-1].isalnum() else ""
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type}{space}{var.name} = {null};\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type}{space}{var.name};\n")
 
 
 def write_uop(

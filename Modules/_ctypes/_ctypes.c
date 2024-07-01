@@ -1606,7 +1606,7 @@ PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (_PyLong_Sign(length_attr) == -1) {
+    if (_PyLong_IsNegative((PyLongObject *)length_attr)) {
         Py_DECREF(length_attr);
         PyErr_SetString(PyExc_ValueError,
                         "The '_length_' attribute must not be negative");
@@ -4074,7 +4074,7 @@ _build_callargs(ctypes_state *st, PyCFuncPtrObject *self, PyObject *argtypes,
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
             *pinoutmask |= (1 << i); /* mark as inout arg */
             (*pnumretvals)++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 0:
         case PARAMFLAG_FIN:
             /* 'in' parameter.  Copy it from inargs. */

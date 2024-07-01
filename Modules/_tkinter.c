@@ -493,24 +493,28 @@ unicodeFromTclString(const char *s)
 }
 
 static PyObject *
-unicodeFromTclObj(Tcl_Obj *value)
+unicodeFromTclObj(TkappObject *tkapp, Tcl_Obj *value)
 {
     Tcl_Size len;
 #if USE_TCL_UNICODE
-    int byteorder = NATIVE_BYTEORDER;
-    const Tcl_UniChar *u = Tcl_GetUnicodeFromObj(value, &len);
-    if (sizeof(Tcl_UniChar) == 2)
-        return PyUnicode_DecodeUTF16((const char *)u, len * 2,
-                                     "surrogatepass", &byteorder);
-    else if (sizeof(Tcl_UniChar) == 4)
-        return PyUnicode_DecodeUTF32((const char *)u, len * 4,
-                                     "surrogatepass", &byteorder);
-    else
-        Py_UNREACHABLE();
-#else
+    if (value->typePtr != NULL && tkapp != NULL &&
+        (value->typePtr == tkapp->StringType ||
+         value->typePtr == tkapp->UTF32StringType))
+    {
+        int byteorder = NATIVE_BYTEORDER;
+        const Tcl_UniChar *u = Tcl_GetUnicodeFromObj(value, &len);
+        if (sizeof(Tcl_UniChar) == 2)
+            return PyUnicode_DecodeUTF16((const char *)u, len * 2,
+                                         "surrogatepass", &byteorder);
+        else if (sizeof(Tcl_UniChar) == 4)
+            return PyUnicode_DecodeUTF32((const char *)u, len * 4,
+                                         "surrogatepass", &byteorder);
+        else
+            Py_UNREACHABLE();
+    }
+#endif /* USE_TCL_UNICODE */
     const char *s = Tcl_GetStringFromObj(value, &len);
     return unicodeFromTclStringAndSize(s, len);
-#endif
 }
 
 /*[clinic input]
@@ -793,7 +797,7 @@ PyTclObject_string(PyObject *_self, void *ignored)
 {
     PyTclObject *self = (PyTclObject *)_self;
     if (!self->string) {
-        self->string = unicodeFromTclObj(self->value);
+        self->string = unicodeFromTclObj(NULL, self->value);
         if (!self->string)
             return NULL;
     }
@@ -808,7 +812,7 @@ PyTclObject_str(PyObject *_self)
         return Py_NewRef(self->string);
     }
     /* XXX Could cache result if it is non-ASCII. */
-    return unicodeFromTclObj(self->value);
+    return unicodeFromTclObj(NULL, self->value);
 }
 
 static PyObject *
@@ -1014,7 +1018,9 @@ AsObj(PyObject *value)
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
         }
-        if (PyUnicode_IS_ASCII(value)) {
+        if (PyUnicode_IS_ASCII(value) &&
+            strlen(PyUnicode_DATA(value)) == (size_t)PyUnicode_GET_LENGTH(value))
+        {
             return Tcl_NewStringObj((const char *)PyUnicode_DATA(value),
                                     (int)size);
         }
@@ -1029,9 +1035,6 @@ AsObj(PyObject *value)
                     "surrogatepass", NATIVE_BYTEORDER);
         else
             Py_UNREACHABLE();
-#else
-        encoded = _PyUnicode_AsUTF8String(value, "surrogateescape");
-#endif
         if (!encoded) {
             return NULL;
         }
@@ -1041,12 +1044,39 @@ AsObj(PyObject *value)
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
         }
-#if USE_TCL_UNICODE
         result = Tcl_NewUnicodeObj((const Tcl_UniChar *)PyBytes_AS_STRING(encoded),
                                    (int)(size / sizeof(Tcl_UniChar)));
 #else
+        encoded = _PyUnicode_AsUTF8String(value, "surrogateescape");
+        if (!encoded) {
+            return NULL;
+        }
+        size = PyBytes_GET_SIZE(encoded);
+        if (strlen(PyBytes_AS_STRING(encoded)) != (size_t)size) {
+            /* The string contains embedded null characters.
+             * Tcl needs a null character to be represented as \xc0\x80 in
+             * the Modified UTF-8 encoding.  Otherwise the string can be
+             * truncated in some internal operations.
+             *
+             * NOTE: stringlib_replace() could be used here, but optimizing
+             * this obscure case isn't worth it unless stringlib_replace()
+             * was already exposed in the C API for other reasons. */
+            Py_SETREF(encoded,
+                      PyObject_CallMethod(encoded, "replace", "y#y#",
+                                          "\0", (Py_ssize_t)1,
+                                          "\xc0\x80", (Py_ssize_t)2));
+            if (!encoded) {
+                return NULL;
+            }
+            size = PyBytes_GET_SIZE(encoded);
+        }
+        if (size > INT_MAX) {
+            Py_DECREF(encoded);
+            PyErr_SetString(PyExc_OverflowError, "string is too long");
+            return NULL;
+        }
         result = Tcl_NewStringObj(PyBytes_AS_STRING(encoded), (int)size);
-#endif
+#endif /* USE_TCL_UNICODE */
         Py_DECREF(encoded);
         return result;
     }
@@ -1143,7 +1173,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
-        return unicodeFromTclObj(value);
+        return unicodeFromTclObj(tkapp, value);
     }
 
     if (value->typePtr == tkapp->BooleanType ||
@@ -1208,7 +1238,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     if (value->typePtr == tkapp->StringType ||
         value->typePtr == tkapp->UTF32StringType)
     {
-        return unicodeFromTclObj(value);
+        return unicodeFromTclObj(tkapp, value);
     }
 
     if (tkapp->BignumType == NULL &&
@@ -1308,7 +1338,7 @@ finally:
 static PyObject *
 Tkapp_UnicodeResult(TkappObject *self)
 {
-    return unicodeFromTclObj(Tcl_GetObjResult(self->interp));
+    return unicodeFromTclObj(self, Tcl_GetObjResult(self->interp));
 }
 
 
@@ -1327,7 +1357,7 @@ Tkapp_ObjectResult(TkappObject *self)
         res = FromObj(self, value);
         Tcl_DecrRefCount(value);
     } else {
-        res = unicodeFromTclObj(value);
+        res = unicodeFromTclObj(self, value);
     }
     return res;
 }
@@ -1860,7 +1890,7 @@ GetVar(TkappObject *self, PyObject *args, int flags)
             res = FromObj(self, tres);
         }
         else {
-            res = unicodeFromTclObj(tres);
+            res = unicodeFromTclObj(self, tres);
         }
     }
     LEAVE_OVERLAP_TCL
@@ -2307,7 +2337,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
-                              : unicodeFromTclObj(objv[i + 1]);
+                              : unicodeFromTclObj(data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
             return PythonCmd_Error(interp);

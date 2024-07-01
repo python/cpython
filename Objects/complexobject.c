@@ -912,7 +912,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
  * handles the case of no arguments and one positional argument, and calls
  * complex_new(), implemented with Argument Clinic, to handle the remaining
  * cases: 'real' and 'imag' arguments.  This separation is well suited
- * for different constructor roles: convering a string or number to a complex
+ * for different constructor roles: converting a string or number to a complex
  * number and constructing a complex number from real and imaginary parts.
  */
 static PyObject *

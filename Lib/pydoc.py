@@ -75,8 +75,11 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, plain, escape_less, pipe_pager,
+from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
+
+# Expose plain() as pydoc.plain()
+from _pyrepl.pager import plain  # noqa: F401
 
 
 # --------------------------------------------------------- old names
@@ -1752,7 +1755,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            what = thing if isinstance(thing, str) else type(thing).__name__
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
             pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
