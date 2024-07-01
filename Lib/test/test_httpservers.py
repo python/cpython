@@ -539,6 +539,51 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             finally:
                 os.chmod(self.tempdir, 0o755)
 
+    def test_range_get(self):
+        response = self.request(self.base_url + '/test')
+        self.assertEqual(response.getheader('accept-ranges'), 'bytes')
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        # valid ranges
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=3-12'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 3-12/30')
+        self.assertEqual(response.getheader('content-length'), '10')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:13])
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=3-'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 3-29/30')
+        self.assertEqual(response.getheader('content-length'), '27')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:])
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=-5'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 25-29/30')
+        self.assertEqual(response.getheader('content-length'), '5')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[25:])
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=29-29'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 29-29/30')
+        self.assertEqual(response.getheader('content-length'), '1')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[29:])
+
+        # end > file size
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=25-100'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 25-29/30')
+        self.assertEqual(response.getheader('content-length'), '5')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[25:])
+
+        # invalid ranges
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=100-200'})
+        self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=4-3'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=wrong format'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=-'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
     def test_head(self):
         response = self.request(
             self.base_url + '/test', method='HEAD')
