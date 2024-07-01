@@ -1,0 +1,2 @@
+Fixed memory leak in :class:`multiprocessing.util.ForkAwareLocal` when used
+by multiple threads.
