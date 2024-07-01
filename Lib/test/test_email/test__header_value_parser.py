@@ -2552,7 +2552,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '')
         self.assertEqual(address_list.token_type, 'address-list')
         self.assertEqual(len(address_list.mailboxes), 1)
-        self.assertEqual(len(address_list.all_mailboxes), 3)
+        self.assertEqual(len(address_list.all_mailboxes), 4)
         self.assertEqual([str(x) for x in address_list.all_mailboxes],
                          [str(x) for x in address_list.addresses])
         self.assertEqual(address_list.mailboxes[0].domain, 'example.com')
@@ -2561,11 +2561,13 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address_list.addresses[1].token_type, 'address')
         self.assertEqual(len(address_list.addresses[0].mailboxes), 1)
         self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
-        self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[2].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[3].mailboxes), 0)
         self.assertEqual(
             address_list.addresses[1].all_mailboxes[0].local_part, 'Foo x')
+        self.assertEqual(address_list.addresses[2].all_mailboxes[0].value, '[]')
         self.assertEqual(
-            address_list.addresses[2].all_mailboxes[0].display_name,
+            address_list.addresses[3].all_mailboxes[0].display_name,
                 "Nobody Is. Special")
 
     def test_get_address_list_group_empty(self):
@@ -2629,6 +2631,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'y')
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
+
+    def test_get_address_list_trailing_garbage(self):
+        address_list = self._test_get_x(parser.get_address_list,
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; ',
+            [errors.InvalidHeaderDefect]*2 + [errors.ObsoleteHeaderDefect],
+            '')
 
     def test_invalid_content_disposition(self):
         content_disp = self._test_parse_x(
