@@ -52,6 +52,7 @@ struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
     mi_tld_t tld;
+    int initialized;
     struct llist_node page_list;
 };
 #endif

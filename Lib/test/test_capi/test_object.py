@@ -103,5 +103,33 @@ class PrintTest(unittest.TestCase):
         with self.assertRaises(OSError):
             _testcapi.pyobject_print_os_error(output_filename)
 
+
+class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
+    """Test PyUnstable_Object_ClearWeakRefsNoCallbacks"""
+    def test_ClearWeakRefsNoCallbacks(self):
+        """Ensure PyUnstable_Object_ClearWeakRefsNoCallbacks works"""
+        import weakref
+        import gc
+        class C:
+            pass
+        obj = C()
+        messages = []
+        ref = weakref.ref(obj, lambda: messages.append("don't add this"))
+        self.assertIs(ref(), obj)
+        self.assertFalse(messages)
+        _testcapi.pyobject_clear_weakrefs_no_callbacks(obj)
+        self.assertIsNone(ref())
+        gc.collect()
+        self.assertFalse(messages)
+
+    def test_ClearWeakRefsNoCallbacks_no_weakref_support(self):
+        """Don't fail on objects that don't support weakrefs"""
+        import weakref
+        obj = object()
+        with self.assertRaises(TypeError):
+            ref = weakref.ref(obj)
+        _testcapi.pyobject_clear_weakrefs_no_callbacks(obj)
+
+
 if __name__ == "__main__":
     unittest.main()

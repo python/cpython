@@ -1,0 +1,3 @@
+Now, the method ``sock_connect`` of :class:`asyncio.ProactorEventLoop`
+raises a :exc:`ValueError` if given socket is not in
+non-blocking mode, as well as in other loop implementations.
