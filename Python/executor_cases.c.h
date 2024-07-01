@@ -4470,7 +4470,6 @@
             oparg = CURRENT_OPARG();
             tstate->previous_executor = (PyObject *)current_executor;
             _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
-            PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -4479,12 +4478,13 @@
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
                        oparg, exit->temperature.as_counter,
-                       (int)(target - _PyCode_CODE(code)),
+                       (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = (PyCodeObject *)frame->f_executable;
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
             }
