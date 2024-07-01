@@ -374,8 +374,10 @@ def get_mixed_type_key(obj):
 
     """
     if isinstance(obj, _BaseNetwork):
+        obj = obj.ipv4_mapped or obj
         return obj._get_networks_key()
     elif isinstance(obj, _BaseAddress):
+        obj = obj.ipv4_mapped or obj
         return obj._get_address_key()
     return NotImplemented
 
@@ -420,6 +422,15 @@ class _IPAddressBase:
             msg = "%d (>= 2**%d) is not permitted as an IPv%d address"
             raise AddressValueError(msg % (address, self._max_prefixlen,
                                            self._version))
+
+    @property
+    def ipv4_mapped(self):
+        """Returns an IPv4 address, maybe mapped by RFC 5156 from ::ffff:
+
+        Returns:
+            An IPv4Address instance or None
+        """
+        return None
 
     def _check_packed_address(self, address, expected_len):
         address_len = len(address)
@@ -737,6 +748,8 @@ class _BaseNetwork(_IPAddressBase):
         return hash(int(self.network_address) ^ int(self.netmask))
 
     def __contains__(self, other):
+        if other._version == 6 and self._version == 4:
+            other = other.ipv4_mapped or other
         # always false if one is v4 and the other is v6.
         if self._version != other._version:
             return False
@@ -2030,6 +2043,19 @@ class IPv6Address(_BaseV6, _BaseAddress):
         return self._scope_id
 
     @property
+    def ipv4_mapped(self):
+        """Return the IPv4 mapped address.
+
+        Returns:
+            If the IPv6 address is a v4 mapped address, return the
+            IPv4 mapped address. Return None otherwise.
+
+        """
+        if (self._ip >> 32) != 0xFFFF:
+            return None
+        return IPv4Address(self._ip & 0xFFFFFFFF)
+
+    @property
     def packed(self):
         """The binary representation of this address."""
         return v6_int_to_packed(self._ip)
@@ -2146,19 +2172,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
         if ipv4_mapped is not None:
             return ipv4_mapped.is_loopback
         return self._ip == 1
-
-    @property
-    def ipv4_mapped(self):
-        """Return the IPv4 mapped address.
-
-        Returns:
-            If the IPv6 address is a v4 mapped address, return the
-            IPv4 mapped address. Return None otherwise.
-
-        """
-        if (self._ip >> 32) != 0xFFFF:
-            return None
-        return IPv4Address(self._ip & 0xFFFFFFFF)
 
     @property
     def teredo(self):
