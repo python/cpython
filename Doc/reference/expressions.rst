@@ -218,10 +218,12 @@ A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
 expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`!async for` clauses or
-:keyword:`!await` expressions or other asynchronous comprehensions it is called
-an :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
-suspend the execution of the coroutine function in which it appears.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
 .. versionadded:: 3.6
