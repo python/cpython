@@ -363,7 +363,7 @@ tuplecontains(PyTupleObject *a, PyObject *el)
 static PyObject *
 tupleitem(PyTupleObject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (i >= Py_SIZE(a) || (i < 0 && (i += Py_SIZE(a)) < 0)) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
@@ -768,8 +768,6 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
-        if (i < 0)
-            i += PyTuple_GET_SIZE(self);
         return tupleitem(self, i);
     }
     else if (PySlice_Check(item)) {
@@ -865,7 +863,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_NO_SEQ_INDEX_ADJUST,  /* tp_flags */
     tuple_new__doc__,                           /* tp_doc */
     (traverseproc)tupletraverse,                /* tp_traverse */
     0,                                          /* tp_clear */
