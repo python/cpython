@@ -546,7 +546,7 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
     warnings._deprecated('java_ver', remove=(3, 15))
     # Import the needed APIs
     try:
-        import java.lang
+        import java.lang  # noqa: F401
     except ImportError:
         return release, vendor, vminfo, osinfo
 

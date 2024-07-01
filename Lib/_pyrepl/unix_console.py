@@ -27,7 +27,6 @@ import re
 import select
 import signal
 import struct
-import sys
 import termios
 import time
 from fcntl import ioctl
@@ -118,9 +117,12 @@ except AttributeError:
 
         def register(self, fd, flag):
             self.fd = fd
-
-        def poll(self):  # note: a 'timeout' argument would be *milliseconds*
-            r, w, e = select.select([self.fd], [], [])
+        # note: The 'timeout' argument is received as *milliseconds*
+        def poll(self, timeout: float | None = None) -> list[int]:
+            if timeout is None:
+                r, w, e = select.select([self.fd], [], [])
+            else:
+                r, w, e = select.select([self.fd], [], [], timeout/1000)
             return r
 
     poll = MinimalPoll  # type: ignore[assignment]
@@ -143,21 +145,12 @@ class UnixConsole(Console):
         - term (str): Terminal name.
         - encoding (str): Encoding to use for I/O operations.
         """
-
-        self.encoding = encoding or sys.getdefaultencoding()
-
-        if isinstance(f_in, int):
-            self.input_fd = f_in
-        else:
-            self.input_fd = f_in.fileno()
-
-        if isinstance(f_out, int):
-            self.output_fd = f_out
-        else:
-            self.output_fd = f_out.fileno()
+        super().__init__(f_in, f_out, term, encoding)
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
+        self.input_buffer = b""
+        self.input_buffer_pos = 0
         curses.setupterm(term or None, self.output_fd)
         self.term = term
 
@@ -204,6 +197,18 @@ class UnixConsole(Console):
 
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
+
+    def __read(self, n: int) -> bytes:
+        if not self.input_buffer or self.input_buffer_pos >= len(self.input_buffer):
+            self.input_buffer = os.read(self.input_fd, 10000)
+
+        ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
+        self.input_buffer_pos += len(ret)
+        if self.input_buffer_pos >= len(self.input_buffer):
+            self.input_buffer = b""
+            self.input_buffer_pos = 0
+        return ret
+
 
     def change_encoding(self, encoding: str) -> None:
         """
@@ -318,13 +323,13 @@ class UnixConsole(Console):
         """
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
-        raw.iflag &= ~(termios.BRKINT | termios.INPCK | termios.ISTRIP | termios.IXON)
+        raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
         raw.cflag |= termios.CS8
-        raw.lflag &= ~(
-            termios.ICANON | termios.ECHO | termios.IEXTEN | (termios.ISIG * 1)
-        )
+        raw.iflag |= termios.BRKINT
+        raw.lflag &= ~(termios.ICANON | termios.ECHO | termios.IEXTEN)
+        raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
@@ -381,7 +386,7 @@ class UnixConsole(Console):
         while self.event_queue.empty():
             while True:
                 try:
-                    self.push_char(os.read(self.input_fd, 1))
+                    self.push_char(self.__read(1))
                 except OSError as err:
                     if err.errno == errno.EINTR:
                         if not self.event_queue.empty():
@@ -396,11 +401,11 @@ class UnixConsole(Console):
                 break
         return self.event_queue.get()
 
-    def wait(self):
+    def wait(self, timeout: float | None = None) -> bool:
         """
         Wait for events on the console.
         """
-        self.pollob.poll()
+        return bool(self.pollob.poll(timeout))
 
     def set_cursor_vis(self, visible):
         """
@@ -499,7 +504,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
-            raw = os.read(self.input_fd, amount)
+            raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data
             e.raw += raw
@@ -522,7 +527,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = 10000
-            raw = os.read(self.input_fd, amount)
+            raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data
             e.raw += raw
@@ -537,6 +542,15 @@ class UnixConsole(Console):
         self.__move = self.__move_tall
         self.__posxy = 0, 0
         self.screen = []
+
+    @property
+    def input_hook(self):
+        try:
+            import posix
+        except ImportError:
+            return None
+        if posix._is_inputhook_installed():
+            return posix._inputhook
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")
@@ -592,14 +606,19 @@ class UnixConsole(Console):
         px_pos = 0
         j = 0
         for c in oldline:
-            if j >= px_coord: break
+            if j >= px_coord:
+                break
             j += wlen(c)
             px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
         # sequene
-        while x_coord < minlen and oldline[x_pos] == newline[x_pos] and newline[x_pos] != "\x1b":
+        while (
+            x_coord < minlen
+            and oldline[x_pos] == newline[x_pos]
+            and newline[x_pos] != "\x1b"
+        ):
             x_coord += wlen(newline[x_pos])
             x_pos += 1
 
@@ -619,7 +638,11 @@ class UnixConsole(Console):
             self.__posxy = x_coord + character_width, y
 
         # if it's a single character change in the middle of the line
-        elif x_coord < minlen and oldline[x_pos + 1 :] == newline[x_pos + 1 :] and wlen(oldline[x_pos]) == wlen(newline[x_pos]):
+        elif (
+            x_coord < minlen
+            and oldline[x_pos + 1 :] == newline[x_pos + 1 :]
+            and wlen(oldline[x_pos]) == wlen(newline[x_pos])
+        ):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])

@@ -2,8 +2,14 @@
 #   include <alloca.h>
 #endif
 
+#include <ffi.h>                  // FFI_TARGET_HAS_COMPLEX_TYPE
+
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#   include "../_complex.h"       // complex
+#endif
 
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -393,6 +399,9 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+        double complex C;
+#endif
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */

@@ -8,7 +8,6 @@ import itertools
 import pprint
 import random
 import re
-import test.support
 import types
 import unittest
 from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
