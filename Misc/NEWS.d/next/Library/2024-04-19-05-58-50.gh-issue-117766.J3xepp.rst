@@ -1,0 +1,1 @@
+Always use :func:`str()` to print ``choices`` in :mod:`argparse`.
