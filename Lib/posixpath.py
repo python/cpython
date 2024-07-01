@@ -266,6 +266,7 @@ def expanduser(path):
             name = os.fsdecode(name)
         try:
             pwent = pwd.getpwnam(name)
+            print(f"expanduser: {pwent=!r}")
         except KeyError:
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
