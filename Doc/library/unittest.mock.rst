@@ -412,6 +412,9 @@ the *new_callable* argument to :func:`patch`.
         .. versionchanged:: 3.6
            Added two keyword-only arguments to the reset_mock function.
 
+        .. versionchanged:: 3.9
+           :attr:`return_value` and :attr:`side_effect` apply to child mocks too.
+
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
         :attr:`return_value`, :attr:`side_effect` or any child attributes you have
