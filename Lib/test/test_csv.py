@@ -1320,16 +1320,36 @@ ghijkl\0mno
 ghi\0jkl
 """
 
+    sample15 = """\
+IsOK,def
+True,abcd
+True,jklm
+"""
+
+    sample16 = """\
+returndate,def
+2023-05-11,abcd
+2023-05-12,jklm
+"""
+
+    sample17 = dedent("""IsOK,def
+                        yes,ab
+                        no,jklm
+                        """)
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
-        self.assertFalse(sniffer.has_header(self.sample13))
+        self.assertTrue(sniffer.has_header(self.sample13))
 
     def test_has_header_strings(self):
         "More to document existing (unexpected?) behavior than anything else."
         sniffer = csv.Sniffer()
         self.assertFalse(sniffer.has_header(self.sample10))
         self.assertFalse(sniffer.has_header(self.sample11))
+        self.assertTrue(sniffer.has_header(self.sample15))
+        self.assertTrue(sniffer.has_header(self.sample16))
+        self.assertTrue(sniffer.has_header(self.sample17))
 
     def test_has_header(self):
         sniffer = csv.Sniffer()
