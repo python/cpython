@@ -20,7 +20,7 @@ class TestTokenize(unittest.TestCase):
                 try:
                     r = next(it)
                     tokens.append(tokenize.TokenInfo._make(r))
-                    time.sleep(1)
+                    time.sleep(0.03)
                 except StopIteration:
                     return
 
