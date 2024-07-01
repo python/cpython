@@ -4556,7 +4556,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable, value=None)
+   .. classmethod:: fromkeys(iterable, value=None, /)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
