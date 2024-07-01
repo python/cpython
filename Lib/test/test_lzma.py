@@ -4,6 +4,7 @@ from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import random
+import re
 import sys
 from test import support
 import unittest
@@ -382,6 +383,20 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     def test_uninitialized_LZMADecompressor_crash(self):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
+
+    def test_riscv_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_RISCV)
+
+    def test_arm64_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_ARM64)
+
+    def test_lzma_header_versions(self):
+        self.assertIsInstance(lzma.LZMA_HEADER_VERSION_STRING, str)
+        self.assertGreater(lzma.LZMA_HEADER_VERSION, 0)
+
+    def test_lzma_versions(self):
+        self.assertIsInstance(lzma.LZMA_VERSION_STRING, str)
+        self.assertGreater(lzma.LZMA_VERSION, 0)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
