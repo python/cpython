@@ -281,6 +281,7 @@ applications include caching objects that are expensive to create::
        d['primary']                # entry was automatically removed
      File "C:/python314/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
+           ~~~~~~~~~^^^^^
    KeyError: 'primary'
 
 
