@@ -42,6 +42,12 @@ except ImportError:
     pass
 else:
     extensions.append('sphinxext.opengraph')
+try:
+    import sphinx_new_tab_link
+except ImportError:
+    pass
+else:
+    extensions.append('sphinx_new_tab_link')
 
 
 doctest_global_setup = '''
