@@ -9,6 +9,7 @@ from tempfile import TemporaryFile
 import csv
 import gc
 import pickle
+import os
 from test import support
 from test.support import import_helper, check_disallow_instantiation
 from itertools import permutations
@@ -1403,6 +1404,20 @@ ghi\0jkl
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
+
+    def test_guess_lineterminator(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff('Date;Value\r\n2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\r\n')
+        dialect = sniffer.sniff('Date;Value\n2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\n')
+        dialect = sniffer.sniff('Date;Value\r2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\r')
+        dialect = sniffer.sniff('Date;Value\v2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, os.linesep)
+        dialect = sniffer.sniff('Date;Value')
+        self.assertEqual(dialect.lineterminator, os.linesep)
+
 
 class NUL:
     def write(s, *args):
