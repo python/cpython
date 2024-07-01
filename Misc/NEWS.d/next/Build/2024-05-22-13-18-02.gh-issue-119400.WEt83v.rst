@@ -1,0 +1,1 @@
+make_ssl_certs: update reference test data automatically, do not hardcode expiration dates

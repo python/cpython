@@ -1,6 +1,7 @@
 """Make the custom certificate and private key files used by test_ssl
 and friends."""
 
+import argparse
 import os
 import pprint
 import shutil
@@ -8,7 +9,10 @@ import tempfile
 from subprocess import *
 
 startdate = "20180829142316Z"
-enddate = "20371028142316Z"
+enddate_default = "20371028142316Z"
+days_default = "7000"
+
+cmdlineargs = None
 
 req_template = """
     [ default ]
@@ -79,8 +83,8 @@ req_template = """
     default_startdate = {startdate}
     enddate = {enddate}
     default_enddate = {enddate}
-    default_days = 7000
-    default_crl_days = 7000
+    default_days = {days}
+    default_crl_days = {days}
     certificate = pycacert.pem
     private_key = pycakey.pem
     serial    = $dir/serial
@@ -130,11 +134,12 @@ def make_cert_key(hostname, sign=False, extra_san='',
             hostname=hostname,
             extra_san=extra_san,
             startdate=startdate,
-            enddate=enddate
+            enddate=cmdlineargs.enddate,
+            days=cmdlineargs.days
         )
         with open(req_file, 'w') as f:
             f.write(req)
-        args = ['req', '-new', '-nodes', '-days', '7000',
+        args = ['req', '-new', '-nodes', '-days', cmdlineargs.days,
                 '-newkey', key, '-keyout', key_file,
                 '-extensions', ext,
                 '-config', req_file]
@@ -192,7 +197,8 @@ def make_ca():
             hostname='our-ca-server',
             extra_san='',
             startdate=startdate,
-            enddate=enddate
+            enddate=cmdlineargs.enddate,
+            days=cmdlineargs.days
         )
         t.write(req)
         t.flush()
@@ -219,12 +225,20 @@ def make_ca():
     shutil.copy('capath/ceff1710.0', 'capath/b1930218.0')
 
 
-def print_cert(path):
+def write_cert_reference(path):
     import _ssl
-    pprint.pprint(_ssl._test_decode_cert(path))
+    refdata = pprint.pformat(_ssl._test_decode_cert(path))
+    print(refdata)
+    with open(path + '.reference', 'w') as f:
+        f.write(refdata)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Make the custom certificate and private key files used by test_ssl and friends.')
+    parser.add_argument('--days', default=days_default)
+    parser.add_argument('--enddate', default=enddate_default)
+    cmdlineargs = parser.parse_args()
+
     os.chdir(here)
     cert, key = make_cert_key('localhost', ext='req_x509_extensions_simple')
     with open('ssl_cert.pem', 'w') as f:
@@ -308,6 +322,6 @@ if __name__ == '__main__':
         f.write(cert)
 
     unmake_ca()
-    print("update Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
-    print_cert('keycert.pem')
-    print_cert('keycert3.pem')
+    print("Writing out reference data for Lib/test/test_ssl.py and Lib/test/test_asyncio/utils.py")
+    write_cert_reference('keycert.pem')
+    write_cert_reference('keycert3.pem')
