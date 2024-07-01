@@ -1259,11 +1259,39 @@ class Popen:
         """Convenience for checking if a timeout has expired."""
         if endtime is None:
             return
+
+        def translate_newlines_partial_output(data, encoding, errors):
+            # Handle decoding the data considering it may be truncated
+            # mid-codepoint (ignore the trailing partial codepoint).
+            # See https://github.com/python/cpython/issues/87597
+            try:
+                output = self._translate_newlines(data, encoding, errors)
+            except UnicodeDecodeError as exc:
+                if exc.end == len(data):
+                    output = self._translate_newlines(data[:exc.start],
+                                                      encoding,
+                                                      errors)
+                else:
+                    raise
+            return output
+
         if skip_check_and_raise or _time() > endtime:
+            if stdout_seq is not None:
+                stdout = b''.join(stdout_seq)
+                if self.text_mode:
+                    stdout = translate_newlines_partial_output(
+                            stdout, self.stdout.encoding, self.stdout.errors)
+            else:
+                stdout = None
+            if stderr_seq is not None:
+                stderr = b''.join(stderr_seq)
+                if self.text_mode:
+                    stderr = translate_newlines_partial_output(
+                            stderr, self.stderr.encoding, self.stderr.errors)
+            else:
+                stderr = None
             raise TimeoutExpired(
-                    self.args, orig_timeout,
-                    output=b''.join(stdout_seq) if stdout_seq else None,
-                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+                    self.args, orig_timeout, output=stdout, stderr=stderr)
 
 
     def wait(self, timeout=None):
