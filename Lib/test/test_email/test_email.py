@@ -4086,6 +4086,173 @@ Here's the message body
         msg = email.message_from_string(m)
         self.assertTrue(msg.get_payload(0).get_payload().endswith('\r\n'))
 
+    def test_rfc6532_s3_5_quoted_printable_subpart(self):
+        # Issue 44660: email.feedparser Module Lacks Support for Section 3.5 of
+        #  RFC 6532: message/global Emails with non-identity
+        #  Content-Transfer-Encodings.
+
+        m = (
+            # Top-level part header:
+            'Content-Type: message/global\r\n'
+            'Content-Transfer-Encoding: quoted-printable\r\n'
+            '\r\n'
+            # Top-level part body:
+            # Quoted-printable-encoded subpart header:
+            'Content-Type: text/plain; charset=3Dutf-8\r\n'
+            'X-Really-Long-Header-Field-Name: This header field value is intentionally l=\r\n'
+            'ong because soft-wrapped, quoted-printable header fields are an edge case.\r\n'
+            'X-Header-Field-with-Unicode-Value: =E2=93=89=E2=93=97=E2=93=98=E2=93=A2 =\r\n'
+            '=E2=93=98=E2=93=A2 =E2=93=8A=E2=93=9D=E2=93=98=E2=93=92=E2=93=9E=E2=93=\r\n'
+            '=93=E2=93=94 =E2=93=A3=E2=93=94=E2=93=A7=E2=93=A3.\r\n'
+            '\r\n'
+            # Quoted-printable-encoded subpart body:
+            'This is ASCII text.\r\n'
+            '=E2=93=89=E2=93=97=E2=93=98=E2=93=A2 =E2=93=98=E2=93=A2 =E2=93=8A=E2=93=\r\n'
+            '=9D=E2=93=98=E2=93=92=E2=93=9E=E2=93=93=E2=93=94 =E2=93=A3=E2=93=94=\r\n'
+            '=E2=93=A7=E2=93=A3.\r\n'
+        )
+        actual_email_object = email.message_from_string(
+            m,
+            policy=email.policy.default
+        )
+        self.assertIsInstance(
+            actual_email_object,
+            email.message.EmailMessage,
+            'Parsed value should be a message part object.'
+        )
+
+        self.assertEqual(
+            dict(actual_email_object),
+            {'Content-Transfer-Encoding': 'quoted-printable',
+             'Content-Type': 'message/global'},
+            'Top-level message headers incorrect.'
+        )
+
+        actual_payload = actual_email_object.get_payload()
+        self.assertIsInstance(
+            actual_payload,
+            list,
+            'Top-level message body should be a list.'
+        )
+        self.assertFalse(
+            [subpart for subpart in actual_payload if not isinstance(subpart, Message)],
+            'Top-level message body (a list) should contain only subpart object(s).'
+        )
+        self.assertEqual(
+            len(actual_payload),
+            1,
+            'Top-level message should have a single subpart.'
+        )
+        actual_subpart: Message = actual_payload[0]
+
+        self.assertEqual(
+            actual_subpart.get_content_type(),
+            'text/plain'
+        )
+        self.assertEqual(
+            actual_subpart.get_content_charset(),
+            'utf-8'
+        )
+        self.assertEqual(
+            {   key: list(actual_subpart.get_all(key))
+                for key in actual_subpart.keys()
+                if key not in ['Content-Type']},
+            {'X-Header-Field-with-Unicode-Value': ['Ⓣⓗⓘⓢ ⓘⓢ Ⓤⓝⓘⓒⓞⓓⓔ ⓣⓔⓧⓣ.'],
+             'X-Really-Long-Header-Field-Name': [('This header field value is intentionally '
+                                                  'long because soft-wrapped, '
+                                                  'quoted-printable header fields are an '
+                                                  'edge case.')]},
+            'Subpart headers incorrect.'
+        )
+        actual_subpart_payload = actual_subpart.get_payload()
+        self.assertIsInstance(
+            actual_subpart_payload,
+            str,
+            'Subpart body is of type "text/plain" so should be a string.'
+        )
+        self.assertEqual(
+            actual_subpart_payload,
+            ('This is ASCII text.\r\n'
+             'Ⓣⓗⓘⓢ ⓘⓢ Ⓤⓝⓘⓒⓞⓓⓔ ⓣⓔⓧⓣ.\r\n'),
+            'Parsed subpart body text might be corrupt.'
+        )
+
+
+    def test_rfc6532_s3_5_base64_subpart(self):
+        # Issue 44660: email.feedparser Module Lacks Support for Section 3.5 of
+        #  RFC 6532: message/global Emails with non-identity
+        #  Content-Transfer-Encodings.
+
+        m = (
+            # Top-level part header:
+            'Content-Type: message/global\r\n'
+            'Content-Transfer-Encoding: base64\r\n'
+            '\r\n'
+            # Top-level part body:
+            # Base-64-encoded subpart (header and body):
+            'Q29udGVudC1UeXBlOiB0ZXh0L3BsYWluDQpYLUhlYWRlci1GaWVsZC13aXRoLVVuaWNvZGUtVmFs\r\n'
+            'dWU6IOKTieKTl+KTmOKToiDik5jik6Ig4pOK4pOd4pOY4pOS4pOe4pOT4pOUIOKTo+KTlOKTp+KT\r\n'
+            'oy4NCg0KVGhpcyBpcyBBU0NJSSB0ZXh0Lg==\r\n'
+        )
+        actual_email_object = email.message_from_string(
+            m,
+            policy=email.policy.default
+        )
+        self.assertIsInstance(
+            actual_email_object,
+            email.message.EmailMessage,
+            'Parsed value should be a message part object.'
+        )
+
+        self.assertEqual(
+            dict(actual_email_object),
+            {'Content-Transfer-Encoding': 'base64',
+             'Content-Type': 'message/global'},
+            'Top-level message headers incorrect.'
+        )
+
+        actual_payload = actual_email_object.get_payload()
+        self.assertIsInstance(
+            actual_payload,
+            list,
+            'Top-level message body should be a list.'
+        )
+        self.assertFalse(
+            [subpart for subpart in actual_payload if not isinstance(subpart, Message)],
+            'Top-level message body (a list) should contain only subpart object(s).'
+        )
+        self.assertEqual(
+            len(actual_payload),
+            1,
+            'Top-level message should have a single subpart.'
+        )
+        actual_subpart: Message = actual_payload[0]
+
+        self.assertEqual(
+            actual_subpart.get_content_type(),
+            'text/plain'
+        )
+        self.assertEqual(
+            {key: list(actual_subpart.get_all(key))
+             for key in actual_subpart.keys()
+             if key not in ['Content-Type']},
+            {'X-Header-Field-with-Unicode-Value': [
+                'Ⓣⓗⓘⓢ ⓘⓢ Ⓤⓝⓘⓒⓞⓓⓔ ⓣⓔⓧⓣ.'
+            ]},
+            'Subpart headers incorrect.'
+        )
+        actual_subpart_payload = actual_subpart.get_payload()
+        self.assertIsInstance(
+            actual_subpart_payload,
+            str,
+            'Subpart body is of type "text/plain" so should be a string.'
+        )
+        self.assertEqual(
+            actual_subpart_payload,
+            'This is ASCII text.',
+            'Parsed subpart body text might be corrupt.'
+        )
+
 
 class Test8BitBytesHandling(TestEmailBase):
     # In Python3 all input is string, but that doesn't work if the actual input
