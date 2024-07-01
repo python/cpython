@@ -13,6 +13,12 @@
 
 #include <Python.h>
 
+#include <ffi.h>                  // FFI_TARGET_HAS_COMPLEX_TYPE
+
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#  include "../_complex.h"        // csqrt()
+#  undef I                        // for _ctypes_test_generated.c.h
+#endif
 #include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
 #include <string.h>               // memset()
@@ -442,6 +448,13 @@ EXPORT(double) my_sqrt(double a)
 {
     return sqrt(a);
 }
+
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+EXPORT(double complex) my_csqrt(double complex a)
+{
+    return csqrt(a);
+}
+#endif
 
 EXPORT(void) my_qsort(void *base, size_t num, size_t width, int(*compare)(const void*, const void*))
 {
