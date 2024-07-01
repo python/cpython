@@ -21,7 +21,7 @@ from docutils.parsers.rst import Directive
 from docutils.utils import new_document
 from sphinx import addnodes
 from sphinx.builders import Builder
-from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.domains.python import PyFunction, PyMethod, PyXRefRole
 from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
@@ -691,9 +691,19 @@ def patch_pairindextypes(app, _env) -> None:
         pairindextypes.clear()
 
 
+class PyDecoratorRole(PyXRefRole):
+    class inner(nodes.literal):
+        def __init__(self, raw, text, *args, **kwds):
+            super().__init__(raw, f"@{text}", *args, **kwds)
+
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, innernodeclass=PyDecoratorRole.inner, **kwds)
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
+    app.add_role_to_domain('py', 'deco', PyDecoratorRole())
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)

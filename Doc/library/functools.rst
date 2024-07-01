@@ -34,7 +34,7 @@ The :mod:`functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache()` with a size limit.
+   :deco:`lru_cache` with a size limit.
 
    For example::
 
@@ -64,7 +64,7 @@ The :mod:`functools` module defines the following functions:
 
    Transform a method of a class into a property whose value is computed once
    and then cached as a normal attribute for the life of the instance. Similar
-   to :func:`property`, with the addition of caching. Useful for expensive
+   to :deco:`property`, with the addition of caching. Useful for expensive
    computed properties of instances that are otherwise effectively immutable.
 
    Example::
@@ -78,11 +78,11 @@ The :mod:`functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
-   The mechanics of :func:`cached_property` are somewhat different from
-   :func:`property`.  A regular property blocks attribute writes unless a
+   The mechanics of :deco:`!cached_property` are somewhat different from
+   :deco:`property`.  A regular property blocks attribute writes unless a
    setter is defined. In contrast, a *cached_property* allows writes.
 
-   The *cached_property* decorator only runs on lookups and only when an
+   The :deco:`!cached_property` decorator only runs on lookups and only when an
    attribute of the same name doesn't exist.  When it does run, the
    *cached_property* writes to the attribute with the same name. Subsequent
    attribute reads and writes take precedence over the *cached_property*
@@ -111,14 +111,14 @@ The :mod:`functools` module defines the following functions:
    (as such classes don't provide a ``__dict__`` attribute at all).
 
    If a mutable mapping is not available or if space-efficient key sharing is
-   desired, an effect similar to :func:`cached_property` can also be achieved by
-   stacking :func:`property` on top of :func:`lru_cache`. See
-   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
+   desired, an effect similar to :deco:`!cached_property` can also be achieved by
+   stacking :deco:`property` on top of :deco:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :deco:`!cached_property`.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
-      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      Prior to Python 3.12, :deco:`!cached_property` included an undocumented lock to
       ensure that in multi-threaded usage the getter function was guaranteed to
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
@@ -172,7 +172,7 @@ The :mod:`functools` module defines the following functions:
    entries.
 
    If *user_function* is specified, it must be a callable. This allows the
-   *lru_cache* decorator to be applied directly to a user function, leaving
+   :deco:`!lru_cache` decorator to be applied directly to a user function, leaving
    the *maxsize* at its default value of 128::
 
        @lru_cache
@@ -319,7 +319,7 @@ The :mod:`functools` module defines the following functions:
 
       This decorator makes no attempt to override methods that have been
       declared in the class *or its superclasses*. Meaning that if a
-      superclass defines a comparison operator, *total_ordering* will not
+      superclass defines a comparison operator, :deco:`!total_ordering` will not
       implement it again, even if the original method is abstract.
 
    .. versionadded:: 3.2
@@ -369,7 +369,7 @@ The :mod:`functools` module defines the following functions:
    like normal functions, are handled as descriptors).
 
    When *func* is a descriptor (such as a normal Python function,
-   :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
+   :deco:`classmethod`, :deco:`staticmethod`, :deco:`~abs.abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
    :ref:`partial object<partial-objects>` returned as the result.
@@ -436,8 +436,8 @@ The :mod:`functools` module defines the following functions:
    Transform a function into a :term:`single-dispatch <single
    dispatch>` :term:`generic function`.
 
-   To define a generic function, decorate it with the ``@singledispatch``
-   decorator. When defining a function using ``@singledispatch``, note that the
+   To define a generic function, decorate it with the :deco:`singledispatch`
+   decorator. When defining a function using :deco:`!singledispatch`, note that the
    dispatch happens on the type of the first argument::
 
      >>> from functools import singledispatch
@@ -537,7 +537,7 @@ The :mod:`functools` module defines the following functions:
 
    Where there is no registered implementation for a specific type, its
    method resolution order is used to find a more generic implementation.
-   The original function decorated with ``@singledispatch`` is registered
+   The original function decorated with :deco:`singledispatch` is registered
    for the base :class:`object` type, which means it is used if no better
    implementation is found.
 
@@ -591,8 +591,8 @@ The :mod:`functools` module defines the following functions:
    Transform a method into a :term:`single-dispatch <single
    dispatch>` :term:`generic function`.
 
-   To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   To define a generic method, decorate it with the :deco:`singledispatchmethod`
+   decorator. When defining a function using :deco:`!singledispatchmethod`, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
@@ -609,9 +609,9 @@ The :mod:`functools` module defines the following functions:
         def _(self, arg: bool):
             return not arg
 
-   ``@singledispatchmethod`` supports nesting with other decorators such as
-   :func:`@classmethod<classmethod>`. Note that to allow for
-   ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
+   :deco:`!singledispatchmethod` supports nesting with other decorators such as
+   :deco:`classmethod`. Note that to allow for
+   :deco:`!dispatcher.register`, :deco:`!singledispatchmethod` must be the *outer most*
    decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
    the class, rather than an instance of the class::
 
@@ -632,8 +632,8 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :func:`@staticmethod<staticmethod>`,
-   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+   :deco:`staticmethod`,
+   :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
 
@@ -652,7 +652,7 @@ The :mod:`functools` module defines the following functions:
    updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
-   (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
+   (e.g. bypassing a caching decorator such as :deco:`lru_cache`), this function
    automatically adds a ``__wrapped__`` attribute to the wrapper that refers to
    the function being wrapped.
 

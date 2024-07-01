@@ -1262,7 +1262,7 @@ These can be used as types in annotations. They all support subscription using
    Using ``Annotated[T, x]`` as an annotation still allows for static
    typechecking of ``T``, as type checkers will simply ignore the metadata ``x``.
    In this way, ``Annotated`` differs from the
-   :func:`@no_type_check <no_type_check>` decorator, which can also be used for
+   :deco:`no_type_check` decorator, which can also be used for
    adding annotations outside the scope of the typing system, but
    completely disables typechecking for a function or class.
 
@@ -2265,7 +2265,7 @@ types.
       func(C())  # Passes static type check
 
    See :pep:`544` for more details. Protocol classes decorated with
-   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   :deco:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures.
 
@@ -2310,7 +2310,7 @@ types.
 
    .. note::
 
-        :func:`!runtime_checkable` will check only the presence of the required
+        :deco:`!runtime_checkable` will check only the presence of the required
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
@@ -2593,7 +2593,7 @@ Protocols
 ---------
 
 The following protocols are provided by the typing module. All are decorated
-with :func:`@runtime_checkable <runtime_checkable>`.
+with :deco:`runtime_checkable`.
 
 .. class:: SupportsAbs
 
@@ -2749,14 +2749,14 @@ Functions and decorators
                                    field_specifiers=(), **kwargs)
 
    Decorator to mark an object as providing
-   :func:`dataclass <dataclasses.dataclass>`-like behavior.
+   :deco:`~dataclasses.dataclass`-like behavior.
 
-   ``dataclass_transform`` may be used to
+   :deco:`!dataclass_transform` may be used to
    decorate a class, metaclass, or a function that is itself a decorator.
-   The presence of ``@dataclass_transform()`` tells a static type checker that the
+   The presence of :deco:`!dataclass_transform` tells a static type checker that the
    decorated object performs runtime "magic" that
    transforms a class in a similar way to
-   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   :deco:`!dataclasses.dataclass`.
 
    Example usage with a decorator function:
 
@@ -2794,19 +2794,19 @@ Functions and decorators
 
    The ``CustomerModel`` classes defined above will
    be treated by type checkers similarly to classes created with
-   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   :deco:`dataclasses.dataclass`.
    For example, type checkers will assume these classes have
    ``__init__`` methods that accept ``id`` and ``name``.
 
    The decorated class, metaclass, or function may accept the following bool
    arguments which type checkers will assume have the same effect as they
    would have on the
-   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
+   :deco:`!dataclasses.dataclass` decorator: ``init``,
    ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
    ``kw_only``, and ``slots``. It must be possible for the value of these
    arguments (``True`` or ``False``) to be statically evaluated.
 
-   The arguments to the ``dataclass_transform`` decorator can be used to
+   The arguments to the :deco:`!dataclass_transform` decorator can be used to
    customize the default behaviors of the decorated class, metaclass, or
    function:
 
@@ -2870,8 +2870,8 @@ Functions and decorators
           keyword-only. If ``True``, the field will be keyword-only. If
           ``False``, it will not be keyword-only. If unspecified, the value of
           the ``kw_only`` parameter on the object decorated with
-          ``dataclass_transform`` will be used, or if that is unspecified, the
-          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+          :deco:`dataclass_transform` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on :deco:`!dataclass_transform` will be used.
       * - ``alias``
         - Provides an alternative name for the field. This alternative
           name is used in the synthesized ``__init__`` method.
@@ -2890,17 +2890,17 @@ Functions and decorators
 
    Decorator for creating overloaded functions and methods.
 
-   The ``@overload`` decorator allows describing functions and methods
+   The :deco:`overload` decorator allows describing functions and methods
    that support multiple different combinations of argument types. A series
-   of ``@overload``-decorated definitions must be followed by exactly one
-   non-``@overload``-decorated definition (for the same function/method).
+   of :deco:`!overload`-decorated definitions must be followed by exactly one
+   non-:deco:`!overload`-decorated definition (for the same function/method).
 
-   ``@overload``-decorated definitions are for the benefit of the
+   :deco:`!overload`-decorated definitions are for the benefit of the
    type checker only, since they will be overwritten by the
-   non-``@overload``-decorated definition. The non-``@overload``-decorated
+   non-:deco:`!overload`-decorated definition. The non-:deco:`!overload`-decorated
    definition, meanwhile, will be used at
    runtime but should be ignored by a type checker.  At runtime, calling
-   an ``@overload``-decorated function directly will raise
+   an :deco:`!overload`-decorated function directly will raise
    :exc:`NotImplementedError`.
 
    An example of overload that gives a more
@@ -2929,12 +2929,12 @@ Functions and decorators
 
 .. function:: get_overloads(func)
 
-   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   Return a sequence of :deco:`overload`-decorated definitions for
    *func*.
 
    *func* is the function object for the implementation of the
    overloaded function. For example, given the definition of ``process`` in
-   the documentation for :func:`@overload <overload>`,
+   the documentation for :deco:`!overload`,
    ``get_overloads(process)`` will return a sequence of three function objects
    for the three defined overloads. If called on a function with no overloads,
    ``get_overloads()`` returns an empty sequence.
@@ -2958,8 +2958,8 @@ Functions and decorators
 
    Decorator to indicate final methods and final classes.
 
-   Decorating a method with ``@final`` indicates to a type checker that the
-   method cannot be overridden in a subclass. Decorating a class with ``@final``
+   Decorating a method with :deco:`final` indicates to a type checker that the
+   method cannot be overridden in a subclass. Decorating a class with :deco:`!final`
    indicates that it cannot be subclassed.
 
    For example::
@@ -3002,17 +3002,17 @@ Functions and decorators
    checkers will ignore all annotations in a function or class with this
    decorator.
 
-   ``@no_type_check`` mutates the decorated object in place.
+   :deco:`!no_type_check` mutates the decorated object in place.
 
 .. decorator:: no_type_check_decorator
 
-   Decorator to give another decorator the :func:`no_type_check` effect.
+   Decorator to give another decorator the :deco:`no_type_check` effect.
 
    This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
+   function in :deco:`!no_type_check`.
 
    .. deprecated-removed:: 3.13 3.15
-      No type checker ever added support for ``@no_type_check_decorator``. It
+      No type checker ever added support for :deco:`!no_type_check_decorator`. It
       is therefore deprecated, and will be removed in Python 3.15.
 
 .. decorator:: override
@@ -3020,7 +3020,7 @@ Functions and decorators
    Decorator to indicate that a method in a subclass is intended to override a
    method or attribute in a superclass.
 
-   Type checkers should emit an error if a method decorated with ``@override``
+   Type checkers should emit an error if a method decorated with :deco:`!override`
    does not, in fact, override anything.
    This helps prevent bugs that may occur when a base class is changed without
    an equivalent change to a child class.
@@ -3883,7 +3883,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.12
      - Undecided
      - :pep:`695`
-   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
+   * - :deco:`typing.no_type_check_decorator`
      - 3.13
      - 3.15
      - :gh:`106309`

@@ -995,7 +995,7 @@ dataclasses
 __slots__
 ~~~~~~~~~
 
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Added ``slots`` parameter in :deco:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 Keyword-only fields

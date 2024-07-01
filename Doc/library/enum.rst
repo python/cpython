@@ -101,7 +101,7 @@ Module Contents
    :class:`EnumCheck`
 
       An enumeration with the values ``CONTINUOUS``, ``NAMED_FLAGS``, and
-      ``UNIQUE``, for use with :func:`verify` to ensure various constraints
+      ``UNIQUE``, for use with :deco:`verify` to ensure various constraints
       are met by a given enumeration.
 
    :class:`FlagBoundary`
@@ -116,30 +116,30 @@ Module Contents
       :class:`StrEnum` defaults to the lower-cased version of the member name,
       while other Enums default to 1 and increase from there.
 
-   :func:`~enum.property`
+   :deco:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       member names.  The ``value`` and ``name`` attributes are implemented this
       way.
 
-   :func:`unique`
+   :deco:`unique`
 
       Enum class decorator that ensures only one name is bound to any one value.
 
-   :func:`verify`
+   :deco:`verify`
 
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
-   :func:`member`
+   :deco:`member`
 
       Make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`nonmember`
+   :deco:`nonmember`
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
-   :func:`global_enum`
+   :deco:`global_enum`
 
       Modify the :class:`str() <str>` and :func:`repr` of an enum
       to show its members as belonging to the module instead of its class,
@@ -151,7 +151,7 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, :deco:`property`, :deco:`member`, :deco:`nonmember`, :deco:`global_enum`, ``show_flag_values``
 
 ---------------
 
@@ -698,7 +698,7 @@ Data Types
 
 .. class:: EnumCheck
 
-   *EnumCheck* contains the options used by the :func:`verify` decorator to ensure
+   *EnumCheck* contains the options used by the :deco:`verify` decorator to ensure
    various constraints; failed constraints result in a :exc:`ValueError`.
 
    .. attribute:: UNIQUE
@@ -908,7 +908,7 @@ Utilities and Decorators
 
 .. decorator:: property
 
-   A decorator similar to the built-in *property*, but specifically for
+   A decorator similar to the built-in :deco:`!property`, but specifically for
    enumerations.  It allows member attributes to have the same names as members
    themselves.
 

@@ -4876,9 +4876,9 @@ decimal arithmetic context. The specific types are not treated specially beyond
 their implementation of the context management protocol. See the
 :mod:`contextlib` module for some examples.
 
-Python's :term:`generator`\s and the :class:`contextlib.contextmanager` decorator
+Python's :term:`generator`\s and the :deco:`contextlib.contextmanager` decorator
 provide a convenient way to implement these protocols.  If a generator function is
-decorated with the :class:`contextlib.contextmanager` decorator, it will return a
+decorated with the :deco:`!contextlib.contextmanager` decorator, it will return a
 context manager implementing the necessary :meth:`~contextmanager.__enter__` and
 :meth:`~contextmanager.__exit__` methods, rather than the iterator produced by an
 undecorated generator function.

@@ -51,24 +51,24 @@ Module contents
    This function is a :term:`decorator` that is used to add generated
    :term:`special methods <special method>` to classes, as described below.
 
-   The ``@dataclass`` decorator examines the class to find
+   The :deco:`!dataclass` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as a class variable that has a
    :term:`type annotation <variable annotation>`.  With two
-   exceptions described below, nothing in ``@dataclass``
+   exceptions described below, nothing in :deco:`!dataclass`
    examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
 
-   The ``@dataclass`` decorator will add various "dunder" methods to
+   The :deco:`!dataclass` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
    exist in the class, the behavior depends on the parameter, as documented
    below. The decorator returns the same class that it is called on; no new
    class is created.
 
-   If ``@dataclass`` is used just as a simple decorator with no parameters,
+   If :deco:`!dataclass` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
-   signature.  That is, these three uses of ``@dataclass`` are
+   signature.  That is, these three uses of :deco:`!dataclass` are
    equivalent::
 
      @dataclass
@@ -84,7 +84,7 @@ Module contents
      class C:
          ...
 
-   The parameters to ``@dataclass`` are:
+   The parameters to :deco:`!dataclass` are:
 
    - *init*: If true (the default), a :meth:`~object.__init__` method will be
      generated.
@@ -129,17 +129,17 @@ Module contents
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
      intent, the existence and behavior of :meth:`!__eq__`, and the values of
-     the *eq* and *frozen* flags in the ``@dataclass`` decorator.
+     the *eq* and *frozen* flags in the :deco:`!dataclass` decorator.
 
-     By default, ``@dataclass`` will not implicitly add a :meth:`~object.__hash__`
+     By default, :deco:`!dataclass` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
      existing explicitly defined :meth:`!__hash__` method.  Setting the class
      attribute ``__hash__ = None`` has a specific meaning to Python, as
      described in the :meth:`!__hash__` documentation.
 
      If :meth:`!__hash__` is not explicitly defined, or if it is set to ``None``,
-     then ``@dataclass`` *may* add an implicit :meth:`!__hash__` method.
-     Although not recommended, you can force ``@dataclass`` to create a
+     then :deco:`!dataclass` *may* add an implicit :meth:`!__hash__` method.
+     Although not recommended, you can force :deco:`!dataclass` to create a
      :meth:`!__hash__` method with ``unsafe_hash=True``. This might be the case
      if your class is logically immutable but can still be mutated.
      This is a specialized use case and should be considered carefully.
@@ -149,7 +149,7 @@ Module contents
      method in your dataclass and set ``unsafe_hash=True``; this will result
      in a :exc:`TypeError`.
 
-     If *eq* and *frozen* are both true, by default ``@dataclass`` will
+     If *eq* and *frozen* are both true, by default :deco:`!dataclass` will
      generate a :meth:`!__hash__` method for you.  If *eq* is true and
      *frozen* is false, :meth:`!__hash__` will be set to ``None``, marking it
      unhashable (which it is, since it is mutable).  If *eq* is false,
@@ -299,7 +299,7 @@ Module contents
    :func:`!field`, then the class attribute for this field will be
    replaced by the specified *default* value.  If *default* is not
    provided, then the class attribute will be deleted.  The intent is
-   that after the :func:`@dataclass <dataclass>` decorator runs, the class
+   that after the :deco:`dataclass` decorator runs, the class
    attributes will all contain the default values for the fields, just
    as if the default value itself were specified.  For example,
    after::
@@ -400,7 +400,7 @@ Module contents
    :data:`typing.Any` is used for ``type``.  The values of *init*,
    *repr*, *eq*, *order*, *unsafe_hash*, *frozen*,
    *match_args*, *kw_only*, *slots*, and *weakref_slot* have
-   the same meaning as they do in :func:`@dataclass <dataclass>`.
+   the same meaning as they do in :deco:`dataclass`.
 
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
@@ -408,7 +408,7 @@ Module contents
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with :attr:`!__annotations__` can
-   then apply the :func:`@dataclass <dataclass>` function to convert that class to
+   then apply the :deco:`dataclass` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
 
@@ -534,7 +534,7 @@ Post-init processing
          def __post_init__(self):
              self.c = self.a + self.b
 
-The :meth:`~object.__init__` method generated by :func:`@dataclass <dataclass>` does not call base
+The :meth:`~object.__init__` method generated by :deco:`dataclass` does not call base
 class :meth:`!__init__` methods. If the base class has an :meth:`!__init__` method
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
@@ -564,7 +564,7 @@ parameters to :meth:`!__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of the few places where :func:`@dataclass <dataclass>` actually inspects the type
+One of the few places where :deco:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 :data:`typing.ClassVar`.  If a field is a ``ClassVar``, it is excluded
@@ -577,7 +577,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
+Another place where :deco:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
@@ -611,7 +611,7 @@ Frozen instances
 ----------------
 
 It is not possible to create truly immutable Python objects.  However,
-by passing ``frozen=True`` to the :func:`@dataclass <dataclass>` decorator you can
+by passing ``frozen=True`` to the :deco:`dataclass` decorator you can
 emulate immutability.  In that case, dataclasses will add
 :meth:`~object.__setattr__` and :meth:`~object.__delattr__` methods to the class.  These
 methods will raise a :exc:`FrozenInstanceError` when invoked.
@@ -627,7 +627,7 @@ must use :meth:`!object.__setattr__`.
 Inheritance
 -----------
 
-When the dataclass is being created by the :func:`@dataclass <dataclass>` decorator,
+When the dataclass is being created by the :deco:`dataclass` decorator,
 it looks through all of the class's base classes in reverse MRO (that
 is, starting at :class:`object`) and, for each dataclass that it finds,
 adds the fields from that base class to an ordered mapping of fields.
@@ -751,7 +751,7 @@ for :attr:`!x` when creating a class instance will share the same copy
 of :attr:`!x`.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`@dataclass <dataclass>` decorator will raise a :exc:`ValueError` if it
+:deco:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.
@@ -785,7 +785,7 @@ default value have the following special behaviors:
   :meth:`~object.__get__` or :meth:`!__set__` method is called rather than returning or
   overwriting the descriptor object.
 
-* To determine whether a field contains a default value, :func:`@dataclass <dataclass>`
+* To determine whether a field contains a default value, :deco:`dataclass`
   will call the descriptor's :meth:`!__get__` method using its class access
   form: ``descriptor.__get__(obj=None, type=cls)``.  If the
   descriptor returns a value in this case, it will be used as the

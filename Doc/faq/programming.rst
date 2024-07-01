@@ -1966,11 +1966,11 @@ How do I cache method calls?
 ----------------------------
 
 The two principal tools for caching methods are
-:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+:deco:`functools.cached_property` and :deco:`functools.lru_cache`.  The
 former stores results at the instance level and the latter at the class
 level.
 
-The *cached_property* approach only works with methods that do not take
+The :deco:`!cached_property` approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
 cached method result will be kept only as long as the instance is alive.
 
@@ -1979,7 +1979,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have :term:`hashable`
+The :deco:`!lru_cache` approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 
@@ -2017,7 +2017,7 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-To make the *lru_cache* approach work when the *station_id* is mutable,
+To make the :deco:`~functools.lru_cache` approach work when the *station_id* is mutable,
 the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
 methods so that the cache can detect relevant attribute updates::
 
