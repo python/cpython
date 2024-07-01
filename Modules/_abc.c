@@ -157,9 +157,28 @@ static PyType_Spec _abc_data_type_spec = {
     .slots = _abc_data_type_spec_slots,
 };
 
+/* Forward declaration. */
+static PyObject * _abc__abc_init(PyObject *module, PyObject *self);
+
+static int
+_already_abc_init(PyObject *self) {
+    PyObject *oname = _PyUnicode_FromId(&PyId__abc_impl);
+    if (!oname) {
+        return 0;
+    }
+    PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
+    int res = PyMapping_HasKey(dict, oname);
+    Py_DECREF(dict);
+    return res;
+}
+
 static _abc_data *
 _get_impl(PyObject *module, PyObject *self)
 {
+    if (!_already_abc_init(self)) {
+        _abc__abc_init(module, self);
+    }
+
     _abcmodule_state *state = get_abc_state(module);
     PyObject *impl = PyObject_GetAttr(self, &_Py_ID(_abc_impl));
     if (impl == NULL) {
