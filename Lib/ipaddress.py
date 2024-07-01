@@ -2071,8 +2071,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
         """Test if the address is reserved for site-local.
 
         Note that the site-local address space has been deprecated by RFC 3879.
-        Use is_private to test if this address is in the space of unique local
-        addresses as defined by RFC 4193.
 
         Returns:
             A boolean, True if the address is reserved per RFC 3513 2.5.6.
@@ -2345,8 +2343,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         """Test if the address is reserved for site-local.
 
         Note that the site-local address space has been deprecated by RFC 3879.
-        Use is_private to test if this address is in the space of unique local
-        addresses as defined by RFC 4193.
 
         Returns:
             A boolean, True if the address is reserved per RFC 3513 2.5.6.

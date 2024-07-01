@@ -345,9 +345,7 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_site_local
 
       ``True`` if the address is reserved for site-local usage.  Note that
-      the site-local address space has been deprecated by :RFC:`3879`. Use
-      :attr:`~IPv4Address.is_private` to test if this address is in the
-      space of unique local addresses as defined by :RFC:`4193`.
+      the site-local address space has been deprecated by :RFC:`3879`.
 
    .. attribute:: ipv4_mapped
 
