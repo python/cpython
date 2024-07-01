@@ -1054,6 +1054,20 @@ class CmdLineTest(unittest.TestCase):
         res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
+    def test_import_time(self):
+        code = "import os"
+        res = assert_python_ok('-X', 'importtime', '-c', code)
+        self.assertRegex(
+            res.err.decode("utf-8"),
+            r"import time: \s*\d+ | \s*\d+ | \s*os"
+        )
+        code = "import os; import os"
+        res = assert_python_ok('-X', 'importtime=2', '-c', code)
+        self.assertRegex(
+            res.err.decode("utf-8"),
+            r"import time: cached\s* | cached\s* | os"
+        )
+
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())

@@ -535,6 +535,12 @@ Other Language Changes
   relative imports if dots are present before the module name.
   (Contributed by Jeremiah Gabriel Pascual in :gh:`118216`.)
 
+* :option:`-X importtime <-X>` now accepts value ``2``, which indicates that
+  an ``importtime`` entry should also be printed if an imported module has
+  already been loaded. The ``self`` and ``cumulative`` times for such entries
+  are replaced by the string ``cached``.
+  (Contributed by Noah Kim in :gh:`118655`.)
+
 
 New Modules
 ===========

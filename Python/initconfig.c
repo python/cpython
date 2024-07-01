@@ -61,7 +61,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
     SPEC(perf_profiling, UINT),
-    SPEC(import_time, BOOL),
+    SPEC(import_time, UINT),
     SPEC(code_debug_ranges, BOOL),
     SPEC(show_ref_count, BOOL),
     SPEC(dump_refs, BOOL),
@@ -1886,6 +1886,56 @@ config_init_run_presite(PyConfig *config)
 }
 #endif
 
+/* Set `config->import_time` based on `value`. */
+static PyStatus
+config_set_import_time(PyConfig *config, const wchar_t *value)
+{
+    /* -Ximporttime(=.*)? */
+    if (value == NULL) {
+    }
+
+    /* We recognize 2 as a special value: if the importtime flag is
+     * set to 2, we also print import cache hits. Otherwise, we fall
+     * back to standard -X importtime behavior. */
+    else if (wcscmp(value, L"2") == 0) {
+        config->import_time = 2;
+    }
+    else {
+        config->import_time = 1;
+    }
+
+    return _PyStatus_OK();
+}
+
+/* Configure `config->import_time` by checking -Ximporttime then the
+ * PYTHONPROFILEIMPORTTIME environment variable. Defaults to 0.
+ */
+static PyStatus
+config_read_import_time(PyConfig* config)
+{
+    /* Check the -X option first. */
+    const wchar_t *xoption_value = NULL;
+    xoption_value = config_get_xoption_value(config, L"importtime");
+    if (xoption_value != NULL)
+    {
+        return config_set_import_time(config, xoption_value);
+    }
+
+    /* If there's no -Ximporttime, look for ENV flag */
+    wchar_t *env_value = NULL;
+    /* `CONFIG_GET_ENV_DUP` requires dest to be initialized to `NULL`. */
+    PyStatus status = CONFIG_GET_ENV_DUP(config, &env_value,
+                                         L"PYTHONPROFILEIMPORTTIME",
+                                         "PYTHONPROFILEIMPORTTIME");
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    if (env_value != NULL) {
+        return config_set_import_time(config, env_value);
+    }
+
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_read_complex_options(PyConfig *config)
@@ -1897,17 +1947,18 @@ config_read_complex_options(PyConfig *config)
             config->faulthandler = 1;
         }
     }
-    if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
-       || config_get_xoption(config, L"importtime")) {
-        config->import_time = 1;
-    }
-
     if (config_get_env(config, "PYTHONNODEBUGRANGES")
        || config_get_xoption(config, L"no_debug_ranges")) {
         config->code_debug_ranges = 0;
     }
 
     PyStatus status;
+
+    status = config_read_import_time(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
         if (_PyStatus_EXCEPTION(status)) {

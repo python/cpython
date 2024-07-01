@@ -835,9 +835,10 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If non-zero, profile import time. If ``2``, include additional output that
+      indicates when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
