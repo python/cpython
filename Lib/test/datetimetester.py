@@ -52,25 +52,6 @@ except ImportError:
     pass
 #
 
-# This is copied from test_import/__init__.py.
-def no_rerun(reason):
-    """Skip rerunning for a particular test.
-
-    WARNING: Use this decorator with care; skipping rerunning makes it
-    impossible to find reference leaks. Provide a clear reason for skipping the
-    test using the 'reason' parameter.
-    """
-    def deco(func):
-        _has_run = False
-        def wrapper(self):
-            nonlocal _has_run
-            if _has_run:
-                self.skipTest(reason)
-            func(self)
-            _has_run = True
-        return wrapper
-    return deco
-
 pickle_loads = {pickle.loads, pickle._loads}
 
 pickle_choices = [(pickle, pickle, proto)
@@ -6420,7 +6401,6 @@ class IranTest(ZoneInfoTest):
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-@no_rerun("the encapsulated datetime C API does not support reloading")
 class CapiTest(unittest.TestCase):
     def setUp(self):
         # Since the C API is not present in the _Pure tests, skip all tests
@@ -6888,6 +6868,38 @@ class ExtensionModuleTests(unittest.TestCase):
                     return FakeDate
                 """)
             script_helper.assert_python_ok('-c', script)
+
+    def test_update_type_cache(self):
+        # gh-120782
+        script = textwrap.dedent("""
+            import sys
+            for i in range(5):
+                import _datetime
+                assert _datetime.date.max > _datetime.date.min
+                assert _datetime.time.max > _datetime.time.min
+                assert _datetime.datetime.max > _datetime.datetime.min
+                assert _datetime.timedelta.max > _datetime.timedelta.min
+                assert _datetime.date.__dict__["min"] is _datetime.date.min
+                assert _datetime.date.__dict__["max"] is _datetime.date.max
+                assert _datetime.date.__dict__["resolution"] is _datetime.date.resolution
+                assert _datetime.time.__dict__["min"] is _datetime.time.min
+                assert _datetime.time.__dict__["max"] is _datetime.time.max
+                assert _datetime.time.__dict__["resolution"] is _datetime.time.resolution
+                assert _datetime.datetime.__dict__["min"] is _datetime.datetime.min
+                assert _datetime.datetime.__dict__["max"] is _datetime.datetime.max
+                assert _datetime.datetime.__dict__["resolution"] is _datetime.datetime.resolution
+                assert _datetime.timedelta.__dict__["min"] is _datetime.timedelta.min
+                assert _datetime.timedelta.__dict__["max"] is _datetime.timedelta.max
+                assert _datetime.timedelta.__dict__["resolution"] is _datetime.timedelta.resolution
+                assert _datetime.timezone.__dict__["min"] is _datetime.timezone.min
+                assert _datetime.timezone.__dict__["max"] is _datetime.timezone.max
+                assert _datetime.timezone.__dict__["utc"] is _datetime.timezone.utc
+                assert isinstance(_datetime.timezone.min, _datetime.tzinfo)
+                assert isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
+                del sys.modules['_datetime']
+            """)
+        script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):
