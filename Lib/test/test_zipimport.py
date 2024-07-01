@@ -446,6 +446,30 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         mod = importlib.import_module('.'.join((subpkg, TESTMOD + '3')))
         self.assertEqual('path1.zip', mod.__file__.split(os.sep)[-4])
 
+    def testImportSubmodulesInZip(self):
+        with ZipFile(TEMP_ZIP, "w") as z:
+            z.writestr("a/__init__.py", b'')
+            z.writestr("a/b/c/__init__.py", b'def foo(): return "foo"')
+
+        importer = zipimport.zipimporter(TEMP_ZIP + "/a/")
+        spec = importer.find_spec("a.b")
+        self.assertEqual(spec.loader, None)
+        self.assertEqual(spec.submodule_search_locations,
+                         [(TEMP_ZIP + "/a/b").replace("/", zipimport.path_sep)])
+        self.assertRaises(zipimport.ZipImportError, importer.get_code, "a.b")
+        self.assertEqual(importer.get_data("a/b/"), b"")
+
+        sys.path.insert(0, TEMP_ZIP)
+        try:
+            import a.b.c
+            self.assertIn('namespace', str(a.b).lower())
+            self.assertEqual(a.b.c.foo(), "foo")
+        finally:
+            del sys.path[0]
+            sys.modules.pop('a.b.c', None)
+            sys.modules.pop('a.b', None)
+            sys.modules.pop('a', None)
+
     def testZipImporterMethods(self):
         packdir = TESTPACK + os.sep
         packdir2 = packdir + TESTPACK2 + os.sep
@@ -520,6 +544,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
                  "spam" + pyc_ext: (NOW, test_pyc)}
+        extra_files = [packdir, packdir2]
         self.addCleanup(os_helper.unlink, TEMP_ZIP)
         with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
@@ -529,10 +554,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
         # Check that the file information remains accurate after reloading
         zi.invalidate_caches()
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -544,7 +569,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
         # Check that we can detect the new file after invalidating the cache
         zi.invalidate_caches()
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
@@ -562,6 +587,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
                  "spam" + pyc_ext: (NOW, test_pyc)}
+        extra_files = [packdir, packdir2]
         self.addCleanup(os_helper.unlink, TEMP_ZIP)
         with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
@@ -571,10 +597,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
         # Zipimporter for the same path.
         zi2 = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(zi2._get_files().keys(), files.keys())
+        self.assertEqual(list(zi2._get_files()), [*files, *extra_files])
         # Add a new file to the ZIP archive to make the cache wrong.
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -587,7 +613,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Invalidate the cache of the first zipimporter.
         zi.invalidate_caches()
         # Check that the second zipimporter detects the new file and isn't using a stale cache.
-        self.assertEqual(zi2._get_files().keys(), files.keys())
+        self.assertEqual(list(zi2._get_files()), [*files, *extra_files])
         spec = zi2.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)

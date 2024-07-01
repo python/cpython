@@ -155,6 +155,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             toc_entry = self._get_files()[key]
         except KeyError:
             raise OSError(0, '', key)
+        if toc_entry is None:
+            return b''
         return _get_data(self.archive, toc_entry)
 
 
@@ -554,6 +556,12 @@ def _read_directory(archive):
         finally:
             fp.seek(start_offset)
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
+    for name in list(files):
+        while (i := name.rstrip(path_sep).rfind(path_sep)) >= 0:
+            name = name[:i + 1]
+            if name in files:
+                break
+            files[name] = None
     return files
 
 # During bootstrap, we may need to load the encodings
