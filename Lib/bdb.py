@@ -214,21 +214,25 @@ class Bdb:
     # methods, but they may if they want to redefine the
     # definition of stopping and breakpoints.
 
+    def is_skipped_frame(self, frame):
+        "Return True if the given frame should be skipped."
+        if self.skip:
+            return self.is_skipped_module(frame.f_globals.get('__name__'))
+        return False
+
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
-        if module_name is None:  # some modules do not have names
-            return False
-        for pattern in self.skip:
-            if fnmatch.fnmatch(module_name, pattern):
-                return True
+        if module_name:  # some modules do not have names
+            for pattern in self.skip:
+                if fnmatch.fnmatch(module_name, pattern):
+                    return True
         return False
 
     def stop_here(self, frame):
         "Return True if frame is below the starting frame in the stack."
         # (CT) stopframe may now also be None, see dispatch_call.
         # (CT) the former test for None is therefore removed from here.
-        if self.skip and \
-               self.is_skipped_module(frame.f_globals.get('__name__')):
+        if self.is_skipped_frame(frame):
             return False
         if frame is self.stopframe:
             if self.stoplineno == -1:
