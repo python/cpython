@@ -1,3 +1,4 @@
+import _colorize
 import io
 import os
 import signal
@@ -20,12 +21,12 @@ STATE_SKIP = (State.SKIPPED, State.RESOURCE_DENIED)
 
 class Logger:
     # Bold red for errors and high load.
-    ERROR_COLOR = '\033[1m\033[31m'
+    ERROR_COLOR = _colorize.ANSIColors.BOLD_RED
     # Regular yellow for info/warnings and expected load.
-    INFO_COLOR = '\033[33m'
+    INFO_COLOR = _colorize.ANSIColors.YELLOW
     # Bold green for passing tests and low load.
-    GOOD_COLOR = '\033[1m\033[32m'
-    RESET_COLOR = '\033[0m'
+    GOOD_COLOR = _colorize.ANSIColors.BOLD_GREEN
+    RESET_COLOR = _colorize.ANSIColors.RESET
 
     def __init__(self, results: TestResults, ns: Namespace):
         self.start_time = time.perf_counter()
@@ -36,10 +37,8 @@ class Logger:
         self._quiet: bool = ns.quiet
         self._pgo: bool = ns.pgo
         self.color = ns.color
-        # If NO_COLOR is set (to something other than '' or '0'), don't use
-        # color regardless of options.
-        if os.environ.get('NO_COLOR', '') not in ('', '0'):
-            self.color = False
+        if self.color is None:
+            self.color = _colorize.can_colorize()
         self.load_threshold = os.process_cpu_count()
 
     def error(self, s) -> str:
@@ -209,11 +208,8 @@ def replace_stdout():
 
 
 class FancyLogger(Logger):
-    """A logger with more compact, colorized output."""
+    """A logger with more compact, screen-updating output."""
     def __init__(self, results: TestResults, ns: Namespace):
-        # In the fancy reporter, default to color.
-        if ns.color is None:
-            ns.color = True
         self.report_skip_reason = ns.fancy_report_skip_reason
         self.setup_terminal()
         # Import here to avoid circular import issues.
