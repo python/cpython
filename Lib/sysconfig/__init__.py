@@ -27,10 +27,10 @@ _ALWAYS_STR = {
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short_abi}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -77,10 +77,10 @@ _INSTALL_SCHEMES = {
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
     # leave the following schemes unchanged
     'posix_venv': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short_abi}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}/site-packages',
         'include':
             '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
@@ -148,11 +148,11 @@ if _HAS_USER_BASE:
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short_abi}',
+            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short_abi}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short_abi}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short_abi}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
@@ -475,6 +475,8 @@ def _init_config_vars():
         _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
     except AttributeError:
         _CONFIG_VARS['py_version_nodot_plat'] = ''
+    # e.g., 3.14 or 3.14t
+    _CONFIG_VARS['py_version_short_abi'] = _PY_VERSION_SHORT + _CONFIG_VARS['abiflags'].replace('d', '')
 
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
@@ -653,6 +655,11 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def _get_python_version_abi():
+    abi_thread = "t" if _CONFIG_VARS["Py_GIL_DISABLED"] else ""
+    return _PY_VERSION_SHORT + abi_thread
 
 
 def expand_makefile_vars(s, vars):
