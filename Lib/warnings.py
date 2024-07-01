@@ -7,14 +7,15 @@ __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings", "deprecated"]
 
-def showwarning(message, category, filename, lineno, file=None, line=None):
+def showwarning(message, category, filename, lineno, file=None, line=None,
+                source=None):
     """Hook to write a warning to a file; replace if you like."""
-    msg = WarningMessage(message, category, filename, lineno, file, line)
+    msg = WarningMessage(message, category, filename, lineno, file, line, source)
     _showwarnmsg_impl(msg)
 
-def formatwarning(message, category, filename, lineno, line=None):
+def formatwarning(message, category, filename, lineno, line=None, source=None):
     """Function to format a warning the standard way."""
-    msg = WarningMessage(message, category, filename, lineno, None, line)
+    msg = WarningMessage(message, category, filename, lineno, None, line, source)
     return _formatwarnmsg_impl(msg)
 
 def _showwarnmsg_impl(msg):
@@ -108,7 +109,7 @@ def _showwarnmsg(msg):
                                 "function or method")
 
             sw(msg.message, msg.category, msg.filename, msg.lineno,
-               msg.file, msg.line)
+               msg.file, msg.line, msg.source)
             return
     _showwarnmsg_impl(msg)
 
