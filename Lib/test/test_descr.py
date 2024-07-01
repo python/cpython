@@ -2094,12 +2094,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             return 1j
         def stop(self):
             raise StopIteration
-        def return_true(self, thing=None):
-            return True
-        def do_isinstance(obj):
-            return isinstance(int, obj)
-        def do_issubclass(obj):
-            return issubclass(int, obj)
         def do_dict_missing(checker):
             class DictSub(checker.__class__, dict):
                 pass
@@ -2120,11 +2114,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             ("__length_hint__", list, zero, set(),
              {"__iter__" : iden, "__next__" : stop}),
             ("__sizeof__", sys.getsizeof, zero, set(), {}),
-            ("__instancecheck__", do_isinstance, return_true, set(), {}),
             ("__missing__", do_dict_missing, some_number,
              set(("__class__",)), {}),
-            ("__subclasscheck__", do_issubclass, return_true,
-             set(("__bases__",)), {}),
             ("__enter__", run_context, iden, set(), {"__exit__" : swallow}),
             ("__exit__", run_context, swallow, set(), {"__enter__" : iden}),
             ("__complex__", complex, complex_num, set(), {}),

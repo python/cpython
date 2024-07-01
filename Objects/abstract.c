@@ -2694,9 +2694,6 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
 
         return ok;
     }
-    else if (_PyErr_Occurred(tstate)) {
-        return -1;
-    }
 
     /* cls has no __instancecheck__() method */
     return object_isinstance(inst, cls);
@@ -2781,9 +2778,6 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
             Py_DECREF(res);
         }
         return ok;
-    }
-    else if (_PyErr_Occurred(tstate)) {
-        return -1;
     }
 
     /* Can be reached when infinite recursion happens. */
