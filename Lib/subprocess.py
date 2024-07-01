@@ -1595,6 +1595,8 @@ class Popen:
                 timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
+                if timeout_millis >= _winapi.INFINITE:
+                    raise OverflowError('timeout too large to convert to C DWORD')
             if self.returncode is None:
                 # API note: Returns immediately if timeout_millis == 0.
                 result = _winapi.WaitForSingleObject(self._handle,
