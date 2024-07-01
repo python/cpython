@@ -13,7 +13,7 @@
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "xx/xx/xx"
+#define DATE "xxx xx xxxx"
 #endif
 #endif
 
