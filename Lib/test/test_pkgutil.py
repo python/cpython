@@ -130,8 +130,9 @@ class PkgutilTests(unittest.TestCase):
             del sys.path[0]
             sys.modules.pop(pkg, None)
 
-        # assert path must be None or list of paths
-        expected_msg = "path must be None or list of paths to look for modules in"
+        # assert path must be None or a list of paths (List[str])
+        expected_msg = r"path must be None or a list of paths \(List\[str\]\) " \
+            "to search for modules"
         with self.assertRaisesRegex(ValueError, expected_msg):
             list(pkgutil.iter_modules("invalid_path"))
 
