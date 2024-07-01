@@ -1564,7 +1564,7 @@ def test_pdb_return_to_different_file():
     (Pdb) return
     --Return--
     > ...pprint.py..._safe_repr()->('A'...)
-    -> return rep,...
+    -> del context...
     (Pdb) return
     --Return--
     > ...pprint.py...format()->('A'...)
