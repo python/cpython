@@ -126,6 +126,12 @@ server is the address family.
       waits until all non-daemon threads complete, except if
       :attr:`block_on_close` attribute is ``False``.
 
+   .. attribute:: max_children
+
+      Specify how many child processes will exist to handle requests at a time
+      for :class:`ForkingMixIn`.  If the limit is reached,
+      new requests will wait until one child process has finished.
+
    .. attribute:: daemon_threads
 
       For :class:`ThreadingMixIn` use daemonic threads by setting
