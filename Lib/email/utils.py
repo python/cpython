@@ -381,9 +381,9 @@ def encode_rfc2231(s, charset=None, language=None):
     charset is given but not language, the string is encoded using the empty
     string for language.
     """
-    s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if charset is None and language is None:
         return s
+    s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if language is None:
         language = ''
     return "%s'%s'%s" % (charset, language, s)
