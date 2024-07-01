@@ -127,7 +127,7 @@ def deepcopy(x, memo=None, _nil=[]):
         return x
 
     if memo is None:
-        if cls in _builtin_iterables and len(x) == 0:
+        if cls in _builtin_iterables and not x:
             return cls()
         d = id(x)
         memo = {}
@@ -137,7 +137,7 @@ def deepcopy(x, memo=None, _nil=[]):
         if y is not _nil:
             return y
 
-    if cls in _builtin_iterables and len(x) == 0:
+    if cls in _builtin_iterables and not x:
         y = cls()
     elif copier := _deepcopy_dispatch.get(cls):
         y = copier(x, memo)
