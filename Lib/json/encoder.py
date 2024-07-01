@@ -104,12 +104,15 @@ class JSONEncoder(object):
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, default=None, convert_keys=False):
         """Constructor for JSONEncoder, with sensible defaults.
 
-        If skipkeys is false, then it is a TypeError to attempt
-        encoding of keys that are not str, int, float or None.  If
-        skipkeys is True, such items are simply skipped.
+        Dict keys in JSON must be str, int, float, bool, or None.  skipkeys and
+        convert_keys control how keys that are not one of these types are
+        handled.  If skipkeys is True, then those items are simply skipped.
+        Otherwise, if convert_keys is True, the keys will be passed to
+        ``.default()`` to be converted.  If convert_keys is False, or
+        ``.default()`` returns an unsupported type, TypeError is raised.
 
         If ensure_ascii is true, the output is guaranteed to be str
         objects with all incoming non-ASCII characters escaped.  If
@@ -157,6 +160,7 @@ class JSONEncoder(object):
             self.item_separator = ','
         if default is not None:
             self.default = default
+        self.convert_keys = convert_keys
 
     def default(self, o):
         """Implement this method in a subclass such that it returns
@@ -252,16 +256,17 @@ class JSONEncoder(object):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, indent,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan)
+                self.skipkeys, self.allow_nan, self.convert_keys)
         else:
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                self.skipkeys, self.convert_keys, _one_shot)
         return _iterencode(o, 0)
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
-        _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        _key_separator, _item_separator, _sort_keys, _skipkeys, _convert_keys,
+        _one_shot,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -371,6 +376,27 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
                 key = _intstr(key)
+            elif _convert_keys:
+                key = _default(key)
+                if isinstance(key, str):
+                    pass
+                # JavaScript is weakly typed for these, so it makes sense to
+                # also allow them.  Many encoders seem to do something like this.
+                elif isinstance(key, float):
+                    # see comment for int/float in _make_iterencode
+                    key = _floatstr(key)
+                elif key is True:
+                    key = 'true'
+                elif key is False:
+                    key = 'false'
+                elif key is None:
+                    key = 'null'
+                elif isinstance(key, int):
+                    # see comment for int/float in _make_iterencode
+                    key = _intstr(key)
+                else:
+                    raise TypeError(f'keys must be str, int, float, bool '
+                                    f'or None, not {key.__class__.__name__}')
             elif _skipkeys:
                 continue
             else:

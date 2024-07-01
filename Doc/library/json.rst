@@ -148,15 +148,19 @@ Basic Usage
 .. function:: dump(obj, fp, *, skipkeys=False, ensure_ascii=True, \
                    check_circular=True, allow_nan=True, cls=None, \
                    indent=None, separators=None, default=None, \
-                   sort_keys=False, **kw)
+                   sort_keys=False, convert_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
    :term:`file-like object`) using this :ref:`conversion table
    <py-to-json-table>`.
 
-   If *skipkeys* is true (default: ``False``), then dict keys that are not
-   of a basic type (:class:`str`, :class:`int`, :class:`float`, :class:`bool`,
-   ``None``) will be skipped instead of raising a :exc:`TypeError`.
+   *skipkeys* and *convert_keys* control how keys that are not of a basic type
+   (:class:`str`, :class:`int`, :class:`float`, :class:`bool`, ``None``) are
+   handled.  If *skipkeys* is true (default: ``False``), then such keys will be
+   skipped.  Otherwise, if *convert_keys* is true (default: ``False``), such
+   keys are converted to a supported type by calling the encoder's
+   :meth:`JSONEncoder.default` method.  If :meth:`JSONEncoder.default` returns an
+   unsupported type, or *convert_keys* is False, :exc:`TypeError` is raised.
 
    The :mod:`json` module always produces :class:`str` objects, not
    :class:`bytes` objects. Therefore, ``fp.write()`` must support :class:`str`
