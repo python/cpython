@@ -1,0 +1,6 @@
+Added feature to argparse so that percentage symbols (%) don't have to be
+escaped in help messages. Without this fix, they have to be escaped (as
+stated in the documentation) but if you forget this, the error message that
+is produced is completely cryptic. With this patch, 1) this does not happen
+anymore, 2) single % don't need to be escaped and 3) it remains fully
+compatible with the previous implementation.

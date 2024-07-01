@@ -591,7 +591,11 @@ class HelpFormatter(object):
         if params.get('choices') is not None:
             choices_str = ', '.join([str(c) for c in params['choices']])
             params['choices'] = choices_str
-        return self._get_help_string(action) % params
+        expanded_help = self._get_help_string(action)
+        for param, value in params.items():
+            if f'%({param})s' in expanded_help:
+                expanded_help = expanded_help.replace(f'%({param})s', str(value))
+        return expanded_help.replace('%%','%')
 
     def _iter_indented_subactions(self, action):
         try:
