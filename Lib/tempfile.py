@@ -240,10 +240,11 @@ def _get_candidate_names():
     return _name_sequence
 
 
-def _mkstemp_inner(dir, pre, suf, flags, output_type):
+def _mkstemp_inner(dir, pre, suf, flags, output_type, run_realpath=True):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
-    dir = _os.path.abspath(dir)
+    dir = getattr(_os.path,
+        "realpath" if run_realpath else "abspath")(dir)
     names = _get_candidate_names()
     if output_type is bytes:
         names = map(_os.fsencode, names)
@@ -312,13 +313,13 @@ def _gettempdir():
 
 def gettempdir():
     """Returns tempfile.tempdir as str."""
-    return _os.fsdecode(_gettempdir())
+    return _os.path.realpath(_os.fsdecode(_gettempdir()))
 
 def gettempdirb():
     """Returns tempfile.tempdir as bytes."""
-    return _os.fsencode(_gettempdir())
+    return _os.path.realpath(_os.fsencode(_gettempdir()))
 
-def mkstemp(suffix=None, prefix=None, dir=None, text=False):
+def mkstemp(suffix=None, prefix=None, dir=None, text=False, run_realpath=True):
     """User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
     file descriptor returned by os.open, and name is the filename.
@@ -339,6 +340,9 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     same type.  If they are bytes, the returned name will be bytes; str
     otherwise.
 
+    If 'run_realpath' is true, `os.path.realpath` is run on the path.
+    Otherwise, only `os.path.abspath` is run.
+
     The file is readable and writable only by the creating user ID.
     If the operating system uses permission bits to indicate whether a
     file is executable, the file is executable by no one. The file
@@ -354,10 +358,10 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     else:
         flags = _bin_openflags
 
-    return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+    return _mkstemp_inner(dir, prefix, suffix, flags, output_type, run_realpath)
 
 
-def mkdtemp(suffix=None, prefix=None, dir=None):
+def mkdtemp(suffix=None, prefix=None, dir=None, run_realpath=True):
     """User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
 
@@ -370,7 +374,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     Caller is responsible for deleting the directory when done with it.
     """
 
-    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+    prefix, suffix, path, output_type = _sanitize_params(prefix, suffix, path)
 
     names = _get_candidate_names()
     if output_type is bytes:
@@ -378,7 +382,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
 
     for seq in range(TMP_MAX):
         name = next(names)
-        file = _os.path.join(dir, prefix + name + suffix)
+        file = _os.path.join(path, prefix + name + suffix)
         _sys.audit("tempfile.mkdtemp", file)
         try:
             _os.mkdir(file, 0o700)
@@ -387,12 +391,12 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
         except PermissionError:
             # This exception is thrown when a directory with the chosen name
             # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
+            if (_os.name == 'nt' and _os.path.isdir(path) and
+                _os.access(path, _os.W_OK)):
                 continue
             else:
                 raise
-        return _os.path.abspath(file)
+        return getattr(_os.path, "realpath" if run_realpath else "abspath")(file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
@@ -537,7 +541,7 @@ class _TemporaryFileWrapper:
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
                        dir=None, delete=True, *, errors=None,
-                       delete_on_close=True):
+                       delete_on_close=True, run_realpath=True):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -576,7 +580,8 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     name = None
     def opener(*args):
         nonlocal name
-        fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+        fd, name = _mkstemp_inner(
+            dir, prefix, suffix, flags, output_type, run_realpath)
         return fd
     try:
         file = _io.open(dir, mode, buffering=buffering,
@@ -667,7 +672,8 @@ else:
         fd = None
         def opener(*args):
             nonlocal fd
-            fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+            fd, name = _mkstemp_inner(dir, prefix, suffix, flags,
+                output_type, run_realpath)
             try:
                 _os.unlink(name)
             except BaseException as e:
