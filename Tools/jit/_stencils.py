@@ -204,33 +204,20 @@ class Stencil:
             return
 
         self.disassembly += [
-            f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
-            f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
-            f"{base + 4 * 1:x}: f2a00008      movk    x8, #0x0, lsl #16",
-            f"{base + 4 * 1:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
-            f"{base + 4 * 2:x}: f2c00008      movk    x8, #0x0, lsl #32",
-            f"{base + 4 * 2:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
-            f"{base + 4 * 3:x}: f2e00008      movk    x8, #0x0, lsl #48",
-            f"{base + 4 * 3:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
-            f"{base + 4 * 4:x}: d61f0100      br      x8",
+            f"{base + 4 * 0:x}: 58000048      ldr     x8, 8",
+            f"{base + 4 * 1:x}: d61f0100      br      x8",
+            f"{base + 4 * 2:x}: 00000000",
+            f"{base + 4 * 2:016x}:  R_AARCH64_ABS64    {hole.symbol}",
+            f"{base + 4 * 3:x}: 00000000",
         ]
         for code in [
-            0xD2800008.to_bytes(4, sys.byteorder),
-            0xF2A00008.to_bytes(4, sys.byteorder),
-            0xF2C00008.to_bytes(4, sys.byteorder),
-            0xF2E00008.to_bytes(4, sys.byteorder),
+            0x58000048.to_bytes(4, sys.byteorder),
             0xD61F0100.to_bytes(4, sys.byteorder),
+            0x00000000.to_bytes(4, sys.byteorder),
+            0x00000000.to_bytes(4, sys.byteorder),
         ]:
             self.body.extend(code)
-        for i, kind in enumerate(
-            [
-                "R_AARCH64_MOVW_UABS_G0_NC",
-                "R_AARCH64_MOVW_UABS_G1_NC",
-                "R_AARCH64_MOVW_UABS_G2_NC",
-                "R_AARCH64_MOVW_UABS_G3",
-            ]
-        ):
-            self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
+        self.holes.append(hole.replace(offset=base + 8, kind="R_AARCH64_ABS64"))
         self.trampolines[hole.symbol] = base
 
     def remove_jump(self, *, alignment: int = 1) -> None:
