@@ -617,15 +617,14 @@ _PyObject_IS_GC(PyObject *obj)
 static inline Py_hash_t
 _PyObject_HashFast(PyObject *op)
 {
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(op) ||
-        (hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash)) == -1) {
-        hash = PyObject_Hash(op);
-        if (hash == -1) {
-            return -1;
+    if (PyUnicode_CheckExact(op)) {
+        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                             _PyASCIIObject_CAST(op)->hash);
+        if (hash != -1) {
+            return hash;
         }
     }
-    return hash;
+    return PyObject_Hash(op);
 }
 
 // Fast inlined version of PyType_IS_GC()
