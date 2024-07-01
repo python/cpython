@@ -1,0 +1,1 @@
+Make wave._wave_params public
