@@ -451,34 +451,75 @@ def _read_gzip_header(fp):
     Returns last mtime if header was present or None otherwise.
     '''
     magic = fp.read(2)
-    if magic == b'':
+    if not magic:
         return None
 
     if magic != b'\037\213':
         raise BadGzipFile('Not a gzipped file (%r)' % magic)
-
-    (method, flag, last_mtime) = struct.unpack("<BBIxx", _read_exact(fp, 8))
+    base_header = _read_exact(fp, 8)
+    (method, flag, last_mtime) = struct.unpack("<BBIxx", base_header)
     if method != 8:
         raise BadGzipFile('Unknown compression method')
 
-    if flag & FEXTRA:
-        # Read & discard the extra field, if present
-        extra_len, = struct.unpack("<H", _read_exact(fp, 2))
-        _read_exact(fp, extra_len)
-    if flag & FNAME:
-        # Read and discard a null-terminated string containing the filename
+    # No flags. No need for further parsing. These headers are returned by
+    # gzip.compress or zlib.compress(..., wbits=31)
+    if not flag:
+        return last_mtime
+    # Most gzip files will have only FNAME set. For example: produced by gzip
+    # command line application or python's GzipFile.
+    if flag == FNAME:
         while True:
             s = fp.read(1)
-            if not s or s==b'\000':
+            if not s:
+                raise EOFError("Compressed file ended before the "
+                               "end-of-stream marker was reached")
+            if s == b'\000':
+                break
+        return last_mtime
+
+    # Processing for more complex flags.
+
+    # Save header parts for FHCRC checking
+    header_parts = [magic, base_header]
+
+    if flag & FEXTRA:
+        # Read the extra field, if present, save the fields for FHCRC checking.
+        extra_len_bytes = _read_exact(fp, 2)
+        extra_len, = struct.unpack("<H", extra_len_bytes)
+        extra = _read_exact(fp, extra_len)
+        header_parts.extend([extra_len_bytes, extra])
+
+    if flag & FNAME:
+        # Read a null-terminated string containing the filename, save the name
+        # for FHCRC checking.
+        while True:
+            s = fp.read(1)
+            if not s:
+                raise EOFError("Compressed file ended before the "
+                               "end-of-stream marker was reached")
+            header_parts.append(s)
+            if s == b'\000':
                 break
     if flag & FCOMMENT:
-        # Read and discard a null-terminated string containing a comment
+        # Read a null-terminated string containing the comment, save the
+        # comment for FHCRC checking.
         while True:
             s = fp.read(1)
-            if not s or s==b'\000':
+            if not s:
+                raise EOFError("Compressed file ended before the "
+                               "end-of-stream marker was reached")
+            header_parts.append(s)
+            if s == b'\000':
                 break
+
     if flag & FHCRC:
-        _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
+        # Read the 16-bit header CRC and check it against the header.
+        header_crc, = struct.unpack("<H", _read_exact(fp, 2))
+        header = b"".join(header_parts)
+        true_crc = zlib.crc32(header) & 0xFFFF
+        if header_crc != true_crc:
+            raise BadGzipFile(f"Corrupted gzip header. Checksums do not "
+                               f"match: {true_crc:04x} != {header_crc:04x}")
     return last_mtime
 
 
