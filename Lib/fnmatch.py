@@ -65,16 +65,16 @@ def filter(names, pat):
 
 def filterfalse(names, pat):
     """Construct a list from those elements of the iterable NAMES that do not match PAT."""
-    result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
         return list(itertools.filterfalse(match, names))
-    else:
-        for name in names:
-            if match(os.path.normcase(name)) is None:
-                result.append(name)
+
+    result = []
+    for name in names:
+        if match(os.path.normcase(name)) is None:
+            result.append(name)
     return result
 
 def fnmatchcase(name, pat):
