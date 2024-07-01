@@ -1202,6 +1202,19 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         goto cleanup;
     }
 
+    /* NOTE: user-defined classes may be able to present different
+     * executable/argument/env lists to the eventual exec as to this hook.
+     * The audit hook receives the original object, so would nevertheless
+     * be able to detect weird behaviour, hence we do not add extra
+     * complexity or performance penalties to attempt to avoid this. */
+    if (PySys_Audit("_posixsubprocess.fork_exec",
+                    "OOO",
+                    executable_list,
+                    process_args,
+                    env_list) < 0) {
+        goto cleanup;
+    }
+
     /* This must be the last thing done before fork() because we do not
      * want to call PyOS_BeforeFork() if there is any chance of another
      * error leading to the cleanup: code without calling fork(). */
