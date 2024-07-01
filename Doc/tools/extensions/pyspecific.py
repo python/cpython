@@ -691,7 +691,21 @@ def patch_pairindextypes(app, _env) -> None:
         pairindextypes.clear()
 
 
+def hide_old_versionmodified(app, doctree, fromdocname):
+    """Remove versionmodified nodes (added/changed) older than the minimum."""
+    min_version = app.config.min_version_show_changes
+    if not min_version:
+        return
+    min_version = [int(part) for part in min_version.split(".")]
+    for node in list(doctree.findall(addnodes.versionmodified)):
+        if node['type'] in ('versionadded', 'versionchanged'):
+            node_version = [int(part) for part in node['version'].split(".")]
+            if node_version < min_version:
+                node.parent.remove(node)
+
+
 def setup(app):
+    app.add_config_value('min_version_show_changes', '', 'html')
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
@@ -713,6 +727,7 @@ def setup(app):
     app.add_directive('miscnews', MiscNews)
     app.connect('env-check-consistency', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
+    app.connect('doctree-resolved', hide_old_versionmodified)
     app.connect('env-merge-info', audit_events_merge)
     app.connect('env-purge-doc', audit_events_purge)
     return {'version': '1.0', 'parallel_read_safe': True}
