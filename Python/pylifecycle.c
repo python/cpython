@@ -2967,26 +2967,29 @@ fatal_output_debug(const char *msg)
 
     OutputDebugStringW(L"Fatal Python error: ");
 
-    msglen = strlen(msg);
-    while (msglen) {
-        size_t i;
+    if (msg) {
+        msglen = strlen(msg);
+        while (msglen) {
+            size_t i;
 
-        if (buflen > msglen) {
-            buflen = msglen;
+            if (buflen > msglen) {
+                buflen = msglen;
+            }
+
+            /* Convert the message to wchar_t. This uses a simple one-to-one
+               conversion, assuming that the this error message actually uses
+               ASCII only. If this ceases to be true, we will have to convert. */
+            for (i=0; i < buflen; ++i) {
+                buffer[i] = msg[i];
+            }
+            buffer[i] = L'\0';
+            OutputDebugStringW(buffer);
+
+            msg += buflen;
+            msglen -= buflen;
         }
-
-        /* Convert the message to wchar_t. This uses a simple one-to-one
-           conversion, assuming that the this error message actually uses
-           ASCII only. If this ceases to be true, we will have to convert. */
-        for (i=0; i < buflen; ++i) {
-            buffer[i] = msg[i];
-        }
-        buffer[i] = L'\0';
-        OutputDebugStringW(buffer);
-
-        msg += buflen;
-        msglen -= buflen;
     }
+
     OutputDebugStringW(L"\n");
 }
 #endif
