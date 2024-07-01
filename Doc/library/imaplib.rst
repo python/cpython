@@ -611,6 +611,10 @@ The following attributes are defined on instances of :class:`IMAP4`:
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.13
+
+      :meth:`login_cram_md5` is deprecated from :class:`IMAP4`
+
 
 .. _imap4-example:
 
