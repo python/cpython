@@ -1132,6 +1132,51 @@ cleanup:
     return result;
 }
 
+/*
+ * Python equivalent:
+ *
+ *   for key in keys:
+ *       if hasattr(self, key):
+ *           payload[key] = getattr(self, key)
+ *
+ * The 'keys' argument is a sequence corresponding to
+ * the '_fields' or the '_attributes' of an AST node.
+ */
+static inline int
+ast_type_replace_update_payload(PyObject *payload,
+                                PyObject *keys /* sequence of keys */,
+                                PyObject *dict /* instance dictionary */) {
+    Py_ssize_t n = PySequence_Size(keys);
+    if (n == -1) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = PySequence_GetItem(keys, i);
+        if (key == NULL) {
+            return -1;
+        }
+        PyObject *value;
+        if (PyDict_GetItemRef(dict, key, &value) < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (value == NULL) {
+            Py_DECREF(key);
+            // If a field or attribute is not present at runtime, it should
+            // be explicitly given in 'kwargs'. If not, the constructor will
+            // issue a warning (which becomes an error in 3.15).
+            continue;
+        }
+        int rc = PyDict_SetItem(payload, key, value);
+        Py_DECREF(key);
+        Py_DECREF(value);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /* copy.replace() support (shallow copy) */
 static PyObject *
 ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -1145,8 +1190,8 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     }
 
     PyObject *result = NULL;
-    // known AST class fields
-    PyObject *fields = NULL;
+    // known AST class fields and attributes
+    PyObject *fields = NULL, *attributes = NULL;
     // current instance dictionary
     PyObject *dict = NULL;
     // constructor positional and keyword arguments
@@ -1154,6 +1199,9 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
 
     PyObject *type = (PyObject *)Py_TYPE(self);
     if (PyObject_GetOptionalAttr(type, state->_fields, &fields) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
         goto cleanup;
     }
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
@@ -1167,35 +1215,13 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     if (payload == NULL) {
         goto cleanup;
     }
-    if (fields) {
-        Py_ssize_t numfields = PySequence_Size(fields);
-        if (numfields == -1) {
-            goto cleanup;
-        }
-        for (Py_ssize_t i = 0; i < numfields; i++) {
-            PyObject *key = PySequence_GetItem(fields, i);
-            if (key == NULL) {
-                goto cleanup;
-            }
-            PyObject *value;
-            if (PyDict_GetItemRef(dict, key, &value) < 0) {
-                Py_DECREF(key);
-                goto cleanup;
-            }
-            if (value == NULL) {
-                Py_DECREF(key);
-                // If a field is not present at runtime, we hope that it will
-                // be explicitly given in 'kwargs'. If not, the constructor
-                // will issue a warning (which becomes an error in 3.15).
-                continue;
-            }
-            int rc = PyDict_SetItem(payload, key, value);
-            Py_DECREF(key);
-            Py_DECREF(value);
-            if (rc < 0) {
-                goto cleanup;
-            }
-        }
+    // copy the instance's fields
+    if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
+        goto cleanup;
+    }
+    // copy the instance's attribute
+    if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
+        goto cleanup;
     }
     if (kwargs && PyDict_Update(payload, kwargs) < 0) {
         goto cleanup;
@@ -1208,6 +1234,7 @@ cleanup:
     Py_XDECREF(payload);
     Py_XDECREF(empty_tuple);
     Py_XDECREF(dict);
+    Py_XDECREF(attributes);
     Py_XDECREF(fields);
     return result;
 }
