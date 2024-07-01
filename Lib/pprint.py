@@ -596,17 +596,29 @@ class PrettyPrinter:
             return "{%s}" % ", ".join(components), readable, recursive
 
         if (issubclass(typ, list) and r is list.__repr__) or \
-           (issubclass(typ, tuple) and r is tuple.__repr__):
+           (issubclass(typ, tuple) and r is tuple.__repr__) or \
+           (issubclass(typ, set) and r is set.__repr__) or \
+           (issubclass(typ, frozenset) and r is frozenset.__repr__):
             if issubclass(typ, list):
                 if not object:
                     return "[]", True, False
                 format = "[%s]"
-            elif len(object) == 1:
-                format = "(%s,)"
+            elif issubclass(typ, tuple):
+                if len(object) == 1:
+                    format = "(%s,)"
+                else:
+                    if not object:
+                        return "()", True, False
+                    format = "(%s)"
             else:
                 if not object:
-                    return "()", True, False
-                format = "(%s)"
+                    return repr(object), True, False
+                if typ is set:
+                    format = "{%s}"
+                else:
+                    format = typ.__name__ + "({%s})"
+                object = sorted(object, key=_safe_key)
+
             objid = id(object)
             if maxlevels and level >= maxlevels:
                 return format % "...", False, objid in context
