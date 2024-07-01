@@ -194,12 +194,25 @@ class CookieTests(unittest.TestCase):
         # Accepting these could be a security issue
         C = cookies.SimpleCookie()
         for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
-                  'Set-Cookie: foo=bar', 'Set-Cookie: foo',
-                  'foo=bar; baz', 'baz; foo=bar',
+                  'Set-Cookie: foo=bar', 'Set-Cookie: foo', 'baz; foo=bar',
                   'secure;foo=bar', 'Version=1;foo=bar'):
             C.load(s)
             self.assertEqual(dict(C), {})
             self.assertEqual(C.output(), '')
+
+    def test_ignore_unknown_attribute(self):
+        # Ignore unknown attributes, but keep the cookie valid
+        C = cookies.SimpleCookie()
+        C.load('foo=bar; baz')
+        self.assertIsNone(C.get('baz'))
+        self.assertEqual(C.output(), 'Set-Cookie: foo=bar')
+        C.clear()
+        C.load('foo=bar; bar=Low; baz; Priority=High')
+        self.assertEqual(C['foo'].output(), 'Set-Cookie: foo=bar')
+        self.assertIsNone(C['foo'].get('baz'))
+        self.assertEqual(C['bar'].output(), 'Set-Cookie: bar=Low; Priority=High')
+        self.assertIsNone(C['bar'].get('baz'))
+        self.assertNotIn(C.output(), 'baz')
 
     def test_pickle(self):
         rawdata = 'Customer="WILE_E_COYOTE"; Path=/acme; Version=1'
