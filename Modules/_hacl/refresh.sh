@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0
+expected_hacl_star_rev=d7c0909b0552239eea04f4398bbb099365b8e398
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,19 +40,35 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Hash_SHA2.h
   Hacl_Streaming_Types.h
-  Hacl_Hash_SHA1.h
-  internal/Hacl_Hash_SHA1.h
   Hacl_Hash_MD5.h
+  Hacl_Hash_SHA1.h
+  Hacl_Hash_SHA2.h
   Hacl_Hash_SHA3.h
+  Hacl_Hash_Blake2b.h
+  Hacl_Hash_Blake2s.h
+  Hacl_Hash_Blake2b_Simd256.h
+  Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Hash_MD5.h
-  internal/Hacl_Hash_SHA3.h
-  Hacl_Hash_SHA2.c
+  internal/Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA2.h
-  Hacl_Hash_SHA1.c
+  internal/Hacl_Hash_SHA3.h
+  internal/Hacl_Hash_Blake2b.h
+  internal/Hacl_Hash_Blake2s.h
+  internal/Hacl_Hash_Blake2b_Simd256.h
+  internal/Hacl_Hash_Blake2s_Simd128.h
+  internal/Hacl_Impl_Blake2_Constants.h
   Hacl_Hash_MD5.c
+  Hacl_Hash_SHA1.c
+  Hacl_Hash_SHA2.c
   Hacl_Hash_SHA3.c
+  Hacl_Hash_Blake2b.c
+  Hacl_Hash_Blake2s.c
+  Hacl_Hash_Blake2b_Simd256.c
+  Hacl_Hash_Blake2s_Simd128.c
+  libintvector.h
+  lib_memzero0.h
+  Lib_Memzero0.c
 )
 
 declare -a include_files
