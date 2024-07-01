@@ -826,11 +826,32 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
-/* Define to 1 if you have the `ncursesw' library. */
+/* Define if you have the 'ncurses' library */
+#undef HAVE_NCURSES
+
+/* Define if you have the 'ncursesw' library */
 #undef HAVE_NCURSESW
+
+/* Define to 1 if you have the <ncursesw/curses.h> header file. */
+#undef HAVE_NCURSESW_CURSES_H
+
+/* Define to 1 if you have the <ncursesw/ncurses.h> header file. */
+#undef HAVE_NCURSESW_NCURSES_H
+
+/* Define to 1 if you have the <ncursesw/panel.h> header file. */
+#undef HAVE_NCURSESW_PANEL_H
+
+/* Define to 1 if you have the <ncurses/curses.h> header file. */
+#undef HAVE_NCURSES_CURSES_H
 
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/ncurses.h> header file. */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/panel.h> header file. */
+#undef HAVE_NCURSES_PANEL_H
 
 /* Define to 1 if you have the <ndbm.h> header file. */
 #undef HAVE_NDBM_H
@@ -871,6 +892,12 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
+
+/* Define if you have the 'panel' library */
+#undef HAVE_PANEL
+
+/* Define if you have the 'panelw' library */
+#undef HAVE_PANELW
 
 /* Define to 1 if you have the <panel.h> header file. */
 #undef HAVE_PANEL_H
