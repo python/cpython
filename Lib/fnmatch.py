@@ -9,6 +9,7 @@ expression.  They cache the compiled regular expressions for speed.
 The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
+import itertools
 import os
 import posixpath
 import re
@@ -68,9 +69,7 @@ def filterfalse(names, pat):
     match = _compile_pattern(pat)
     if os.path is posixpath:
         # normcase on posix is NOP. Optimize it away from the loop.
-        for name in names:
-            if match(name) is None:
-                result.append(name)
+        return list(itertools.filterfalse(match, names))
     else:
         for name in names:
             if match(os.path.normcase(name)) is None:
