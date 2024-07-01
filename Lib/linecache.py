@@ -37,6 +37,12 @@ def getline(filename, lineno, module_globals=None):
     """
 
     if filename in failures:
+        # We explicitly validate the input even for failures
+        # because for success, they would raise a TypeError.
+        if not isinstance(lineno, int):
+            raise TypeError(f"'lineno' must be an int, "
+                            f"got {type(module_globals)}")
+        _validate_module_globals_type(module_globals)
         return ''
 
     lines = getlines(filename, module_globals)
@@ -50,6 +56,8 @@ def getlines(filename, module_globals=None):
     Update the cache if it doesn't contain an entry for this file already.
     Previous failures are cached and must be invalidated via checkcache().
     """
+
+    _validate_module_globals_type(module_globals)
 
     if filename in cache:
         assert filename not in failures
@@ -136,7 +144,8 @@ def updatecache(filename, module_globals=None):
     """Update a cache entry and return its list of lines.
 
     If something's wrong, possibly print a message, discard the cache entry,
-    add the file name to the known failures, and return an empty list."""
+    add the file name to the known failures, and return an empty list.
+    """
 
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
@@ -144,6 +153,8 @@ def updatecache(filename, module_globals=None):
     import os
     import sys
     import tokenize
+
+    _validate_module_globals_type(module_globals)
 
     if filename in cache:
         if len(cache[filename]) != 1:
@@ -287,3 +298,14 @@ def _register_code(code, string, name):
             None,
             [line + '\n' for line in string.splitlines()],
             name)
+
+
+def _validate_module_globals_type(module_globals):
+    if module_globals is not None:
+        # Validation is done here and not in linecache
+        # since the latter may not necessarily use it.
+        from collections.abc import Mapping
+
+        if not isinstance(module_globals, Mapping):
+            raise TypeError(f"'module_globals' must be a Mapping, "
+                            f"got {type(module_globals)}")
