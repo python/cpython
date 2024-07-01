@@ -1,6 +1,7 @@
 import unittest
 import string
 from string import Template
+import types
 
 
 class ModuleTest(unittest.TestCase):
@@ -100,6 +101,22 @@ class ModuleTest(unittest.TestCase):
             fmt.format("{0[2]}{0[0]}", [])
         with self.assertRaises(KeyError):
             fmt.format("{0[2]}{0[0]}", {})
+
+    def test_auto_numbering_lookup(self):
+        fmt = string.Formatter()
+        namespace = types.SimpleNamespace(foo=types.SimpleNamespace(bar='baz'))
+        widths = [None, types.SimpleNamespace(qux=4)]
+        self.assertEqual(
+            fmt.format("{.foo.bar:{[1].qux}}", namespace, widths), 'baz ')
+
+    def test_auto_numbering_reenterability(self):
+        class ReenteringFormatter(string.Formatter):
+            def format_field(self, value, format_spec):
+                return (self.format(' {:{}} ', value, int(format_spec) - 1)
+                    if format_spec.isdigit() and int(format_spec) > 0
+                    else super().format_field(value, format_spec))
+        fmt = ReenteringFormatter()
+        self.assertEqual(fmt.format("{:{}}", 42, 5), '     42     ')
 
     def test_override_get_value(self):
         class NamespaceFormatter(string.Formatter):
