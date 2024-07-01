@@ -792,7 +792,7 @@ class RawConfigParser(MutableMapping):
                 self.set(section, key, value)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
-        """Get an option value for a given section.
+        """Get an option value for a given section (or list of sections).
 
         If `vars` is provided, it must be a dictionary. The option is looked up
         in `vars` (if provided), `section`, and in `DEFAULTSECT` in that order.
@@ -1178,22 +1178,28 @@ class RawConfigParser(MutableMapping):
     def _unify_values(self, section, vars):
         """Create a sequence of lookups with 'vars' taking priority over
         the 'section' which takes priority over the DEFAULTSECT.
+        'section' can be a string or list (specialised to generalised)
 
         """
-        sectiondict = {}
-        try:
-            sectiondict = self._sections[section]
-        except KeyError:
-            if section != self.default_section:
-                raise NoSectionError(section) from None
-        # Update with the entry specific variables
-        vardict = {}
+        var_dict = {}
+        section_is_iterable = not isinstance(section, str) and hasattr(section, '__iter__')
+        section_list = section if section_is_iterable else [section]
+
+        map_list = []
+
         if vars:
             for key, value in vars.items():
                 if value is not None:
                     value = str(value)
-                vardict[self.optionxform(key)] = value
-        return _ChainMap(vardict, sectiondict, self._defaults)
+                var_dict[self.optionxform(key)] = value
+        map_list.append(var_dict)
+        for section_item in section_list:
+            if section_item in self._sections:
+                map_list.append(self._sections[section_item])
+            elif section_item != self.default_section:
+                raise NoSectionError(section_item) from None
+        map_list.append(self._defaults)
+        return _ChainMap(*map_list)
 
     def _convert_to_boolean(self, value):
         """Return a boolean value translating from other types if necessary.
