@@ -1,3 +1,4 @@
+import multiprocessing.context
 import os
 import sys
 import threading
@@ -40,6 +41,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
         p.terminate()
         for fut in futures:
             self.assertRaises(BrokenProcessPool, fut.result)
+            self.assertIsInstance(
+                fut.exception().__cause__, multiprocessing.context.ProcessError
+            )
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
