@@ -563,6 +563,7 @@ def _default_mime_types():
         '.tsv'    : 'text/tab-separated-values',
         '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
+        '.rst'    : 'text/x-rst',
         '.etx'    : 'text/x-setext',
         '.sgm'    : 'text/x-sgml',
         '.sgml'   : 'text/x-sgml',
