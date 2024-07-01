@@ -501,9 +501,10 @@ be finalized; only the internally used file object will be closed. See the
    .. warning::
 
       Never extract archives from untrusted sources without prior inspection.
-      It is possible that files are created outside of *path*, e.g. members
-      that have absolute filenames starting with ``"/"`` or filenames with two
-      dots ``".."``.
+      It is possible for files to be created or written to outside of *path*.
+      Some examples include members that have absolute or relative filenames
+      that are not in the current path, and symbolic or hard links pointing
+      outside of *path*.
 
       Set ``filter='data'`` to prevent the most dangerous security issues,
       and read the :ref:`tarfile-extraction-filter` section for details.
