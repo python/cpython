@@ -168,6 +168,9 @@ class Lock(SemLock):
     def __init__(self, *, ctx):
         SemLock.__init__(self, SEMAPHORE, 1, 1, ctx=ctx)
 
+    def locked(self):
+        return self._semlock._is_zero()
+
     def __repr__(self):
         try:
             if self._semlock._is_mine():
