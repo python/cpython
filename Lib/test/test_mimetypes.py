@@ -3,6 +3,7 @@ import mimetypes
 import os
 import sys
 import unittest.mock
+import warnings
 
 from test import support
 from test.support import os_helper
@@ -304,6 +305,24 @@ class MimeTypesTestCase(unittest.TestCase):
             type='image/jpg', strict=True), [])
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
+
+    def test_added_types_are_used(self):
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(None, mime_type)
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual('testing/type', mime_type)
+
+    def test_add_type_with_undotted_extension_raises_exception(self):
+        with self.assertRaises(ValueError):
+            mimetypes.add_type('testing/type', 'undotted')
+
+    def test_add_type_with_empty_extension_emits_warning(self):
+        with warnings.catch_warnings(record=True) as wlog:
+            mimetypes.add_type('testing/type', '')
+        self.assertEqual(1, len(wlog))
+        warning = wlog[0]
+        self.assertEqual('Empty extension specified', str(warning.message))
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

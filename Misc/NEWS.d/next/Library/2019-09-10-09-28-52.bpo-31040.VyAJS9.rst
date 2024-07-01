@@ -1,0 +1,1 @@
+Reject undotted extensions in mimetypes.add_type.
