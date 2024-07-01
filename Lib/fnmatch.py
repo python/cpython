@@ -9,11 +9,12 @@ expression.  They cache the compiled regular expressions for speed.
 The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
+
+import functools
 import itertools
 import os
 import posixpath
 import re
-import functools
 
 __all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
