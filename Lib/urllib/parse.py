@@ -541,8 +541,6 @@ def urljoin(base, url, allow_fragments=True):
     interpretation of the latter."""
     if not base:
         return url
-    if not url:
-        return base
 
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \

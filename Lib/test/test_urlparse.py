@@ -372,7 +372,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, '../../g', 'http://a/g')
 
         # "abnormal" cases from RFC 1808:
-        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         self.checkJoin(RFC1808_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC1808_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC1808_BASE, 'g..', 'http://a/b/c/g..')
@@ -388,6 +387,7 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC1808_BASE, 'http:', 'http:')
 
         # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         # self.checkJoin(RFC1808_BASE, '../../../g', 'http://a/../g')
         # self.checkJoin(RFC1808_BASE, '../../../../g', 'http://a/../../g')
         # self.checkJoin(RFC1808_BASE, '/./g', 'http://a/./g')
@@ -500,6 +500,10 @@ class UrlParseTestCase(unittest.TestCase):
 
         # Test for issue9721
         self.checkJoin('http://a/b/c/de', ';x','http://a/b/c/;x')
+
+        # Tests for issue39799: no base fragment
+        self.checkJoin('http://a/b#f', '', 'http://a/b')
+        self.checkJoin('http://a/b/#f', 'g', 'http://a/b/g')
 
     def test_urljoins(self):
         self.checkJoin(SIMPLE_BASE, 'g:h','g:h')
