@@ -164,7 +164,7 @@ class EnvBuilder:
                              'Python interpreter. Provide an explicit path or '
                              'check that your PATH environment variable is '
                              'correctly set.')
-        dirname, exename = os.path.split(os.path.abspath(executable))
+        dirname, exename = os.path.split(os.path.realpath(executable))
         if sys.platform == 'win32':
             # Always create the simplest name in the venv. It will either be a
             # link back to executable, or a copy of the appropriate launcher

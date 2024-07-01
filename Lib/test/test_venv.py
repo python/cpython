@@ -775,6 +775,29 @@ class BasicTest(BaseTest):
                 else:
                     self.assertFalse(same_path(path1, path2))
 
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_executable_symlink(self):
+        """
+        Test creation using a symlink to python executable.
+        """
+        rmtree(self.env_dir)
+        with tempfile.TemporaryDirectory() as symlink_dir:
+            executable_symlink = os.path.join(
+                os.path.realpath(symlink_dir),
+                os.path.basename(sys.executable))
+            os.symlink(os.path.abspath(sys.executable), executable_symlink)
+            cmd = [executable_symlink, "-m", "venv", "--without-pip",
+                   self.env_dir]
+            subprocess.check_call(cmd)
+        data = self.get_text_file_contents('pyvenv.cfg')
+        executable = sys._base_executable
+        path = os.path.dirname(executable)
+        self.assertIn('home = %s' % path, data)
+        self.assertIn('executable = %s' %
+                      os.path.realpath(sys.executable), data)
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
