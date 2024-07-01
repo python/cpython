@@ -8,7 +8,7 @@ import tempfile
 from subprocess import *
 
 startdate = "20180829142316Z"
-enddate = "20371028142316Z"
+enddate = "25251028142316Z"
 
 req_template = """
     [ default ]
@@ -79,8 +79,8 @@ req_template = """
     default_startdate = {startdate}
     enddate = {enddate}
     default_enddate = {enddate}
-    default_days = 7000
-    default_crl_days = 7000
+    default_days = 140000
+    default_crl_days = 140000
     certificate = pycacert.pem
     private_key = pycakey.pem
     serial    = $dir/serial
@@ -134,7 +134,7 @@ def make_cert_key(hostname, sign=False, extra_san='',
         )
         with open(req_file, 'w') as f:
             f.write(req)
-        args = ['req', '-new', '-nodes', '-days', '7000',
+        args = ['req', '-new', '-nodes', '-days', '140000',
                 '-newkey', key, '-keyout', key_file,
                 '-extensions', ext,
                 '-config', req_file]
