@@ -1791,6 +1791,12 @@ class TestMIMEText(unittest.TestCase):
         teststr = '\u043a\u0438\u0440\u0438\u043b\u0438\u0446\u0430'
         self.assertRaises(UnicodeEncodeError, MIMEText, teststr)
 
+    def test_line_max_length(self):
+        teststr = '\n'.join(['This is a long', 'g' * 1000, 'line.'])
+        msg = MIMEText(teststr)
+        lines = msg.as_string()
+        for line in lines:
+            self.assertLessEqual(len(line), 998, 'This line is too long')
 
 
 # Test complicated multipart/* messages
