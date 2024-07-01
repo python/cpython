@@ -244,7 +244,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SET_IP] = 0,
     [_CHECK_STACK_SPACE_OPERAND] = HAS_DEOPT_FLAG,
     [_SAVE_RETURN_OFFSET] = HAS_ARG_FLAG,
-    [_EXIT_TRACE] = 0,
+    [_EXIT_TRACE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
@@ -253,7 +253,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
-    [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_FATAL_ERROR] = 0,
@@ -325,7 +324,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
     [_CHECK_VALIDITY_AND_SET_IP] = "_CHECK_VALIDITY_AND_SET_IP",
-    [_COLD_EXIT] = "_COLD_EXIT",
     [_COMPARE_OP] = "_COMPARE_OP",
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",
@@ -984,8 +982,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _INTERNAL_INCREMENT_OPT_COUNTER:
             return 1;
-        case _COLD_EXIT:
-            return 0;
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:

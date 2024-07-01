@@ -535,7 +535,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(COLD_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
+static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
     "Cold exit value should be larger than adaptive cooldown value");
 
 static inline _Py_BackoffCounter

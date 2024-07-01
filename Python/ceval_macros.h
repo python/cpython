@@ -426,7 +426,7 @@ do {                                                   \
 do { \
     OPT_STAT_INC(traces_executed); \
     next_uop = (EXECUTOR)->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    assert(next_uop->opcode == _START_EXECUTOR); \
     goto enter_tier_two; \
 } while (0)
 #endif
@@ -446,7 +446,6 @@ do { \
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
 #define JUMP_TO_ERROR() goto jump_to_error_target
 #define GOTO_UNWIND() goto error_tier_two
-#define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
 #define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
 
