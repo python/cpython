@@ -133,10 +133,9 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :term:`Soft deprecate <soft deprecated>` :func:`os.popen`,
-  :func:`os.spawn* <os.spawnl>` and :func:`os.system` functions. They should no
-  longer be used to write new code.  The :mod:`subprocess` module is
-  recommended instead.
+* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
+  write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
 

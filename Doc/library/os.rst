@@ -4992,10 +4992,6 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, Windows, not WASI, not iOS.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
-
 
 .. function:: times()
 
