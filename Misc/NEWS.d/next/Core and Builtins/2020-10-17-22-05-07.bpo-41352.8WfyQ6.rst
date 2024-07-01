@@ -1,0 +1,1 @@
+Fix "FileIO.readall()" to check for "readable" and raise "UnsupportedOperation" for not readable file in "w" mode.

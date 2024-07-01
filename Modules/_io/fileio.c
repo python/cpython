@@ -717,6 +717,9 @@ _io_FileIO_readall_impl(fileio *self)
 
     if (self->fd < 0)
         return err_closed();
+    if (!self->readable) {
+        return err_mode("reading");
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH

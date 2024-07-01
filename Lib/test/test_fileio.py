@@ -81,6 +81,22 @@ class AutoFileTests:
             blksize = getattr(fst, 'st_blksize', blksize)
         self.assertEqual(self.f._blksize, blksize)
 
+    def testReadWithWritingMode(self):
+        r, w = os.pipe()
+        with os.fdopen(w, "w") as w:
+            w.write("hello")
+        with io.FileIO(r, mode="w") as f:
+            with self.assertRaises(_io.UnsupportedOperation):
+                f.read()
+
+    def testReadallWithWritingMode(self):
+        r, w = os.pipe()
+        with os.fdopen(w, "w") as w:
+            w.write("hello")
+        with io.FileIO(r, mode="w") as f:
+            with self.assertRaises(_io.UnsupportedOperation):
+                f.readall()
+
     # verify readinto
     def testReadintoByteArray(self):
         self.f.write(bytes([1, 2, 0, 255]))
