@@ -551,6 +551,8 @@ def _default_mime_types():
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
+        '.md'     : 'text/markdown',
+        '.markdown': 'text/markdown',
         '.n3'     : 'text/n3',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
