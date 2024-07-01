@@ -1172,28 +1172,24 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
         if (numfields == -1) {
             goto cleanup;
         }
-        int rc;
-        // for iterating over 'fields' and 'kwargs'
-        PyObject *key = NULL, *value = NULL;
         for (Py_ssize_t i = 0; i < numfields; i++) {
-            key = PySequence_GetItem(fields, i);
+            PyObject *key = PySequence_GetItem(fields, i);
             if (key == NULL) {
                 goto cleanup;
             }
-            rc = PyDict_GetItemRef(dict, key, &value);
-            if (rc < 0) {
+            PyObject *value;
+            if (PyDict_GetItemRef(dict, key, &value) < 0) {
                 Py_DECREF(key);
                 goto cleanup;
             }
-            if (rc == 0) {
+            if (value == NULL) {
                 Py_DECREF(key);
-                Py_DECREF(value);
                 // If a field is not present at runtime, we hope that it will
                 // be explicitly given in 'kwargs'. If not, the constructor
                 // will issue a warning (which becomes an error in 3.15).
                 continue;
             }
-            rc = PyDict_SetItem(payload, key, value);
+            int rc = PyDict_SetItem(payload, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
             if (rc < 0) {
