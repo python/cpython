@@ -56,6 +56,7 @@ the `Python Package Index <https://pypi.org>`_.
    crypto.rst
    allos.rst
    concurrency.rst
+   concurrent.rst
    ipc.rst
    netdata.rst
    markup.rst
