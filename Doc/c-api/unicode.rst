@@ -338,6 +338,8 @@ APIs:
    This is the recommended way to allocate a new Unicode object.  Objects
    created using this function are not resizable.
 
+   On failure returns ``NULL`` and sets an exception.
+
    .. versionadded:: 3.3
 
 
@@ -614,6 +616,10 @@ APIs:
 
    Return the length of the Unicode object, in code points.
 
+   This function checks that *unicode* is a Unicode object, in contrast to
+   :c:func:`PyUnicode_GET_LENGTH`, which performs no error checking. On error
+   returns ``-1`` and sets an exception.
+
    .. versionadded:: 3.3
 
 
@@ -657,6 +663,8 @@ APIs:
    not out of bounds, and that the object can be modified safely (i.e. that it
    its reference count is one).
 
+   Return ``0`` on success, ``-1`` on error with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -666,6 +674,8 @@ APIs:
    Unicode object and the index is not out of bounds, in contrast to
    :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
+   Return character on success, ``-1`` on error with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -674,6 +684,7 @@ APIs:
 
    Return a substring of *unicode*, from character index *start* (included) to
    character index *end* (excluded).  Negative indices are not supported.
+   Returns ``NULL`` and sets an exception on error.
 
    .. versionadded:: 3.3
 
