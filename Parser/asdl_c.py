@@ -1148,23 +1148,23 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     // known AST class fields
     PyObject *fields = NULL;
     // current instance dictionary
-    PyObject *__dict__ = NULL;
+    PyObject *dict = NULL;
     // constructor positional and keyword arguments
     PyObject *empty_tuple = NULL, *payload = NULL;
-    // for iterating over 'fields' and 'kwargs'
-    PyObject *key = NULL, *value = NULL;
 
-    PyTypeObject *type = Py_TYPE(self);
-    if (PyObject_GetOptionalAttr((PyObject *)type, state->_fields, &fields) < 0) {
+    PyObject *type = (PyObject *)Py_TYPE(self);
+    if (PyObject_GetOptionalAttr(type, state->_fields, &fields) < 0) {
         goto cleanup;
     }
-    if (PyObject_GetOptionalAttr(self, state->__dict__, &__dict__) < 0) {
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         goto cleanup;
     }
-    if (!(empty_tuple = PyTuple_New(0))) {
+    empty_tuple = PyTuple_New(0);
+    if (empty_tuple == NULL) {
         goto cleanup;
     }
-    if (!(payload = PyDict_New())) {
+    payload = PyDict_New();
+    if (payload == NULL) {
         goto cleanup;
     }
     if (fields) {
@@ -1172,17 +1172,31 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
         if (numfields == -1) {
             goto cleanup;
         }
+        int rc;
+        // for iterating over 'fields' and 'kwargs'
+        PyObject *key = NULL, *value = NULL;
         for (Py_ssize_t i = 0; i < numfields; i++) {
-            if (!(key = PySequence_GetItem(fields, i))) {
+            key = PySequence_GetItem(fields, i);
+            if (key == NULL) {
                 goto cleanup;
             }
-            if (PyDict_GetItemRef(__dict__, key, &value) < 0) {
+            rc = PyDict_GetItemRef(dict, key, &value);
+            if (rc < 0) {
+                Py_DECREF(key);
                 goto cleanup;
             }
-            if (!value) {
-                break;
+            if (rc == 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                // If a field is not present at runtime, we hope that it will
+                // be explicitly given in 'kwargs'. If not, the constructor
+                // will issue a warning (which becomes an error in 3.15).
+                continue;
             }
-            if (PyDict_SetItem(payload, key, value) < 0) {
+            rc = PyDict_SetItem(payload, key, value);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            if (rc < 0) {
                 goto cleanup;
             }
         }
@@ -1190,20 +1204,14 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     if (kwargs && PyDict_Update(payload, kwargs) < 0) {
         goto cleanup;
     }
-    if (!(result = type->tp_new(type, empty_tuple, payload))) {
-        Py_CLEAR(result);
-        goto cleanup;
-    }
-    if (ast_type_init(result, empty_tuple, payload) < 0) {
-        Py_CLEAR(result);
+    result = PyObject_Call(type, empty_tuple, payload);
+    if (result == NULL) {
         goto cleanup;
     }
 cleanup:
-    Py_XDECREF(value);
-    Py_XDECREF(key);
     Py_XDECREF(payload);
     Py_XDECREF(empty_tuple);
-    Py_XDECREF(__dict__);
+    Py_XDECREF(dict);
     Py_XDECREF(fields);
     return result;
 }
