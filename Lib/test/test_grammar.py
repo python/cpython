@@ -19,8 +19,11 @@ import test
 
 # These are shared with test_tokenize and other test modules.
 #
-# Note: since several test cases filter out floats by looking for "e" and ".",
-# don't add hexadecimal literals that contain "e" or "E".
+# Note:
+# 1) several test cases filter out floats by looking for "e" and ".":
+#    don't add hexadecimal literals that contain "e" or "E".
+# 2) several tests also filter out binary integers by looking for "b" or "B":
+#    so, don't add hexadecimal floating point literals with above digits.
 VALID_UNDERSCORE_LITERALS = [
     '0_0_0',
     '4_2',
@@ -43,6 +46,16 @@ VALID_UNDERSCORE_LITERALS = [
     '.1_4j',
     '(1_2.5+3_3j)',
     '(.5_6j)',
+    '0x_.1p1',
+    '0X_.1p1',
+    '0x1_1.p1',
+    '0x_1_1.p1',
+    '0x1.1_1p1',
+    '0x1.p1_1',
+    '0xa.p1',
+    '0x.ap1',
+    '0xa_c.p1',
+    '0x.a_cp1',
 ]
 INVALID_UNDERSCORE_LITERALS = [
     # Trailing underscores:
@@ -54,6 +67,8 @@ INVALID_UNDERSCORE_LITERALS = [
     '0xf_',
     '0o5_',
     '0 if 1_Else 1',
+    '0x1p1_',
+    '0x1.1p1_',
     # Underscores in the base selector:
     '0_b0',
     '0_xf',
@@ -71,28 +86,41 @@ INVALID_UNDERSCORE_LITERALS = [
     '0o5__77',
     '1e1__0',
     '1e1__0j',
+    '0x1__1.1p1',
     # Underscore right before a dot:
     '1_.4',
     '1_.4j',
+    '0x1_.p1',
+    '0xa_.p1',
     # Underscore right after a dot:
     '1._4',
     '1._4j',
     '._5',
     '._5j',
+    '0x1._p1',
+    '0xa._p1',
     # Underscore right after a sign:
     '1.0e+_1',
     '1.0e+_1j',
+    '0x1.1p+_1',
     # Underscore right before j:
     '1.4_j',
     '1.4e5_j',
-    # Underscore right before e:
+    '0x1.1p1_j',
+    # Underscore right before e or p:
     '1_e1',
     '1.4_e1',
     '1.4_e1j',
-    # Underscore right after e:
+    '0x1_p1',
+    '0x1_P1',
+    '0x1.1_p1',
+    '0x1.1_P1',
+    # Underscore right after e or p:
     '1e_1',
     '1.4e_1',
     '1.4e_1j',
+    '0x1p_1',
+    '0x1.1p_1',
     # Complex cases with parens:
     '(1+1.5_j_)',
     '(1+1.5_j)',
@@ -150,6 +178,17 @@ class TokenTests(unittest.TestCase):
         else:
             self.fail('Weird maxsize value %r' % maxsize)
 
+    def test_attrs_on_hexintegers(self):
+        good_meth = [m for m in dir(int) if not m.startswith('_')]
+        for m in good_meth:
+            with self.assertWarns(SyntaxWarning):
+                v = eval('0x1.' + m)
+            self.assertEqual(v, eval('(0x1).' + m))
+        self.check_syntax_error('0x1.spam', "invalid hexadecimal literal",
+                                lineno=1, offset=4)
+        self.check_syntax_error('0x1.foo', "invalid hexadecimal literal",
+                                lineno=1, offset=5)
+
     def test_long_integers(self):
         x = 0
         x = 0xffffffffffffffff
@@ -173,6 +212,23 @@ class TokenTests(unittest.TestCase):
         x = 3.e14
         x = .3e14
         x = 3.1e4
+        x = 0x1.2p1
+        x = 0x1.2p+1
+        x = 0x1.p1
+        x = 0x1.p-1
+        x = 0x1p0
+        x = 0x1ap1
+        x = 0x1P1
+        x = 0x1cp2
+        x = 0x1.p1
+        x = 0x1.P1
+        x = 0x001.1p2
+        x = 0X1p1
+        x = 0x1.1_1p1
+        x = 0x1.1p1_1
+        x = 0x1.
+        x = 0x1.1
+        x = 0x.1
 
     def test_float_exponent_tokenization(self):
         # See issue 21642.
@@ -210,7 +266,14 @@ class TokenTests(unittest.TestCase):
               "use an 0o prefix for octal integers")
         check("1.2_", "invalid decimal literal")
         check("1e2_", "invalid decimal literal")
-        check("1e+", "invalid decimal literal")
+        check("1e+", "invalid float literal")
+        check("0x.p", "invalid float literal")
+        check("0x_.p", "invalid float literal")
+        check("0x1.1p", "invalid float literal")
+        check("0x1.1_p", "invalid float literal")
+        check("0x1.1p_", "invalid float literal")
+        check("0xp", "invalid hexadecimal literal")
+        check("0xP", "invalid hexadecimal literal")
 
     def test_end_of_numerical_literals(self):
         def check(test, error=False):
