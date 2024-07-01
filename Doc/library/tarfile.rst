@@ -608,7 +608,7 @@ be finalized; only the internally used file object will be closed. See the
    and fall back to the :func:`fully_trusted <fully_trusted_filter>` filter,
    whose dangerous behavior matches previous versions of Python.
 
-   In Python 3.14+, leaving ``extraction_filter=None`` will cause
+   In Python 3.14, leaving ``extraction_filter=None`` will cause
    extraction methods to use the :func:`data <data_filter>` filter by default.
 
    The attribute may be set on instances or overridden in subclasses.
