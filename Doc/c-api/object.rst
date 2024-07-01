@@ -454,6 +454,7 @@ Object Protocol
    equivalent to the Python expression ``operator.length_hint(o, defaultvalue)``.
 
    .. versionadded:: 3.4
+      Originally specified by :pep:`424`.
 
 
 .. c:function:: PyObject* PyObject_GetItem(PyObject *o, PyObject *key)
