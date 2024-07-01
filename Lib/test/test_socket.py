@@ -1836,6 +1836,15 @@ class GeneralModuleTests(unittest.TestCase):
             srv.bind((HOST, 0))
             srv.listen()
 
+    def test_listen_backlog_connect(self):
+        for backlog in 0, -1:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+                srv.bind((HOST, 65200))
+                srv.listen(backlog)
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
+                    c.connect((HOST, 65200))
+                    c.send(MSG)
+
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_listen_backlog_overflow(self):
