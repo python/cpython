@@ -1,0 +1,3 @@
+Add *bound_arg* keyword-only parameter to
+:func:`inspect.Signature.from_callable` and :func:`inspect.signature`.
+If *bound_arg* is ``True``, keep ``self`` parameter in method a signature.
