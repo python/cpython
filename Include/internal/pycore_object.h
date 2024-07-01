@@ -615,7 +615,8 @@ _PyObject_IS_GC(PyObject *obj)
 
 // Fast inlined version of PyObject_Hash()
 static inline Py_hash_t
-_PyObject_HashFast(PyObject *op) {
+_PyObject_HashFast(PyObject *op)
+{
     Py_hash_t hash;
     if (!PyUnicode_CheckExact(op) ||
         (hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash)) == -1) {
