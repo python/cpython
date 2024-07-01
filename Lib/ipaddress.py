@@ -1260,13 +1260,20 @@ class _BaseV4:
         return '.'.join(map(str, ip_int.to_bytes(4, 'big')))
 
     def _reverse_pointer(self):
-        """Return the reverse DNS pointer name for the IPv4 address.
+        """Return the reverse DNS pointer name for the IPv4 address or network.
 
         This implements the method described in RFC1035 3.5.
 
         """
-        reverse_octets = str(self).split('.')[::-1]
-        return '.'.join(reverse_octets) + '.in-addr.arpa'
+        prefix = getattr(self, 'prefixlen', IPV4LENGTH)
+        octet_count, remainder = divmod(prefix, 8)  # each octet is 8 bits long
+        if remainder:
+            raise NetmaskValueError(
+                'Reverse pointer cannot be generated for given prefix size')
+        address_exploded = getattr(self, 'network_address', self).exploded
+        reverse_octets = address_exploded.split('.')[:octet_count][::-1]
+        reverse_octets.append('in-addr.arpa')
+        return '.'.join(reverse_octets)
 
     @property
     def max_prefixlen(self):
@@ -1884,13 +1891,20 @@ class _BaseV6:
         return ':'.join(parts)
 
     def _reverse_pointer(self):
-        """Return the reverse DNS pointer name for the IPv6 address.
+        """Return the reverse DNS pointer name for the IPv6 address or network.
 
         This implements the method described in RFC3596 2.5.
 
         """
-        reverse_chars = self.exploded[::-1].replace(':', '')
-        return '.'.join(reverse_chars) + '.ip6.arpa'
+        prefix = getattr(self, 'prefixlen', IPV6LENGTH)
+        char_count, remainder = divmod(prefix, 4)  # each char is 4 bits long
+        if remainder:
+            raise NetmaskValueError(
+                'Reverse pointer cannot be generated for given prefix size')
+        address_exploded = getattr(self, 'network_address', self).exploded
+        reverse_chars = list(address_exploded.replace(':', '')[:char_count][::-1])
+        reverse_chars.append('ip6.arpa')
+        return '.'.join(reverse_chars)
 
     @staticmethod
     def _split_scope_id(ip_str):
