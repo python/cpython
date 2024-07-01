@@ -849,6 +849,34 @@ class TestOptionalsActionAppendConstWithDefault(ParserTestCase):
         ('-b -cx -b -cyz', NS(b=['X', Exception, 'x', Exception, 'yz'])),
     ]
 
+class TestOptionalsActionExtendConst(ParserTestCase):
+    """Tests the extend_const action for an Optional"""
+
+    argument_signatures = [
+        Sig('-b', action='extend_const', const=[Exception, Exception]),
+        Sig('-c', action='extend', dest='b'),
+    ]
+    failures = ['a', '-c', 'a -c', '-bx', '-b x']
+    successes = [
+        ('', NS(b=None)),
+        ('-b', NS(b=[Exception, Exception])),
+        ('-b -cx -b -cyz', NS(b=[Exception, Exception, 'x', Exception, Exception, 'y', 'z'])),
+    ]
+
+class TestOptionalsActionExtendConstWithDefault(ParserTestCase):
+    """Tests the extend_const action for an Optional"""
+
+    argument_signatures = [
+        Sig('-b', action='extend_const', const=[Exception, Exception], default=['X']),
+        Sig('-c', action='extend', dest='b'),
+    ]
+    failures = ['a', '-c', 'a -c', '-bx', '-b x']
+    successes = [
+        ('', NS(b=['X'])),
+        ('-b', NS(b=['X', Exception, Exception])),
+        ('-b -cx -b -cyz', NS(b=['X', Exception, Exception, 'x', Exception, Exception, 'y', 'z'])),
+    ]
+
 
 class TestOptionalsActionCount(ParserTestCase):
     """Tests the count action for an Optional"""

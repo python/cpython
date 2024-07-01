@@ -917,6 +917,21 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
+* ``'extend_const'`` - This stores a list, and extends each argument value to the list.
+  The ``'extend_const'`` action is typically useful when you want to provide an alias
+  that is the combination of multiple other arguments. For example::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--str', dest='types', action='append_const', const=str)
+    >>> parser.add_argument('--int', dest='types', action='append_const', const=int)
+    >>> parser.add_argument('--both', dest='types', action='extend_const', const=(str, int))
+    >>> parser.parse_args('--str --int'.split())
+    Namespace(types=[<class 'str'>, <class 'int'>])
+    >>> parser.parse_args('--both'.split())
+    Namespace(types=[<class 'str'>, <class 'int'>])
+
+  .. versionadded:: TBA
+
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``
 is available in ``argparse`` and adds support for boolean actions such as
