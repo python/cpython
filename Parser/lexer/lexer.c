@@ -212,10 +212,15 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
         case '}':
         case '!':
         case ':':
-            if (tok_mode->last_expr_end == -1) {
-                tok_mode->last_expr_end = strlen(tok->start);
+            {
+                Py_ssize_t size = strlen(tok->start);
+                if (tok_mode->last_expr_size - size > 0) {
+                    tok_mode->last_expr_end = size;
+                } else {
+                    tok_mode->last_expr_end = tok_mode->last_expr_size;
+                }
+                break;
             }
-            break;
         default:
             Py_UNREACHABLE();
     }
@@ -1139,13 +1144,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
         int in_format_spec = current_tok->in_format_spec;
-        int cursor_in_format_with_debug =
-            cursor == 1 && (current_tok->f_string_debug || in_format_spec);
-        int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if (cursor_valid && !_PyLexer_update_fstring_expr(tok, c)) {
+         int cursor_in_format_with_debug =
+             cursor == 1 && (current_tok->f_string_debug || in_format_spec);
+         int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
+        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
-        if (cursor_valid && c != '{' && set_fstring_expr(tok, token, c)) {
+        if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
@@ -1328,10 +1333,14 @@ f_string_middle:
             return MAKE_TOKEN(ERRORTOKEN);
         }
         int in_format_spec = (
-                current_tok->last_expr_end != -1
+                current_tok->in_format_spec
                 &&
                 INSIDE_FSTRING_EXPR(current_tok)
         );
+
+        if (!_PyLexer_update_fstring_expr(tok, '{')) {
+            return MAKE_TOKEN(ENDMARKER);
+        }
 
        if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
@@ -1415,7 +1424,8 @@ f_string_middle:
             // scanning (indicated by the end of the expression being set) and we are not at the top level
             // of the bracket stack (-1 is the top level). Since format specifiers can't legally use double
             // brackets, we can bypass it here.
-            if (peek == '}' && !in_format_spec) {
+            int cursor = current_tok->curly_bracket_depth;
+            if (peek == '}' && !in_format_spec && cursor == 0) {
                 p_start = tok->start;
                 p_end = tok->cur - 1;
             } else {

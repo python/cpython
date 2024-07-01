@@ -8,6 +8,7 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import datetime
 import dis
 import os
 import re
@@ -1604,6 +1605,8 @@ x = (
         # Check debug expressions in format spec
         y = 20
         self.assertEqual(f"{2:{y=}}", "yyyyyyyyyyyyyyyyyyy2")
+        self.assertEqual(f"{datetime.datetime.now():h1{y=}h2{y=}h3{y=}}",
+                         'h1y=20h2y=20h3y=20')
 
         # Make sure __format__ is being called.
         class C:
