@@ -860,7 +860,10 @@ class BooleanOptionalAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
-            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+            if not self.dest.startswith('no'):
+                setattr(namespace, self.dest, not option_string.startswith('--no-'))
+            else:
+                setattr(namespace, self.dest, option_string.count('no') == self.dest.count('no'))
 
     def format_usage(self):
         return ' | '.join(self.option_strings)
