@@ -164,6 +164,11 @@ class Server(object):
         self.id_to_local_proxy_obj = {}
         self.mutex = threading.Lock()
 
+    def _track_parent(self):
+        if process.parent_process() is not None:
+            process.parent_process().join()
+            self.stop_event.set()
+
     def serve_forever(self):
         '''
         Run the server forever
@@ -174,6 +179,12 @@ class Server(object):
             accepter = threading.Thread(target=self.accepter)
             accepter.daemon = True
             accepter.start()
+
+            if process.parent_process() is not None:
+                watcher = threading.Thread(target=self._track_parent)
+                watcher.daemon = True
+                watcher.start()
+
             try:
                 while not self.stop_event.is_set():
                     self.stop_event.wait(1)

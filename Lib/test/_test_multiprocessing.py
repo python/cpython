@@ -4267,6 +4267,45 @@ class _TestSharedMemory(BaseTestCase):
 
         smm.shutdown()
 
+    def test_shared_memory_SharedMemoryManager_cleanup_if_parent_dies(self):
+        # If a process that spawned a SharedMemoryManager was terminated, its
+        # manager process should notice it, unlink the resources the manager
+        # delivered, and shut down.
+        cmd = '''if 1:
+            import sys, time
+
+            from multiprocessing.managers import SharedMemoryManager
+
+
+            smm = SharedMemoryManager()
+            smm.start()
+            sl = smm.ShareableList([1, 2, 3])
+
+            sys.stdout.write(f'{sl.shm.name}\\n')
+            sys.stdout.flush()
+            time.sleep(100)
+        '''
+
+        p = subprocess.Popen([sys.executable, '-E', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        shm_name = p.stdout.readline().decode().strip()
+        p.terminate()
+        start_time = time.monotonic()
+        deadline = start_time + 60
+        t = 0.1
+        while time.monotonic() < deadline:
+            time.sleep(t)
+            # The shared_memory segment should be released by the
+            # SharedMemoryManager server process before it shuts down.
+            try:
+                sl = shared_memory.SharedMemory(shm_name, create=False)
+            except FileNotFoundError:
+                break
+        else:
+            raise AssertionError(
+                "A SharedMemoryManager prevented some resources to be cleaned "
+                "up after its parent process was terminated")
+
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
