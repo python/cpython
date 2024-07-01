@@ -981,6 +981,9 @@ IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
+APP_STORE_COMPLIANCE_PATCH_FLAGS
+APP_STORE_COMPLIANCE_PATCH_TARGET
+APP_STORE_COMPLIANCE_PATCH
 INSTALLTARGETS
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
@@ -1076,6 +1079,7 @@ enable_universalsdk
 with_universal_archs
 with_framework_name
 enable_framework
+with_app_store_compliance
 with_emscripten_target
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
@@ -1855,6 +1859,10 @@ Optional Packages:
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
                           Mac/README.rst (default is 'Python')
+  --with-app-store-compliance=[PATCH-FILE]
+                          Enable any patches required for compiliance with app
+                          stores. Optional PATCH-FILE specifies the custom
+                          patch to apply.
   --with-emscripten-target=[browser|node]
                           Emscripten platform
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is empty,
@@ -4428,6 +4436,71 @@ fi
 
 
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-app-store-compliance" >&5
+printf %s "checking for --with-app-store-compliance... " >&6; }
+
+# Check whether --with-app_store_compliance was given.
+if test ${with_app_store_compliance+y}
+then :
+  withval=$with_app_store_compliance;
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
+      esac
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+      APP_STORE_COMPLIANCE_PATCH_FLAGS=
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying custom app store compliance patch" >&5
+printf "%s\n" "applying custom app store compliance patch" >&6; }
+      ;;
+    esac
+
+else $as_nop
+
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
+printf "%s\n" "applying default app store compliance patch" >&6; }
+        ;;
+      Darwin)
+        # Always *check* the compliance patch on macOS
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: checking (not applying) default app store compliance patch" >&5
+printf "%s\n" "checking (not applying) default app store compliance patch" >&6; }
+        ;;
+      *)
+        # No app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        APP_STORE_COMPLIANCE_PATCH_TARGET=
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not patching for app store compliance" >&5
+printf "%s\n" "not patching for app store compliance" >&6; }
+        ;;
+    esac
+
+fi
+
+
+
 
 
 
@@ -7758,7 +7831,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -9414,6 +9487,11 @@ then :
   PYDEBUG_CFLAGS="-Og"
 fi
 
+# gh-120688: WASI uses -O3 in debug mode to support more recursive calls
+if test "$ac_sys_system" = "WASI"; then
+    PYDEBUG_CFLAGS="-O3"
+fi
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -9560,7 +9638,7 @@ then :
 
 fi
 
-                as_fn_append LDFLAGS_NODIST " -z stack-size=8388608 -Wl,--stack-first -Wl,--initial-memory=20971520"
+                as_fn_append LDFLAGS_NODIST " -z stack-size=16777216 -Wl,--stack-first -Wl,--initial-memory=41943040"
 
  ;; #(
   *) :
@@ -9600,6 +9678,87 @@ else $as_nop
   BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"
 fi
 
+# Enable flags that warn and protect for potential security vulnerabilities.
+# These flags should be enabled by default for all builds.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
+if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -fstack-protector-strong"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__fstack_protector_strong=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__fstack_protector_strong=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fstack_protector_strong" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fstack_protector_strong" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fstack_protector_strong" = xyes
+then :
+  BASECFLAGS="$BASECFLAGS -fstack-protector-strong"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported" >&5
+printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wtrampolines"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wtrampolines=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wtrampolines=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wtrampolines" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wtrampolines" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wtrampolines" = xyes
+then :
+  BASECFLAGS="$BASECFLAGS -Wtrampolines"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
+fi
+
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -9614,7 +9773,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9732,7 +9891,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9777,7 +9936,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9818,7 +9977,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9859,7 +10018,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9900,7 +10059,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9941,7 +10100,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9993,7 +10152,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -12892,7 +13051,7 @@ then
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -13132,6 +13291,8 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  riscv64-linux-gnu) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
@@ -25861,6 +26022,58 @@ if test "$ac_cv_stat_tv_nsec2" = yes
 then
 
 printf "%s\n" "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether year with century should be normalized for strftime" >&5
+printf %s "checking whether year with century should be normalized for strftime... " >&6; }
+if test ${ac_cv_normalize_century+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+if test "$cross_compiling" = yes
+then :
+  ac_cv_normalize_century=yes
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char year[5];
+  struct tm date = {
+    .tm_year = -1801,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
+    return 1;
+  }
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_normalize_century=yes
+else $as_nop
+  ac_cv_normalize_century=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_normalize_century" >&5
+printf "%s\n" "$ac_cv_normalize_century" >&6; }
+if test "$ac_cv_normalize_century" = yes
+then
+
+printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
 
 fi
 
