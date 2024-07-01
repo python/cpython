@@ -10,12 +10,12 @@ import re
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match
 _declstringlit_match = re.compile(r'(\'[^\']*\'|"[^"]*")\s*').match
 _commentclose = re.compile(r'--\s*>')
-_markedsectionclose = re.compile(r']\s*]\s*>')
+_markedsectionclose = re.compile(r'](\s*]\s*>)')
 
 # An analysis of the MS-Word extensions is available at
 # http://www.planetpublish.com/xmlarena/xap/Thursday/WordtoXML.pdf
 
-_msmarkedsectionclose = re.compile(r']\s*>')
+_msmarkedsectionclose = re.compile(r'(]\s*>)')
 
 del re
 
@@ -157,7 +157,7 @@ class ParserBase:
         if not match:
             return -1
         if report:
-            j = match.start(0)
+            j = match.start(1)
             self.unknown_decl(rawdata[i+3: j])
         return match.end(0)
 
