@@ -5,6 +5,7 @@ import math
 import os.path
 import platform
 import random
+import re
 import shlex
 import signal
 import subprocess
@@ -712,3 +713,19 @@ def get_signal_name(exitcode):
         pass
 
     return None
+
+
+ILLEGAL_XML_CHARS_RE = re.compile(
+    '['
+    '\x00-\x1F'      # ASCII control characters
+    '\uD800-\uDFFF'  # surrogate characters
+    '\uFFFE'
+    '\uFFFF'
+    ']')
+
+def _escape_xml_replace(regs):
+    code_point = ord(regs[0])
+    return f"&#{code_point};"
+
+def escape_xml(text):
+    return ILLEGAL_XML_CHARS_RE.sub(_escape_xml_replace, text)

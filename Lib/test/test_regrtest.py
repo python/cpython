@@ -21,6 +21,8 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+from xml.etree import ElementTree
+
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -2254,6 +2256,44 @@ class ArgsTestCase(BaseTestCase):
             self.check_executed_tests(output, testname, stats=1, parallel=True)
             self.assertNotIn('SPAM SPAM SPAM', output)
 
+    def test_xml(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_failed(self):
+                    print("abc \x1b def")
+                    self.fail()
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        output = self.run_tests(testname, "--junit-xml", filename,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=testname,
+                                  stats=TestStats(1, 1, 0))
+
+        # Test generated XML
+        with open(filename, encoding="utf8") as fp:
+            content = fp.read()
+
+        testsuite = ElementTree.fromstring(content)
+        self.assertEqual(int(testsuite.get('tests')), 1)
+        self.assertEqual(int(testsuite.get('errors')), 0)
+        self.assertEqual(int(testsuite.get('failures')), 1)
+
+        testcase = testsuite[0][0]
+        self.assertEqual(testcase.get('status'), 'run')
+        self.assertEqual(testcase.get('result'), 'completed')
+        self.assertGreater(float(testcase.get('time')), 0)
+        for out in testcase.iter('system-out'):
+            self.assertEqual(out.text, "abc &#27; def")
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
@@ -2436,6 +2476,11 @@ class TestUtils(unittest.TestCase):
             self.assertFalse(match_test(test_access))
             self.assertTrue(match_test(test_chdir))
             self.assertFalse(match_test(test_copy))
+
+    def test_escape_xml(self):
+        escape_xml = utils.escape_xml
+        self.assertEqual(escape_xml('abc \x1b def'),
+                         'abc &#27; def')
 
 
 if __name__ == '__main__':
