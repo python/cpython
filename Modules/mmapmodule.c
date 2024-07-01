@@ -1754,9 +1754,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         fh = _Py_get_osfhandle(fileno);
         if (fh == INVALID_HANDLE_VALUE)
             return NULL;
-
-        /* Win9x appears to need us seeked to zero */
-        lseek(fileno, 0, SEEK_SET);
     }
 
     m_obj = (mmap_object *)type->tp_alloc(type, 0);
