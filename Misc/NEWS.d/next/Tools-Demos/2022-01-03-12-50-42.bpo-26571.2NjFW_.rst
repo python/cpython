@@ -1,0 +1,1 @@
+Enables turtle object to be instantiated multiple times. Fixes error thrown every other time when turtle screen is closed and turtle object is again reinstantiated through code. This particularly helps to use this module smoothly in notebooks or shell or other GUI based applications.
