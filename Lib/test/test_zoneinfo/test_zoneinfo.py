@@ -31,6 +31,9 @@ try:
 except importlib.metadata.PackageNotFoundError:
     HAS_TZDATA_PKG = False
 
+if HAS_TZDATA_PKG:
+    raise ValueError('Fail the test')
+
 ZONEINFO_DATA = None
 ZONEINFO_DATA_V1 = None
 TEMP_DIR = None
@@ -222,6 +225,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "a" * 256,  # Too long
         ]
 
         for bad_key in bad_keys:
