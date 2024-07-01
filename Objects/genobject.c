@@ -14,6 +14,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 
 #include "pystats.h"
 
@@ -158,7 +159,7 @@ gen_dealloc(PyGenObject *gen)
 }
 
 static PySendResult
-gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+gen_send_ex2_unlocked(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -254,6 +255,17 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     assert(gen->gi_frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
+}
+
+static PySendResult
+gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+             int exc, int closing)
+{
+    PySendResult res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = gen_send_ex2_unlocked(gen, arg, presult, exc, closing);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PySendResult
