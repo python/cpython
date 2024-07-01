@@ -416,8 +416,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # on a directory that is chmod 500, which will fail.
         # This function is run when shutil.rmtree fails.
         # 99.9% of the time it initially fails to remove
-        # a file in the directory, so the first time through
-        # func is os.remove.
+        # the file or directory in the directory, so func
+        # is os.unlink or os.rmdir.
         # However, some Linux machines running ZFS on
         # FUSE experienced a failure earlier in the process
         # at os.listdir.  The first failure may legally
