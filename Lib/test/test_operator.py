@@ -145,6 +145,14 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.add, None, None)
         self.assertEqual(operator.add(3, 4), 7)
 
+    def test_as_float(self):
+        from fractions import Fraction as F
+
+        operator = self.module
+        self.assertRaises(TypeError, operator.as_float)
+        self.assertRaises(AttributeError, operator.as_float, None)
+        self.assertEqual(operator.as_float(F(1, 2)), 0.5)
+
     def test_bitwise_and(self):
         operator = self.module
         self.assertRaises(TypeError, operator.and_)

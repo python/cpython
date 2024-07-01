@@ -10,7 +10,7 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
-__all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
+__all__ = ['abs', 'add', 'and_', 'attrgetter', 'as_float', 'call', 'concat', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
@@ -87,6 +87,10 @@ def floordiv(a, b):
 def index(a):
     "Same as a.__index__()."
     return a.__index__()
+
+def as_float(a):
+    "Same as a.__float__()."
+    return a.__float__()
 
 def inv(a):
     "Same as ~a."
@@ -432,6 +436,7 @@ __and__ = and_
 __call__ = call
 __floordiv__ = floordiv
 __index__ = index
+__float__ = as_float
 __inv__ = inv
 __invert__ = invert
 __lshift__ = lshift
