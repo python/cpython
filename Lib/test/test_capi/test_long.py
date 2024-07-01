@@ -594,9 +594,9 @@ class LongTests(unittest.TestCase):
 
         # Ensure omitting Py_ASNATIVEBYTES_ALLOW_INDEX raises on __index__ value
         with self.assertRaises(TypeError):
-            asnativebytes(Index(1), buffer, 0, -1)
+            asnativebytes(WithIndex(1), buffer, 0, -1)
         with self.assertRaises(TypeError):
-            asnativebytes(Index(1), buffer, 0, 3)
+            asnativebytes(WithIndex(1), buffer, 0, 3)
 
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's
@@ -724,7 +724,7 @@ class LongTests(unittest.TestCase):
         self.assertEqual(getsign(False), 0)
 
         self.assertRaises(TypeError, getsign, 1.0)
-        self.assertRaises(TypeError, getsign, Index(123))
+        self.assertRaises(TypeError, getsign, WithIndex(123))
 
         # CRASHES getsign(NULL)
 
