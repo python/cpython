@@ -1,7 +1,9 @@
 """Unit tests for contextlib.py, and other context managers."""
 
 import io
+import errno
 import os
+import shutil
 import sys
 import tempfile
 import threading
@@ -1362,6 +1364,87 @@ class TestChdir(unittest.TestCase):
         except RuntimeError as re:
             self.assertEqual(str(re), "boom")
         self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_with_os_chdir(self):
+        old_cwd = os.getcwd()
+        target1 = os.path.join(os.path.dirname(__file__), 'data')
+        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+
+        with chdir(target1):
+            self.assertEqual(os.getcwd(), target1)
+            os.chdir(target2)
+            self.assertEqual(os.getcwd(), target2)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_long_path(self):
+        if not (hasattr(os, 'pathconf_names')
+                and 'PC_NAME_MAX' in os.pathconf_names
+                and 'PC_PATH_MAX' in os.pathconf_names):
+            self.skipTest('Cannot determine a path max to test against.')
+
+        nmax = os.pathconf(os.getcwd(), 'PC_NAME_MAX')
+        pmax = os.pathconf(os.getcwd(), 'PC_PATH_MAX')
+        long_path = old_cwd = os.getcwd()
+        dirname = '_' * nmax
+
+        try:
+            for _ in range(pmax // (nmax + 1)):
+                long_path = os.path.join(long_path, dirname)
+                os.mkdir(dirname)
+                os.chdir(dirname)
+            os.mkdir(dirname)
+            try:
+                os.getcwd()
+            except OSError as exc:
+                if exc.errno == errno.ENOENT:
+                    # This will rais an exception in __enter__ when we are
+                    # testing for an exception in __exit__
+                    self.skipTest('Cannot retrieve cwd that is longer than '
+                                  'PC_PATH_MAX')
+                raise
+
+            with chdir(dirname):
+                self.assertEqual(os.getcwd(), os.path.join(long_path, dirname))
+            self.assertEqual(os.getcwd(), long_path)
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(os.path.join(old_cwd, dirname), ignore_errors=True)
+
+
+    def test_deleted_dir_without_ignore(self):
+        old_cwd = os.getcwd()
+        os.mkdir('dead')
+        os.mkdir('alive')
+
+        try:
+            with self.assertRaises(FileNotFoundError):
+                with chdir('dead'):
+                    with chdir(os.path.join(old_cwd, 'alive')):
+                        os.rmdir(os.path.join(old_cwd, 'dead'))
+            self.assertEqual(os.getcwd(), old_cwd)
+        finally:
+            os.chdir(old_cwd)
+            if os.path.isdir('dead'):
+                os.rmdir('dead')
+            if os.path.isdir('alive'):
+                os.rmdir('alive')
+
+    def test_deleted_dir_with_ignore(self):
+        old_cwd = os.getcwd()
+        os.mkdir('dead')
+        os.mkdir('alive')
+
+        try:
+            with chdir('dead', ignore_errors=True):
+                with chdir(os.path.join(old_cwd, 'alive'), ignore_errors=True):
+                    os.rmdir(os.path.join(old_cwd, 'dead'))
+            self.assertEqual(os.getcwd(), old_cwd)
+        finally:
+            os.chdir(old_cwd)
+            if os.path.isdir('dead'):
+                os.rmdir('dead')
+            if os.path.isdir('alive'):
+                os.rmdir('alive')
 
 
 if __name__ == "__main__":
