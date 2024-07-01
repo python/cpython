@@ -1470,6 +1470,8 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef map_methods[] = {
     {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL,           NULL}           /* sentinel */
 };
 
