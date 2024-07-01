@@ -268,9 +268,16 @@ their API.  For example, :func:`locale.strcoll` is a comparison function.
 
 To accommodate those situations, Python provides
 :class:`functools.cmp_to_key` to wrap the comparison function
-to make it usable as a key function::
+to make it usable as a key function:
 
-    sorted(words, key=cmp_to_key(strcoll))  # locale-aware sort order
+..doctest::
+
+   >>> from functools import cmp_to_key
+   >>> from locale import strcoll
+
+   >>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+   >>> sorted(names, key=cmp_to_key(strcoll))  # locale-aware sort order
+   ['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
 
 Odds and Ends
 =============
