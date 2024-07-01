@@ -1797,8 +1797,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         kwargs.setdefault('parser_class', type(self))
 
         if 'title' in kwargs or 'description' in kwargs:
-            title = _(kwargs.pop('title', 'subcommands'))
-            description = _(kwargs.pop('description', None))
+            title = kwargs.pop('title', _('subcommands'))
+            description = kwargs.pop('description', None)
             self._subparsers = self.add_argument_group(title, description)
         else:
             self._subparsers = self._positionals
