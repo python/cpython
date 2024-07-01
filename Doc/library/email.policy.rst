@@ -454,9 +454,10 @@ added matters.  To illustrate::
 
 
       The name is parsed as everything up to the '``:``' and returned
-      unmodified.  The value is determined by stripping leading whitespace off
-      the remainder of the first line, joining all subsequent lines together,
-      and stripping any trailing carriage return or linefeed characters.
+      stripped of trailing whitespace.  The value is determined by stripping
+      leading whitespace off the remainder of the first line, joining all
+      subsequent lines together, and stripping any trailing carriage
+      return or linefeed characters.
 
 
    .. method:: header_store_parse(name, value)

@@ -446,6 +446,14 @@ class TestMessageAPI(TestEmailBase):
         msg = self._msgobj('msg_22.txt')
         self.assertEqual(msg.get_payload(1).get_param('name'), 'wibble.JPG')
 
+    def test_whitespace_after_fieldname(self):
+        # As part of obsolete email syntax, fieldnames can be followed by arbitrary whitespace
+        msg = self._msgobj("msg_48.txt")
+
+        self.assertEqual(msg["x-whitespace-after-fieldname"], "value")
+        self.assertEqual(msg.get_payload(),
+                         "Field names can be followed by arbitrary whitespace\n")
+
     # test_headerregistry.TestContentTypeHeader.semis_inside_quotes
     def test_get_param_with_semis_in_quotes(self):
         msg = email.message_from_string(
