@@ -94,6 +94,7 @@ __all__ = [
 
 import __future__
 import difflib
+import functools
 import inspect
 import linecache
 import os
@@ -383,23 +384,15 @@ class _OutputRedirectingPdb(pdb.Pdb):
     """
     def __init__(self, out):
         self.__out = out
-        self.__debugger_used = False
         # do not play signal games in the pdb
         pdb.Pdb.__init__(self, stdout=out, nosigint=True)
         # still use input() to get user input
         self.use_rawinput = 1
 
     def set_trace(self, frame=None):
-        self.__debugger_used = True
         if frame is None:
             frame = sys._getframe().f_back
         pdb.Pdb.set_trace(self, frame)
-
-    def set_continue(self):
-        # Calling set_continue unconditionally would break unit test
-        # coverage reporting, as Bdb.set_continue calls sys.settrace(None).
-        if self.__debugger_used:
-            pdb.Pdb.set_continue(self)
 
     def trace_dispatch(self, *args):
         # Redirect stdout to the given stream.
@@ -1274,6 +1267,8 @@ class DocTestRunner:
         # Create a fake output target for capturing doctest output.
         self._fakeout = _SpoofOut()
 
+        self.debugger = None
+
     #/////////////////////////////////////////////////////////////////
     # Reporting methods
     #/////////////////////////////////////////////////////////////////
@@ -1394,13 +1389,15 @@ class DocTestRunner:
                 # Don't blink!  This is where the user's code gets run.
                 exec(compile(example.source, filename, "single",
                              compileflags, True), test.globs)
-                self.debugger.set_continue() # ==== Example Finished ====
+                if self.debugger:
+                    self.debugger.set_continue()  # ==== Example Finished ====
                 exception = None
             except KeyboardInterrupt:
                 raise
             except:
                 exception = sys.exc_info()
-                self.debugger.set_continue() # ==== Example Finished ====
+                if self.debugger:
+                    self.debugger.set_continue()  # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
             self._fakeout.truncate(0)
@@ -1501,6 +1498,12 @@ class DocTestRunner:
         else:
             return self.save_linecache_getlines(filename, module_globals)
 
+    def _pdb_set_trace(self, stdout):
+        if not self.debugger:
+            self.debugger = _OutputRedirectingPdb(stdout)
+            self.debugger.reset()
+        self.debugger.set_trace(frame=sys._getframe().f_back)
+
     def run(self, test, compileflags=None, out=None, clear_globs=True):
         """
         Run the examples in `test`, and display the results using the
@@ -1545,9 +1548,7 @@ class DocTestRunner:
         # allows us to write test cases for the set_trace behavior.
         save_trace = sys.gettrace()
         save_set_trace = pdb.set_trace
-        self.debugger = _OutputRedirectingPdb(save_stdout)
-        self.debugger.reset()
-        pdb.set_trace = self.debugger.set_trace
+        pdb.set_trace = functools.partial(self._pdb_set_trace, save_stdout)
 
         # Patch linecache.getlines, so we can see the example's source
         # when we're inside the debugger.
