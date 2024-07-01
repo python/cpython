@@ -964,7 +964,8 @@ class HTTPConnection:
         self.send(b"".join(headers))
         del headers
 
-        response = self.response_class(self.sock, method=self._method)
+        response = self._create_response(self.sock, self.debuglevel, method=self._method)
+
         try:
             (version, code, message) = response._read_status()
 
@@ -1381,6 +1382,12 @@ class HTTPConnection:
             body = _encode(body, 'body')
         self.endheaders(body, encode_chunked=encode_chunked)
 
+    def _create_response(self, sock, debuglevel, method):
+        if debuglevel > 0:
+            return self.response_class(sock, debuglevel, method=method)
+        else:
+            return self.response_class(sock, method=method)
+
     def getresponse(self):
         """Get the response from the server.
 
@@ -1417,11 +1424,7 @@ class HTTPConnection:
         if self.__state != _CS_REQ_SENT or self.__response:
             raise ResponseNotReady(self.__state)
 
-        if self.debuglevel > 0:
-            response = self.response_class(self.sock, self.debuglevel,
-                                           method=self._method)
-        else:
-            response = self.response_class(self.sock, method=self._method)
+        response = self._create_response(self.sock, self.debuglevel, self._method)
 
         try:
             try:

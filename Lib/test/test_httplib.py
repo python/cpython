@@ -2444,6 +2444,8 @@ class TunnelTests(TestCase):
         lines = output.getvalue().splitlines()
         self.assertIn('header: {}'.format(expected_header), lines)
 
+        # Issue 43718
+        self.assertIn("reply: 'HTTP/1.0 200 OK\\r\\n'", lines)
     def test_proxy_response_headers(self):
         expected_header = ('X-Dummy', '1')
         response_text = (
