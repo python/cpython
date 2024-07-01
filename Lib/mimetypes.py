@@ -247,7 +247,7 @@ class MimeTypes:
             for suff in suffixes:
                 self.add_type(type, '.' + suff, strict)
 
-    def read_windows_registry(self, strict=True):
+    def read_windows_registry(self, strict=False):
         """
         Load the MIME types database from Windows registry.
 
@@ -259,9 +259,7 @@ class MimeTypes:
         if not _mimetypes_read_windows_registry and not _winreg:
             return
 
-        add_type = self.add_type
-        if strict:
-            add_type = lambda type, ext: self.add_type(type, ext, True)
+        add_type = lambda type, ext: self.add_type(type, ext, strict)
 
         # Accelerated function if it is available
         if _mimetypes_read_windows_registry:
