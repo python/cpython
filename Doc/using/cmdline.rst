@@ -289,9 +289,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
