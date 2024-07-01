@@ -1,0 +1,1 @@
+Now :class:`http.server.CGIHTTPRequestHandler` is able to handle long POST content especially files uploaded from clients.
