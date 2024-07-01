@@ -2035,11 +2035,9 @@ PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *pub_writer,
         if (!converted) {
             return -1;
         }
-        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
-        PyMem_Free(converted);
 
-        int res = _PyUnicodeWriter_WriteStr(writer, unicode);
-        Py_DECREF(unicode);
+        int res = PyUnicodeWriter_WriteUCS4(pub_writer, converted, size);
+        PyMem_Free(converted);
         return res;
     }
 #endif
@@ -2288,6 +2286,51 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
+
+
+int
+PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
+                          Py_UCS4 *str,
+                          Py_ssize_t size)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
+
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "size must be positive");
+        return -1;
+    }
+
+    if (size == 0) {
+        return 0;
+    }
+
+    Py_UCS4 max_char = ucs4lib_find_max_char(str, str + size);
+
+    if (_PyUnicodeWriter_Prepare(writer, size, max_char) < 0) {
+        return -1;
+    }
+
+    int kind = writer->kind;
+    void *data = (Py_UCS1*)writer->data + writer->pos * kind;
+    if (kind == PyUnicode_1BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS1,
+                                 str, str + size,
+                                 data);
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        _PyUnicode_CONVERT_BYTES(Py_UCS4, Py_UCS2,
+                                 str, str + size,
+                                 data);
+    }
+    else {
+        memcpy(data, str, size * sizeof(Py_UCS4));
+    }
+    writer->pos += size;
+
+    return 0;
+}
+
 
 PyObject*
 PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
@@ -5030,7 +5073,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
                 /* Truncated surrogate code in range D800-DFFF */
                 goto End;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 3:
         case 4:
             errmsg = "invalid continuation byte";
@@ -6254,7 +6297,7 @@ _PyUnicode_GetNameCAPI(void)
         ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
                 PyUnicodeData_CAPSULE_NAME, 1);
 
-        // It's fine if we overwite the value here. It's always the same value.
+        // It's fine if we overwrite the value here. It's always the same value.
         _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
     }
     return ucnhash_capi;
@@ -7065,7 +7108,7 @@ unicode_encode_ucs1(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 memset(str, '?', collend - collstart);
                 str += (collend - collstart);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
@@ -7104,7 +7147,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     break;
                 collstart = pos;
                 assert(collstart != collend);
-                /* fall through */
+                _Py_FALLTHROUGH;
 
             default:
                 rep = unicode_encode_call_errorhandler(errors, &error_handler_obj,
@@ -8330,7 +8373,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     int count2 = 0, count3 = 0;
     int kind;
     const void *data;
-    Py_ssize_t length;
+    int length;
     Py_UCS4 ch;
 
     if (!PyUnicode_Check(string) || !PyUnicode_GET_LENGTH(string)) {
@@ -8339,8 +8382,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     }
     kind = PyUnicode_KIND(string);
     data = PyUnicode_DATA(string);
-    length = PyUnicode_GET_LENGTH(string);
-    length = Py_MIN(length, 256);
+    length = (int)Py_MIN(PyUnicode_GET_LENGTH(string), 256);
     memset(level1, 0xFF, sizeof level1);
     memset(level2, 0xFF, sizeof level2);
 
@@ -8657,7 +8699,7 @@ charmap_encoding_error(
                 return -1;
             }
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case _Py_ERROR_IGNORE:
         *inpos = collendpos;
         break;
@@ -13357,7 +13399,7 @@ PyUnicodeWriter*
 PyUnicodeWriter_Create(Py_ssize_t length)
 {
     if (length < 0) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
                         "length must be positive");
         return NULL;
     }
@@ -15631,7 +15673,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
             break;
         case SSTATE_NOT_INTERNED:
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             Py_UNREACHABLE();
         }
