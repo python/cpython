@@ -96,6 +96,7 @@ class ModuleTest(unittest.TestCase):
         fmt = string.Formatter()
         lookup = ["eggs", "and", "spam"]
         self.assertEqual(fmt.format("{0[2]}{0[0]}", lookup), 'spameggs')
+        self.assertEqual(fmt.format("{[2]}{1[0]}", lookup, (1, 2, 3)), 'spam1')
         with self.assertRaises(IndexError):
             fmt.format("{0[2]}{0[0]}", [])
         with self.assertRaises(KeyError):
