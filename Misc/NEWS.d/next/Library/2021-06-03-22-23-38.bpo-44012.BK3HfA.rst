@@ -1,0 +1,1 @@
+:meth:`ipaddress.IPv6Address.exploded` now supports IPv6 addresses with a ``scope_id`` (link-local addresses)

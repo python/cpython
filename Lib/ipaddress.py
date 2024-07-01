@@ -1874,14 +1874,14 @@ class _BaseV6:
         elif isinstance(self, IPv6Interface):
             ip_str = str(self.ip)
         else:
-            ip_str = str(self)
+            ip_str = str(self._string_from_ip_int(self._ip))
 
         ip_int = self._ip_int_from_string(ip_str)
         hex_str = '%032x' % ip_int
-        parts = [hex_str[x:x+4] for x in range(0, 32, 4)]
+        exploded = ':'.join([hex_str[x:x+4] for x in range(0, 32, 4)])
         if isinstance(self, (_BaseNetwork, IPv6Interface)):
-            return '%s/%d' % (':'.join(parts), self._prefixlen)
-        return ':'.join(parts)
+            return '%s/%d' % (exploded, self._prefixlen)
+        return exploded + '%' + self._scope_id if self._scope_id else exploded
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv6 address.

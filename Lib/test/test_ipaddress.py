@@ -2577,6 +2577,8 @@ class IpaddrUnitTest(unittest.TestCase):
                          addr1.exploded)
         self.assertEqual('0000:0000:0000:0000:0000:0000:0000:0001/128',
                          ipaddress.IPv6Interface('::1/128').exploded)
+        self.assertEqual('fe80:0000:0000:0000:0000:0000:0000:0001%1',
+                         ipaddress.IPv6Address('fe80::1%1').exploded)
         # issue 77
         self.assertEqual('2001:0000:5ef5:79fd:0000:059d:a0e5:0ba1',
                          addr2.exploded)
