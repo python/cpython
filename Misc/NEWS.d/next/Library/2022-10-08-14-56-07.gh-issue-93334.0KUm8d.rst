@@ -1,0 +1,3 @@
+Prevent :exc:`KeyError` thrown by :meth:`importlib.machinery.PathFinder.find_spec`
+when a directory that is not a module shares a name with a namespace package
+submodule, and where a ``path`` argument is not provided.
