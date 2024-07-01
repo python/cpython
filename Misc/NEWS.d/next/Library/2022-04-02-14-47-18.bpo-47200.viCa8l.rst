@@ -1,0 +1,1 @@
+Adds the :attr:`ZipInfo.mode` attribute to get and set the mode of a file

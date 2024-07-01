@@ -2227,6 +2227,21 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(zi.file_size, 0)
         self.assertEqual(zi.compress_size, 0)
 
+    def test_zipinfo_mode(self):
+        zinfo = zipfile.ZipInfo()
+        self.assertEqual(zinfo.mode, 0)
+
+        zinfo.mode = 0o777
+        self.assertEqual(zinfo.mode, 0o777)
+
+        zinfo.mode = 0o700
+        self.assertEqual(zinfo.mode, 0o700)
+
+        # Setting the file mode should not overwrite the file type
+        zinfo.mode = 0xFFFF
+        self.assertLessEqual(zinfo.mode, 0o777)
+        self.assertEqual(zinfo.external_attr >> 16 >> 9, 0)
+
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
         zipdata = (
