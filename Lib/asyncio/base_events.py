@@ -2013,19 +2013,19 @@ class BaseEventLoop(events.AbstractEventLoop):
             handle = self._ready.popleft()
             if handle._cancelled:
                 continue
-            if self._debug:
-                try:
-                    self._current_handle = handle
-                    t0 = self.time()
-                    handle._run()
-                    dt = self.time() - t0
-                    if dt >= self.slow_callback_duration:
-                        logger.warning('Executing %s took %.3f seconds',
-                                       _format_handle(handle), dt)
-                finally:
-                    self._current_handle = None
-            else:
+            try:
+                self._current_handle = handle
+                t0 = self.time()
                 handle._run()
+                dt = self.time() - t0
+                if dt >= self.slow_callback_duration:
+                    formatted_handle = _format_handle(handle)
+                    sys.audit("asyncio.stalled", dt, handle, formatted_handle, self)
+                    if self._debug:
+                        logger.warning('Executing %s took %.3f seconds',
+                                       formatted_handle, dt)
+            finally:
+                self._current_handle = None
         handle = None  # Needed to break cycles when an exception occurs.
 
     def _set_coroutine_origin_tracking(self, enabled):
