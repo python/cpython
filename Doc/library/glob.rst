@@ -92,8 +92,12 @@ The :mod:`glob` module defines the following functions:
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
                     include_hidden=False)
 
-   Return an :term:`iterator` which yields the same values as :func:`glob`
-   without actually storing them all simultaneously.
+   Return an :term:`iterator` which yields the same values as :func:`glob.glob` without
+   actually storing them all simultaneously. Internally, :func:`iglob` uses
+   :func:`os.listdir` which may result in large amount of memory being consumed if a
+   single directory contains a large number of files. Unlike :func:`glob.glob`, the case
+   with large number of subdirectories but with small number of files per each
+   subdirectory, should not result in large amount of memory consumption.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
