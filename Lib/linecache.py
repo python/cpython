@@ -37,11 +37,10 @@ def getline(filename, lineno, module_globals=None):
     """
 
     if filename in failures:
-        # We explicitly validate the input even for failures
-        # because for success, they would raise a TypeError.
+        # We explicitly validate the arguments, because
+        # for cached entries, they would raise a TypeError.
         if not isinstance(lineno, int):
-            raise TypeError(f"'lineno' must be an int, "
-                            f"got {type(module_globals)}")
+            raise TypeError(f"'lineno' must be an int, got {type(lineno)}")
         _validate_module_globals_type(module_globals)
         return ''
 
