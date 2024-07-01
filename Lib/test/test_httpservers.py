@@ -364,11 +364,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.tempdir = tempfile.mkdtemp(dir=basetempdir)
         self.tempdir_name = os.path.basename(self.tempdir)
         self.base_url = '/' + self.tempdir_name
-        tempname = os.path.join(self.tempdir, 'test')
-        with open(tempname, 'wb') as temp:
+        self.tempname = os.path.join(self.tempdir, 'test')
+        with open(self.tempname, 'wb') as temp:
             temp.write(self.data)
             temp.flush()
-        mtime = os.stat(tempname).st_mtime
+        mtime = os.stat(self.tempname).st_mtime
         # compute last modification datetime for browser cache tests
         last_modif = datetime.datetime.fromtimestamp(mtime,
             datetime.timezone.utc)
@@ -603,6 +603,23 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
         last_modif_header = response.headers['Last-modified']
         self.assertEqual(last_modif_header, self.last_modif_header)
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'win32 specific OSError')
+    def test_last_modified_file_with_mtime_12_hour_before_epoch(self):
+        """Check that SimpleHTTPServer can function correctly when file's
+        mtime is less then -43200 (before 1969-12-31 12:00:00+00:00).
+        """
+        stat = os.stat(self.tempname)
+        atime_bak, mtime_bak = stat.st_atime, stat.st_mtime
+
+        os.utime(self.tempname, (-43201., -43201.))
+        try:
+            self.request(self.base_url + '/test')
+        except http.client.RemoteDisconnected as err:
+            raise err
+        finally:
+            os.utime(self.tempname, (atime_bak, mtime_bak))
 
     def test_path_without_leading_slash(self):
         response = self.request(self.tempdir_name + '/test')
