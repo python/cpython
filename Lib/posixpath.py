@@ -402,7 +402,9 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
-    return _realpath(filename, strict, sep, curdir, pardir, getcwd)
+    maxlinks = 40 if strict else None  # TODO: use limit set by OS
+    return _realpath(filename, strict, sep, curdir, pardir, getcwd,
+                     maxlinks=maxlinks)
 
 def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
               getcwd=os.getcwd, lstat=os.lstat, readlink=os.readlink, maxlinks=None):
@@ -453,7 +455,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 if link_count > maxlinks:
                     if strict:
                         raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                      newpath)
+                                      filename)
                     path = newpath
                     continue
             elif newpath in seen:
@@ -465,7 +467,7 @@ def _realpath(filename, strict=False, sep=sep, curdir=curdir, pardir=pardir,
                 # The symlink is not resolved, so we must have a symlink loop.
                 if strict:
                     raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
-                                  newpath)
+                                  filename)
                 path = newpath
                 continue
             target = readlink(newpath)
