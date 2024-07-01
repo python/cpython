@@ -54,7 +54,6 @@ race_top:PyInterpreterState_ThreadHead
 race_top:_PyObject_TryGetInstanceAttribute
 race_top:PyThreadState_Next
 race_top:PyUnstable_InterpreterFrame_GetLine
-race_top:sock_close
 race_top:tstate_delete_common
 race_top:tstate_is_freed
 race_top:type_modified_unlocked
