@@ -1530,7 +1530,7 @@ class _ActionsContainer(object):
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
-        return dict(kwargs, dest=dest, option_strings=[])
+        return dict(kwargs, dest=dest.replace("-", "_"), option_strings=[])
 
     def _get_optional_kwargs(self, *args, **kwargs):
         # determine short and long option strings

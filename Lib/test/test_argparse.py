@@ -954,6 +954,22 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
 # Positional tests
 # ================
 
+
+class TestPositionalsDest(ParserTestCase):
+    """Test a Positional containing - is converted to _ in the resulting namepsace"""
+
+    argument_signatures = [Sig('foo-bar')]
+
+    failures = []
+
+    successes = [
+
+        ('abc', NS(foo_bar='abc')),
+
+        ('def', NS(foo_bar='def'))
+
+    ]
+
 class TestPositionalsNargsNone(ParserTestCase):
     """Test a Positional that doesn't specify nargs"""
 
