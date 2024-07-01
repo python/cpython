@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_symtable.h"      // _Py_Mangle()
 
 
 #include "clinic/classobject.c.h"
@@ -134,8 +135,28 @@ method___reduce___impl(PyMethodObject *self)
     PyObject *funcself = PyMethod_GET_SELF(self);
     PyObject *func = PyMethod_GET_FUNCTION(self);
     PyObject *funcname = PyObject_GetAttr(func, &_Py_ID(__name__));
+    Py_ssize_t len;
     if (funcname == NULL) {
         return NULL;
+    }
+    if (PyUnicode_Check(funcname) &&
+        (len = PyUnicode_GET_LENGTH(funcname)) > 2 &&
+        PyUnicode_READ_CHAR(funcname, 0) == '_' &&
+        PyUnicode_READ_CHAR(funcname, 1) == '_' &&
+        !(PyUnicode_READ_CHAR(funcname, len-1) == '_' &&
+          PyUnicode_READ_CHAR(funcname, len-2) == '_'))
+    {
+        PyObject *name = PyObject_GetAttr((PyObject *)Py_TYPE(funcself),
+                                          &_Py_ID(__name__));
+        if (name == NULL) {
+            Py_DECREF(funcname);
+            return NULL;
+        }
+        Py_SETREF(funcname, _Py_Mangle(name, funcname));
+        Py_DECREF(name);
+        if (funcname == NULL) {
+            return NULL;
+        }
     }
     return Py_BuildValue(
             "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, funcname);
