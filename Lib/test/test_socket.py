@@ -1692,6 +1692,30 @@ class GeneralModuleTests(unittest.TestCase):
         socket.getaddrinfo(None, 0, type=socket.SOCK_STREAM)  # No error expected.
         socket.getaddrinfo(None, 0xffff, type=socket.SOCK_STREAM)  # No error expected.
 
+    def test_setsockopt_errors(self):
+        # See issue #107546.
+        from _testcapi import INT_MAX, INT_MIN
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # No error expected.
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, INT_MAX + 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, INT_MIN - 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, INT_MAX + 1, 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(INT_MAX + 1, socket.SO_REUSEADDR, 1)
+
+        with self.assertRaises(TypeError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
+
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(OSError, socket.getnameinfo, ('mail.python.org',0), 0)
