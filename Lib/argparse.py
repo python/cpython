@@ -1820,6 +1820,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # return the created parsers action
         return action
 
+    def get_subparsers(self):
+        if self._subparsers is None:
+            return None
+        if not hasattr(self._subparsers, '_group_actions'):
+            return None
+        if len(self._subparsers._group_actions) > 0:
+            return self._subparsers._group_actions[-1]
+        return None
+
     def _add_action(self, action):
         if action.option_strings:
             self._optionals._add_action(action)

@@ -2146,6 +2146,7 @@ class TestAddSubparsers(TestCase):
             subparsers_kwargs['title'] = 'commands'
         else:
             subparsers_kwargs['help'] = 'command help'
+        self.assertIsNone(parser.get_subparsers())
         subparsers = parser.add_subparsers(**subparsers_kwargs)
         self.assertRaisesRegex(argparse.ArgumentError,
                                'cannot have multiple subparser arguments',
@@ -2177,6 +2178,7 @@ class TestAddSubparsers(TestCase):
         parser3.add_argument('t', type=int, help='t help')
         parser3.add_argument('u', nargs='...', help='u help')
 
+        self.assertEqual(parser.get_subparsers(), subparsers)
         # return the main parser
         return parser
 
