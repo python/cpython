@@ -13,11 +13,6 @@ from . import case, suite, util
 
 __unittest = True
 
-# what about .pyc (etc)
-# we would need to avoid loading the same tests multiple times
-# from '.py', *and* '.pyc'
-VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
-
 
 class _FailedTest(case.TestCase):
     _testMethodName = None
@@ -33,6 +28,12 @@ class _FailedTest(case.TestCase):
             raise self._exception
         return testFailure
 
+
+def _is_valid_module_filename(module_filename):
+    root, ext = os.path.splitext(module_filename)
+    if not (ext == '.py' and root.isidentifier()):
+        return False
+    return True
 
 def _make_failed_import_test(name, suiteClass):
     message = 'Failed to import test module: %s\n%s' % (
@@ -385,18 +386,19 @@ class TestLoader(object):
         """
         basename = os.path.basename(full_path)
         if os.path.isfile(full_path):
-            if not VALID_MODULE_NAME.match(basename):
+            if not _is_valid_module_filename(basename):
                 # valid Python identifiers only
                 return None, False
             if not self._match_path(basename, full_path, pattern):
                 return None, False
+
             # if the test file matches, load it
             name = self._get_name_from_path(full_path)
             try:
                 module = self._get_module_from_name(name)
             except case.SkipTest as e:
                 return _make_skipped_test(name, e, self.suiteClass), False
-            except:
+            except Exception:
                 error_case, error_message = \
                     _make_failed_import_test(name, self.suiteClass)
                 self.errors.append(error_message)
@@ -425,6 +427,10 @@ class TestLoader(object):
             load_tests = None
             tests = None
             name = self._get_name_from_path(full_path)
+
+            if not name.isidentifier():
+                return None, False
+
             try:
                 package = self._get_module_from_name(name)
             except case.SkipTest as e:
