@@ -401,6 +401,8 @@ struct tagPyCArgObject {
         void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
         double complex C;
+        float complex E;
+        long double complex F;
 #endif
     } value;
     PyObject *obj;

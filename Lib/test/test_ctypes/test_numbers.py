@@ -146,7 +146,8 @@ class NumberTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")
     def test_complex(self):
-        for t in [ctypes.c_double_complex]:
+        for t in [ctypes.c_double_complex, ctypes.c_float_complex,
+                  ctypes.c_longdouble_complex]:
             self.assertEqual(t(1).value, 1+0j)
             self.assertEqual(t(1.0).value, 1+0j)
             self.assertEqual(t(1+0.125j).value, 1+0.125j)
@@ -162,9 +163,10 @@ class NumberTestCase(unittest.TestCase):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            with self.subTest(z=z):
-                z2 = ctypes.c_double_complex(z).value
-                self.assertComplexesAreIdentical(z, z2)
+            for t in [ctypes.c_double_complex, ctypes.c_float_complex,
+                      ctypes.c_longdouble_complex]:
+                with self.subTest(z=z, type=t):
+                    self.assertComplexesAreIdentical(z, t(z).value)
 
     def test_integers(self):
         f = FloatLike()
