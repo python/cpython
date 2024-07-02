@@ -510,16 +510,11 @@ class CodecCallbackTest(unittest.TestCase):
            codecs.xmlcharrefreplace_errors,
            UnicodeError("ouch")
         )
-        # "xmlcharrefreplace" can only be used for encoding
+        # "xmlcharrefreplace" can not be used for decoding
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
             UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.xmlcharrefreplace_errors,
-            UnicodeTranslateError("\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
         cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000,
@@ -530,6 +525,13 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.xmlcharrefreplace_errors(
                 UnicodeEncodeError("ascii", "a" + s + "b",
                                    1, 1 + len(s), "ouch")
+            ),
+            ("".join("&#%d;" % c for c in cs), 1 + len(s))
+        )
+        self.assertEqual(
+            codecs.xmlcharrefreplace_errors(
+                UnicodeTranslateError("a" + s + "b",
+                                      1, 1 + len(s), "ouch")
             ),
             ("".join("&#%d;" % c for c in cs), 1 + len(s))
         )
@@ -605,16 +607,11 @@ class CodecCallbackTest(unittest.TestCase):
            codecs.namereplace_errors,
            UnicodeError("ouch")
         )
-        # "namereplace" can only be used for encoding
+        # "namereplace" can not be used for decoding
         self.assertRaises(
             TypeError,
             codecs.namereplace_errors,
             UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.namereplace_errors,
-            UnicodeTranslateError("\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
         tests = [
@@ -635,6 +632,12 @@ class CodecCallbackTest(unittest.TestCase):
                     codecs.namereplace_errors(
                         UnicodeEncodeError("ascii", "a" + s + "b",
                                            1, 1 + len(s), "ouch")),
+                    (r, 1 + len(s))
+                )
+                self.assertEqual(
+                    codecs.namereplace_errors(
+                        UnicodeTranslateError("a" + s + "b",
+                                              1, 1 + len(s), "ouch")),
                     (r, 1 + len(s))
                 )
 
@@ -696,12 +699,6 @@ class CodecCallbackTest(unittest.TestCase):
            surrogatepass_errors,
            UnicodeError("ouch")
         )
-        # "surrogatepass" can not be used for translating
-        self.assertRaises(
-            TypeError,
-            surrogatepass_errors,
-            UnicodeTranslateError("\ud800", 0, 1, "ouch")
-        )
         # Use the correct exception
         for enc in ("utf-8", "utf-16le", "utf-16be", "utf-32le", "utf-32be"):
             with self.subTest(encoding=enc):
@@ -715,12 +712,23 @@ class CodecCallbackTest(unittest.TestCase):
                     surrogatepass_errors,
                     UnicodeDecodeError(enc, "a".encode(enc), 0, 1, "ouch")
                 )
+        self.assertRaises(
+            UnicodeTranslateError,
+            surrogatepass_errors,
+            UnicodeTranslateError("\u3042", 0, 1, "ouch")
+        )
         for s in ("\ud800", "\udfff", "\ud800\udfff"):
             with self.subTest(str=s):
                 self.assertRaises(
                     UnicodeEncodeError,
                     surrogatepass_errors,
                     UnicodeEncodeError("ascii", s, 0, len(s), "ouch")
+                )
+                self.assertEqual(
+                    surrogatepass_errors(
+                        UnicodeTranslateError("a" + s + "b",
+                                              1, 1 + len(s), "ouch")),
+                    (s, 1 + len(s))
                 )
         tests = [
             ("utf-8", "\ud800", b'\xed\xa0\x80', 3),
