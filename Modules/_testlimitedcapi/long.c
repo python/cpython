@@ -1,7 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-   // Need limited C API 3.13 to test PyLong_AsInt()
-#  define Py_LIMITED_API 0x030d0000
+   // Need limited C API 3.14 to test PyLong_AsInt64()
+#  define Py_LIMITED_API 0x030e0000
 #endif
 
 #include "parts.h"
@@ -758,6 +758,52 @@ pylong_aspid(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+pylong_toint32(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int32_t value;
+    if (PyLong_ToInt32(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromInt32(value);
+}
+
+static PyObject *
+pylong_touint32(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    uint32_t value;
+    if (PyLong_ToUInt32(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromUInt32(value);
+}
+
+
+static PyObject *
+pylong_toint64(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int64_t value;
+    if (PyLong_ToInt64(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromInt64(value);
+}
+
+static PyObject *
+pylong_touint64(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    uint64_t value;
+    if (PyLong_ToUInt64(arg, &value) < 0) {
+        return NULL;
+    }
+    return PyLong_FromUInt64(value);
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTLIMITEDCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
     _TESTLIMITEDCAPI_TEST_LONG_API_METHODDEF
@@ -785,6 +831,10 @@ static PyMethodDef test_methods[] = {
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_toint32",              pylong_toint32,             METH_O},
+    {"pylong_touint32",             pylong_touint32,            METH_O},
+    {"pylong_toint64",              pylong_toint64,             METH_O},
+    {"pylong_touint64",             pylong_touint64,            METH_O},
     {NULL},
 };
 
