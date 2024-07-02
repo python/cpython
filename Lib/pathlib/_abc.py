@@ -790,7 +790,30 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
-    def copy(self, target, follow_symlinks=True):
+    _metadata_keys = frozenset()
+
+    def _get_metadata(self, keys, follow_symlinks):
+        """
+        Returns path metadata as a dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_get_metadata()'))
+
+    def _set_metadata(self, metadata, follow_symlinks):
+        """
+        Sets path metadata from the given dict with string keys.
+        """
+        raise UnsupportedOperation(self._unsupported_msg('_set_metadata()'))
+
+    def _copy_metadata(self, target, follow_symlinks):
+        """
+        Copies metadata (permissions, timestamps, etc) from this path to target.
+        """
+        metadata_keys = self._metadata_keys & target._metadata_keys
+        if metadata_keys:
+            metadata = self._get_metadata(metadata_keys, follow_symlinks)
+            target._set_metadata(metadata, follow_symlinks)
+
+    def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
         Copy the contents of this file to the given target. If this file is a
         symlink and follow_symlinks is false, a symlink will be created at the
@@ -802,6 +825,8 @@ class PathBase(PurePathBase):
             raise OSError(f"{self!r} and {target!r} are the same file")
         if not follow_symlinks and self.is_symlink():
             target.symlink_to(self.readlink())
+            if preserve_metadata:
+                self._copy_metadata(target, False)
             return
         with self.open('rb') as source_f:
             try:
@@ -814,6 +839,8 @@ class PathBase(PurePathBase):
                         f'Directory does not exist: {target}') from e
                 else:
                     raise
+        if preserve_metadata:
+            self._copy_metadata(target, True)
 
     def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
                  ignore=None, on_error=None):

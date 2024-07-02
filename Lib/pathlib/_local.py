@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile
+from ._os import copyfile, file_metadata_keys, get_file_metadata, set_file_metadata
 
 
 __all__ = [
@@ -781,8 +781,12 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _metadata_keys = file_metadata_keys
+    _get_metadata = get_file_metadata
+    _set_metadata = set_file_metadata
+
     if copyfile:
-        def copy(self, target, follow_symlinks=True):
+        def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
             """
             Copy the contents of this file to the given target. If this file is a
             symlink and follow_symlinks is false, a symlink will be created at the
@@ -794,7 +798,9 @@ class Path(PathBase, PurePath):
                 if isinstance(target, PathBase):
                     # Target is an instance of PathBase but not os.PathLike.
                     # Use generic implementation from PathBase.
-                    return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
+                    return PathBase.copy(self, target,
+                                         follow_symlinks=follow_symlinks,
+                                         preserve_metadata=preserve_metadata)
                 raise
             copyfile(os.fspath(self), target, follow_symlinks)
 
