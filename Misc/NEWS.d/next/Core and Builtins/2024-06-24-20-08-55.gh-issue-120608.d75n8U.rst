@@ -1,0 +1,2 @@
+Adapt :func:`reversed` for usage in the free-theading build.
+The :func:`reversed` is not guaranteed to be thread-safe.
