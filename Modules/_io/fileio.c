@@ -732,9 +732,9 @@ _io_FileIO_readall_impl(fileio *self)
     }
     else {
         /* This is probably a real file, so we try to allocate a
-        buffer one byte larger than the rest of the file.  If the
-        calculation is right then we should get EOF without having
-        to enlarge the buffer. */
+           buffer one byte larger than the rest of the file.  If the
+           calculation is right then we should get EOF without having
+           to enlarge the buffer. */
         if (end >= _PY_READ_MAX) {
             bufsize = _PY_READ_MAX;
         }
@@ -743,10 +743,10 @@ _io_FileIO_readall_impl(fileio *self)
         }
 
         /* While a lot of code does open().read() to get the whole contents
-        of a file it is possible a caller seeks/reads a ways into the file
-        then calls readall() to get the rest, which would result in allocating
-        more than required. Guard against that for larger files where we expect
-        the I/O time to dominate anyways while keeping small files fast. */
+           of a file it is possible a caller seeks/reads a ways into the file
+           then calls readall() to get the rest, which would result in allocating
+           more than required. Guard against that for larger files where we expect
+           the I/O time to dominate anyways while keeping small files fast. */
         if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
             Py_BEGIN_ALLOW_THREADS
             _Py_BEGIN_SUPPRESS_IPH
