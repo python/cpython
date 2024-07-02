@@ -486,6 +486,17 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     return 0;
 }
 
+static inline int
+future_call_finish_execution(FutureObj *fut)
+{
+    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)fut,
+                                              &_Py_ID(_finish_execution));
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
 
 static int
 future_init(FutureObj *fut, PyObject *loop)
@@ -562,7 +573,7 @@ future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
     fut->fut_result = Py_NewRef(res);
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_call_finish_execution(fut) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -626,7 +637,7 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
     fut->fut_exception_tb = PyException_GetTraceback(exc_val);
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_call_finish_execution(fut) < 0) {
         return NULL;
     }
 
@@ -784,10 +795,9 @@ future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
     Py_XINCREF(msg);
     Py_XSETREF(fut->fut_cancel_msg, msg);
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_call_finish_execution(fut) < 0) {
         return NULL;
     }
-
     Py_RETURN_TRUE;
 }
 
@@ -1444,6 +1454,26 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
     return create_cancelled_error(state, self);
 }
 
+/*[clinic input]
+_asyncio.Future._finish_execution
+
+Ask the event loop to call all callbacks.
+
+The callbacks are scheduled to be called as soon as possible. Also
+clears the callback list.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Future__finish_execution_impl(FutureObj *self)
+/*[clinic end generated code: output=77354407293553bb input=c18b4c42a7810aa9]*/
+{
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    if (future_schedule_callbacks(state, self) == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static void
 FutureObj_finalize(FutureObj *fut)
 {
@@ -1515,6 +1545,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
+    _ASYNCIO_FUTURE__FINISH_EXECUTION_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1976,6 +2007,17 @@ register_task(asyncio_state *state, PyObject *task)
         return -1;
     }
     Py_DECREF(res);
+
+    PyObject *loop = get_future_loop(state, task);
+    if (loop == NULL) {
+        return -1;
+    }
+    res = PyObject_CallMethodOneArg(loop, &_Py_ID(_add_pending_task), task);
+    Py_DECREF(loop);
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
     return 0;
 }
 
@@ -1988,8 +2030,13 @@ register_eager_task(asyncio_state *state, PyObject *task)
 static int
 unregister_task(asyncio_state *state, PyObject *task)
 {
-    PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
-                                     &_Py_ID(discard), task);
+    PyObject *loop = get_future_loop(state, task);
+    if (loop == NULL) {
+        return -1;
+    }
+    PyObject *res = PyObject_CallMethodOneArg(loop, &_Py_ID(_del_pending_task),
+                                              task);
+    Py_DECREF(loop);
     if (res == NULL) {
         return -1;
     }
@@ -2583,6 +2630,27 @@ _asyncio_Task_set_name(TaskObj *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+
+
+/*[clinic input]
+_asyncio.Task._finish_execution
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__finish_execution_impl(TaskObj *self)
+/*[clinic end generated code: output=9d218be34fb814b7 input=783199407feedc8a]*/
+{
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    if (future_schedule_callbacks(state, (FutureObj *)self) < 0) {
+        return NULL;
+    }
+    if (unregister_task(state, (PyObject*) self) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static void
 TaskObj_finalize(TaskObj *task)
 {
@@ -2665,6 +2733,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
+    _ASYNCIO_TASK__FINISH_EXECUTION_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };

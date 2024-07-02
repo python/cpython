@@ -712,6 +712,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(_add_pending_task);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(_align_);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -748,6 +752,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(_del_pending_task);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(_feature_version);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -765,6 +773,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(_find_and_load);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(_finish_execution);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
@@ -825,6 +837,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(_pack_);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(_pending_tasks);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);

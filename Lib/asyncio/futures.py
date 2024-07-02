@@ -152,11 +152,11 @@ class Future:
             return False
         self._state = _CANCELLED
         self._cancel_message = msg
-        self.__schedule_callbacks()
+        self._finish_execution()
         return True
 
-    def __schedule_callbacks(self):
-        """Internal: Ask the event loop to call all callbacks.
+    def _finish_execution(self):
+        """Ask the event loop to call all callbacks.
 
         The callbacks are scheduled to be called as soon as possible. Also
         clears the callback list.
@@ -257,7 +257,7 @@ class Future:
             raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         self._result = result
         self._state = _FINISHED
-        self.__schedule_callbacks()
+        self._finish_execution()
 
     def set_exception(self, exception):
         """Mark the future done and set an exception.
@@ -279,7 +279,7 @@ class Future:
         self._exception = exception
         self._exception_tb = exception.__traceback__
         self._state = _FINISHED
-        self.__schedule_callbacks()
+        self._finish_execution()
         self.__log_traceback = True
 
     def __await__(self):

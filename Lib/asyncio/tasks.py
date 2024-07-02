@@ -127,6 +127,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_soon(self.__step, context=self._context)
             _register_task(self)
 
+    def _finish_execution(self):
+        super()._finish_execution()
+        _unregister_task(self)
+
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
             context = {
@@ -1047,6 +1051,8 @@ _current_tasks = {}
 def _register_task(task):
     """Register an asyncio Task scheduled to run on an event loop."""
     _scheduled_tasks.add(task)
+    loop = futures._get_loop(task)
+    loop._add_pending_task(task)
 
 
 def _register_eager_task(task):
@@ -1082,6 +1088,8 @@ def _swap_current_task(loop, task):
 def _unregister_task(task):
     """Unregister a completed, scheduled Task."""
     _scheduled_tasks.discard(task)
+    loop = futures._get_loop(task)
+    loop._del_pending_task(task)
 
 
 def _unregister_eager_task(task):

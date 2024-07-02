@@ -2278,6 +2278,9 @@ class BaseTaskTests:
         coro = None
         source_traceback = task._source_traceback
         task = None
+        
+        # remove strong reference held by the event loop
+        self.loop._pending_tasks.clear()
 
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
