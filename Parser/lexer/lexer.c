@@ -1329,7 +1329,7 @@ f_string_middle:
     tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
-        if (tok->done == E_ERROR) {
+        if (tok->done == E_ERROR || tok->done == E_DECODE) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
         int in_format_spec = (
@@ -1338,10 +1338,9 @@ f_string_middle:
                 INSIDE_FSTRING_EXPR(current_tok)
         );
 
-        if (!_PyLexer_update_fstring_expr(tok, '{')) {
-            return MAKE_TOKEN(ENDMARKER);
-        }
-
+       if (!_PyLexer_update_fstring_expr(tok, '{')) {
+           return MAKE_TOKEN(ENDMARKER);
+       }
        if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
