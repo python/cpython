@@ -909,6 +909,7 @@ class TestMain(TestCase):
         env.update({"PYTHON_HISTORY": hfile.name})
         commands = "123\nspam\nexit()\n"
         output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
         self.assertIn("123", output)
         self.assertIn("spam", output)
         self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
