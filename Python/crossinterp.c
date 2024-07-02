@@ -34,7 +34,9 @@ _Py_CallInInterpreter(PyInterpreterState *interp,
         return func(arg);
     }
     // XXX Emit a warning if this fails?
-    _PyEval_AddPendingCall(interp, (_Py_pending_call_func)func, arg, 0);
+    // XXX Block until added?
+    _PyEval_AddPendingCall(
+            interp, (_Py_pending_call_func)func, arg, 0, 0 /* timeout */);
     return 0;
 }
 
@@ -48,7 +50,9 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
         return res;
     }
     // XXX Emit a warning if this fails?
-    _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_RAWFREE);
+    // XXX Block until added?
+    _PyEval_AddPendingCall(
+            interp, func, arg, _Py_PENDING_RAWFREE, 0 /* timeout */);
     return 0;
 }
 
