@@ -11,7 +11,7 @@ from functools import wraps
 
 from test.support import (
     cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
-    infinite_recursion,
+    infinite_recursion, strace_helper
 )
 from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
@@ -22,6 +22,9 @@ from collections import UserList
 
 import _io  # C implementation of io
 import _pyio # Python implementation of io
+
+
+_strace_flags=["--trace=%file,%desc"]
 
 
 class AutoFileTests:
@@ -358,6 +361,85 @@ class AutoFileTests:
         f = self.ReopenForRead()
         a = array('b', b'x'*10)
         f.readinto(a)
+
+    @strace_helper.requires_strace()
+    def test_syscalls_read(self):
+        """Check that the set of system calls produced by the I/O stack is what
+        is expected for various read cases.
+
+        It's expected as bits of the I/O implementation change, this will need
+        to change. The goal is to catch changes that unintentionally add
+        additional systemcalls (ex. additional fstat calls has been an issue).
+        """
+        self.f.write(b"Hello, World!")
+        self.f.close()
+
+        # "open, read, close" file with default options.
+        calls = strace_helper.get_syscalls(
+            f"""
+            f = open('{TESTFN}')
+            f.read()
+            f.close()
+            """,
+            _strace_flags
+        )
+
+        # There are a number of related syscalls used to implement `fstat` in
+        # a libc (ex. fstat, newfstatat). Default to fstat, but if we see the
+        # system using a variant, allow that
+        fstat = next((sc for sc in calls if 'fstat' in sc), 'fstat')
+
+        readall_calls = ['openat', fstat, 'ioctl', 'lseek', 'lseek', fstat,
+                         'read', 'read', 'close']
+
+        self.assertEqual(calls, readall_calls)
+
+        # Focus on just `read()`
+        calls = strace_helper.get_syscalls(
+            prelude=f"f = open('{TESTFN}')",
+            code="f.read()",
+            cleanup="f.close()",
+            strace_flags=_strace_flags
+        )
+        self.assertEqual(calls, ['lseek', fstat, 'read', 'read'])
+
+        # Readall in binary mode
+        calls = strace_helper.get_syscalls(
+            f"""
+            f = open('{TESTFN}', 'rb')
+            f.read()
+            f.close()
+            """,
+            _strace_flags
+        )
+        self.assertEqual(calls, readall_calls)
+
+        # Readall in text mode
+        calls = strace_helper.get_syscalls(
+            f"""
+            f = open('{TESTFN}', 'rt')
+            f.read()
+            f.close()
+            """,
+            _strace_flags
+        )
+        self.assertEqual(calls, readall_calls)
+
+        # text and binary mode, but using pathlib
+        calls = strace_helper.get_syscalls(
+            """p.read_bytes()""",
+            _strace_flags,
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+        self.assertEqual(calls, readall_calls)
+
+        calls = strace_helper.get_syscalls(
+            """p.read_text()""",
+            _strace_flags,
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+        self.assertEqual(calls, readall_calls)
+
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
