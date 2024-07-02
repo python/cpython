@@ -1,1 +1,2 @@
-Correct working with CLI history for new REPL.
+Fix a bug in the handling of the command history of the new :term:`REPL` that caused
+the history file to be wiped at REPL exit.
