@@ -55,12 +55,14 @@ typedef struct _Py_DebugOffsets {
     uint64_t version;
     // Runtime state offset;
     struct _runtime_state {
+        uint64_t size;
         uint64_t finalizing;
         uint64_t interpreters_head;
     } runtime_state;
 
     // Interpreter state offset;
     struct _interpreter_state {
+        uint64_t size;
         uint64_t next;
         uint64_t threads_head;
         uint64_t gc;
@@ -74,6 +76,7 @@ typedef struct _Py_DebugOffsets {
 
     // Thread state offset;
     struct _thread_state{
+        uint64_t size;
         uint64_t prev;
         uint64_t next;
         uint64_t interp;
@@ -84,6 +87,7 @@ typedef struct _Py_DebugOffsets {
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
+        uint64_t size;
         uint64_t previous;
         uint64_t executable;
         uint64_t instr_ptr;
@@ -93,12 +97,14 @@ typedef struct _Py_DebugOffsets {
 
     // CFrame offset;
     struct _cframe {
+        uint64_t size;
         uint64_t current_frame;
         uint64_t previous;
     } cframe;
 
     // Code object offset;
     struct _code_object {
+        uint64_t size;
         uint64_t filename;
         uint64_t name;
         uint64_t linetable;
@@ -111,21 +117,25 @@ typedef struct _Py_DebugOffsets {
 
     // PyObject offset;
     struct _pyobject {
+        uint64_t size;
         uint64_t ob_type;
     } pyobject;
 
     // PyTypeObject object offset;
     struct _type_object {
+        uint64_t size;
         uint64_t tp_name;
     } type_object;
 
     // PyTuple object offset;
     struct _tuple_object {
+        uint64_t size;
         uint64_t ob_item;
     } tuple_object;
 
     // Unicode object offset;
     struct _unicode_object {
+        uint64_t size;
         uint64_t state;
         uint64_t length;
         size_t asciiobject_size;
