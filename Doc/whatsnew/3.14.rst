@@ -89,8 +89,12 @@ Improved Modules
 ast
 ---
 
-Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+* Added :func:`ast.compare` for comparing two ASTs.
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+
+* Add support for :func:`copy.replace` for AST nodes.
+
+  (Contributed by Bénédikt Tran in :gh:`121141`.)
 
 os
 --
