@@ -1,0 +1,4 @@
+On POSIX systems, there are now versionless symlinks with the ABI flags, which may include debug ("d") and free-threaded ("t").  For example:
+* ``python3`` (default, non-debug build)
+* ``python3d`` (default, debug build)
+* ``python3t`` (free-threaded build)
