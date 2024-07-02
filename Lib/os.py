@@ -782,7 +782,7 @@ class _Environ(MutableMapping):
         return new
 
     if _exists("_create_environ"):
-        def refresh(self):
+        def invalidate_cache(self):
             data = _create_environ()
             if name == 'nt':
                 data = {self.encodekey(key): value

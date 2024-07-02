@@ -193,8 +193,8 @@ process and user.
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
 
-   The :meth:`!os.environ.refresh()` method updates :data:`os.environ` with
-   changes to the environment made by :func:`os.putenv`, by
+   The :meth:`!os.environ.invalidate_cache()` method updates :data:`os.environ`
+   with changes to the environment made by :func:`os.putenv`, by
    :func:`os.unsetenv`, or made outside Python in the same process.
 
    This mapping may be used to modify the environment as well as query the
@@ -230,7 +230,7 @@ process and user.
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
    .. versionchanged:: 3.14
-      Added the :meth:`!os.environ.refresh()` method.
+      Added the :meth:`!os.environ.invalidate_cache()` method.
 
 
 .. data:: environb
@@ -568,7 +568,7 @@ process and user.
    of :data:`os.environ`. This also applies to :func:`getenv` and :func:`getenvb`, which
    respectively use :data:`os.environ` and :data:`os.environb` in their implementations.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :data:`os.environ.invalidate_cache() <os.environ>` method.
 
    .. note::
 
@@ -818,7 +818,7 @@ process and user.
    don't update :data:`os.environ`, so it is actually preferable to delete items of
    :data:`os.environ`.
 
-   See also the :data:`os.environ.refresh() <os.environ>` method.
+   See also the :data:`os.environ.invalidate_cache() <os.environ>` method.
 
    .. audit-event:: os.unsetenv key os.unsetenv
 
