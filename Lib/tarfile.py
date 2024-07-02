@@ -1422,7 +1422,7 @@ class TarInfo(object):
            POSIX.1-2008.
         """
         # Read the header information.
-        buf: bytes = tarfile.fileobj.read(self._block(self.size))
+        buf = tarfile.fileobj.read(self._block(self.size))
 
         # A pax header stores supplemental information for either
         # the following file (extended) or all following files
@@ -1526,7 +1526,7 @@ class TarInfo(object):
     def _proc_gnusparse_00(self, next, pax_headers, buf):
         """Process a GNU tar extended sparse header, version 0.0.
         """
-        def finditer_without_backtracking(buf, needle: bytes) -> list[int]:
+        def finditer_without_backtracking(buf, needle):
             values = []
             regex = re.compile(br"^\d{1,20}%s(\d+)\n" % (needle,))
             while True:
