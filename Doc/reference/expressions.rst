@@ -255,7 +255,7 @@ A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
 .. productionlist:: python-grammar
-   list_display: "[" [`starred_list` | `comprehension`] "]"
+   list_display: "[" [`expression_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -280,7 +280,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist:: python-grammar
-   set_display: "{" (`starred_list` | `comprehension`) "}"
+   set_display: "{" (`expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -425,7 +425,7 @@ Yield expressions
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
-   yield_expression: "yield" `expression_list` | `yield_from`
+   yield_expression: "yield" `yield_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
@@ -875,9 +875,13 @@ primary is subscripted, the evaluated result of the expression list will be
 passed to one of these methods. For more details on when ``__class_getitem__``
 is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the expression list contains at least one comma, it will evaluate to a
-:class:`tuple` containing the items of the expression list. Otherwise, the
-expression list will evaluate to the value of the list's sole member.
+If the expression list contains at least one comma, or if any of the expressions
+are starred, the expression list will evaluate to a :class:`tuple` containing
+the items of the expression list. Otherwise, the expression list will evaluate
+to the value of the list's sole member.
+
+.. versionchanged:: 3.11
+   Expressions in an expression list may be starred. See :pep:`646`.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
@@ -1876,10 +1880,11 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
-   expression_list: `expression` ("," `expression`)* [","]
-   starred_list: `starred_item` ("," `starred_item`)* [","]
-   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `assignment_expression` | "*" `or_expr`
+   starred_expression: ["*"] `or_expr`
+   flexible_expression: `assignment_expression` | `starred_expression`
+   expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
+   yield_list: `expression` | `starred_expression` "," [`starred_expression_list`]
 
 .. index:: pair: object; tuple
 
@@ -1899,6 +1904,9 @@ the unpacking.
 
 .. versionadded:: 3.5
    Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 .. index:: pair: trailing; comma
 
