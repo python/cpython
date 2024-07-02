@@ -3,6 +3,8 @@ import sys
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support.classes import (ComplexSubclass, WithComplex,
+                                  WithFloat, WithIndex, WithInt)
 
 from random import random
 from math import isnan, copysign
@@ -21,26 +23,6 @@ ZERO_DIVISION = (
     (1, 0+0j),
 )
 
-class WithIndex:
-    def __init__(self, value):
-        self.value = value
-    def __index__(self):
-        return self.value
-
-class WithFloat:
-    def __init__(self, value):
-        self.value = value
-    def __float__(self):
-        return self.value
-
-class ComplexSubclass(complex):
-    pass
-
-class WithComplex:
-    def __init__(self, value):
-        self.value = value
-    def __complex__(self):
-        return self.value
 
 class ComplexTest(unittest.TestCase):
 
