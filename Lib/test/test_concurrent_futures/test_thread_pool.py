@@ -23,6 +23,19 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.executor.shutdown(wait=True)
         self.assertCountEqual(finished, range(10))
 
+    def test_map_on_infinite_iterator(self):
+        import itertools
+        def identity(x):
+            return x
+
+        mapobj = self.executor.map(identity, itertools.count(0), prefetch=1)
+        # Get one result, which shows we handle infinite inputs
+        # without waiting for all work to be dispatched
+        res = next(mapobj)
+        mapobj.close()  # Make sure futures cancelled
+
+        self.assertEqual(res, 0)
+
     def test_default_workers(self):
         executor = self.executor_type()
         expected = min(32, (os.process_cpu_count() or 1) + 4)

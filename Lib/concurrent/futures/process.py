@@ -657,19 +657,17 @@ class ProcessPoolExecutor(_base.Executor):
         _check_system_limits()
 
         if max_workers is None:
-            self._max_workers = os.process_cpu_count() or 1
+            max_workers = os.process_cpu_count() or 1
             if sys.platform == 'win32':
-                self._max_workers = min(_MAX_WINDOWS_WORKERS,
-                                        self._max_workers)
+                max_workers = min(_MAX_WINDOWS_WORKERS, max_workers)
         else:
             if max_workers <= 0:
                 raise ValueError("max_workers must be greater than 0")
             elif (sys.platform == 'win32' and
-                max_workers > _MAX_WINDOWS_WORKERS):
+                  max_workers > _MAX_WINDOWS_WORKERS):
                 raise ValueError(
                     f"max_workers must be <= {_MAX_WINDOWS_WORKERS}")
-
-            self._max_workers = max_workers
+        super().__init__(max_workers)
 
         if mp_context is None:
             if max_tasks_per_child is not None:
@@ -813,7 +811,7 @@ class ProcessPoolExecutor(_base.Executor):
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, prefetch=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -824,6 +822,8 @@ class ProcessPoolExecutor(_base.Executor):
             chunksize: If greater than one, the iterables will be chopped into
                 chunks of size chunksize and submitted to the process pool.
                 If set to one, the items in the list will be sent one at a time.
+            prefetch: The number of chunks to queue beyond the number of
+                workers on the executor. If None, all chunks are queued.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
@@ -839,7 +839,7 @@ class ProcessPoolExecutor(_base.Executor):
 
         results = super().map(partial(_process_chunk, fn),
                               itertools.batched(zip(*iterables), chunksize),
-                              timeout=timeout)
+                              timeout=timeout, prefetch=prefetch)
         return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
