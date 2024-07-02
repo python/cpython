@@ -28,6 +28,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.util.display import status_iterator
+import sphinx.directives.other
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
@@ -393,7 +394,23 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of removal in deprecations
+# Support for documenting version of changes, additions, deprecations
+
+def expand_version_arg(argument, env):
+    """Expand "next" to the current version"""
+    if argument == 'next':
+        return sphinx_gettext('{} (unreleased)').format(env.config.release)
+    return argument
+
+
+class PyVersionChange(sphinx.directives.other.VersionChange):
+    def run(self):
+        env = self.state.document.settings.env
+        self.arguments = (
+            expand_version_arg(self.arguments[0], env),
+            *self.arguments[1:])
+        return super().run()
+
 
 class DeprecatedRemoved(Directive):
     has_content = True
@@ -409,9 +426,10 @@ class DeprecatedRemoved(Directive):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
-        version = (self.arguments[0], self.arguments[1])
-        node['version'] = version
         env = self.state.document.settings.env
+        deprecated = expand_version_arg(self.arguments[0], env)
+        version = (deprecated, self.arguments[1])
+        node['version'] = version
         current_version = tuple(int(e) for e in env.config.version.split('.'))
         removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
         if current_version < removed_version:
@@ -419,7 +437,7 @@ class DeprecatedRemoved(Directive):
         else:
             label = self._removed_label
 
-        text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
+        text = label.format(deprecated=deprecated, removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
@@ -447,7 +465,6 @@ class DeprecatedRemoved(Directive):
         env = self.state.document.settings.env
         env.get_domain('changeset').note_changeset(node)
         return [node] + messages
-
 
 # Support for including Misc/NEWS
 
@@ -698,6 +715,10 @@ def setup(app):
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)
     app.add_directive('audit-event-table', AuditEventListDirective)
+    app.add_directive('versionadded', PyVersionChange, override=True)
+    app.add_directive('versionchanged', PyVersionChange, override=True)
+    app.add_directive('versionremoved', PyVersionChange, override=True)
+    app.add_directive('deprecated', PyVersionChange, override=True)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
