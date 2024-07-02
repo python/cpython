@@ -1,2 +1,4 @@
-Fix a bug in the handling of the command history of the new :term:`REPL` that caused
-the history file to be wiped at REPL exit.
+Fix a bug in the handling of the command history of the new :term:`REPL` that
+caused the history file to be wiped at REPL exit.  ``site.register_readline()``
+helper was refactored to not clear history file if the command history is
+empty.  Patch by Sergey B Kirpichev.
