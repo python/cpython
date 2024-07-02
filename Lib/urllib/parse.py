@@ -517,14 +517,32 @@ def urlunparse(components):
         url = "%s;%s" % (url, params)
     return _coerce_result(urlunsplit((scheme, netloc, url, query, fragment)))
 
+# Returns true if path can confused with a scheme.  I.e. a relative path
+# without leading dot that includes a colon in the first component.
+_is_scheme_like = re.compile(r'[^/.][^/]*:').match
+
 def urlunsplit(components):
     """Combine the elements of a tuple as returned by urlsplit() into a
     complete URL as a string. The data argument can be any five-item iterable.
     This may result in a slightly different, but equivalent URL, if the URL that
     was parsed originally had unnecessary delimiters (for example, a ? with an
     empty query; the RFC states that these are equivalent)."""
-    scheme, netloc, url, query, fragment, _coerce_result = (
+    scheme, netloc, path, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
+    if not scheme and not netloc:
+        # Building a relative URI.  Need to be careful that path is not
+        # confused with scheme or netloc.
+        if path.startswith('//'):
+            # gh-87389: don't treat first component of path as netloc
+            url = '/' + path.lstrip('/')
+        elif _is_scheme_like(path):
+            # first component has colon, ensure it will not be parsed as the
+            # scheme
+            url = './' + path
+        else:
+            url = path
+    else:
+        url = path
     if netloc or (scheme and scheme in uses_netloc) or url[:2] == '//':
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
