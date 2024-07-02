@@ -1325,9 +1325,9 @@ class CopyTests(unittest.TestCase):
 
     def test_replace_accept_known_custom_class_fields(self):
         class MyNode(ast.AST):
-            _fields = ('name', 'data',)
+            _fields = ('name', 'data')
             __annotations__ = {'name': str, 'data': object}
-            __match_args__ = ('name', 'data',)
+            __match_args__ = ('name', 'data')
 
         name, data = 'name', object()
 
@@ -1354,31 +1354,22 @@ class CopyTests(unittest.TestCase):
         self.assertIs(repl.name, node.name)
         self.assertIs(repl.data, repl_data)
 
-    def test_replace_reject_known_custom_class_attributes(self):
+    def test_replace_accept_known_custom_class_attributes(self):
         class MyNode(ast.AST):
             x = 0
             y = 1
-            _attributes = ('x', 'y',)
+            _attributes = ('x', 'y')
 
         node = MyNode()
         self.assertEqual(node.x, 0)
         self.assertEqual(node.y, 1)
 
         y = object()
-        # Currently, we emit a warning (and thus the changes are committed)
-        # and only support hard-coded attributes 'lineno', 'col_offset',
-        # 'end_lineno', and 'end_col_offset'.
-        msg = (
-            "MyNode.__init__ got an unexpected keyword argument 'y'. "
-            "Support for arbitrary keyword arguments is deprecated and "
-            "will be removed in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node, y=y)
+        repl = copy.replace(node, y=y)
         # assert that there is no side-effect
         self.assertEqual(node.x, 0)
         self.assertEqual(node.y, 1)
-        # check the changes ('repl' will not be available in 3.15+)
+        # check the changes
         self.assertEqual(repl.x, 0)
         self.assertEqual(repl.y, y)
 
@@ -1454,17 +1445,13 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of known instance fields
         self.assertTrue(hasattr(node, 'extra'))
-        msg = "Name.__init__ got an unexpected keyword argument 'extra'."
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node, extra=1)
+        msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node, extra=1)
         # assert that there is no side-effect
         self.assertIs(node.id, 'x')
         self.assertIs(node.ctx, context)
         self.assertIs(node.extra, extra)
-        # check the changes ('repl' will not be available in 3.15+)
-        self.assertIs(repl.id, 'x')
-        self.assertIs(repl.ctx, context)
-        self.assertIs(repl.extra, 1)
 
     def test_replace_reject_unknown_instance_fields(self):
         node = ast.parse('x').body[0].value
@@ -1472,17 +1459,13 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of unknown extra fields
         self.assertRaises(AttributeError, getattr, node, 'unknown')
-        msg = "Name.__init__ got an unexpected keyword argument 'unknown'."
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node, unknown=1)
+        msg = "Name.__replace__ got an unexpected keyword argument 'unknown'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node, unknown=1)
         # assert that there is no side-effect
         self.assertIs(node.id, 'x')
         self.assertIs(node.ctx, context)
         self.assertRaises(AttributeError, getattr, node, 'unknown')
-        # check the changes ('repl' will not be available in 3.15+)
-        self.assertIs(repl.id, 'x')
-        self.assertIs(repl.ctx, context)
-        self.assertIs(repl.unknown, 1)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
