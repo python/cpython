@@ -111,21 +111,44 @@ by :c:func:`PyObject_Malloc` for allocating memory for buffers.
 
 The three allocation domains are:
 
-* Raw domain: intended for allocating memory for general-purpose memory
-  buffers where the allocation *must* go to the system allocator or where the
-  allocator can operate without the :term:`GIL`. The memory is requested directly
-  to the system.
+* Raw domain: intended for allocating memory independently
+  of the Python runtime.  This includes cases where the
+  allocation *must* go to the system allocator, when the runtime might
+  not be initialized yet, or in non-Python threads.
+  Examples include general-purpose memory buffers, as well as global
+  state for applications that embed Python.
+  The allocator may be called with or without the :term:`GIL` held.
+  The memory is requested directly from the system.
+  (Also see: :ref:`user API <raw-interface>`,
+  :ref:`custom allocator <custom-raw-allocator>`.)
 
-* "Mem" domain: intended for allocating memory for Python buffers and
-  general-purpose memory buffers where the allocation must be performed with
-  the :term:`GIL` held. The memory is taken from the Python private heap.
+* "Mem" domain: intended for allocating memory tied to the
+  current interpreter but *not* belonging to any Python objects.
+  Examples include Python buffers, *arrays* of objects, and
+  general-purpose memory buffers associated with an extension module.
+  The allocator will always be called with the :term:`GIL` held.
+  The memory is taken from the Python private heap.
+  (Also see: :ref:`user API <mem-interface>`,
+  :ref:`custom allocator <custom-mem-allocator>`.)
 
-* Object domain: intended for allocating memory belonging to Python objects. The
-  memory is taken from the Python private heap.
+* Object domain: intended for allocating memory belonging to Python
+  objects (which are necessarily tied to the current interpreter).
+  The allocator will always be called with the :term:`GIL` held.
+  The memory is taken from the Python private heap.
+  (Also see: :ref:`user API <object-interface>`,
+  :ref:`custom allocator <custom-object-allocator>`.)
 
 When freeing memory previously allocated by the allocating functions belonging to a
 given domain,the matching specific deallocating functions must be used. For example,
 :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
+
+Likewise, if one or more
+:ref:`custom allocator <customize-memory-allocators>` is used
+then any allocated memory must be freed using the same allocator
+that provided it.
+
+
+.. _raw-interface:
 
 Raw Memory Interface
 ====================
@@ -134,7 +157,13 @@ The following function sets are wrappers to the system allocator. These
 functions are thread-safe, the :term:`GIL <global interpreter lock>` does not
 need to be held.
 
-The :ref:`default raw memory allocator <default-memory-allocators>` uses
+Use of these functions is not restricted by the current state of the
+Python runtime.  Likewise, they are not constrained by which interpreter
+is active in the current thread or even if there is one.  The allocated
+memory is process-global and independent of the Python runtime.
+
+These functions use the :ref:`raw <allocator-domains>` allocator.
+:ref:`By default <default-memory-allocators>`, the allocator uses
 the following functions: :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc`
 and :c:func:`!free`; call ``malloc(1)`` (or ``calloc(1, 1)``) when requesting
 zero bytes.
@@ -191,7 +220,7 @@ zero bytes.
    If *p* is ``NULL``, no operation is performed.
 
 
-.. _memoryinterface:
+.. _mem-interface:
 
 Memory Interface
 ================
@@ -200,8 +229,13 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
-The :ref:`default memory allocator <default-memory-allocators>` uses the
-:ref:`pymalloc memory allocator <pymalloc>`.
+All allocations happen relative to the current interpreter.  Subsequent
+free (and realloc) operations on the allocated memory must be made using
+the same interpreter.
+
+These functions use the :ref:`"mem" <allocator-domains>` allocator.
+:ref:`By default <default-memory-allocators>` the "mem" allocator uses
+the :ref:`pymalloc memory allocator <pymalloc>`.
 
 .. warning::
 
@@ -299,6 +333,8 @@ versions and is therefore deprecated in extension modules.
 * ``PyMem_DEL(ptr)``
 
 
+.. _object-interface:
+
 Object allocators
 =================
 
@@ -312,8 +348,13 @@ memory from the Python heap.
     functions in this domain by the methods described in
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
-The :ref:`default object allocator <default-memory-allocators>` uses the
-:ref:`pymalloc memory allocator <pymalloc>`.
+All allocations happen relative to the current interpreter.  Subsequent
+free (and realloc) operations on the allocated memory must be made using
+the same interpreter.
+
+These functions use the :ref:`"mem" <allocator-domains>` allocator.
+:ref:`By default <default-memory-allocators>` the object allocator uses
+the :ref:`pymalloc memory allocator <pymalloc>`.
 
 .. warning::
 
@@ -397,10 +438,84 @@ Legend:
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
 
+
 .. _customize-memory-allocators:
 
 Customize Memory Allocators
 ===========================
+
+The Python runtime may be configured, with :c:func:`PyMem_SetAllocator`,
+to use custom allocators for any of the
+:ref:`supported allocator domains <allocator-domains>`.
+There are two kinds of custom allocator:
+
+* actual allocator implementations
+* wrappers around other allocators (AKA "hooks")
+
+Applications that embed Python may set either kind before the runtime
+is initialized (e.g. with :c:func:`Py_InitializeFromConfig`).  However,
+from that point on only wrappers around the current allocator
+(see :c:func:`PyMem_GetAllocator`) may be set.  Thus, extension modules
+may only set wrappers.
+
+An actual allocator is responsible for managing its own state and memory
+pool.  For the "mem" and "object" domains, the allocator is responsible
+for maintaining its state and allocations relative to the
+:c:func:`current interpreter <PyInterpreterState_Get>`.
+The ``PyMemAllocatorEx.ctx`` field may be ``NULL`` for
+this kind of allocator.
+
+A wrapper can be useful for tracking allocations, adjusting the behavior
+of another allocator (e.g. handling failures differently), or debugging.
+For example, debug builds of CPython use a wrapper to track memory usage
+and find memory leaks, and the :mod:`tracemalloc` module sets a wrapper
+to identify where allocations happen.  Typically, the wrapped allocator
+is stored in (or within) the ``PyMemAllocatorEx.ctx`` field
+of the wrapper.
+
+Regardless of the kind, the following applies to every custom
+allocator, depending on the domain:
+
+.. _custom-raw-allocator:
+
+Raw domain:
+
+* a system allocator (or wrapper around one)
+* the memory is requested directly from the system
+* independent of the Python runtime
+* not associated with any interpreter
+* may be used before the runtime is initialized and after it's finalized
+* may be used with the runtime in an unknown state
+* must be thread-safe
+* must work whether or not the :term:`GIL` is held
+
+.. _custom-mem-allocator:
+
+"Mem" domain:
+
+* may use a Python-specific heap
+* allocated memory will be used only in a single interpreter
+* memory for each interpreter is likely kept separate
+* must be thread-safe
+* always called with the runtime in an active, stable state
+* always called with the target interpreter/tstate set in the current thread
+  (:c:func:`PyInterpreterState_Get`, :c:func:`PyThreadState_Get`)
+* always called with the current interpreter's :term:`GIL` held
+* never used for memory belonging to Python objects
+
+.. _custom-object-allocator:
+
+Object domain:
+
+* will use a Python-specific heap
+* allocated memory will be used only in a single interpreter
+* memory for each interpreter is kept separate
+* must be thread-safe
+* always called with the runtime in an active, stable state
+* always called with the target interpreter/tstate set in the current thread
+  (:c:func:`PyInterpreterState_Get`, :c:func:`PyThreadState_Get`)
+* always called with the current interpreter's :term:`GIL` held
+* only used for memory belonging to Python objects
 
 .. versionadded:: 3.4
 
