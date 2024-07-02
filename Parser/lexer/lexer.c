@@ -212,15 +212,10 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
         case '}':
         case '!':
         case ':':
-            {
-                Py_ssize_t size = strlen(tok->start);
-                if (tok_mode->last_expr_size - size > 0) {
-                    tok_mode->last_expr_end = size;
-                } else {
-                    tok_mode->last_expr_end = tok_mode->last_expr_size;
-                }
-                break;
-            }
+            if (tok_mode->last_expr_end == -1) {
+                 tok_mode->last_expr_end = strlen(tok->start);
+             }
+            break;
         default:
             Py_UNREACHABLE();
     }
@@ -1338,9 +1333,6 @@ f_string_middle:
                 INSIDE_FSTRING_EXPR(current_tok)
         );
 
-       if (!_PyLexer_update_fstring_expr(tok, '{')) {
-           return MAKE_TOKEN(ENDMARKER);
-       }
        if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
@@ -1394,6 +1386,9 @@ f_string_middle:
         }
 
         if (c == '{') {
+            if (!_PyLexer_update_fstring_expr(tok, c)) {
+                return MAKE_TOKEN(ENDMARKER);
+            }
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
