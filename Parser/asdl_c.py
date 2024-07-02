@@ -1133,6 +1133,47 @@ cleanup:
 }
 
 /*
+ * Verify that the keyword arguments are recognized.
+ *
+ * This returns 1 if all keyword arguments are allowed,
+ * otherwise -1, possibly setting a TypeError exception.
+ */
+static inline int
+ast_type_replace_check_keywords(PyObject *self,
+                                PyObject *fields,
+                                PyObject *attributes,
+                                PyObject *kwargs) {
+    PyObject *allowed = PySet_New(fields);
+    if (allowed == NULL) {
+        return -1;
+    }
+    if (attributes) {
+        if (_PySet_Update(allowed, attributes) < 0) {
+            Py_DECREF(allowed);
+            return -1;
+        }
+    }
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(kwargs, &pos, &key, &value)) {
+        int rc = PySet_Discard(allowed, key);
+        if (rc < 0) {
+            Py_DECREF(allowed);
+            return -1;
+        }
+        if (rc == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.400s.__replace__ got an unexpected keyword "
+                         "argument '%U'.", Py_TYPE(self)->tp_name, key);
+            Py_DECREF(allowed);
+            return -1;
+        }
+    }
+    Py_DECREF(allowed);
+    return 1;
+}
+
+/*
  * Python equivalent:
  *
  *   for key in keys:
@@ -1141,6 +1182,8 @@ cleanup:
  *
  * The 'keys' argument is a sequence corresponding to
  * the '_fields' or the '_attributes' of an AST node.
+ *
+ * This returns -1 if an error occurs and 0 otherwise.
  */
 static inline int
 ast_type_replace_update_payload(PyObject *payload,
@@ -1204,6 +1247,12 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
         goto cleanup;
     }
+    // disallow unknown fields or attributes
+    if (kwargs &&
+        ast_type_replace_check_keywords(self, fields, attributes, kwargs) < 0)
+    {
+        goto cleanup;
+    }
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         goto cleanup;
     }
@@ -1215,13 +1264,15 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     if (payload == NULL) {
         goto cleanup;
     }
-    // copy the instance's fields
-    if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
-        goto cleanup;
-    }
-    // copy the instance's attribute
-    if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
-        goto cleanup;
+    if (dict) { // in case __dict__ is missing (for some obscure reason)
+        // copy the instance's fields
+        if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
+            goto cleanup;
+        }
+        // copy the instance's attribute
+        if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
+            goto cleanup;
+        }
     }
     if (kwargs && PyDict_Update(payload, kwargs) < 0) {
         goto cleanup;
@@ -1886,6 +1937,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_modsupport.h"    // _PyArg_NoPositional()
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+        #include "pycore_setobject.h"     // _PySet_Update()
         #include "pycore_unionobject.h"   // _Py_union_type_or
         #include "structmember.h"
         #include <stddef.h>
