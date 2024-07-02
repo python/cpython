@@ -1511,7 +1511,7 @@ xmlparse_specified_attributes_setter(xmlparseobject *self, PyObject *v, void *cl
 }
 
 static PyMemberDef xmlparse_members[] = {
-    {"intern", _Py_T_OBJECT, offsetof(xmlparseobject, intern), Py_READONLY, NULL},
+    {"intern", Py_T_OBJECT_EX, offsetof(xmlparseobject, intern), Py_READONLY, NULL},
     {NULL}
 };
 
