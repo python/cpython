@@ -23,13 +23,14 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_optimizer.h"     // _PyOptimizerObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -401,7 +402,10 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        if (val < UINT8_MAX) { \
+            FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
+        } \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 

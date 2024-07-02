@@ -9,7 +9,6 @@ import sys
 import textwrap
 import types
 import unittest
-import asyncio
 
 import test.support
 from test.support import requires_specialization, script_helper

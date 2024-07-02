@@ -21,6 +21,12 @@ inherit from pure paths but also provide I/O operations.
 .. image:: pathlib-inheritance.png
    :align: center
    :class: invert-in-dark-mode
+   :alt: Inheritance diagram showing the classes available in pathlib. The
+         most basic class is PurePath, which has three direct subclasses:
+         PurePosixPath, PureWindowsPath, and Path. Further to these four
+         classes, there are two classes that use multiple inheritance:
+         PosixPath subclasses PurePosixPath and Path, and WindowsPath
+         subclasses PureWindowsPath and Path.
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -885,6 +891,107 @@ conforming to :rfc:`8089`.
    it strictly impure.
 
 
+Expanding and resolving paths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. classmethod:: Path.home()
+
+   Return a new path object representing the user's home directory (as
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> Path.home()
+      PosixPath('/home/antoine')
+
+   .. versionadded:: 3.5
+
+
+.. method:: Path.expanduser()
+
+   Return a new path with expanded ``~`` and ``~user`` constructs,
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
+
+      >>> p = PosixPath('~/films/Monty Python')
+      >>> p.expanduser()
+      PosixPath('/home/eric/films/Monty Python')
+
+   .. versionadded:: 3.5
+
+
+.. classmethod:: Path.cwd()
+
+   Return a new path object representing the current directory (as returned
+   by :func:`os.getcwd`)::
+
+      >>> Path.cwd()
+      PosixPath('/home/antoine/pathlib')
+
+
+.. method:: Path.absolute()
+
+   Make the path absolute, without normalization or resolving symlinks.
+   Returns a new path object::
+
+      >>> p = Path('tests')
+      >>> p
+      PosixPath('tests')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/tests')
+
+
+.. method:: Path.resolve(strict=False)
+
+   Make the path absolute, resolving any symlinks.  A new path object is
+   returned::
+
+      >>> p = Path()
+      >>> p
+      PosixPath('.')
+      >>> p.resolve()
+      PosixPath('/home/antoine/pathlib')
+
+   "``..``" components are also eliminated (this is the only method to do so)::
+
+      >>> p = Path('docs/../setup.py')
+      >>> p.resolve()
+      PosixPath('/home/antoine/pathlib/setup.py')
+
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised.  If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
+
+   .. versionchanged:: 3.6
+      The *strict* parameter was added (pre-3.6 behavior is strict).
+
+   .. versionchanged:: 3.13
+      Symlink loops are treated like other errors: :exc:`OSError` is raised in
+      strict mode, and no exception is raised in non-strict mode. In previous
+      versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
+
+
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.readlink` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+
 Querying file type and status
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1343,93 +1450,26 @@ Reading directories
    .. versionadded:: 3.12
 
 
-Other methods
-^^^^^^^^^^^^^
+Creating files and directories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. classmethod:: Path.cwd()
+.. method:: Path.touch(mode=0o666, exist_ok=True)
 
-   Return a new path object representing the current directory (as returned
-   by :func:`os.getcwd`)::
+   Create a file at this given path.  If *mode* is given, it is combined
+   with the process's ``umask`` value to determine the file mode and access
+   flags.  If the file already exists, the function succeeds when *exist_ok*
+   is true (and its modification time is updated to the current time),
+   otherwise :exc:`FileExistsError` is raised.
 
-      >>> Path.cwd()
-      PosixPath('/home/antoine/pathlib')
-
-
-.. classmethod:: Path.home()
-
-   Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> Path.home()
-      PosixPath('/home/antoine')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.chmod(mode, *, follow_symlinks=True)
-
-   Change the file mode and permissions, like :func:`os.chmod`.
-
-   This method normally follows symlinks. Some Unix flavours support changing
-   permissions on the symlink itself; on these platforms you may add the
-   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
-
-   ::
-
-      >>> p = Path('setup.py')
-      >>> p.stat().st_mode
-      33277
-      >>> p.chmod(0o444)
-      >>> p.stat().st_mode
-      33060
-
-   .. versionchanged:: 3.10
-      The *follow_symlinks* parameter was added.
-
-.. method:: Path.expanduser()
-
-   Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`. If a home directory can't be
-   resolved, :exc:`RuntimeError` is raised.
-
-   ::
-
-      >>> p = PosixPath('~/films/Monty Python')
-      >>> p.expanduser()
-      PosixPath('/home/eric/films/Monty Python')
-
-   .. versionadded:: 3.5
-
-
-.. method:: Path.group(*, follow_symlinks=True)
-
-   Return the name of the group owning the file. :exc:`KeyError` is raised
-   if the file's gid isn't found in the system database.
-
-   This method normally follows symlinks; to get the group of the symlink, add
-   the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.lchmod(mode)
-
-   Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
-   symbolic link's mode is changed rather than its target's.
+   .. seealso::
+      The :meth:`~Path.open`, :meth:`~Path.write_text` and
+      :meth:`~Path.write_bytes` methods are often used to create files.
 
 
 .. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
 
    Create a new directory at this given path.  If *mode* is given, it is
-   combined with the process' ``umask`` value to determine the file mode
+   combined with the process's ``umask`` value to determine the file mode
    and access flags.  If the path already exists, :exc:`FileExistsError`
    is raised.
 
@@ -1451,127 +1491,6 @@ Other methods
       The *exist_ok* parameter was added.
 
 
-.. method:: Path.owner(*, follow_symlinks=True)
-
-   Return the name of the user owning the file. :exc:`KeyError` is raised
-   if the file's uid isn't found in the system database.
-
-   This method normally follows symlinks; to get the owner of the symlink, add
-   the argument ``follow_symlinks=False``.
-
-   .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-
-.. method:: Path.readlink()
-
-   Return the path to which the symbolic link points (as returned by
-   :func:`os.readlink`)::
-
-      >>> p = Path('mylink')
-      >>> p.symlink_to('setup.py')
-      >>> p.readlink()
-      PosixPath('setup.py')
-
-   .. versionadded:: 3.9
-
-   .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if :func:`os.readlink` is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
-
-
-.. method:: Path.rename(target)
-
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  On Unix, if *target* exists and is a file,
-   it will be replaced silently if the user has permission.
-   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
-   *target* can be either a string or another path object::
-
-      >>> p = Path('foo')
-      >>> p.open('w').write('some text')
-      9
-      >>> target = Path('bar')
-      >>> p.rename(target)
-      PosixPath('bar')
-      >>> target.open().read()
-      'some text'
-
-   The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
-
-   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
-
-   .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
-
-
-.. method:: Path.replace(target)
-
-   Rename this file or directory to the given *target*, and return a new Path
-   instance pointing to *target*.  If *target* points to an existing file or
-   empty directory, it will be unconditionally replaced.
-
-   The target path may be absolute or relative. Relative paths are interpreted
-   relative to the current working directory, *not* the directory of the Path
-   object.
-
-   .. versionchanged:: 3.8
-      Added return value, return the new Path instance.
-
-
-.. method:: Path.absolute()
-
-   Make the path absolute, without normalization or resolving symlinks.
-   Returns a new path object::
-
-      >>> p = Path('tests')
-      >>> p
-      PosixPath('tests')
-      >>> p.absolute()
-      PosixPath('/home/antoine/pathlib/tests')
-
-
-.. method:: Path.resolve(strict=False)
-
-   Make the path absolute, resolving any symlinks.  A new path object is
-   returned::
-
-      >>> p = Path()
-      >>> p
-      PosixPath('.')
-      >>> p.resolve()
-      PosixPath('/home/antoine/pathlib')
-
-   "``..``" components are also eliminated (this is the only method to do so)::
-
-      >>> p = Path('docs/../setup.py')
-      >>> p.resolve()
-      PosixPath('/home/antoine/pathlib/setup.py')
-
-   If a path doesn't exist or a symlink loop is encountered, and *strict* is
-   ``True``, :exc:`OSError` is raised.  If *strict* is ``False``, the path is
-   resolved as far as possible and any remainder is appended without checking
-   whether it exists.
-
-   .. versionchanged:: 3.6
-      The *strict* parameter was added (pre-3.6 behavior is strict).
-
-   .. versionchanged:: 3.13
-      Symlink loops are treated like other errors: :exc:`OSError` is raised in
-      strict mode, and no exception is raised in non-strict mode. In previous
-      versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
-
-.. method:: Path.rmdir()
-
-   Remove this directory.  The directory must be empty.
-
-
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
    Make this path a symbolic link pointing to *target*.
@@ -1579,7 +1498,7 @@ Other methods
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created
-   as a directory if *target_is_directory* is ``True`` or a file symlink (the
+   as a directory if *target_is_directory* is true or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    ::
@@ -1617,13 +1536,98 @@ Other methods
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-.. method:: Path.touch(mode=0o666, exist_ok=True)
+Copying, renaming and deleting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Create a file at this given path.  If *mode* is given, it is combined
-   with the process' ``umask`` value to determine the file mode and access
-   flags.  If the file already exists, the function succeeds if *exist_ok*
-   is true (and its modification time is updated to the current time),
-   otherwise :exc:`FileExistsError` is raised.
+.. method:: Path.copy(target, *, follow_symlinks=True)
+
+   Copy the contents of this file to the *target* file. If *target* specifies
+   a file that already exists, it will be replaced.
+
+   If *follow_symlinks* is false, and this file is a symbolic link, *target*
+   will be created as a symbolic link. If *follow_symlinks* is true and this
+   file is a symbolic link, *target* will be a copy of the symlink target.
+
+   .. note::
+      This method uses operating system functionality to copy file content
+      efficiently. The OS might also copy some metadata, such as file
+      permissions. After the copy is complete, users may wish to call
+      :meth:`Path.chmod` to set the permissions of the target file.
+
+   .. warning::
+      On old builds of Windows (before Windows 10 build 19041), this method
+      raises :exc:`OSError` when a symlink to a directory is encountered and
+      *follow_symlinks* is false.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
+                          ignore=None, on_error=None)
+
+   Recursively copy this directory tree to the given destination.
+
+   If a symlink is encountered in the source tree, and *follow_symlinks* is
+   true (the default), the symlink's target is copied. Otherwise, the symlink
+   is recreated in the destination tree.
+
+   If the destination is an existing directory and *dirs_exist_ok* is false
+   (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
+   operation will continue if it encounters existing directories, and files
+   within the destination tree will be overwritten by corresponding files from
+   the source tree.
+
+   If *ignore* is given, it should be a callable accepting one argument: a
+   file or directory path within the source tree. The callable may return true
+   to suppress copying of the path.
+
+   If *on_error* is given, it should be a callable accepting one argument: an
+   instance of :exc:`OSError`. The callable may re-raise the exception or do
+   nothing, in which case the copying operation continues. If *on_error* isn't
+   given, exceptions are propagated to the caller.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.rename(target)
+
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  On Unix, if *target* exists
+   and is a file, it will be replaced silently if the user has permission.
+   On Windows, if *target* exists, :exc:`FileExistsError` will be raised.
+   *target* can be either a string or another path object::
+
+      >>> p = Path('foo')
+      >>> p.open('w').write('some text')
+      9
+      >>> target = Path('bar')
+      >>> p.rename(target)
+      PosixPath('bar')
+      >>> target.open().read()
+      'some text'
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
+
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new :class:`!Path` instance.
+
+
+.. method:: Path.replace(target)
+
+   Rename this file or directory to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.  If *target* points to an
+   existing file or empty directory, it will be unconditionally replaced.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the
+   :class:`!Path` object.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new :class:`!Path` instance.
 
 
 .. method:: Path.unlink(missing_ok=False)
@@ -1639,6 +1643,73 @@ Other methods
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
+
+
+.. method:: Path.rmdir()
+
+   Remove this directory.  The directory must be empty.
+
+
+Permissions and ownership
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: Path.owner(*, follow_symlinks=True)
+
+   Return the name of the user owning the file. :exc:`KeyError` is raised
+   if the file's user identifier (UID) isn't found in the system database.
+
+   This method normally follows symlinks; to get the owner of the symlink, add
+   the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
+      available. In earlier versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.group(*, follow_symlinks=True)
+
+   Return the name of the group owning the file. :exc:`KeyError` is raised
+   if the file's group identifier (GID) isn't found in the system database.
+
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In earlier versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
+
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
+
+      >>> p = Path('setup.py')
+      >>> p.stat().st_mode
+      33277
+      >>> p.chmod(0o444)
+      >>> p.stat().st_mode
+      33060
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.lchmod(mode)
+
+   Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
+   symbolic link's mode is changed rather than its target's.
 
 
 .. _pathlib-pattern-language:

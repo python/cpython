@@ -991,13 +991,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
 static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewCounter();
+    return _PyOptimizer_NewCounter();
 }
 
 static PyObject *
 new_uop_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewUOpOptimizer();
+    return _PyOptimizer_NewUOpOptimizer();
 }
 
 static PyObject *
@@ -1006,7 +1006,7 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1017,7 +1017,7 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *opt = NULL;
 #ifdef _Py_TIER2
-    opt = (PyObject *)PyUnstable_GetOptimizer();
+    opt = (PyObject *)_Py_GetOptimizer();
 #endif
     if (opt == NULL) {
         Py_RETURN_NONE;
@@ -1586,8 +1586,8 @@ exec_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     PyObject *res = NULL;
-    PyThreadState *tstate = PyThreadState_New(interp);
-    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
+    PyThreadState *tstate =
+        _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_EXEC);
 
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
@@ -2002,6 +2002,21 @@ has_inline_values(PyObject *self, PyObject *obj)
 }
 
 
+// Circumvents standard version assignment machinery - use with caution and only on
+// short-lived heap types
+static PyObject *
+type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    unsigned int version;
+    if (!PyArg_ParseTuple(args, "Oi:type_assign_specific_version_unsafe", &type, &version)) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
+    _PyType_SetVersion(type, version);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 gh_119213_getargs
 
@@ -2102,6 +2117,9 @@ static PyMethodDef module_functions[] = {
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
     {"has_inline_values", has_inline_values, METH_O},
+    {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
+     PyDoc_STR("forcefully assign type->tp_version_tag")},
+
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif

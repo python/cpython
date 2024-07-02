@@ -1,6 +1,5 @@
 import threading
 import time
-import unittest
 import weakref
 from concurrent import futures
 from test import support

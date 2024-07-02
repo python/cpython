@@ -21,8 +21,11 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+from xml.etree import ElementTree
+
 from test import support
-from test.support import os_helper, without_optimizer
+from test.support import import_helper
+from test.support import os_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
@@ -1178,7 +1181,7 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    @without_optimizer
+    @support.without_optimizer
     def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
@@ -1746,10 +1749,9 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
-        try:
-            import _testcapi
-        except ImportError:
-            raise unittest.SkipTest("requires _testcapi")
+        # Skip test if _testcapi is missing
+        import_helper.import_module('_testcapi')
+
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -2132,10 +2134,10 @@ class ArgsTestCase(BaseTestCase):
 
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
-        try:
-            import _testinternalcapi
-        except ImportError:
-            raise unittest.SkipTest("requires _testinternalcapi")
+
+        # Skip test if _testinternalcapi is missing
+        import_helper.import_module('_testinternalcapi')
+
         code = textwrap.dedent(r"""
             import sys
             import unittest
@@ -2198,10 +2200,8 @@ class ArgsTestCase(BaseTestCase):
     @unittest.skipIf(support.is_android,
                      'raising SIGSEGV on Android is unreliable')
     def test_worker_output_on_failure(self):
-        try:
-            from faulthandler import _sigsegv
-        except ImportError:
-            self.skipTest("need faulthandler._sigsegv")
+        # Skip test if faulthandler is missing
+        import_helper.import_module('faulthandler')
 
         code = textwrap.dedent(r"""
             import faulthandler
@@ -2255,6 +2255,44 @@ class ArgsTestCase(BaseTestCase):
             output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
             self.check_executed_tests(output, testname, stats=1, parallel=True)
             self.assertNotIn('SPAM SPAM SPAM', output)
+
+    def test_xml(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_failed(self):
+                    print("abc \x1b def")
+                    self.fail()
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        output = self.run_tests(testname, "--junit-xml", filename,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=testname,
+                                  stats=TestStats(1, 1, 0))
+
+        # Test generated XML
+        with open(filename, encoding="utf8") as fp:
+            content = fp.read()
+
+        testsuite = ElementTree.fromstring(content)
+        self.assertEqual(int(testsuite.get('tests')), 1)
+        self.assertEqual(int(testsuite.get('errors')), 0)
+        self.assertEqual(int(testsuite.get('failures')), 1)
+
+        testcase = testsuite[0][0]
+        self.assertEqual(testcase.get('status'), 'run')
+        self.assertEqual(testcase.get('result'), 'completed')
+        self.assertGreater(float(testcase.get('time')), 0)
+        for out in testcase.iter('system-out'):
+            self.assertEqual(out.text, r"abc \x1b def")
 
 
 class TestUtils(unittest.TestCase):
@@ -2438,6 +2476,25 @@ class TestUtils(unittest.TestCase):
             self.assertFalse(match_test(test_access))
             self.assertTrue(match_test(test_chdir))
             self.assertFalse(match_test(test_copy))
+
+    def test_sanitize_xml(self):
+        sanitize_xml = utils.sanitize_xml
+
+        # escape invalid XML characters
+        self.assertEqual(sanitize_xml('abc \x1b\x1f def'),
+                         r'abc \x1b\x1f def')
+        self.assertEqual(sanitize_xml('nul:\x00, bell:\x07'),
+                         r'nul:\x00, bell:\x07')
+        self.assertEqual(sanitize_xml('surrogate:\uDC80'),
+                         r'surrogate:\udc80')
+        self.assertEqual(sanitize_xml('illegal \uFFFE and \uFFFF'),
+                         r'illegal \ufffe and \uffff')
+
+        # no escape for valid XML characters
+        self.assertEqual(sanitize_xml('a\n\tb'),
+                         'a\n\tb')
+        self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
+                         'valid t\xe9xt \u20ac')
 
 
 if __name__ == '__main__':
