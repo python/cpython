@@ -22,7 +22,7 @@ from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, TestName,
-    format_duration, print_warning, count, plural, get_signal_name)
+    format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -366,7 +366,7 @@ class WorkerThread(threading.Thread):
                                   err_msg=None,
                                   state=State.TIMEOUT)
             if retcode != 0:
-                name = get_signal_name(retcode)
+                name = support.get_signal_name(retcode)
                 if name:
                     retcode = f"{retcode} ({name})"
                 raise WorkerError(self.test_name, f"Exit code {retcode}", stdout,
