@@ -355,6 +355,14 @@ _Py_atomic_exchange_int(int *obj, int value)
                                            (int32_t)value);
 }
 
+static inline int
+_Py_atomic_exchange_long(long *obj, long value)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(int32_t);
+    return (int)_Py_atomic_exchange_int32((int32_t *)obj,
+                                          (int32_t)value);
+}
+
 static inline unsigned int
 _Py_atomic_exchange_uint(unsigned int *obj, unsigned int value)
 {
@@ -581,6 +589,13 @@ _Py_atomic_load_int(const int *obj)
     return (int)_Py_atomic_load_uint32((uint32_t *)obj);
 }
 
+static inline long
+_Py_atomic_load_long(const long *obj)
+{
+    _Py_atomic_ASSERT_ARG_TYPE(uint32_t);
+    return (int)_Py_atomic_load_uint32((uint32_t *)obj);
+}
+
 static inline unsigned int
 _Py_atomic_load_uint(const unsigned int *obj)
 {
@@ -725,6 +740,12 @@ static inline void
 _Py_atomic_store_int(int *obj, int value)
 {
     (void)_Py_atomic_exchange_int(obj, value);
+}
+
+static inline void
+_Py_atomic_store_long(long *obj, long value)
+{
+    (void)_Py_atomic_exchange_long(obj, value);
 }
 
 static inline void

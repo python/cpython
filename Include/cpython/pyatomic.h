@@ -275,6 +275,9 @@ _Py_atomic_or_uintptr(uintptr_t *obj, uintptr_t value);
 static inline int
 _Py_atomic_load_int(const int *obj);
 
+static inline long
+_Py_atomic_load_long(const long *obj);
+
 static inline int8_t
 _Py_atomic_load_int8(const int8_t *obj);
 
@@ -368,6 +371,9 @@ _Py_atomic_load_ullong_relaxed(const unsigned long long *obj);
 
 static inline void
 _Py_atomic_store_int(int *obj, int value);
+
+static inline void
+_Py_atomic_store_long(long *obj, long value);
 
 static inline void
 _Py_atomic_store_int8(int8_t *obj, int8_t value);
