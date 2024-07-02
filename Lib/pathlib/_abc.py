@@ -16,22 +16,13 @@ import operator
 import posixpath
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from ._os import copyfileobj
-
-
-__all__ = ["UnsupportedOperation"]
+from ._os import UnsupportedOperation, copyfileobj
 
 
 @functools.cache
 def _is_case_sensitive(parser):
     return parser.normcase('Aa') == 'Aa'
 
-
-class UnsupportedOperation(NotImplementedError):
-    """An exception that is raised when an unsupported operation is called on
-    a path object.
-    """
-    pass
 
 
 class ParserBase:
