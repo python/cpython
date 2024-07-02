@@ -137,9 +137,8 @@ def deepcopy(x, memo=None, _nil=[]):
         if y is not _nil:
             return y
 
-    if cls in _builtin_iterables and not x:
-        y = cls()
-    elif copier := _deepcopy_dispatch.get(cls):
+    copier = _deepcopy_dispatch.get(cls)
+    if copier is not None:
         y = copier(x, memo)
     else:
         if issubclass(cls, type):
