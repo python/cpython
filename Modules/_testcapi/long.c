@@ -117,6 +117,147 @@ pylong_aspid(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+pylong_export(PyObject *module, PyObject *obj)
+{
+    PyLong_DigitArray array;
+    if (PyLong_AsDigitArray(obj, &array) < 0) {
+        return NULL;
+    }
+
+    PyObject *digits = PyList_New(0);
+    for (Py_ssize_t i=0; i < array.ndigits; i++) {
+        PyObject *digit = PyLong_FromUnsignedLong(array.digits[i]);
+        if (digit == NULL) {
+            Py_DECREF(digits);
+            goto error;
+        }
+
+        if (PyList_Append(digits, digit) < 0) {
+            Py_DECREF(digits);
+            Py_DECREF(digit);
+            goto error;
+        }
+        Py_DECREF(digit);
+    }
+
+    PyObject *res = Py_BuildValue("(iN)", array.negative, digits);
+    PyLong_FreeDigitArray(&array);
+    return res;
+
+error:
+    PyLong_FreeDigitArray(&array);
+    return NULL;
+}
+
+
+static PyObject *
+pylongwriter_create(PyObject *module, PyObject *args)
+{
+    int negative;
+    PyObject *list;
+    if (!PyArg_ParseTuple(args, "iO!", &negative, &PyList_Type, &list)) {
+        return NULL;
+    }
+    Py_ssize_t ndigits = PyList_GET_SIZE(list);
+
+    Py_digit *digits = PyMem_Malloc(ndigits * sizeof(Py_digit));
+    if (digits == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (Py_ssize_t i=0; i < ndigits; i++) {
+        PyObject *item = PyList_GET_ITEM(list, i);
+
+        long digit = PyLong_AsLong(item);
+        if (digit == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        if (digit < 0 || digit >= PyLong_BASE) {
+            PyErr_SetString(PyExc_ValueError, "digit doesn't fit into Py_digit");
+            goto error;
+        }
+        digits[i] = (Py_digit)digit;
+    }
+
+    Py_digit *writer_digits;
+    PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
+                                               &writer_digits);
+    if (writer == NULL) {
+        goto error;
+    }
+    memcpy(writer_digits, digits, ndigits * sizeof(digit));
+    PyObject *res = PyLongWriter_Finish(writer);
+    PyMem_Free(digits);
+
+    return res;
+
+error:
+    PyMem_Free(digits);
+    return NULL;
+}
+
+
+static PyObject *
+get_pylong_layout(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    PyLongLayout layout = PyLong_LAYOUT;
+
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        goto error;
+    }
+
+    PyObject *value = PyLong_FromUnsignedLong(layout.bits_per_digit);
+    if (value == NULL) {
+        goto error;
+    }
+    int res = PyDict_SetItemString(dict, "bits_per_digit", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+
+    value = PyLong_FromUnsignedLong(layout.digit_size);
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(dict, "digit_size", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+
+    value = PyLong_FromLong(layout.word_endian);
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(dict, "word_endian", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+
+    value = PyLong_FromLong(layout.array_endian);
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(dict, "array_endian", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+
+    return dict;
+
+error:
+    Py_XDECREF(dict);
+    return NULL;
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -124,6 +265,9 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
+    {"pylong_export",               pylong_export,              METH_O},
+    {"pylongwriter_create",         pylongwriter_create,        METH_VARARGS},
+    {"get_pylong_layout",           get_pylong_layout,          METH_NOARGS},
     {NULL},
 };
 

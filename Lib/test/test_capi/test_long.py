@@ -631,6 +631,72 @@ class LongTests(unittest.TestCase):
 
         # CRASHES getsign(NULL)
 
+    def test_long_layout(self):
+        # Test PyLong_LAYOUT
+        int_info = sys.int_info
+        layout = _testcapi.get_pylong_layout()
+        expected = {
+            'array_endian': -1,
+            'bits_per_digit': int_info.bits_per_digit,
+            'digit_size': int_info.sizeof_digit,
+            'word_endian': -1 if sys.byteorder == 'little' else 1,
+        }
+        self.assertEqual(layout, expected)
+
+    def test_long_export(self):
+        # Test PyLong_Export()
+        layout = _testcapi.get_pylong_layout()
+        base = 2 ** layout['bits_per_digit']
+
+        pylong_export = _testcapi.pylong_export
+        self.assertEqual(pylong_export(0), (0, [0]))
+        self.assertEqual(pylong_export(123), (0, [123]))
+        self.assertEqual(pylong_export(-123), (1, [123]))
+        self.assertEqual(pylong_export(base**2 * 3 + base * 2 + 1),
+                         (0, [1, 2, 3]))
+
+        with self.assertRaises(TypeError):
+            pylong_export(1.0)
+        with self.assertRaises(TypeError):
+            pylong_export(0+1j)
+        with self.assertRaises(TypeError):
+            pylong_export("abc")
+
+    def test_longwriter_create(self):
+        # Test PyLong_Import()
+        layout = _testcapi.get_pylong_layout()
+        base = 2 ** layout['bits_per_digit']
+
+        pylongwriter_create = _testcapi.pylongwriter_create
+        self.assertEqual(pylongwriter_create(0, []), 0)
+        self.assertEqual(pylongwriter_create(0, [0]), 0)
+        self.assertEqual(pylongwriter_create(0, [123]), 123)
+        self.assertEqual(pylongwriter_create(1, [123]), -123)
+        self.assertEqual(pylongwriter_create(1, [1, 2]),
+                         -(base * 2 + 1))
+        self.assertEqual(pylongwriter_create(0, [1, 2, 3]),
+                         base**2 * 3 + base * 2 + 1)
+        max_digit = base - 1
+        self.assertEqual(pylongwriter_create(0, [max_digit, max_digit, max_digit]),
+                         base**2 * max_digit + base * max_digit + max_digit)
+
+        # normalize
+        self.assertEqual(pylongwriter_create(0, [123, 0, 0]), 123)
+
+        # test singletons + normalize
+        for num in (-2, 0, 1, 5, 42, 100):
+            self.assertIs(pylongwriter_create(bool(num < 0), [abs(num), 0]),
+                          num)
+
+        # round trip: Python int -> export -> Python int
+        pylong_export = _testcapi.pylong_export
+        numbers = [*range(0, 10), 12345, 0xdeadbeef, 2**100, 2**100-1]
+        numbers.extend(-num for num in list(numbers))
+        for num in numbers:
+            with self.subTest(num=num):
+                export = pylong_export(num)
+                self.assertEqual(pylongwriter_create(*export), num, export)
+
 
 if __name__ == "__main__":
     unittest.main()

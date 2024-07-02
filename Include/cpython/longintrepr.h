@@ -58,8 +58,10 @@ typedef long stwodigits; /* signed variant of twodigits */
 #else
 #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
-#define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
-#define PyLong_MASK     ((digit)(PyLong_BASE - 1))
+#define PyLong_BASE     ((Py_digit)1 << PyLong_SHIFT)
+#define PyLong_MASK     ((Py_digit)(PyLong_BASE - 1))
+
+typedef digit Py_digit;
 
 /* Long integer representation.
 
@@ -138,6 +140,52 @@ _PyLong_CompactValue(const PyLongObject *op)
 
 #define PyUnstable_Long_CompactValue _PyLong_CompactValue
 
+
+/* --- Import/Export API -------------------------------------------------- */
+
+typedef struct PyLongLayout {
+    // Bits per digit
+    uint8_t bits_per_digit;
+
+    // Digit size in bytes
+    uint8_t digit_size;
+
+    // Word endian:
+    // * 1 for most significant word first (big endian)
+    // * -1 for least significant first (little endian)
+    int8_t word_endian;
+
+    // Array endian:
+    // * 1 for most significant byte first (big endian)
+    // * -1 for least significant first (little endian)
+    int8_t array_endian;
+} PyLongLayout;
+
+PyAPI_DATA(const PyLongLayout) PyLong_LAYOUT;
+
+typedef struct PyLong_DigitArray {
+    PyObject *obj;
+    int negative;
+    Py_ssize_t ndigits;
+    const Py_digit *digits;
+} PyLong_DigitArray;
+
+PyAPI_FUNC(int) PyLong_AsDigitArray(
+    PyObject *obj,
+    PyLong_DigitArray *array);
+PyAPI_FUNC(void) PyLong_FreeDigitArray(
+    PyLong_DigitArray *array);
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+typedef struct PyLongWriter PyLongWriter;
+
+PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
+    int negative,
+    Py_ssize_t ndigits,
+    Py_digit **digits);
+PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
 
 #ifdef __cplusplus
 }

@@ -540,6 +540,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
+   .. versionadded:: 3.12
+
+
 .. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
@@ -547,3 +550,153 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Otherwise, the return value is undefined.
 
+   .. versionadded:: 3.12
+
+
+Export API
+^^^^^^^^^^
+
+.. versionadded:: 3.14
+
+.. c:type:: Py_digit
+
+   A single unsigned digit in the range [``0``; ``PyLong_BASE - 1``].
+
+   It is usually used in an *array of digits*, such as the
+   :c:member:`PyLong_DigitArray.digits` array.
+
+   Its size depend on the :c:macro:`!PYLONG_BITS_IN_DIGIT` macro:
+   see the ``configure`` :option:`--enable-big-digits` option.
+
+   See :c:member:`PyLong_LAYOUT.bits_per_digit` for the number of bits per
+   digit and :c:member:`PyLong_LAYOUT.digit_size` for the size of a digit (in
+   bytes).
+
+
+.. c:struct:: PyLong_LAYOUT
+
+   Layout of an array of digits, used by Python :class:`int` object.
+
+   See also :attr:`sys.int_info` which exposes similar information to Python.
+
+   .. c:member:: uint8_t bits_per_digit
+
+      Bits per digit.
+
+   .. c:member:: uint8_t digit_size
+
+      Digit size in bytes.
+
+   .. c:member:: int8_t word_endian
+
+      Word endian:
+
+      - ``1`` for most significant word first (big endian)
+      - ``-1`` for least significant first (little endian)
+
+   .. c:member:: int8_t array_endian
+
+      Array endian:
+
+      - ``1`` for most significant byte first (big endian)
+      - ``-1`` for least significant first (little endian)
+
+
+.. c:struct:: PyLong_DigitArray
+
+   A Python :class:`int` object exported as an array of digits.
+
+   See :c:struct:`PyLong_LAYOUT` for the :c:member:`digits` layout.
+
+   .. c:member:: PyObject *obj
+
+      Strong reference to the Python :class:`int` object.
+
+   .. c:member:: int negative
+
+      1 if the number is negative, 0 otherwise.
+
+   .. c:member:: Py_ssize_t ndigits
+
+      Number of digits in :c:member:`digits` array.
+
+   .. c:member:: const Py_digit *digits
+
+      Read-only array of unsigned digits.
+
+
+.. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
+
+   Export a Python :class:`int` object as an array of digits.
+
+   On success, set *\*array* and return 0.
+   On error, set an exception and return -1.
+
+   This function always succeeds if *obj* is a Python :class:`int` object or a
+   subclass.
+
+   :c:func:`PyLong_FreeDigitArray` must be called once done with using
+   *export*.
+
+
+.. c:function:: void PyLong_FreeDigitArray(PyLong_DigitArray *array)
+
+   Release the export *array* created by :c:func:`PyLong_AsDigitArray`.
+
+
+PyLongWriter API
+^^^^^^^^^^^^^^^^
+
+The :c:type:`PyLongWriter` API can be used to import an integer.
+
+.. versionadded:: 3.14
+
+.. c:struct:: PyLongWriter
+
+   A Python :class:`int` writer instance.
+
+   The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
+
+
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, Py_digit **digits)
+
+   Create a :c:type:`PyLongWriter`.
+
+   On success, set *\*digits* and return a writer.
+   On error, set an exception and return ``NULL``.
+
+   *negative* is ``1`` if the number is negative, or ``0`` otherwise.
+
+   *ndigits* is the number of digits in the *digits* array. It must be
+   positive.
+
+   The caller must initialize the array of digits *digits* and then call
+   :c:func:`PyLongWriter_Finish` to get a Python :class:`int`. Digits must be
+   in the range [``0``; ``PyLong_BASE - 1``]. Unused digits must be set to
+   ``0``.
+
+   See :c:struct:`PyLong_LAYOUT` for the layout of an array of digits.
+
+
+.. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
+
+   Finish a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   On success, return a Python :class:`int` object.
+   On error, set an exception and return ``NULL``.
+
+
+Example creating an integer from an array of digits::
+
+    PyObject *
+    long_import(int negative, Py_ssize_t ndigits, Py_digit *digits)
+    {
+        Py_digit *writer_digits;
+        PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
+                                                   &writer_digits);
+        if (writer == NULL) {
+            return NULL;
+        }
+        memcpy(writer_digits, digits, ndigits * sizeof(digit));
+        return PyLongWriter_Finish(writer);
+    }

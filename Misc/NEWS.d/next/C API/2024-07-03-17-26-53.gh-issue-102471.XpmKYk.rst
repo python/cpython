@@ -1,0 +1,9 @@
+Add a new import and export API for Python :class:`int` objects:
+
+* :c:func:`PyLong_AsDigitArray`;
+* :c:func:`PyLong_FreeDigitArray`;
+* :c:func:`PyLongWriter_Create`;
+* :c:func:`PyLongWriter_Finish`;
+* :c:struct:`PyLong_LAYOUT`.
+
+Patch by Victor Stinner.
