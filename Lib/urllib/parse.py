@@ -561,7 +561,10 @@ def urljoin(base, url, allow_fragments=True):
     if not path and not params:
         path = bpath
         params = bparams
-        if not query:
+        # since urlparse doesn't leave any evidence of whether there was a bare
+        # '?' with an empty query string, we need to check whether it was there.
+        has_empty_query = url[0] == '?' or url.startswith(scheme + ':?')
+        if not has_empty_query:
             query = bquery
         return _coerce_result(urlunparse((scheme, netloc, path,
                                           params, query, fragment)))
