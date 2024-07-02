@@ -1132,12 +1132,14 @@ class CopyTests(unittest.TestCase):
 
     @staticmethod
     def iter_ast_classes():
-        """Iterate over the subclasses of ast.AST recursively.
+        """Iterate over the (native) subclasses of ast.AST recursively.
 
         This excludes the special class ast.Index since its constructor
         returns an integer.
         """
         def do(cls):
+            if cls.__module__ != 'ast':
+                return
             if cls is ast.Index:
                 return
 
@@ -1365,7 +1367,15 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(node.y, 1)
 
         y = object()
-        repl = copy.replace(node, y=y)
+        # custom attributes are currently not supported and raise a warning
+        # because the allowed attributes are hard-coded !
+        msg = (
+            "MyNode.__init__ got an unexpected keyword argument 'y'. "
+            "Support for arbitrary keyword arguments is deprecated and "
+            "will be removed in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
+            repl = copy.replace(node, y=y)
         # assert that there is no side-effect
         self.assertEqual(node.x, 0)
         self.assertEqual(node.y, 1)
@@ -1412,19 +1422,14 @@ class CopyTests(unittest.TestCase):
 
         self.assertRaises(AttributeError, getattr, node, 'id')
         self.assertIs(node.ctx, context)
-        msg = (
-            "Name.__init__ missing 1 required positional argument: 'id'. "
-            "This will become an error in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, re.escape(msg)):
-            repl = copy.replace(node)
+        msg = "Name.__replace__ missing 1 keyword argument: 'id'."
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            copy.replace(node)
         # assert that there is no side-effect
         self.assertRaises(AttributeError, getattr, node, 'id')
         self.assertIs(node.ctx, context)
-        self.assertRaises(AttributeError, getattr, repl, 'id')
-        self.assertIs(repl.ctx, context)
 
-        # case: do not warn if deleted field is replaced
+        # case: do not raise if deleted field is replaced
         node = ast.parse('x').body[0].value
         context = node.ctx
         del node.id
