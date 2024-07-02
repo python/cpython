@@ -2746,7 +2746,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 double value = PyFloat_AS_DOUBLE(item);
                 cr_result.sum += value;
                 ci_result.sum += 0.0;
-                Py_DECREF(item);
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
             _csum_neumaier_finalize(&cr_result);
