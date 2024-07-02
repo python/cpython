@@ -101,6 +101,62 @@ scan_eol(bytesio *self, Py_ssize_t len)
     return len;
 }
 
+#ifdef HAVE_MEMRCHR
+# define RFIND_CHAR memrchr
+#else
+static inline void *
+RFIND_CHAR(const void *s, int c, size_t n)
+{
+    const unsigned char *sp = (const unsigned char *)s + n - 1;
+    while (n--) {
+        if (*sp == (unsigned char)c) {
+            return (void *)sp;
+        }
+        sp--;
+    }
+    return NULL;
+}
+#endif
+
+/* Internal routine to get a line from the buffer of a BytesIO
+   object in reverse order. Returns the offset between the current
+   position to the previous newline character.  Set 'found' to 1
+   if a newline character is found, '0' otherwise. */
+static Py_ssize_t
+backscan_eol_offset(bytesio *self, Py_ssize_t len, bool *found)
+{
+    if (found != NULL) {
+        *found = 0;
+    }
+    assert(self->buf != NULL);
+    Py_ssize_t rem = self->pos;  // remaining characters to scan on the left
+    if (rem <= 0) { // BOF
+        return 0;
+    }
+    if (len < 0 || len > rem) {
+        len = rem;
+    }
+    Py_ssize_t off = len;
+    if (len) {
+        assert(len <= rem);
+        const char *pos = PyBytes_AS_STRING(self->buf) + rem;
+        const char *loc = RFIND_CHAR(pos - len, '\n', len);
+        if (loc) {
+            // *** | xxx\nxxx |
+            //              ^-- pos
+            //       ^--------- pos - len
+            //          ^------ loc
+            // pos - off == '\n' => off = pos - loc
+            off = pos - loc;
+            if (found != NULL) {
+                *found = 1;
+            }
+        }
+    }
+    assert(0 <= off && off <= rem);
+    return off;
+}
+
 /* Internal routine for detaching the shared buffer of BytesIO objects.
    The caller should ensure that the 'size' argument is non-negative and
    not lesser than self->string_size.  Returns 0 on success, -1 otherwise. */
@@ -586,6 +642,196 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     return PyLong_FromSsize_t(len);
 }
 
+static PyObject *
+backread_bytes(bytesio *self, Py_ssize_t n /* exact number of bytes to read */)
+{
+    assert(self->buf != NULL);
+    assert(0 <= n && n <= self->pos);
+    if (n == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
+    PyObject *res;
+    const char *src = PyBytes_AS_STRING(self->buf) + self->pos - n;
+
+    if (n == 1) {
+        // single character (no reverse) can be immortalized
+        res = PyBytes_FromStringAndSize(src, 1);
+    }
+    else {
+        if ((res = PyBytes_FromStringAndSize(NULL, n)) != NULL) {
+            // 'ob_sval' has size + 1 elements, and ob_sval[size] == '\0'
+            char *buf = ((PyBytesObject *)res)->ob_sval;
+            for (Py_ssize_t i = 0; i < n; ++i) {
+                buf[n - 1 - i] = src[i];
+            }
+        }
+    }
+    self->pos -= n;
+    return res;
+}
+
+/*[clinic input]
+_io.BytesIO.backread
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Read backwards at most size bytes, returned as a bytes object.
+
+If the size argument is negative, read until the beginning of file (BOF) is
+reached.  Return an empty bytes object at BOF.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backread_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=d3bccd201010ec0a input=1fea25a35bd6ad81]*/
+{
+    CHECK_CLOSED(self);
+    Py_ssize_t rem = self->pos;
+    if (size < 0 || size > rem) {
+        size = rem;
+        if (size < 0) {
+            size = 0;
+        }
+    }
+    return backread_bytes(self, size);
+}
+
+/*[clinic input]
+_io.BytesIO.backreadinto
+    buffer: Py_buffer(accept={rwbuffer})
+    /
+
+Read backwards bytes into buffer.
+
+Returns number of bytes read (0 if current position is 0), or None if the object
+is set not to block and has no data to read.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backreadinto_impl(bytesio *self, Py_buffer *buffer)
+/*[clinic end generated code: output=42f2ca676ab55937 input=ef424bc91ee85a0b]*/
+{
+    CHECK_CLOSED(self);
+
+    Py_ssize_t off = 0;
+    Py_ssize_t len = buffer->len;
+    assert(len >= 0);
+
+    Py_ssize_t rem = self->pos;
+    if (len >= rem) {
+        len = rem;
+    }
+    else {
+        off = rem - len;
+    }
+    if (len < 0) {
+        len = 0;
+        goto exit;
+    }
+    assert(0 <= off && off <= self->pos);
+
+    const char *src = PyBytes_AS_STRING(self->buf) + off;
+    char *out = (char *)(buffer->buf);
+
+    if (len >= 1) {
+        size_t i, j;
+        // swap characters in len / 2 iterations
+        for (i = 0, j = len - 1; i < j; ++i, --j) {
+            out[i] = src[j];
+            out[j] = src[i];
+        }
+        if (len % 2 == 1) {
+            // buf = abc  (odd length)
+            //  i = 0, j = 4 :: a <-> e (e__a)
+            //  i = 1, j = 3 :: b <-> d (ed_ba)
+            //  i = 2, j = 2 :: exit & copy the remaining character
+            assert(i == j);
+            out[i] = src[i];
+        }
+        else {
+            // buf = abcd   (even length)
+            // i = 0, j = 3 :: a <-> d (d__a)
+            // i = 1, j = 2 :: b <-> c (dcba)
+            // i = 2, j = 1 :: exit -> nothing to do
+            assert(i == j + 1);
+        }
+    }
+exit:
+    assert(self->pos - len >= 0);
+    assert(len >= 0);
+    self->pos -= len;
+    return PyLong_FromSsize_t(len);
+}
+
+/*[clinic input]
+_io.BytesIO.backreadline
+    size: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+
+Next line from the end of the file, as a bytes object.
+
+Retain newline.  A non-negative size argument limits the maximum
+number of bytes to return (an incomplete line may be returned then).
+Return an empty bytes object if current position is 0.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO_backreadline_impl(bytesio *self, Py_ssize_t size)
+/*[clinic end generated code: output=cf53cd21c22e0a4d input=2d74fa3d4ec83ed0]*/
+{
+    CHECK_CLOSED(self);
+
+    PyObject *res;
+    bool found = 0;
+    Py_ssize_t n = backscan_eol_offset(self, size, &found);
+    assert(0 <= n && n <= self->pos);
+
+    // fast path: BOF or on '\n'
+    if (n == 0) {
+        if (found) {
+            n = 1;
+            res = PyBytes_FromStringAndSize("\n", 1);
+        }
+        else {
+            // empty bytes
+            res = PyBytes_FromStringAndSize(NULL, 0);
+        }
+        goto exit;
+    }
+
+    // For backreadline(), the characters are kept in the forward order
+    // but they are read from the right (e.g., backreadline(3) on 'abcdef'
+    // gives 'def' instead of 'fed'. In addition, new lines are added on
+    // the right if they are found, e.g., backreadline(3) on '\nab' would
+    // return 'ab\n').
+    const char *head = PyBytes_AS_STRING(self->buf) + self->pos;
+    if (found && n > 1) {
+        // To avoid calling malloc() twice (once in PyBytes_FromStringAndSize()
+        // and once for temporarily storing the n - 1 last characters) and to
+        // avoid concatenating bytes (and creating a writer object), we instead
+        // specialize PyBytes_FromStringAndSize() by creating a nul-terminated
+        // bytes object and fill its buffer manually.
+        if ((res = PyBytes_FromStringAndSize(NULL, n)) == NULL) {
+            goto exit;
+        }
+        // copy the n - 1 last characters (no need for an auxiliary buffer)
+        char *buf = ((PyBytesObject *)res)->ob_sval;
+        memcpy(buf, head - (n - 1), n - 1);
+        // 'ob_sval' has n + 1 elements, and ob_sval[n] == '\0'
+        buf[n - 1] = '\n';
+    }
+    else {
+        // No need to create a temporary object if the result
+        // is a single '\n' or does not contain a new line.
+        res = PyBytes_FromStringAndSize(head - n, n);
+    }
+exit:
+    assert(0 <= n && n <= self->pos);
+    self->pos -= n;
+    return res;
+}
+
 /*[clinic input]
 _io.BytesIO.truncate
     size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
@@ -1019,6 +1265,9 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_READLINE_METHODDEF
     _IO_BYTESIO_READLINES_METHODDEF
     _IO_BYTESIO_READ_METHODDEF
+    _IO_BYTESIO_BACKREAD_METHODDEF
+    _IO_BYTESIO_BACKREADINTO_METHODDEF
+    _IO_BYTESIO_BACKREADLINE_METHODDEF
     _IO_BYTESIO_GETBUFFER_METHODDEF
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF

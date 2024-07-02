@@ -1,0 +1,2 @@
+Add support for reversed iterators on buffered IO objects. Patch by Bénédikt
+Tran.

@@ -294,16 +294,22 @@ The following table summarizes the ABCs provided by the :mod:`io` module:
 ABC                        Inherits            Stub Methods              Mixin Methods and Properties
 =========================  ==================  ========================  ==================================================
 :class:`IOBase`                                ``fileno``, ``seek``,     ``close``, ``closed``, ``__enter__``,
-                                               and ``truncate``          ``__exit__``, ``flush``, ``isatty``, ``__iter__``,
-                                                                         ``__next__``, ``readable``, ``readline``,
-                                                                         ``readlines``, ``seekable``, ``tell``,
+                                               and ``truncate``          ``__exit__``, ``flush``, ``isatty``,
+                                                                         ``__iter__``, ``__next__``, ``__reversed__``,
+                                                                         ``readable``, ``readline``, ``readlines``,
+                                                                         ``backreadline``, ``seekable``, ``tell``,
                                                                          ``writable``, and ``writelines``
-:class:`RawIOBase`         :class:`IOBase`     ``readinto`` and          Inherited :class:`IOBase` methods, ``read``,
-                                               ``write``                 and ``readall``
+:class:`RawIOBase`         :class:`IOBase`     ``readinto``,             Inherited :class:`IOBase` methods, ``read``,
+                                               ``backreadinto`` and      ``readall``, ``backread``, and ``backreadall``
+                                               ``write``
 :class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``,
-                                               ``read1``, and ``write``  and ``readinto1``
+                                               ``read1``,                ``readinto1``, and ``backreadinto``
+                                               ``backread``,
+                                               and ``write``
 :class:`TextIOBase`        :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``encoding``,
-                                               ``readline``, and         ``errors``, and ``newlines``
+                                               ``readline``,             ``errors``, and ``newlines``
+                                               ``backread``,
+                                               ``backreadline``, and
                                                ``write``
 =========================  ==================  ========================  ==================================================
 
@@ -402,6 +408,12 @@ I/O Base Classes
 
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling :meth:`!file.readlines`.
+
+   .. method:: backreadline(size=-1, /)
+
+      TODO
+
+      .. versionadded:: 3.14
 
    .. method:: seek(offset, whence=os.SEEK_SET, /)
 
@@ -503,6 +515,40 @@ I/O Base Classes
       If the object is in non-blocking mode and no bytes
       are available, ``None`` is returned.
 
+   .. method:: backread(size=-1, /)
+
+      Read up to *size* bytes from the *end* of the object and return them in
+      reverse order.  As a convenience, if *size* is unspecified or -1, all
+      bytes are returned.  Otherwise, only one system call is ever made.  Fewer
+      than *size* bytes may be returned if the operating system call returns
+      fewer than *size* bytes.
+
+      If 0 bytes are returned, and *size* was not 0, this indicates beginning
+      of file.  If the object is in non-blocking mode and no bytes are available,
+      ``None`` is returned.
+
+      The default implementation defers to :meth:`backreadall` and
+      :meth:`backreadinto`.
+
+      .. versionadded:: 3.14
+
+   .. method:: backreadall()
+
+      Read and return all the bytes from the stream in reverse order,
+      using multiple calls to the stream if necessary.
+
+      .. versionadded:: 3.14
+
+   .. method:: backreadinto(b, /)
+
+      Read backward bytes into a pre-allocated, writable
+      :term:`bytes-like object` *b*, and return the
+      number of bytes read.  For example, *b* might be a :class:`bytearray`.
+      If the object is in non-blocking mode and no bytes
+      are available, ``None`` is returned.
+
+      .. versionadded:: 3.14
+
    .. method:: write(b, /)
 
       Write the given :term:`bytes-like object`, *b*, to the
@@ -532,7 +578,9 @@ I/O Base Classes
    never return ``None``.
 
    Besides, the :meth:`read` method does not have a default
-   implementation that defers to :meth:`readinto`.
+   implementation that defers to :meth:`readinto`. A similar
+   argument holds for :meth:`backread` which does not defer
+   to :meth:`backreadinto` by default.
 
    A typical :class:`BufferedIOBase` implementation should not inherit from a
    :class:`RawIOBase` implementation, but wrap one, like
@@ -610,6 +658,38 @@ I/O Base Classes
 
       .. versionadded:: 3.5
 
+   .. method:: backread(size=-1, /)
+
+      Read backwards and return up to *size* bytes.  If the argument is
+      omitted, ``None``, or negative, data is read and returned until the
+      beginning of file.  An empty :class:`bytes` object is returned if
+      the stream is already at the beginning of file.
+
+      If the argument is positive, and the underlying raw stream is not
+      interactive, multiple raw reads may be issued to satisfy the byte count
+      (unless the beginning of file is reached first).  But for interactive
+      raw streams, at most one raw read will be issued, and a short result
+      does not imply that the beginning of file is imminent.
+
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
+      non blocking-mode, and has no data available at the moment.
+
+      .. versionadded:: 3.14
+
+   .. method:: backreadinto(b, /)
+
+      Read backwards bytes into a pre-allocated, writable
+      :term:`bytes-like object` *b* and return the number of bytes read.
+      For example, *b* might be a :class:`bytearray`.
+
+      Like :meth:`backread`, multiple reads may be issued to the underlying
+      raw stream, unless the latter is interactive.
+
+      A :exc:`BlockingIOError` is raised if the underlying raw stream is in non
+      blocking-mode, and has no data available at the moment.
+
+      .. versionadded:: 3.14
+
    .. method:: write(b, /)
 
       Write the given :term:`bytes-like object`, *b*, and return the number
@@ -655,7 +735,10 @@ Raw File I/O
 
    The :meth:`~RawIOBase.read` (when called with a positive argument),
    :meth:`~RawIOBase.readinto` and :meth:`~RawIOBase.write` methods on this
-   class will only make one system call.
+   class will only make one system call.  A similar argument holds for
+   :meth:`~RawIOBase.backread` and :meth:`~RawIOBase.backreadinto`, but
+   those method in additions require the file to be *seekable*, lest they
+   raise :exc:`UnsupportedOperation`.
 
    A custom opener can be used by passing a callable as *opener*. The underlying
    file descriptor for the file object is then obtained by calling *opener* with
@@ -779,6 +862,13 @@ than raw I/O does.
       .. versionchanged:: 3.7
          The *size* argument is now optional.
 
+   .. method:: backread(size=-1, /)
+
+      Read backwards and return *size* bytes, or if *size* is not given or
+      negative, until the beginning of file or if the read call would block
+      in non-blocking mode.
+
+      .. versionadded:: 3.14
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
@@ -908,6 +998,27 @@ Text I/O
       already at EOF, an empty string is returned.
 
       If *size* is specified, at most *size* characters will be read.
+
+   .. method:: backread(size=-1, /)
+
+      Read backwards and return at most *size* characters from the stream as a
+      single :class:`str`.  If *size* is negative or ``None``, reads until the
+      beginning of file.
+
+      .. versionadded:: 3.14
+
+   .. method:: backreadline(size=-1, /)
+
+      Read backwards until newline or the beginning of file is reached,
+      and return a single :class:`str`. If the stream is already at the
+      beginning of file, an empty string is returned.
+
+      If *size* is specified, at most *size* characters will be read.
+
+      .. todo(picnixz): decide whether to read the characters in a line from
+         the beginning or from the end.
+
+      .. versionadded:: 3.14
 
    .. method:: seek(offset, whence=SEEK_SET, /)
 

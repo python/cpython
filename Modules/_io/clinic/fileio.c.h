@@ -334,6 +334,133 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_FileIO_backread__doc__,
+"backread($self, size=-1, /)\n"
+"--\n"
+"\n"
+"Read backwards at most size bytes, returned as bytes.\n"
+"\n"
+"Only makes one system call, so less data may be returned than requested.\n"
+"In non-blocking mode, returns None if no data is available.\n"
+"Return an empty bytes object if the current position is 0.");
+
+#define _IO_FILEIO_BACKREAD_METHODDEF    \
+    {"backread", _PyCFunction_CAST(_io_FileIO_backread), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_backread__doc__},
+
+static PyObject *
+_io_FileIO_backread_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size);
+
+static PyObject *
+_io_FileIO_backread(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backread",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t size = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io_FileIO_backread_impl(self, cls, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_FileIO_backreadinto__doc__,
+"backreadinto($self, buffer, /)\n"
+"--\n"
+"\n"
+"Same as RawIOBase.backreadinto().");
+
+#define _IO_FILEIO_BACKREADINTO_METHODDEF    \
+    {"backreadinto", _PyCFunction_CAST(_io_FileIO_backreadinto), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_backreadinto__doc__},
+
+static PyObject *
+_io_FileIO_backreadinto_impl(fileio *self, PyTypeObject *cls,
+                             Py_buffer *buffer);
+
+static PyObject *
+_io_FileIO_backreadinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "backreadinto",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_buffer buffer = {NULL, NULL};
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("backreadinto", "argument 1", "read-write bytes-like object", args[0]);
+        goto exit;
+    }
+    return_value = _io_FileIO_backreadinto_impl(self, cls, &buffer);
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_FileIO_backreadall__doc__,
+"backreadall($self, /)\n"
+"--\n"
+"\n"
+"Read all data backwards from the file, returned as bytes.\n"
+"\n"
+"In non-blocking mode, returns as much as is immediately available,\n"
+"or None if no data is available.  Return an empty bytes object if\n"
+"the current position is 0.");
+
+#define _IO_FILEIO_BACKREADALL_METHODDEF    \
+    {"backreadall", (PyCFunction)_io_FileIO_backreadall, METH_NOARGS, _io_FileIO_backreadall__doc__},
+
+static PyObject *
+_io_FileIO_backreadall_impl(fileio *self);
+
+static PyObject *
+_io_FileIO_backreadall(fileio *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_FileIO_backreadall_impl(self);
+}
+
 PyDoc_STRVAR(_io_FileIO_write__doc__,
 "write($self, b, /)\n"
 "--\n"
@@ -528,4 +655,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=e3d9446b4087020e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5da0b05594dd9d4 input=a9049054013a1b77]*/

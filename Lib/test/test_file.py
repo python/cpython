@@ -58,6 +58,12 @@ class AutoFileTests:
         if hasattr(self.f, "readinto"):
             self.assertRaises(TypeError, self.f.readinto, a)
 
+    def test_backread_into(self):
+        self.skipTest("TODO")
+
+    def test_backread_into_text(self):
+        self.skipTest("TODO (should not be supported, for now)")
+
     def testWritelinesUserList(self):
         # verify writelines with instance sequence
         l = UserList([b'1', b'2'])
@@ -121,6 +127,12 @@ class AutoFileTests:
             # should raise on closed file
             self.assertRaises(ValueError, method, *args)
 
+        # TODO(picnixz): NotImplementedError -> ValueError when implemented in C
+        for methodname in ('backread', 'backreadline'):
+            method = getattr(self.f, methodname)
+            with self.subTest(method=methodname):
+                self.assertRaises((NotImplementedError, ValueError), method)
+
         # file is closed, __exit__ shouldn't do anything
         self.assertEqual(self.f.__exit__(None, None, None), None)
         # it must also return None if an exception was given
@@ -131,6 +143,10 @@ class AutoFileTests:
 
     def testReadWhenWriting(self):
         self.assertRaises(OSError, self.f.read)
+
+    def testBackReadWhenWriting(self):
+        # this delegates to the abstract BufferedIOBase.backread()
+        self.assertRaises(io.UnsupportedOperation, self.f.backread)
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     open = io.open
@@ -340,6 +356,11 @@ class OtherFileTests:
                 self.fail("read* failed after next() consumed file")
         finally:
             f.close()
+
+    def test_reverse_iteration(self):
+        # Test the complex interaction when mixing file-reverse iteration
+        # and the various backread* methods.
+        self.skipTest("TODO")
 
 class COtherFileTests(OtherFileTests, unittest.TestCase):
     open = io.open

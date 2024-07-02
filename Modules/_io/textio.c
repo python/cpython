@@ -111,6 +111,49 @@ _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+_io._TextIOBase.backread
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards at most size characters from stream.
+
+Read from underlying buffer until we have size characters or we hit the
+beginning of file.  If size is negative or omitted, read until the
+beginning of file.
+[clinic start generated code]*/
+
+static PyObject *
+_io__TextIOBase_backread_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=e7adf2f428a3cfa4 input=1e7b896c0152c737]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backread");
+}
+
+/*[clinic input]
+_io._TextIOBase.backreadline
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read backwards until newline or the beginning of file.
+
+Return an empty string if the current position is 0.
+If size is specified, at most size characters will be read.
+[clinic start generated code]*/
+
+static PyObject *
+_io__TextIOBase_backreadline_impl(PyObject *self, PyTypeObject *cls,
+                                  int Py_UNUSED(size))
+/*[clinic end generated code: output=92c399ecfbede452 input=2c62dec827da79cc]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backreadline");
+}
+
+/*[clinic input]
 _io._TextIOBase.write
     cls: defining_class
     s: str(unused=True)
@@ -186,6 +229,8 @@ static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
     _IO__TEXTIOBASE_READ_METHODDEF
     _IO__TEXTIOBASE_READLINE_METHODDEF
+    _IO__TEXTIOBASE_BACKREAD_METHODDEF
+    _IO__TEXTIOBASE_BACKREADLINE_METHODDEF
     _IO__TEXTIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
@@ -2355,6 +2400,40 @@ _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size)
     return _textiowrapper_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.backread
+    cls: defining_class
+    size as n: Py_ssize_t(accept={int, NoneType}) = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_backread_impl(textio *self, PyTypeObject *cls,
+                                Py_ssize_t n)
+/*[clinic end generated code: output=ae1a73d6e2b808c4 input=042b3553a2eeb5e5]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backread");
+}
+
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.backreadline
+    cls: defining_class
+    size: Py_ssize_t = -1
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_backreadline_impl(textio *self, PyTypeObject *cls,
+                                    Py_ssize_t size)
+/*[clinic end generated code: output=52c0d84b5ebda3e1 input=48c0dc44f3b40ffe]*/
+{
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "backreadline");
+}
+
 /* Seek and Tell */
 
 typedef struct {
@@ -3337,6 +3416,8 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_WRITE_METHODDEF
     _IO_TEXTIOWRAPPER_READ_METHODDEF
     _IO_TEXTIOWRAPPER_READLINE_METHODDEF
+    _IO_TEXTIOWRAPPER_BACKREAD_METHODDEF
+    _IO_TEXTIOWRAPPER_BACKREADLINE_METHODDEF
     _IO_TEXTIOWRAPPER_FLUSH_METHODDEF
     _IO_TEXTIOWRAPPER_CLOSE_METHODDEF
 
