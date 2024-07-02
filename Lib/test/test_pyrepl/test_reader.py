@@ -258,8 +258,8 @@ class TestReader(TestCase):
 
         actual = reader.screen
         self.assertEqual(len(actual), 2)
-        self.assertEqual(actual[0].rstrip(), "itertools.accumulate(")
-        self.assertEqual(actual[1], f"{code}a")
+        self.assertEqual(actual[0], f"{code}a")
+        self.assertEqual(actual[1].rstrip(), "itertools.accumulate(")
 
     def test_key_press_on_tab_press_once(self):
         namespace = {"itertools": itertools}
