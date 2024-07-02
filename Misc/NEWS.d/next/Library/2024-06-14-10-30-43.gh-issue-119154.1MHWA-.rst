@@ -1,0 +1,2 @@
+Make :class:`asyncio.Queue` an :term:`asynchronous iterable`.
+Contributed by Wannes Boeykens.
