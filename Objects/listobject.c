@@ -2884,7 +2884,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
 
-    if (keyfunc == NULL) {
+    if (keyfunc == NULL || saved_ob_size <= 1) {
         keys = NULL;
         lo.keys = saved_ob_item;
         lo.values = NULL;
