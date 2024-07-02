@@ -3900,6 +3900,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_token = NULL;
 
     _PyObject_SetDeferredRefcount((PyObject *)et);
 
@@ -4922,6 +4923,11 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_tp_token:
+            {
+                res->ht_token = slot->pfunc ? slot->pfunc : spec;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
@@ -5084,8 +5090,15 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         PyErr_BadInternalCall();
         return NULL;
     }
+    int slot_offset = pyslot_offsets[slot].slot_offset;
 
-    parent_slot = *(void**)((char*)type + pyslot_offsets[slot].slot_offset);
+    if (slot_offset >= (int)sizeof(PyTypeObject)) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+    }
+
+    parent_slot = *(void**)((char*)type + slot_offset);
     if (parent_slot == NULL) {
         return NULL;
     }
@@ -5212,6 +5225,94 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
         }
     }
     return module;
+}
+
+
+static PyTypeObject *
+get_base_by_token_recursive(PyTypeObject *type, void *token, int initial)
+{
+    if (initial) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+        if (((PyHeapTypeObject*)type)->ht_token == token) {
+            return type;
+        }
+    }
+    PyObject *bases = type->tp_bases;
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+        base = get_base_by_token_recursive(base, token, 0);
+        if (base) {
+            return base;
+        }
+    }
+    return NULL;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token,
+                      PyTypeObject **result)
+{
+    if (result != NULL) {
+        *result = NULL;
+    }
+    if (token == NULL) {
+        // We scan only heaptypes that contains a token
+        return 0;
+    }
+    assert(PyType_Check(type));
+    PyObject *mro = type->tp_mro;
+    if (mro == NULL) {
+        PyTypeObject *base = get_base_by_token_recursive(type, token, 1);
+        if (base == NULL) {
+            return 0;
+        }
+        if (result != NULL) {
+            *result = (PyTypeObject *)Py_NewRef(base);
+        }
+        return 1;
+    }
+    assert(PyTuple_Check(mro));
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            if (i) {
+                continue;
+            }
+            // Static type MRO contains no heap type,
+            // which type_ready_mro() ensures.
+            assert(base == type);
+            return 0;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            if (result != NULL) {
+                *result = (PyTypeObject *)Py_NewRef(base);
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int
+PyType_GetToken(PyTypeObject *type, void **result)
+{
+    assert(PyType_Check(type));
+    if(_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        *result = ((PyHeapTypeObject*)type)->ht_token;
+        return *result ? 1 : 0;
+    }
+    *result = NULL;
+    return 0;
 }
 
 void *
@@ -5903,6 +6004,7 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+    et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 

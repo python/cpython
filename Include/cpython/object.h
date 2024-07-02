@@ -268,6 +268,7 @@ typedef struct _heaptypeobject {
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
+    void *ht_token;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
     struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
@@ -277,6 +278,8 @@ PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_LookupRef(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+PyAPI_FUNC(int) PyType_GetToken(PyTypeObject *, void **);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
