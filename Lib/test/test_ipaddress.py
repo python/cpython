@@ -1462,12 +1462,21 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(254, len(hosts))
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
+        self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
+        host_iter = self.ipv4_network.hosts()
+        self.assertEqual(next(host_iter), hosts[0])
+        self.assertEqual(next(self.ipv4_network.hosts()), hosts[0])
+        self.assertEqual(next(host_iter), hosts[1])
 
         ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
         hosts = list(ipv6_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
+        host_iter = self.ipv6_network.hosts()
+        self.assertEqual(next(host_iter), hosts[0])
+        self.assertEqual(next(self.ipv6_network.hosts()), hosts[0])
+        self.assertEqual(next(host_iter), hosts[1])
 
         ipv6_scoped_network = ipaddress.IPv6Network('2001:658:22a:cafe::%scope/120')
         hosts = list(ipv6_scoped_network.hosts())
@@ -1493,6 +1502,11 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
                          list(ipaddress.ip_network(tpl_args).hosts()))
+        network = ipaddress.ip_network(str_args)
+        host_iter = network.hosts()
+        self.assertEqual(next(host_iter), addrs[0])
+        self.assertEqual(next(network.hosts()), addrs[0])
+        self.assertRaises(StopIteration, next, host_iter)
 
         addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::'),
                  ipaddress.IPv6Address('2001:658:22a:cafe::1')]

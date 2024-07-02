@@ -594,7 +594,7 @@ dictionaries.
       network address itself and the network broadcast address.  For networks
       with a mask length of 31, the network address and network broadcast
       address are also included in the result. Networks with a mask of 32
-      will return a list containing the single host address.
+      will contain a single host address.
 
          >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
@@ -765,8 +765,7 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       Subnet-Router anycast address.  For networks with a mask length of 127,
       the Subnet-Router anycast address is also included in the result.
-      Networks with a mask of 128 will return a list containing the
-      single host address.
+      Networks with a mask of 128 will only contain the single host address.
 
    .. method:: overlaps(other)
    .. method:: address_exclude(network)
