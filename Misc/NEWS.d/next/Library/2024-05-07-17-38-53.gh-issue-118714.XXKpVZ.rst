@@ -1,0 +1,1 @@
+Make the :mod:`pdb` post-mortem restart/quit message match the behavior
