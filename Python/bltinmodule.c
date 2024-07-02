@@ -1851,27 +1851,27 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
                 break;
             }
         }
-        assert(item != NULL);
 
-        /* first iteration; just set maxitem, defer maxval since we may not need it */
-        if (maxitem == NULL) {
-            maxitem = item;
-            continue;
-        }
-
-        /* second iteration; set deferred maxval before comparisons */
         if (maxval == NULL) {
-            /* get the value from the key function */
-            if (keyfunc != NULL) {
-                val = PyObject_CallOneArg(keyfunc, maxitem);
-                if (val == NULL)
-                    goto Fail_it_item;
+            /* first iteration; just set maxitem, defer maxval since we may not need it */
+            if (maxitem == NULL) {
+                maxitem = item;
+                continue;
             }
-            /* no key function; the value is the item */
+            /* second iteration; set deferred maxval before comparisons */
             else {
-                val = Py_NewRef(maxitem);
+                /* get the value from the key function */
+                if (keyfunc != NULL) {
+                    val = PyObject_CallOneArg(keyfunc, maxitem);
+                    if (val == NULL)
+                        goto Fail_it_item;
+                }
+                /* no key function; the value is the item */
+                else {
+                    val = Py_NewRef(maxitem);
+                }
+                maxval = val;
             }
-            maxval = val;
         }
 
         /* get the value from the key function */
