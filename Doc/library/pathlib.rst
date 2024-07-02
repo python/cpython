@@ -1559,7 +1559,7 @@ Copying, renaming and deleting
       raises :exc:`OSError` when a symlink to a directory is encountered and
       *follow_symlinks* is false.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
@@ -1586,7 +1586,7 @@ Copying, renaming and deleting
    nothing, in which case the copying operation continues. If *on_error* isn't
    given, exceptions are propagated to the caller.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. method:: Path.rename(target)

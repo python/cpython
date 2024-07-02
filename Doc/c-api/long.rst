@@ -511,7 +511,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    On failure, return -1 with an exception set.  This function always succeeds
    if *obj* is a :c:type:`PyLongObject` or its subtype.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)

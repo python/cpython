@@ -2299,7 +2299,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. class:: c_int
