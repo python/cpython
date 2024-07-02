@@ -276,6 +276,19 @@ class Test(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(name='NewClass', bases=(object,), dict={})
 
+    def test_type_set_module(self):
+        A = type('A', (), {})
+        self.assertTrue(hasattr(A, '__module__'))
+        self.assertEqual(A.__module__, __name__)
+
+        Parent = type('Parent', (), {'__module__': 'foo'})
+        self.assertTrue(hasattr(Parent, '__module__'))
+        self.assertEqual(Parent.__module__, 'foo')
+
+        Child = type('Child', (Parent,), {})
+        self.assertTrue(hasattr(Child, '__module__'))
+        self.assertEqual(Child.__module__, __name__)
+
 
 if __name__ == "__main__":
     unittest.main()
