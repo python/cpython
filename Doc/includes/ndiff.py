@@ -35,7 +35,8 @@ recovered by piping the output through
 
 __version__ = 1, 7, 0
 
-import difflib, sys
+import difflib
+import sys
 
 def fail(msg):
     out = sys.stderr.write
@@ -58,8 +59,10 @@ def fcompare(f1name, f2name):
     if not f1 or not f2:
         return 0
 
-    a = f1.readlines(); f1.close()
-    b = f2.readlines(); f2.close()
+    a = f1.readlines()
+    b = f2.readlines()
+    f1.close()
+    f2.close()
     for line in difflib.ndiff(a, b):
         print(line, end=' ')
 

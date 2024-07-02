@@ -3,6 +3,10 @@ repos:
     rev: v0.3.4
     hooks:
       - id: ruff
+        name: Run Ruff on Doc/
+        args: [--exit-non-zero-on-fix]
+        files: ^Doc/
+      - id: ruff
         name: Run Ruff on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/

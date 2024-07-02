@@ -1,14 +1,14 @@
 from datetime import tzinfo, timedelta, datetime
 
-ZERO = timedelta(0)
-HOUR = timedelta(hours=1)
-SECOND = timedelta(seconds=1)
-
 # A class capturing the platform's idea of local time.
 # (May result in wrong values on historical times in
 #  timezones where UTC offset and/or the DST rules had
 #  changed in the past.)
 import time as _time
+
+ZERO = timedelta(0)
+HOUR = timedelta(hours=1)
+SECOND = timedelta(seconds=1)
 
 STDOFFSET = timedelta(seconds = -_time.timezone)
 if _time.daylight:
