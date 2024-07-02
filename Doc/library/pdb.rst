@@ -192,7 +192,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True)
+               nosigint=False, readrc=True, commands=None)
 
    :class:`Pdb` is the debugger class.
 
@@ -211,6 +211,9 @@ access further features, you have to do this yourself:
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
+   The *commands* argument, if given, would be a list of commands to execute
+   when the debugger starts. It has similar effects to the :file:`.pdbrc` file.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -226,6 +229,9 @@ access further features, you have to do this yourself:
 
    .. versionchanged:: 3.6
       The *readrc* argument.
+
+   .. versionadded:: 3.14
+      The *commands* argument.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)

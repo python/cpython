@@ -307,7 +307,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _file_mtime_table = {}
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True):
+                 nosigint=False, readrc=True, commands=None):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -345,6 +345,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
+
+        if commands is not None:
+            self.rcLines.extend(commands)
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_doprompt = {} # for each bp num, tells if the prompt
