@@ -500,6 +500,7 @@ jobs:
       options: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
       suppressions_path: Tools/tsan/suppressions_free_threading.txt
       tsan_logs_artifact_name: tsan-logs-free-threading
+      os-matrix: '["ubuntu-22.04", "macos-14"]'
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
