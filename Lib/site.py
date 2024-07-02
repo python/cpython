@@ -526,8 +526,7 @@ def register_readline():
 
         def write_history():
             try:
-                # _pyrepl.__main__ is executed as the __main__ module
-                from __main__ import CAN_USE_PYREPL
+                from _pyrepl.main import CAN_USE_PYREPL
             except ImportError:
                 CAN_USE_PYREPL = False
 
