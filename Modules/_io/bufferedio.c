@@ -1604,7 +1604,8 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     Py_buffer buf;
     PyObject *memobj, *res;
     Py_ssize_t n;
-    /* NOTE: the buffer needn't be released as its object is NULL. */
+    PyObject *release_res;
+    /* The buffer will be released when raw.readinto() returns. */
     if (PyBuffer_FillInfo(&buf, NULL, start, len, 0, PyBUF_CONTIG) == -1)
         return -1;
     memobj = PyMemoryView_FromBuffer(&buf);
@@ -1618,7 +1619,15 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     do {
         res = PyObject_CallMethodOneArg(self->raw, &_Py_ID(readinto), memobj);
     } while (res == NULL && _PyIO_trap_eintr());
+    PyObject *exc = PyErr_GetRaisedException();
+    release_res = PyObject_CallMethod(memobj, "release", NULL);
+    _PyErr_ChainExceptions1(exc);
     Py_DECREF(memobj);
+    if (release_res == NULL) {
+        Py_XDECREF(res);
+        return -1;
+    }
+    Py_DECREF(release_res);
     if (res == NULL)
         return -1;
     if (res == Py_None) {
@@ -1963,7 +1972,8 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
     PyObject *memobj, *res;
     Py_ssize_t n;
     int errnum;
-    /* NOTE: the buffer needn't be released as its object is NULL. */
+    PyObject *release_res;
+    /* The buffer will be released when raw.write() returns. */
     if (PyBuffer_FillInfo(&buf, NULL, start, len, 1, PyBUF_CONTIG_RO) == -1)
         return -1;
     memobj = PyMemoryView_FromBuffer(&buf);
@@ -1979,6 +1989,14 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
         res = PyObject_CallMethodOneArg(self->raw, &_Py_ID(write), memobj);
         errnum = errno;
     } while (res == NULL && _PyIO_trap_eintr());
+    PyObject *exc = PyErr_GetRaisedException();
+    release_res = PyObject_CallMethod(memobj, "release", NULL);
+    _PyErr_ChainExceptions1(exc);
+    if (release_res == NULL) {
+        Py_XDECREF(res);
+        return -1;
+    }
+    Py_DECREF(release_res);
     Py_DECREF(memobj);
     if (res == NULL)
         return -1;
