@@ -1,0 +1,2 @@
+Handle AST nodes with missing runtime fields or attributes in
+:func:`ast.compare`. Patch by Bénédikt Tran.
