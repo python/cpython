@@ -1,8 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid7() for generating version 1, 3,
+4, 5, and 7 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
+referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -129,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1, 3, 4, 5 and 7, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -214,7 +215,7 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 7:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
@@ -656,7 +657,7 @@ def getnode():
     assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
 
-_last_timestamp = None
+_last_timestamp_v1 = None
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -674,15 +675,15 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID.unknown
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
-    global _last_timestamp
+    global _last_timestamp_v1
     import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
-    if _last_timestamp is not None and timestamp <= _last_timestamp:
-        timestamp = _last_timestamp + 1
-    _last_timestamp = timestamp
+    if _last_timestamp_v1 is not None and timestamp <= _last_timestamp_v1:
+        timestamp = _last_timestamp_v1 + 1
+    _last_timestamp_v1 = timestamp
     if clock_seq is None:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
@@ -719,6 +720,63 @@ def uuid5(namespace, name):
     hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
+_last_timestamp_v7 = None
+_last_counter_v7 = 0  # 42-bit counter
+
+def uuid7():
+    """Generate a UUID from a Unix timestamp in milliseconds and random bits.
+
+    UUIDv7 objects feature monotonicity within a millisecond.
+    """
+    # --- 48 ---   -- 4 --   --- 12 ---   -- 2 --   --- 30 ---   - 32 -
+    # unix_ts_ms | version | counter_hi | variant | counter_lo | random
+    #
+    # 'counter = counter_hi | counter_lo' is a 42-bit counter constructed
+    # with Method 1 of RFC 9562, §6.2, and its MSB is set to 0.
+    #
+    # 'random' is a 32-bit random value regenerated for every new UUID.
+    #
+    # If multiple UUIDs are generated within the same millisecond, the LSB
+    # of 'counter' is incremented by 1. When overflowing, the timestamp is
+    # advanced and the counter is reset to a random 42-bit integer with MSB
+    # set to 0.
+
+    def get_counter_and_tail():
+        rand = int.from_bytes(os.urandom(10))
+        # 42-bit counter with MSB set to 0
+        counter = (rand >> 32) & 0x1ffffffffff
+        # 32-bit random data
+        tail = rand & 0xffffffff
+        return counter, tail
+
+    global _last_timestamp_v7
+    global _last_counter_v7
+
+    import time
+    nanoseconds = time.time_ns()
+    timestamp_ms, _ = divmod(nanoseconds, 1_000_000)
+
+    if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
+        counter, tail = get_counter_and_tail()
+    else:
+        if timestamp_ms < _last_timestamp_v7:
+            timestamp_ms = _last_timestamp_v7 + 1
+        # advance the counter
+        counter = _last_counter_v7 + 1
+        if counter > 0x3ffffffffff:
+            timestamp_ms += 1  # advance the timestamp
+            counter, tail = get_counter_and_tail()
+        else:
+            tail = int.from_bytes(os.urandom(4))
+
+    _last_timestamp_v7 = timestamp_ms
+    _last_counter_v7 = counter
+
+    int_uuid_7 = (timestamp_ms & 0xffffffffffff) << 80
+    int_uuid_7 |= ((counter >> 30) & 0xfff) << 64
+    int_uuid_7 |= (counter & 0x3fffffff) << 32
+    int_uuid_7 |= tail & 0xffffffff
+    return UUID(int=int_uuid_7, version=7)
 
 def main():
     """Run the uuid command line interface."""
@@ -726,7 +784,8 @@ def main():
         "uuid1": uuid1,
         "uuid3": uuid3,
         "uuid4": uuid4,
-        "uuid5": uuid5
+        "uuid5": uuid5,
+        "uuid7": uuid7,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {

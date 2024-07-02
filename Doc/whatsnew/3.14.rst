@@ -121,6 +121,14 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+uuid
+----
+
+* Add support for UUID version 7 via :func:`uuid.uuid7` as specified
+  in :rfc:`9562`.
+
+  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
 
 Optimizations
 =============
