@@ -92,6 +92,17 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+datetime
+--------
+
+* Add support for ISO 8601 basic format for the following methods:
+
+  - :meth:`date.isoformat <datetime.date.isoformat>`
+  - :meth:`datetime.isoformat <datetime.datetime.isoformat>`
+  - :meth:`time.isoformat <datetime.time.isoformat>`
+
+  (Contributed by Bénédikt Tran in :gh:`118948`.)
+
 os
 --
 
