@@ -1,0 +1,2 @@
+Fixed ``zipimport.zipimporter`` improperly handling nested submodules inside
+of a zip file.

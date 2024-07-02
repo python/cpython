@@ -305,7 +305,18 @@ _zip_searchorder = (
 # Given a module name, return the potential file path in the
 # archive (without extension).
 def _get_module_path(self, fullname):
-    return self.prefix + fullname.rpartition('.')[2]
+    path = self.prefix + fullname.rpartition(".")[2]
+
+    # Here be dragons.
+    # Originally, this *only* used rpartition('.')[2] to find
+    # the last item in a namespace package, but that made it basically
+    # impossible to use nested submodules.
+    for suffix, _, _ in [*_zip_searchorder, (path_sep, False, False)]:
+        if (path + suffix) in self._get_files():
+            # OK, we found it the old way. Let's return it.
+            return path
+
+    return self.prefix + fullname.replace(".", path_sep)
 
 # Does this path represent a directory?
 def _is_dir(self, path):
