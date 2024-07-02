@@ -296,6 +296,81 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
         self.doTest(pyc_ext, files, TESTPACK, TESTPACK2, TESTMOD)
 
+    def testPackageExplicitDirectories(self):
+        # Test explicit namespace packages with explicit directory entries.
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            z.mkdir('a')
+            z.writestr('a/__init__.py', test_src)
+            z.mkdir('a/b')
+            z.writestr('a/b/__init__.py', test_src)
+            z.mkdir('a/b/c')
+            z.writestr('a/b/c/__init__.py', test_src)
+            z.writestr('a/b/c/d.py', test_src)
+        self._testPackage(initfile='__init__.py')
+
+    def testPackageImplicitDirectories(self):
+        # Test explicit namespace packages without explicit directory entries.
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            z.writestr('a/__init__.py', test_src)
+            z.writestr('a/b/__init__.py', test_src)
+            z.writestr('a/b/c/__init__.py', test_src)
+            z.writestr('a/b/c/d.py', test_src)
+        self._testPackage(initfile='__init__.py')
+
+    def testNamespacePackageExplicitDirectories(self):
+        # Test implicit namespace packages with explicit directory entries.
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            z.mkdir('a')
+            z.mkdir('a/b')
+            z.mkdir('a/b/c')
+            z.writestr('a/b/c/d.py', test_src)
+        self._testPackage(initfile=None)
+
+    def testNamespacePackageImplicitDirectories(self):
+        # Test implicit namespace packages without explicit directory entries.
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            z.writestr('a/b/c/d.py', test_src)
+        self._testPackage(initfile=None)
+
+    def _testPackage(self, initfile):
+        zi = zipimport.zipimporter(os.path.join(TEMP_ZIP, 'a'))
+        if initfile is None:
+            # XXX Should it work?
+            self.assertRaises(zipimport.ZipImportError, zi.is_package, 'b')
+            self.assertRaises(zipimport.ZipImportError, zi.get_source, 'b')
+            self.assertRaises(zipimport.ZipImportError, zi.get_code, 'b')
+        else:
+            self.assertTrue(zi.is_package('b'))
+            self.assertEqual(zi.get_source('b'), test_src)
+            self.assertEqual(zi.get_code('b').co_filename,
+                             os.path.join(TEMP_ZIP, 'a', 'b', initfile))
+
+        sys.path.insert(0, TEMP_ZIP)
+        self.assertNotIn('a', sys.modules)
+
+        mod = importlib.import_module(f'a.b')
+        self.assertIn('a', sys.modules)
+        self.assertIs(sys.modules['a.b'], mod)
+        if initfile is None:
+            self.assertIsNone(mod.__file__)
+        else:
+            self.assertEqual(mod.__file__,
+                             os.path.join(TEMP_ZIP, 'a', 'b', initfile))
+        self.assertEqual(len(mod.__path__), 1, mod.__path__)
+        self.assertEqual(mod.__path__[0], os.path.join(TEMP_ZIP, 'a', 'b'))
+
+        mod2 = importlib.import_module(f'a.b.c.d')
+        self.assertIn('a.b.c', sys.modules)
+        self.assertIn('a.b.c.d', sys.modules)
+        self.assertIs(sys.modules['a.b.c.d'], mod2)
+        self.assertIs(mod.c.d, mod2)
+        self.assertEqual(mod2.__file__,
+                         os.path.join(TEMP_ZIP, 'a', 'b', 'c', 'd.py'))
+
     def testMixedNamespacePackage(self):
         # Test implicit namespace packages spread between a
         # real filesystem and a zip archive.
@@ -445,30 +520,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Finally subpkg.TESTMOD + '3' only exists in zip1.
         mod = importlib.import_module('.'.join((subpkg, TESTMOD + '3')))
         self.assertEqual('path1.zip', mod.__file__.split(os.sep)[-4])
-
-    def testImportSubmodulesInZip(self):
-        with ZipFile(TEMP_ZIP, "w") as z:
-            z.writestr("a/__init__.py", b'')
-            z.writestr("a/b/c/__init__.py", b'def foo(): return "foo"')
-
-        importer = zipimport.zipimporter(TEMP_ZIP + "/a/")
-        spec = importer.find_spec("a.b")
-        self.assertEqual(spec.loader, None)
-        self.assertEqual(spec.submodule_search_locations,
-                         [(TEMP_ZIP + "/a/b").replace("/", zipimport.path_sep)])
-        self.assertRaises(zipimport.ZipImportError, importer.get_code, "a.b")
-        self.assertEqual(importer.get_data("a/b/"), b"")
-
-        sys.path.insert(0, TEMP_ZIP)
-        try:
-            import a.b.c
-            self.assertIn('namespace', str(a.b).lower())
-            self.assertEqual(a.b.c.foo(), "foo")
-        finally:
-            del sys.path[0]
-            sys.modules.pop('a.b.c', None)
-            sys.modules.pop('a.b', None)
-            sys.modules.pop('a', None)
 
     def testZipImporterMethods(self):
         packdir = TESTPACK + os.sep
@@ -676,17 +727,33 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertIsNone(loader.get_source(mod_name))
         self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
-    def testGetData(self):
+    def testGetDataExplicitDirectories(self):
         self.addCleanup(os_helper.unlink, TEMP_ZIP)
-        with ZipFile(TEMP_ZIP, "w") as z:
-            z.compression = self.compression
-            name = "testdata.dat"
-            data = bytes(x for x in range(256))
-            z.writestr(name, data)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            z.mkdir('a')
+            z.mkdir('a/b')
+            z.mkdir('a/b/c')
+            data = bytes(range(256))
+            z.writestr('a/b/c/testdata.dat', data)
+        self._testGetData()
 
-        zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(data, zi.get_data(name))
-        self.assertIn('zipimporter object', repr(zi))
+    def testGetDataImplicitDirectories(self):
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, 'w', compression=self.compression) as z:
+            data = bytes(range(256))
+            z.writestr('a/b/c/testdata.dat', data)
+        self._testGetData()
+
+    def _testGetData(self):
+        zi = zipimport.zipimporter(os.path.join(TEMP_ZIP, 'ignored'))
+        pathname = os.path.join('a', 'b', 'c', 'testdata.dat')
+        data = bytes(range(256))
+        self.assertEqual(zi.get_data(pathname), data)
+        self.assertEqual(zi.get_data(os.path.join(TEMP_ZIP, pathname)), data)
+        self.assertEqual(zi.get_data(os.path.join('a', 'b', '')), b'')
+        self.assertEqual(zi.get_data(os.path.join(TEMP_ZIP, 'a', 'b', '')), b'')
+        self.assertRaises(OSError, zi.get_data, os.path.join('a', 'b'))
+        self.assertRaises(OSError, zi.get_data, os.path.join(TEMP_ZIP, 'a', 'b'))
 
     def testImporterAttr(self):
         src = """if 1:  # indent hack
