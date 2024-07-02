@@ -106,9 +106,14 @@ def load_raw_data(input: Path) -> RawData:
                     # are missing an underscore prefix in their name
                     if key.startswith("uops[") and key[5:6] != "_":
                         key = "uops[_" + key[5:]
-                    stats[key.strip()] += int(value)
-            stats["__nfiles__"] += 1
 
+                    # TODO: Add validation, presumably metadata should match across
+                    # all input files?
+                    if "metadata" in key:
+                        stats[key.strip()] = int(value)
+                    else:
+                        stats[key.strip()] += int(value)
+            stats["__nfiles__"] += 1
         data = dict(stats)
         data.update(_load_metadata_from_source())
         return data
@@ -215,6 +220,13 @@ class OpcodeStats:
                     miss = opcode_stat.get("specialization.miss", 0)
                 counts[name] = (count, miss)
         return counts
+
+    def get_code_sizes(self) -> dict[str, int]:
+        sizes = {}
+        for name, opcode_stat in self._data.items():
+            if "metadata.code_size" in opcode_stat:
+                sizes[name] = opcode_stat["metadata.code_size"]
+        return sizes
 
     @functools.cache
     def _get_pred_succ(
@@ -736,6 +748,48 @@ def execution_count_section() -> Section:
     )
 
 
+def calc_execution_cost_table(prefix: str) -> RowCalculator:
+    """Calculate the product of the number of times each uop is executed and the
+    number of bytes in that uop's stencil, as a rough measure of the time
+    spent in each uop
+    """
+
+    def calc(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats(prefix)
+        counts = opcode_stats.get_execution_counts()
+        code_sizes = opcode_stats.get_code_sizes()
+
+        # Only include UOps for which we have both a count and a stencil size,
+        # to not error when running in Tier 2 without the JIT
+        uop_costs = {
+            name: counts[name][0] * code_sizes[name]
+            for name in counts
+            if name in code_sizes
+        }
+
+        total_cost = sum(uop_costs.values())
+        cumulative = 0
+        rows: Rows = []
+
+        for opcode, cost in sorted(uop_costs.items(), key=itemgetter(1), reverse=True):
+            count = counts[opcode][0]
+            cumulative += cost
+            rows.append(
+                (
+                    opcode,
+                    Count(count),
+                    Count(code_sizes[opcode]),
+                    Count(cost),
+                    Ratio(cost, total_cost),
+                    Ratio(cumulative, total_cost),
+                )
+            )
+        rows.sort(key=itemgetter(3), reverse=True)
+        return rows
+
+    return calc
+
+
 def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
@@ -1230,6 +1284,25 @@ def optimization_section() -> Section:
                     calc_execution_count_table("uops"),
                     JoinMode.CHANGE_ONE_COLUMN,
                 )
+            ],
+        )
+
+        yield Section(
+            "Total Bytes Executed per JIT'ed UOp",
+            "",
+            [
+                Table(
+                    (
+                        "Name",
+                        "Count",
+                        "Stencil Size (Bytes)",
+                        "Total Size",
+                        "Self (Total Size)",
+                        "Cumulative (Total Size)",
+                    ),
+                    calc_execution_cost_table("uops"),
+                    JoinMode.CHANGE_ONE_COLUMN,
+                ),
             ],
         )
         yield pair_count_section(prefix="uop", title="Non-JIT uop")
