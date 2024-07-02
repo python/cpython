@@ -1,0 +1,1 @@
+Correct working with CLI history for new REPL.
