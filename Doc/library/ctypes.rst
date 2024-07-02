@@ -2306,7 +2306,7 @@ These are the fundamental ctypes data types:
    .. versionadded:: 3.14
 
 
- .. class:: c_float_complex
+.. class:: c_float_complex
 
    Represents the C :c:expr:`float complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
