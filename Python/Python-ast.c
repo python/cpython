@@ -5361,12 +5361,13 @@ ast_type_replace_check(PyObject *self,
             return -1;
         }
     }
-    Py_ssize_t m = PySet_Size(expecting);
-    if (m == -1) {
-        Py_DECREF(expecting);
-        return -1;
-    }
-    // check that the keyword arguments are accepted
+    // Any keyword argument that is neither a field or attribute is rejected.
+    // We first need to check whether a keyword argument is accepted or not.
+    // If all keyword arguments are accepted, we compute the required fields
+    // and attributes. A field or attribute is not needed if:
+    //
+    //  1) it is given in 'kwargs', or
+    //  2) it already exists on 'self'.
     if (kwargs) {
         Py_ssize_t pos = 0;
         PyObject *key, *value;
@@ -5383,9 +5384,6 @@ ast_type_replace_check(PyObject *self,
                 Py_DECREF(expecting);
                 return -1;
             }
-            else {
-                m -= 1;
-            }
         }
     }
     // check that the remaining fields or attributes would be filled
@@ -5393,19 +5391,22 @@ ast_type_replace_check(PyObject *self,
         Py_ssize_t pos = 0;
         PyObject *key, *value;
         while (PyDict_Next(dict, &pos, &key, &value)) {
-            int rc = PySet_Discard(expecting, key);
-            if (rc < 0) {
+            // Mark fields or attributes that are found on the instance
+            // as non-mandatory. If they are not given in 'kwargs', they
+            // will be shallow-coied; otherwise, they would be replaced
+            // (not in this function).
+            if (PySet_Discard(expecting, key) < 0) {
                 Py_DECREF(expecting);
                 return -1;
             }
-            if (rc) {
-                m -= 1;
-            }
         }
         if (attributes) {
-            // Some attributes may or may not be present; if they are
-            // not present on the node, we do not consider them to be
-            // required, since they would be set in the constructor.
+            // Some attributes may or may not be present at runtime.
+            // In particular, now that we checked whether 'kwargs'
+            // is correct or not, we allow any attribute to be missing.
+            //
+            // Note that fields must still be entirely determined when
+            // calling the constructor later.
             PyObject *optionals = PySet_New(attributes);
             if (optionals == NULL) {
                 Py_DECREF(expecting);
@@ -5415,36 +5416,25 @@ ast_type_replace_check(PyObject *self,
             PyObject *item;
             Py_hash_t hash;
             while (_PySet_NextEntry(optionals, &pos, &item, &hash)) {
-                int rc = PyDict_Contains(dict, item);
-                if (rc < 0) {
+                if(PySet_Discard(expecting, item) < 0) {
                     Py_DECREF(expecting);
                     Py_DECREF(optionals);
                     return -1;
-                }
-                if (rc == 0) {
-                    rc = PySet_Discard(expecting, item);
-                    if(rc < 0) {
-                        Py_DECREF(expecting);
-                        Py_DECREF(optionals);
-                        return -1;
-                    }
-                    if (rc) {
-                        m -= 1;
-                    }
                 }
             }
             Py_DECREF(optionals);
         }
     }
-    // now 'expecting' contains all the missing fields or attributes
+    // Now 'expecting' contains the fields or attributes
+    // that would not be filled inside ast_type_replace().
+    Py_ssize_t m = PySet_GET_SIZE(expecting);
     if (m > 0) {
         PyObject *names = PyList_New(m);
         if (names == NULL) {
             Py_DECREF(expecting);
             return -1;
         }
-        Py_ssize_t i = 0;
-        Py_ssize_t pos = 0;
+        Py_ssize_t i = 0, pos = 0;
         PyObject *item;
         Py_hash_t hash;
         while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
