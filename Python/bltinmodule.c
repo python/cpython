@@ -2728,7 +2728,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 z = PyComplex_AsCComplex(item);
                 _csum_neumaier_step(&cr_result, z.real);
                 _csum_neumaier_step(&ci_result, z.imag);
-                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
+                Py_DECREF(item);
                 continue;
             }
             if (PyLong_Check(item)) {
