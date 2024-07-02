@@ -1851,6 +1851,28 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
                 break;
             }
         }
+        assert(item != NULL);
+
+        /* first iteration; just set maxitem, defer maxval since we may not need it */
+        if (maxitem == NULL) {
+            maxitem = item;
+            continue;
+        }
+
+        /* second iteration; set deferred maxval before comparisons */
+        if (maxval == NULL) {
+            /* get the value from the key function */
+            if (keyfunc != NULL) {
+                val = PyObject_CallOneArg(keyfunc, maxitem);
+                if (val == NULL)
+                    goto Fail_it_item;
+            }
+            /* no key function; the value is the item */
+            else {
+                val = Py_NewRef(maxitem);
+            }
+            maxval = val;
+        }
 
         /* get the value from the key function */
         if (keyfunc != NULL) {
@@ -1863,30 +1885,24 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
             val = Py_NewRef(item);
         }
 
-        /* maximum value and item are unset; set them */
-        if (maxval == NULL) {
-            maxitem = item;
-            maxval = val;
-        }
         /* maximum value and item are set; update them as necessary */
+        int cmp = PyObject_RichCompareBool(val, maxval, op);
+        if (cmp < 0)
+            goto Fail_it_item_and_val;
+        else if (cmp > 0) {
+            Py_DECREF(maxval);
+            Py_DECREF(maxitem);
+            maxval = val;
+            maxitem = item;
+        }
         else {
-            int cmp = PyObject_RichCompareBool(val, maxval, op);
-            if (cmp < 0)
-                goto Fail_it_item_and_val;
-            else if (cmp > 0) {
-                Py_DECREF(maxval);
-                Py_DECREF(maxitem);
-                maxval = val;
-                maxitem = item;
-            }
-            else {
-                Py_DECREF(item);
-                Py_DECREF(val);
-            }
+            Py_DECREF(item);
+            Py_DECREF(val);
         }
     }
-    if (maxval == NULL) {
-        assert(maxitem == NULL);
+
+    if (maxitem == NULL) {
+        assert(maxval == NULL);
         if (defaultval != NULL) {
             maxitem = Py_NewRef(defaultval);
         } else {
@@ -1894,7 +1910,7 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
                          "%s() iterable argument is empty", name);
         }
     }
-    else
+    else if (maxval != NULL)
         Py_DECREF(maxval);
     Py_XDECREF(it);
     return maxitem;
