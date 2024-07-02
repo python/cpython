@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "errcode.h"
+#include "internal/pycore_critical_section.h"   // Py_BEGIN_CRITICAL_SECTION
 #include "../Parser/lexer/state.h"
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "../Parser/pegen.h"                    // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
 
@@ -84,14 +85,16 @@ tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
 }
 
 static int
-_tokenizer_error(struct tok_state *tok)
+_tokenizer_error(tokenizeriterobject *it)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     if (PyErr_Occurred()) {
         return -1;
     }
 
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
+    struct tok_state *tok = it->tok;
     switch (tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -178,16 +181,77 @@ exit:
 }
 
 static PyObject *
+_get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t size,
+                  int *line_changed)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
+    PyObject *line;
+    if (it->tok->lineno != it->last_lineno) {
+        // Line has changed since last token, so we fetch the new line and cache it
+        // in the iter object.
+        Py_XDECREF(it->last_line);
+        line = PyUnicode_DecodeUTF8(line_start, size, "replace");
+        it->last_line = line;
+        it->byte_col_offset_diff = 0;
+    }
+    else {
+        line = it->last_line;
+        *line_changed = 0;
+    }
+    return line;
+}
+
+static void
+_get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_start,
+                 PyObject *line, int line_changed, Py_ssize_t lineno, Py_ssize_t end_lineno,
+                 Py_ssize_t *col_offset, Py_ssize_t *end_col_offset)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
+    Py_ssize_t byte_offset = -1;
+    if (token.start != NULL && token.start >= line_start) {
+        byte_offset = token.start - line_start;
+        if (line_changed) {
+            *col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
+            it->byte_col_offset_diff = byte_offset - *col_offset;
+        }
+        else {
+            *col_offset = byte_offset - it->byte_col_offset_diff;
+        }
+    }
+
+    if (token.end != NULL && token.end >= it->tok->line_start) {
+        Py_ssize_t end_byte_offset = token.end - it->tok->line_start;
+        if (lineno == end_lineno) {
+            // If the whole token is at the same line, we can just use the token.start
+            // buffer for figuring out the new column offset, since using line is not
+            // performant for very long lines.
+            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
+            *end_col_offset = *col_offset + token_col_offset;
+            it->byte_col_offset_diff += token.end - token.start - token_col_offset;
+        }
+        else {
+            *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, end_byte_offset);
+            it->byte_col_offset_diff += end_byte_offset - *end_col_offset;
+        }
+    }
+    it->last_lineno = lineno;
+    it->last_end_lineno = end_lineno;
+}
+
+static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
     PyObject* result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(it);
+
     struct token token;
     _PyToken_Init(&token);
 
     int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
-            _tokenizer_error(it->tok);
+            _tokenizer_error(it);
             assert(PyErr_Occurred());
         }
         goto exit;
@@ -224,18 +288,7 @@ tokenizeriter_next(tokenizeriterobject *it)
             size -= 1;
         }
 
-        if (it->tok->lineno != it->last_lineno) {
-            // Line has changed since last token, so we fetch the new line and cache it
-            // in the iter object.
-            Py_XDECREF(it->last_line);
-            line = PyUnicode_DecodeUTF8(line_start, size, "replace");
-            it->last_line = line;
-            it->byte_col_offset_diff = 0;
-        } else {
-            // Line hasn't changed so we reuse the cached one.
-            line = it->last_line;
-            line_changed = 0;
-        }
+        line = _get_current_line(it, line_start, size, &line_changed);
     }
     if (line == NULL) {
         Py_DECREF(str);
@@ -244,36 +297,10 @@ tokenizeriter_next(tokenizeriterobject *it)
 
     Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     Py_ssize_t end_lineno = it->tok->lineno;
-    it->last_lineno = lineno;
-    it->last_end_lineno = end_lineno;
-
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
-    Py_ssize_t byte_offset = -1;
-    if (token.start != NULL && token.start >= line_start) {
-        byte_offset = token.start - line_start;
-        if (line_changed) {
-            col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
-            it->byte_col_offset_diff = byte_offset - col_offset;
-        }
-        else {
-            col_offset = byte_offset - it->byte_col_offset_diff;
-        }
-    }
-    if (token.end != NULL && token.end >= it->tok->line_start) {
-        Py_ssize_t end_byte_offset = token.end - it->tok->line_start;
-        if (lineno == end_lineno) {
-            // If the whole token is at the same line, we can just use the token.start
-            // buffer for figuring out the new column offset, since using line is not
-            // performant for very long lines.
-            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
-            end_col_offset = col_offset + token_col_offset;
-            it->byte_col_offset_diff += token.end - token.start - token_col_offset;
-        } else {
-            end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, end_byte_offset);
-            it->byte_col_offset_diff += end_byte_offset - end_col_offset;
-        }
-    }
+    _get_col_offsets(it, token, line_start, line, line_changed,
+                     lineno, end_lineno, &col_offset, &end_col_offset);
 
     if (it->tok->tok_extra_tokens) {
         if (is_trailing_token) {
@@ -315,6 +342,8 @@ exit:
     if (type == ENDMARKER) {
         it->done = 1;
     }
+
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
