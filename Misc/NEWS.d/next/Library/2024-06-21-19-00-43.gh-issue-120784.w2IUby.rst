@@ -1,0 +1,1 @@
+Reword ``utcnow()``/``utcfromtimestamp()`` deprecation warning to use :attr:`datetime.timezone.utc`.
