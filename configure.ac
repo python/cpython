@@ -2511,8 +2511,18 @@ AS_VAR_IF([with_strict_overflow], [yes],
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
-AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+case $ac_sys_system/$CC in
+   AIX*/gcc*)
+   # In AIX with GCC, the compile check passes with -fstack-protector-strong
+   # even though it is not supported and is exposed only by a run/link check.
+   # So disable it.
+     AC_MSG_WARN([-fstack-protector-strong not supported in AIX with gcc])
+   ;;
+   *)
+   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+   ;;
+esac
 
 case $GCC in
 yes)

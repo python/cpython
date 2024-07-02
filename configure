@@ -9680,7 +9680,16 @@ fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+case $ac_sys_system/$CC in
+   AIX*/gcc*)
+   # In AIX with GCC, the compile check passes with -fstack-protector-strong
+   # even though it is not supported and is exposed only by a run/link check.
+   # So disable it.
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -fstack-protector-strong not supported in AIX with gcc" >&5
+printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported in AIX with gcc" >&2;}
+   ;;
+   *)
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
 if test ${ax_cv_check_cflags__Werror__fstack_protector_strong+y}
 then :
@@ -9719,7 +9728,7 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -fstack-protector-strong not supported" >&2;}
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wtrampolines" >&5
 printf %s "checking whether C compiler accepts -Wtrampolines... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wtrampolines+y}
 then :
@@ -9758,6 +9767,8 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
+   ;;
+esac
 
 case $GCC in
 yes)
