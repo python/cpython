@@ -70,6 +70,26 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
+   .. method:: iter()
+
+      Return an :term:`asynchronous iterator` which iterates over the queue
+      of items. If queue is empty, wait until the next item is available.
+
+      Stops iteration if the queue has been shut down and is empty, or if
+      the queue has been shut down immediately.
+
+      .. versionadded:: 3.14
+
+   .. method:: iter_nowait()
+
+      Return an :term:`iterator` which iterates over the queue of items
+      without blocking.
+
+      Only iterate over the items which are immediately available, but raise
+      the :exc:`QueueEmpty` exception if none are.
+
+      .. versionadded:: 3.14
+
    .. coroutinemethod:: join()
 
       Block until all items in the queue have been received and processed.
@@ -191,15 +211,10 @@ concurrent tasks::
 
 
    async def worker(name, queue):
-       while True:
-           # Get a "work item" out of the queue.
-           sleep_for = await queue.get()
-
+       # Get a "work item" out of the queue.
+       async for sleep_for in queue.iter():
            # Sleep for the "sleep_for" seconds.
            await asyncio.sleep(sleep_for)
-
-           # Notify the queue that the "work item" has been processed.
-           queue.task_done()
 
            print(f'{name} has slept for {sleep_for:.2f} seconds')
 
@@ -215,22 +230,16 @@ concurrent tasks::
            total_sleep_time += sleep_for
            queue.put_nowait(sleep_for)
 
+       # All tasks have been queued
+       queue.shutdown()
+
        # Create three worker tasks to process the queue concurrently.
-       tasks = []
-       for i in range(3):
-           task = asyncio.create_task(worker(f'worker-{i}', queue))
-           tasks.append(task)
-
-       # Wait until the queue is fully processed.
        started_at = time.monotonic()
-       await queue.join()
-       total_slept_for = time.monotonic() - started_at
+       async with asyncio.TaskGroup() as tg:
+           for i in range(3):
+               tg.create_task(worker(f'worker-{i}', queue))
 
-       # Cancel our worker tasks.
-       for task in tasks:
-           task.cancel()
-       # Wait until all worker tasks are cancelled.
-       await asyncio.gather(*tasks, return_exceptions=True)
+       total_slept_for = time.monotonic() - started_at
 
        print('====')
        print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')

@@ -92,6 +92,12 @@ ast
 Added :func:`ast.compare` for comparing two ASTs.
 (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
+asyncio
+-------
+
+Add :meth:`asyncio.Queue.iter` and :meth:`asyncio.Queue.iter_nowait`.
+(Contributed by Wannes Boeykens in :gh:`119154`.)
+
 os
 --
 
@@ -109,6 +115,12 @@ pathlib
 * Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
   another.
   (Contributed by Barney Gale in :gh:`73991`.)
+
+queue
+-----
+
+Add :meth:`queue.Queue.iter` and :meth:`queue.Queue.iter_nowait`.
+(Contributed by Wannes Boeykens in :gh:`119154`.)
 
 symtable
 --------

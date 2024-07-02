@@ -1,5 +1,6 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
+import concurrent.futures
 import itertools
 import random
 import threading
@@ -150,34 +151,63 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.do_blocking_test(q.get, (), q.put, ('empty',))
         self.do_blocking_test(q.get, (True, 10), q.put, ('empty',))
 
+    def test_iter(self):
+        q = self.type2test()
+        self.cum = 0
 
-    def worker(self, q):
-        while True:
-            x = q.get()
-            if x < 0:
-                q.task_done()
-                return
-            with self.cumlock:
-                self.cum += x
-            q.task_done()
+        def worker():
+            for x in q.iter():
+                with self.cumlock:
+                    self.cum += x
+
+        with concurrent.futures.ThreadPoolExecutor() as tp:
+            tp.submit(worker)
+            tp.submit(worker)
+            for i in range(100):
+                q.put(i)
+
+            q.shutdown()
+
+        self.assertEqual(self.cum, sum(range(100)))
+
+    def test_iter_nowait(self):
+        q = self.type2test()
+        self.cum = 0
+        for i in range(100):
+            q.put(i)
+
+        for x in q.iter_nowait():
+            self.cum += x
+
+        self.assertEqual(self.cum, sum(range(100)))
 
     def queue_join_test(self, q):
         self.cum = 0
-        threads = []
-        for i in (0,1):
-            thread = threading.Thread(target=self.worker, args=(q,))
-            thread.start()
-            threads.append(thread)
-        for i in range(100):
-            q.put(i)
-        q.join()
-        self.assertEqual(self.cum, sum(range(100)),
-                         "q.join() did not block until all tasks were done")
-        for i in (0,1):
-            q.put(-1)         # instruct the threads to close
-        q.join()                # verify that you can join twice
-        for thread in threads:
-            thread.join()
+
+        def worker():
+            for x in q.iter():
+                with self.cumlock:
+                    self.cum += x
+                    q.task_done()
+
+        with concurrent.futures.ThreadPoolExecutor() as tp:
+            tp.submit(worker)
+            tp.submit(worker)
+            for i in range(100):
+                q.put(i)
+
+            q.join()
+            self.assertEqual(self.cum, sum(range(100)),
+                             "q.join() didn't block until all tasks were done")
+            for i in range(100, 200):
+                q.put(i)
+
+            q.join() # verify that you can join twice
+            self.assertEqual(self.cum, sum(range(200)),
+                             "q.join() didn't block until all tasks were done")
+
+            # instruct the threads to close
+            q.shutdown()
 
     def test_queue_task_done(self):
         # Test to make sure a queue task completed successfully.
@@ -192,15 +222,15 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def test_queue_join(self):
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
-        q = self.type2test()
-        self.queue_join_test(q)
-        self.queue_join_test(q)
-        try:
-            q.task_done()
-        except ValueError:
-            pass
-        else:
-            self.fail("Did not detect task count going negative")
+        for _ in range(2):
+            q = self.type2test()
+            self.queue_join_test(q)
+            try:
+                q.task_done()
+            except ValueError:
+                pass
+            else:
+                self.fail("Did not detect task count going negative")
 
     def test_basic(self):
         # Do it a couple of times on the same queue.
@@ -215,6 +245,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put(1, timeout=-1)
         with self.assertRaises(ValueError):
             q.get(1, timeout=-1)
+        with self.assertRaises(ValueError):
+            list(q.iter(1, timeout=-1))
 
     def test_nowait(self):
         q = self.type2test(QUEUE_SIZE)
@@ -227,6 +259,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.get_nowait()
         with self.assertRaises(self.queue.Empty):
             q.get_nowait()
+        with self.assertRaises(self.queue.Empty):
+            list(q.iter_nowait())
 
     def test_shrinking_queue(self):
         # issue 10110
@@ -248,6 +282,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put("data")
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_nonempty(self):
         q = self.type2test()
@@ -256,6 +291,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.get()
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_immediate(self):
         q = self.type2test()
@@ -263,6 +299,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.shutdown(immediate=True)
         with self.assertRaises(self.queue.ShutDown):
             q.get()
+        self.assertEqual(list(q.iter()), [])
 
     def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from alive via shutdown to immediate
