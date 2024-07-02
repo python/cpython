@@ -40,7 +40,7 @@ The minimum supported iOS version is specified at compile time, using the
 :option:`--host` option to ``configure``. By default, when compiled for iOS,
 Python will be compiled with a minimum supported iOS version of 13.0. To use a
 different miniumum iOS version, provide the version number as part of the
-:option:`--host` argument - for example,
+:option:`!--host` argument - for example,
 ``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64 simulator build
 with a deployment target of 15.4.
 
