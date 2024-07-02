@@ -1,3 +1,4 @@
+import itertools
 import textwrap
 import types
 import unittest
@@ -11,12 +12,8 @@ SOURCE = 3
 class TypeAnnotationTests(unittest.TestCase):
 
     def test_lazy_create_annotations(self):
-        # type objects lazy create their __annotations__ dict on demand.
-        # the annotations dict is stored in type.__dict__.
-        # a freshly created type shouldn't have an annotations dict yet.
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
             d = foo.__annotations__
             self.assertTrue("__annotations__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
@@ -26,7 +23,6 @@ class TypeAnnotationTests(unittest.TestCase):
     def test_setting_annotations(self):
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
             d = {'a': int}
             foo.__annotations__ = d
             self.assertTrue("__annotations__" in foo.__dict__)
@@ -268,6 +264,68 @@ class AnnotateTests(unittest.TestCase):
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
+
+
+class MetaclassTests(unittest.TestCase):
+    def test_annotated_meta(self):
+        class Meta(type):
+            a: int
+
+        class X(metaclass=Meta):
+            pass
+
+        class Y(metaclass=Meta):
+            b: float
+
+        self.assertEqual(Meta.__annotations__, {"a": int})
+        self.assertEqual(Meta.__annotate__(1), {"a": int})
+
+        self.assertEqual(X.__annotations__, {})
+        self.assertIs(X.__annotate__, None)
+
+        self.assertEqual(Y.__annotations__, {"b": float})
+        self.assertEqual(Y.__annotate__(1), {"b": float})
+
+    def test_ordering(self):
+        # Based on a sample by David Ellis
+        # https://discuss.python.org/t/pep-749-implementing-pep-649/54974/38
+
+        def make_classes():
+            class Meta(type):
+                a: int
+                expected_annotations = {"a": int}
+
+            class A(type, metaclass=Meta):
+                b: float
+                expected_annotations = {"b": float}
+
+            class B(metaclass=A):
+                c: str
+                expected_annotations = {"c": str}
+
+            class C(B):
+                expected_annotations = {}
+
+            class D(metaclass=Meta):
+                expected_annotations = {}
+
+            return Meta, A, B, C, D
+
+        classes = make_classes()
+        class_count = len(classes)
+        for order in itertools.permutations(range(class_count), class_count):
+            names = ", ".join(classes[i].__name__ for i in order)
+            with self.subTest(names=names):
+                classes = make_classes()  # Regenerate classes
+                for i in order:
+                    classes[i].__annotations__
+                for c in classes:
+                    with self.subTest(c=c):
+                        self.assertEqual(c.__annotations__, c.expected_annotations)
+                        if c.expected_annotations:
+                            self.assertEqual(c.__annotate__(1), c.expected_annotations)
+                        else:
+                            self.assertIs(c.__annotate__, None)
 
 
 class DeferredEvaluationTests(unittest.TestCase):

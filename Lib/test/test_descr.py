@@ -5123,7 +5123,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = list(it)
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+        self.assertEqual(keys, ['__annotate__', '__annotations__',
+                                '__dict__', '__doc__', '__firstlineno__',
                                 '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])
@@ -5135,7 +5136,7 @@ class DictProxyTests(unittest.TestCase):
         it = self.C.__dict__.values()
         self.assertNotIsInstance(it, list)
         values = list(it)
-        self.assertEqual(len(values), 7)
+        self.assertEqual(len(values), 9)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                         'trace function introduces __local__')
@@ -5145,7 +5146,8 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = [item[0] for item in it]
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__firstlineno__',
+        self.assertEqual(keys, ['__annotate__', '__annotations__',
+                                '__dict__', '__doc__', '__firstlineno__',
                                 '__module__',
                                 '__static_attributes__', '__weakref__',
                                 'meth'])

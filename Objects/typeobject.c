@@ -104,6 +104,9 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static PyObject *
+annodescr_new(PyObject *owner);
+
 
 static inline PyTypeObject *
 type_from_ref(PyObject *ref)
@@ -1880,6 +1883,34 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+type_materialize_annotations(PyTypeObject *type)
+{
+    PyObject *annotate = type_get_annotate(type, NULL);
+    if (annotate == NULL) {
+        return NULL;
+    }
+    if (PyCallable_Check(annotate)) {
+        PyObject *one = _PyLong_GetOne();
+        PyObject *annotations = _PyObject_CallOneArg(annotate, one);
+        Py_DECREF(annotate);
+        if (annotations == NULL) {
+            return NULL;
+        }
+        if (!PyDict_Check(annotations)) {
+            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                            Py_TYPE(annotations)->tp_name);
+            Py_DECREF(annotations);
+            return NULL;
+        }
+        return annotations;
+    }
+    else {
+        Py_DECREF(annotate);
+        return PyDict_New();
+    }
+}
+
+static PyObject *
 type_get_annotations(PyTypeObject *type, void *context)
 {
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -1900,40 +1931,17 @@ type_get_annotations(PyTypeObject *type, void *context)
         }
     }
     else {
-        PyObject *annotate = type_get_annotate(type, NULL);
-        if (annotate == NULL) {
+        annotations = type_materialize_annotations(type);
+        if (annotations == NULL) {
             Py_DECREF(dict);
             return NULL;
         }
-        if (PyCallable_Check(annotate)) {
-            PyObject *one = _PyLong_GetOne();
-            annotations = _PyObject_CallOneArg(annotate, one);
-            if (annotations == NULL) {
-                Py_DECREF(dict);
-                Py_DECREF(annotate);
-                return NULL;
-            }
-            if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
-                Py_DECREF(annotations);
-                Py_DECREF(annotate);
-                Py_DECREF(dict);
-                return NULL;
-            }
-        }
-        else {
-            annotations = PyDict_New();
-        }
-        Py_DECREF(annotate);
-        if (annotations) {
-            int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
-            if (result) {
-                Py_CLEAR(annotations);
-            } else {
-                PyType_Modified(type);
-            }
+        int result = PyDict_SetItem(
+                dict, &_Py_ID(__annotations__), annotations);
+        if (result) {
+            Py_CLEAR(annotations);
+        } else {
+            PyType_Modified(type);
         }
     }
     Py_DECREF(dict);
@@ -4181,6 +4189,39 @@ type_new_set_classcell(PyTypeObject *type)
 }
 
 static int
+type_new_set_annotate(PyTypeObject *type)
+{
+    PyObject *dict = lookup_tp_dict(type);
+    // If __annotate__ is not set (i.e., the class has no annotations),
+    // set it to None
+    int result = PyDict_Contains(dict, &_Py_ID(__annotate__));
+    if (result < 0) {
+        return -1;
+    }
+    else if (result == 0) {
+        if (PyDict_SetItem(dict, &_Py_ID(__annotate__), Py_None) < 0) {
+            return -1;
+        }
+    }
+    result = PyDict_Contains(dict, &_Py_ID(__annotations__));
+    if (result < 0) {
+        return -1;
+    }
+    else if (result == 0) {
+        PyObject *descr = annodescr_new((PyObject *)type);
+        if (descr == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItem(dict, &_Py_ID(__annotations__), descr) < 0) {
+            Py_DECREF(descr);
+            return -1;
+        }
+        Py_DECREF(descr);
+    }
+    return 0;
+}
+
+static int
 type_new_set_classdictcell(PyTypeObject *type)
 {
     PyObject *dict = lookup_tp_dict(type);
@@ -4251,6 +4292,9 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
     if (type_new_set_classdictcell(type) < 0) {
+        return -1;
+    }
+    if (type_new_set_annotate(type) < 0) {
         return -1;
     }
     return 0;
@@ -11611,4 +11655,256 @@ PyTypeObject PySuper_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = (vectorcallfunc)super_vectorcall,
+};
+
+/* Annotations descriptor for heap types */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *owner;
+    PyObject *annotations;
+} annodescrobject;
+
+static PyObject *
+annodescr_new(PyObject *owner)
+{
+    annodescrobject *ad = PyObject_GC_New(annodescrobject, &_PyAnnotationsDescriptor_Type);
+    if (ad == NULL) {
+        return NULL;
+    }
+    ad->owner = Py_NewRef(owner);
+    ad->annotations = NULL;
+    _PyObject_GC_TRACK(ad);
+    return (PyObject *)ad;
+}
+
+static int
+annodescr_materialize(annodescrobject *ad)
+{
+    if (ad->annotations == NULL) {
+        assert(PyType_Check(ad->owner));
+        PyObject *dict = type_materialize_annotations((PyTypeObject *)ad->owner);
+        if (dict == NULL) {
+            return -1;
+        }
+        ad->annotations = dict;
+    }
+    return 0;
+}
+
+static void
+annodescr_dealloc(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    PyTypeObject *tp = Py_TYPE(self);
+
+    _PyObject_GC_UNTRACK(self);
+    Py_XDECREF(ad->owner);
+    Py_XDECREF(ad->annotations);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static int
+annodescr_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+
+    Py_VISIT(ad->owner);
+    Py_VISIT(ad->annotations);
+
+    return 0;
+}
+
+static int
+annodescr_clear(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+
+    Py_CLEAR(ad->annotations);
+    Py_CLEAR(ad->owner);
+    return 0;
+}
+
+static PyObject *
+annodescr_repr(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    return PyUnicode_FromFormat("<annotations for %R>", ad->owner);
+}
+
+PyDoc_STRVAR(annodescr_doc,
+"Wrapper for a class's annotations dictionary.");
+
+static PyObject *
+annodescr_iter(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return PyObject_GetIter(ad->annotations);
+}
+
+static Py_ssize_t
+annodescr_length(PyObject *self)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return -1;
+    }
+    return PyObject_Size(ad->annotations);
+}
+
+static PyObject *
+annodescr_getitem(PyObject *self, PyObject *key)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return PyObject_GetItem(ad->annotations, key);
+}
+
+static int
+annodescr_setitem(PyObject *self, PyObject *key, PyObject *value)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return -1;
+    }
+    return PyObject_SetItem(ad->annotations, key, value);
+}
+
+static PyMappingMethods annodescr_as_mapping = {
+    .mp_length = annodescr_length,
+    .mp_subscript = annodescr_getitem,
+    .mp_ass_subscript = annodescr_setitem,
+};
+
+static int
+annodescr_contains(PyObject *self, PyObject *key)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return -1;
+    }
+    return PySequence_Contains(ad->annotations, key);
+}
+
+static PySequenceMethods annodescr_as_sequence = {
+    .sq_contains = annodescr_contains,
+};
+
+static PyObject *
+annodescr_or(PyObject *self, PyObject *other)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return PyNumber_Or(ad->annotations, other);
+}
+
+static PyObject *
+annodescr_inplace_or(PyObject *self, PyObject *other)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return PyNumber_InPlaceOr(ad->annotations, other);
+}
+
+static PyNumberMethods annodescr_as_number = {
+    .nb_or = annodescr_or,
+    .nb_inplace_or = annodescr_inplace_or,
+};
+
+static PyObject *
+annodescr_richcompare(PyObject *self, PyObject *other, int op)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return PyObject_RichCompare(ad->annotations, other, op);
+}
+
+#define MAKE_DICT_WRAPPER(name) \
+    static PyObject *annodescr_wrap_ ## name(PyObject *self, \
+                                 PyObject *args, \
+                                 PyObject *kwargs) \
+    { \
+        annodescrobject *ad = (annodescrobject *)self; \
+        if (annodescr_materialize(ad) < 0) { \
+            return NULL; \
+        } \
+        PyObject *method = PyObject_GetAttrString(ad->annotations, #name); \
+        if (method == NULL) { \
+            return NULL; \
+        } \
+        return PyObject_Call(method, args, kwargs); \
+    }
+
+MAKE_DICT_WRAPPER(get)
+MAKE_DICT_WRAPPER(setdefault)
+MAKE_DICT_WRAPPER(pop)
+MAKE_DICT_WRAPPER(popitem)
+MAKE_DICT_WRAPPER(keys)
+MAKE_DICT_WRAPPER(values)
+MAKE_DICT_WRAPPER(items)
+MAKE_DICT_WRAPPER(update)
+MAKE_DICT_WRAPPER(clear)
+MAKE_DICT_WRAPPER(copy)
+
+#undef MAKE_DICT_WRAPPER
+
+static PyMethodDef annodescr_methods[] = {
+    {"get", (PyCFunction)annodescr_wrap_get, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"setdefault", (PyCFunction)annodescr_wrap_setdefault, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"pop", (PyCFunction)annodescr_wrap_pop, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"popitem", (PyCFunction)annodescr_wrap_popitem, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"keys", (PyCFunction)annodescr_wrap_keys, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"values", (PyCFunction)annodescr_wrap_values, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"items", (PyCFunction)annodescr_wrap_items, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"update", (PyCFunction)annodescr_wrap_update, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"clear", (PyCFunction)annodescr_wrap_clear, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"copy", (PyCFunction)annodescr_wrap_copy, METH_VARARGS | METH_KEYWORDS, NULL},
+    {NULL, NULL},
+};
+
+static PyObject *
+annodescr_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    annodescrobject *ad = (annodescrobject *)self;
+    if (annodescr_materialize(ad) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(ad->annotations);
+}
+
+PyTypeObject _PyAnnotationsDescriptor_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "AnnotationsDescriptor",
+    .tp_basicsize = sizeof(annodescrobject),
+    .tp_itemsize = 0,
+    .tp_dealloc = annodescr_dealloc,
+    .tp_traverse = annodescr_traverse,
+    .tp_clear = annodescr_clear,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MAPPING,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
+    .tp_free = PyObject_GC_Del,
+    .tp_doc = annodescr_doc,
+    .tp_repr = annodescr_repr,
+    .tp_iter = annodescr_iter,
+    .tp_as_mapping = &annodescr_as_mapping,
+    .tp_as_sequence = &annodescr_as_sequence,
+    .tp_as_number = &annodescr_as_number,
+    .tp_hash = PyObject_HashNotImplemented,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_richcompare = annodescr_richcompare,
+    .tp_methods = annodescr_methods,
+    .tp_descr_get = annodescr_descr_get,
 };

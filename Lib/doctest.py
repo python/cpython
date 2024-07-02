@@ -1067,6 +1067,7 @@ class DocTestFinder:
                 # Recurse to methods, properties, and nested classes.
                 if ((inspect.isroutine(val) or inspect.isclass(val) or
                       isinstance(val, property)) and
+                      valname != '__annotations__' and
                       self._from_module(module, val)):
                     valname = '%s.%s' % (name, valname)
                     self._find(tests, val, valname, module, source_lines,
