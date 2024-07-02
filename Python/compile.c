@@ -77,14 +77,6 @@ typedef struct _PyCfgBuilder cfg_builder;
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
-/* Return true if loc1 starts after loc2 ends. */
-static inline bool
-location_is_after(location loc1, location loc2) {
-    return (loc1.lineno > loc2.end_lineno) ||
-            ((loc1.lineno == loc2.end_lineno) &&
-             (loc1.col_offset > loc2.end_col_offset));
-}
-
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef _PyJumpTargetLabel jump_target_label;
@@ -3847,14 +3839,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         PyTuple_SET_ITEM(names, i, Py_NewRef(alias->name));
     }
 
-    if (location_is_after(LOC(s), c->c_future.ff_location) &&
-        s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
-        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
-    {
-        Py_DECREF(names);
-        return compiler_error(c, LOC(s), "from __future__ imports must occur "
-                              "at the beginning of the file");
-    }
     ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
