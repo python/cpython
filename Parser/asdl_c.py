@@ -1133,44 +1133,155 @@ cleanup:
 }
 
 /*
- * Verify that the keyword arguments are recognized.
+ * Perform the following validations:
  *
- * This returns 1 if all keyword arguments are allowed,
- * otherwise -1, possibly setting a TypeError exception.
+ *   - All keyword arguments are accepted.
+ *   - The instance after replacement does not lack required fields
+ *     or attributes.
+ *
+ * On success, this returns 1. Otherwise, set a TypeError
+ * exception and returns -1 (no exception is set if some
+ * other internal errors occur).
  */
 static inline int
-ast_type_replace_check_keywords(PyObject *self,
-                                PyObject *fields,
-                                PyObject *attributes,
-                                PyObject *kwargs) {
-    PyObject *allowed = PySet_New(fields);
-    if (allowed == NULL) {
+ast_type_replace_check(PyObject *self,
+                       PyObject *dict,
+                       PyObject *fields,
+                       PyObject *attributes,
+                       PyObject *kwargs)
+{
+    PyObject *expecting = PySet_New(fields);
+    if (expecting == NULL) {
         return -1;
     }
     if (attributes) {
-        if (_PySet_Update(allowed, attributes) < 0) {
-            Py_DECREF(allowed);
+        if (_PySet_Update(expecting, attributes) < 0) {
+            Py_DECREF(expecting);
             return -1;
         }
     }
-    PyObject *key, *value;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(kwargs, &pos, &key, &value)) {
-        int rc = PySet_Discard(allowed, key);
-        if (rc < 0) {
-            Py_DECREF(allowed);
-            return -1;
-        }
-        if (rc == 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.400s.__replace__ got an unexpected keyword "
-                         "argument '%U'.", Py_TYPE(self)->tp_name, key);
-            Py_DECREF(allowed);
-            return -1;
+    Py_ssize_t m = PySet_Size(expecting);
+    if (m == -1) {
+        Py_DECREF(expecting);
+        return -1;
+    }
+    // check that the keyword arguments are accepted
+    if (kwargs) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
+            int rc = PySet_Discard(expecting, key);
+            if (rc < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            if (rc == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "%.400s.__replace__ got an unexpected keyword "
+                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                Py_DECREF(expecting);
+                return -1;
+            }
+            else {
+                m -= 1;
+            }
         }
     }
-    Py_DECREF(allowed);
-    return 1;
+    // check that the remaining fields or attributes would be filled
+    if (dict) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(dict, &pos, &key, &value)) {
+            int rc = PySet_Discard(expecting, key);
+            if (rc < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            if (rc) {
+                m -= 1;
+            }
+        }
+        if (attributes) {
+            // Some attributes may or may not be present; if they are
+            // not present on the node, we do not consider them to be
+            // required, since they would be set in the constructor.
+            PyObject *optionals = PySet_New(attributes);
+            if (optionals == NULL) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            Py_ssize_t pos = 0;
+            PyObject *item;
+            Py_hash_t hash;
+            while (_PySet_NextEntry(optionals, &pos, &item, &hash)) {
+                int rc = PyDict_Contains(dict, item);
+                if (rc < 0) {
+                    Py_DECREF(expecting);
+                    Py_DECREF(optionals);
+                    return -1;
+                }
+                if (rc == 0) {
+                    rc = PySet_Discard(expecting, item);
+                    if(rc < 0) {
+                        Py_DECREF(expecting);
+                        Py_DECREF(optionals);
+                        return -1;
+                    }
+                    if (rc) {
+                        m -= 1;
+                    }
+                }
+            }
+            Py_DECREF(optionals);
+        }
+    }
+    // now 'expecting' contains all the missing fields or attributes
+    if (m > 0) {
+        PyObject *names = PyList_New(m);
+        if (names == NULL) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+        Py_ssize_t i = 0;
+        Py_ssize_t pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
+            PyObject *name = PyObject_Repr(item);
+            if (name == NULL) {
+                Py_DECREF(expecting);
+                Py_DECREF(names);
+                return -1;
+            }
+            // steal the reference 'name'
+            PyList_SET_ITEM(names, i++, name);
+        }
+        Py_DECREF(expecting);
+        if (PyList_Sort(names) < 0) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *sep = PyUnicode_FromString(", ");
+        if (sep == NULL) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *str_names = PyUnicode_Join(sep, names);
+        Py_DECREF(sep);
+        Py_DECREF(names);
+        if (str_names == NULL) {
+            return -1;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
+                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
+        Py_DECREF(str_names);
+        return -1;
+    }
+    else {
+        Py_DECREF(expecting);
+        return 1;
+    }
 }
 
 /*
@@ -1188,7 +1299,8 @@ ast_type_replace_check_keywords(PyObject *self,
 static inline int
 ast_type_replace_update_payload(PyObject *payload,
                                 PyObject *keys /* sequence of keys */,
-                                PyObject *dict /* instance dictionary */) {
+                                PyObject *dict /* instance dictionary */)
+{
     Py_ssize_t n = PySequence_Size(keys);
     if (n == -1) {
         return -1;
@@ -1222,7 +1334,8 @@ ast_type_replace_update_payload(PyObject *payload,
 
 /* copy.replace() support (shallow copy) */
 static PyObject *
-ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
+ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
     if (!_PyArg_NoPositional("__replace__", args)) {
         return NULL;
     }
@@ -1247,13 +1360,10 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs) {
     if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
         goto cleanup;
     }
-    // disallow unknown fields or attributes
-    if (kwargs &&
-        ast_type_replace_check_keywords(self, fields, attributes, kwargs) < 0)
-    {
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         goto cleanup;
     }
-    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
+    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
         goto cleanup;
     }
     empty_tuple = PyTuple_New(0);
