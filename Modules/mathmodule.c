@@ -815,7 +815,15 @@ long_lcm(PyObject *a, PyObject *b)
     if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
-    g = _PyLong_GCD(a, b);
+
+    /* Make sure a <= b to speed up (a // g) * b. */
+    if (PyObject_RichCompareBool(b, a, Py_LT)) {
+        g = a;
+        a = b;
+        b = g;
+    }
+
+    g = _PyLong_GCD(b, a);
     if (g == NULL) {
         return NULL;
     }
