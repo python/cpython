@@ -1935,8 +1935,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case ImportFrom_kind:
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
-        if (!check_import_from(st, s))
+        if (!check_import_from(st, s)) {
             VISIT_QUIT(st, 0);
+        }
         break;
     case Global_kind: {
         Py_ssize_t i;
