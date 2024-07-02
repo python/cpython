@@ -1422,7 +1422,7 @@ class TarInfo(object):
            POSIX.1-2008.
         """
         # Read the header information.
-        buf = tarfile.fileobj.read(self._block(self.size))
+        buf: bytes = tarfile.fileobj.read(self._block(self.size))
 
         # A pax header stores supplemental information for either
         # the following file (extended) or all following files
@@ -1437,9 +1437,15 @@ class TarInfo(object):
         # these fields are UTF-8 encoded but since POSIX.1-2008 tar
         # implementations are allowed to store them as raw binary strings if
         # the translation to UTF-8 fails.
-        match = re.search(br"\d+ hdrcharset=([^\n]+)\n", buf)
-        if match is not None:
-            pax_headers["hdrcharset"] = match.group(1).decode("utf-8")
+        if (
+            # Statement is both a contains check (!=-1) and a bounds check (>0)
+            (hdrcharset_offset := buf.find(b" hdrcharset=") - 1) > -1
+            # Check that the character before is a digit (0x30-0x39 is 0-9)
+            and 0x30 <= buf[hdrcharset_offset] <= 0x39
+        ):
+            match = re.match(br"^\d{1,20} hdrcharset=([^\n]+)\n", buf[hdrcharset_offset:])
+            if match is not None:
+                pax_headers["hdrcharset"] = match.group(1).decode("utf-8")
 
         # For the time being, we don't care about anything other than "BINARY".
         # The only other value that is currently allowed by the standard is
@@ -1454,14 +1460,14 @@ class TarInfo(object):
         # "%d %s=%s\n" % (length, keyword, value). length is the size
         # of the complete record including the length field itself and
         # the newline. keyword and value are both UTF-8 encoded strings.
-        regex = re.compile(br"(\d+) ([^=]+)=")
+        regex = re.compile(br"^(\d{1,20}) ([^=]+)=")
         pos = 0
-        while match := regex.match(buf, pos):
+        while match := regex.match(buf[pos:]):
             length, keyword = match.groups()
             length = int(length)
             if length == 0:
                 raise InvalidHeaderError("invalid header")
-            value = buf[match.end(2) + 1:match.start(1) + length - 1]
+            value = buf[match.end(2) + pos + 1:match.start(1) + pos + length - 1]
 
             # Normally, we could just use "utf-8" as the encoding and "strict"
             # as the error handler, but we better not take the risk. For
@@ -1520,12 +1526,26 @@ class TarInfo(object):
     def _proc_gnusparse_00(self, next, pax_headers, buf):
         """Process a GNU tar extended sparse header, version 0.0.
         """
-        offsets = []
-        for match in re.finditer(br"\d+ GNU.sparse.offset=(\d+)\n", buf):
-            offsets.append(int(match.group(1)))
-        numbytes = []
-        for match in re.finditer(br"\d+ GNU.sparse.numbytes=(\d+)\n", buf):
-            numbytes.append(int(match.group(1)))
+        def finditer_without_backtracking(buf, needle: bytes) -> list[int]:
+            values = []
+            regex = re.compile(br"^\d{1,20}%s(\d+)\n" % (needle,))
+            while True:
+                if (
+                    # Statement is both a contains check (!=-1) and a bounds check (>0)
+                    (needle_offset := buf.find(needle) - 1) > -1
+                    # Check that the character before is a digit (0x30-0x39 is 0-9)
+                    and 0x30 <= buf[needle_offset] <= 0x39
+                ):
+                    match = regex.match(buf[needle_offset:])
+                    if match is not None:
+                        values.append(int(match.group(1)))
+                    buf = buf[needle_offset + len(needle):]  # Skip over to the match.
+                else:
+                    break
+            return values
+
+        offsets = finditer_without_backtracking(buf, b" GNU.sparse.offset=")
+        numbytes = finditer_without_backtracking(buf, b" GNU.sparse.numbytes=")
         next.sparse = list(zip(offsets, numbytes))
 
     def _proc_gnusparse_01(self, next, pax_headers):
