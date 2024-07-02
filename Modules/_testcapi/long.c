@@ -103,7 +103,19 @@ pylong_getsign(PyObject *module, PyObject *arg)
     }
     return PyLong_FromLong(sign);
 }
-
+static PyObject *
+pylong_flipsign(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    PyObject *res = arg;
+    if (PyLong_Check(arg)) {
+        res = _PyLong_Copy((PyLongObject *)arg);
+    }
+    if (PyLong_FlipSign(&res) == -1) {
+        return NULL;
+    }
+    return res;
+}
 
 static PyObject *
 pylong_aspid(PyObject *module, PyObject *arg)
@@ -123,6 +135,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
+    {"pylong_flipsign",             pylong_flipsign,            METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
     {NULL},
 };
