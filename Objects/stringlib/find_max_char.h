@@ -20,25 +20,53 @@
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
-    const unsigned char *p = (const unsigned char *) begin;
+    const unsigned char *restrict p = (const unsigned char *) begin;
     const unsigned char *_end = (const unsigned char *)end;
-
-    while (p < _end) {
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help register allocation */
-            const unsigned char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= _end) {
-                size_t value = *(const size_t *) _p;
-                if (value & UCS1_ASCII_CHAR_MASK)
-                    return 255;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (p == _end)
-                break;
-        }
-        if (*p++ & 0x80)
+    const unsigned char *size_t_end = _end - SIZEOF_SIZE_T;
+    const unsigned char *unrolled_end = _end - (4 * SIZEOF_SIZE_T - 1);
+    while (p < unrolled_end) {
+        /* Chunks of 4 size_t values allow for compiler optimizations using vectors */
+        const size_t *restrict _p = (const size_t *)p;
+        size_t value0;
+        size_t value1;
+        size_t value2;
+        size_t value3;
+        /* Will be optimized to simple loads for architectures that support
+           unaligned loads. */
+        memcpy(&value0, _p + 0, SIZEOF_SIZE_T);
+        memcpy(&value1, _p + 1, SIZEOF_SIZE_T);
+        memcpy(&value2, _p + 2, SIZEOF_SIZE_T);
+        memcpy(&value3, _p + 3, SIZEOF_SIZE_T);
+        size_t value = value0 | value1 | value2 | value3;
+        if (value & UCS1_ASCII_CHAR_MASK) {
             return 255;
+        }
+        p += (4 * SIZEOF_SIZE_T);
+    }
+    size_t accumulator = 0;
+    while (p < size_t_end) {
+        size_t value;
+        memcpy(&value, p, SIZEOF_SIZE_T);
+        accumulator |= value;
+        p += SIZEOF_SIZE_T;
+    }
+    /* In the end there will be up to SIZEOF_SIZE_T leftover characters. It is
+       faster to do an unaligned load of a size_t integer at an offset from
+       the end rather than breaking it up into single bytes. However, if the
+       string is smaller than SIZEOF_SIZE_T this strategy is illegal. */
+    if (size_t_end >= (const unsigned char*)begin) {
+        size_t value;
+        memcpy(&value, size_t_end, SIZEOF_SIZE_T);
+        accumulator |= value;
+    } else {
+        /* Fallback for smaller than size_t strings. */
+        while (p < _end) {
+            accumulator |= *p;
+            p += 1;
+        }
+    }
+    if (accumulator & UCS1_ASCII_CHAR_MASK) {
+        return 255;
     }
     return 127;
 }
@@ -71,13 +99,15 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     Py_UCS4 mask;
     Py_ssize_t n = end - begin;
     const STRINGLIB_CHAR *p = begin;
-    const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 4);
+    const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 8);
     Py_UCS4 max_char;
 
     max_char = MAX_CHAR_ASCII;
     mask = MASK_ASCII;
     while (p < unrolled_end) {
-        STRINGLIB_CHAR bits = p[0] | p[1] | p[2] | p[3];
+        /* Loading 8 values at once allows platforms that have 16-byte vectors
+           to do a vector load and vector bitwise OR. */
+        STRINGLIB_CHAR bits = p[0] | p[1] | p[2] | p[3] | p[4] | p[5] | p[6] | p[7];
         if (bits & mask) {
             if (mask == mask_limit) {
                 /* Limit reached */
@@ -96,7 +126,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
             /* We check the new mask on the same chars in the next iteration */
             continue;
         }
-        p += 4;
+        p += 8;
     }
     while (p < end) {
         if (p[0] & mask) {
