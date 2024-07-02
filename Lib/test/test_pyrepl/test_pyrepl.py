@@ -1,10 +1,12 @@
 import io
 import itertools
 import os
+import pathlib
 import rlcompleter
 import select
 import subprocess
 import sys
+import tempfile
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -864,6 +866,21 @@ class TestMain(TestCase):
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
+    @force_not_colorized
+    def test_globals_from_file_passed_included_in_repl_globals(self):
+        with tempfile.TemporaryDirectory() as td:
+            fake_main = pathlib.Path(td, "foo.py")
+            fake_main.write_text("FOO = 42", encoding="utf-8")
+            output, exit_code = self.run_repl(
+                ["f'{FOO=}'", "exit"], main_module=str(fake_main)
+            )
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn("'FOO=42'", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
         env.update({"TERM": "dumb"})
@@ -898,10 +915,19 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+    def run_repl(
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        main_module: str | None = None,
+    ) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
+        repl_cmdline = [sys.executable, "-u", "-i"]
+        if main_module is not None:
+            repl_cmdline.append(main_module)
         process = subprocess.Popen(
-            [sys.executable, "-i", "-u"],
+            repl_cmdline,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
