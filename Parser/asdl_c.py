@@ -2053,7 +2053,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_modsupport.h"    // _PyArg_NoPositional()
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "pycore_setobject.h"     // _PySet_Update()
+        #include "pycore_setobject.h"     // _PySet_NextEntry(), _PySet_Update()
         #include "pycore_unionobject.h"   // _Py_union_type_or
         #include "structmember.h"
         #include <stddef.h>
