@@ -1,0 +1,82 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2023-05-11 00:33+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: messages.py:5 messages.py:7
+msgid "Hello, world!"
+msgstr ""
+
+#: messages.py:10
+msgid ""
+"Hello,\n"
+"    multiline!\n"
+msgstr ""
+
+#: messages.py:14
+msgid "parentheses"
+msgstr ""
+
+#: messages.py:16
+msgid "Raw string \\ \\n \\t"
+msgstr ""
+
+#: messages.py:18
+msgid "unicode string"
+msgstr ""
+
+#: messages.py:20
+msgid "rawdocunicodestandard"
+msgstr ""
+
+#: messages.py:31
+msgid "Some non-ascii text: ěščř αβγδ"
+msgstr ""
+
+#: messages.py:33
+msgid "Some very long text which should wrap correctly into multiple lines while respecting the maximum line length"
+msgstr ""
+
+#: messages.py:35
+msgid "foo"
+msgstr ""
+
+#: messages.py:35
+msgid "bar"
+msgstr ""
+
+#: messages.py:37 messages.py:73
+msgid "baz"
+msgstr ""
+
+#: messages.py:55
+msgid "Hello, {}!"
+msgstr ""
+
+#: messages.py:59 messages.py:60
+msgid "A"
+msgstr ""
+
+#: messages.py:59 messages.py:60
+msgid "B"
+msgstr ""
+
+#: messages.py:64
+msgid "nested"
+msgstr ""
+
+#: messages.py:67
+msgid "param"
+msgstr ""
+
