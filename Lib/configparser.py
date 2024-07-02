@@ -471,6 +471,10 @@ class ExtendedInterpolation(Interpolation):
 
     _KEYCRE = re.compile(r"\$\{([^}]+)\}")
 
+    def __init__(self, delimiter=':'):
+        super().__init__()
+        self.delimiter = delimiter
+
     def before_get(self, parser, section, option, value, defaults):
         L = []
         self._interpolate_some(parser, option, L, value, section, defaults, 1)
@@ -507,7 +511,7 @@ class ExtendedInterpolation(Interpolation):
                 if m is None:
                     raise InterpolationSyntaxError(option, section,
                         "bad interpolation variable reference %r" % rest)
-                path = m.group(1).split(':')
+                path = m.group(1).split(self.delimiter)
                 rest = rest[m.end():]
                 sect = section
                 opt = option
@@ -522,10 +526,10 @@ class ExtendedInterpolation(Interpolation):
                     else:
                         raise InterpolationSyntaxError(
                             option, section,
-                            "More than one ':' found: %r" % (rest,))
+                            "More than one '%r' found: %r" % (self.delimiter,rest,))
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
-                        option, section, rawval, ":".join(path)) from None
+                        option, section, rawval, self.delimiter.join(path)) from None
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
