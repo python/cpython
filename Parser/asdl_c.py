@@ -1135,13 +1135,20 @@ cleanup:
 /*
  * Perform the following validations:
  *
- *   - All keyword arguments are accepted.
- *   - The instance after replacement does not lack required fields
- *     or attributes.
+ *   - All keyword arguments are known @e fields or @e attributes.
+ *   - No field or attribute would be left unfilled after copy.replace().
  *
  * On success, this returns 1. Otherwise, set a TypeError
  * exception and returns -1 (no exception is set if some
  * other internal errors occur).
+ *
+ * @param self          The AST node instance.
+ * @param dict          The AST node instance dictionary (self.__dict__).
+ * @param fields        The list of fields (self._fields).
+ * @param attributes    The list of attributes (self._attributes).
+ * @param kwargs        Keyword arguments passed to ast_type_replace().
+ *
+ * The @e dict, @e fields, @e attributes and @e kwargs arguments can be NULL.
  */
 static inline int
 ast_type_replace_check(PyObject *self,
@@ -1150,6 +1157,10 @@ ast_type_replace_check(PyObject *self,
                        PyObject *attributes,
                        PyObject *kwargs)
 {
+    // While it is possible to make some fast paths that would avoid
+    // allocating objects on the stack, this would cost us readability.
+    // For instance, if 'fields' and 'attributes' are both empty, and 
+    // 'kwargs' is not empty, we could raise a TypeError immediately.
     PyObject *expecting = PySet_New(fields);
     if (expecting == NULL) {
         return -1;
@@ -1285,12 +1296,17 @@ ast_type_replace_check(PyObject *self,
  * the '_fields' or the '_attributes' of an AST node.
  *
  * This returns -1 if an error occurs and 0 otherwise.
+ *
+ * @param payload   A dictionary to fill.
+ * @param keys      A sequence of keys.
+ * @param dict      The AST node instance dictionary (must NOT be NULL).
  */
 static inline int
 ast_type_replace_update_payload(PyObject *payload,
-                                PyObject *keys /* sequence of keys */,
-                                PyObject *dict /* instance dictionary */)
+                                PyObject *keys,
+                                PyObject *dict)
 {
+    assert(dict != NULL);
     Py_ssize_t n = PySequence_Size(keys);
     if (n == -1) {
         return -1;
