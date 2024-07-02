@@ -68,6 +68,10 @@ struct _ts {
        pycore_ceval.h. */
     uintptr_t eval_breaker;
 
+    Py_ssize_t n_eval_frames;
+    Py_ssize_t eval_stack_size;
+    PyObject** eval_stack;
+
     struct {
         /* Has been initialized to a safe state.
 

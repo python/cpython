@@ -1509,6 +1509,9 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     }
 
     tstate->_status.initialized = 1;
+    tstate->n_eval_frames = 0;
+    tstate->eval_stack_size = tstate->py_recursion_limit * 2;
+    tstate->eval_stack = NULL;
 }
 
 static void
@@ -1575,7 +1578,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
 
     init_threadstate(tstate, interp, id, whence);
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
-
     HEAD_UNLOCK(runtime);
     if (!used_newtstate) {
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
@@ -1596,6 +1598,15 @@ new_threadstate(PyInterpreterState *interp, int whence)
     _Py_qsbr_register(tstate, interp, qsbr_idx);
 #endif
 
+    // Initialize eval stack
+    PyThreadState* result = (PyThreadState*)(tstate);
+    if (result && result->eval_stack == NULL) {
+        result->eval_stack = PyMem_RawMalloc(result->eval_stack_size * sizeof(PyObject*));
+        if (result->eval_stack == NULL) {
+            PyMem_RawFree(result);
+            return NULL;
+        }
+    }
     return (PyThreadState *)tstate;
 }
 
@@ -1815,6 +1826,8 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 #endif
 
     tstate->_status.finalized = 1;
+    tstate->n_eval_frames = -1;
+    PyMem_RawFree(tstate->eval_stack);
 }
 
 static void
