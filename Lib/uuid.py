@@ -1,8 +1,9 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5() and uuid6() for generating version 1, 3,
+4, 5, and 6 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
+referred to as RFC 4122 for compatibility purposes).
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -129,7 +130,7 @@ class UUID:
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1 through 6, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -214,7 +215,7 @@ class UUID:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 6:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
@@ -322,8 +323,17 @@ class UUID:
 
     @property
     def time(self):
-        return (((self.time_hi_version & 0x0fff) << 48) |
-                (self.time_mid << 32) | self.time_low)
+        field_1 = self.int >> 96
+        field_3_no_ver = (self.int >> 64) & 0x0fff
+
+        if self.version == 6:
+            # In version 6, the first field contains the 32 MSBs
+            # and the field after the version contains the 12 LSBs.
+            return field_1 << 28 | (self.time_mid << 12) | field_3_no_ver
+        else:
+            # In version 1, the first field contains the 32 LSBs
+            # and the field after the version contains the 12 MSBs.
+            return field_3_no_ver << 48 | (self.time_mid << 32) | field_1
 
     @property
     def clock_seq(self):
@@ -656,7 +666,7 @@ def getnode():
     assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
 
-_last_timestamp = None
+_last_timestamp_v1 = None
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -674,15 +684,15 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID.unknown
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
-    global _last_timestamp
+    global _last_timestamp_v1
     import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
-    if _last_timestamp is not None and timestamp <= _last_timestamp:
-        timestamp = _last_timestamp + 1
-    _last_timestamp = timestamp
+    if _last_timestamp_v1 is not None and timestamp <= _last_timestamp_v1:
+        timestamp = _last_timestamp_v1 + 1
+    _last_timestamp_v1 = timestamp
     if clock_seq is None:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
@@ -719,6 +729,39 @@ def uuid5(namespace, name):
     hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
+_last_timestamp_v6 = None
+
+def uuid6(node=None, clock_seq=None):
+    """Similar to :func:`uuid1` but where fields are ordered differently
+    for improved DB locality.
+
+    More precisely, given a 60-bit timestamp value as specified for UUIDv1,
+    for UUIDv6 the first 48 most significant bits are stored first, followed
+    by the 4-bit version (same position), followed by the remaining 12 bits
+    of the original 60-bit timestamp.
+    """
+    global _last_timestamp_v6
+    import time
+    nanoseconds = time.time_ns()
+    # 0x01b21dd213814000 is the number of 100-ns intervals between the
+    # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
+    if _last_timestamp_v6 is not None and timestamp <= _last_timestamp_v6:
+        timestamp = _last_timestamp_v6 + 1
+    _last_timestamp_v6 = timestamp
+    if clock_seq is None:
+        import random
+        clock_seq = random.getrandbits(14) # instead of stable storage
+    time_hi_and_mid = (timestamp >> 12) & 0xffffffffffff
+    time_ver_and_lo = timestamp & 0x0fff
+    var_and_clock_s = clock_seq & 0x3fff
+    if node is None:
+        node = getnode()
+    int_uuid_6 = time_hi_and_mid << 80
+    int_uuid_6 |= time_ver_and_lo << 64
+    int_uuid_6 |= var_and_clock_s << 48
+    int_uuid_6 |= node & 0xffffffffffff
+    return UUID(int=int_uuid_6, version=6)
 
 def main():
     """Run the uuid command line interface."""
@@ -726,7 +769,8 @@ def main():
         "uuid1": uuid1,
         "uuid3": uuid3,
         "uuid4": uuid4,
-        "uuid5": uuid5
+        "uuid5": uuid5,
+        "uuid6": uuid6,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {

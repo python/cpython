@@ -267,7 +267,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -588,7 +588,7 @@ class BaseTestUUID:
 
     def test_uuid1_time(self):
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \
-             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch.object(self.uuid, '_last_timestamp_v1', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
              mock.patch('random.getrandbits', return_value=5317): # guaranteed to be random
@@ -596,7 +596,7 @@ class BaseTestUUID:
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \
-             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch.object(self.uuid, '_last_timestamp_v1', None), \
              mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
@@ -680,6 +680,35 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid6(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid6()
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 6)
+
+        fake_nanoseconds = 1545052026752910643
+        fake_node_value = 93328246233727
+        fake_clock_seq = 5317
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
+                mock.patch.object(self.uuid, '_last_timestamp_v6', None), \
+                mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value), \
+                mock.patch('time.time_ns', return_value=fake_nanoseconds), \
+                mock.patch('random.getrandbits', return_value=fake_clock_seq):
+            u = self.uuid.uuid6()
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 0b0110)  # 6
+
+            timestamp = 137643448267529106
+            # 32 (hi) | 16 (mid) | 12 (lo) == 60 bits of timestamp
+            equal(timestamp, 0b_00011110100100000001111111001010_0111101001010101_101110010010)
+            equal(u.time, timestamp)
+            equal(u.fields[0], 0b00011110100100000001111111001010)  # 32 high bits of time
+            equal(u.fields[1], 0b0111101001010101)  # 16 bits of time (mid)
+            equal(u.fields[2], 0b0110_101110010010)  # 4 bits of version + 12 low bits of time
+            equal(u.fields[3], 0b10_010100)  # 2 bits of variant + 6 high bits of clock_seq
+            equal(u.fields[4], 0b11000101)  # 8 low bits of clock_seq
+            equal(u.fields[5], fake_node_value)
 
     @support.requires_fork()
     def testIssue8621(self):
