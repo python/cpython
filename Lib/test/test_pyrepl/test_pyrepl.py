@@ -1,10 +1,12 @@
 import io
 import itertools
 import os
+import pathlib
 import rlcompleter
 import select
 import subprocess
 import sys
+import tempfile
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -897,6 +899,21 @@ class TestMain(TestCase):
         self.assertNotIn("True", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
+
+    def setUp(self):
+        self.hfile = tempfile.NamedTemporaryFile(delete=False)
+
+    def tearDown(self):
+        self.hfile.close()
+
+    def test_not_wiping_history_file(self):
+        env = os.environ.copy()
+        env.update({"PYTHON_HISTORY": self.hfile.name})
+        commands = "123\nspam\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(self.hfile.name).stat().st_size, 0)
 
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
