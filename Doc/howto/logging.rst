@@ -402,11 +402,13 @@ following diagram.
      function updateBody(theme) {
         let elem = document.body;
 
+        elem.classList.remove('dark-theme');
+        elem.classList.remove('light-theme');
         if (theme === 'dark') {
             elem.classList.add('dark-theme');
         }
-        else {
-            elem.classList.remove('dark-theme');
+        else if (theme === 'light') {
+            elem.classList.add('light-theme');
         }
      }
 
