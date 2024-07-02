@@ -165,7 +165,7 @@ class NumberTestCase(unittest.TestCase):
         for z in values:
             for t in [ctypes.c_double_complex, ctypes.c_float_complex,
                       ctypes.c_longdouble_complex]:
-                with self.subTest(z=z, t=t):
+                with self.subTest(z=z, type=t):
                     self.assertComplexesAreIdentical(z, t(z).value)
 
     def test_integers(self):
