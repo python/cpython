@@ -1,4 +1,0 @@
-Support :c:expr:`float complex` and :c:expr:`long double complex` C types in
-:mod:`ctypes` via :class:`~ctypes.c_float_complex` and
-:class:`~ctypes.c_longdouble_complex` if compiler has C11 complex
-arithmetic. Patch by Sergey B Kirpichev.
