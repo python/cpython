@@ -590,14 +590,15 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
                 break;
             err = 0;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
-            if (WaitForSingleObjectEx(hInterruptEvent, 100, FALSE)
-                    == WAIT_OBJECT_0) {
+            DWORD state = WaitForSingleObjectEx(hInterruptEvent, 100, FALSE);
+            if (state == WAIT_OBJECT_0 || state == WAIT_TIMEOUT) {
                 ResetEvent(hInterruptEvent);
                 Py_BLOCK_THREADS
                 sig = PyErr_CheckSignals();
                 Py_UNBLOCK_THREADS
                 if (sig < 0)
                     break;
+                continue;
             }
         }
         *readlen += n;

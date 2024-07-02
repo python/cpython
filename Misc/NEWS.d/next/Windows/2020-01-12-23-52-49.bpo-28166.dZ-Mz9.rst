@@ -1,0 +1,2 @@
+``WindowsConsoleIO``: Continue to read when interrupted by Ctrl+C if
+``SIGINT`` is ignored or the handler doesn't raise an exception.
