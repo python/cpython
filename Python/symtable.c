@@ -1661,6 +1661,27 @@ has_kwonlydefaults(asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 }
 
 static int
+check_import_from(struct symtable *st, stmt_ty s)
+{
+    assert(s->kind == ImportFrom_kind);
+    _Py_SourceLocation fut = st->st_future->ff_location;
+    if (s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
+        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__") &&
+        ((s->lineno > fut.lineno) ||
+         ((s->lineno == fut.end_lineno) && (s->col_offset > fut.end_col_offset))))
+    {
+        PyErr_SetString(PyExc_SyntaxError,
+                        "from __future__ imports must occur "
+                        "at the beginning of the file");
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                         s->lineno, s->col_offset + 1,
+                                         s->end_lineno, s->end_col_offset + 1);
+        return 0;
+    }
+    return 1;
+}
+
+static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
     if (++st->recursion_depth > st->recursion_limit) {
@@ -1914,6 +1935,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case ImportFrom_kind:
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
+        if (!check_import_from(st, s)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     case Global_kind: {
         Py_ssize_t i;
