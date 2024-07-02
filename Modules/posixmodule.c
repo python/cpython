@@ -11328,33 +11328,32 @@ os.read
 Read from a file descriptor.  Returns a bytes object.
 [clinic start generated code]*/
 
+
 static PyObject *
 os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 /*[clinic end generated code: output=dafbe9a5cddb987b input=1df2eaa27c0bf1d3]*/
 {
     Py_ssize_t n;
     PyObject *buffer;
-
+    
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
     }
 
     length = Py_MIN(length, _PY_READ_MAX);
-
+   
+    static long page_size;
+    if (page_size == 0) 
+        page_size = sysconf(_SC_PAGE_SIZE);
 
 #ifndef MS_WINDOWS
-    // check if read size is bigger than malloc limit to create new VMA
-    if(length > 131072) {
-            struct stat statbuffer;
-            fstat(fd, &statbuffer);
-            if (S_ISFIFO(statbuffer.st_mode)) {
-		// cache pipe size
-                static int ps;
-                if (ps == 0)
-                        ps = fcntl(fd, F_GETPIPE_SZ);
-                length = Py_MIN(ps, length);
-            }
+    if (length > page_size * 16) {
+    	struct stat statbuffer;
+    	fstat(fd, &statbuffer);
+    	if (S_ISFIFO(statbuffer.st_mode)) {
+	    length = Py_MIN(page_size* 16, length);
+    	}
     }
 #endif
 
