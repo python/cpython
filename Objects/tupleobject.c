@@ -391,6 +391,27 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
+_PyTuple_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyStackRef_CLOSE(src[i]);
+        }
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+    }
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
 _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
 {
     if (n == 0) {

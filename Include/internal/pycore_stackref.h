@@ -48,7 +48,7 @@ extern "C" {
    CPython refcounting operations on it!
 */
 
-typedef union {
+typedef union _PyStackRef {
     uintptr_t bits;
 } _PyStackRef;
 
