@@ -1148,7 +1148,7 @@ free_delayed(uintptr_t ptr)
 #endif
 }
 
-void
+PyAPI_FUNC(void)
 _PyMem_FreeDelayed(void *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));

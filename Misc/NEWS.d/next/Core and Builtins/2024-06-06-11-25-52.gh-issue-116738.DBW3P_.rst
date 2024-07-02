@@ -1,0 +1,1 @@
+Make array builtin module safe for FTPython.
