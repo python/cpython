@@ -688,6 +688,11 @@ current class name with leading underscore(s) stripped.  This mangling is done
 without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class.
 
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
+
 Name mangling is helpful for letting subclasses override methods without
 breaking intraclass method calls.  For example::
 
