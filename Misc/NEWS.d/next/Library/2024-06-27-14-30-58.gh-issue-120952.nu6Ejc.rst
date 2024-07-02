@@ -1,0 +1,3 @@
+Add :func:`subprocess.shell` function to run a shell command. Read the
+:ref:`Security Considerations <subprocess-security>` section before using
+this function. Patch by Victor Stinner.

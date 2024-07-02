@@ -62,7 +62,7 @@ except ImportError:
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
+           "SubprocessError", "TimeoutExpired", "CompletedProcess", "shell"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -2221,3 +2221,16 @@ class Popen:
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
+
+
+def shell(cmd, **kwargs):
+    """
+    Run a shell command.
+
+    Read the Security Considerations section of the documentation before using
+    this function.
+    """
+    if not isinstance(cmd, str):
+        raise TypeError("cmd type must be str")
+
+    return run(cmd, shell=True, **kwargs)

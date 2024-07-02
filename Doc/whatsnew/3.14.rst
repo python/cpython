@@ -110,6 +110,14 @@ pathlib
   another.
   (Contributed by Barney Gale in :gh:`73991`.)
 
+subprocess
+----------
+
+* Add :func:`subprocess.shell` function to run a shell command.
+  Read the :ref:`Security Considerations <subprocess-security>` section before
+  using this function.
+  (Contributed by Victor Stinner in :gh:`120952`.)
+
 symtable
 --------
 

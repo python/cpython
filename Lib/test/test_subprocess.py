@@ -1824,6 +1824,22 @@ class RunFuncTestCase(BaseTestCase):
         self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
         self.assertTrue(lines[2].startswith(b"<string>:3: EncodingWarning: "))
 
+    def test_shell(self):
+        # Test basic echo command
+        proc = subprocess.shell("echo Python", stdout=subprocess.PIPE, text=True)
+        self.assertEqual(proc.returncode, 0)
+        self.assertEqual(proc.stdout.rstrip(), "Python")
+
+        # cmd type must be str
+        with self.assertRaises(TypeError):
+            subprocess.shell(b"echo Python")
+        with self.assertRaises(TypeError):
+            subprocess.shell(["echo", "Python"])
+
+        # Passing shell=False is invalid
+        with self.assertRaises(TypeError):
+            subprocess.shell("echo Python", shell=False)
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
