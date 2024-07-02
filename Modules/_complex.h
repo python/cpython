@@ -32,6 +32,7 @@ CMPLX(double real, double imag)
     ((double *)(&z))[1] = imag;
     return z;
 }
+
 static inline float complex
 CMPLXF(float real, float imag)
 {
@@ -40,6 +41,7 @@ CMPLXF(float real, float imag)
     ((float *)(&z))[1] = imag;
     return z;
 }
+
 static inline long double complex
 CMPLXL(long double real, long double imag)
 {
