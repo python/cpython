@@ -1159,7 +1159,7 @@ ast_type_replace_check(PyObject *self,
 {
     // While it is possible to make some fast paths that would avoid
     // allocating objects on the stack, this would cost us readability.
-    // For instance, if 'fields' and 'attributes' are both empty, and 
+    // For instance, if 'fields' and 'attributes' are both empty, and
     // 'kwargs' is not empty, we could raise a TypeError immediately.
     PyObject *expecting = PySet_New(fields);
     if (expecting == NULL) {
