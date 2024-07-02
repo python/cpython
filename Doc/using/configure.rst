@@ -245,9 +245,10 @@ General Options
      * :func:`!sys._stats_clear`: Clears the statistics.
      * :func:`!sys._stats_dump`: Dump statistics to file, and clears the statistics.
 
-   The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
-   directory does not exist, results will be printed on stderr.
+   The statistics will be dumped to a file in the directory specifed by the
+   environment variable ``PYTHON_PYSTATS_DIR`` (or ``/tmp/py_stats/`` (Unix) or
+   ``C:\temp\py_stats\`` (Windows) if not specified). If that directory does not
+   exist, results will be printed on stderr.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
