@@ -1,0 +1,4 @@
+Fixed future subclass returned by :func:`asyncio.gather` to behave like
+other futures by returning True on a call to :meth:`cancelled` after
+a successful cancellation occurred. Previously it always returned False.
+Patch by Timm Wagener.
