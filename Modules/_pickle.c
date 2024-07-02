@@ -3583,6 +3583,69 @@ fix_imports(PickleState *st, PyObject **module_name, PyObject **global_name)
     return 0;
 }
 
+PyObject*
+import_module_from_string(PickleState *st, PyObject *module_name)
+{
+    PyObject *split_module_name = PyUnicode_RSplit(module_name,
+                                                   PyUnicode_FromString("."),
+                                                   1);
+    if (split_module_name == NULL) {
+        PyErr_Format(PyExc_RuntimeError, "Failed to split module name %R",
+                     module_name);
+        return NULL;
+    }
+
+    PyObject *parent_module_name = PySequence_Fast_GET_ITEM(split_module_name,
+                                                            0);
+    if (parent_module_name == NULL) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Failed to get parent module name from %R",
+                     split_module_name);
+        return NULL;
+    }
+
+    PyObject *fromlist = PySequence_GetSlice(split_module_name, 1,
+                                             PySequence_Fast_GET_SIZE(split_module_name));
+    if (fromlist == NULL) {
+        PyErr_Format(PyExc_RuntimeError, "Failed to get fromlist from %R",
+                     split_module_name);
+        return NULL;
+    }
+
+    PyObject *parent_module = PyImport_ImportModuleLevelObject(parent_module_name,
+                                                               NULL, NULL,
+                                                               fromlist, 0);
+    if (parent_module == NULL) {
+        PyErr_Format(st->PicklingError, "Import of module %R failed",
+                     parent_module_name);
+        return NULL;
+    }
+
+    Py_ssize_t fromlist_size = PySequence_Fast_GET_SIZE(fromlist);
+    if (fromlist_size == 0) {
+        return parent_module;
+    }
+    assert(fromlist_size == 1);
+
+    PyObject *module = PyImport_GetModule(module_name);
+    if (module == NULL) {
+        PyObject *child_module_name = PySequence_Fast_GET_ITEM(fromlist, 0);
+        if (child_module_name == NULL) {
+            PyErr_Format(PyExc_RuntimeError, "Failed to get item from %R",
+                         fromlist);
+            return NULL;
+        }
+        module = PyObject_GetAttr(parent_module, child_module_name);
+        if (module == NULL) {
+            PyErr_Format(st->PicklingError, "Attribute lookup %R on %R failed",
+                         child_module_name, parent_module_name);
+            return NULL;
+        }
+    }
+    return module;
+}
+
+
 static int
 save_global(PickleState *st, PicklerObject *self, PyObject *obj,
             PyObject *name)
@@ -3618,21 +3681,11 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     if (module_name == NULL)
         goto error;
 
-    /* XXX: Change to use the import C API directly with level=0 to disallow
-       relative imports.
-
-       XXX: PyImport_ImportModuleLevel could be used. However, this bypasses
-       builtins.__import__. Therefore, _pickle, unlike pickle.py, will ignore
-       custom import functions (IMHO, this would be a nice security
-       feature). The import C API would need to be extended to support the
-       extra parameters of __import__ to fix that. */
-    module = PyImport_Import(module_name);
+    module = import_module_from_string(st, module_name);
     if (module == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: import of module %R failed",
-                     obj, module_name);
         goto error;
     }
+
     lastname = Py_NewRef(PyList_GET_ITEM(dotted_path,
                          PyList_GET_SIZE(dotted_path) - 1));
     cls = get_deep_attribute(module, dotted_path, &parent);
@@ -6983,10 +7036,10 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
     /* Try to map the old names used in Python 2.x to the new ones used in
        Python 3.x.  We do this only with old pickle protocols and when the
        user has not disabled the feature. */
+    PickleState *st = _Pickle_GetStateByClass(cls);
     if (self->proto < 3 && self->fix_imports) {
         PyObject *key;
         PyObject *item;
-        PickleState *st = _Pickle_GetStateByClass(cls);
 
         /* Check if the global (i.e., a function or a class) was renamed
            or moved to another module. */
@@ -7039,7 +7092,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
      * we don't use PyImport_GetModule here, because it can return partially-
      * initialised modules, which then cause the getattribute to fail.
      */
-    module = PyImport_Import(module_name);
+    module = import_module_from_string(st, module_name);
     if (module == NULL) {
         return NULL;
     }

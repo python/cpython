@@ -1,0 +1,1 @@
+Extend :mod:`pickle` import behavior to support loading :c:func:`PyModule_Create`-generated ``module`` attributes.

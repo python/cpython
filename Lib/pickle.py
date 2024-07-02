@@ -345,6 +345,25 @@ def whichmodule(obj, name):
             pass
     return '__main__'
 
+def import_module_from_string(module_name):
+    """Import a module from a string.
+
+    The last module in the dot-delimited module name is returned. The last
+    module need not be a package (see bpo-43367).
+
+    >>> import_module_from_string('pickle')
+    <module 'pickle' from '...'>
+    >>> import_module_from_string('collections.abc)
+    <module 'collections.abc' from '...'>
+    """
+    parent_module_name, *fromlist = module_name.rsplit(".", 1)
+    parent_module = __import__(parent_module_name, fromlist=fromlist, level=0)
+    if not fromlist:
+        return parent_module
+    assert len(fromlist) == 1
+    return (sys.modules[module_name] if module_name in sys.modules
+            else getattr(parent_module, fromlist[0]))
+
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
     Note that 0 is a special case, returning an empty string, to save a
@@ -364,7 +383,6 @@ def encode_long(x):
     b'\x80'
     >>> encode_long(127)
     b'\x7f'
-    >>>
     """
     if x == 0:
         return b''
@@ -1069,7 +1087,6 @@ class _Pickler:
 
     def save_global(self, obj, name=None):
         write = self.write
-        memo = self.memo
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
@@ -1078,8 +1095,7 @@ class _Pickler:
 
         module_name = whichmodule(obj, name)
         try:
-            __import__(module_name, level=0)
-            module = sys.modules[module_name]
+            module = import_module_from_string(module_name)
             obj2, parent = _getattribute(module, name)
         except (ImportError, KeyError, AttributeError):
             raise PicklingError(
@@ -1585,17 +1601,18 @@ class _Unpickler:
 
     def find_class(self, module, name):
         # Subclasses may override this.
-        sys.audit('pickle.find_class', module, name)
+        module_name = module
+        sys.audit('pickle.find_class', module_name, name)
         if self.proto < 3 and self.fix_imports:
-            if (module, name) in _compat_pickle.NAME_MAPPING:
-                module, name = _compat_pickle.NAME_MAPPING[(module, name)]
-            elif module in _compat_pickle.IMPORT_MAPPING:
-                module = _compat_pickle.IMPORT_MAPPING[module]
-        __import__(module, level=0)
+            if (module_name, name) in _compat_pickle.NAME_MAPPING:
+                module_name, name = _compat_pickle.NAME_MAPPING[(module_name, name)]
+            elif module_name in _compat_pickle.IMPORT_MAPPING:
+                module_name = _compat_pickle.IMPORT_MAPPING[module_name]
+        module = import_module_from_string(module_name)
         if self.proto >= 4:
-            return _getattribute(sys.modules[module], name)[0]
+            return _getattribute(module, name)[0]
         else:
-            return getattr(sys.modules[module], name)
+            return getattr(module, name)
 
     def load_reduce(self):
         stack = self.stack
