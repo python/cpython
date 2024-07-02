@@ -1208,8 +1208,23 @@ class MathTests(unittest.TestCase):
         self.ftest('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
         self.ftest('log(10**1000)', math.log(10**1000),
                    2302.5850929940457)
+        self.ftest('log(10**2000, 10**1000)', math.log(10**2000, 10**1000), 2)
+        self.ftest('log(MyIndexable(32), MyIndexable(2))',
+                   math.log(MyIndexable(32), MyIndexable(2)), 5)
+        self.ftest('log(MyIndexable(10**1000))',
+                   math.log(MyIndexable(10**1000)),
+                   2302.5850929940457)
+        self.ftest('log(MyIndexable(10**2000), MyIndexable(10**1000))',
+                   math.log(MyIndexable(10**2000), MyIndexable(10**1000)),
+                   2)
+        self.assertRaises(ValueError, math.log, 0.0)
+        self.assertRaises(ValueError, math.log, 0)
+        self.assertRaises(ValueError, math.log, MyIndexable(0))
         self.assertRaises(ValueError, math.log, -1.5)
+        self.assertRaises(ValueError, math.log, -1)
+        self.assertRaises(ValueError, math.log, MyIndexable(-1))
         self.assertRaises(ValueError, math.log, -10**1000)
+        self.assertRaises(ValueError, math.log, MyIndexable(-10**1000))
         self.assertRaises(ValueError, math.log, 10, -10)
         self.assertRaises(ValueError, math.log, NINF)
         self.assertEqual(math.log(INF), INF)
@@ -1230,13 +1245,22 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log2(1), 0.0)
         self.assertEqual(math.log2(2), 1.0)
         self.assertEqual(math.log2(4), 2.0)
+        self.assertEqual(math.log2(MyIndexable(4)), 2.0)
 
         # Large integer values
         self.assertEqual(math.log2(2**1023), 1023.0)
         self.assertEqual(math.log2(2**1024), 1024.0)
         self.assertEqual(math.log2(2**2000), 2000.0)
+        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
 
+        self.assertRaises(ValueError, math.log2, 0.0)
+        self.assertRaises(ValueError, math.log2, 0)
+        self.assertRaises(ValueError, math.log2, MyIndexable(0))
         self.assertRaises(ValueError, math.log2, -1.5)
+        self.assertRaises(ValueError, math.log2, -1)
+        self.assertRaises(ValueError, math.log2, MyIndexable(-1))
+        self.assertRaises(ValueError, math.log2, -2**2000)
+        self.assertRaises(ValueError, math.log2, MyIndexable(-2**2000))
         self.assertRaises(ValueError, math.log2, NINF)
         self.assertTrue(math.isnan(math.log2(NAN)))
 
@@ -1255,8 +1279,17 @@ class MathTests(unittest.TestCase):
         self.ftest('log10(1)', math.log10(1), 0)
         self.ftest('log10(10)', math.log10(10), 1)
         self.ftest('log10(10**1000)', math.log10(10**1000), 1000.0)
+        self.ftest('log10(MyIndexable(10))', math.log10(MyIndexable(10)), 1)
+        self.ftest('log10(MyIndexable(10**1000))',
+                   math.log10(MyIndexable(10**1000)), 1000.0)
+        self.assertRaises(ValueError, math.log10, 0.0)
+        self.assertRaises(ValueError, math.log10, 0)
+        self.assertRaises(ValueError, math.log10, MyIndexable(0))
         self.assertRaises(ValueError, math.log10, -1.5)
+        self.assertRaises(ValueError, math.log10, -1)
+        self.assertRaises(ValueError, math.log10, MyIndexable(-1))
         self.assertRaises(ValueError, math.log10, -10**1000)
+        self.assertRaises(ValueError, math.log10, MyIndexable(-10**1000))
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
