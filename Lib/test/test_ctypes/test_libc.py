@@ -32,6 +32,18 @@ class LibTest(unittest.TestCase):
                                0.004999937502734214+1.0000124996093955j)
         self.assertAlmostEqual(lib.my_csqrt(-1-0.01j),
                                0.004999937502734214-1.0000124996093955j)
+        lib.my_csqrtf.argtypes = ctypes.c_float_complex,
+        lib.my_csqrtf.restype = ctypes.c_float_complex
+        self.assertAlmostEqual(lib.my_csqrtf(-1+0.01j),
+                               0.004999937502734214+1.0000124996093955j)
+        self.assertAlmostEqual(lib.my_csqrtf(-1-0.01j),
+                               0.004999937502734214-1.0000124996093955j)
+        lib.my_csqrtl.argtypes = ctypes.c_longdouble_complex,
+        lib.my_csqrtl.restype = ctypes.c_longdouble_complex
+        self.assertAlmostEqual(lib.my_csqrtl(-1+0.01j),
+                               0.004999937502734214+1.0000124996093955j)
+        self.assertAlmostEqual(lib.my_csqrtl(-1-0.01j),
+                               0.004999937502734214-1.0000124996093955j)
 
     def test_qsort(self):
         comparefunc = CFUNCTYPE(c_int, POINTER(c_char), POINTER(c_char))
