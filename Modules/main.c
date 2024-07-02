@@ -241,6 +241,11 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
+    Py_SETREF(unicode, _PyUnicode_Dedent(unicode));
+    if (unicode == NULL) {
+        goto error;
+    }
+
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
     if (bytes == NULL) {
