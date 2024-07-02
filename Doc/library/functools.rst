@@ -358,6 +358,41 @@ The :mod:`functools` module defines the following functions:
       >>> basetwo('10010')
       18
 
+   If :data:`Placeholder` sentinels are present in *args*, they will be filled first
+   when :func:`partial` is called. This allows custom selection of positional arguments
+   to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
+
+   If :data:`!Placeholder` sentinels are used, all of them must be filled at call time:
+
+      >>> from functools import partial, Placeholder
+      >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")
+      >>> say_to_world('Hello', 'dear')
+      Hello dear world!
+
+   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`, because
+   only one positional argument is provided, while there are two placeholders
+   in :ref:`partial object <partial-objects>`.
+
+   When successively using :func:`partial` existing :data:`!Placeholder`
+   sentinels are filled first. A place for positional argument is retained
+   when :data:`!Placeholder` sentinel is replaced with a new one:
+
+      >>> from functools import partial, Placeholder as _
+      >>> count = partial(print, _, _, _, 4)
+      >>> count = partial(count, _, _, 3)
+      >>> count = partial(count, _, 2)
+      >>> count = partial(count, _, 5)   # 5 is appended after 4
+      >>> count(1)
+      1 2 3 4 5
+
+   .. versionchanged:: 3.14
+      Support for :data:`Placeholder` in *args*
+
+.. data:: Placeholder
+
+   A singleton object used as a sentinel to reserve a place
+   for positional arguments when calling :func:`partial`
+   and :func:`partialmethod`.
 
 .. class:: partialmethod(func, /, *args, **keywords)
 

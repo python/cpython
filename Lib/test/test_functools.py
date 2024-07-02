@@ -210,6 +210,46 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
+    def test_placeholders_trailing_raise(self):
+        PH = self.module.Placeholder
+        for args in [(PH,), (0, PH), (0, PH, 1, PH, PH, PH)]:
+            with self.assertRaises(TypeError):
+                self.partial(capture, *args)
+
+    def test_placeholders(self):
+        PH = self.module.Placeholder
+        # 1 Placeholder
+        args = (PH, 0)
+        p = self.partial(capture, *args)
+        got, empty = p('x')
+        self.assertTrue(('x', 0) == got and empty == {})
+        # 2 Placeholders
+        args = (PH, 0, PH, 1)
+        p = self.partial(capture, *args)
+        with self.assertRaises(TypeError):
+            got, empty = p('x')
+        got, empty = p('x', 'y')
+        expected = ('x', 0, 'y', 1)
+        self.assertTrue(expected == got and empty == {})
+
+    def test_placeholders_optimization(self):
+        PH = self.module.Placeholder
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p, PH, 1, 2, 3)
+        expected = (PH, 0, 1, 2, 3)
+        self.assertTrue(expected == p2.args)
+        p3 = self.partial(p2, -1, 4)
+        got, empty = p3(5)
+        expected = (-1, 0, 1, 2, 3, 4, 5)
+        self.assertTrue(expected == got and empty == {})
+
+    def test_construct_placeholder_singleton(self):
+        PH = self.module.Placeholder
+        tp = type(PH)
+        self.assertIs(tp(), PH)
+        self.assertRaises(TypeError, tp, 1, 2)
+        self.assertRaises(TypeError, tp, a=1, b=2)
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
@@ -310,6 +350,20 @@ class TestPartial:
         self.assertEqual(f(2, b=20), ((2,), {'b': 20}))
         self.assertEqual(f(2), ((2,), {}))
         self.assertEqual(f(), ((), {}))
+
+        # Set State with placeholders
+        PH = self.module.Placeholder
+        f = self.partial(signature)
+        f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
+        self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
+        with self.assertRaises(TypeError):
+            self.assertEqual(f(), (PH, 1), dict(a=10))
+        self.assertEqual(f(2), ((2, 1), dict(a=10)))
+
+        # Leading Placeholder error
+        f = self.partial(signature)
+        with self.assertRaises(TypeError):
+            f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
     def test_setstate_errors(self):
         f = self.partial(signature)
