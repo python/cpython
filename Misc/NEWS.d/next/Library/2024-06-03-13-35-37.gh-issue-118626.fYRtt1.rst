@@ -1,0 +1,1 @@
+Use less red-ish colour for non-error traceback. Patch by Hugo van Kemenade.
