@@ -1,0 +1,1 @@
+Make the :class:`functools.partial` object a method descriptor.
