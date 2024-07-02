@@ -948,6 +948,15 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(ast.Add(), ast.Add()))
         self.assertFalse(ast.compare(ast.Sub(), ast.Add()))
 
+        # test that missing runtime fields is handled in ast.compare()
+        a1, a2 = ast.Name('a'), ast.Name('a')
+        self.assertTrue(ast.compare(a1, a2))
+        self.assertTrue(ast.compare(a1, a2))
+        del a1.id
+        self.assertFalse(ast.compare(a1, a2))
+        del a2.id
+        self.assertTrue(ast.compare(a1, a2))
+
     def test_compare_modes(self):
         for mode, sources in (
             ("exec", exec_tests),
@@ -969,6 +978,16 @@ class AST_Tests(unittest.TestCase):
         self.assertTrue(ast.compare(a, b))
         self.assertTrue(ast.compare(a, b, compare_attributes=False))
         self.assertFalse(ast.compare(a, b, compare_attributes=True))
+
+    def test_compare_attributes_option_missing_attribute(self):
+        # test that missing runtime attributes is handled in ast.compare()
+        a1, a2 = ast.Name('a', lineno=1), ast.Name('a', lineno=1)
+        self.assertTrue(ast.compare(a1, a2))
+        self.assertTrue(ast.compare(a1, a2, compare_attributes=True))
+        del a1.lineno
+        self.assertFalse(ast.compare(a1, a2, compare_attributes=True))
+        del a2.lineno
+        self.assertTrue(ast.compare(a1, a2, compare_attributes=True))
 
     def test_positional_only_feature_version(self):
         ast.parse('def foo(x, /): ...', feature_version=(3, 8))

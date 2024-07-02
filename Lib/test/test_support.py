@@ -3,6 +3,7 @@ import importlib
 import io
 import os
 import shutil
+import signal
 import socket
 import stat
 import subprocess
@@ -731,6 +732,17 @@ class TestSupport(unittest.TestCase):
         path = os.path.join(src_dir, 'Objects')
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored)
+
+    def test_get_signal_name(self):
+        for exitcode, expected in (
+            (-int(signal.SIGINT), 'SIGINT'),
+            (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
+            (3221225477, "STATUS_ACCESS_VIOLATION"),
+            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+        ):
+            self.assertEqual(support.get_signal_name(exitcode), expected,
+                             exitcode)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

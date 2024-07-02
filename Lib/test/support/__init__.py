@@ -2632,3 +2632,35 @@ def initialized_with_pyrepl():
     """Detect whether PyREPL was used during Python initialization."""
     # If the main module has a __file__ attribute it's a Python module, which means PyREPL.
     return hasattr(sys.modules["__main__"], "__file__")
+
+
+WINDOWS_STATUS = {
+    0xC0000005: "STATUS_ACCESS_VIOLATION",
+    0xC00000FD: "STATUS_STACK_OVERFLOW",
+    0xC000013A: "STATUS_CONTROL_C_EXIT",
+}
+
+def get_signal_name(exitcode):
+    import signal
+
+    if exitcode < 0:
+        signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    # Shell exit code (ex: WASI build)
+    if 128 < exitcode < 256:
+        signum = exitcode - 128
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    try:
+        return WINDOWS_STATUS[exitcode]
+    except KeyError:
+        pass
+
+    return None
