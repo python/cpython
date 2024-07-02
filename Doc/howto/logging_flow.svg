@@ -46,6 +46,7 @@
         filter: invert(100%) hue-rotate(180deg) saturate(1.25);
       }
     }
+    /* These rules are for when the theme selector is used, perhaps in contrast to the browser theme. */
     body.dark-theme polygon, body.dark-theme rect, body.dark-theme polyline, body.dark-theme line {
       stroke: #ffffff;
     }
@@ -54,6 +55,15 @@
     }
     body.dark-theme text {
       fill: #ffffff;
+    }
+    body.light-theme polygon, body.light-theme rect, body.light-theme polyline, body.light-theme line {
+      stroke: #000000;
+    }
+    body.light-theme polygon.filled {
+      fill: #000000;
+    }
+    body.light-theme text {
+      fill: #000000;
     }
   </style>
 
