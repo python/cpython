@@ -1169,8 +1169,10 @@ Some differences from :class:`dict` still remain:
 In addition to the usual mapping methods, ordered dictionaries also support
 reverse iteration using :func:`reversed`.
 
+.. _collections_OrderedDict__eq__:
+
 Equality tests between :class:`OrderedDict` objects are order-sensitive
-and are implemented as ``list(od1.items())==list(od2.items())``.
+and are roughly equivalent to ``list(od1.items())==list(od2.items())``.
 Equality tests between :class:`OrderedDict` objects and other
 :class:`~collections.abc.Mapping` objects are order-insensitive like regular
 dictionaries.  This allows :class:`OrderedDict` objects to be substituted
