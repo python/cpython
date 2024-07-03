@@ -105,16 +105,6 @@ PyCode_ClearWatcher(int watcher_id)
 static int
 should_intern_string(PyObject *o)
 {
-#ifdef Py_GIL_DISABLED
-    // The free-threaded build interns (and immortalizes) all string constants
-    // unless we've disabled immortalizing objects that use deferred reference
-    // counting.
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int(&interp->gc.immortalize) < 0) {
-        return 1;
-    }
-#endif
-
     // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
@@ -129,10 +119,6 @@ should_intern_string(PyObject *o)
     }
     return 1;
 }
-
-#ifdef Py_GIL_DISABLED
-static PyObject *intern_one_constant(PyObject *op);
-#endif
 
 static int
 intern_strings(PyObject *tuple)
@@ -234,27 +220,6 @@ intern_constants(PyObject *tuple, int *modified)
                 }
             }
             Py_DECREF(tmp);
-        }
-
-        // Intern non-string constants in the free-threaded build, but only if
-        // we are also immortalizing objects that use deferred reference
-        // counting.
-        PyThreadState *tstate = PyThreadState_GET();
-        if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) &&
-            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
-        {
-            PyObject *interned = intern_one_constant(v);
-            if (interned == NULL) {
-                return -1;
-            }
-            else if (interned != v) {
-                PyTuple_SET_ITEM(tuple, i, interned);
-                Py_SETREF(v, interned);
-                if (modified) {
-                    *modified = 1;
-                }
-            }
         }
 #endif
     }
@@ -2495,36 +2460,6 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 #ifdef Py_GIL_DISABLED
-static PyObject *
-intern_one_constant(PyObject *op)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _Py_hashtable_t *consts = interp->code_state.constants;
-
-    assert(!PyUnicode_CheckExact(op));  // strings are interned separately
-
-    _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(consts, op);
-    if (entry == NULL) {
-        if (_Py_hashtable_set(consts, op, op) != 0) {
-            return NULL;
-        }
-
-#ifdef Py_REF_DEBUG
-        Py_ssize_t refcnt = Py_REFCNT(op);
-        if (refcnt != 1) {
-            // Adjust the reftotal to account for the fact that we only
-            // restore a single reference in _PyCode_Fini.
-            _Py_AddRefTotal(_PyThreadState_GET(), -(refcnt - 1));
-        }
-#endif
-
-        _Py_SetImmortal(op);
-        return op;
-    }
-
-    assert(_Py_IsImmortal(entry->value));
-    return (PyObject *)entry->value;
-}
 
 static int
 compare_constants(const void *key1, const void *key2) {

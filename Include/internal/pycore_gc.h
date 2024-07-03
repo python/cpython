@@ -344,14 +344,6 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
-
-    /* gh-117783: Deferred reference counting is not fully implemented yet, so
-       as a temporary measure we treat objects using deferred reference
-       counting as immortal. The value may be zero, one, or a negative number:
-        0: immortalize deferred RC objects once the first thread is created
-        1: immortalize all deferred RC objects immediately
-        <0: suppressed; don't immortalize objects */
-    int immortalize;
 #endif
 };
 
