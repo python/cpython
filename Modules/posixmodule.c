@@ -11328,7 +11328,6 @@ os.read
 Read from a file descriptor.  Returns a bytes object.
 [clinic start generated code]*/
 
-
 static PyObject *
 os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 /*[clinic end generated code: output=dafbe9a5cddb987b input=1df2eaa27c0bf1d3]*/
@@ -11365,9 +11364,9 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     if (n == -1) {
         Py_DECREF(buffer);
         return NULL;
-    }   
-    
-    if (n != length) 
+    }
+
+    if (n != length)
         _PyBytes_Resize(&buffer, n);
 
     return buffer;
