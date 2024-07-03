@@ -156,7 +156,7 @@ to read the pickle produced.
 
 * Protocol version 4 was added in Python 3.4.  It adds support for very large
   objects, pickling more kinds of objects, and some data format
-  optimizations.  This was the default protocol in Python 3.8--3.14.
+  optimizations.  This was the default protocol in Python 3.8--3.13.
   Refer to :pep:`3154` for information about improvements brought by
   protocol 4.
 
