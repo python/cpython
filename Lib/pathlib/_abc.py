@@ -784,26 +784,27 @@ class PathBase(PurePathBase):
     # Metadata keys supported by this path type.
     _readable_metadata = _writable_metadata = frozenset()
 
-    def _read_metadata(self, keys, follow_symlinks):
+    def _read_metadata(self, keys=None, *, follow_symlinks=True):
         """
         Returns path metadata as a dict with string keys.
         """
         raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
 
-    def _write_metadata(self, metadata, follow_symlinks):
+    def _write_metadata(self, metadata, *, follow_symlinks=True):
         """
         Sets path metadata from the given dict with string keys.
         """
         raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
-    def _copy_metadata(self, target, follow_symlinks):
+    def _copy_metadata(self, target, *, follow_symlinks=True):
         """
         Copies metadata (permissions, timestamps, etc) from this path to target.
         """
-        metadata_keys = self._readable_metadata & target._writable_metadata
-        if metadata_keys:
-            metadata = self._read_metadata(metadata_keys, follow_symlinks)
-            target._write_metadata(metadata, follow_symlinks)
+        # Metadata types supported by both source and target.
+        keys = self._readable_metadata & target._writable_metadata
+        if keys:
+            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
 
     def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """
@@ -818,7 +819,7 @@ class PathBase(PurePathBase):
         if not follow_symlinks and self.is_symlink():
             target.symlink_to(self.readlink())
             if preserve_metadata:
-                self._copy_metadata(target, False)
+                self._copy_metadata(target, follow_symlinks=False)
             return
         with self.open('rb') as source_f:
             try:
@@ -832,7 +833,7 @@ class PathBase(PurePathBase):
                 else:
                     raise
         if preserve_metadata:
-            self._copy_metadata(target, True)
+            self._copy_metadata(target)
 
     def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
                  ignore=None, on_error=None):

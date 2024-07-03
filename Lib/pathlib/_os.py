@@ -189,10 +189,12 @@ if hasattr(os, 'listxattr'):
 file_metadata_keys = frozenset(file_metadata_keys)
 
 
-def read_file_metadata(path, keys, follow_symlinks):
+def read_file_metadata(path, keys=None, *, follow_symlinks=True):
     """
     Returns local path metadata as a dict with string keys.
     """
+    if keys is None:
+        keys = file_metadata_keys
     assert keys.issubset(file_metadata_keys)
     result = {}
     for key in keys:
@@ -215,7 +217,7 @@ def read_file_metadata(path, keys, follow_symlinks):
     return result
 
 
-def write_file_metadata(path, metadata, follow_symlinks):
+def write_file_metadata(path, metadata, *, follow_symlinks=True):
     """
     Sets local path metadata from the given dict with string keys.
     """
