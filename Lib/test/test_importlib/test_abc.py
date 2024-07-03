@@ -920,14 +920,17 @@ class DeprecatedAttrsTests:
     def test_deprecated_attr_ResourceReader(self):
         with self.assertWarns(DeprecationWarning):
             self.abc.ResourceReader
+        del self.abc.ResourceReader
 
     def test_deprecated_attr_Traversable(self):
         with self.assertWarns(DeprecationWarning):
             self.abc.Traversable
+        del self.abc.Traversable
 
     def test_deprecated_attr_TraversableResources(self):
         with self.assertWarns(DeprecationWarning):
             self.abc.TraversableResources
+        del self.abc.TraversableResources
 
 
 (Frozen_DeprecatedAttrsTests,
