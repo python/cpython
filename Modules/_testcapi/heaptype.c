@@ -501,43 +501,6 @@ error:
     return NULL;
 }
 
-static PyObject *
-repeat_getbasebytoken(PyObject *self, PyObject *args)
-{
-    PyTypeObject *type;
-    PyObject *py_token, *repeat, *use_mro;
-    if (!PyArg_ParseTuple(args, "OOOO", &type, &py_token, &repeat, &use_mro)) {
-        return NULL;
-    }
-    assert(PyType_Check(type));
-
-    PyObject *mro_save = type->tp_mro;
-    if (use_mro != Py_True) {
-        type->tp_mro = NULL;
-    }
-
-    void *token = PyLong_AsVoidPtr(py_token);
-    int n = PyLong_AsLong(repeat);
-    int found = 0;
-    PyObject *result;
-    for (int i = 0; i < n; i++) {
-        if (PyType_GetBaseByToken(type, token, (PyTypeObject **)&result) < 0) {
-            found = -1;
-            break;
-        }
-        if (result) {
-            Py_DECREF(result);
-            found = 1;
-        }
-    }
-
-    type->tp_mro = mro_save;
-    if (!found) {
-        PyErr_SetString(PyExc_ValueError, "token not found");
-    }
-    return found == 1 ? Py_None : NULL;
-}
-
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -555,7 +518,6 @@ static PyMethodDef TestMethods[] = {
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
-    {"repeat_getbasebytoken", repeat_getbasebytoken, METH_VARARGS},
     {NULL},
 };
 
