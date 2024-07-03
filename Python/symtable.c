@@ -58,13 +58,13 @@
 #define ANNOTATION_NOT_ALLOWED \
 "%s cannot be used within an annotation"
 
-#define TYPEVAR_BOUND_NOT_ALLOWED \
-"%s cannot be used within a TypeVar bound"
+#define EXPR_NOT_ALLOWED_IN_TYPE_VARIABLE \
+"%s cannot be used within %s"
 
-#define TYPEALIAS_NOT_ALLOWED \
+#define EXPR_NOT_ALLOWED_IN_TYPE_ALIAS \
 "%s cannot be used within a type alias"
 
-#define TYPEPARAM_NOT_ALLOWED \
+#define EXPR_NOT_ALLOWED_IN_TYPE_PARAMETERS \
 "%s cannot be used within the definition of a generic"
 
 #define DUPLICATE_TYPE_PARAM \
@@ -106,6 +106,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_mangled_names = NULL;
 
     ste->ste_type = block;
+    ste->ste_scope_info = NULL;
+
     ste->ste_nested = 0;
     ste->ste_free = 0;
     ste->ste_varargs = 0;
@@ -269,9 +271,9 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         case ClassBlock: blocktype = "ClassBlock"; break;
         case ModuleBlock: blocktype = "ModuleBlock"; break;
         case AnnotationBlock: blocktype = "AnnotationBlock"; break;
-        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeVariableBlock: blocktype = "TypeVariableBlock"; break;
         case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
-        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+        case TypeParametersBlock: blocktype = "TypeParametersBlock"; break;
     }
     const char *comptype = "";
     switch (ste->ste_comprehension) {
@@ -396,7 +398,7 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
-    int i;
+    Py_ssize_t i;
     PyThreadState *tstate;
     int starting_recursion_depth;
 
@@ -544,9 +546,9 @@ _PyST_IsFunctionLike(PySTEntryObject *ste)
 {
     return ste->ste_type == FunctionBlock
         || ste->ste_type == AnnotationBlock
-        || ste->ste_type == TypeVarBoundBlock
+        || ste->ste_type == TypeVariableBlock
         || ste->ste_type == TypeAliasBlock
-        || ste->ste_type == TypeParamBlock;
+        || ste->ste_type == TypeParametersBlock;
 }
 
 static int
@@ -1519,7 +1521,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
                                int end_lineno, int end_col_offset)
 {
     _Py_block_ty current_type = st->st_cur->ste_type;
-    if(!symtable_enter_block(st, name, TypeParamBlock, ast, lineno,
+    if(!symtable_enter_block(st, name, TypeParametersBlock, ast, lineno,
                              col_offset, end_lineno, end_col_offset)) {
         return 0;
     }
@@ -1592,7 +1594,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 
 #define VISIT_SEQ(ST, TYPE, SEQ) \
     do { \
-        int i; \
+        Py_ssize_t i; \
         asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
         for (i = 0; i < asdl_seq_LEN(seq); i++) { \
             TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -1603,7 +1605,7 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) \
     do { \
-        int i; \
+        Py_ssize_t i; \
         asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
         for (i = (START); i < asdl_seq_LEN(seq); i++) { \
             TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
@@ -1656,6 +1658,37 @@ has_kwonlydefaults(asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
         }
     }
     return 0;
+}
+
+static int
+check_import_from(struct symtable *st, stmt_ty s)
+{
+    assert(s->kind == ImportFrom_kind);
+    _Py_SourceLocation fut = st->st_future->ff_location;
+    if (s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
+        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__") &&
+        ((s->lineno > fut.lineno) ||
+         ((s->lineno == fut.end_lineno) && (s->col_offset > fut.end_col_offset))))
+    {
+        PyErr_SetString(PyExc_SyntaxError,
+                        "from __future__ imports must occur "
+                        "at the beginning of the file");
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                         s->lineno, s->col_offset + 1,
+                                         s->end_lineno, s->end_col_offset + 1);
+        return 0;
+    }
+    return 1;
+}
+
+static void
+maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
+{
+    if ((st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+        (st->st_cur->ste_type == ModuleBlock))
+    {
+        st->st_cur->ste_coroutine = 1;
+    }
 }
 
 static int
@@ -1912,9 +1945,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case ImportFrom_kind:
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
+        if (!check_import_from(st, s)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     case Global_kind: {
-        int i;
+        Py_ssize_t i;
         asdl_identifier_seq *seq = s->v.Global.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
@@ -1950,7 +1986,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     }
     case Nonlocal_kind: {
-        int i;
+        Py_ssize_t i;
         asdl_identifier_seq *seq = s->v.Nonlocal.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
@@ -2048,10 +2084,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     }
     case AsyncWith_kind:
+        maybe_set_ste_coroutine_for_module(st, s);
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
         VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
         break;
     case AsyncFor_kind:
+        maybe_set_ste_coroutine_for_module(st, s);
         VISIT(st, expr, s->v.AsyncFor.target);
         VISIT(st, expr, s->v.AsyncFor.iter);
         VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
@@ -2122,20 +2160,20 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
         /* Disallow usage in ClassBlock and type scopes */
         if (ste->ste_type == ClassBlock ||
-            ste->ste_type == TypeParamBlock ||
+            ste->ste_type == TypeParametersBlock ||
             ste->ste_type == TypeAliasBlock ||
-            ste->ste_type == TypeVarBoundBlock) {
+            ste->ste_type == TypeVariableBlock) {
             switch (ste->ste_type) {
                 case ClassBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
                     break;
-                case TypeParamBlock:
+                case TypeParametersBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEPARAM);
                     break;
                 case TypeAliasBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEALIAS);
                     break;
-                case TypeVarBoundBlock:
+                case TypeVariableBlock:
                     PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEVAR_BOUND);
                     break;
                 default:
@@ -2341,19 +2379,27 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 }
 
 static int
-symtable_visit_type_param_bound_or_default(struct symtable *st, expr_ty e, identifier name, void *key)
+symtable_visit_type_param_bound_or_default(
+    struct symtable *st, expr_ty e, identifier name,
+    void *key, const char *ste_scope_info)
 {
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVarBoundBlock, key, LOCATION(e)))
+        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e)))
             return 0;
+
         st->st_cur->ste_can_see_class_scope = is_in_class;
         if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(e))) {
             VISIT_QUIT(st, 0);
         }
+
+        assert(ste_scope_info != NULL);
+        st->st_cur->ste_scope_info = ste_scope_info;
         VISIT(st, expr, e);
-        if (!symtable_exit_block(st))
+
+        if (!symtable_exit_block(st)) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2371,6 +2417,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
 
+        const char *ste_scope_info = NULL;
+        const expr_ty bound = tp->v.TypeVar.bound;
+        if (bound != NULL) {
+            ste_scope_info = bound->kind == Tuple_kind ? "a TypeVar constraint" : "a TypeVar bound";
+        }
+
         // We must use a different key for the bound and default. The obvious choice would be to
         // use the .bound and .default_value pointers, but that fails when the expression immediately
         // inside the bound or default is a comprehension: we would reuse the same key for
@@ -2378,11 +2430,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, ste_scope_info)) {
             VISIT_QUIT(st, 0);
         }
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1))) {
+                                                        (void *)((uintptr_t)tp + 1), "a TypeVar default")) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2390,8 +2443,9 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, "a TypeVarTuple default")) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2399,8 +2453,9 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
         }
+
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp)) {
+                                                        (void *)tp, "a ParamSpec default")) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -2475,7 +2530,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
 static int
 symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 {
-    int i;
+    Py_ssize_t i;
 
     if (!args)
         return -1;
@@ -2536,7 +2591,7 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 static int
 symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
-    int i;
+    Py_ssize_t i;
 
     if (!args)
         return -1;
@@ -2829,12 +2884,21 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
     _Py_block_ty type = st->st_cur->ste_type;
     if (type == AnnotationBlock)
         PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
-    else if (type == TypeVarBoundBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEVAR_BOUND_NOT_ALLOWED, name);
-    else if (type == TypeAliasBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
-    else if (type == TypeParamBlock)
-        PyErr_Format(PyExc_SyntaxError, TYPEPARAM_NOT_ALLOWED, name);
+    else if (type == TypeVariableBlock) {
+        const char *info = st->st_cur->ste_scope_info;
+        assert(info != NULL); // e.g., info == "a ParamSpec default"
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_VARIABLE, name, info);
+    }
+    else if (type == TypeAliasBlock) {
+        // for now, we do not have any extra information
+        assert(st->st_cur->ste_scope_info == NULL);
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_ALIAS, name);
+    }
+    else if (type == TypeParametersBlock) {
+        // for now, we do not have any extra information
+        assert(st->st_cur->ste_scope_info == NULL);
+        PyErr_Format(PyExc_SyntaxError, EXPR_NOT_ALLOWED_IN_TYPE_PARAMETERS, name);
+    }
     else
         return 1;
 

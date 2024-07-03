@@ -4,16 +4,12 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -28,7 +24,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -38,16 +34,17 @@ def declare_variable(
 ) -> None:
     if var.name in variables:
         return
-    type = var.type if var.type else "PyObject *"
     variables.add(var.name)
+    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+    space = " " if type[-1].isalnum() else ""
     if var.condition:
-        out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{space}{var.name} = {null};\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:

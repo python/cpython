@@ -77,14 +77,6 @@ typedef struct _PyCfgBuilder cfg_builder;
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
-/* Return true if loc1 starts after loc2 ends. */
-static inline bool
-location_is_after(location loc1, location loc2) {
-    return (loc1.lineno > loc2.end_lineno) ||
-            ((loc1.lineno == loc2.end_lineno) &&
-             (loc1.col_offset > loc2.end_col_offset));
-}
-
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef _PyJumpTargetLabel jump_target_label;
@@ -119,6 +111,7 @@ enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
 struct fblockinfo {
     enum fblocktype fb_type;
     jump_target_label fb_block;
+    location fb_loc;
     /* (optional) type-specific exit or cleanup block */
     jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
@@ -644,8 +637,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -1239,6 +1231,7 @@ compiler_push_fblock(struct compiler *c, location loc,
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
     f->fb_block = block_label;
+    f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return SUCCESS;
@@ -1260,7 +1253,7 @@ compiler_call_exit_with_nones(struct compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_I(c, loc, CALL, 2);
+    ADDOP_I(c, loc, CALL, 3);
     return SUCCESS;
 }
 
@@ -1366,9 +1359,10 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
         case WITH:
         case ASYNC_WITH:
-            *ploc = LOC((stmt_ty)info->fb_datum);
+            *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
+                ADDOP_I(c, *ploc, SWAP, 3);
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             RETURN_IF_ERROR(compiler_call_exit_with_nones(c, *ploc));
@@ -1762,7 +1756,7 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-compiler_visit_kwonlydefaults(struct compiler *c, location loc,
+compiler_kwonlydefaults(struct compiler *c, location loc,
                               asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 {
     /* Push a dict of keyword-only default values.
@@ -1827,7 +1821,7 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
-compiler_visit_argannotation(struct compiler *c, identifier id,
+compiler_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
@@ -1861,14 +1855,14 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
-                              Py_ssize_t *annotations_len, location loc)
+compiler_argannotations(struct compiler *c, asdl_arg_seq* args,
+                        Py_ssize_t *annotations_len, location loc)
 {
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(
+            compiler_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
@@ -1879,39 +1873,39 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
-compiler_visit_annotations_in_scope(struct compiler *c, location loc,
-                                    arguments_ty args, expr_ty returns,
-                                    Py_ssize_t *annotations_len)
+compiler_annotations_in_scope(struct compiler *c, location loc,
+                              arguments_ty args, expr_ty returns,
+                              Py_ssize_t *annotations_len)
 {
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->args, annotations_len, loc));
+        compiler_argannotations(c, args->args, annotations_len, loc));
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->posonlyargs, annotations_len, loc));
+        compiler_argannotations(c, args->posonlyargs, annotations_len, loc));
 
     if (args->vararg && args->vararg->annotation) {
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->vararg->arg,
+            compiler_argannotation(c, args->vararg->arg,
                                          args->vararg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotations(c, args->kwonlyargs, annotations_len, loc));
+        compiler_argannotations(c, args->kwonlyargs, annotations_len, loc));
 
     if (args->kwarg && args->kwarg->annotation) {
         RETURN_IF_ERROR(
-            compiler_visit_argannotation(c, args->kwarg->arg,
+            compiler_argannotation(c, args->kwarg->arg,
                                          args->kwarg->annotation, annotations_len, loc));
     }
 
     RETURN_IF_ERROR(
-        compiler_visit_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
+        compiler_argannotation(c, &_Py_ID(return), returns, annotations_len, loc));
 
     return 0;
 }
 
 static int
-compiler_visit_annotations(struct compiler *c, location loc,
+compiler_annotations(struct compiler *c, location loc,
                            arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
@@ -1937,7 +1931,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
     }
     Py_DECREF(ste);
 
-    if (compiler_visit_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
+    if (compiler_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
         if (annotations_used) {
             compiler_exit_scope(c);
         }
@@ -1955,7 +1949,7 @@ compiler_visit_annotations(struct compiler *c, location loc,
 }
 
 static int
-compiler_visit_defaults(struct compiler *c, arguments_ty args,
+compiler_defaults(struct compiler *c, arguments_ty args,
                         location loc)
 {
     VISIT_SEQ(c, expr, args->defaults);
@@ -1969,13 +1963,13 @@ compiler_default_arguments(struct compiler *c, location loc,
 {
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
-        RETURN_IF_ERROR(compiler_visit_defaults(c, args, loc));
+        RETURN_IF_ERROR(compiler_defaults(c, args, loc));
         funcflags |= MAKE_FUNCTION_DEFAULTS;
     }
     if (args->kwonlyargs) {
-        int res = compiler_visit_kwonlydefaults(c, loc,
-                                                args->kwonlyargs,
-                                                args->kw_defaults);
+        int res = compiler_kwonlydefaults(c, loc,
+                                          args->kwonlyargs,
+                                          args->kw_defaults);
         RETURN_IF_ERROR(res);
         if (res > 0) {
             funcflags |= MAKE_FUNCTION_KWDEFAULTS;
@@ -2341,7 +2335,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
 
-    int annotations_flag = compiler_visit_annotations(c, loc, args, returns);
+    int annotations_flag = compiler_annotations(c, loc, args, returns);
     if (annotations_flag < 0) {
         if (is_generic) {
             compiler_exit_scope(c);
@@ -2967,7 +2961,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         co = optimize_and_assemble(c, 0);
     }
     else {
-        location loc = LOCATION(e->lineno, e->lineno, 0, 0);
+        location loc = LOC(e->v.Lambda.body);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = optimize_and_assemble(c, 1);
     }
@@ -3065,7 +3059,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, loc, "'async for' outside async function");
     }
@@ -3845,14 +3839,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         PyTuple_SET_ITEM(names, i, Py_NewRef(alias->name));
     }
 
-    if (location_is_after(LOC(s), c->c_future.ff_location) &&
-        s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
-        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
-    {
-        Py_DECREF(names);
-        return compiler_error(c, LOC(s), "from __future__ imports must occur "
-                              "at the beginning of the file");
-    }
     ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
@@ -4679,7 +4665,7 @@ check_subscripter(struct compiler *c, expr_ty e)
         {
             return SUCCESS;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case Set_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
@@ -4712,7 +4698,7 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
         if (!(PyUnicode_Check(v) || PyBytes_Check(v) || PyTuple_Check(v))) {
             return SUCCESS;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case Tuple_kind:
     case List_kind:
     case ListComp_kind:
@@ -5107,7 +5093,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     if (names == NULL) {
         return ERROR;
     }
-    for (int i = 0; i < nkwelts; i++) {
+    for (Py_ssize_t i = 0; i < nkwelts; i++) {
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
@@ -5796,7 +5782,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     }
     if (co == NULL) {
         goto error;
@@ -5897,6 +5883,7 @@ compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     ADDOP(c, NO_LOCATION, POP_EXCEPT);
     ADDOP(c, NO_LOCATION, POP_TOP);
     ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP);
     NEW_JUMP_TARGET_LABEL(c, exit);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, exit);
 
@@ -5939,7 +5926,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     assert(s->kind == AsyncWith_kind);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, loc, "'async with' outside async function");
     }
@@ -5952,7 +5939,12 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     loc = LOC(item->context_expr);
-    ADDOP(c, loc, BEFORE_ASYNC_WITH);
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, SWAP, 3);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
+    ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
@@ -6050,7 +6042,12 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
     location loc = LOC(item->context_expr);
-    ADDOP(c, loc, BEFORE_WITH);
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___EXIT__);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, SWAP, 3);
+    ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
+    ADDOP_I(c, loc, CALL, 0);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
@@ -6099,7 +6096,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-compiler_visit_expr1(struct compiler *c, expr_ty e)
+compiler_visit_expr(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     switch (e->kind) {
@@ -6266,13 +6263,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_tuple(c, e);
     }
     return SUCCESS;
-}
-
-static int
-compiler_visit_expr(struct compiler *c, expr_ty e)
-{
-    int res = compiler_visit_expr1(c, e);
-    return res;
 }
 
 static bool

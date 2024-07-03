@@ -2138,6 +2138,8 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_incompatible_here(module)
         with self.subTest(f'{module}: strict, fresh'):
             self.check_incompatible_fresh(module)
+        with self.subTest(f'{module}: isolated, fresh'):
+            self.check_incompatible_fresh(module, isolated=True)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
@@ -3031,6 +3033,13 @@ class SinglephaseInitTests(unittest.TestCase):
     @requires_subinterpreters
     def test_basic_multiple_interpreters_reset_each(self):
         # resetting between each interpreter
+
+        if Py_TRACE_REFS:
+            # It's a Py_TRACE_REFS build.
+            # This test breaks interpreter isolation a little,
+            # which causes problems on Py_TRACE_REF builds.
+            # See gh-121110.
+            raise unittest.SkipTest('crashes on Py_TRACE_REFS builds')
 
         # At this point:
         #  * alive in 0 interpreters

@@ -1220,7 +1220,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 Notes:
 
 (1)
-   *t* must have the same length as the slice it is replacing.
+   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
    The optional argument *i* defaults to ``-1``, so that by default the last
@@ -4565,7 +4565,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable, value=None)
+   .. classmethod:: fromkeys(iterable, value=None, /)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
