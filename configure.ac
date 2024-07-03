@@ -695,6 +695,64 @@ AC_SUBST([INSTALLTARGETS])
 AC_DEFINE_UNQUOTED([_PYTHONFRAMEWORK], ["${PYTHONFRAMEWORK}"],
                    [framework name])
 
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+AC_MSG_CHECKING([for --with-app-store-compliance])
+AC_ARG_WITH(
+  [app_store_compliance],
+  [AS_HELP_STRING(
+    [--with-app-store-compliance=@<:@PATCH-FILE@:>@],
+    [Enable any patches required for compiliance with app stores.
+     Optional PATCH-FILE specifies the custom patch to apply.]
+  )],[
+    case "$withval" in
+    yes)
+      case $ac_sys_system in
+        Darwin|iOS)
+          # iOS is able to share the macOS patch
+          APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+          APP_STORE_COMPLIANCE_PATCH_FLAGS=
+          ;;
+        *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
+      esac
+      AC_MSG_RESULT([applying default app store compliance patch])
+      ;;
+    *)
+      APP_STORE_COMPLIANCE_PATCH="${withval}"
+      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+      APP_STORE_COMPLIANCE_PATCH_FLAGS=
+      AC_MSG_RESULT([applying custom app store compliance patch])
+      ;;
+    esac
+  ],[
+    case $ac_sys_system in
+      iOS)
+        # Always apply the compliance patch on iOS; we can use the macOS patch
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([applying default app store compliance patch])
+        ;;
+      Darwin)
+        # Always *check* the compliance patch on macOS
+        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
+        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
+        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
+        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
+        ;;
+      *)
+        # No app compliance patching on any other platform
+        APP_STORE_COMPLIANCE_PATCH=
+        APP_STORE_COMPLIANCE_PATCH_TARGET=
+        APP_STORE_COMPLIANCE_PATCH_FLAGS=
+        AC_MSG_RESULT([not patching for app store compliance])
+        ;;
+    esac
+])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
+AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
+
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
 	case "$host" in
@@ -3768,6 +3826,35 @@ dnl The AIX_BUILDDATE is obtained from the kernel fileset - bos.mp64
 	*) ;;
 esac
 
+# check for _Complex C type
+#
+# Note that despite most compilers define __STDC_IEC_559_COMPLEX__ - almost
+# none properly support C11+ Annex G (where pure imaginary types
+# represented by _Imaginary are mandatory).  This is a bug (see e.g.
+# llvm/llvm-project#60269), so we don't rely on presence
+# of __STDC_IEC_559_COMPLEX__.
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <complex.h>
+#define test(type, out)                                \
+{                                                      \
+    type complex z = 1 + 2*I; z = z*z;                 \
+    (out) = (out) || creal(z) != -3 || cimag(z) != 4;  \
+}
+int main(void)
+{
+   int res = 0;
+   test(float, res);
+   test(double, res);
+   test(long double, res);
+   return res;
+}]])], [ac_cv_c_complex_supported=yes],
+[ac_cv_c_complex_supported=no],
+[ac_cv_c_complex_supported=no])
+if test "$ac_cv_c_complex_supported" = "yes"; then
+    AC_DEFINE([Py_HAVE_C_COMPLEX], [1],
+              [Defined if _Complex C type is available.])
+fi
+
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -6577,55 +6664,116 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
-dnl check for ncurses/ncursesw and panel/panelw
+AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char year[5];
+  struct tm date = {
+    .tm_year = -1801,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
+    return 1;
+  }
+  return 0;
+}
+]])],
+[ac_cv_normalize_century=yes],
+[ac_cv_normalize_century=no],
+[ac_cv_normalize_century=yes])])
+if test "$ac_cv_normalize_century" = yes
+then
+  AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
+  [Define if year with century should be normalized for strftime.])
+fi
+
+dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.
-dnl have_curses=[no, ncursesw, ncurses]
-dnl have_panel=[no, panelw, panel]
+dnl have_curses=[no, yes]
+dnl have_panel=[no, yes]
 have_curses=no
 have_panel=no
 
-AH_TEMPLATE([HAVE_NCURSESW], [Define to 1 if you have the `ncursesw' library.])
-AC_CHECK_HEADERS([curses.h ncurses.h])
+dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
+dnl Sets 'have_curses' and 'have_panel'.
+dnl For the PKG_CHECK_MODULES() calls, we can safely reuse the first variable
+dnl here, since we're only calling the macro a second time if the first call
+dnl fails.
+AC_DEFUN([PY_CHECK_CURSES], [dnl
+AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
+AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
+PKG_CHECK_MODULES([CURSES], [$1],
+  [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
+   AS_VAR_SET([have_curses], [yes])
+   PKG_CHECK_MODULES([PANEL], [$2],
+    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
+     AS_VAR_SET([have_panel], [yes])],
+    [AS_VAR_SET([have_panel], [no])])],
+  [AS_VAR_SET([have_curses], [no])])
+AS_VAR_POPDEF([curses_var])
+AS_VAR_POPDEF([panel_var])])
 
-AS_VAR_IF([ac_cv_header_ncurses_h], [yes], [
-  if test "$ac_sys_system" != "Darwin"; then
-    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-    PKG_CHECK_MODULES([CURSES], [ncursesw], [
-      AC_DEFINE([HAVE_NCURSESW], [1])
-      have_curses=ncursesw
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ncursesw], [initscr], [
-          AC_DEFINE([HAVE_NCURSESW], [1])
-          have_curses=ncursesw
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
-        ])
-      ])
-    ])
-  fi
+# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
+PY_CHECK_CURSES([ncursesw], [panelw])
+AS_VAR_IF([have_curses], [no],
+          [PY_CHECK_CURSES([ncurses], [panel])])
 
-  AS_VAR_IF([have_curses], [no], [
-    PKG_CHECK_MODULES([CURSES], [ncurses], [
-      have_curses=ncurses
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([ncurses], [initscr], [
-          have_curses=ncurses
-          CURSES_CFLAGS=${CURSES_CFLAGS-""}
-          CURSES_LIBS=${CURSES_LIBS-"-lncurses"}
-        ])
-      ])
-    ])
-  ])
+WITH_SAVE_ENV([
+  # Make sure we've got the header defines.
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
+  AC_CHECK_HEADERS(m4_normalize([
+    ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
+    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
+    curses.h ncurses.h panel.h
+  ]))
 
-])dnl ac_cv_header_ncurses_h = yes
+  # Check that we're able to link with crucial curses/panel functions. This
+  # also serves as a fallback in case pkg-config failed.
+  AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
+  AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
+    [AS_VAR_IF([have_curses], [no],
+      [AS_VAR_SET([have_curses], [yes])
+       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
+    [AS_VAR_SET([have_curses], [no])])
+  AC_SEARCH_LIBS([update_panels], [panelw panel],
+    [AS_VAR_IF([have_panel], [no],
+      [AS_VAR_SET([have_panel], [yes])
+       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
+    [AS_VAR_SET([have_panel], [no])])
 
+dnl Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
+dnl structs since version 5.7.  If the macro is defined as zero before including
+dnl [n]curses.h, ncurses will expose fields of the structs regardless of the
+dnl configuration.
+AC_DEFUN([_CURSES_INCLUDES],dnl
+[
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+])
+
+AS_IF([test "have_curses" != "no"], [
 dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
+AS_VAR_IF([ac_sys_system], [Darwin], [
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
   dnl System-supplied ncurses combines libncurses/libpanel and supports wide
   dnl characters, so we can use it like ncursesw.
@@ -6635,82 +6783,17 @@ if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
 
   AS_VAR_APPEND([CURSES_CFLAGS], [" -D_XOPEN_SOURCE_EXTENDED=1"])
-  AC_DEFINE([HAVE_NCURSESW], [1])
-fi
-
-dnl TODO: detect "curses" and special cases tinfo, terminfo, or termcap
-
-AC_MSG_CHECKING([curses module flags])
-AS_VAR_IF([have_curses], [no], [
-  AC_MSG_RESULT([no])
-], [
-  AC_MSG_RESULT([$have_curses (CFLAGS: $CURSES_CFLAGS, LIBS: $CURSES_LIBS)])
 ])
-
-dnl check for ncurses' panel/panelw library
-AC_CHECK_HEADERS([panel.h])
-
-AS_VAR_IF([ac_cv_header_panel_h], [yes], [
-
-  if test "$ac_sys_system" != "Darwin"; then
-    dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-    AS_VAR_IF([have_curses], [ncursesw], [
-      PKG_CHECK_MODULES([PANEL], [panelw], [
-        have_panel=panelw
-      ], [
-        WITH_SAVE_ENV([
-          AC_CHECK_LIB([panelw], [update_panels], [
-            have_panel=panelw
-            PANEL_CFLAGS=${PANEL_CFLAGS-""}
-            PANEL_LIBS=${PANEL_LIBS-"-lpanelw"}
-          ])
-        ])
-      ])
-    ])
-  fi
-
-  AS_VAR_IF([have_curses], [ncurses], [
-    PKG_CHECK_MODULES([PANEL], [panel], [
-      have_panel=panel
-    ], [
-      WITH_SAVE_ENV([
-        AC_CHECK_LIB([panel], [update_panels], [
-          have_panel=panel
-          PANEL_CFLAGS=${PANEL_CFLAGS-""}
-          PANEL_LIBS=${PANEL_LIBS-"-lpanel"}
-        ])
-      ])
-    ])
-  ])
-
-])dnl ac_cv_header_panel_h = yes
 
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-AC_MSG_CHECKING([panel flags])
-AS_VAR_IF([have_panel], [no], [
-  AC_MSG_RESULT([no])
-], [
-  AC_MSG_RESULT([$have_panel (CFLAGS: $PANEL_CFLAGS, LIBS: $PANEL_LIBS)])
-])
-
-# first curses header check
-ac_save_cppflags="$CPPFLAGS"
-if test "$cross_compiling" = no; then
-  CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
-fi
-
 # On Solaris, term.h requires curses.h
-AC_CHECK_HEADERS([term.h], [], [], [
-#ifdef HAVE_CURSES_H
-#include <curses.h>
-#endif
-])
+AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 AC_CACHE_CHECK([whether mvwdelch is an expression], [ac_cv_mvwdelch_is_expression],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <curses.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
   int rtn;
   rtn = mvwdelch(0,0,0);
 ]])],
@@ -6723,15 +6806,8 @@ then
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
-# Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
-# structs since version 5.7.  If the macro is defined as zero before including
-# [n]curses.h, ncurses will expose fields of the structs regardless of the
-# configuration.
 AC_CACHE_CHECK([whether WINDOW has _flags], [ac_cv_window_has_flags],
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-  #define NCURSES_OPAQUE 0
-  #include <curses.h>
-]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
   WINDOW *w;
   w->_flags = 0;
 ]])],
@@ -6753,11 +6829,7 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [for curses function $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM(
-        [
-        #define NCURSES_OPAQUE 0
-        #include <curses.h>
-        ], [
+      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
         #ifndef $1
         void *x=$1
         #endif
@@ -6785,6 +6857,8 @@ PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 CPPFLAGS=$ac_save_cppflags
+])dnl have_curses != no
+])dnl save env
 
 AC_MSG_NOTICE([checking for device files])
 
@@ -7702,11 +7776,11 @@ PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
-  [], [test "$have_curses" != "no"],
+  [], [test "$have_curses" = "yes"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
 )
 PY_STDLIB_MOD([_curses_panel],
-  [], [test "$have_panel" != "no"],
+  [], [test "$have_curses" = "yes" && test "$have_panel" = "yes"],
   [$PANEL_CFLAGS $CURSES_CFLAGS], [$PANEL_LIBS $CURSES_LIBS]
 )
 PY_STDLIB_MOD([_decimal],
@@ -7766,7 +7840,7 @@ PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
-  [], [$LIBM])
+  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS $LIBM])
 
 dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.

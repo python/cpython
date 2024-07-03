@@ -867,9 +867,6 @@ class _PidfdChildWatcher:
     recent (5.3+) kernels.
     """
 
-    def is_active(self):
-        return True
-
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
         pidfd = os.pidfd_open(pid)
@@ -910,9 +907,6 @@ class _ThreadedChildWatcher:
     def __init__(self):
         self._pid_counter = itertools.count(0)
         self._threads = {}
-
-    def is_active(self):
-        return True
 
     def __del__(self, _warn=warnings.warn):
         threads = [thread for thread in list(self._threads.values())

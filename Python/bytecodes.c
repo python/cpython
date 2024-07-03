@@ -230,7 +230,7 @@ dummy_func(
         }
 
         replicate(8) pure inst(LOAD_FAST, (-- value)) {
-            assert(PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg)) != NULL);
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
@@ -673,7 +673,7 @@ dummy_func(
                 err = 1;
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
                 Py_DECREF(slice);
             }
             PyStackRef_CLOSE(v);
@@ -789,7 +789,7 @@ dummy_func(
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectSteal(v));
+                                PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -813,7 +813,7 @@ dummy_func(
 
         op(_STORE_SUBSCR, (v, container, sub -- )) {
             /* container[sub] = v */
-            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectSteal(sub), PyStackRef_AsPyObjectSteal(v));
+            int err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), PyStackRef_AsPyObjectBorrow(sub), PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -885,10 +885,10 @@ dummy_func(
             switch (oparg) {
             case 2:
                 cause = PyStackRef_AsPyObjectSteal(args[1]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 1:
                 exc = PyStackRef_AsPyObjectSteal(args[0]);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case 0:
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
@@ -1235,7 +1235,7 @@ dummy_func(
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value,
-                PyStackRef_AsPyObjectBorrow(exc_value) == Py_None
+                   PyStackRef_Is(exc_value, PyStackRef_None)
                     ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
         }
 
@@ -1330,9 +1330,9 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             if (PyDict_CheckExact(ns))
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             else
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectSteal(v));
+                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1450,7 +1450,7 @@ dummy_func(
         op(_STORE_ATTR, (v, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
-                                       name, PyStackRef_AsPyObjectSteal(v));
+                                       name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1780,13 +1780,7 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            STACKREFS_TO_PYOBJECTS(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            PyObject *tup_o = _PyTuple_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
             ERROR_IF(tup_o == NULL, error);
             tup = PyStackRef_FromPyObjectSteal(tup_o);
         }
@@ -4618,7 +4612,50 @@ dummy_func(
         }
 
         tier2 op(_EXIT_TRACE, (--)) {
-            EXIT_TO_TRACE();
+            _PyExitData *exit = &current_executor->exits[oparg];
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+        #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+            if (lltrace >= 2) {
+                printf("SIDE EXIT: [UOp ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(", exit %u, temp %d, target %d -> %s]\n",
+                    oparg, exit->temperature.as_counter,
+                    (int)(target - _PyCode_CODE(code)),
+                    _PyOpcode_OpName[target->op.code]);
+            }
+        #endif
+            if (exit->executor == NULL) {
+                _Py_BackoffCounter temperature = exit->temperature;
+                if (!backoff_counter_triggers(temperature)) {
+                    exit->temperature = advance_backoff_counter(temperature);
+                    tstate->previous_executor = (PyObject *)current_executor;
+                    GOTO_TIER_ONE(target);
+                }
+                _PyExecutorObject *executor;
+                if (target->op.code == ENTER_EXECUTOR) {
+                    executor = code->co_executors->executors[target->op.arg];
+                    Py_INCREF(executor);
+                }
+                else {
+                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                    if (optimized <= 0) {
+                        exit->temperature = restart_backoff_counter(temperature);
+                        if (optimized < 0) {
+                            Py_DECREF(current_executor);
+                            tstate->previous_executor = Py_None;
+                            GOTO_UNWIND();
+                        }
+                        tstate->previous_executor = (PyObject *)current_executor;
+                        GOTO_TIER_ONE(target);
+                    }
+                }
+                exit->executor = executor;
+            }
+            Py_INCREF(exit->executor);
+            tstate->previous_executor = (PyObject *)current_executor;
+            GOTO_TIER_TWO(exit->executor);
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -4659,47 +4696,21 @@ dummy_func(
             exe->count++;
         }
 
-        /* Only used for handling cold side exits, should never appear in
-         * a normal trace or as part of an instruction.
-         */
-        tier2 op(_COLD_EXIT, (--)) {
-            _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
-            _PyExitData *exit = &previous->exits[oparg];
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            _Py_BackoffCounter temperature = exit->temperature;
-            if (!backoff_counter_triggers(temperature)) {
-                exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target);
-            }
-            _PyExecutorObject *executor;
-            if (target->op.code == ENTER_EXECUTOR) {
-                executor = code->co_executors->executors[target->op.arg];
-                Py_INCREF(executor);
-            }
-            else {
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
-                if (optimized <= 0) {
-                    exit->temperature = restart_backoff_counter(temperature);
-                    if (optimized < 0) {
-                        Py_DECREF(previous);
-                        tstate->previous_executor = Py_None;
-                        GOTO_UNWIND();
-                    }
-                    GOTO_TIER_ONE(target);
-                }
-            }
-            /* We need two references. One to store in exit->executor and
-            * one to keep the executor alive when executing. */
-            Py_INCREF(executor);
-            exit->executor = executor;
-            GOTO_TIER_TWO(executor);
-        }
-
         tier2 op(_DYNAMIC_EXIT, (--)) {
             tstate->previous_executor = (PyObject *)current_executor;
             _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];
             _Py_CODEUNIT *target = frame->instr_ptr;
+        #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+            if (lltrace >= 2) {
+                printf("DYNAMIC EXIT: [UOp ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(", exit %u, temp %d, target %d -> %s]\n",
+                    oparg, exit->temperature.as_counter,
+                    (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
+                    _PyOpcode_OpName[target->op.code]);
+            }
+        #endif
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = (PyCodeObject *)frame->f_executable;

@@ -178,6 +178,9 @@ EXPORTSFROM=	@EXPORTSFROM@
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
+# Name of the patch file to apply for app store compliance
+APP_STORE_COMPLIANCE_PATCH=@APP_STORE_COMPLIANCE_PATCH@
+
 # Short name and location for Mac OS X Python framework
 UNIVERSALSDK=@UNIVERSALSDK@
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
@@ -691,7 +694,7 @@ list-targets:
 	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
 
 .PHONY: build_all
-build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
+build_all:	check-clean-src @APP_STORE_COMPLIANCE_PATCH_TARGET@ $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 
 .PHONY: build_wasm
@@ -926,6 +929,18 @@ gdbhooks: $(BUILDPYTHON)-gdb.py
 SRC_GDB_HOOKS=$(srcdir)/Tools/gdb/libpython.py
 $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 	$(INSTALL_DATA) $(SRC_GDB_HOOKS) $(BUILDPYTHON)-gdb.py
+
+# Compliance with app stores (such as iOS and macOS) sometimes requires making
+# modifications to the Python standard library. If enabled, apply the patch of
+# known modifications to the source tree before building. The patch will be
+# applied in a dry-run mode (validating, but not applying the patch) on builds
+# that *have* a compliance patch, but where compliance has not been enabled.
+build/app-store-compliant:
+	patch @APP_STORE_COMPLIANCE_PATCH_FLAGS@ --forward --strip=1 --directory="$(srcdir)" --input "$(APP_STORE_COMPLIANCE_PATCH)"
+	@if test "@APP_STORE_COMPLIANCE_PATCH_FLAGS@" == ""; then \
+		mkdir -p build ; \
+		echo "$(APP_STORE_COMPLIANCE_PATCH)" > build/app-store-compliant ; \
+	fi
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
@@ -1178,7 +1193,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_global_strings.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
-		$(srcdir)/Include/internal/pycore_identifier.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_importdl.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
@@ -3111,7 +3125,7 @@ MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h $(srcdir)/Modules/_complex.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
