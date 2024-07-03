@@ -56,7 +56,7 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
-__all__ = ["Error", "copy", "deepcopy"]
+__all__ = ["Error", "copy", "deepcopy", "replace"]
 
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
