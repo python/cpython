@@ -18,6 +18,7 @@ from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
+from types import MethodType
 from _thread import RLock
 
 # Avoid importing types, so we can speedup import time
@@ -314,12 +315,7 @@ class partial:
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
-        import warnings
-        warnings.warn('functools.partial will be a method descriptor in '
-                      'future Python versions; wrap it in staticmethod() '
-                      'if you want to preserve the old behavior',
-                      FutureWarning, 2)
-        return self
+        return MethodType(self, obj)
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -402,7 +398,7 @@ class partialmethod(object):
     def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
-        if get is not None and not isinstance(self.func, partial):
+        if get is not None:
             new_func = get(obj, cls)
             if new_func is not self.func:
                 # Assume __get__ returning something new indicates the
