@@ -363,7 +363,7 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 
     module_state *state;
     switch (err) {
-    case ERR_QUEUE_ALLOC:  // fall through
+    case ERR_QUEUE_ALLOC: _Py_FALLTHROUGH;
     case ERR_QUEUES_ALLOC:
         PyErr_NoMemory();
         break;

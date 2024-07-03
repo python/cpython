@@ -182,6 +182,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
     [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_DEOPT_FLAG,
@@ -243,7 +244,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SET_IP] = 0,
     [_CHECK_STACK_SPACE_OPERAND] = HAS_DEOPT_FLAG,
     [_SAVE_RETURN_OFFSET] = HAS_ARG_FLAG,
-    [_EXIT_TRACE] = 0,
+    [_EXIT_TRACE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
@@ -252,7 +253,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
-    [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_FATAL_ERROR] = 0,
@@ -324,7 +324,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
     [_CHECK_VALIDITY_AND_SET_IP] = "_CHECK_VALIDITY_AND_SET_IP",
-    [_COLD_EXIT] = "_COLD_EXIT",
     [_COMPARE_OP] = "_COMPARE_OP",
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",
@@ -442,6 +441,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
     [_LOAD_GLOBAL_MODULE] = "_LOAD_GLOBAL_MODULE",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
+    [_LOAD_SPECIAL] = "_LOAD_SPECIAL",
     [_LOAD_SUPER_ATTR_ATTR] = "_LOAD_SUPER_ATTR_ATTR",
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
     [_MAKE_CELL] = "_MAKE_CELL",
@@ -840,8 +840,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _FOR_ITER_GEN_FRAME:
             return 1;
+        case _LOAD_SPECIAL:
+            return 1;
         case _WITH_EXCEPT_START:
-            return 4;
+            return 5;
         case _PUSH_EXC_INFO:
             return 1;
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
@@ -980,8 +982,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _INTERNAL_INCREMENT_OPT_COUNTER:
             return 1;
-        case _COLD_EXIT:
-            return 0;
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:

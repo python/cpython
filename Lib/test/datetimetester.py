@@ -1697,18 +1697,26 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.max)
 
     def test_strftime_y2k(self):
-        for y in (1, 49, 70, 99, 100, 999, 1000, 1970):
-            d = self.theclass(y, 1, 1)
-            # Issue 13305:  For years < 1000, the value is not always
-            # padded to 4 digits across platforms.  The C standard
-            # assumes year >= 1900, so it does not specify the number
-            # of digits.
-            if d.strftime("%Y") != '%04d' % y:
-                # Year 42 returns '42', not padded
-                self.assertEqual(d.strftime("%Y"), '%d' % y)
-                # '0042' is obtained anyway
-                if support.has_strftime_extensions:
-                    self.assertEqual(d.strftime("%4Y"), '%04d' % y)
+        # Test that years less than 1000 are 0-padded; note that the beginning
+        # of an ISO 8601 year may fall in an ISO week of the year before, and
+        # therefore needs an offset of -1 when formatting with '%G'.
+        dataset = (
+            (1, 0),
+            (49, -1),
+            (70, 0),
+            (99, 0),
+            (100, -1),
+            (999, 0),
+            (1000, 0),
+            (1970, 0),
+        )
+        for year, offset in dataset:
+            for specifier in 'YG':
+                with self.subTest(year=year, specifier=specifier):
+                    d = self.theclass(year, 1, 1)
+                    if specifier == 'G':
+                        year += offset
+                    self.assertEqual(d.strftime(f"%{specifier}"), f"{year:04d}")
 
     def test_replace(self):
         cls = self.theclass
@@ -6869,6 +6877,23 @@ class ExtensionModuleTests(unittest.TestCase):
                     return FakeDate
                 """)
             script_helper.assert_python_ok('-c', script)
+
+    def test_update_type_cache(self):
+        # gh-120782
+        script = textwrap.dedent("""
+            import sys
+            for i in range(5):
+                import _datetime
+                _datetime.date.max > _datetime.date.min
+                _datetime.time.max > _datetime.time.min
+                _datetime.datetime.max > _datetime.datetime.min
+                _datetime.timedelta.max > _datetime.timedelta.min
+                isinstance(_datetime.timezone.min, _datetime.tzinfo)
+                isinstance(_datetime.timezone.utc, _datetime.tzinfo)
+                isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                del sys.modules['_datetime']
+            """)
+        script_helper.assert_python_ok('-c', script)
 
 
 def load_tests(loader, standard_tests, pattern):

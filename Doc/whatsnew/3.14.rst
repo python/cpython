@@ -106,6 +106,9 @@ pathlib
 * Add :meth:`pathlib.Path.copy`, which copies the content of one file to
   another, like :func:`shutil.copyfile`.
   (Contributed by Barney Gale in :gh:`73991`.)
+* Add :meth:`pathlib.Path.copytree`, which copies one directory tree to
+  another.
+  (Contributed by Barney Gale in :gh:`73991`.)
 
 symtable
 --------
@@ -122,6 +125,14 @@ symtable
 Optimizations
 =============
 
+asyncio
+-------
+
+* :mod:`asyncio` now uses double linked list implementation for native tasks
+  which speeds up execution by 10% on standard pyperformance benchmarks and
+  reduces memory usage.
+  (Contributed by Kumar Aditya in :gh:`107803`.)
+
 
 
 
@@ -132,6 +143,11 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
+  write new code.  The :mod:`subprocess` module is recommended instead.
+  (Contributed by Victor Stinner in :gh:`120743`.)
 
 
 Removed
@@ -172,6 +188,26 @@ ast
   Use :attr:`!ast.Constant.value` instead.
 
   (Contributed by Alex Waygood in :gh:`119562`.)
+
+asyncio
+-------
+
+* Remove the following classes and functions. They were all deprecated and
+  emitted deprecation warnings since Python 3.12:
+
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!asyncio.get_child_watcher`
+  * :func:`!asyncio.set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
 
 collections.abc
 ---------------
@@ -269,6 +305,12 @@ Porting to Python 3.14
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
 Build Changes
 =============
@@ -291,15 +333,23 @@ New Features
   * :c:func:`PyUnicodeWriter_Finish`.
   * :c:func:`PyUnicodeWriter_WriteChar`.
   * :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`PyUnicodeWriter_WriteUCS4`.
+  * :c:func:`PyUnicodeWriter_WriteWideChar`.
   * :c:func:`PyUnicodeWriter_WriteStr`.
   * :c:func:`PyUnicodeWriter_WriteRepr`.
   * :c:func:`PyUnicodeWriter_WriteSubstring`.
   * :c:func:`PyUnicodeWriter_Format`.
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
 Porting to Python 3.14
 ----------------------
+
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` is now implemented as
+  an opaque function call to hide implementation details.
+  (Contributed by Victor Stinner in :gh:`120600`.)
+
 
 Deprecated
 ----------
