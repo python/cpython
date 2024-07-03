@@ -75,7 +75,7 @@ typedef struct {
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
-    Py_off_t size_estimated;
+    Py_off_t estimated_size;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -200,7 +200,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->appending = 0;
         self->seekable = -1;
         self->blksize = 0;
-        self->size_estimated = -1;
+        self->estimated_size = -1;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
@@ -488,7 +488,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
         if (fdfstat.st_size < PY_SSIZE_T_MAX) {
-            self->size_estimated = (Py_off_t)fdfstat.st_size;
+            self->estimated_size = (Py_off_t)fdfstat.st_size;
         }
     }
 
@@ -725,7 +725,7 @@ _io_FileIO_readall_impl(fileio *self)
         return err_closed();
     }
 
-    end = self->size_estimated;
+    end = self->estimated_size;
     if (end <= 0) {
         /* Use a default size and resize as needed. */
         bufsize = SMALLCHUNK;
