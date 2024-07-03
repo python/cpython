@@ -263,7 +263,8 @@ PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subjec
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
+PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArrayBorrow(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
+PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArraySteal(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
 
 PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
 
