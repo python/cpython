@@ -126,8 +126,8 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
-extern void _Py_SetImmortal(PyObject *op);
-extern void _Py_SetImmortalUntracked(PyObject *op);
+PyAPI_FUNC(void) _Py_SetImmortal(PyObject *op);
+PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
@@ -158,21 +158,6 @@ static inline void _Py_ClearImmortal(PyObject *op)
         _Py_ClearImmortal(_PyObject_CAST(op)); \
         op = NULL; \
     } while (0)
-
-// Mark an object as supporting deferred reference counting. This is a no-op
-// in the default (with GIL) build. Objects that use deferred reference
-// counting should be tracked by the GC so that they are eventually collected.
-extern void _PyObject_SetDeferredRefcount(PyObject *op);
-
-static inline int
-_PyObject_HasDeferredRefcount(PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_DEFERRED);
-#else
-    return 0;
-#endif
-}
 
 #if !defined(Py_GIL_DISABLED)
 static inline void
@@ -262,7 +247,7 @@ extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((type->tp_flags & feature) != 0);
+    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -497,6 +482,9 @@ _Py_NewRefWithLock(PyObject *op)
     if (_Py_TryIncrefFast(op)) {
         return op;
     }
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
     _Py_INCREF_STAT_INC();
     for (;;) {
         Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
@@ -586,7 +574,7 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(
+        managed_static_type_state *state = _PyStaticType_GetState(
                                                 interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
@@ -623,6 +611,20 @@ _PyObject_IS_GC(PyObject *obj)
     PyTypeObject *type = Py_TYPE(obj);
     return (PyType_IS_GC(type)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
+}
+
+// Fast inlined version of PyObject_Hash()
+static inline Py_hash_t
+_PyObject_HashFast(PyObject *op)
+{
+    if (PyUnicode_CheckExact(op)) {
+        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                             _PyASCIIObject_CAST(op)->hash);
+        if (hash != -1) {
+            return hash;
+        }
+    }
+    return PyObject_Hash(op);
 }
 
 // Fast inlined version of PyType_IS_GC()
@@ -706,6 +708,7 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null);
 
 extern int _PyObject_IsAbstract(PyObject *);
 

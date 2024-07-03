@@ -38,7 +38,14 @@ from rlcompleter import Completer as RLCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
-from .unix_console import UnixConsole, _error
+from .console import Console as ConsoleType
+
+Console: type[ConsoleType]
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import UnixConsole as Console, _error
+except ImportError:
+    from .windows_console import WindowsConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -47,6 +54,11 @@ ENCODING = sys.getdefaultencoding() or "latin1"
 Command = commands.Command
 from collections.abc import Callable, Collection
 from .types import Callback, Completer, KeySpec, CommandName
+
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -85,7 +97,7 @@ __all__ = [
 
 @dataclass
 class ReadlineConfig:
-    readline_completer: Completer | None = RLCompleter().complete
+    readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
 
 
@@ -230,13 +242,24 @@ def _get_first_indentation(buffer: list[str]) -> str | None:
     return None
 
 
-def _is_last_char_colon(buffer: list[str]) -> bool:
-    i = len(buffer)
-    while i > 0:
-        i -= 1
-        if buffer[i] not in " \t\n":  # ignore whitespaces
-            return buffer[i] == ":"
-    return False
+def _should_auto_indent(buffer: list[str], pos: int) -> bool:
+    # check if last character before "pos" is a colon, ignoring
+    # whitespaces and comments.
+    last_char = None
+    while pos > 0:
+        pos -= 1
+        if last_char is None:
+            if buffer[pos] not in " \t\n":  # ignore whitespaces
+                last_char = buffer[pos]
+        else:
+            # even if we found a non-whitespace character before
+            # original pos, we keep going back until newline is reached
+            # to make sure we ignore comments
+            if buffer[pos] == "\n":
+                break
+            if buffer[pos] == "#":
+                last_char = None
+    return last_char == ":"
 
 
 class maybe_accept(commands.Command):
@@ -244,6 +267,10 @@ class maybe_accept(commands.Command):
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
+
+        if self.reader.in_bracketed_paste:
+            r.insert("\n")
+            return
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -273,7 +300,7 @@ class maybe_accept(commands.Command):
                     for i in range(prevlinestart, prevlinestart + indent):
                         r.insert(r.buffer[i])
                 r.update_last_used_indentation()
-                if _is_last_char_colon(r.buffer):
+                if _should_auto_indent(r.buffer, r.pos):
                     if r.last_used_indentation is not None:
                         indentation = r.last_used_indentation
                     else:
@@ -328,7 +355,7 @@ class _ReadlineWrapper:
 
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
-            console = UnixConsole(self.f_in, self.f_out, encoding=ENCODING)
+            console = Console(self.f_in, self.f_out, encoding=ENCODING)
             self.reader = ReadlineAlikeReader(console=console, config=self.config)
         return self.reader
 
@@ -532,7 +559,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup() -> None:
+def _setup(namespace: dict[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -548,9 +575,11 @@ def _setup() -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
+    # set up namespace in rlcompleter
+    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
-
     raw_input = builtins.input
     builtins.input = _wrapper.input
 

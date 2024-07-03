@@ -13,6 +13,8 @@
 
 # Build system
 configure*                    @erlend-aasland @corona10
+Makefile.pre.in               @erlend-aasland
+Modules/Setup*                @erlend-aasland
 
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
@@ -29,20 +31,22 @@ Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval*.c               @markshannon @gvanrossum
-Python/ceval*.h               @markshannon @gvanrossum
+Python/ceval*.c               @markshannon
+Python/ceval*.h               @markshannon
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
+Python/instruction_sequence.c @iritkatriel
 Python/ast_opt.c              @isidentical
-Python/bytecodes.c            @markshannon @gvanrossum
-Python/optimizer*.c           @markshannon @gvanrossum
+Python/bytecodes.c            @markshannon
+Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
+Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
-Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Lib/test/test_capi/test_misc.py  @markshannon
 Lib/test/test_pyrepl/*        @pablogsal @lysnikolaou @ambv
 Tools/c-analyzer/             @ericsnowcurrently
 
@@ -74,11 +78,8 @@ Programs/python.c             @ericsnowcurrently
 Tools/build/generate_global_objects.py  @ericsnowcurrently
 
 # Exceptions
-Lib/traceback.py              @iritkatriel
 Lib/test/test_except*.py      @iritkatriel
-Lib/test/test_traceback.py    @iritkatriel
 Objects/exceptions.c          @iritkatriel
-Python/traceback.c            @iritkatriel
 
 # Hashing
 **/*hashlib*                  @gpshead @tiran
@@ -152,13 +153,13 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
 
 # Code generator
-/Tools/cases_generator/        @gvanrossum
+/Tools/cases_generator/        @markshannon
 
 # AST
-Python/ast.c                  @isidentical
-Parser/asdl.py                @isidentical
-Parser/asdl_c.py              @isidentical
-Lib/ast.py                    @isidentical
+Python/ast.c                  @isidentical @JelleZijlstra
+Parser/asdl.py                @isidentical @JelleZijlstra
+Parser/asdl_c.py              @isidentical @JelleZijlstra
+Lib/ast.py                    @isidentical @JelleZijlstra
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
@@ -174,6 +175,10 @@ Lib/ast.py                    @isidentical
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# debugger
+**/*pdb*                      @gaogaotiantian
+**/*bdb*                      @gaogaotiantian
 
 # Limited C API & stable ABI
 Tools/build/stable_abi.py     @encukou
@@ -196,7 +201,6 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-**/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
@@ -207,6 +211,7 @@ Doc/c-api/stable.rst          @encukou
 **/*ensurepip*                @pfmoore @pradyunsg
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
 
@@ -242,7 +247,7 @@ Doc/howto/clinic.rst          @erlend-aasland
 **/*interpreteridobject.*     @ericsnowcurrently
 **/*crossinterp*              @ericsnowcurrently
 Lib/test/support/interpreters/  @ericsnowcurrently
-Modules/_xx*interp*module.c   @ericsnowcurrently
+Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android

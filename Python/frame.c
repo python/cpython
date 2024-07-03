@@ -16,11 +16,11 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(locals[i]);
+        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
     }
     return 0;
 }
@@ -101,7 +101,7 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame)
     int stacktop = frame->stacktop;
     frame->stacktop = 0;
     for (int i = 0; i < stacktop; i++) {
-        Py_XDECREF(frame->localsplus[i]);
+        PyStackRef_XCLOSE(frame->localsplus[i]);
     }
     Py_CLEAR(frame->f_locals);
 }
@@ -112,7 +112,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
+        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
