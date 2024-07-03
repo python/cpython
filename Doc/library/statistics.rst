@@ -1,5 +1,5 @@
-:mod:`statistics` --- Mathematical statistics functions
-=======================================================
+:mod:`!statistics` --- Mathematical statistics functions
+========================================================
 
 .. module:: statistics
    :synopsis: Mathematical statistics functions
@@ -220,7 +220,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: harmonic_mean(data, weights=None)
 
    Return the harmonic mean of *data*, a sequence or iterable of
-   real-valued numbers.  If *weights* is omitted or *None*, then
+   real-valued numbers.  If *weights* is omitted or ``None``, then
    equal weighting is assumed.
 
    The harmonic mean is the reciprocal of the arithmetic :func:`mean` of the

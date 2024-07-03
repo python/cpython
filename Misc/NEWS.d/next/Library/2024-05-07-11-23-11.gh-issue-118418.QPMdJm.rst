@@ -1,6 +1,0 @@
-A :exc:`DeprecationWarning` is now emitted if you fail to pass a value to
-the new *type_params* parameter of ``typing._eval_type()`` or
-``typing.ForwardRef._evaluate()``. (Using either of these private and
-undocumented functions is discouraged to begin with, but failing to pass a
-value to the ``type_params`` parameter may lead to incorrect behaviour on
-Python 3.12 or newer.)

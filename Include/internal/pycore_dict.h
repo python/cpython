@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_freelist.h"             // _PyFreeListState
-#include "pycore_identifier.h"           // _Py_Identifier
 #include "pycore_object.h"               // PyManagedDictPointer
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
 
@@ -246,7 +245,7 @@ dict_next_version(PyInterpreterState *interp)
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
 #endif
 
-void
+PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
                   PyDictObject *mp,

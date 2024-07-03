@@ -1,2 +1,0 @@
-Allow the *globals* and *locals* arguments to :func:`exec`
-and :func:`eval` to be passed as keywords.

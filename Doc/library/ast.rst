@@ -1,5 +1,5 @@
-:mod:`ast` --- Abstract Syntax Trees
-====================================
+:mod:`!ast` --- Abstract Syntax Trees
+=====================================
 
 .. module:: ast
    :synopsis: Abstract Syntax Tree classes and manipulation.
@@ -120,7 +120,8 @@ Node classes
 
    If a field that is optional in the grammar is omitted from the constructor,
    it defaults to ``None``. If a list field is omitted, it defaults to the empty
-   list. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
+   :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
    and the AST node will not have this field. In Python 3.15, this condition will
    raise an error.
 
@@ -596,8 +597,7 @@ Expressions
    * ``keywords`` holds a list of :class:`.keyword` objects representing
      arguments passed by keyword.
 
-   When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists.
+   The ``args`` and ``keywords`` arguments are optional and default to empty lists.
 
    .. doctest::
 
@@ -891,9 +891,13 @@ Statements
    An assignment with a type annotation. ``target`` is a single node and can
    be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
-   node. ``value`` is a single optional node. ``simple`` is a boolean integer
-   set to True for a :class:`Name` node in ``target`` that do not appear in
-   between parenthesis and are hence pure names and not expressions.
+   node. ``value`` is a single optional node.
+
+   ``simple`` is always either 0 (indicating a "complex" target) or 1
+   (indicating a "simple" target). A "simple" target consists solely of a
+   :class:`Name` node that does not appear between parentheses; all other
+   targets are considered complex. Only simple targets appear in
+   the :attr:`__annotations__` dictionary of modules and classes.
 
    .. doctest::
 
@@ -2470,6 +2474,20 @@ effects on the compilation of a program:
    (``# type: <type>``, ``# type: ignore <stuff>``).
 
    .. versionadded:: 3.8
+
+
+.. function:: compare(a, b, /, *, compare_attributes=False)
+
+   Recursively compares two ASTs.
+
+   *compare_attributes* affects whether AST attributes are considered
+   in the comparison. If *compare_attributes* is ``False`` (default), then
+   attributes are ignored. Otherwise they must all be equal. This
+   option is useful to check whether the ASTs are structurally equal but
+   differ in whitespace or similar details. Attributes include line numbers
+   and column offsets.
+
+   .. versionadded:: 3.14
 
 
 .. _ast-cli:

@@ -1,3 +1,0 @@
-Fix issue where an object's dict would get out of sync with the object's
-internal values when being cleared. ``obj.__dict__.clear()`` now clears the
-internal values, but leaves the dict attached to the object.

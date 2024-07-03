@@ -831,19 +831,13 @@ class Action(_AttributeHolder):
         raise NotImplementedError(_('.__call__() not defined'))
 
 
-# FIXME: remove together with `BooleanOptionalAction` deprecated arguments.
-_deprecated_default = object()
-
 class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
                  default=None,
-                 type=_deprecated_default,
-                 choices=_deprecated_default,
                  required=False,
                  help=None,
-                 metavar=_deprecated_default,
                  deprecated=False):
 
         _option_strings = []
@@ -854,35 +848,13 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        # We need `_deprecated` special value to ban explicit arguments that
-        # match default value. Like:
-        #   parser.add_argument('-f', action=BooleanOptionalAction, type=int)
-        for field_name in ('type', 'choices', 'metavar'):
-            if locals()[field_name] is not _deprecated_default:
-                import warnings
-                warnings._deprecated(
-                    field_name,
-                    "{name!r} is deprecated as of Python 3.12 and will be "
-                    "removed in Python {remove}.",
-                    remove=(3, 14))
-
-        if type is _deprecated_default:
-            type = None
-        if choices is _deprecated_default:
-            choices = None
-        if metavar is _deprecated_default:
-            metavar = None
-
         super().__init__(
             option_strings=_option_strings,
             dest=dest,
             nargs=0,
             default=default,
-            type=type,
-            choices=choices,
             required=required,
             help=help,
-            metavar=metavar,
             deprecated=deprecated)
 
 
@@ -1819,7 +1791,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ==================================
     def add_subparsers(self, **kwargs):
         if self._subparsers is not None:
-            self.error(_('cannot have multiple subparser arguments'))
+            raise ArgumentError(None, _('cannot have multiple subparser arguments'))
 
         # add the parser class to the arguments if it's not present
         kwargs.setdefault('parser_class', type(self))
@@ -1871,8 +1843,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def parse_args(self, args=None, namespace=None):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
-            msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            msg = _('unrecognized arguments: %s') % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(msg)
+            else:
+                raise ArgumentError(None, msg)
         return args
 
     def parse_known_args(self, args=None, namespace=None):
@@ -2161,7 +2136,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 self._get_value(action, action.default))
 
         if required_actions:
-            self.error(_('the following arguments are required: %s') %
+            raise ArgumentError(None, _('the following arguments are required: %s') %
                        ', '.join(required_actions))
 
         # make sure all required groups had one option present
@@ -2177,7 +2152,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
                     msg = _('one of the arguments %s is required')
-                    self.error(msg % ' '.join(names))
+                    raise ArgumentError(None, msg % ' '.join(names))
 
         # return the updated namespace and the extra arguments
         return namespace, extras
@@ -2204,7 +2179,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         arg_strings = self._read_args_from_files(arg_strings)
                         new_arg_strings.extend(arg_strings)
                 except OSError as err:
-                    self.error(str(err))
+                    raise ArgumentError(None, str(err))
 
         # return the modified argument list
         return new_arg_strings
@@ -2284,7 +2259,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 for action, option_string, sep, explicit_arg in option_tuples])
             args = {'option': arg_string, 'matches': options}
             msg = _('ambiguous option: %(option)s could match %(matches)s')
-            self.error(msg % args)
+            raise ArgumentError(None, msg % args)
 
         # if exactly one action matched, this segmentation is good,
         # so return the parsed action
@@ -2344,7 +2319,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # shouldn't ever get here
         else:
-            self.error(_('unexpected option string: %s') % option_string)
+            raise ArgumentError(None, _('unexpected option string: %s') % option_string)
 
         # return the collected option tuples
         return result
@@ -2401,8 +2376,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def parse_intermixed_args(self, args=None, namespace=None):
         args, argv = self.parse_known_intermixed_args(args, namespace)
         if argv:
-            msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            msg = _('unrecognized arguments: %s') % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(msg)
+            else:
+                raise ArgumentError(None, msg)
         return args
 
     def parse_known_intermixed_args(self, args=None, namespace=None):

@@ -1,2 +1,0 @@
-Fixes virtual environments not correctly launching when created from a Store
-install.

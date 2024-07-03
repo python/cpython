@@ -1,5 +1,5 @@
-:mod:`enum` --- Support for enumerations
-========================================
+:mod:`!enum` --- Support for enumerations
+=========================================
 
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
@@ -527,7 +527,7 @@ Data Types
 
    ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
    operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
-   the results of those operators are members of the enumeration.
+   the results of those operations are (aliases of) members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -629,7 +629,7 @@ Data Types
       of two, starting with ``1``.
 
    .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
-      is now::
+      is now:
 
          >>> Color(0) # doctest: +SKIP
          <Color: 0>
@@ -861,9 +861,15 @@ Supported ``_sunder_`` names
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
 
+- While ``_sunder_`` names are generally reserved for the further development
+  of the :class:`Enum` class and can not be used, some are explicitly allowed:
+
+  - ``_repr_*`` (e.g. ``_repr_html_``), as used in `IPython's rich display`_
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``, ``_repr_*``
+.. _`IPython's rich display`: https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display
 
 ---------------
 

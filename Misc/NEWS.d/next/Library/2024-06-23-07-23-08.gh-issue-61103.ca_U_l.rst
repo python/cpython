@@ -1,0 +1,3 @@
+Support :c:expr:`double complex` C type in :mod:`ctypes` via
+:class:`~ctypes.c_double_complex` if compiler has C11 complex
+arithmetic.  Patch by Sergey B Kirpichev.

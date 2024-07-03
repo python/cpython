@@ -429,7 +429,7 @@ Several non-character keys move the cursor and possibly
 delete characters.  Deletion does not puts text on the clipboard,
 but IDLE has an undo list.  Wherever this doc discusses keys,
 'C' refers to the :kbd:`Control` key on Windows and
-Unix and the :kbd:`Command` key on macOS.  (And all such dicussions
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
 assume that the keys have not been re-bound to something else.)
 
 * Arrow keys move the cursor one character or line.

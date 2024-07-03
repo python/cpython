@@ -311,19 +311,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
-    def test_relative_to_several_args(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.relative_to('a', 'b')
-            p.relative_to('a', 'b', walk_up=True)
-
-    def test_is_relative_to_several_args(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_relative_to('a', 'b')
-
     def test_is_reserved_deprecated(self):
         P = self.cls
         p = P('a/b')
@@ -666,6 +653,20 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
+    @unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "directories are always readable on Windows and WASI")
+    @unittest.skipIf(root_in_posix, "test fails with root privilege")
+    def test_copytree_no_read_permission(self):
+        base = self.cls(self.base)
+        source = base / 'dirE'
+        target = base / 'copyE'
+        self.assertRaises(PermissionError, source.copytree, target)
+        self.assertFalse(target.exists())
+        errors = []
+        source.copytree(target, on_error=errors.append)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], PermissionError)
+        self.assertFalse(target.exists())
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 
@@ -776,25 +777,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
-
-    def test_unlink(self):
-        p = self.cls(self.base) / 'fileA'
-        p.unlink()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
-
-    def test_unlink_missing_ok(self):
-        p = self.cls(self.base) / 'fileAAA'
-        self.assertFileNotFound(p.unlink)
-        p.unlink(missing_ok=True)
-
-    def test_rmdir(self):
-        p = self.cls(self.base) / 'dirA'
-        for q in p.iterdir():
-            q.unlink()
-        p.rmdir()
-        self.assertFileNotFound(p.stat)
-        self.assertFileNotFound(p.unlink)
 
     @os_helper.skip_unless_hardlink
     def test_hardlink_to(self):
@@ -1121,8 +1103,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(R.is_mount())
         self.assertFalse((R / '\udfff').is_mount())
 
-    def test_passing_kwargs_deprecated(self):
-        with self.assertWarns(DeprecationWarning):
+    def test_passing_kwargs_errors(self):
+        with self.assertRaises(TypeError):
             self.cls(foo="bar")
 
     def setUpWalk(self):

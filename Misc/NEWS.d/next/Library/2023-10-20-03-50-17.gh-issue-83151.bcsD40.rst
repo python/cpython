@@ -1,3 +1,0 @@
-Enabled arbitrary statements and evaluations in :mod:`pdb` shell to access the
-local variables of the current frame, which made it possible for multi-scope
-code like generators or nested function to work.

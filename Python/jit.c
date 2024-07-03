@@ -5,6 +5,7 @@
 #include "pycore_abstract.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"
 #include "pycore_dict.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"
@@ -438,7 +439,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     group->emit(code, data, executor, NULL, instruction_starts);
     code += group->code_size;
     data += group->data_size;
-    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
+    assert(trace[0].opcode == _START_EXECUTOR);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
