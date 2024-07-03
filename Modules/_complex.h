@@ -21,6 +21,8 @@
 #if !defined(CMPLX)
 #  if defined(__clang__) && __has_builtin(__builtin_complex)
 #    define CMPLX(x, y) __builtin_complex ((double) (x), (double) (y))
+#    define CMPLXF(x, y) __builtin_complex ((float) (x), (float) (y))
+#    define CMPLXL(x, y) __builtin_complex ((long double) (x), (long double) (y))
 #  else
 static inline double complex
 CMPLX(double real, double imag)
@@ -28,6 +30,24 @@ CMPLX(double real, double imag)
     double complex z;
     ((double *)(&z))[0] = real;
     ((double *)(&z))[1] = imag;
+    return z;
+}
+
+static inline float complex
+CMPLXF(float real, float imag)
+{
+    float complex z;
+    ((float *)(&z))[0] = real;
+    ((float *)(&z))[1] = imag;
+    return z;
+}
+
+static inline long double complex
+CMPLXL(long double real, long double imag)
+{
+    long double complex z;
+    ((long double *)(&z))[0] = real;
+    ((long double *)(&z))[1] = imag;
     return z;
 }
 #  endif

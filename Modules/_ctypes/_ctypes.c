@@ -1751,7 +1751,7 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
 #if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
-static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCfuzZqQPXOv?g";
+static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
 #else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 #endif
@@ -2234,12 +2234,13 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         stginfo->ffi_type_pointer = *fmt->pffi_type;
     }
     else {
+        const size_t els_size = sizeof(fmt->pffi_type->elements);
         stginfo->ffi_type_pointer.size = fmt->pffi_type->size;
         stginfo->ffi_type_pointer.alignment = fmt->pffi_type->alignment;
         stginfo->ffi_type_pointer.type = fmt->pffi_type->type;
-        stginfo->ffi_type_pointer.elements = PyMem_Malloc(2 * sizeof(ffi_type));
+        stginfo->ffi_type_pointer.elements = PyMem_Malloc(els_size);
         memcpy(stginfo->ffi_type_pointer.elements,
-               fmt->pffi_type->elements, 2 * sizeof(ffi_type));
+               fmt->pffi_type->elements, els_size);
     }
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
