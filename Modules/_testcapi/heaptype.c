@@ -464,9 +464,8 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
     }
     assert(PyType_Check(type));
 
-    PyObject *mro_save = NULL;
+    PyObject *mro_save = type->tp_mro;
     if (use_mro != Py_True) {
-        mro_save = type->tp_mro;
         type->tp_mro = NULL;
     }
 
@@ -481,21 +480,26 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
         ret = PyType_GetBaseByToken(type, token, NULL);
     }
 
-    if (mro_save != NULL) {
-        type->tp_mro = mro_save;
-    }
-
+    type->tp_mro = mro_save;
     if (ret < 0) {
         return NULL;
     }
+    PyObject *py_ret = PyLong_FromLong(ret);
+    if (py_ret == NULL) {
+        goto error;
+    }
     PyObject *tuple = PyTuple_New(2);
     if (tuple == NULL) {
-        Py_XDECREF(result);
-        return NULL;
+        goto error;
     }
-    PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong(ret));
+    PyTuple_SET_ITEM(tuple, 0, py_ret);
     PyTuple_SET_ITEM(tuple, 1, result ? result : Py_None);
     return tuple;
+error:
+    Py_XDECREF(py_ret);
+    Py_XDECREF(result);
+    return NULL;
+}
 }
 
 
