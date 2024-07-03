@@ -2524,32 +2524,33 @@ With an argument, equivalent to object.__dict__.");
  */
 
 typedef struct {
-    double sum;  /* accumulator */
-    double c;    /* a running compensation for lost low-order bits */
-} _csum;
+    double hi;     /* high-order bits for a running sum */
+    double lo;     /* a running compensation for lost low-order bits */
+} CompensatedSum;
 
 static inline void
-_csum_neumaier_step(_csum *v, double x)
+cs_add(CompensatedSum *v, double x)
 {
-    double t = v->sum + x;
-    if (fabs(v->sum) >= fabs(x)) {
-        v->c += (v->sum - t) + x;
+    double t = v->hi + x;
+    if (fabs(v->hi) >= fabs(x)) {
+        v->lo += (v->hi - t) + x;
     }
     else {
-        v->c += (x - t) + v->sum;
+        v->lo += (x - t) + v->hi;
     }
-    v->sum = t;
+    v->hi = t;
 }
 
-static inline void
-_csum_neumaier_finalize(_csum *v)
+static inline double
+cs_to_double(CompensatedSum *v)
 {
     /* Avoid losing the sign on a negative result,
        and don't let adding the compensation convert
        an infinite or overflowed sum to a NaN. */
-    if (v->c && isfinite(v->c)) {
-        v->sum += v->c;
+    if (v->lo && isfinite(v->lo)) {
+        v->hi += v->lo;
     }
+    return v->hi;
 }
 
 /*[clinic input]
@@ -2664,7 +2665,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (PyFloat_CheckExact(result)) {
-        _csum f_result = {PyFloat_AS_DOUBLE(result), 0.0};
+        CompensatedSum re_sum = {PyFloat_AS_DOUBLE(result)};
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2672,11 +2673,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                _csum_neumaier_finalize(&f_result);
-                return PyFloat_FromDouble(f_result.sum);
+                return PyFloat_FromDouble(cs_to_double(&re_sum));
             }
             if (PyFloat_CheckExact(item)) {
-                _csum_neumaier_step(&f_result, PyFloat_AS_DOUBLE(item));
+                cs_add(&re_sum, PyFloat_AS_DOUBLE(item));
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2685,13 +2685,12 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    f_result.sum += (double)value;
+                    re_sum.hi += (double)value;
                     Py_DECREF(item);
                     continue;
                 }
             }
-            _csum_neumaier_finalize(&f_result);
-            result = PyFloat_FromDouble(f_result.sum);
+            result = PyFloat_FromDouble(cs_to_double(&re_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
@@ -2710,8 +2709,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyComplex_CheckExact(result)) {
         Py_complex z = PyComplex_AsCComplex(result);
-        _csum cr_result = {z.real, 0.0};
-        _csum ci_result = {z.imag, 0.0};
+        CompensatedSum re_sum = {z.real};
+        CompensatedSum im_sum = {z.imag};
         Py_SETREF(result, NULL);
         while (result == NULL) {
             item = PyIter_Next(iter);
@@ -2720,14 +2719,13 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 if (PyErr_Occurred()) {
                     return NULL;
                 }
-                _csum_neumaier_finalize(&cr_result);
-                _csum_neumaier_finalize(&ci_result);
-                return PyComplex_FromDoubles(cr_result.sum, ci_result.sum);
+                return PyComplex_FromDoubles(cs_to_double(&re_sum),
+                                             cs_to_double(&im_sum));
             }
             if (PyComplex_CheckExact(item)) {
                 z = PyComplex_AsCComplex(item);
-                _csum_neumaier_step(&cr_result, z.real);
-                _csum_neumaier_step(&ci_result, z.imag);
+                cs_add(&re_sum, z.real);
+                cs_add(&im_sum, z.imag);
                 Py_DECREF(item);
                 continue;
             }
@@ -2736,22 +2734,21 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    cr_result.sum += (double)value;
-                    ci_result.sum += 0.0;
+                    re_sum.hi += (double)value;
+                    im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
                 }
             }
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
-                cr_result.sum += value;
-                ci_result.sum += 0.0;
+                re_sum.hi += value;
+                im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
-            _csum_neumaier_finalize(&cr_result);
-            _csum_neumaier_finalize(&ci_result);
-            result = PyComplex_FromDoubles(cr_result.sum, ci_result.sum);
+            result = PyComplex_FromDoubles(cs_to_double(&re_sum),
+                                           cs_to_double(&im_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
