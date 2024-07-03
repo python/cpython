@@ -430,9 +430,9 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: list.remove(): 42 not in list
+   ValueError: list.remove(x): 42 not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove():
+That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
 42 not in list`` detail as shown.
 
 The expected output for an exception must start with a traceback header, which
