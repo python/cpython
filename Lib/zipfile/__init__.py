@@ -396,7 +396,6 @@ class ZipInfo:
         'file_size',
         '_raw_time',
         '_end_offset',
-        'file_mode',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -431,7 +430,6 @@ class ZipInfo:
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
-        self.file_mode = b""            # External attributes of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
@@ -458,7 +456,8 @@ class ZipInfo:
             result.append(' compress_type=%s' %
                           compressor_names.get(self.compress_type,
                                                self.compress_type))
-        result.append(' file_mode=%r' % self.file_mode)
+        if self.file_mode:
+            result.append(' file_mode=%r' % self.file_mode)
         lo = self.external_attr & 0xFFFF
         if lo:
             result.append(' external_attr=%#x' % lo)
