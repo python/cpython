@@ -420,9 +420,6 @@
     <ClInclude Include="..\Include\cpython\odictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\optimizer.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\unicodeobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -715,6 +712,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_alloc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_deferred.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_state.h">
