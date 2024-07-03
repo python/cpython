@@ -5,6 +5,7 @@ import math
 import os.path
 import platform
 import random
+import re
 import shlex
 import signal
 import subprocess
@@ -684,31 +685,23 @@ def cleanup_temp_dir(tmp_dir: StrPath):
             print("Remove file: %s" % name)
             os_helper.unlink(name)
 
-WINDOWS_STATUS = {
-    0xC0000005: "STATUS_ACCESS_VIOLATION",
-    0xC00000FD: "STATUS_STACK_OVERFLOW",
-    0xC000013A: "STATUS_CONTROL_C_EXIT",
-}
 
-def get_signal_name(exitcode):
-    if exitcode < 0:
-        signum = -exitcode
-        try:
-            return signal.Signals(signum).name
-        except ValueError:
-            pass
+ILLEGAL_XML_CHARS_RE = re.compile(
+    '['
+    # Control characters; newline (\x0A and \x0D) and TAB (\x09) are legal
+    '\x00-\x08\x0B\x0C\x0E-\x1F'
+    # Surrogate characters
+    '\uD800-\uDFFF'
+    # Special Unicode characters
+    '\uFFFE'
+    '\uFFFF'
+    # Match multiple sequential invalid characters for better effiency
+    ']+')
 
-    # Shell exit code (ex: WASI build)
-    if 128 < exitcode < 256:
-        signum = exitcode - 128
-        try:
-            return signal.Signals(signum).name
-        except ValueError:
-            pass
+def _sanitize_xml_replace(regs):
+    text = regs[0]
+    return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
+                   for ch in text)
 
-    try:
-        return WINDOWS_STATUS[exitcode]
-    except KeyError:
-        pass
-
-    return None
+def sanitize_xml(text):
+    return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)

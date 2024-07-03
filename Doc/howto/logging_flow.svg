@@ -1,9 +1,9 @@
 <svg width="22cm" height="23cm" viewBox="1 1 439 446" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <!-- Invert color in dark mode -->
   <style type="text/css">
-      svg {
-        background-color: transparent !important;
-      }
+    svg {
+      background-color: transparent !important;
+    }
     line {
       stroke: #000000;
       fill: none;
@@ -16,7 +16,7 @@
       stroke-opacity: 1;
     }
     polygon.filled {
-      fill: #ff0000;
+      fill: #000000;
     }
     polyline {
       fill: none;
@@ -36,12 +36,34 @@
       polygon, rect, polyline, line {
         stroke: #ffffff;
       }
+      polygon.filled {
+        fill: #ffffff;
+      }
       text {
         fill: #ffffff;
       }
       image {
         filter: invert(100%) hue-rotate(180deg) saturate(1.25);
       }
+    }
+    /* These rules are for when the theme selector is used, perhaps in contrast to the browser theme. */
+    body.dark-theme polygon, body.dark-theme rect, body.dark-theme polyline, body.dark-theme line {
+      stroke: #ffffff;
+    }
+    body.dark-theme polygon.filled {
+      fill: #ffffff;
+    }
+    body.dark-theme text {
+      fill: #ffffff;
+    }
+    body.light-theme polygon, body.light-theme rect, body.light-theme polyline, body.light-theme line {
+      stroke: #000000;
+    }
+    body.light-theme polygon.filled {
+      fill: #000000;
+    }
+    body.light-theme text {
+      fill: #000000;
     }
   </style>
 
@@ -57,7 +79,7 @@
       <rect x="81.5533" y="106.469" width="44.45" height="25.9333" rx="0" ry="0" />
       <text font-size="6.77333" style="text-anchor: middle;" x="103.778" y="117.256">
         <tspan x="103.778" y="117.256">Create</tspan>
-        <tspan x="103.778" y="125.723">LogRecord</tspan>
+        <tspan x="103.778" y="125.723" style="font-family: monospace">LogRecord</tspan>
       </text>
     </g>
     <g>
@@ -100,7 +122,7 @@
     <g>
       <rect x="75.2033" y="249.478" width="57.15" height="34.4" rx="0" ry="0" />
       <text font-size="6.77333" style="text-anchor: middle;" x="103.778" y="260.265">
-        <tspan x="103.778" y="260.265">Pass to</tspan>
+        <tspan x="103.778" y="260.265">Pass record to</tspan>
         <tspan x="103.778" y="268.732">handlers of</tspan>
         <tspan x="103.778" y="277.198">current logger</tspan>
       </text>
@@ -135,16 +157,17 @@
     </g>
     <g>
       <rect x="298.963" y="312.257" width="57.75" height="25.9333" rx="0" ry="0" />
-      <text font-size="6.77333" style="text-anchor: middle;" x="327.838" y="323.044">
-        <tspan x="327.838" y="324.100">Use lastResort</tspan>
-        <tspan x="327.838" y="332.567">handler</tspan>
+      <text font-size="6.77333" x="327.838" y="323.044">
+        <tspan x="301" y="324.100">Use</tspan>
+        <tspan x="315" y="324.100" style="font-family: monospace">lastResort</tspan>
+        <tspan x="316" y="332.567">handler</tspan>
       </text>
     </g>
     <g>
       <polygon fill-rule="evenodd" points="320.041,35.7307 373.377,60.8536 320.041,85.9765 266.704,60.8536 " />
       <text font-size="6.77333" style="text-anchor: middle;" x="320.041" y="58.6741">
         <tspan x="320.041" y="58.6741">Handler enabled for</tspan>
-        <tspan x="320.041" y="67.1407">level of LogRecord?</tspan>
+        <tspan x="320.041" y="67.1407">level of record?</tspan>
       </text>
     </g>
     <g>
@@ -292,7 +315,7 @@
       <tspan x="323.75" y="99.0042">Yes</tspan>
     </text>
     <text font-size="6.77323" style="text-anchor: middle;" x="355.762" y="18.2449">
-      <tspan x="355.762" y="18.2449">LogRecord passed</tspan>
+      <tspan x="355.762" y="18.2449">Record passed</tspan>
       <tspan x="355.762" y="26.7116">to handler</tspan>
     </text>
     <line style="stroke-dasharray: 5" x1="330.96" y1="266.686" x2="377.733" y2="267.908" />
