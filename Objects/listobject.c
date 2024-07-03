@@ -3244,7 +3244,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "list.index(): %R is not in list", value);
+    PyErr_Format(PyExc_ValueError, "list.index(x): %R not in list", value);
     return NULL;
 }
 
@@ -3314,7 +3314,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "list.remove(): %R is not in list", value);
+    PyErr_Format(PyExc_ValueError, "list.remove(x): %R not in list", value);
     return NULL;
 }
 
