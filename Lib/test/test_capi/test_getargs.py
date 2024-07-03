@@ -1352,6 +1352,59 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                     "argument 1 must be sequence of length 1, not 0"):
                 parse(((),), {}, '(' + f + ')', ['a'])
 
+    def test_specific_type_errors(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        def check(format, arg, expected, got='list'):
+            errmsg = f'must be {expected}, not {got}'
+            with self.assertRaisesRegex(TypeError, errmsg):
+                parse((arg,), {}, format, ['a'])
+
+        check('k', [], 'int')
+        check('k?', [], 'int or None')
+        check('K', [], 'int')
+        check('K?', [], 'int or None')
+        check('c', [], 'a byte string of length 1')
+        check('c?', [], 'a byte string of length 1 or None')
+        check('c', b'abc', 'a byte string of length 1',
+              'a bytes object of length 3')
+        check('c?', b'abc', 'a byte string of length 1 or None',
+              'a bytes object of length 3')
+        check('c', bytearray(b'abc'), 'a byte string of length 1',
+              'a bytearray object of length 3')
+        check('c?', bytearray(b'abc'), 'a byte string of length 1 or None',
+              'a bytearray object of length 3')
+        check('C', [], 'a unicode character')
+        check('C?', [], 'a unicode character or None')
+        check('C', 'abc', 'a unicode character',
+              'a string of length 3')
+        check('C?', 'abc', 'a unicode character or None',
+              'a string of length 3')
+        check('s', [], 'str')
+        check('s?', [], 'str or None')
+        check('z', [], 'str or None')
+        check('z?', [], 'str or None')
+        check('es', [], 'str')
+        check('es?', [], 'str or None')
+        check('es#', [], 'str')
+        check('es#?', [], 'str or None')
+        check('et', [], 'str, bytes or bytearray')
+        check('et?', [], 'str, bytes or bytearray or None')
+        check('et#', [], 'str, bytes or bytearray')
+        check('et#?', [], 'str, bytes or bytearray or None')
+        check('w*', [], 'read-write bytes-like object')
+        check('w*?', [], 'read-write bytes-like object or None')
+        check('S', [], 'bytes')
+        check('S?', [], 'bytes or None')
+        check('U', [], 'str')
+        check('U?', [], 'str or None')
+        check('Y', [], 'bytearray')
+        check('Y?', [], 'bytearray or None')
+        check('(OO)', 42, '2-item sequence', 'int')
+        check('(OO)', (1, 2, 3), 'sequence of length 2', '3')
+
+        # TODO: Not implemented: (...)?
+
     def test_nullable(self):
         parse = _testcapi.parse_tuple_and_keywords
 
