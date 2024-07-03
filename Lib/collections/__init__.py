@@ -103,6 +103,7 @@ class OrderedDict(dict):
         self.__root = root = _proxy(self.__hardroot)
         root.prev = root.next = root
         self.__map = {}
+        self.__state = 0
         return self
 
     def __init__(self, other=(), /, **kwds):
@@ -123,6 +124,7 @@ class OrderedDict(dict):
             link.prev, link.next, link.key = last, root, key
             last.next = link
             root.prev = proxy(link)
+            self.__state += 1
         dict_setitem(self, key, value)
 
     def __delitem__(self, key, dict_delitem=dict.__delitem__):
@@ -137,6 +139,7 @@ class OrderedDict(dict):
         link_next.prev = link_prev
         link.prev = None
         link.next = None
+        self.__state += 1
 
     def __iter__(self):
         'od.__iter__() <==> iter(od)'
@@ -160,6 +163,7 @@ class OrderedDict(dict):
         'od.clear() -> None.  Remove all items from od.'
         root = self.__root
         root.prev = root.next = root
+        self.__state += 1
         self.__map.clear()
         dict.clear(self)
 
@@ -184,6 +188,7 @@ class OrderedDict(dict):
         key = link.key
         del self.__map[key]
         value = dict.pop(self, key)
+        self.__state += 1
         return key, value
 
     def move_to_end(self, key, last=True):
@@ -210,6 +215,7 @@ class OrderedDict(dict):
             link.next = first
             first.prev = soft_link
             root.next = link
+        self.__state += 1
 
     def __sizeof__(self):
         sizeof = _sys.getsizeof
@@ -218,6 +224,7 @@ class OrderedDict(dict):
         size += sizeof(self.__map) * 2          # internal dict and inherited dict
         size += sizeof(self.__hardroot) * n     # link objects
         size += sizeof(self.__root) * n         # proxy objects
+        size += sizeof(self.__state)            # linked list state
         return size
 
     update = __update = _collections_abc.MutableMapping.update
@@ -255,6 +262,7 @@ class OrderedDict(dict):
             link_next.prev = link_prev
             link.prev = None
             link.next = None
+            self.__state += 1
             return result
         if default is marker:
             raise KeyError(key)
@@ -314,8 +322,32 @@ class OrderedDict(dict):
         while comparison to a regular mapping is order-insensitive.
 
         '''
+        # The Python implementation is not optimal but matches
+        # the C implementation and the exceptions it may raise.
         if isinstance(other, OrderedDict):
-            return dict.__eq__(self, other) and all(map(_eq, self, other))
+            if not dict.__eq__(self, other):
+                return False
+            state_a, count_a = self.__state, len(self)
+            root_a, curr_a = self.__root, self.__root.next
+            state_b, count_b = other.__state, len(other)
+            root_b, curr_b = other.__root, other.__root.next
+            while True:
+                if curr_a is root_a and curr_b is root_b:
+                    return True
+                if curr_a is root_a or curr_b is root_b:
+                    return False
+                # With the C implementation, calling '==' might have side
+                # effects that would end in segmentation faults, thus the
+                # state and size of the operands need to be checked.
+                res = curr_a.key == curr_b.key
+                if self.__state != state_a or other.__state != state_b:
+                    # changing the size always changes the state
+                    if len(self) != count_a or len(other) != count_b:
+                        raise RuntimeError("OrderedDict changed size during iteration")
+                    raise RuntimeError("OrderedDict mutated during iteration")
+                elif not res:
+                    return False
+                curr_a, curr_b = curr_a.next, curr_b.next
         return dict.__eq__(self, other)
 
     def __ior__(self, other):

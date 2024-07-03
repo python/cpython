@@ -699,7 +699,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
     _odictnode_KEY(node) = key;
     _odictnode_HASH(node) = hash;
-    _odict_add_tail(od, node);
+    _odict_add_tail(od, node); // this updates 'od_state'
     od->od_fast_nodes[i] = node;
     return 0;
 }
@@ -773,7 +773,7 @@ _odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key,
 
     // Now clear the node.
     od->od_fast_nodes[i] = NULL;
-    _odict_remove_node(od, node);
+    _odict_remove_node(od, node); // this updates 'od_state'
     _odictnode_DEALLOC(node);
     return 0;
 }
@@ -796,6 +796,7 @@ _odict_clear_nodes(PyODictObject *od)
         _odictnode_DEALLOC(node);
         node = next;
     }
+    od->od_state++;
 }
 
 /* There isn't any memory management of nodes past this point. */
@@ -805,6 +806,12 @@ static int
 _odict_keys_equal(PyODictObject *a, PyODictObject *b)
 {
     _ODictNode *node_a, *node_b;
+
+    // keep operands' state and size to detect undesired mutations
+    const size_t state_a = a->od_state;
+    const Py_ssize_t size_a = PyODict_SIZE(a);
+    const size_t state_b = b->od_state;
+    const Py_ssize_t size_b = PyODict_SIZE(b);
 
     node_a = _odict_FIRST(a);
     node_b = _odict_FIRST(b);
@@ -820,10 +827,22 @@ _odict_keys_equal(PyODictObject *a, PyODictObject *b)
                                             (PyObject *)_odictnode_KEY(node_a),
                                             (PyObject *)_odictnode_KEY(node_b),
                                             Py_EQ);
-            if (res < 0)
+            if (res < 0) {
                 return res;
-            else if (res == 0)
+            }
+            else if (a->od_state != state_a || b->od_state != state_b) {
+                // If the size changed, then the state must also have changed
+                // since the former changes only if keys are added or removed,
+                // which in turn updates the state.
+                PyErr_SetString(PyExc_RuntimeError,
+                                (size_a != PyODict_SIZE(a) || size_b != PyODict_SIZE(b))
+                                    ? "OrderedDict changed size during iteration"
+                                    : "OrderedDict mutated during iteration");
+                return -1;
+            }
+            else if (res == 0) {
                 return 0;
+            }
 
             /* otherwise it must match, so move on to the next one */
             node_a = _odictnode_NEXT(node_a);
