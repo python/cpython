@@ -2,7 +2,9 @@ import builtins
 import contextlib
 import copy
 import gc
+import operator
 import pickle
+import re
 from random import randrange, shuffle
 import struct
 import sys
@@ -611,6 +613,44 @@ class OrderedDictTests:
                     od.popitem(last=False)
                 key = c0 + c1
                 od[key] = key
+
+    def test_issue119004_change_size(self):
+        count = 0
+        class ChangeExternSize:
+            def __eq__(self, other):
+                nonlocal count
+                if count == 1:
+                    l.clear()
+                count += 1
+                return True
+            def __hash__(self):
+                return 3
+
+        l0, r0 = ChangeExternSize(), ChangeExternSize()
+        l = self.OrderedDict({l0: 1, 2: 3})
+        r = self.OrderedDict({r0: 1, 2: 3})
+        msg = re.escape("OrderedDict changed size during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, l, r)
+
+    def test_issue119004_change_item(self):
+        count = 0
+        class ChangeExternItem:
+            def __eq__(self, other):
+                nonlocal count
+                if count == 1:
+                    # change the layout of the underlying linked list
+                    del lhs[0]
+                    lhs[object()] = object()
+                count += 1
+                return True
+            def __hash__(self):
+                return 3
+
+        l1, r1 = ChangeExternItem(), ChangeExternItem()
+        lhs = self.OrderedDict(dict.fromkeys((0, l1)))
+        rhs = self.OrderedDict(dict.fromkeys((0, r1)))
+        msg = re.escape("OrderedDict mutated during iteration")
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
 
     # Direct use of dict methods
 
