@@ -17,8 +17,8 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
-from ._os import copyfile
+from ._os import UnsupportedOperation, copyfile
+from ._abc import PurePathBase, PathBase
 
 
 __all__ = [
@@ -791,12 +791,15 @@ class Path(PathBase, PurePath):
             try:
                 target = os.fspath(target)
             except TypeError:
-                if isinstance(target, PathBase):
-                    # Target is an instance of PathBase but not os.PathLike.
-                    # Use generic implementation from PathBase.
-                    return PathBase.copy(self, target, follow_symlinks=follow_symlinks)
-                raise
-            copyfile(os.fspath(self), target, follow_symlinks)
+                if not isinstance(target, PathBase):
+                    raise
+            else:
+                try:
+                    copyfile(os.fspath(self), target, follow_symlinks)
+                    return
+                except UnsupportedOperation:
+                    pass  # Fall through to generic code.
+            PathBase.copy(self, target, follow_symlinks=follow_symlinks)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
