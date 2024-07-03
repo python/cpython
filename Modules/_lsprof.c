@@ -402,7 +402,6 @@ ptrace_leave_call(PyObject *self, void *key)
     }
     /* put pContext into the free list */
     pContext->previous = pObj->freelistProfilerContext;
-
     pObj->freelistProfilerContext = pContext;
 }
 
