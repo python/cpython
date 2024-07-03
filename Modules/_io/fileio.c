@@ -739,7 +739,7 @@ _io_FileIO_readall_impl(fileio *self)
             bufsize = _PY_READ_MAX;
         }
         else {
-            bufsize = Py_SAFE_DOWNCAST(end, Py_off_t, size_t) + 1;
+            bufsize = (size_t)end + 1;
         }
 
         /* While a lot of code does open().read() to get the whole contents
@@ -759,7 +759,7 @@ _io_FileIO_readall_impl(fileio *self)
             Py_END_ALLOW_THREADS
 
             if (end >= pos && pos >= 0 && end - pos < _PY_READ_MAX) {
-                bufsize = Py_SAFE_DOWNCAST(end - pos, Py_off_t, size_t) + 1;
+                bufsize = (size_t)(end - pos) + 1;
             }
         }
     }
