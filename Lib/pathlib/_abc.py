@@ -781,28 +781,29 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('mkdir()'))
 
-    _metadata_keys = frozenset()
+    # Metadata keys supported by this path type.
+    _readable_metadata = _writable_metadata = frozenset()
 
-    def _get_metadata(self, keys, follow_symlinks):
+    def _read_metadata(self, keys, follow_symlinks):
         """
         Returns path metadata as a dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_get_metadata()'))
+        raise UnsupportedOperation(self._unsupported_msg('_read_metadata()'))
 
-    def _set_metadata(self, metadata, follow_symlinks):
+    def _write_metadata(self, metadata, follow_symlinks):
         """
         Sets path metadata from the given dict with string keys.
         """
-        raise UnsupportedOperation(self._unsupported_msg('_set_metadata()'))
+        raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
     def _copy_metadata(self, target, follow_symlinks):
         """
         Copies metadata (permissions, timestamps, etc) from this path to target.
         """
-        metadata_keys = self._metadata_keys & target._metadata_keys
+        metadata_keys = self._readable_metadata & target._writable_metadata
         if metadata_keys:
-            metadata = self._get_metadata(metadata_keys, follow_symlinks)
-            target._set_metadata(metadata, follow_symlinks)
+            metadata = self._read_metadata(metadata_keys, follow_symlinks)
+            target._write_metadata(metadata, follow_symlinks)
 
     def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
         """

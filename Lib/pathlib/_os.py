@@ -180,6 +180,7 @@ def copyfileobj(source_f, target_f):
         write_target(buf)
 
 
+# Kinds of metadata supported by the operating system.
 file_metadata_keys = {'mode', 'times_ns'}
 if hasattr(os.stat_result, 'st_flags'):
     file_metadata_keys.add('flags')
@@ -188,7 +189,7 @@ if hasattr(os, 'listxattr'):
 file_metadata_keys = frozenset(file_metadata_keys)
 
 
-def get_file_metadata(path, keys, follow_symlinks):
+def read_file_metadata(path, keys, follow_symlinks):
     """
     Returns local path metadata as a dict with string keys.
     """
@@ -214,7 +215,7 @@ def get_file_metadata(path, keys, follow_symlinks):
     return result
 
 
-def set_file_metadata(path, metadata, follow_symlinks):
+def write_file_metadata(path, metadata, follow_symlinks):
     """
     Sets local path metadata from the given dict with string keys.
     """

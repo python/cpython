@@ -1551,8 +1551,8 @@ Copying, renaming and deleting
    If *preserve_metadata* is false (the default), only the file data is
    guaranteed to be copied. Set *preserve_metadata* to true to ensure that the
    file mode (permissions), flags, last access and modification times, and
-   extended attributes are all copied where supported. This argument has no
-   effect on Windows, where metadata is always preserved when copying.
+   extended attributes are copied where supported. This argument has no effect
+   on Windows, where metadata is always preserved when copying.
 
    .. versionadded:: 3.14
 

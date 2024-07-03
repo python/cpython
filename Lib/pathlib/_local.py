@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from ._os import (UnsupportedOperation, copyfile, file_metadata_keys,
-                  get_file_metadata, set_file_metadata)
+                  read_file_metadata, write_file_metadata)
 from ._abc import PurePathBase, PathBase
 
 
@@ -782,9 +782,9 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
-    _metadata_keys = file_metadata_keys
-    _get_metadata = get_file_metadata
-    _set_metadata = set_file_metadata
+    _readable_metadata = _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
 
     if copyfile:
         def copy(self, target, *, follow_symlinks=True, preserve_metadata=False):
