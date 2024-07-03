@@ -431,6 +431,7 @@ NON_ESCAPING_FUNCTIONS = (
     "CONVERSION_FAILED",
     "_PyList_FromArraySteal",
     "_PyTuple_FromArraySteal",
+    "_PyTuple_FromStackRefSteal",
 )
 
 ESCAPING_FUNCTIONS = (
