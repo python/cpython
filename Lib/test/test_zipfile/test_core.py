@@ -21,7 +21,8 @@ from test import archiver_tests
 from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
-    captured_stdout, captured_stderr, requires_subprocess
+    captured_stdout, captured_stderr, requires_subprocess,
+    MS_WINDOWS
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
@@ -3075,21 +3076,30 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
-        self.assertEqual(zi.file_mode, '-rw-r--r--')
+        if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '----------')
+        else:
+            self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(FakePath(__file__))
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
-        self.assertEqual(zi.file_mode, '-rw-r--r--')
+        if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '----------')
+        else:
+            self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_bytes(self):
         zi = zipfile.ZipInfo.from_file(os.fsencode(__file__), 'test')
         self.assertEqual(posixpath.basename(zi.filename), 'test')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
-        self.assertEqual(zi.file_mode, '-rw-r--r--')
+        if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '----------')
+        else:
+            self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_fileno(self):
         with open(__file__, 'rb') as f:
@@ -3105,7 +3115,10 @@ class ZipInfoTests(unittest.TestCase):
         self.assertTrue(zi.is_dir())
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
-        self.assertEqual(zi.file_mode, 'drwxr-xr-x')
+        if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, 'd---------')
+        else:
+            self.assertEqual(zi.file_mode, 'drwxr-xr-x')
 
     def test_compresslevel_property(self):
         zinfo = zipfile.ZipInfo("xxx")
