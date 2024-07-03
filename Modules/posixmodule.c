@@ -11351,7 +11351,7 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
         struct stat statbuffer;
     	fstat(fd, &statbuffer);
     	if (S_ISFIFO(statbuffer.st_mode)) {
-	    length = Py_MIN(page_size* 16, length);
+	length = Py_MIN(page_size* 16, length);
     	}
     }
 #endif
