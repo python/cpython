@@ -2111,13 +2111,12 @@ class TarFile(object):
         # Calls to pwd.getpwuid() and grp.getgrgid() tend to be expensive. To
         # speed things up, cache the resolved usernames and group names.
         if pwd:
-            if not tarinfo.uid in self.uname_cache:
+            if tarinfo.uid not in self.uname_cache:
                 try:
                     self.uname_cache[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
                 except KeyError:
-                    pass
-
-            tarinfo.uname = self.uname_cache.get(tarinfo.uid, None)
+                    self.uname_cache[tarinfo.uid] = None
+            tarinfo.uname = self.uname_cache[tarinfo.uid]
         if grp:
             if not tarinfo.gid in self.gname_cache:
                 try:
