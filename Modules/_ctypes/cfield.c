@@ -1112,6 +1112,50 @@ C_get(void *ptr, Py_ssize_t size)
     memcpy(&x, ptr, sizeof(x));
     return PyComplex_FromDoubles(creal(x), cimag(x));
 }
+
+static PyObject *
+E_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    float complex x = CMPLXF((float)c.real, (float)c.imag);
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+E_get(void *ptr, Py_ssize_t size)
+{
+    float complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles(crealf(x), cimagf(x));
+}
+
+static PyObject *
+F_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    long double complex x = CMPLXL(c.real, c.imag);
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+F_get(void *ptr, Py_ssize_t size)
+{
+    long double complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles((double)creall(x), (double)cimagl(x));
+}
 #endif
 
 static PyObject *
@@ -1621,6 +1665,8 @@ static struct fielddesc formattable[] = {
     { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
 #if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
     { 'C', C_set, C_get, NULL},
+    { 'E', E_set, E_get, NULL},
+    { 'F', F_set, F_get, NULL},
 #endif
     { 'g', g_set, g_get, NULL},
     { 'f', f_set, f_get, NULL, f_set_sw, f_get_sw},
@@ -1674,6 +1720,8 @@ _ctypes_init_fielddesc(void)
         case 'd': fd->pffi_type = &ffi_type_double; break;
 #if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
         case 'C': fd->pffi_type = &ffi_type_complex_double; break;
+        case 'E': fd->pffi_type = &ffi_type_complex_float; break;
+        case 'F': fd->pffi_type = &ffi_type_complex_longdouble; break;
 #endif
         case 'g': fd->pffi_type = &ffi_type_longdouble; break;
         case 'f': fd->pffi_type = &ffi_type_float; break;

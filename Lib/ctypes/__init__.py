@@ -208,6 +208,10 @@ if sizeof(c_longdouble) == sizeof(c_double):
 try:
     class c_double_complex(_SimpleCData):
         _type_ = "C"
+    class c_float_complex(_SimpleCData):
+        _type_ = "E"
+    class c_longdouble_complex(_SimpleCData):
+        _type_ = "F"
 except AttributeError:
     pass
 
