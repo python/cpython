@@ -1075,13 +1075,13 @@ enter_tier_two:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
-            if (next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT) {
+            if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
             else {
@@ -1168,25 +1168,6 @@ goto_to_tier1:
     Py_DECREF(current_executor);
     tstate->previous_executor = NULL;
     DISPATCH();
-
-exit_to_trace:
-    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    uint32_t exit_index = next_uop[-1].exit_index;
-    assert(exit_index < current_executor->exit_count);
-    _PyExitData *exit = &current_executor->exits[exit_index];
-#ifdef Py_DEBUG
-    if (lltrace >= 2) {
-        printf("SIDE EXIT: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(", exit %u, temp %d, target %d -> %s]\n",
-               exit_index, exit->temperature.as_counter, exit->target,
-               _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
-    }
-#endif
-    Py_INCREF(exit->executor);
-    tstate->previous_executor = (PyObject *)current_executor;
-    GOTO_TIER_TWO(exit->executor);
 
 #endif  // _Py_JIT
 
@@ -1540,13 +1521,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
-            assert(args != NULL);
-            STACKREFS_TO_PYOBJECTS_STEAL((_PyStackRef *)args, argcount, args_o);
-            if (args_o == NULL) {
-                goto fail_pre_positional;
-            }
-            u = _PyTuple_FromArraySteal((args_o + n), argcount - n);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            u = _PyTuple_FromStackRefSteal(args + n, argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;
