@@ -251,6 +251,7 @@ emitted by a process (even those that are otherwise ignored by default):
   -Wdefault  # Warn once per call location
   -Werror    # Convert to exceptions
   -Walways   # Warn every time
+  -Wall      # Same as -Walways
   -Wmodule   # Warn once per calling module
   -Wonce     # Warn once per Python process
   -Wignore   # Never warn

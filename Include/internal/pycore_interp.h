@@ -30,6 +30,7 @@ extern "C" {
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_optimizer.h"     // _PyOptimizerObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl

@@ -88,8 +88,7 @@ _Py_c_quot(Py_complex a, Py_complex b)
      * numerators and denominator by whichever of {b.real, b.imag} has
      * larger magnitude.  The earliest reference I found was to CACM
      * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
-     * University).  As usual, though, we're still ignoring all IEEE
-     * endcases.
+     * University).
      */
      Py_complex r;      /* the result */
      const double abs_breal = b.real < 0 ? -b.real : b.real;
@@ -120,6 +119,28 @@ _Py_c_quot(Py_complex a, Py_complex b)
         /* At least one of b.real or b.imag is a NaN */
         r.real = r.imag = Py_NAN;
     }
+
+    /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
+       the C11, Annex G.5.2, routine _Cdivd(). */
+    if (isnan(r.real) && isnan(r.imag)) {
+        if ((isinf(a.real) || isinf(a.imag))
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
+            const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
+            r.real = Py_INFINITY * (x*b.real + y*b.imag);
+            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+        }
+        else if ((isinf(abs_breal) || isinf(abs_bimag))
+                 && isfinite(a.real) && isfinite(a.imag))
+        {
+            const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
+            const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
+            r.real = 0.0 * (a.real*x + a.imag*y);
+            r.imag = 0.0 * (a.imag*x - a.real*y);
+        }
+    }
+
     return r;
 }
 #ifdef _M_ARM64
