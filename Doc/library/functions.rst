@@ -1934,7 +1934,8 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
 
-   .. versionchanged:: 3.14 Added specialization for summation of complexes,
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
       using same algorithm as for summation of floats.
 
 
