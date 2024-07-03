@@ -26,7 +26,7 @@ class TupleTest(seq_tests.CommonTest):
             t['a']
 
     def test_index_error(self):
-        msg = re.escape("tuple.index(): 'a' is not in tuple")
+        msg = re.escape("tuple.index(x): 'a' not in tuple")
         with self.assertRaisesRegex(ValueError, msg):
             ().index('a')
 

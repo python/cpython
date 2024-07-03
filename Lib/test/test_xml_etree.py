@@ -14,6 +14,7 @@ import operator
 import os
 import pickle
 import pyexpat
+import re
 import sys
 import textwrap
 import types
@@ -327,9 +328,9 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaises(ValueError) as cm:
+        msg = re.escape('list.remove(x): %r not in list' % subelement)
+        with self.assertRaisesRegex(ValueError, msg):
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')

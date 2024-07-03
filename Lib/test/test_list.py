@@ -301,12 +301,12 @@ class ListTest(list_tests.CommonTest):
         X() in lst
 
     def test_list_index_error(self):
-        msg = re.escape("list.index(): 'a' is not in list")
+        msg = re.escape("list.index(x): 'a' not in list")
         with self.assertRaisesRegex(ValueError, msg):
             [].index('a')
 
     def test_list_remove_error(self):
-        msg = re.escape("list.remove(): 'a' is not in list")
+        msg = re.escape("list.remove(x): 'a' not in list")
         with self.assertRaisesRegex(ValueError, msg):
             [].remove('a')
 
