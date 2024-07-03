@@ -5280,7 +5280,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     }
     PyObject *mro = type->tp_mro;
     if (mro == NULL) {
-        PyTypeObject *base = get_base_by_token_recursive(type, token, result);
+        PyTypeObject *base = get_base_by_token_recursive(type, token);
         return base ? _token_found(base, result) : 0;
     }
     assert(PyTuple_Check(mro));
