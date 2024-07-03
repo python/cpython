@@ -1,0 +1,3 @@
+Fix constructor of :mod:`ast` nodes with custom ``_attributes``. Previously,
+passing custom attributes would raise a :py:exc:`DeprecationWarning`. Patch
+by Jelle Zijlstra.

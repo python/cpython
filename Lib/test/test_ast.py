@@ -2978,6 +2978,18 @@ class ASTConstructorTests(unittest.TestCase):
         obj = FieldsAndTypes(a=1)
         self.assertEqual(obj.a, 1)
 
+    def test_custom_attributes(self):
+        class MyAttrs(ast.AST):
+            _attributes = ("a", "b")
+
+        obj = MyAttrs(a=1, b=2)
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, 2)
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'."):
+            obj = MyAttrs(c=3)
+
     def test_fields_and_types_no_default(self):
         class FieldsAndTypesNoDefault(ast.AST):
             _fields = ('a',)
