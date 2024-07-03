@@ -5336,20 +5336,25 @@ cleanup:
 /*
  * Perform the following validations:
  *
- *   - All keyword arguments are known @e fields or @e attributes.
+ *   - All keyword arguments are known 'fields' or 'attributes'.
  *   - No field or attribute would be left unfilled after copy.replace().
  *
  * On success, this returns 1. Otherwise, set a TypeError
  * exception and returns -1 (no exception is set if some
  * other internal errors occur).
  *
- * @param self          The AST node instance.
- * @param dict          The AST node instance dictionary (self.__dict__).
- * @param fields        The list of fields (self._fields).
- * @param attributes    The list of attributes (self._attributes).
- * @param kwargs        Keyword arguments passed to ast_type_replace().
+ * Parameters
  *
- * The @e dict, @e fields, @e attributes and @e kwargs arguments can be NULL.
+ *      self          The AST node instance.
+ *      dict          The AST node instance dictionary (self.__dict__).
+ *      fields        The list of fields (self._fields).
+ *      attributes    The list of attributes (self._attributes).
+ *      kwargs        Keyword arguments passed to ast_type_replace().
+ *
+ * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
+ *
+ * Note: this function can be removed in 3.15 since the verification
+ *       will be done inside the constructor.
  */
 static inline int
 ast_type_replace_check(PyObject *self,
@@ -5372,7 +5377,7 @@ ast_type_replace_check(PyObject *self,
             return -1;
         }
     }
-    // Any keyword argument that is neither a field or attribute is rejected.
+    // Any keyword argument that is neither a field nor attribute is rejected.
     // We first need to check whether a keyword argument is accepted or not.
     // If all keyword arguments are accepted, we compute the required fields
     // and attributes. A field or attribute is not needed if:
@@ -5418,22 +5423,14 @@ ast_type_replace_check(PyObject *self,
             //
             // Note that fields must still be entirely determined when
             // calling the constructor later.
-            PyObject *optionals = PySet_New(attributes);
-            if (optionals == NULL) {
+            PyObject *unused = PyObject_CallMethodOneArg(expecting,
+                                                         &_Py_ID(difference_update),
+                                                         attributes);
+            if (unused == NULL) {
                 Py_DECREF(expecting);
                 return -1;
             }
-            Py_ssize_t pos = 0;
-            PyObject *item;
-            Py_hash_t hash;
-            while (_PySet_NextEntry(optionals, &pos, &item, &hash)) {
-                if(PySet_Discard(expecting, item) < 0) {
-                    Py_DECREF(expecting);
-                    Py_DECREF(optionals);
-                    return -1;
-                }
-            }
-            Py_DECREF(optionals);
+            Py_DECREF(unused);
         }
     }
     // Now 'expecting' contains the fields or attributes
@@ -5498,9 +5495,11 @@ ast_type_replace_check(PyObject *self,
  *
  * This returns -1 if an error occurs and 0 otherwise.
  *
- * @param payload   A dictionary to fill.
- * @param keys      A sequence of keys.
- * @param dict      The AST node instance dictionary (must NOT be NULL).
+ * Parameters
+ *
+ *      payload   A dictionary to fill.
+ *      keys      A sequence of keys or NULL for an empty sequence.
+ *      dict      The AST node instance dictionary (must not be NULL).
  */
 static inline int
 ast_type_replace_update_payload(PyObject *payload,
@@ -5508,6 +5507,9 @@ ast_type_replace_update_payload(PyObject *payload,
                                 PyObject *dict)
 {
     assert(dict != NULL);
+    if (keys == NULL) {
+        return 0;
+    }
     Py_ssize_t n = PySequence_Size(keys);
     if (n == -1) {
         return -1;
@@ -5582,11 +5584,11 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         goto cleanup;
     }
     if (dict) { // in case __dict__ is missing (for some obscure reason)
-        // copy the instance's fields
+        // copy the instance's fields (possibly NULL)
         if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
             goto cleanup;
         }
-        // copy the instance's attribute
+        // copy the instance's attributes (possibly NULL)
         if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
             goto cleanup;
         }
@@ -5595,9 +5597,6 @@ ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         goto cleanup;
     }
     result = PyObject_Call(type, empty_tuple, payload);
-    if (result == NULL) {
-        goto cleanup;
-    }
 cleanup:
     Py_XDECREF(payload);
     Py_XDECREF(empty_tuple);
