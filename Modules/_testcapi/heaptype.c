@@ -413,7 +413,6 @@ pyobject_getitemdata(PyObject *self, PyObject *o)
 static PyObject *
 create_type_with_token(PyObject *self, PyObject *args)
 {
-    assert(Py_TP_USE_SPEC == NULL);
     const char *name;
     PyObject *py_token;
     if (!PyArg_ParseTuple(args, "sO", &name, &py_token)) {
@@ -1295,6 +1294,8 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
         &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
     ADD("HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
+
+    ADD("Py_TP_USE_SPEC", PyLong_FromVoidPtr(Py_TP_USE_SPEC));
 
     PyObject *HeapCCollection = PyType_FromMetaclass(
         NULL, m, &HeapCCollection_spec, NULL);
