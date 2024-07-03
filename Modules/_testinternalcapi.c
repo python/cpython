@@ -1968,13 +1968,27 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 suppress_immortalization(PyObject *self, PyObject *value)
 {
+#ifdef Py_GIL_DISABLED
+    int suppress = PyObject_IsTrue(value);
+    if (suppress < 0) {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    // Subtract two to suppress immortalization (so that 1 -> -1)
+    _Py_atomic_add_int(&interp->gc.immortalize, suppress ? -2 : 2);
+#endif
     Py_RETURN_NONE;
 }
 
 static PyObject *
 get_immortalize_deferred(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return PyBool_FromLong(_Py_atomic_load_int(&interp->gc.immortalize) >= 0);
+#else
     Py_RETURN_FALSE;
+#endif
 }
 
 static PyObject *
