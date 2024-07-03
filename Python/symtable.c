@@ -71,11 +71,7 @@
 "duplicate type parameter '%U'"
 
 
-#define LOCATION(x) \
-    ((const _Py_SourceLocation){(x)->lineno, \
-                                (x)->end_lineno, \
-                                (x)->col_offset, \
-                                (x)->end_col_offset})
+#define LOCATION(x) SRC_LOCATION_FROM_AST(x)
 
 #define SET_ERROR_LOCATION(FNAME, L) \
     PyErr_RangedSyntaxLocationObject((FNAME), \
