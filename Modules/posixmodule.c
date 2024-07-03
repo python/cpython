@@ -11342,6 +11342,20 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     length = Py_MIN(length, _PY_READ_MAX);
 
+    static long page_size;
+    if (page_size == 0) 
+        page_size = sysconf(_SC_PAGE_SIZE);
+
+#ifndef MS_WINDOWS
+    if (length > page_size * 16) {
+        struct stat statbuffer;
+    	fstat(fd, &statbuffer);
+    	if (S_ISFIFO(statbuffer.st_mode)) {
+	    length = Py_MIN(page_size* 16, length);
+    	}
+    }
+#endif
+
     buffer = PyBytes_FromStringAndSize((char *)NULL, length);
     if (buffer == NULL)
         return NULL;
