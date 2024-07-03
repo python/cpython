@@ -2460,9 +2460,12 @@ def main():
             traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            pdb.interaction(None, e)
-            print(f"Post mortem debugger finished. The {target} will "
-                  "be restarted")
+            try:
+                pdb.interaction(None, e)
+            except Restart:
+                print("Restarting", target, "with arguments:")
+                print("\t" + " ".join(sys.argv[1:]))
+                continue
         if pdb._user_requested_quit:
             break
         print("The program finished and will be restarted")
