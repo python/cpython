@@ -41,6 +41,7 @@ extern PyTypeObject _PyExc_MemoryError;
             }, \
             .interpreter_state = { \
                 .size = sizeof(PyInterpreterState), \
+                .id = offsetof(PyInterpreterState, id), \
                 .next = offsetof(PyInterpreterState, next), \
                 .threads_head = offsetof(PyInterpreterState, threads.head), \
                 .gc = offsetof(PyInterpreterState, gc), \
@@ -59,6 +60,8 @@ extern PyTypeObject _PyExc_MemoryError;
                 .current_frame = offsetof(PyThreadState, current_frame), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
                 .native_thread_id = offsetof(PyThreadState, native_thread_id), \
+                .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
+                .status = offsetof(PyThreadState, _status), \
             }, \
             .interpreter_frame = { \
                 .size = sizeof(_PyInterpreterFrame), \
@@ -72,6 +75,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .size = sizeof(PyCodeObject), \
                 .filename = offsetof(PyCodeObject, co_filename), \
                 .name = offsetof(PyCodeObject, co_name), \
+                .qualname = offsetof(PyCodeObject, co_qualname), \
                 .linetable = offsetof(PyCodeObject, co_linetable), \
                 .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
                 .argcount = offsetof(PyCodeObject, co_argcount), \
@@ -96,6 +100,10 @@ extern PyTypeObject _PyExc_MemoryError;
                 .state = offsetof(PyUnicodeObject, _base._base.state), \
                 .length = offsetof(PyUnicodeObject, _base._base.length), \
                 .asciiobject_size = sizeof(PyASCIIObject), \
+            }, \
+            .gc = { \
+                .size = sizeof(struct _gc_runtime_state), \
+                .collecting = offsetof(struct _gc_runtime_state, collecting), \
             }, \
         }, \
         .allocators = { \
