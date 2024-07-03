@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_freelist.h"  // _PyFreeListState
+#include "pycore_stackref.h"  // _PyStackRef
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
@@ -59,7 +60,7 @@ typedef struct {
 } _PyListIterObject;
 
 PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
-PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
+PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n);
 
 
 #ifdef __cplusplus
