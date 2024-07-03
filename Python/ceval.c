@@ -718,27 +718,6 @@ _PyObjectArray_FromStackRefArrayBorrow(_PyStackRef *input, Py_ssize_t nargs, PyO
     return result;
 }
 
-PyObject **
-_PyObjectArray_FromStackRefArraySteal(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch)
-{
-    PyObject **result;
-    if (nargs > MAX_STACKREF_SCRATCH) {
-        // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
-        result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
-        if (result == NULL) {
-            return NULL;
-        }
-        result++;
-    }
-    else {
-        result = scratch;
-    }
-    for (int i = 0; i < nargs; i++) {
-        result[i] = PyStackRef_AsPyObjectSteal(input[i]);
-    }
-    return result;
-}
-
 void
 _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 {

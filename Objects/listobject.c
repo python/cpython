@@ -3203,6 +3203,29 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     return (PyObject *)list;
 }
 
+PyObject *
+_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return PyList_New(0);
+    }
+
+    PyListObject *list = (PyListObject *)PyList_New(n);
+    if (list == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyStackRef_CLOSE(src[i]);
+        }
+        return NULL;
+    }
+
+    PyObject **dst = list->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+    }
+
+    return (PyObject *)list;
+}
+
 /*[clinic input]
 list.index
 

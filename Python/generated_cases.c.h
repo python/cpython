@@ -632,15 +632,7 @@
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS_STEAL(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                for (int _i = oparg; --_i >= 0;) {
-                    PyStackRef_CLOSE(values[_i]);
-                }
-                if (true) { stack_pointer += -oparg; goto error; }
-            }
-            PyObject *list_o = _PyList_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
             if (list_o == NULL) { stack_pointer += -oparg; goto error; }
             list = PyStackRef_FromPyObjectSteal(list_o);
             stack_pointer[-oparg] = list;

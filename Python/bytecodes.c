@@ -1785,13 +1785,7 @@ dummy_func(
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            STACKREFS_TO_PYOBJECTS_STEAL(values, oparg, values_o);
-            if (CONVERSION_FAILED(values_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            PyObject *list_o = _PyList_FromArraySteal(values_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
             ERROR_IF(list_o == NULL, error);
             list = PyStackRef_FromPyObjectSteal(list_o);
         }
