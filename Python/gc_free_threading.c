@@ -324,8 +324,11 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
         _PyInterpreterFrame *curr_frame = p->current_frame;
         while (curr_frame != NULL) {
             PyCodeObject *co = (PyCodeObject *)curr_frame->f_executable;
-            for (int i = 0; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-                gc_visit_stackref(curr_frame->localsplus[i]);
+            if (co != NULL && PyCode_Check(co)) {
+                for (int i = 0;
+                     i < co->co_nlocalsplus + co->co_stacksize; i++) {
+                    gc_visit_stackref(curr_frame->localsplus[i]);
+                }
             }
             curr_frame = curr_frame->previous;
         }
@@ -585,13 +588,13 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // incoming references.
     gc_visit_heaps(interp, &update_refs, &state->base);
 
-    gc_visit_thread_stacks(interp);
-
 #ifdef GC_DEBUG
     // Check that all objects are marked as unreachable and that the computed
     // reference count difference (stored in `ob_tid`) is non-negative.
     gc_visit_heaps(interp, &validate_gc_objects, &state->base);
 #endif
+
+    gc_visit_thread_stacks(interp);
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.
