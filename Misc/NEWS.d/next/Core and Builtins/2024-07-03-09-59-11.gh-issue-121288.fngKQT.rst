@@ -1,2 +1,2 @@
-Improve error messages for :meth:`tuple.index`, :meth:`list.index` and
-:meth:`list.remove`. Patch by Bénédikt Tran.
+Improve error messages for :meth:`!tuple.index`, :meth:`!list.index` and
+:meth:`!list.remove`. Patch by Bénédikt Tran.
