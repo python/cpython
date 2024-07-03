@@ -444,15 +444,10 @@ create_type_with_token(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pytype_gettoken(PyObject *self, PyObject *type)
+get_tp_token(PyObject *self, PyObject *type)
 {
-    void *token;
-    if (PyType_GetToken((PyTypeObject *)type, &token) < 0) {
-        return NULL;
-    }
-    if (token != PyType_GetSlot((PyTypeObject *)type, Py_tp_token)) {
-        PyErr_SetString(PyExc_AssertionError,
-                     "PyType_GetSlot returned different token from GetToken");
+    void *token = PyType_GetSlot((PyTypeObject *)type, Py_tp_token);
+    if (PyErr_Occurred()) {
         return NULL;
     }
     return PyLong_FromVoidPtr(token);
@@ -518,7 +513,7 @@ static PyMethodDef TestMethods[] = {
     {"make_type_with_base", make_type_with_base, METH_O},
     {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
-    {"pytype_gettoken", pytype_gettoken, METH_O},
+    {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
     {NULL},
 };

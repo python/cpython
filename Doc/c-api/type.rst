@@ -311,17 +311,6 @@ Type Objects
 
    .. versionadded:: 3.14
 
-.. c:function:: int PyType_GetToken(PyTypeObject *type, void **result)
-
-   Retrieve the token stored in the type. See :c:func:`PyType_GetBaseByToken()`
-   for the entry.
-
-   * On error, set *\*result* to ``NULL``, set an exception, return ``-1``.
-   * If there's no token: set *\*result* to ``NULL``, return ``0``.
-   * Otherwise: set *\*result* to the non-NULL token, return ``1``.
-
-   .. versionadded:: 3.14
-
 
 Creating Heap-Allocated Types
 .............................

@@ -1171,7 +1171,7 @@ class CAPITest(unittest.TestCase):
             return found_in_mro, found_in_bases
 
         create_type = _testcapi.create_type_with_token
-        get_token = _testcapi.pytype_gettoken
+        get_token = _testcapi.get_tp_token
         Py_TP_USE_SPEC = 0
 
         A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)

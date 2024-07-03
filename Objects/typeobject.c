@@ -5312,17 +5312,6 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token,
     return 0;
 }
 
-int
-PyType_GetToken(PyTypeObject *type, void **result)
-{
-    assert(PyType_Check(type));
-    if(_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        *result = ((PyHeapTypeObject*)type)->ht_token;
-        return *result ? 1 : 0;
-    }
-    *result = NULL;
-    return 0;
-}
 
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
