@@ -2528,29 +2528,35 @@ typedef struct {
     double lo;     /* a running compensation for lost low-order bits */
 } CompensatedSum;
 
-static inline void
-cs_add(CompensatedSum *v, double x)
+static inline CompensatedSum
+cs_from_double(double x)
 {
-    double t = v->hi + x;
-    if (fabs(v->hi) >= fabs(x)) {
-        v->lo += (v->hi - t) + x;
+    return (CompensatedSum) {x};
+}
+
+static inline CompensatedSum
+cs_add(CompensatedSum total, double x)
+{
+    double t = total.hi + x;
+    if (fabs(total.hi) >= fabs(x)) {
+        total.lo += (total.hi - t) + x;
     }
     else {
-        v->lo += (x - t) + v->hi;
+        total.lo += (x - t) + total.hi;
     }
-    v->hi = t;
+    return (CompensatedSum) {t, total.lo};
 }
 
 static inline double
-cs_to_double(CompensatedSum *v)
+cs_to_double(CompensatedSum total)
 {
     /* Avoid losing the sign on a negative result,
        and don't let adding the compensation convert
        an infinite or overflowed sum to a NaN. */
-    if (v->lo && isfinite(v->lo)) {
-        v->hi += v->lo;
+    if (total.lo && isfinite(total.lo)) {
+        return total.hi + total.lo;
     }
-    return v->hi;
+    return total.hi;
 }
 
 /*[clinic input]
@@ -2665,7 +2671,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (PyFloat_CheckExact(result)) {
-        CompensatedSum re_sum = {PyFloat_AS_DOUBLE(result)};
+        CompensatedSum re_sum = cs_from_double(PyFloat_AS_DOUBLE(result));
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2673,10 +2679,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                return PyFloat_FromDouble(cs_to_double(&re_sum));
+                return PyFloat_FromDouble(cs_to_double(re_sum));
             }
             if (PyFloat_CheckExact(item)) {
-                cs_add(&re_sum, PyFloat_AS_DOUBLE(item));
+                re_sum = cs_add(re_sum, PyFloat_AS_DOUBLE(item));
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2690,7 +2696,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     continue;
                 }
             }
-            result = PyFloat_FromDouble(cs_to_double(&re_sum));
+            result = PyFloat_FromDouble(cs_to_double(re_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
@@ -2709,8 +2715,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyComplex_CheckExact(result)) {
         Py_complex z = PyComplex_AsCComplex(result);
-        CompensatedSum re_sum = {z.real};
-        CompensatedSum im_sum = {z.imag};
+        CompensatedSum re_sum = cs_from_double(z.real);
+        CompensatedSum im_sum = cs_from_double(z.imag);
         Py_SETREF(result, NULL);
         while (result == NULL) {
             item = PyIter_Next(iter);
@@ -2719,13 +2725,13 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 if (PyErr_Occurred()) {
                     return NULL;
                 }
-                return PyComplex_FromDoubles(cs_to_double(&re_sum),
-                                             cs_to_double(&im_sum));
+                return PyComplex_FromDoubles(cs_to_double(re_sum),
+                                             cs_to_double(im_sum));
             }
             if (PyComplex_CheckExact(item)) {
                 z = PyComplex_AsCComplex(item);
-                cs_add(&re_sum, z.real);
-                cs_add(&im_sum, z.imag);
+                re_sum = cs_add(re_sum, z.real);
+                im_sum = cs_add(im_sum, z.imag);
                 Py_DECREF(item);
                 continue;
             }
@@ -2747,8 +2753,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
-            result = PyComplex_FromDoubles(cs_to_double(&re_sum),
-                                           cs_to_double(&im_sum));
+            result = PyComplex_FromDoubles(cs_to_double(re_sum),
+                                           cs_to_double(im_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
