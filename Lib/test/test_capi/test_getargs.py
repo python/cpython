@@ -1402,7 +1402,14 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         check('Y', bytearray(b'bytearray'))
         check('O', object, allows_none=True)
 
-        # TODO: Not tested: es?, es#?, et?, et#?, O!, O&
+        parse((None,), {}, 'es?', ['a'])
+        parse((None,), {}, 'es#?', ['a'])
+        parse((None,), {}, 'et?', ['a'])
+        parse((None,), {}, 'et#?', ['a'])
+        parse((None,), {}, 'O!?', ['a'])
+        parse((None,), {}, 'O&?', ['a'])
+
+        # TODO: More tests for es?, es#?, et?, et#?, O!, O&
         # TODO: Not implemented: (...)?
 
     @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
