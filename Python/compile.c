@@ -3059,7 +3059,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, loc, "'async for' outside async function");
     }
@@ -5782,7 +5782,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     }
     if (co == NULL) {
         goto error;
@@ -5926,7 +5926,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     assert(s->kind == AsyncWith_kind);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, loc, "'async with' outside async function");
     }

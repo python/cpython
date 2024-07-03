@@ -1681,6 +1681,16 @@ check_import_from(struct symtable *st, stmt_ty s)
     return 1;
 }
 
+static void
+maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
+{
+    if ((st->st_future->ff_features & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+        (st->st_cur->ste_type == ModuleBlock))
+    {
+        st->st_cur->ste_coroutine = 1;
+    }
+}
+
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
@@ -2074,10 +2084,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     }
     case AsyncWith_kind:
+        maybe_set_ste_coroutine_for_module(st, s);
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
         VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
         break;
     case AsyncFor_kind:
+        maybe_set_ste_coroutine_for_module(st, s);
         VISIT(st, expr, s->v.AsyncFor.target);
         VISIT(st, expr, s->v.AsyncFor.iter);
         VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
