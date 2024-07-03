@@ -252,7 +252,7 @@ def set_file_metadata(path, metadata, follow_symlinks):
     mode = metadata.get('mode')
     if mode is not None:
         try:
-            lookup("chmod")(path, metadata['mode'], follow_symlinks=follow_symlinks)
+            lookup("chmod")(path, mode, follow_symlinks=follow_symlinks)
         except NotImplementedError:
             # if we got a NotImplementedError, it's because
             #   * follow_symlinks=False,
