@@ -1584,7 +1584,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    weak references to the type object itself.
 
    It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
 
@@ -1596,7 +1596,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
    to indicate that it is unsafe to use this field.
 
