@@ -4,8 +4,9 @@ Interface summary:
 
         import copy
 
-        x = copy.copy(y)        # make a shallow copy of y
-        x = copy.deepcopy(y)    # make a deep copy of y
+        x = copy.copy(y)                # make a shallow copy of y
+        x = copy.deepcopy(y)            # make a deep copy of y
+        x = copy.replace(y, a=1, b=2)   # new object with fields replaced, as defined by `__replace__`
 
 For module specific errors, copy.Error is raised.
 
