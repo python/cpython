@@ -1528,7 +1528,7 @@ class TarInfo(object):
         """
         def finditer_without_backtracking(buf, needle):
             values = []
-            regex = re.compile(br"^\d{1,20}%s(\d+)\n" % (needle,))
+            regex = re.compile(br"^\d+%s(\d{1,20})\n" % (needle,))
             while True:
                 if (
                     # Statement is both a contains check (!=-1) and a bounds check (>0)
