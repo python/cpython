@@ -1770,8 +1770,8 @@ class BuiltinTest(unittest.TestCase):
 
         xs = [complex(random.random() - .5, random.random() - .5)
               for _ in range(10000)]
-        self.assertEqual(sum(xs), complex(sum(_.real for _ in xs),
-                                          sum(_.imag for _ in xs)))
+        self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
+                                          sum(z.imag for z in xs)))
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
