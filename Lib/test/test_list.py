@@ -2,6 +2,7 @@ import sys
 from test import list_tests
 from test.support import cpython_only
 import pickle
+import re
 import unittest
 
 class ListTest(list_tests.CommonTest):
@@ -299,6 +300,15 @@ class ListTest(list_tests.CommonTest):
         lst = [X(), X()]
         X() in lst
 
+    def test_list_index_error(self):
+        msg = re.escape("list.index(): 'a' is not in list")
+        with self.assertRaisesRegex(ValueError, msg):
+            [].index('a')
+
+    def test_list_remove_error(self):
+        msg = re.escape("list.remove(): 'a' is not in list")
+        with self.assertRaisesRegex(ValueError, msg):
+            [].remove('a')
 
 if __name__ == "__main__":
     unittest.main()

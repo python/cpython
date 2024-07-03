@@ -3,6 +3,7 @@ import unittest
 
 import gc
 import pickle
+import re
 
 # For tuple hashes, we normally only run a test to ensure that we get
 # the same results across platforms in a handful of cases.  If that's
@@ -23,6 +24,11 @@ class TupleTest(seq_tests.CommonTest):
         msg = "tuple indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
             t['a']
+
+    def test_index_error(self):
+        msg = re.escape("tuple.index(): 'a' is not in tuple")
+        with self.assertRaisesRegex(ValueError, msg):
+            ().index('a')
 
     def test_constructors(self):
         super().test_constructors()
