@@ -2118,13 +2118,12 @@ class TarFile(object):
                     self.uname_cache[tarinfo.uid] = None
             tarinfo.uname = self.uname_cache[tarinfo.uid]
         if grp:
-            if not tarinfo.gid in self.gname_cache:
+            if tarinfo.gid not in self.gname_cache:
                 try:
                     self.gname_cache[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
                 except KeyError:
-                    pass
-
-            tarinfo.gname = self.gname_cache.get(tarinfo.gid, None)
+                    self.gname_cache[tarinfo.gid] = None
+            tarinfo.gname = self.gname_cache[tarinfo.gid]
 
         if type in (CHRTYPE, BLKTYPE):
             if hasattr(os, "major") and hasattr(os, "minor"):
