@@ -1352,6 +1352,71 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                     "argument 1 must be sequence of length 1, not 0"):
                 parse(((),), {}, '(' + f + ')', ['a'])
 
+    def test_nullable(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        def check(format, arg, allows_none=False):
+            # Because some format units (such as y*) require cleanup,
+            # we force the parsing code to perform the cleanup by adding
+            # an argument that always fails.
+            # By checking for an exception, we ensure that the parsing
+            # of the first argument was successful.
+            self.assertRaises(OverflowError, parse,
+                              (arg, 256), {}, '?' + format + 'b', ['a', 'b'])
+            self.assertRaises(OverflowError, parse,
+                              (None, 256), {}, '?' + format + 'b', ['a', 'b'])
+            self.assertRaises(OverflowError, parse,
+                              (arg, 256), {}, format + 'b', ['a', 'b'])
+            self.assertRaises(OverflowError if allows_none else TypeError, parse,
+                              (None, 256), {}, format + 'b', ['a', 'b'])
+
+        check('b', 42)
+        check('B', 42)
+        check('h', 42)
+        check('H', 42)
+        check('i', 42)
+        check('I', 42)
+        check('n', 42)
+        check('l', 42)
+        check('k', 42)
+        check('L', 42)
+        check('K', 42)
+        check('f', 2.5)
+        check('d', 2.5)
+        check('D', 2.5j)
+        check('c', b'a')
+        check('C', 'a')
+        check('p', True, allows_none=True)
+        check('y', b'buffer')
+        check('y*', b'buffer')
+        check('y#', b'buffer')
+        check('s', 'string')
+        check('s*', 'string')
+        check('s#', 'string')
+        check('z', 'string', allows_none=True)
+        check('z*', 'string', allows_none=True)
+        check('z#', 'string', allows_none=True)
+        check('w*', bytearray(b'buffer'))
+        check('U', 'string')
+        check('S', b'bytes')
+        check('Y', bytearray(b'bytearray'))
+        check('O', object, allows_none=True)
+
+        check('(OO)', (1, 2))
+        self.assertEqual(parse((((1, 2), 3),), {}, '(?(OO)O)', ['a']), (1, 2, 3))
+        self.assertEqual(parse(((None, 3),), {}, '(?(OO)O)', ['a']), (NULL, NULL, 3))
+        self.assertEqual(parse((((1, 2), 3),), {}, '((OO)O)', ['a']), (1, 2, 3))
+        self.assertRaises(TypeError, parse, ((None, 3),), {}, '((OO)O)', ['a'])
+
+        parse((None,), {}, '?es', ['a'])
+        parse((None,), {}, '?es#', ['a'])
+        parse((None,), {}, '?et', ['a'])
+        parse((None,), {}, '?et#', ['a'])
+        parse((None,), {}, '?O!', ['a'])
+        parse((None,), {}, '?O&', ['a'])
+
+        # TODO: More tests for es?, es#?, et?, et#?, O!, O&
+
     @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
     def test_gh_119213(self):
         rc, out, err = script_helper.assert_python_ok("-c", """if True:
