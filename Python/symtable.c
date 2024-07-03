@@ -1614,7 +1614,8 @@ symtable_record_directive(struct symtable *st, identifier name, _Py_SourceLocati
     mangled = _Py_MaybeMangle(st->st_private, st->st_cur, name);
     if (!mangled)
         return 0;
-    data = Py_BuildValue("(Niiii)", mangled, loc);
+    data = Py_BuildValue("(Niiii)", mangled, loc.lineno, loc.col_offset,
+                                    loc.end_lineno, loc.end_col_offset);
     if (!data)
         return 0;
     res = PyList_Append(st->st_cur->ste_directives, data);
