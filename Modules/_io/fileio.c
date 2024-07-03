@@ -735,7 +735,7 @@ _io_FileIO_readall_impl(fileio *self)
            buffer one byte larger than the rest of the file.  If the
            calculation is right then we should get EOF without having
            to enlarge the buffer. */
-        if (end >= _PY_READ_MAX) {
+        if (end > _PY_READ_MAX - 1) {
             bufsize = _PY_READ_MAX;
         }
         else {
@@ -758,7 +758,7 @@ _io_FileIO_readall_impl(fileio *self)
             _Py_END_SUPPRESS_IPH
             Py_END_ALLOW_THREADS
 
-            if (end >= pos && pos >= 0 && end - pos < _PY_READ_MAX) {
+            if (end >= pos && pos >= 0 && (end - pos) < (_PY_READ_MAX - 1)) {
                 bufsize = (size_t)(end - pos) + 1;
             }
         }
