@@ -310,7 +310,7 @@ gc_visit_stackref(_PyStackRef stackref)
     // being dead already.
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *curr_o = PyStackRef_AsPyObjectBorrow(stackref);
-        if (!_Py_IsImmortal(curr_o)) {
+        if (_PyObject_GC_IS_TRACKED(curr_o)) {
             gc_add_refs(curr_o, 1);
         }
     }
