@@ -381,7 +381,6 @@ class AbstractTestsWithSourceFile:
                 self.assertIn("mode='r'", r)
                 r = repr(zipfp.getinfo(fname))
                 self.assertIn('filename=%r' % fname, r)
-                self.assertIn('file_mode=', r)
                 self.assertIn('file_size=', r)
                 if self.compression != zipfile.ZIP_STORED:
                     self.assertIn('compress_type=', r)
@@ -2203,7 +2202,7 @@ class OtherTests(unittest.TestCase):
     def test_create_empty_zipinfo_repr(self):
         """Before bpo-26185, repr() on empty ZipInfo object was failing."""
         zi = zipfile.ZipInfo(filename="empty")
-        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_mode=b'' file_size=0>")
+        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
 
     def test_create_empty_zipinfo_default_attributes(self):
         """Ensure all required attributes are set."""
@@ -2226,8 +2225,7 @@ class OtherTests(unittest.TestCase):
         # Before bpo-26185, both were missing
         self.assertEqual(zi.file_size, 0)
         self.assertEqual(zi.compress_size, 0)
-
-        self.assertEqual(zi.file_mode, b"")
+        self.assertIsNone(zi.file_mode)
 
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
@@ -3077,18 +3075,21 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
+        self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(FakePath(__file__))
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
+        self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_bytes(self):
         zi = zipfile.ZipInfo.from_file(os.fsencode(__file__), 'test')
         self.assertEqual(posixpath.basename(zi.filename), 'test')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
+        self.assertEqual(zi.file_mode, '-rw-r--r--')
 
     def test_from_file_fileno(self):
         with open(__file__, 'rb') as f:
@@ -3104,6 +3105,7 @@ class ZipInfoTests(unittest.TestCase):
         self.assertTrue(zi.is_dir())
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
+        self.assertEqual(zi.file_mode, 'drwxr-xr-x')
 
     def test_compresslevel_property(self):
         zinfo = zipfile.ZipInfo("xxx")
