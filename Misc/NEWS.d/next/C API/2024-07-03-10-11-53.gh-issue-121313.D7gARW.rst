@@ -1,1 +1,1 @@
-- Limit reading size in os.read for pipes to default pipe size in order to avoid memory overallocation
+Limit reading size in os.read for pipes to default pipe size in order to avoid memory overallocation
