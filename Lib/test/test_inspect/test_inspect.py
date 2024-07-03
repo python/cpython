@@ -3868,17 +3868,15 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class CM(type):
-                __call__ = functools.partial(lambda x, a: (x, a), 2)
+                __call__ = functools.partial(lambda x, a, b: (x, a, b), 2)
             class C(metaclass=CM):
-                def __init__(self, b):
+                def __init__(self, c):
                     pass
 
-            with self.assertWarns(FutureWarning):
-                self.assertEqual(C(1), (2, 1))
-            with self.assertWarns(FutureWarning):
-                self.assertEqual(self.signature(C),
-                                ((('a', ..., ..., "positional_or_keyword"),),
-                                ...))
+            self.assertEqual(C(1), (2, C, 1))
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
 
         with self.subTest('partialmethod'):
             class CM(type):
@@ -4024,14 +4022,12 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __init__ = functools.partial(lambda x, a: None, 2)
+                __init__ = functools.partial(lambda x, a, b: None, 2)
 
-            with self.assertWarns(FutureWarning):
-                C(1)  # does not raise
-            with self.assertWarns(FutureWarning):
-                self.assertEqual(self.signature(C),
-                                ((('a', ..., ..., "positional_or_keyword"),),
-                                ...))
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
 
         with self.subTest('partialmethod'):
             class C:
@@ -4284,15 +4280,13 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __call__ = functools.partial(lambda x, a: (x, a), 2)
+                __call__ = functools.partial(lambda x, a, b: (x, a, b), 2)
 
             c = C()
-            with self.assertWarns(FutureWarning):
-                self.assertEqual(c(1), (2, 1))
-            with self.assertWarns(FutureWarning):
-                self.assertEqual(self.signature(c),
-                                ((('a', ..., ..., "positional_or_keyword"),),
-                                ...))
+            self.assertEqual(c(1), (2, c, 1))
+            self.assertEqual(self.signature(C()),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
 
         with self.subTest('partialmethod'):
             class C:
