@@ -17,6 +17,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_descrobject.h"
+#include "pycore_stackref.h"
 
 #include "ceval_macros.h"
 
@@ -84,7 +85,7 @@ do {                                                         \
 #define WITHIN_STACK_BOUNDS() 1
 
 _Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
+_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
@@ -102,7 +103,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     uint64_t _operand = ((uint64_t)_operand_hi << 32) | _operand_lo;
 #endif
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
-    PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
 
     OPT_STAT_INC(uops_executed);
     UOP_STAT_INC(uopcode, execution_count);
@@ -125,11 +125,4 @@ exit_to_tier1:
 exit_to_tier1_dynamic:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_ONE(frame->instr_ptr);
-exit_to_trace:
-    {
-        _PyExitData *exit = &current_executor->exits[_exit_index];
-        Py_INCREF(exit->executor);
-        tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_TWO(exit->executor);
-    }
 }

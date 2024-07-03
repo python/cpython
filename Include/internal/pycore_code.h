@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
 
@@ -317,30 +318,30 @@ extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
 /* Specialization functions */
 
-extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
                                          _Py_CODEUNIT *instr, int load_method);
-extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
-extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
+extern void _Py_Specialize_BinarySubscr(_PyStackRef sub, _PyStackRef container,
                                         _Py_CODEUNIT *instr);
-extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
+extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
-extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
-extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg, PyObject **locals);
-extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
+extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+                                    int oparg, _PyStackRef *locals);
+extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 
 #ifdef Py_STATS
 
@@ -534,7 +535,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(COLD_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
+static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
     "Cold exit value should be larger than adaptive cooldown value");
 
 static inline _Py_BackoffCounter

@@ -19,6 +19,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
+from types import MethodType
 from _thread import RLock
 
 # Avoid importing types, so we can speedup import time
@@ -397,6 +398,11 @@ class partial:
             pto_args = self.args
         keywords = {**self.keywords, **keywords}
         return self.func(*pto_args, *args, **keywords)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return MethodType(self, obj)
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
