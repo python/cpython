@@ -1768,6 +1768,11 @@ class BuiltinTest(unittest.TestCase):
         sum(([x] for x in range(10)), empty)
         self.assertEqual(empty, [])
 
+        xs = [complex(random.random() - .5, random.random() - .5)
+              for _ in range(10000)]
+        self.assertEqual(sum(xs), complex(sum(_.real for _ in xs),
+                                          sum(_.imag for _ in xs)))
+
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "sum accuracy not guaranteed on machines with double rounding")
