@@ -1836,32 +1836,6 @@ custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
     return true;
 }
 
-// gh-117783: Immortalize objects that use deferred reference counting to
-// temporarily work around scaling bottlenecks.
-static bool
-immortalize_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
-                    void *block, size_t block_size, void *args)
-{
-    PyObject *op = op_from_block(block, args, false);
-    if (op != NULL && _PyObject_HasDeferredRefcount(op)) {
-        _Py_SetImmortal(op);
-        op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
-    }
-    return true;
-}
-
-void
-_PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp)
-{
-    struct visitor_args args;
-    _PyEval_StopTheWorld(interp);
-    if (interp->gc.immortalize == 0) {
-        gc_visit_heaps(interp, &immortalize_visitor, &args);
-        interp->gc.immortalize = 1;
-    }
-    _PyEval_StartTheWorld(interp);
-}
-
 void
 PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 {
