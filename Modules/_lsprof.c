@@ -311,17 +311,10 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 }
 
 static void
-Stop(ProfilerObject *pObj, ProfilerContext **pself, ProfilerEntry *entry)
+Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    ProfilerContext *self = *pself;
     PyTime_t tt = call_timer(pObj) - self->t0;
     PyTime_t it = tt - self->subt;
-    // call_timer could have flushed all contexts, in this case, set pself to NULL
-    // to indicate that there's nothing needs to be done for it
-    if (pObj->currentProfilerContext == NULL) {
-        *pself = NULL;
-        return;
-    }
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -402,17 +395,15 @@ ptrace_leave_call(PyObject *self, void *key)
         return;
     profEntry = getEntry(pObj, key);
     if (profEntry) {
-        Stop(pObj, &pContext, profEntry);
+        Stop(pObj, pContext, profEntry);
     }
     else {
         pObj->currentProfilerContext = pContext->previous;
     }
-    /* put pContext into the free list if it's not NULL */
-    /* we need to check because Stop could potentially set pContext to NULL*/
-    if (pContext != NULL) {
-        pContext->previous = pObj->freelistProfilerContext;
-        pObj->freelistProfilerContext = pContext;
-    }
+    /* put pContext into the free list */
+    pContext->previous = pObj->freelistProfilerContext;
+
+    pObj->freelistProfilerContext = pContext;
 }
 
 static int
@@ -769,13 +760,11 @@ flush_unmatched(ProfilerObject *pObj)
         ProfilerContext *pContext = pObj->currentProfilerContext;
         ProfilerEntry *profEntry= pContext->ctxEntry;
         if (profEntry)
-            Stop(pObj, &pContext, profEntry);
+            Stop(pObj, pContext, profEntry);
         else
             pObj->currentProfilerContext = pContext->previous;
-        if (pContext != NULL) {
-            pContext->previous = pObj->freelistProfilerContext;
-            pObj->freelistProfilerContext = pContext;
-        }
+        if (pContext)
+            PyMem_Free(pContext);
     }
 
 }
