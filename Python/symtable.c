@@ -73,8 +73,8 @@
 
 #define LOCATION(x) \
     ((const _Py_SourceLocation){(x)->lineno, \
-                                (x)->col_offset, \
                                 (x)->end_lineno, \
+                                (x)->col_offset, \
                                 (x)->end_col_offset})
 
 #define SET_ERROR_LOCATION(FNAME, L) \
