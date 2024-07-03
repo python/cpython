@@ -3492,6 +3492,23 @@ def bœr():
         # the file as up to date
         self.assertNotIn("WARNING:", stdout)
 
+    def test_post_mortem_restart(self):
+        script = """
+            def foo():
+                raise ValueError("foo")
+            foo()
+        """
+
+        commands = """
+            continue
+            restart
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("Restarting", stdout)
+
     def test_relative_imports(self):
         self.module_name = 't_main'
         os_helper.rmtree(self.module_name)
