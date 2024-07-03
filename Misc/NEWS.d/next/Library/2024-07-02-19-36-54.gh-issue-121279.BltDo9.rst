@@ -1,0 +1,2 @@
+Avoid :exc:`NameError` for the :mod:`warnings` module when accessing the
+depracated atributes of the :mod:`importlib.abc` module.
