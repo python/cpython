@@ -22,7 +22,7 @@ from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     captured_stdout, captured_stderr, requires_subprocess,
-    MS_WINDOWS
+    MS_WINDOWS, is_wasi
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
@@ -3077,6 +3077,8 @@ class ZipInfoTests(unittest.TestCase):
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
         if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '-rw-rw-rw-')
+        elif is_wasi:
             self.assertEqual(zi.file_mode, '----------')
         else:
             self.assertEqual(zi.file_mode, '-rw-r--r--')
@@ -3087,6 +3089,8 @@ class ZipInfoTests(unittest.TestCase):
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
         if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '-rw-rw-rw-')
+        elif is_wasi:
             self.assertEqual(zi.file_mode, '----------')
         else:
             self.assertEqual(zi.file_mode, '-rw-r--r--')
@@ -3097,6 +3101,8 @@ class ZipInfoTests(unittest.TestCase):
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
         if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, '-rw-rw-rw-')
+        elif is_wasi:
             self.assertEqual(zi.file_mode, '----------')
         else:
             self.assertEqual(zi.file_mode, '-rw-r--r--')
@@ -3116,6 +3122,8 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
         if MS_WINDOWS:
+            self.assertEqual(zi.file_mode, 'drwxrwxrwx')
+        elif is_wasi:
             self.assertEqual(zi.file_mode, 'd---------')
         else:
             self.assertEqual(zi.file_mode, 'drwxr-xr-x')
