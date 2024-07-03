@@ -11335,7 +11335,7 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 {
     Py_ssize_t n;
     PyObject *buffer;
-    
+
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
@@ -11362,8 +11362,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
         return NULL;
 
     n = _Py_read(fd, PyBytes_AS_STRING(buffer), length);
-
-
     if (n == -1) {
         Py_DECREF(buffer);
         return NULL;
@@ -11371,7 +11369,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
     
     if (n != length) 
         _PyBytes_Resize(&buffer, n);
-    
 
     return buffer;
 }
