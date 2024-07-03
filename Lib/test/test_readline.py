@@ -132,6 +132,32 @@ class TestHistoryManipulation (unittest.TestCase):
         self.assertEqual(readline.get_history_item(1), "entrée 1")
         self.assertEqual(readline.get_history_item(2), "entrée 22")
 
+    def test_write_read_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.add_history("third line")
+
+        readline.set_history_length(2)
+        self.assertEqual(readline.get_history_length(), 2)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.clear_history()
+        self.assertEqual(readline.get_current_history_length(), 0)
+        self.assertEqual(readline.get_history_length(), 2)
+
+        readline.read_history_file(TESTFN)
+        self.assertEqual(readline.get_history_item(1), "second line")
+        self.assertEqual(readline.get_history_item(2), "third line")
+        self.assertEqual(readline.get_history_item(3), None)
+
+        # Readline seems to report an additional history element.
+        self.assertIn(readline.get_current_history_length(), (2, 3))
+
 
 class TestReadline(unittest.TestCase):
 
