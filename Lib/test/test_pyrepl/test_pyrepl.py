@@ -909,6 +909,8 @@ class TestMain(TestCase):
         env.update({"PYTHON_HISTORY": hfile.name})
         commands = "123\nspam\nexit()\n"
         output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn("123", output)
         self.assertIn("spam", output)
