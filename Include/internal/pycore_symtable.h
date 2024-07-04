@@ -127,12 +127,7 @@ typedef struct _symtable_entry {
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
-    int ste_lineno;          /* first line of block */
-    int ste_col_offset;      /* offset of first line of block */
-    int ste_end_lineno;      /* end line of block */
-    int ste_end_col_offset;  /* end offset of first line of block */
-    int ste_opt_lineno;      /* lineno of last exec or import * */
-    int ste_opt_col_offset;  /* offset of last exec or import * */
+    _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
     struct symtable *ste_table;
 } PySTEntryObject;
