@@ -156,7 +156,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
 
-   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
 
@@ -206,7 +206,7 @@ Dictionary Objects
      ``NULL``, and return ``0``.
    - On error, raise an exception and return ``-1``.
 
-   This is similar to :meth:`dict.pop`, but without the default value and
+   Similar to :meth:`dict.pop`, but without the default value and
    not raising :exc:`KeyError` if the key missing.
 
    .. versionadded:: 3.13

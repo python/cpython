@@ -2537,12 +2537,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (key == NULL)
                 break;
 
-            if (!PyUnicode_CheckExact(key) ||
-                (hash = _PyASCIIObject_CAST(key)->hash) == -1)
-            {
-                hash = PyObject_Hash(key);
-                if (hash == -1)
-                    goto done;
+            hash = _PyObject_HashFast(key);
+            if (hash == -1) {
+                goto done;
             }
 
             oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
