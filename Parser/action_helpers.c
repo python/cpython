@@ -1002,7 +1002,7 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
                 PyUnicode_GET_LENGTH(item->v.Constant.value) == 0) {
                 continue;
             }
-                asdl_seq_SET(resized_spec, j++, item);
+            asdl_seq_SET(resized_spec, j++, item);
         }
         assert(j == non_empty_count);
         spec = resized_spec;
