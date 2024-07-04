@@ -627,7 +627,6 @@ state:
    see their documentation for details.
 
 
-
 .. c:macro:: PyModule_AddIntMacro(module, macro)
 
    Add an int constant to *module*. The name and the value are taken from
