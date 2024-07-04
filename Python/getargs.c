@@ -1129,7 +1129,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else {
             return converterr(
-                flags, recode_strings ? "str" : "str, bytes or bytearray",
+                flags,
+                recode_strings ? "str" : (flags & FLAG_NULLABLE) ?
+                    "str, bytes, bytearray" : "str, bytes or bytearray",
                 arg, msgbuf, bufsize);
         }
 
