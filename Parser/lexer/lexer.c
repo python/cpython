@@ -213,7 +213,7 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
         case '!':
         case ':':
             if (tok_mode->last_expr_end == -1) {
-                 ok_mode->last_expr_end = strlen(tok->start);
+                tok_mode->last_expr_end = strlen(tok->start);
             }
             break;
         default:
