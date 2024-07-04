@@ -5,7 +5,8 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
+from pathlib._os import UnsupportedOperation
+from pathlib._abc import ParserBase, PurePathBase, PathBase
 import posixpath
 
 from test.support import is_wasi
