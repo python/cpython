@@ -1,10 +1,10 @@
 # Locations table
 
-For versions up to 3.10 see ./lnotab_notes.txt
+The `co_linetable` bytes object of code objects contains a compact
+representation of the source code positions of instructions, which are
+returned by the `co_positions()` iterator.
 
-In version 3.11 the `co_linetable` bytes object of code objects contains a compact representation of the positions returned by the `co_positions()` iterator.
-
-The `co_linetable` consists of a sequence of location entries.
+`co_linetable` consists of a sequence of location entries.
 Each entry starts with a byte with the most significant bit set, followed by zero or more bytes with most significant bit unset.
 
 Each entry contains the following information:

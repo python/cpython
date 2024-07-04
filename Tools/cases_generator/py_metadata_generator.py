@@ -12,7 +12,6 @@ from analyzer import (
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
-    root_relative_path,
     write_header,
 )
 from cwriter import CWriter
