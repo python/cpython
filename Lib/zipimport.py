@@ -557,20 +557,35 @@ def _read_directory(archive):
             fp.seek(start_offset)
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
 
-    # Add implicit directories.
-    for name in list(files):
+    add_count = _add_implicit_dirs(files)
+    _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
+                                add_count, archive)
+
+
+    return files
+
+
+def _add_implicit_dirs(files):
+    # dict.from_keys is doing triple-duty here:
+    # - deduplicating any entries in O(1) time
+    # - setting values to `None`
+    # - representing the __len__ of the updates
+    updates = dict.fromkeys(_implicit_dirs(files))
+    files.update(updates)
+    return len(updates)
+
+
+def _implicit_dirs(names):
+    for name in names:
         while True:
             i = name.rstrip(path_sep).rfind(path_sep)
             if i < 0:
                 break
             name = name[:i + 1]
-            if name in files:
+            if name in names:
                 break
-            files[name] = None
-            count += 1
-    _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
-                                count, archive)
-    return files
+            yield name
+
 
 # During bootstrap, we may need to load the encodings
 # package from a ZIP file. But the cp437 encoding is implemented
