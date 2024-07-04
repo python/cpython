@@ -31,20 +31,73 @@ Generating Symbol Tables
 Examining Symbol Tables
 -----------------------
 
+.. class:: SymbolTableType
+
+   An enumeration indicating the type of a :class:`SymbolTable` object.
+
+   .. attribute:: MODULE
+      :value: "module"
+
+      Used for the symbol table of a module.
+
+   .. attribute:: FUNCTION
+      :value: "function"
+
+      Used for the symbol table of a function.
+
+   .. attribute:: CLASS
+      :value: "class"
+
+      Used for the symbol table of a class.
+
+   The following members refer to different flavors of
+   :ref:`annotation scopes <annotation-scopes>`.
+
+   .. attribute:: ANNOTATION
+      :value: "annotation"
+
+      Used for annotations if ``from __future__ import annotations`` is active.
+
+   .. attribute:: TYPE_ALIAS
+      :value: "type alias"
+
+      Used for the symbol table of :keyword:`type` constructions.
+
+   .. attribute:: TYPE_PARAMETERS
+      :value: "type parameters"
+
+      Used for the symbol table of :ref:`generic functions <generic-functions>`
+      or :ref:`generic classes <generic-classes>`.
+
+   .. attribute:: TYPE_VARIABLE
+      :value: "type variable"
+
+      Used for the symbol table of the bound, the constraint tuple or the
+      default value of a single type variable in the formal sense, i.e.,
+      a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two do
+      not support a bound or a constraint tuple).
+
+   .. versionadded:: 3.13
+
 .. class:: SymbolTable
 
    A namespace table for a block.  The constructor is not public.
 
    .. method:: get_type()
 
-      Return the type of the symbol table.  Possible values are ``'class'``,
-      ``'module'``, ``'function'``, ``'annotation'``, ``'TypeVar bound'``,
-      ``'type alias'``, and ``'type parameter'``. The latter four refer to
-      different flavors of :ref:`annotation scopes <annotation-scopes>`.
+      Return the type of the symbol table.  Possible values are members
+      of the :class:`SymbolTableType` enumeration.
 
       .. versionchanged:: 3.12
          Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
          and ``'type parameter'`` as possible return values.
+
+      .. versionchanged:: 3.13
+         Return values are members of the :class:`SymbolTableType` enumeration.
+
+         The exact values of the returned string may change in the future,
+         and thus, it is recommended to use :class:`SymbolTableType` members
+         instead of hard-coded strings.
 
    .. method:: get_id()
 
@@ -127,8 +180,39 @@ Examining Symbol Tables
 
    .. method:: get_methods()
 
-      Return a tuple containing the names of methods declared in the class.
+      Return a tuple containing the names of method-like functions declared
+      in the class.
 
+      Here, the term 'method' designates *any* function defined in the class
+      body via :keyword:`def` or :keyword:`async def`.
+
+      Functions defined in a deeper scope (e.g., in an inner class) are not
+      picked up by :meth:`get_methods`.
+
+      For example:
+
+         >>> import symtable
+         >>> st = symtable.symtable('''
+         ... def outer(): pass
+         ...
+         ... class A:
+         ...    def f():
+         ...        def w(): pass
+         ...
+         ...    def g(self): pass
+         ...
+         ...    @classmethod
+         ...    async def h(cls): pass
+         ...
+         ...    global outer
+         ...    def outer(self): pass
+         ... ''', 'test', 'exec')
+         >>> class_A = st.get_children()[2]
+         >>> class_A.get_methods()
+         ('f', 'g', 'h')
+
+      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
+      considered as a method-like function.
 
 .. class:: Symbol
 

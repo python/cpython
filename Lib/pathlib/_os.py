@@ -4,6 +4,7 @@ Low-level OS functionality wrappers used by pathlib.
 
 from errno import EBADF, EOPNOTSUPP, ETXTBSY, EXDEV
 import os
+import stat
 import sys
 try:
     import fcntl
@@ -17,6 +18,15 @@ try:
     import _winapi
 except ImportError:
     _winapi = None
+
+
+__all__ = ["UnsupportedOperation"]
+
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is attempted.
+    """
+    pass
 
 
 def get_copy_blocksize(infd):
@@ -91,12 +101,44 @@ else:
     copyfd = None
 
 
-if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def copyfile(source, target):
+if _winapi and hasattr(_winapi, 'CopyFile2') and hasattr(os.stat_result, 'st_file_attributes'):
+    def _is_dirlink(path):
+        try:
+            st = os.lstat(path)
+        except (OSError, ValueError):
+            return False
+        return (st.st_file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY and
+                st.st_reparse_tag == stat.IO_REPARSE_TAG_SYMLINK)
+
+    def copyfile(source, target, follow_symlinks):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
-        _winapi.CopyFile2(source, target, 0)
+        if follow_symlinks:
+            _winapi.CopyFile2(source, target, 0)
+        else:
+            # Use COPY_FILE_COPY_SYMLINK to copy a file symlink.
+            flags = _winapi.COPY_FILE_COPY_SYMLINK
+            try:
+                _winapi.CopyFile2(source, target, flags)
+                return
+            except OSError as err:
+                # Check for ERROR_ACCESS_DENIED
+                if err.winerror == 5 and _is_dirlink(source):
+                    pass
+                else:
+                    raise
+
+            # Add COPY_FILE_DIRECTORY to copy a directory symlink.
+            flags |= _winapi.COPY_FILE_DIRECTORY
+            try:
+                _winapi.CopyFile2(source, target, flags)
+            except OSError as err:
+                # Check for ERROR_INVALID_PARAMETER
+                if err.winerror == 87:
+                    raise UnsupportedOperation(err) from None
+                else:
+                    raise
 else:
     copyfile = None
 

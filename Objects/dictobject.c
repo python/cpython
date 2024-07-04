@@ -433,7 +433,7 @@ static inline Py_hash_t
 unicode_get_hash(PyObject *o)
 {
     assert(PyUnicode_CheckExact(o));
-    return _PyASCIIObject_CAST(o)->hash;
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(o)->hash);
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -2177,13 +2177,10 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     }
     PyDictObject *mp = (PyDictObject *)op;
 
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            PyErr_FormatUnraisable(warnmsg);
-            return NULL;
-        }
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        PyErr_FormatUnraisable(warnmsg);
+        return NULL;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2232,12 +2229,9 @@ _PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash = unicode_get_hash(key);
+    Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            return -1;
-        }
+        return -1;
     }
 
     return _Py_dict_lookup(mp, key, hash, &value);
@@ -2308,14 +2302,10 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
         return -1;
     }
 
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1)
-    {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            *result = NULL;
-            return -1;
-        }
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        *result = NULL;
+        return -1;
     }
 
     return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
@@ -2327,13 +2317,10 @@ _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **
     ASSERT_DICT_LOCKED(op);
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash;
-    if ((hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            *result = NULL;
-            return -1;
-        }
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        *result = NULL;
+        return -1;
     }
 
     PyObject *value;
@@ -2367,12 +2354,9 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1)
-    {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            return NULL;
-        }
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return NULL;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -2389,7 +2373,7 @@ PyObject *
 _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
 {
     assert(PyUnicode_CheckExact(kv));
-    Py_hash_t hash = kv->ob_type->tp_hash(kv);
+    Py_hash_t hash = Py_TYPE(kv)->tp_hash(kv);
     if (hash == -1) {
         return NULL;
     }
@@ -2440,10 +2424,9 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return NULL;
     }
 
     /* namespace 1: globals */
@@ -2468,14 +2451,11 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
     assert(key);
     assert(value);
     assert(PyDict_Check(mp));
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            Py_DECREF(key);
-            Py_DECREF(value);
-            return -1;
-        }
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        Py_DECREF(key);
+        Py_DECREF(value);
+        return -1;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -2624,12 +2604,10 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
 int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
-    Py_hash_t hash;
     assert(key);
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return -1;
     }
 
     return _PyDict_DelItem_KnownHash(op, key, hash);
@@ -2808,8 +2786,6 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     if (!PyDict_Check(op))
         return 0;
 
-    ASSERT_DICT_LOCKED(op);
-
     mp = (PyDictObject *)op;
     i = *ppos;
     if (_PyDict_HasSplitTable(mp)) {
@@ -2882,11 +2858,7 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
 int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    res = _PyDict_Next(op, ppos, pkey, pvalue, NULL);
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
 }
 
 
@@ -2959,15 +2931,12 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         return 0;
     }
 
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            if (result) {
-                *result = NULL;
-            }
-            return -1;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        if (result) {
+            *result = NULL;
         }
+        return -1;
     }
     return _PyDict_Pop_KnownHash(dict, key, hash, result);
 }
@@ -3116,7 +3085,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
                 goto dict_iter_exit;
             }
         }
-dict_iter_exit:
+dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
     } else {
         while ((key = PyIter_Next(it)) != NULL) {
@@ -3299,10 +3268,9 @@ dict_subscript(PyObject *self, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
@@ -4189,10 +4157,9 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(self, key, hash, &val);
     if (ix == DKIX_ERROR)
@@ -4222,14 +4189,12 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         return -1;
     }
 
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1) {
-            if (result) {
-                *result = NULL;
-            }
-            return -1;
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        if (result) {
+            *result = NULL;
         }
+        return -1;
     }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
@@ -4661,12 +4626,10 @@ static PyMethodDef mapp_methods[] = {
 int
 PyDict_Contains(PyObject *op, PyObject *key)
 {
-    Py_hash_t hash;
+    Py_hash_t hash = _PyObject_HashFast(key);
 
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    if (hash == -1) {
+        return -1;
     }
 
     return _PyDict_Contains_KnownHash(op, key, hash);
@@ -4923,7 +4886,8 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     kv = PyUnicode_FromString(key);
     if (kv == NULL)
         return -1;
-    PyUnicode_InternInPlace(&kv); /* XXX Should we really? */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &kv); /* XXX Should we really? */
     err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
@@ -5382,7 +5346,7 @@ fail:
 #ifdef Py_GIL_DISABLED
 
 // Grabs the key and/or value from the provided locations and if successful
-// returns them with an increased reference count.  If either one is unsucessful
+// returns them with an increased reference count.  If either one is unsuccessful
 // nothing is incref'd and returns -1.
 static int
 acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
@@ -6748,11 +6712,9 @@ int
 _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
 {
     if (value == NULL) {
-        Py_hash_t hash;
-        if (!PyUnicode_CheckExact(name) || (hash = unicode_get_hash(name)) == -1) {
-            hash = PyObject_Hash(name);
-            if (hash == -1)
-                return -1;
+        Py_hash_t hash = _PyObject_HashFast(name);
+        if (hash == -1) {
+            return -1;
         }
         return delitem_knownhash_lock_held((PyObject *)dict, name, hash);
     } else {
