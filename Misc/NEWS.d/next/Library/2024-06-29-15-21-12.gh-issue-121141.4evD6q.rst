@@ -1,0 +1,1 @@
+Add support for :func:`copy.replace` to AST nodes. Patch by Bénédikt Tran.
