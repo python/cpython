@@ -1577,6 +1577,7 @@ class FileIO(RawIOBase):
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
             if self._blksize <= 1:
                 self._blksize = DEFAULT_BUFFER_SIZE
+            self._estimated_size = fdfstat.st_size
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1654,14 +1655,18 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        bufsize = DEFAULT_BUFFER_SIZE
-        try:
-            pos = os.lseek(self._fd, 0, SEEK_CUR)
-            end = os.fstat(self._fd).st_size
-            if end >= pos:
-                bufsize = end - pos + 1
-        except OSError:
-            pass
+        if self._estimated_size <= 0:
+            bufsize = DEFAULT_BUFFER_SIZE
+        else:
+            bufsize = self._estimated_size + 1
+
+            if self._estimated_size > 65536:
+                try:
+                    pos = os.lseek(self._fd, 0, SEEK_CUR)
+                    if self._estimated_size >= pos:
+                        bufsize = self._estimated_size - pos + 1
+                except OSError:
+                    pass
 
         result = bytearray()
         while True:
@@ -1737,6 +1742,7 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
+        self._estimated_size = size
         return size
 
     def close(self):
