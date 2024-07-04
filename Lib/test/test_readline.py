@@ -349,6 +349,26 @@ readline.write_history_file(history_file)
             self.assertEqual(len(lines), history_size)
             self.assertEqual(lines[-1].strip(), b"last input")
 
+    def test_write_read_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.add_history("third line")
+
+        readline.set_history_length(2)
+        self.assertEqual(readline.get_history_length(), 2)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.read_history_file(TESTFN)
+        # Without clear_history() there's no good way to test if
+        # the correct entries are present (we're combining history limiting and
+        # possible deduplication with arbitrary previous content).
+        # So, we've only tested that the read did not fail.
+        # See TestHistoryManipulation for the full test.
+
 
 if __name__ == "__main__":
     unittest.main()
