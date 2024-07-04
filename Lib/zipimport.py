@@ -558,9 +558,9 @@ def _read_directory(archive):
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
 
     add_count = _add_implicit_dirs(files)
-    _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
-                                add_count, archive)
-
+    if add_count:
+        _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
+                                    add_count, archive)
 
     return files
 
