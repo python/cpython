@@ -912,11 +912,13 @@ class PathBase(PurePathBase):
             def on_error(err):
                 raise err
         try:
-            if self.is_symlink() or self.is_junction():
+            if self.is_symlink():
                 raise OSError("Cannot call rmtree on a symbolic link")
+            elif self.is_junction():
+                raise OSError("Cannot call rmtree on a junction")
             results = self.walk(
                 on_error=on_error,
-                top_down=False,
+                top_down=False,  # Bottom-up so we rmdir() empty directories.
                 follow_symlinks=False)
             for dirpath, dirnames, filenames in results:
                 for name in filenames:
