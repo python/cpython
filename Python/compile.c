@@ -77,14 +77,6 @@ typedef struct _PyCfgBuilder cfg_builder;
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
-/* Return true if loc1 starts after loc2 ends. */
-static inline bool
-location_is_after(location loc1, location loc2) {
-    return (loc1.lineno > loc2.end_lineno) ||
-            ((loc1.lineno == loc2.end_lineno) &&
-             (loc1.col_offset > loc2.end_col_offset));
-}
-
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef _PyJumpTargetLabel jump_target_label;
@@ -3067,7 +3059,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, loc, "'async for' outside async function");
     }
@@ -3847,14 +3839,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         PyTuple_SET_ITEM(names, i, Py_NewRef(alias->name));
     }
 
-    if (location_is_after(LOC(s), c->c_future.ff_location) &&
-        s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
-        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
-    {
-        Py_DECREF(names);
-        return compiler_error(c, LOC(s), "from __future__ imports must occur "
-                              "at the beginning of the file");
-    }
     ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
@@ -5798,7 +5782,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     }
     if (co == NULL) {
         goto error;
@@ -5942,7 +5926,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     assert(s->kind == AsyncWith_kind);
     if (IS_TOP_LEVEL_AWAIT(c)){
-        c->u->u_ste->ste_coroutine = 1;
+        assert(c->u->u_ste->ste_coroutine == 1);
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, loc, "'async with' outside async function");
     }

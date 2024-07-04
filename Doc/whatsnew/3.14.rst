@@ -89,8 +89,12 @@ Improved Modules
 ast
 ---
 
-Added :func:`ast.compare` for comparing two ASTs.
-(Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+* Added :func:`ast.compare` for comparing two ASTs.
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+
+* Add support for :func:`copy.replace` for AST nodes.
+
+  (Contributed by Bénédikt Tran in :gh:`121141`.)
 
 os
 --
@@ -143,6 +147,11 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
+  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
+  write new code.  The :mod:`subprocess` module is recommended instead.
+  (Contributed by Victor Stinner in :gh:`120743`.)
 
 
 Removed
@@ -300,6 +309,12 @@ Porting to Python 3.14
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
 Build Changes
 =============
