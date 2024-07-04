@@ -15,20 +15,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
-   /* locals */
-    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
-    /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-#ifdef Py_GIL_DISABLED
-        if (PyStackRef_IsDeferred(locals[i]) &&
-            (visit == _Py_visit_decref || visit == _Py_visit_decref_unreachable)) {
-            continue;
-        }
-#endif
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
-    }
-    return 0;
+    return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
 PyFrameObject *
