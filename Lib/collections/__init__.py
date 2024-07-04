@@ -327,15 +327,16 @@ class OrderedDict(dict):
         if isinstance(other, OrderedDict):
             if not dict.__eq__(self, other):
                 return False
-            state_a, count_a = self.__state, len(self)
-            root_a, curr_a = self.__root, self.__root.next
-            state_b, count_b = other.__state, len(other)
-            root_b, curr_b = other.__root, other.__root.next
-            while True:
-                if curr_a is root_a and curr_b is root_b:
-                    return True
-                if curr_a is root_a or curr_b is root_b:
-                    return False
+
+            count_a, count_b = len(self), len(other)
+            if count_a != count_b:
+                return False
+
+            state_a, state_b = self.__state, other.__state
+            root_a, root_b = self.__root, other.__root
+            curr_a, curr_b = root_a.next, root_b.next
+
+            while (curr_a is not root_a and curr_b is not root_b):
                 # With the C implementation, calling '==' might have side
                 # effects that would end in segmentation faults, thus the
                 # state and size of the operands need to be checked.
@@ -348,6 +349,9 @@ class OrderedDict(dict):
                 elif not res:
                     return False
                 curr_a, curr_b = curr_a.next, curr_b.next
+            # we stopped simultaneously (size was unchanged)
+            assert curr_a is root_a and curr_b is root_b
+            return True
         return dict.__eq__(self, other)
 
     def __ior__(self, other):
