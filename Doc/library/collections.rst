@@ -1173,6 +1173,7 @@ reverse iteration using :func:`reversed`.
 
 Equality tests between :class:`OrderedDict` objects are order-sensitive
 and are roughly equivalent to ``list(od1.items())==list(od2.items())``.
+
 Equality tests between :class:`OrderedDict` objects and other
 :class:`~collections.abc.Mapping` objects are order-insensitive like regular
 dictionaries.  This allows :class:`OrderedDict` objects to be substituted
@@ -1188,7 +1189,11 @@ anywhere a regular dictionary is used.
    method.
 
 .. versionchanged:: 3.9
-    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+   Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
+.. versionchanged:: 3.14
+   Mutating :class:`OrderedDict` objects during an equality comparison raises
+   a :exc:`RuntimeError`.
 
 
 :class:`OrderedDict` Examples and Recipes
