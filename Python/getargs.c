@@ -54,6 +54,7 @@ static const char *converttuple(PyObject *, const char **, va_list *, int,
                                 int *, char *, size_t, freelist_t *);
 static const char *convertsimple(PyObject *, const char **, va_list *, int,
                                  char *, size_t, freelist_t *);
+static const char * converterr(int, const char *, PyObject *, char *, size_t);
 static Py_ssize_t convertbuffer(PyObject *, const void **p, const char **);
 static int getbuffer(PyObject *, Py_buffer *, const char**);
 
@@ -467,6 +468,8 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     int i;
     Py_ssize_t len;
 
+    assert(*format == '(');
+    format++;
     for (;;) {
         int c = *format++;
         if (c == '(') {
@@ -475,8 +478,12 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             level++;
         }
         else if (c == ')') {
-            if (level == 0)
+            if (level == 0) {
+                if (*format == '?') {
+                    flags |= FLAG_NULLABLE;
+                }
                 break;
+            }
             level--;
         }
         else if (c == ':' || c == ';' || c == '\0')
@@ -485,6 +492,17 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             n++;
     }
 
+    if (arg == Py_None && (flags & FLAG_NULLABLE)) {
+        format = *p_format;
+        const char *msg = skipitem(&format, p_va, flags);
+        if (msg == NULL) {
+            *p_format = format;
+        }
+        else {
+            levels[0] = 0;
+        }
+        return msg;
+    }
     if (!PySequence_Check(arg) || PyBytes_Check(arg)) {
         levels[0] = 0;
         PyOS_snprintf(msgbuf, bufsize,
@@ -505,7 +523,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     }
 
     flags &= ~FLAG_NULLABLE;
-    format = *p_format;
+    format = *p_format + 1;
     for (i = 0; i < n; i++) {
         const char *msg;
         PyObject *item;
@@ -527,6 +545,10 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
     }
 
+    format++;
+    if (*format == '?') {
+        format++;
+    }
     *p_format = format;
     return NULL;
 }
@@ -542,11 +564,8 @@ convertitem(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     const char *format = *p_format;
 
     if (*format == '(' /* ')' */) {
-        format++;
         msg = converttuple(arg, &format, p_va, flags, levels, msgbuf,
                            bufsize, freelist);
-        if (msg == NULL)
-            format++;
     }
     else {
         msg = convertsimple(arg, &format, p_va, flags,

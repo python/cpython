@@ -1401,9 +1401,8 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         check('Y', [], 'bytearray')
         check('Y?', [], 'bytearray or None')
         check('(OO)', 42, '2-item sequence', 'int')
+        check('(OO)?', 42, '2-item sequence or None', 'int')
         check('(OO)', (1, 2, 3), 'sequence of length 2', '3')
-
-        # TODO: Not implemented: (...)?
 
     def test_nullable(self):
         parse = _testcapi.parse_tuple_and_keywords
@@ -1455,6 +1454,12 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         check('Y', bytearray(b'bytearray'))
         check('O', object, allows_none=True)
 
+        check('(OO)', (1, 2))
+        self.assertEqual(parse((((1, 2), 3),), {}, '((OO)?O)', ['a']), (1, 2, 3))
+        self.assertEqual(parse(((None, 3),), {}, '((OO)?O)', ['a']), (NULL, NULL, 3))
+        self.assertEqual(parse((((1, 2), 3),), {}, '((OO)O)', ['a']), (1, 2, 3))
+        self.assertRaises(TypeError, parse, ((None, 3),), {}, '((OO)O)', ['a'])
+
         parse((None,), {}, 'es?', ['a'])
         parse((None,), {}, 'es#?', ['a'])
         parse((None,), {}, 'et?', ['a'])
@@ -1463,7 +1468,6 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         parse((None,), {}, 'O&?', ['a'])
 
         # TODO: More tests for es?, es#?, et?, et#?, O!, O&
-        # TODO: Not implemented: (...)?
 
     @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
     def test_gh_119213(self):
