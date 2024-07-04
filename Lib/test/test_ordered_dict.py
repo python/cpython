@@ -5,10 +5,12 @@ import gc
 import operator
 import pickle
 import re
+import types
 from random import randrange, shuffle
 import struct
 import sys
 import unittest
+import unittest.mock
 import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
@@ -620,17 +622,26 @@ class OrderedDictTests:
             def __eq__(self, other):
                 nonlocal count
                 if count == 1:
-                    l.clear()
+                    lhs.clear()
+                    rhs.clear()
                 count += 1
                 return True
             def __hash__(self):
-                return 3
+                return -1
 
-        l0, r0 = ChangeExternSize(), ChangeExternSize()
-        l = self.OrderedDict({l0: 1, 2: 3})
-        r = self.OrderedDict({r0: 1, 2: 3})
+        lhs = self.OrderedDict(dict.fromkeys((0, ChangeExternSize())))
+        rhs = self.OrderedDict(dict.fromkeys((0, ChangeExternSize())))
         msg = re.escape("OrderedDict changed size during iteration")
-        self.assertRaisesRegex(RuntimeError, msg, operator.eq, l, r)
+        self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        # There are two calls to ChangeExternSize.__eq__: one when doing
+        # value comparisons (without order) by dict.__eq__ and one when
+        # doing key comparisons (for the order).
+        self.assertEqual(count, 2)
+        with unittest.mock.patch.object(ChangeExternSize, '__eq__') as fn:
+            self.assertDictEqual(dict(lhs), {})
+            fn.assert_not_called()
+            self.assertDictEqual(dict(rhs), {})
+            fn.assert_not_called()
 
     def test_issue119004_change_item(self):
         count = 0
@@ -638,19 +649,28 @@ class OrderedDictTests:
             def __eq__(self, other):
                 nonlocal count
                 if count == 1:
-                    # change the layout of the underlying linked list
-                    del lhs[0]
-                    lhs[object()] = object()
+                    # change the layout of the underlying linked list,
+                    # but only in the second call (not in the first call)
+                    del lhs[self], rhs[other]
+                    lhs['a'] = rhs['b'] = 'c'
                 count += 1
                 return True
             def __hash__(self):
-                return 3
+                return -1
 
-        l1, r1 = ChangeExternItem(), ChangeExternItem()
-        lhs = self.OrderedDict(dict.fromkeys((0, l1)))
-        rhs = self.OrderedDict(dict.fromkeys((0, r1)))
+        lhs = self.OrderedDict(dict.fromkeys((0, ChangeExternItem())))
+        rhs = self.OrderedDict(dict.fromkeys((0, ChangeExternItem())))
         msg = re.escape("OrderedDict mutated during iteration")
         self.assertRaisesRegex(RuntimeError, msg, operator.eq, lhs, rhs)
+        # There are two calls to ChangeExternItem.__eq__: one when doing
+        # value comparisons (without order) by dict.__eq__ and one when
+        # doing key comparisons (for the order).
+        self.assertEqual(count, 2)
+        with unittest.mock.patch.object(ChangeExternItem, '__eq__') as fn:
+            self.assertDictEqual(dict(lhs), {0: None, 'a': 'c'})
+            fn.assert_not_called()
+            self.assertDictEqual(dict(rhs), {0: None, 'b': 'c'})
+            fn.assert_not_called()
 
     # Direct use of dict methods
 
