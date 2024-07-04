@@ -5,7 +5,6 @@ import gc
 import operator
 import pickle
 import re
-import types
 from random import randrange, shuffle
 import struct
 import sys
