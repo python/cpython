@@ -265,8 +265,7 @@ def clear_caches():
             f()
 
         import inspect
-        abs_classes = [getattr(typing, attr) for attr in typing.__all__]
-        abs_classes = filter(inspect.isabstract, abs_classes)
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
         for abc in abs_classes:
             for obj in abc.__subclasses__() + [abc]:
                 obj._abc_caches_clear()
