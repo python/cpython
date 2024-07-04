@@ -1496,6 +1496,97 @@ read_failed:
     return ix;
 }
 
+Py_ssize_t
+_Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+{
+    PyDictKeysObject *dk;
+    DictKeysKind kind;
+    Py_ssize_t ix;
+
+    ensure_shared_on_read(mp);
+
+    dk = _Py_atomic_load_ptr(&mp->ma_keys);
+    kind = dk->dk_kind;
+
+    if (kind != DICT_KEYS_GENERAL) {
+        if (PyUnicode_CheckExact(key)) {
+            ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        }
+        else {
+            ix = unicodekeys_lookup_generic_threadsafe(mp, dk, key, hash);
+        }
+        if (ix == DKIX_KEY_CHANGED) {
+            goto read_failed;
+        }
+
+        if (ix >= 0) {
+            if (kind == DICT_KEYS_SPLIT) {
+                PyDictValues *values = _Py_atomic_load_ptr(&mp->ma_values);
+                if (values == NULL)
+                    goto read_failed;
+
+                uint8_t capacity = _Py_atomic_load_uint8_relaxed(&values->capacity);
+                if (ix >= (Py_ssize_t)capacity)
+                    goto read_failed;
+
+                *value_addr = PyStackRef_FromPyObjectNew(values->values[ix]);
+                if (PyStackRef_IsNull(*value_addr)) {
+                    goto read_failed;
+                }
+
+                if (values != _Py_atomic_load_ptr(&mp->ma_values)) {
+                    goto read_failed;
+                }
+            }
+            else {
+                *value_addr = PyStackRef_FromPyObjectNew(DK_UNICODE_ENTRIES(dk)[ix].me_value);
+                if (PyStackRef_IsNull(*value_addr)) {
+                    goto read_failed;
+                }
+
+                if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
+                    goto read_failed;
+                }
+            }
+        }
+        else {
+            *value_addr = PyStackRef_NULL;
+        }
+    }
+    else {
+        ix = dictkeys_generic_lookup_threadsafe(mp, dk, key, hash);
+        if (ix == DKIX_KEY_CHANGED) {
+            goto read_failed;
+        }
+        if (ix >= 0) {
+            *value_addr = PyStackRef_FromPyObjectNew(DK_ENTRIES(dk)[ix].me_value);
+            if (PyStackRef_IsNull(*value_addr)) {
+                goto read_failed;
+            }
+            if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
+                goto read_failed;
+            }
+        }
+        else {
+            *value_addr = PyStackRef_NULL;
+        }
+    }
+
+    return ix;
+
+    PyObject *value;
+read_failed:
+    // In addition to the normal races of the dict being modified the _Py_TryXGetRef
+    // can all fail if they don't yet have a shared ref count.  That can happen here
+    // or in the *_lookup_* helper.  In that case we need to take the lock to avoid
+    // mutation and do a normal incref which will make them shared.
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    ix = _Py_dict_lookup(mp, key, hash, &value);
+    *value_addr = value == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectNew(value);
+    Py_END_CRITICAL_SECTION();
+    return ix;
+}
+
 #else   // Py_GIL_DISABLED
 
 Py_ssize_t
@@ -1503,6 +1594,15 @@ _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyOb
 {
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, value_addr);
     Py_XNewRef(*value_addr);
+    return ix;
+}
+
+Py_ssize_t
+_Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+{
+    PyObject *val;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
+    *value_addr = PyStackRef_FromPyObjectNew(val);
     return ix;
 }
 
@@ -2391,31 +2491,31 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
  * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
  * exist. Return the value if the key exists.
  *
- * Returns a new reference.
+ * Stores a new stack reference.
  */
-PyObject *
-_PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
+void
+_PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObject *key, _PyStackRef *res)
 {
     Py_ssize_t ix;
     Py_hash_t hash;
-    PyObject *value;
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        return NULL;
+        *res = PyStackRef_NULL;
     }
 
     /* namespace 1: globals */
-    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
-    if (ix == DKIX_ERROR)
-        return NULL;
-    if (ix != DKIX_EMPTY && value != NULL)
-        return value;
+    ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
+    if (ix == DKIX_ERROR) {
+        *res = PyStackRef_NULL;
+    }
+    if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
+        return;
+    }
 
     /* namespace 2: builtins */
-    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
-    assert(ix >= 0 || value == NULL);
-    return value;
+    ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
+    assert(ix >= 0 || PyStackRef_IsNull(*res));
 }
 
 /* Consumes references to key and value */
