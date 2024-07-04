@@ -1587,4 +1587,4 @@ code.
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
 .. versionadded:: 3.11 ``_USE_VFORK``
 .. versionchanged:: 3.14 ``_USE_VFORK``
-   ``_USE_VFORK`` has no effect
+   has no effect
