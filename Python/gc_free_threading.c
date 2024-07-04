@@ -890,7 +890,6 @@ visit_decref_unreachable(PyObject *op, void *data)
     return 0;
 }
 
-
 int
 _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
@@ -899,12 +898,10 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-#ifdef Py_GIL_DISABLED
         if (PyStackRef_IsDeferred(locals[i]) &&
             (visit == visit_decref || visit == visit_decref_unreachable)) {
             continue;
         }
-#endif
         Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
     }
     return 0;
