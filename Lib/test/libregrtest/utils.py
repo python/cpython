@@ -264,6 +264,13 @@ def clear_caches():
         for f in typing._cleanups:
             f()
 
+        import inspect
+        abs_classes = [getattr(typing, attr) for attr in typing.__all__]
+        abs_classes = filter(inspect.isabstract, abs_classes)
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
+
     try:
         fractions = sys.modules['fractions']
     except KeyError:
