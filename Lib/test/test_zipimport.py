@@ -605,10 +605,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi._get_files()), sorted([*files, *extra_files]))
         # Check that the file information remains accurate after reloading
         zi.invalidate_caches()
-        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi._get_files()), sorted([*files, *extra_files]))
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -620,7 +620,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
         # Check that we can detect the new file after invalidating the cache
         zi.invalidate_caches()
-        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi._get_files()), sorted([*files, *extra_files]))
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
@@ -648,10 +648,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(list(zi._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi._get_files()), sorted([*files, *extra_files]))
         # Zipimporter for the same path.
         zi2 = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(list(zi2._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi2._get_files()), sorted([*files, *extra_files]))
         # Add a new file to the ZIP archive to make the cache wrong.
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -664,7 +664,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Invalidate the cache of the first zipimporter.
         zi.invalidate_caches()
         # Check that the second zipimporter detects the new file and isn't using a stale cache.
-        self.assertEqual(list(zi2._get_files()), [*files, *extra_files])
+        self.assertEqual(sorted(zi2._get_files()), sorted([*files, *extra_files]))
         spec = zi2.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)

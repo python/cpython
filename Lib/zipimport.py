@@ -556,12 +556,20 @@ def _read_directory(archive):
         finally:
             fp.seek(start_offset)
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
+
+    # Add implicit directories.
     for name in list(files):
-        while (i := name.rstrip(path_sep).rfind(path_sep)) >= 0:
+        while True:
+            i = name.rstrip(path_sep).rfind(path_sep)
+            if i < 0:
+                break
             name = name[:i + 1]
             if name in files:
                 break
             files[name] = None
+            count += 1
+    _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
+                                count, archive)
     return files
 
 # During bootstrap, we may need to load the encodings
