@@ -133,6 +133,10 @@ Using :func:`new` with an algorithm name:
    >>> h.hexdigest()
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
+.. warning::
+
+   :func:`md5` and :func:`sha1` algorithms are considered insecure and may
+   be removed from the python interpreter. Consider :func:`sha256` instead.
 
 .. function:: md5([, data], *, usedforsecurity=True)
 .. function:: sha1([, data], *, usedforsecurity=True)
