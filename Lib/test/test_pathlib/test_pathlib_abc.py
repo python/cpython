@@ -1591,6 +1591,11 @@ class DummyPathTest(DummyPurePathTest):
             func(*args, **kwargs)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
+    def assertNotADirectory(self, func, *args, **kwargs):
+        with self.assertRaises(NotADirectoryError) as cm:
+            func(*args, **kwargs)
+        self.assertEqual(cm.exception.errno, errno.ENOTDIR)
+
     def assertEqualNormCase(self, path_a, path_b):
         normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))

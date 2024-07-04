@@ -1627,12 +1627,17 @@ example because the path doesn't exist).
    If *missing_ok* is false (the default), this method propagates any
    :exc:`OSError` from the operating system, including :exc:`FileNotFoundError`.
 
-   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
-   ignored (same behavior as the POSIX ``rm -f`` command), any other
+   If *missing_ok* is true, this shows similar behavior to the POSIX ``rm -f``
+   command and any :exc:`FileNotFoundError` or :exc:`NotADirectoryError`
+   exceptions will be ignored. This means that the file does not exist after
+   execution, but cannot guarantee that the file did exist before. Any other
    :exc:`OSError` which is encountered will continue to be propogated.
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
+
+   .. versionchanged:: 3.??
+      The *missing_ok* parameter will also ignore :exc:`NotADirectoryError`
 
 
 .. _pathlib-pattern-language:

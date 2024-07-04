@@ -775,6 +775,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFileNotFound(p.unlink)
         p.unlink(missing_ok=True)
 
+    def test_unlink_missing_ok_intermediate_file(self):
+        p = self.cls(self.base) / 'fileAAA'
+        p.touch()
+        p = p / 'fileBBB'
+        self.assertNotADirectory(p.unlink)
+        p.unlink(missing_ok=True)
+
     def test_rmdir(self):
         p = self.cls(self.base) / 'dirA'
         for q in p.iterdir():

@@ -793,7 +793,7 @@ class Path(PathBase, PurePath):
         """
         try:
             os.unlink(self)
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             if not missing_ok:
                 raise
 
