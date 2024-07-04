@@ -70,6 +70,11 @@
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
+#define ASYNC_WITH_OUTISDE_ASYNC_FUNC \
+"'async with' outside async function"
+
+#define ASYNC_FOR_OUTISDE_ASYNC_FUNC \
+"'async for' outside async function"
 
 #define LOCATION(x) SRC_LOCATION_FROM_AST(x)
 
@@ -251,6 +256,7 @@ static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
+static int symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_SourceLocation loc);
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
 /* For debugging purposes only */
@@ -2048,11 +2054,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case AsyncWith_kind:
         maybe_set_ste_coroutine_for_module(st, s);
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
         VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
         break;
     case AsyncFor_kind:
         maybe_set_ste_coroutine_for_module(st, s);
+        if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTISDE_ASYNC_FUNC, LOCATION(s))) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, s->v.AsyncFor.target);
         VISIT(st, expr, s->v.AsyncFor.iter);
         VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
@@ -2863,6 +2875,16 @@ symtable_raise_if_comprehension_block(struct symtable *st, expr_ty e) {
             "'yield' inside generator expression");
     SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
     VISIT_QUIT(st, 0);
+}
+
+static int
+symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_SourceLocation loc) {
+    if (!st->st_cur->ste_coroutine) {
+        PyErr_SetString(PyExc_SyntaxError, msg);
+        SET_ERROR_LOCATION(st->st_filename, loc);
+        return 0;
+    }
+    return 1;
 }
 
 struct symtable *
