@@ -1094,6 +1094,12 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
         return NULL;
     }
 
+    /* Sometimes a large file is truncated. While estimated_size is used as a
+    estimate, that it is much larger than the actual size can result in a
+    significant over allocation and sometimes a MemoryError / running out of
+    memory. */
+    self->estimated_size = pos;
+
     return posobj;
 }
 #endif /* HAVE_FTRUNCATE */
