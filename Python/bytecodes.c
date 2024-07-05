@@ -1468,8 +1468,11 @@ dummy_func(
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *value = PyStackRef_AsPyObjectBorrow(v);
-            int err = PyDict_SetItem(globals, name, value);
-            if (err < 0) {
+            int err;
+            if (PyDict_Check(globals)) {
+                err = PyDict_SetItem(globals, name, value);
+            }
+            else {
                 err = PyObject_SetItem(globals, name, value);
             }
             DECREF_INPUTS();
@@ -1479,18 +1482,20 @@ dummy_func(
         inst(DELETE_GLOBAL, (--)) {
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(globals, name, NULL);
-            if (err < 0) {
+            int err;
+            if (PyDict_Check(globals)) {
+                err = PyDict_Pop(globals, name, NULL);
+            else {
                 err = PyMapping_DelItem(globals, name);
-                // Can't use ERROR_IF here.
-                if (err < 0) {
-                    if (_PyErr_Occurred(tstate) &&
-                        _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                                  NAME_ERROR_MSG, name);
-                    }
-                    ERROR_NO_POP();
+            }
+            // Can't use ERROR_IF here.
+            if (err < 0) {
+                if (_PyErr_Occurred(tstate) &&
+                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              NAME_ERROR_MSG, name);
                 }
+                ERROR_NO_POP();
             }
         }
 
@@ -1561,23 +1566,23 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
+                if (PyDict_Check(globals)) {
+                    if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
+                        ERROR_NO_POP();
+                    }
+                }
+                else if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
                         ERROR_NO_POP();
                     }
                     if (v_o == NULL) {
-                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
-                            ERROR_NO_POP();
-                        }
-                        if (v_o == NULL) {
-                            _PyEval_FormatExcCheckArg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            ERROR_NO_POP();
-                        }
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        ERROR_NO_POP();
                     }
                 }
             }
