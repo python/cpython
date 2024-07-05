@@ -793,7 +793,10 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p = self.cls(self.base) / 'fileAAA'
         p.touch()
         p = p / 'fileBBB'
-        self.assertNotADirectory(p.unlink)
+        if sys.platform.startswith("win"):
+            self.assertFileNotFound(p.unlink)
+        else:
+            self.assertNotADirectory(p.unlink)
         p.unlink(missing_ok=True)
 
     def test_rmdir(self):
