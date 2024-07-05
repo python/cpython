@@ -167,7 +167,7 @@ def skip(reason):
 
 def skipIf(condition, reason):
     """
-    Skip a test if the condition is true.
+    Skip a test if the condition is True.
     """
     if condition:
         return skip(reason)
@@ -175,7 +175,7 @@ def skipIf(condition, reason):
 
 def skipUnless(condition, reason):
     """
-    Skip a test unless the condition is true.
+    Skip a test unless the condition is True.
     """
     if not condition:
         return skip(reason)
@@ -741,15 +741,15 @@ class TestCase(object):
         raise self.failureException(msg)
 
     def assertFalse(self, expr, msg=None):
-        """Check that the expression is false."""
+        """Check that the expression is False."""
         if expr:
-            msg = self._formatMessage(msg, "%s is not false" % safe_repr(expr))
+            msg = self._formatMessage(msg, "%s is not False" % safe_repr(expr))
             raise self.failureException(msg)
 
     def assertTrue(self, expr, msg=None):
-        """Check that the expression is true."""
+        """Check that the expression is True."""
         if not expr:
-            msg = self._formatMessage(msg, "%s is not true" % safe_repr(expr))
+            msg = self._formatMessage(msg, "%s is not True" % safe_repr(expr))
             raise self.failureException(msg)
 
     def _formatMessage(self, msg, standardMsg):
