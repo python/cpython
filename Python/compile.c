@@ -558,8 +558,8 @@ compiler_unit_free(struct compiler_unit *u)
     PyMem_Free(u);
 }
 
-static struct compiler_unit *
-get_class_compiler_unit(struct compiler *c)
+static int
+compiler_add_static_attribute_to_class(struct compiler *c, PyObject *attr)
 {
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
@@ -568,10 +568,12 @@ get_class_compiler_unit(struct compiler *c)
                                                               capsule, CAPSULE_NAME);
         assert(u);
         if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
-            return u;
+            assert(u->u_static_attributes);
+            RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, attr));
+            break;
         }
     }
-    return NULL;
+    return SUCCESS;
 }
 
 static int
@@ -6203,13 +6205,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         if (e->v.Attribute.value->kind == Name_kind &&
             _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
         {
-            struct compiler_unit *class_u = get_class_compiler_unit(c);
-            if (class_u != NULL) {
-                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
-                assert(class_u->u_static_attributes);
-                RETURN_IF_ERROR(
-                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
-            }
+            RETURN_IF_ERROR(compiler_add_static_attribute_to_class(c, e->v.Attribute.attr));
         }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
