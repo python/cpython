@@ -1524,11 +1524,10 @@
             int err = PyMapping_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                JUMP_TO_ERROR();
-            }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                }
                 JUMP_TO_ERROR();
             }
             break;
