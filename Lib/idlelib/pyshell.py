@@ -1362,7 +1362,7 @@ class PyShell(OutputWindow):
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
 
-        from idlelib.stackviewer import StackBrowser
+        from idlelib.stackbrowser import StackBrowser
         try:
             StackBrowser(self.root, sys.last_exc, self.flist)
         except:

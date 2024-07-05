@@ -320,7 +320,7 @@ _sidebar_number_scrolling_spec = {
     }
 
 _stackbrowser_spec = {
-    'file': 'stackviewer',
+    'file': 'stackbrowser',
     'kwds': {},
     'msg': "A stacktrace for a NameError exception.\n"
            "Should have NameError and 1 traceback line."

@@ -1,5 +1,3 @@
-# Rename to stackbrowser or possibly consolidate with browser.
-
 import linecache
 import os
 
@@ -64,10 +62,9 @@ class FrameTreeItem(TreeItem):
         sourceline = linecache.getline(filename, lineno)
         sourceline = sourceline.strip()
         if funcname in ("?", "", None):
-            item = "%s, line %d: %s" % (modname, lineno, sourceline)
+            item = f"{modname}, line {lineno}: {sourceline}"
         else:
-            item = "%s.%s(...), line %d: %s" % (modname, funcname,
-                                             lineno, sourceline)
+            item = f"{modname}.{funcname}(...), line {lineno}: {sourceline}"
         return item
 
     def GetSubList(self):
@@ -116,7 +113,7 @@ class VariablesTreeItem(ObjectTreeItem):
 def _stackbrowser(parent):  # htest #
     from idlelib.pyshell import PyShellFileList
     top = tk.Toplevel(parent)
-    top.title("Test StackViewer")
+    top.title("Test StackBrowser")
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("+%d+%d" % (x + 50, y + 175))
     flist = PyShellFileList(top)
@@ -128,7 +125,7 @@ def _stackbrowser(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_stackviewer', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_stackbrowser', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_stackbrowser)

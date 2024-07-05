@@ -1,8 +1,15 @@
-What's New in IDLE 3.13.0
-(since 3.12.0)
-Released on 2024-10-xx
+What's New in IDLE 3.14.0
+(since 3.14.0)
+Released on 2025-10-01
 =========================
 
+gh-112695: Rename stackviewer module to stackbrowser.
+
+
+What's New in IDLE 3.13.0
+(since 3.12.0)
+Released on 2024-10-01
+=========================
 
 gh-78955: Use user-selected color theme for Help => IDLE Doc.
 
