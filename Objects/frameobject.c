@@ -2105,17 +2105,17 @@ PyFrame_GetGenerator(PyFrameObject *frame)
 PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
-    PyObject *builtins = PyDict_GetItemWithError(globals, &_Py_ID(__builtins__));
-    if (builtins) {
+    PyObject *builtins;
+    int has_builtins = PyMapping_GetOptionalItem(globals, &_Py_ID(__builtins__), &builtins);
+    if (has_builtins < 0) {
+        return NULL;
+    }
+    if (has_builtins) {
         if (PyModule_Check(builtins)) {
             builtins = _PyModule_GetDict(builtins);
             assert(builtins != NULL);
         }
         return builtins;
     }
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
     return _PyEval_GetBuiltins(tstate);
 }

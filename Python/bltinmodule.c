@@ -963,10 +963,8 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
     }
-    if (globals != Py_None && !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
-            "globals must be a real dict; try eval(expr, {}, mapping)"
-            : "globals must be a dict");
+    if (globals != Py_None && !PyMapping_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError, "globals must be a mapping");
         return NULL;
     }
     if (globals == Py_None) {
@@ -993,9 +991,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         goto error;
     }
 
-    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
+    int r = PyMapping_HasKeyStringWithError(globals, "__builtins__");
     if (r == 0) {
-        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        r = PyMapping_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
     }
     if (r < 0) {
         goto error;
@@ -1084,8 +1082,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(locals);
     }
 
-    if (!PyDict_Check(globals)) {
-        PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
+    if (!PyMapping_Check(globals)) {
+        PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
         goto error;
     }
@@ -1095,9 +1093,9 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         goto error;
     }
-    int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
+    int r = PyMapping_HasKeyString(globals, "__builtins__");
     if (r == 0) {
-        r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        r = PyMapping_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
     }
     if (r < 0) {
         goto error;

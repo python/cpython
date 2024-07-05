@@ -1466,14 +1466,14 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err = PyObject_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
+            int err = PyMapping_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
             if (err < 0) {
                 ERROR_NO_POP();
@@ -1551,7 +1551,7 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
+                if (PyMapping_GetItemRef(GLOBALS(), name, &v_o) < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {

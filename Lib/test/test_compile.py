@@ -97,7 +97,7 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(m.results, ('z', g))
         exec('z = locals()', g, m)
         self.assertEqual(m.results, ('z', m))
-        self.assertRaises(TypeError, exec, 'z = b', m)
+        self.assertRaises(NameError, exec, 'z = b', m)
 
         class A:
             "Non-mapping"

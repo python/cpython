@@ -103,7 +103,7 @@ PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
     PyObject *module;
-    if (PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__), &module) < 0) {
+    if (PyMapping_GetOptionalItemString(constr->fc_globals, "__name__", &module) < 0) {
         return NULL;
     }
 
@@ -174,7 +174,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     // __module__: Use globals['__name__'] if it exists, or NULL.
     PyObject *module;
     PyObject *builtins = NULL;
-    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
+    if (PyMapping_GetOptionalItemString(globals, "__name__", &module) < 0) {
         goto error;
     }
 

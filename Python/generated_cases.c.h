@@ -4985,7 +4985,7 @@
                 goto error;
             }
             if (v_o == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v_o) < 0) {
+                if (PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0) {
                     goto error;
                 }
                 if (v_o == NULL) {
