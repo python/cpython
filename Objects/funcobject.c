@@ -103,7 +103,16 @@ PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
     PyObject *module;
-    if (PyMapping_GetOptionalItemString(constr->fc_globals, "__name__", &module) < 0) {
+    int r;
+    if (PyDict_Check(constr->fc_globals)) {
+        r = PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__),
+                              &module);
+    }
+    else {
+        r = PyMapping_GetOptionalItem(constr->fc_globals,  &_Py_ID(__name__),
+                                      &module);
+    }
+    if (r < 0) {
         return NULL;
     }
 
@@ -141,7 +150,7 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyDict_Check(globals) || PyMapping_Check(globals));
     Py_INCREF(globals);
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -174,7 +183,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     // __module__: Use globals['__name__'] if it exists, or NULL.
     PyObject *module;
     PyObject *builtins = NULL;
-    if (PyMapping_GetOptionalItemString(globals, "__name__", &module) < 0) {
+    int r;
+    if (PyDict_Check(globals)) {
+        r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
+    }
+    else {
+        r = PyMapping_GetOptionalItemString(globals, "__name__", &module);
+    }
+    if (r < 0) {
         goto error;
     }
 
