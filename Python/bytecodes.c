@@ -1465,23 +1465,32 @@ dummy_func(
         }
 
         inst(STORE_GLOBAL, (v --)) {
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int err = PyDict_SetItem(globals, name, value);
+            if (err < 0) {
+                err = PyObject_SetItem(globals, name, value);
+            }
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
         inst(DELETE_GLOBAL, (--)) {
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyMapping_DelItem(GLOBALS(), name);
-            // Can't use ERROR_IF here.
+            int err = PyDict_Pop(globals, name, NULL);
             if (err < 0) {
-                if (_PyErr_Occurred(tstate) &&
-                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
+                err = PyMapping_DelItem(globals, name);
+                // Can't use ERROR_IF here.
+                if (err < 0) {
+                    if (_PyErr_Occurred(tstate) &&
+                        _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                                  NAME_ERROR_MSG, name);
+                    }
+                    ERROR_NO_POP();
                 }
-                ERROR_NO_POP();
             }
         }
 
@@ -1540,6 +1549,7 @@ dummy_func(
 
         inst(LOAD_NAME, (-- v)) {
             PyObject *v_o;
+            PyObject *globals = GLOBALS();
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1551,18 +1561,23 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0) {
+                if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
+                    if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
                         ERROR_NO_POP();
                     }
                     if (v_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                                    tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG, name);
-                        ERROR_NO_POP();
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
+                            ERROR_NO_POP();
+                        }
+                        if (v_o == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            ERROR_NO_POP();
+                        }
                     }
                 }
             }

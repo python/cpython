@@ -2777,16 +2777,20 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyMapping_DelItem(GLOBALS(), name);
-            // Can't use ERROR_IF here.
+            int err = PyDict_Pop(globals, name, NULL);
             if (err < 0) {
-                if (_PyErr_Occurred(tstate) &&
-                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                        NAME_ERROR_MSG, name);
+                err = PyMapping_DelItem(globals, name);
+                // Can't use ERROR_IF here.
+                if (err < 0) {
+                    if (_PyErr_Occurred(tstate) &&
+                        _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                    }
+                    goto error;
                 }
-                goto error;
             }
             DISPATCH();
         }
@@ -4974,6 +4978,7 @@
             INSTRUCTION_STATS(LOAD_NAME);
             _PyStackRef v;
             PyObject *v_o;
+            PyObject *globals = GLOBALS();
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4985,18 +4990,23 @@
                 goto error;
             }
             if (v_o == NULL) {
-                if (PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0) {
+                if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
                     goto error;
                 }
                 if (v_o == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
+                    if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
                         goto error;
                     }
                     if (v_o == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        goto error;
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0) {
+                            goto error;
+                        }
+                        if (v_o == NULL) {
+                            _PyEval_FormatExcCheckArg(
+                                tstate, PyExc_NameError,
+                                NAME_ERROR_MSG, name);
+                            goto error;
+                        }
                     }
                 }
             }
@@ -6182,8 +6192,13 @@
             INSTRUCTION_STATS(STORE_GLOBAL);
             _PyStackRef v;
             v = stack_pointer[-1];
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int err = PyDict_SetItem(globals, name, value);
+            if (err < 0) {
+                err = PyObject_SetItem(globals, name, value);
+            }
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;

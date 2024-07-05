@@ -1509,8 +1509,13 @@
             _PyStackRef v;
             oparg = CURRENT_OPARG();
             v = stack_pointer[-1];
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int err = PyDict_SetItem(globals, name, value);
+            if (err < 0) {
+                err = PyObject_SetItem(globals, name, value);
+            }
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1520,16 +1525,20 @@
 
         case _DELETE_GLOBAL: {
             oparg = CURRENT_OPARG();
+            PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyMapping_DelItem(GLOBALS(), name);
-            // Can't use ERROR_IF here.
+            int err = PyDict_Pop(globals, name, NULL);
             if (err < 0) {
-                if (_PyErr_Occurred(tstate) &&
-                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                        NAME_ERROR_MSG, name);
+                err = PyMapping_DelItem(globals, name);
+                // Can't use ERROR_IF here.
+                if (err < 0) {
+                    if (_PyErr_Occurred(tstate) &&
+                        _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                    }
+                    JUMP_TO_ERROR();
                 }
-                JUMP_TO_ERROR();
             }
             break;
         }
