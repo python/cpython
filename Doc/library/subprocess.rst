@@ -1561,7 +1561,6 @@ runtime):
       Module which provides function to parse and escape command lines.
 
 
-.. _disable_vfork:
 .. _disable_posix_spawn:
 
 Disabling use of ``posix_spawn()``
@@ -1574,11 +1573,10 @@ improves performance.
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
-   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
 
-It is safe to set these to false on any Python version. They will have no
-effect on older or newer versions when unsupported. Do not assume the attributes
-are available to read. Despite their names, a true value does not indicate the
+It is safe to set this to false on any Python version. It will have no
+effect on older or newer versions where unsupported. Do not assume the attributes
+are available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
@@ -1586,6 +1584,3 @@ reproduce the issue you were seeing. Link to that issue from a comment in your
 code.
 
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
-.. versionadded:: 3.11 ``_USE_VFORK``
-.. versionchanged:: 3.14 ``_USE_VFORK``
-   has no effect
