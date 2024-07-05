@@ -393,10 +393,13 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         is_pipe = False
+        page_size = 0
         if not _winapi:
             mode = os.fstat(handle).st_mode
             is_pipe = stat.S_ISFIFO(mode)
-        limit = 2 << 15 if is_pipe else remaining
+            if (is_pipe):
+                page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
+        limit = 16 * page_size if is_pipe else remaining
         while remaining > 0:
             to_read = min(limit, remaining)
             chunk = read(handle, to_read)
