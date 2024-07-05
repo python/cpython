@@ -1551,7 +1551,7 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (v_o == NULL) {
-                if (PyMapping_GetItemRef(GLOBALS(), name, &v_o) < 0) {
+                if (PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0) {
                     ERROR_NO_POP();
                 }
                 if (v_o == NULL) {
