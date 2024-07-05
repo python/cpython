@@ -1093,7 +1093,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         goto error;
     }
-    int r = PyMapping_HasKeyString(globals, "__builtins__");
+    int r = PyMapping_HasKeyStringWithError(globals, "__builtins__");
     if (r == 0) {
         r = PyMapping_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
     }
