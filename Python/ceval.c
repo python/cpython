@@ -623,6 +623,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
     PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
+    Py_DECREF(builtins);
     return res;
 }
 
@@ -1946,6 +1947,7 @@ fail:
     Py_XDECREF(kwnames);
     PyMem_Free(newargs);
     Py_DECREF(defaults);
+    Py_DECREF(builtins);
     return res;
 }
 

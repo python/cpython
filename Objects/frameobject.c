@@ -2112,13 +2112,11 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
         return NULL;
     }
     if (has_builtins) {
-        /* release reference right away since we mean to only borrow it */
-        Py_DECREF(builtins);
         if (PyModule_Check(builtins)) {
-            builtins = _PyModule_GetDict(builtins);
+            builtins = Py_XNewRef(_PyModule_GetDict(builtins));
             assert(builtins != NULL);
         }
         return builtins;
     }
-    return _PyEval_GetBuiltins(tstate);
+    return Py_NewRef(_PyEval_GetBuiltins(tstate));
 }
