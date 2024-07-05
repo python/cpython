@@ -1510,7 +1510,7 @@
             oparg = CURRENT_OPARG();
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err = PyObject_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1521,7 +1521,7 @@
         case _DELETE_GLOBAL: {
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
+            int err = PyMapping_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
             if (err < 0) {
                 JUMP_TO_ERROR();
