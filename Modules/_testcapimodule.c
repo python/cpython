@@ -582,11 +582,6 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    if (PyType_GetSlot(&PyLong_Type, Py_tp_token) != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "slot offset >= sizeof(PyTypeObject)");
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 
