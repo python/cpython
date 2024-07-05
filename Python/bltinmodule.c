@@ -2789,11 +2789,15 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 #endif
     for(;;) {
-        item = PyIter_Next(iter);
+        item = iternext(iter);
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_SETREF(result, NULL);
+                if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                    PyErr_Clear();
+                else {
+                    Py_SETREF(result, NULL);
+                }
             }
             break;
         }
