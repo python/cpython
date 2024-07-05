@@ -481,6 +481,7 @@ pytype_getbasebytoken(PyObject *self, PyObject *args)
 
     type->tp_mro = mro_save;
     if (ret < 0) {
+        assert(result == NULL);
         return NULL;
     }
     PyObject *py_ret = PyLong_FromLong(ret);

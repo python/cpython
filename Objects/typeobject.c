@@ -5243,7 +5243,7 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
             return base;
         }
         base = get_base_by_token_recursive(base, token);
-        if (base) {
+        if (base != NULL) {
             return base;
         }
     }
@@ -5262,18 +5262,15 @@ _token_found(PyTypeObject *type, PyTypeObject **result)
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
-    if (result != NULL) {
-        *result = NULL;
-    }
     if (token == NULL) {
         // We scan only heaptypes that contains a token
-        return 0;
+        goto exit;
     }
     assert(PyType_Check(type));
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // Static type MRO contains no heap type,
         // which type_ready_mro() ensures.
-        return 0;
+        goto exit;
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
         return _token_found(type, result);
@@ -5281,7 +5278,10 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     PyObject *mro = type->tp_mro;
     if (mro == NULL) {
         PyTypeObject *base = get_base_by_token_recursive(type, token);
-        return base ? _token_found(base, result) : 0;
+        if (base != NULL) {
+            return _token_found(base, result);
+        }
+        goto exit;
     }
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
@@ -5298,6 +5298,10 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         if (((PyHeapTypeObject*)base)->ht_token == token) {
             return _token_found(base, result);
         }
+    }
+exit:
+    if (result != NULL) {
+        *result = NULL;
     }
     return 0;
 }
