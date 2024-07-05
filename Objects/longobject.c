@@ -1128,12 +1128,16 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
     if (PyLong_Check(vv)) {
         v = (PyLongObject *)vv;
     }
-    else {
+    else if (flags != -1 && (flags & Py_ASNATIVEBYTES_ALLOW_INDEX)) {
         v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL) {
             return -1;
         }
         do_decref = 1;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "expect int, got %T", vv);
+        return -1;
     }
 
     if ((flags != -1 && (flags & Py_ASNATIVEBYTES_REJECT_NEGATIVE))
@@ -6672,12 +6676,12 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 
 int
 PyUnstable_Long_IsCompact(const PyLongObject* op) {
-    return _PyLong_IsCompact(op);
+    return _PyLong_IsCompact((PyLongObject*)op);
 }
 
 #undef PyUnstable_Long_CompactValue
 
 Py_ssize_t
 PyUnstable_Long_CompactValue(const PyLongObject* op) {
-    return _PyLong_CompactValue(op);
+    return _PyLong_CompactValue((PyLongObject*)op);
 }
