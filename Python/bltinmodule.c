@@ -2579,6 +2579,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
+    PyObject *(*iternext)(PyObject *);
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
@@ -2613,6 +2614,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         Py_INCREF(result);
     }
 
+    iternext = *Py_TYPE(iter)->tp_iternext;
+
 #ifndef SLOW_SUM
     /* Fast addition by keeping temporary sums in C instead of new Python objects.
        Assumes all inputs are the same type.  If the assumption fails, default
@@ -2626,11 +2629,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             Py_SETREF(result, NULL);
         }
         while(result == NULL) {
-            item = PyIter_Next(iter);
+            item = iternext(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
-                if (PyErr_Occurred())
-                    return NULL;
+                if (PyErr_Occurred()) {
+                    if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                        PyErr_Clear();
+                    else {
+                        return NULL;
+                    }
+                }
                 return PyLong_FromSsize_t(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
@@ -2674,11 +2682,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         CompensatedSum re_sum = cs_from_double(PyFloat_AS_DOUBLE(result));
         Py_SETREF(result, NULL);
         while(result == NULL) {
-            item = PyIter_Next(iter);
+            item = iternext(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
-                if (PyErr_Occurred())
-                    return NULL;
+                if (PyErr_Occurred()) {
+                    if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                        PyErr_Clear();
+                    else {
+                        return NULL;
+                    }
+                }
                 return PyFloat_FromDouble(cs_to_double(re_sum));
             }
             if (PyFloat_CheckExact(item)) {
@@ -2719,11 +2732,15 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         CompensatedSum im_sum = cs_from_double(z.imag);
         Py_SETREF(result, NULL);
         while (result == NULL) {
-            item = PyIter_Next(iter);
+            item = iternext(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
                 if (PyErr_Occurred()) {
-                    return NULL;
+                    if (PyErr_ExceptionMatches(PyExc_StopIteration))
+                        PyErr_Clear();
+                    else {
+                        return NULL;
+                    }
                 }
                 return PyComplex_FromDoubles(cs_to_double(re_sum),
                                              cs_to_double(im_sum));
@@ -2771,16 +2788,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
     }
 #endif
-
-    for(;;) {
-        item = PyIter_Next(iter);
-        if (item == NULL) {
-            /* error, or end-of-sequence */
-            if (PyErr_Occurred()) {
-                Py_SETREF(result, NULL);
-            }
-            break;
-        }
+    while ((item = iternext(iter)) != NULL) {
         /* It's tempting to use PyNumber_InPlaceAdd instead of
            PyNumber_Add here, to avoid quadratic running time
            when doing 'sum(list_of_lists, [])'.  However, this
@@ -2800,6 +2808,13 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         result = temp;
         if (result == NULL)
             break;
+    }
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_SETREF(result, NULL);
+        }
     }
     Py_DECREF(iter);
     return result;
