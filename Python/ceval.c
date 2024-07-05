@@ -205,7 +205,13 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
     if (frame == skip_frame) {
         return 0;
     }
-    int r = PyMapping_HasKeyWithError(globals, &_Py_ID(__lltrace__));
+    int r;
+    if (PyDict_Check(globals)) {
+        r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
+    }
+    else {
+        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__lltrace__));
+    }
     if (r < 0) {
         return -1;
     }

@@ -2106,8 +2106,15 @@ PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
     PyObject *maybe_builtins;
-    int has_builtins = PyMapping_GetOptionalItem(
-        globals, &_Py_ID(__builtins__), &maybe_builtins);
+    int has_builtins;
+    if (PyDict_Check(globals)) {
+        has_builtins = PyDict_GetItemRef(globals,
+            &_Py_ID(__builtins__), &maybe_builtins);
+    }
+    else {
+        has_builtins = PyMapping_GetOptionalItem(globals,
+            &_Py_ID(__builtins__), &maybe_builtins);
+    }
     if (has_builtins < 0) {
         return NULL;
     }
