@@ -396,6 +396,7 @@ class ZipInfo:
         'file_size',
         '_raw_time',
         '_end_offset',
+        'local_header',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -431,6 +432,7 @@ class ZipInfo:
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
+        self.local_header = b""         # File Local Header
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -519,6 +521,16 @@ class ZipInfo:
             return self.filename.encode('ascii'), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
+
+    def _getlocalheader(self, fp):
+        # Try to decode the file local header
+        fp.seek(self.header_offset)
+        fheader = fp.read(sizeFileHeader)
+        if len(fheader) != sizeFileHeader:
+            return
+        sig_check = struct.unpack(structFileHeader, fheader)
+        if sig_check[_FH_SIGNATURE] == stringFileHeader:
+            self.local_header = fheader
 
     def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
@@ -1503,6 +1515,7 @@ class ZipFile:
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
             x._decodeExtra(orig_filename_crc)
+            x._getlocalheader(self.fp)
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x

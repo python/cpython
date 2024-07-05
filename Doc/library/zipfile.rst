@@ -890,6 +890,11 @@ Instances have the following methods and attributes:
 
    Size of the uncompressed file.
 
+.. attribute:: ZipInfo.local_header
+
+   The current file header as bytes.
+
+   .. versionadded:: 3.14
 
 .. _zipfile-commandline:
 .. program:: zipfile
