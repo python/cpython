@@ -2788,7 +2788,15 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
     }
 #endif
-    while ((item = iternext(iter)) != NULL) {
+    for(;;) {
+        item = PyIter_Next(iter);
+        if (item == NULL) {
+            /* error, or end-of-sequence */
+            if (PyErr_Occurred()) {
+                Py_SETREF(result, NULL);
+            }
+            break;
+        }
         /* It's tempting to use PyNumber_InPlaceAdd instead of
            PyNumber_Add here, to avoid quadratic running time
            when doing 'sum(list_of_lists, [])'.  However, this
@@ -2808,13 +2816,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         result = temp;
         if (result == NULL)
             break;
-    }
-    if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
-            PyErr_Clear();
-        else {
-            Py_SETREF(result, NULL);
-        }
     }
     Py_DECREF(iter);
     return result;
