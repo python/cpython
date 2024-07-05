@@ -18,6 +18,7 @@ import struct
 import time
 import tempfile
 import itertools
+import stat
 
 
 from . import util
@@ -391,8 +392,14 @@ class Connection(_ConnectionBase):
         buf = io.BytesIO()
         handle = self._handle
         remaining = size
+        is_pipe = False
+        if not _winapi:
+            mode = os.fstat(handle).st_mode
+            is_pipe = stat.S_ISFIFO(mode)
+        limit = 2 << 15 if is_pipe else remaining
         while remaining > 0:
-            chunk = read(handle, remaining)
+            to_read = min(limit, remaining)
+            chunk = read(handle, to_read)
             n = len(chunk)
             if n == 0:
                 if remaining == size:
