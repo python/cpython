@@ -188,7 +188,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
         r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
     }
     else {
-        r = PyMapping_GetOptionalItemString(globals, "__name__", &module);
+        r = PyMapping_GetOptionalItem(globals, &_Py_ID(__name__), &module);
     }
     if (r < 0) {
         goto error;

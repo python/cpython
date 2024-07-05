@@ -1091,7 +1091,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(locals);
     }
 
-    if (!PyMapping_Check(globals)) {
+    if (!PyDict_Check(globals) && !PyMapping_Check(globals)) {
         PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
         goto error;
