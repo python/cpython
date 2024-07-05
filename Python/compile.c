@@ -7484,8 +7484,6 @@ compute_code_flags(struct compiler *c)
             flags |= CO_NESTED;
         if (ste->ste_generator && !ste->ste_coroutine)
             flags |= CO_GENERATOR;
-        if (!ste->ste_generator && ste->ste_coroutine)
-            flags |= CO_COROUTINE;
         if (ste->ste_generator && ste->ste_coroutine)
             flags |= CO_ASYNC_GENERATOR;
         if (ste->ste_varargs)
@@ -7494,14 +7492,13 @@ compute_code_flags(struct compiler *c)
             flags |= CO_VARKEYWORDS;
     }
 
-    /* (Only) inherit compilerflags in PyCF_MASK */
-    flags |= (c->c_flags.cf_flags & PyCF_MASK);
-
-    if ((IS_TOP_LEVEL_AWAIT(c)) &&
-         ste->ste_coroutine &&
-         !ste->ste_generator) {
+    if (ste->ste_coroutine && !ste->ste_generator) {
+        assert (IS_TOP_LEVEL_AWAIT(c) || _PyST_IsFunctionLike(c->u->u_ste));
         flags |= CO_COROUTINE;
     }
+
+    /* (Only) inherit compilerflags in PyCF_MASK */
+    flags |= (c->c_flags.cf_flags & PyCF_MASK);
 
     return flags;
 }
