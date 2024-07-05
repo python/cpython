@@ -395,10 +395,10 @@ class Connection(_ConnectionBase):
         is_pipe = False
         page_size = 0
         if not _winapi:
-            mode = os.fstat(handle).st_mode
-            is_pipe = stat.S_ISFIFO(mode)
-            if (is_pipe):
-                page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
+            page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
+            if size > 16 * page_size:
+                mode = os.fstat(handle).st_mode
+                is_pipe = stat.S_ISFIFO(mode)
         limit = 16 * page_size if is_pipe else remaining
         while remaining > 0:
             to_read = min(limit, remaining)
