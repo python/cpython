@@ -1574,10 +1574,11 @@ improves performance.
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
+   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
 
 It is safe to set these to false on any Python version. They will have no
-effect on older versions when unsupported. Do not assume the attributes are
-available to read. Despite their names, a true value does not indicate that the
+effect on older or newer versions when unsupported. Do not assume the attributes
+are available to read. Despite their names, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
