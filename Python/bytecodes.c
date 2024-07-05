@@ -1476,7 +1476,8 @@ dummy_func(
             int err = PyMapping_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                if (_PyErr_Occurred(tstate) &&
+                    _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                               NAME_ERROR_MSG, name);
                 }

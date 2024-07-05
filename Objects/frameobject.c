@@ -2106,11 +2106,13 @@ PyObject*
 _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
     PyObject *builtins;
-    int has_builtins = PyMapping_GetOptionalItem(globals, &_Py_ID(__builtins__), &builtins);
+    int has_builtins = PyMapping_GetOptionalItem(
+        globals, &_Py_ID(__builtins__), &builtins);
     if (has_builtins < 0) {
         return NULL;
     }
     if (has_builtins) {
+        /* release reference right away since we mean to only borrow it */
         Py_DECREF(builtins);
         if (PyModule_Check(builtins)) {
             builtins = _PyModule_GetDict(builtins);
