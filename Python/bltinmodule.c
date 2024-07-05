@@ -991,9 +991,18 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         goto error;
     }
 
-    int r = PyMapping_HasKeyStringWithError(globals, "__builtins__");
-    if (r == 0) {
-        r = PyMapping_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
+    int r;
+    if (PyDict_Check(globals)) {
+        r = PyDict_Contains(globals, &_Py_ID(__builtins__));
+        if (r == 0) {
+            r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        }
+    }
+    else {
+        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__builtins__));
+        if (r == 0) {
+            r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        }
     }
     if (r < 0) {
         goto error;
@@ -1093,9 +1102,19 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         goto error;
     }
-    int r = PyMapping_HasKeyStringWithError(globals, "__builtins__");
-    if (r == 0) {
-        r = PyMapping_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
+
+    int r;
+    if (PyDict_Check(globals)) {
+        r = PyDict_Contains(globals, &_Py_ID(__builtins__));
+        if (r == 0) {
+            r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        }
+    }
+    else {
+        r = PyMapping_HasKeyWithError(globals, &_Py_ID(__builtins__));
+        if (r == 0) {
+            r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+        }
     }
     if (r < 0) {
         goto error;
