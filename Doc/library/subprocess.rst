@@ -1563,7 +1563,7 @@ runtime):
 
 .. _disable_posix_spawn:
 
-Disabling use of ``posix_spawn()``
+Disable use of ``posix_spawn()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
@@ -1575,8 +1575,8 @@ improves performance.
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 
 It is safe to set this to false on any Python version. It will have no
-effect on older or newer versions where unsupported. Do not assume the attributes
-are available to read. Despite the name, a true value does not indicate the
+effect on older or newer versions where unsupported. Do not assume the attribute
+is available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
