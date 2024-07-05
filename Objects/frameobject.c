@@ -2112,9 +2112,8 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
         return NULL;
     }
     if (has_builtins) {
-        PyObject *builtins;
         if (PyModule_Check(maybe_builtins)) {
-            builtins = Py_XNewRef(_PyModule_GetDict(maybe_builtins));
+            PyObject *builtins = Py_XNewRef(_PyModule_GetDict(maybe_builtins));
             Py_DECREF(maybe_builtins);
             assert(builtins != NULL);
             return builtins;
