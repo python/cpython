@@ -505,35 +505,28 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
         topprefix = path.join(toppath, toppath[:0])  # Add trailing slash.
-        try:
-            for entry in scandir(topfd):
-                name = entry.name
-                if isbytes:
-                    name = fsencode(name)
+        for entry in scandir(topfd):
+            name = entry.name
+            if isbytes:
+                name = fsencode(name)
 
-                try:
-                    is_dir = entry.is_dir()
-                except OSError:
-                    # If is_dir() raises an OSError, consider the entry not to
-                    # be a directory, same behaviour as os.path.isdir().
-                    is_dir = False
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                # If is_dir() raises an OSError, consider the entry not to
+                # be a directory, same behaviour as os.path.isdir().
+                is_dir = False
 
-                if is_dir:
-                    if not topdown:
-                        # Bottom-up: traverse into sub-directory.
-                        stack.append(
-                            (_fwalk_walk, (
-                                False, topfd, topprefix + name, name,
-                                None if follow_symlinks else entry)))
-                    dirs.append(name)
-                else:
-                    nondirs.append(name)
-        except:
-            # Undo additions to stack in bottom-up mode.
-            if not topdown:
-                while stack.pop()[0] != _fwalk_yield:
-                    pass
-            raise
+            if is_dir:
+                if not topdown:
+                    # Bottom-up: traverse into sub-directory.
+                    stack.append(
+                        (_fwalk_walk, (
+                            False, topfd, topprefix + name, name,
+                            None if follow_symlinks else entry)))
+                dirs.append(name)
+            else:
+                nondirs.append(name)
 
         if topdown:
             # Yield before sub-directory traversal if going top down
