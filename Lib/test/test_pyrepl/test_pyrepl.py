@@ -11,6 +11,7 @@ from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
+from test.support.import_helper import import_module
 from test.support.os_helper import unlink
 
 from .support import (
@@ -902,6 +903,9 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
         hfile = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(unlink, hfile.name)
         env = os.environ.copy()
