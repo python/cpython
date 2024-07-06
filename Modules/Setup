@@ -137,6 +137,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
 #_heapq _heapqmodule.c
+_fnmatch _fnmatchmodule.c
 #_interpchannels _interpchannelsmodule.c
 #_interpqueues _interpqueuesmodule.c
 #_interpreters _interpretersmodule.c
