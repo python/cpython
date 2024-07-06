@@ -5,10 +5,11 @@ import os
 import string
 import warnings
 
+import _fnmatch as c_fnmatch
+import fnmatch as py_fnmatch
 from fnmatch import fnmatch, fnmatchcase, translate, filter
 
 class FnmatchTestCase(unittest.TestCase):
-
     def check_match(self, filename, pattern, should_match=True, fn=fnmatch):
         if should_match:
             self.assertTrue(fn(filename, pattern),
@@ -250,17 +251,24 @@ class TranslateTestCase(unittest.TestCase):
         self.assertTrue(re.match(fatre, 'cbabcaxc'))
         self.assertFalse(re.match(fatre, 'dabccbad'))
 
-class FilterTestCase(unittest.TestCase):
+
+class FilterTestCaseMixin:
+    fnmatch = None
 
     def test_filter(self):
+        filter = self.fnmatch.filter
         self.assertEqual(filter(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*'),
                          ['Python', 'Perl'])
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
 
     def test_mix_bytes_str(self):
+        filter = self.fnmatch.filter
         self.assertRaises(TypeError, filter, ['test'], b'*')
         self.assertRaises(TypeError, filter, [b'test'], '*')
+
+class PurePythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
+    fnmatch = py_fnmatch
 
     def test_case(self):
         ignorecase = os.path.normcase('P') == os.path.normcase('p')
@@ -275,6 +283,9 @@ class FilterTestCase(unittest.TestCase):
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr/bin'])
         self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
                          ['usr/bin', 'usr\\lib'] if normsep else ['usr\\lib'])
+
+class CPythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
+    fnmatch = c_fnmatch
 
 
 if __name__ == "__main__":
