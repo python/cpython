@@ -11,6 +11,7 @@ from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
+from test.support.import_helper import import_module
 from test.support.os_helper import unlink
 
 from .support import (
@@ -20,7 +21,6 @@ from .support import (
     more_lines,
     multiline_input,
     code_to_events,
-    import_module
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
