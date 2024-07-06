@@ -1153,8 +1153,8 @@ maybe_freelist_pop(Py_ssize_t size)
         return NULL;
     }
     assert(size > 0);
-    if (size < PyTuple_MAXSAVESIZE) {
-        Py_ssize_t index = size - 1;
+    Py_ssize_t index = size - 1;
+    if (index < PyTuple_MAXSAVESIZE) {
         PyTupleObject *op = TUPLE_FREELIST.items[index];
         if (op != NULL) {
             /* op is the head of a linked list, with the first item
