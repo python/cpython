@@ -73,8 +73,13 @@
 
 struct compiler;
 
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
+
+static instr_sequence *compiler_instr_sequence(struct compiler *c);
 static int compiler_future_features(struct compiler *c);
 
+#define INSTR_SEQUENCE(C) compiler_instr_sequence(C)
 #define FUTURE_FEATURES(C) compiler_future_features(C)
 
 typedef _Py_SourceLocation location;
@@ -138,12 +143,6 @@ enum {
     COMPILER_SCOPE_ANNOTATIONS,
 };
 
-
-typedef _PyInstruction instruction;
-typedef _PyInstructionSequence instr_sequence;
-
-#define INITIAL_INSTR_SEQUENCE_SIZE 100
-#define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
 static const int compare_masks[] = {
     [Py_LT] = COMPARISON_LESS_THAN,
@@ -263,8 +262,6 @@ struct compiler {
                                   * (including instructions for nested code objects)
                                   */
 };
-
-#define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
 
 
 typedef struct {
@@ -7473,6 +7470,12 @@ static PyObject *
 compiler_maybe_mangle(struct compiler *c, PyObject *name)
 {
     return _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
+}
+
+static instr_sequence *
+compiler_instr_sequence(struct compiler *c)
+{
+    return c->u->u_instr_sequence;
 }
 
 static int
