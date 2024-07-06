@@ -7,10 +7,26 @@ if sys.platform != "win32":
 else:
     CAN_USE_PYREPL = sys.getwindowsversion().build >= 10586  # Windows 10 TH2
 
+FAIL_MSG = ""
+try:
+    import errno
+    if not os.isatty(sys.stdin.fileno()):
+        raise OSError(errno.ENOTTY, "tty required", "stdin")
+    from .simple_interact import check
+    if err := check():
+        raise RuntimeError(err)
+except Exception as e:
+    FAIL_MSG = f"warning: can't use pyrepl: {e}"
+    CAN_USE_PYREPL = False
+
 
 def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
-    global CAN_USE_PYREPL
+    global CAN_USE_PYREPL, FAIL_MSG
     if not CAN_USE_PYREPL:
+        if not os.environ.get('PYTHON_BASIC_REPL', None):
+            from .trace import trace
+            trace(FAIL_MSG)
+            print(FAIL_MSG, file=sys.stderr)
         return sys._baserepl()
 
     if mainmodule:
@@ -34,22 +50,5 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     if not hasattr(sys, "ps2"):
         sys.ps2 = "... "
 
-    run_interactive = None
-    try:
-        import errno
-        if not os.isatty(sys.stdin.fileno()):
-            raise OSError(errno.ENOTTY, "tty required", "stdin")
-        from .simple_interact import check
-        if err := check():
-            raise RuntimeError(err)
-        from .simple_interact import run_multiline_interactive_console
-        run_interactive = run_multiline_interactive_console
-    except Exception as e:
-        from .trace import trace
-        msg = f"warning: can't use pyrepl: {e}"
-        trace(msg)
-        print(msg, file=sys.stderr)
-        CAN_USE_PYREPL = False
-    if run_interactive is None:
-        return sys._baserepl()
-    run_interactive(namespace)
+    from .simple_interact import run_multiline_interactive_console
+    run_multiline_interactive_console(namespace)
