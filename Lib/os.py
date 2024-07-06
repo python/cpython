@@ -511,43 +511,43 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if not path.samestat(orig_st, stat(topfd)):
                 return
 
+        scandir_it = scandir(topfd)
         dirs = []
         nondirs = []
-        if not topdown:
-            # Yield after sub-directory traversal if going bottom up.
-            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
-
-        topprefix = path.join(toppath, toppath[:0])  # Add trailing slash.
-        for entry in scandir(topfd):
+        entries = None if topdown or follow_symlinks else []
+        for entry in scandir_it:
             name = entry.name
             if isbytes:
                 name = fsencode(name)
-
             try:
-                is_dir = entry.is_dir()
+                if entry.is_dir():
+                    dirs.append(name)
+                    if entries is not None:
+                        entries.append(entry)
+                else:
+                    nondirs.append(name)
             except OSError:
-                # If is_dir() raises an OSError, consider the entry not to
-                # be a directory, same behaviour as os.path.isdir().
-                is_dir = False
-
-            if is_dir:
-                if not topdown:
-                    # Bottom-up: traverse into sub-directory.
-                    stack.append(
-                        (_fwalk_walk, (
-                            False, topfd, topprefix + name, name,
-                            None if follow_symlinks else entry)))
-                dirs.append(name)
-            else:
-                nondirs.append(name)
+                try:
+                    # Add dangling symlinks, ignore disappeared files
+                    if entry.is_symlink():
+                        nondirs.append(name)
+                except OSError:
+                    pass
 
         if topdown:
-            # Yield before sub-directory traversal if going top down
             yield toppath, dirs, nondirs, topfd
-            # Traverse into sub-directories
+        else:
+            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
+
+        toppath = path.join(toppath, toppath[:0])  # Add trailing slash.
+        if entries is None:
             stack.extend(
-                (_fwalk_walk, (False, topfd, topprefix + name, name, None))
+                (_fwalk_walk, (False, topfd, toppath + name, name, None))
                 for name in dirs[::-1])
+        else:
+            stack.extend(
+                (_fwalk_walk, (False, topfd, toppath + name, name, entry))
+                for name, entry in zip(dirs[::-1], entries[::-1]))
 
     __all__.append("fwalk")
 
