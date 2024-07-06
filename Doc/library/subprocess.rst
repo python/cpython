@@ -1564,7 +1564,7 @@ runtime):
 .. _disable_posix_spawn:
 
 Disable use of ``posix_spawn()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
