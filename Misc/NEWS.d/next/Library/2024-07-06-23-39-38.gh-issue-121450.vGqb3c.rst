@@ -1,0 +1,1 @@
+Inline breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) will use the most recent ``Pdb`` instance, instead of creating a new one.
