@@ -722,14 +722,16 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         source.copytree(target, preserve_metadata=True)
 
         for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
-            source_st = source.joinpath(subpath).stat()
-            target_st = target.joinpath(subpath).stat()
+            source_p = source / subpath
+            target_p = target / subpath
+            if hasattr(os, 'listxattr'):
+                if b'user.foo' in os.listxattr(source_p):
+                    self.assertEqual(os.getxattr(target_p, b'user.foo'), b'42')
+            source_st = source_p.stat()
+            target_st = target_p.stat()
             self.assertLessEqual(source_st.st_atime, target_st.st_atime)
             self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
-            if hasattr(os, 'listxattr'):
-                if b'user.foo' in os.listxattr(target):
-                    self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
             if hasattr(source_st, 'st_flags'):
                 self.assertEqual(source_st.st_flags, target_st.st_flags)
 
