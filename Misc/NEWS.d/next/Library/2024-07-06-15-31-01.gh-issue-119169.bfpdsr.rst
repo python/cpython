@@ -1,0 +1,1 @@
+Speed up :func:`os.fwalk` in bottom-up mode.

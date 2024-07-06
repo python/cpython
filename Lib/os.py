@@ -542,7 +542,10 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         scandir_it = scandir(topfd)
         dirs = []
         nondirs = []
-        entries = None if topdown or follow_symlinks else []
+        topprefix = path.join(toppath, toppath[:0])  # Add trailing slash.
+        if not topdown:
+            # Yield after sub-directory traversal if going bottom up.
+            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
         for entry in scandir_it:
             name = entry.name
             if isbytes:
@@ -550,8 +553,11 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             try:
                 if entry.is_dir():
                     dirs.append(name)
-                    if entries is not None:
-                        entries.append(entry)
+                    if not topdown:
+                        stack.append(
+                            (_fwalk_walk, (
+                                False, topfd, topprefix + name, name,
+                                None if follow_symlinks else entry)))
                 else:
                     nondirs.append(name)
             except OSError:
@@ -564,18 +570,9 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
-        else:
-            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
-
-        toppath = path.join(toppath, toppath[:0])  # Add trailing slash.
-        if entries is None:
             stack.extend(
-                (_fwalk_walk, (False, topfd, toppath + name, name, None))
+                (_fwalk_walk, (False, topfd, topprefix + name, name, None))
                 for name in dirs[::-1])
-        else:
-            stack.extend(
-                (_fwalk_walk, (False, topfd, toppath + name, name, entry))
-                for name, entry in zip(dirs[::-1], entries[::-1]))
 
     __all__.append("fwalk")
 
