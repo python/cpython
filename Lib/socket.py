@@ -109,7 +109,7 @@ def _intenum_converter(value, enum_klass):
 
 
 # WSA error codes
-if sys.platform == "win32":
+if sys.platform.lower().startswith("win"):
     errorTab = {
         6: "Specified event object handle is invalid.",
         8: "Insufficient memory available.",
