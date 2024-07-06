@@ -97,7 +97,10 @@ _io._IOBase.seek
       The relative position to seek from.
     /
 
-Change the stream position to the given byte offset.
+Change the stream position to the given offset.
+
+The offset is treated as a byte offset for binary streams, and as a
+character offset for text streams.
 
 The offset is interpreted relative to the position indicated by whence.
 Values for whence are:
