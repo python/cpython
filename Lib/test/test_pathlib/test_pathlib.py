@@ -722,18 +722,24 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         source.copytree(target, preserve_metadata=True)
 
         for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
-            source_p = source / subpath
-            target_p = target / subpath
-            if hasattr(os, 'listxattr'):
-                if b'user.foo' in os.listxattr(source_p):
-                    self.assertEqual(os.getxattr(target_p, b'user.foo'), b'42')
-            source_st = source_p.stat()
-            target_st = target_p.stat()
+            source_st = source.joinpath(subpath).stat()
+            target_st = target.joinpath(subpath).stat()
             self.assertLessEqual(source_st.st_atime, target_st.st_atime)
             self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
             if hasattr(source_st, 'st_flags'):
                 self.assertEqual(source_st.st_flags, target_st.st_flags)
+
+    @os_helper.skip_unless_xattr
+    def test_copytree_preserve_metadata_xattrs(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        source_file = source.joinpath('dirD', 'fileD')
+        os.setxattr(source_file, b'user.foo', b'42')
+        target = base / 'copyA'
+        source.copytree(target, preserve_metadata=True)
+        target_file = target.joinpath('dirD', 'fileD')
+        self.assertEqual(os.getxattr(target_file, b'user.foo'), b'42')
 
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
