@@ -835,7 +835,8 @@ class PathBase(PurePathBase):
         if preserve_metadata:
             self._copy_metadata(target)
 
-    def copytree(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
+    def copytree(self, target, *, follow_symlinks=True,
+                 preserve_metadata=False, dirs_exist_ok=False,
                  ignore=None, on_error=None):
         """
         Recursively copy this directory tree to the given destination.
@@ -851,6 +852,8 @@ class PathBase(PurePathBase):
             try:
                 sources = source_dir.iterdir()
                 target_dir.mkdir(exist_ok=dirs_exist_ok)
+                if preserve_metadata:
+                    source_dir._copy_metadata(target_dir, follow_symlinks=True)
                 for source in sources:
                     if ignore and ignore(source):
                         continue
@@ -859,7 +862,8 @@ class PathBase(PurePathBase):
                             stack.append((source, target_dir.joinpath(source.name)))
                         else:
                             source.copy(target_dir.joinpath(source.name),
-                                        follow_symlinks=follow_symlinks)
+                                        follow_symlinks=follow_symlinks,
+                                        preserve_metadata=preserve_metadata)
                     except OSError as err:
                         on_error(err)
             except OSError as err:

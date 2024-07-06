@@ -711,6 +711,28 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIsInstance(errors[0], PermissionError)
         self.assertFalse(target.exists())
 
+    def test_copytree_preserve_metadata(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        if hasattr(os, 'chmod'):
+            os.chmod(source / 'dirD', stat.S_IRWXU | stat.S_IRWXO)
+        if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
+            os.chflags(source / 'fileC', stat.UF_NODUMP)
+        target = base / 'copyA'
+        source.copytree(target, preserve_metadata=True)
+
+        for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
+            source_st = source.joinpath(subpath).stat()
+            target_st = target.joinpath(subpath).stat()
+            self.assertLessEqual(source_st.st_atime, target_st.st_atime)
+            self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
+            self.assertEqual(source_st.st_mode, target_st.st_mode)
+            if hasattr(os, 'listxattr'):
+                if b'user.foo' in os.listxattr(target):
+                    self.assertEqual(os.getxattr(target, b'user.foo'), b'42')
+            if hasattr(source_st, 'st_flags'):
+                self.assertEqual(source_st.st_flags, target_st.st_flags)
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 
