@@ -52,6 +52,7 @@ Object Protocol
 
    The reference is borrowed from the interpreter, and is valid until the
    interpreter finalization.
+
    .. versionadded:: 3.13
 
 
