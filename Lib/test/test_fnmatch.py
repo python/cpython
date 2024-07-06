@@ -10,6 +10,7 @@ import fnmatch as py_fnmatch
 from fnmatch import fnmatch, fnmatchcase, translate, filter
 
 class FnmatchTestCase(unittest.TestCase):
+
     def check_match(self, filename, pattern, should_match=True, fn=fnmatch):
         if should_match:
             self.assertTrue(fn(filename, pattern),
