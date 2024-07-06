@@ -3639,12 +3639,13 @@ finish:
 static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
-    PyLongObject *pylong;
+    PyObject *pylong;
     digit *ob_digit;
     size_t n;
     mpd_t *x;
     mpd_context_t workctx;
     uint32_t status = 0;
+    const PyLongLayout *layout = PyLong_GetNativeLayout();
 
     if (mpd_isspecial(MPD(dec))) {
         if (mpd_isnan(MPD(dec))) {
@@ -3672,34 +3673,45 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     status = 0;
-    ob_digit = NULL;
+
+    int64_t val = mpd_qget_i64(x, &status);
+    if (!status) {
+        mpd_del(x);
+        return PyLong_FromInt64(val);
+    }
+
+    n = (mpd_sizeinbase(x, 2) +
+         layout->bits_per_digit - 1) / layout->bits_per_digit;
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n,
+                                               (void**)&ob_digit);
+    /* mpd_sizeinbase can overestimate size by 1 digit, set it to zero. */
+    ob_digit[n-1] = 0;
+    if (writer == NULL) {
+        PyLongWriter_Discard(writer);
+        mpd_del(x);
+        return NULL;
+    }
+
+    status = 0;
 #if PYLONG_BITS_IN_DIGIT == 30
-    n = mpd_qexport_u32(&ob_digit, 0, PyLong_BASE, x, &status);
+    n = mpd_qexport_u32(&ob_digit, n, PyLong_BASE, x, &status);
 #elif PYLONG_BITS_IN_DIGIT == 15
-    n = mpd_qexport_u16(&ob_digit, 0, PyLong_BASE, x, &status);
+    n = mpd_qexport_u16(&ob_digit, n, PyLong_BASE, x, &status);
 #else
     #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
 
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
+        PyLongWriter_Discard(writer);
         mpd_del(x);
         return NULL;
     }
 
-    if (n == 1) {
-        sdigit val = mpd_arith_sign(x) * ob_digit[0];
-        mpd_free(ob_digit);
-        mpd_del(x);
-        return PyLong_FromLong(val);
-    }
-
     assert(n > 0);
-    assert(!mpd_iszero(x));
-    pylong = _PyLong_FromDigits(mpd_isnegative(x), n, ob_digit);
-    mpd_free(ob_digit);
+    pylong = PyLongWriter_Finish(writer);
     mpd_del(x);
-    return (PyObject *) pylong;
+    return pylong;
 }
 
 /* Convert a Decimal to its exact integer ratio representation. */
