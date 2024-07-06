@@ -17,7 +17,8 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from ._os import UnsupportedOperation, copyfile
+from ._abc import PurePathBase, PathBase
 
 
 __all__ = [
@@ -672,7 +673,9 @@ class Path(PathBase, PurePath):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         root_dir = str(self)
-        results = self._globber.walk(root_dir, top_down, on_error, follow_symlinks)
+        if not follow_symlinks:
+            follow_symlinks = os._walk_symlinks_as_files
+        results = os.walk(root_dir, top_down, on_error, follow_symlinks)
         for path_str, dirnames, filenames in results:
             if root_dir == '.':
                 path_str = path_str[2:]
@@ -777,6 +780,26 @@ class Path(PathBase, PurePath):
             # could give priority to other errors like EACCES or EROFS
             if not exist_ok or not self.is_dir():
                 raise
+
+    if copyfile:
+        def copy(self, target, follow_symlinks=True):
+            """
+            Copy the contents of this file to the given target. If this file is a
+            symlink and follow_symlinks is false, a symlink will be created at the
+            target.
+            """
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if not isinstance(target, PathBase):
+                    raise
+            else:
+                try:
+                    copyfile(os.fspath(self), target, follow_symlinks)
+                    return
+                except UnsupportedOperation:
+                    pass  # Fall through to generic code.
+            PathBase.copy(self, target, follow_symlinks=follow_symlinks)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

@@ -563,6 +563,11 @@ class TypeParamsAccessTest(unittest.TestCase):
         self.assertIs(T, C.Alias.__type_params__[0])
         self.assertIs(U, C.__type_params__[1])
 
+    def test_type_special_case(self):
+        # https://github.com/python/cpython/issues/119011
+        self.assertEqual(type.__type_params__, ())
+        self.assertEqual(object.__type_params__, ())
+
 
 def make_base(arg):
     class Base:

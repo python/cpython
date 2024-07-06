@@ -10,6 +10,7 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.cpp'
+
 if not support.MS_WINDOWS:
     # C++ compiler flags for GCC and clang
     CPPFLAGS = [
@@ -19,8 +20,11 @@ if not support.MS_WINDOWS:
         '-Werror',
     ]
 else:
-    # Don't pass any compiler flag to MSVC
-    CPPFLAGS = []
+    # MSVC compiler flags
+    CPPFLAGS = [
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
 
 
 def main():

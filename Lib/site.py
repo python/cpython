@@ -486,7 +486,7 @@ def register_readline():
     import atexit
     try:
         import readline
-        import rlcompleter
+        import rlcompleter  # noqa: F401
         import _pyrepl.readline
         import _pyrepl.unix_console
     except ImportError:
@@ -526,8 +526,7 @@ def register_readline():
 
         def write_history():
             try:
-                # _pyrepl.__main__ is executed as the __main__ module
-                from __main__ import CAN_USE_PYREPL
+                from _pyrepl.main import CAN_USE_PYREPL
             except ImportError:
                 CAN_USE_PYREPL = False
 
@@ -603,7 +602,7 @@ def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
         try:
-            import sitecustomize
+            import sitecustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'sitecustomize':
                 pass
@@ -623,7 +622,7 @@ def execusercustomize():
     """Run custom user specific code, if available."""
     try:
         try:
-            import usercustomize
+            import usercustomize  # noqa: F401
         except ImportError as exc:
             if exc.name == 'usercustomize':
                 pass
