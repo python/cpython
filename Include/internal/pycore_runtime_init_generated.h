@@ -1085,6 +1085,7 @@ extern "C" {
     INIT_ID(n_unnamed_fields), \
     INIT_ID(name), \
     INIT_ID(name_from), \
+    INIT_ID(names), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
     INIT_ID(narg), \
@@ -1127,6 +1128,7 @@ extern "C" {
     INIT_ID(pages), \
     INIT_ID(parent), \
     INIT_ID(password), \
+    INIT_ID(pat), \
     INIT_ID(path), \
     INIT_ID(pattern), \
     INIT_ID(peek), \
