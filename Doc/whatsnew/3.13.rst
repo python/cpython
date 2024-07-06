@@ -1307,6 +1307,9 @@ PEP 594: dead batteries (and other module removals)
 
   * :mod:`!imghdr`: use the projects :pypi:`filetype`,
     :pypi:`puremagic`, or :pypi:`python-magic` instead.
+    The ``puremagic.what()`` function can be used to replace
+    the ``imghdr.what()`` function for all file formats that
+    were supported by ``imghdr``.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!mailcap`.
@@ -2258,6 +2261,12 @@ Changes in the Python API
   The value of the :attr:`!mode` attribute of the readable file-like object
   returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
+* :class:`functools.partial` now emits a :exc:`FutureWarning` when it is
+  used as a method.
+  Its behavior will be changed in future Python versions.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`121027`.)
 
 .. _pep667-porting-notes-py:
 

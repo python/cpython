@@ -236,7 +236,7 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string consants in the free-threaded build, but only if
+        // Intern non-string constants in the free-threaded build, but only if
         // we are also immortalizing objects that use deferred reference
         // counting.
         PyThreadState *tstate = PyThreadState_GET();
@@ -573,7 +573,7 @@ get_line_delta(const uint8_t *ptr)
 static PyObject *
 remove_column_info(PyObject *locations)
 {
-    int offset = 0;
+    Py_ssize_t offset = 0;
     const uint8_t *data = (const uint8_t *)PyBytes_AS_STRING(locations);
     PyObject *res = PyBytes_FromStringAndSize(NULL, 32);
     if (res == NULL) {

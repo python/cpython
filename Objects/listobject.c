@@ -1866,7 +1866,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     /* In general, as things go on we've established that the slice starts
        with a monotone run of n elements, starting at lo. */
 
-    /* We're n elements into the slice, and the most recent neq+1 elments are
+    /* We're n elements into the slice, and the most recent neq+1 elements are
      * all equal. This reverses them in-place, and resets neq for reuse.
      */
 #define REVERSE_LAST_NEQ                        \
@@ -1918,7 +1918,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     Py_ssize_t neq = 0;
     for ( ; n < nremaining; ++n) {
         IF_NEXT_SMALLER {
-            /* This ends the most recent run of equal elments, but still in
+            /* This ends the most recent run of equal elements, but still in
              * the "descending" direction.
              */
             REVERSE_LAST_NEQ
@@ -3244,7 +3244,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    PyErr_SetString(PyExc_ValueError, "list.index(x): x not in list");
     return NULL;
 }
 
