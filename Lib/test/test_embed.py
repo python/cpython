@@ -404,6 +404,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
+    def test_datetime_reset_strptime(self):
+        code = (
+            "import datetime;"
+            "d = datetime.datetime.strptime('2000-01-01', '%Y-%m-%d');"
+            "print(d.strftime('%Y%m%d'))"
+        )
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '20000101\n' * INIT_LOOPS)
+
 
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):

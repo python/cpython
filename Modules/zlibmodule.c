@@ -489,8 +489,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             case Z_MEM_ERROR:
@@ -915,8 +915,8 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1293,8 +1293,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1495,8 +1495,8 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
             err = inflate(&self->zst, Z_SYNC_FLUSH);
             Py_END_ALLOW_THREADS
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK:  _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:

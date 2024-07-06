@@ -65,7 +65,7 @@ def _maybe_compile(compiler, source, filename, symbol):
             try:
                 compiler(source + "\n", filename, symbol)
                 return None
-            except IncompleteInputError as e:
+            except _IncompleteInputError as e:
                 return None
             except SyntaxError as e:
                 pass

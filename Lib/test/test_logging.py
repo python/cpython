@@ -1038,6 +1038,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
+    allow_reuse_port = True
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -3898,6 +3899,7 @@ class ConfigDictTest(BaseTest):
                 self.addCleanup(os.remove, fn)
 
     @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
     def test_config_queue_handler(self):
         q = CustomQueue()
         dq = {
@@ -3925,6 +3927,78 @@ class ConfigDictTest(BaseTest):
                 self.do_queuehandler_configuration(qspec, lspec)
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
+
+    @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        from multiprocessing import Queue as MQ
+
+        q1 = {"()": "queue.Queue", "maxsize": -1}
+        q2 = MQ()
+        q3 = queue.Queue()
+
+        for qspec in (q1, q2, q3):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": qspec,
+                        },
+                    },
+                }
+            )
+            manager.assert_not_called()
+
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868
+
+        with self.assertRaises(ValueError):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": object(),
+                        },
+                    },
+                }
+            )
+        manager.assert_not_called()
+
+    @support.requires_subprocess()
+    def test_multiprocessing_queues(self):
+        # See gh-119819
+
+        cd = copy.deepcopy(self.config_queue_handler)
+        from multiprocessing import Queue as MQ, Manager as MM
+        q1 = MQ()  # this can't be pickled
+        q2 = MM().Queue()  # a proxy queue for use when pickling is needed
+        q3 = MM().JoinableQueue()  # a joinable proxy queue
+        for qspec in (q1, q2, q3):
+            fn = make_temp_file('.log', 'test_logging-cmpqh-')
+            cd['handlers']['h1']['filename'] = fn
+            cd['handlers']['ah']['queue'] = qspec
+            qh = None
+            try:
+                self.apply_config(cd)
+                qh = logging.getHandlerByName('ah')
+                self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
+                self.assertIsNotNone(qh.listener)
+                self.assertIs(qh.queue, qspec)
+                self.assertIs(qh.listener.queue, qspec)
+            finally:
+                h = logging.getHandlerByName('h1')
+                if h:
+                    self.addCleanup(closeFileHandler, h, fn)
+                else:
+                    self.addCleanup(os.remove, fn)
 
     def test_90195(self):
         # See gh-90195
@@ -3975,6 +4049,35 @@ class ConfigDictTest(BaseTest):
             },
         }
         logging.config.dictConfig(config)
+
+    # gh-118868: check if kwargs are passed to logging QueueHandler
+    def test_kwargs_passing(self):
+        class CustomQueueHandler(logging.handlers.QueueHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(queue.Queue())
+                self.custom_kwargs = kwargs
+
+        custom_kwargs = {'foo': 'bar'}
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'custom': {
+                    'class': CustomQueueHandler,
+                    **custom_kwargs
+                },
+            },
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['custom']
+            }
+        }
+
+        logging.config.dictConfig(config)
+
+        handler = logging.getHandlerByName('custom')
+        self.assertEqual(handler.custom_kwargs, custom_kwargs)
+
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -4590,13 +4693,18 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
             (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
             (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
+            (1_677_903_920_999_999_900, 0.0), # check rounding up
         )
         for ns, want in tests:
             with patch('time.time_ns') as patched_ns:
                 patched_ns.return_value = ns
                 record = logging.makeLogRecord({'msg': 'test'})
-            self.assertEqual(record.msecs, want)
-            self.assertEqual(record.created, ns / 1e9)
+            with self.subTest(ns):
+                self.assertEqual(record.msecs, want)
+                self.assertEqual(record.created, ns / 1e9)
+                self.assertAlmostEqual(record.created - int(record.created),
+                                       record.msecs / 1e3,
+                                       delta=1e-3)
 
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402.
