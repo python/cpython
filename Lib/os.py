@@ -548,19 +548,16 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if isbytes:
                 name = fsencode(name)
             try:
-                if entry.is_dir():
-                    dirs.append(name)
-                    if entries is not None:
-                        entries.append(entry)
-                else:
-                    nondirs.append(name)
+                is_dir = entry.is_dir()
             except OSError:
-                try:
-                    # Add dangling symlinks, ignore disappeared files
-                    if entry.is_symlink():
-                        nondirs.append(name)
-                except OSError:
-                    pass
+                is_dir = False
+
+            if is_dir:
+                dirs.append(name)
+                if entries is not None:
+                    entries.append(entry)
+            else:
+                nondirs.append(name)
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
