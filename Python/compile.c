@@ -71,6 +71,12 @@
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
+struct compiler;
+
+static int compiler_future_features(struct compiler *c);
+
+#define FUTURE_FEATURES(C) compiler_future_features(C)
+
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
@@ -1504,7 +1510,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
      * Else __annotate__ is created when necessary. */
-    if ((c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) && c->u->u_ste->ste_annotations_used) {
+    if ((FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) && c->u->u_ste->ste_annotations_used) {
         ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
     if (!asdl_seq_LEN(stmts)) {
@@ -1536,7 +1542,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     // If there are annotations and the future import is not on, we
     // collect the annotations in a separate pass and generate an
     // __annotate__ function. See PEP 649.
-    if (!(c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) &&
+    if (!(FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) &&
          c->u->u_deferred_annotations != NULL) {
 
         // It's possible that ste_annotations_block is set but
@@ -1848,7 +1854,7 @@ compiler_argannotation(struct compiler *c, identifier id,
     ADDOP_LOAD_CONST(c, loc, mangled);
     Py_DECREF(mangled);
 
-    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
+    if (FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) {
         VISIT(c, annexpr, annotation);
     }
     else {
@@ -6352,7 +6358,7 @@ check_annotation(struct compiler *c, stmt_ty s)
 {
     /* Annotations of complex targets does not produce anything
        under annotations future */
-    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
+    if (FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) {
         return SUCCESS;
     }
 
@@ -6399,7 +6405,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
-    bool future_annotations = c->c_future.ff_features & CO_FUTURE_ANNOTATIONS;
+    bool future_annotations = FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS;
     PyObject *mangled;
 
     assert(s->kind == AnnAssign_kind);
@@ -7467,6 +7473,12 @@ static PyObject *
 compiler_maybe_mangle(struct compiler *c, PyObject *name)
 {
     return _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
+}
+
+static int
+compiler_future_features(struct compiler *c)
+{
+    return c->c_future.ff_features;
 }
 
 static int
