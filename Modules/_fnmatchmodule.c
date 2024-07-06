@@ -184,7 +184,7 @@ _fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pat)
         return posix_fnmatch_unicode(pattern, name);
     }
     PyErr_Format(PyExc_TypeError, "pattern must be a string or a bytes object");
-    return NULL;
+    return -1;
 }
 
 /*[clinic input]
@@ -213,7 +213,7 @@ _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
         return posix_fnmatchcase_unicode(pattern, name);
     }
     PyErr_Format(PyExc_TypeError, "pattern must be a string or a bytes object");
-    return NULL;
+    return -1;
 }
 
 static PyMethodDef _fnmatch_methods[] = {
