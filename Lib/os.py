@@ -410,16 +410,14 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Yield before sub-directory traversal if going top down
             yield top, dirs, nondirs
             # Traverse into sub-directories
-            if dirs:
-                prefix = join(top, top[:0])
-                for dirname in reversed(dirs):
-                    new_path = prefix + dirname
-                    # bpo-23605: os.path.islink() is used instead of caching
-                    # entry.is_symlink() result during the loop on os.scandir() because
-                    # the caller can replace the directory entry during the "yield"
-                    # above.
-                    if followlinks or not islink(new_path):
-                        stack.append(new_path)
+            for dirname in reversed(dirs):
+                new_path = join(top, dirname)
+                # bpo-23605: os.path.islink() is used instead of caching
+                # entry.is_symlink() result during the loop on os.scandir() because
+                # the caller can replace the directory entry during the "yield"
+                # above.
+                if followlinks or not islink(new_path):
+                    stack.append(new_path)
 
 __all__.append("walk")
 
