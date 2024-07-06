@@ -20,6 +20,7 @@ from .support import (
     more_lines,
     multiline_input,
     code_to_events,
+    import_module
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
@@ -902,6 +903,9 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
         hfile = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(unlink, hfile.name)
         env = os.environ.copy()
