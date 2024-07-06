@@ -450,6 +450,7 @@
     <ClCompile Include="..\Modules\_datetimemodule.c" />
     <ClCompile Include="..\Modules\errnomodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
+    <ClCompile Include="..\Modules\fnmatchmodule.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />

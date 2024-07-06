@@ -920,6 +920,9 @@
     <ClCompile Include="..\Modules\_csv.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_fnmatchmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_functoolsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
