@@ -544,7 +544,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         nondirs = []
         topprefix = path.join(toppath, toppath[:0])  # Add trailing slash.
         if not topdown:
-            # Yield after sub-directory traversal if going bottom up.
             stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
         for entry in scandir_it:
             name = entry.name
