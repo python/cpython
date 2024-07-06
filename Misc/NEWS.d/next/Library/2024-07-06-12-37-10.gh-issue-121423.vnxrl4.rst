@@ -1,1 +1,1 @@
-Speed up socket.errotTab and lazy import selectors
+Speed up socket.errorTab and lazy import selectors
