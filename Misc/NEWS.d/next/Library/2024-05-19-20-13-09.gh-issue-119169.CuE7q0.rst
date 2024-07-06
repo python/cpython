@@ -1,2 +1,1 @@
-Slightly speed up :func:`os.walk` by simplifying exception handling and
-reducing path joining.
+Slightly speed up :func:`os.walk` by simplifying exception handling.
