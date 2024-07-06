@@ -306,6 +306,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     _file_mtime_table = {}
 
+    _last_pdb_instance = None
+
+    def __new__(self, *args, **kwargs):
+        Pdb._last_pdb_instance = super().__new__(self)
+        return Pdb._last_pdb_instance
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
@@ -2350,7 +2356,10 @@ def set_trace(*, header=None):
     an assertion fails). If given, *header* is printed to the console
     just before debugging begins.
     """
-    pdb = Pdb()
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb()
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back)
