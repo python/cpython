@@ -1581,6 +1581,106 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     return 0;
 }
 
+int
+_PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
+{
+
+    int meth_found = 0;
+
+    assert(PyStackRef_IsNull(*method));
+
+    PyTypeObject *tp = Py_TYPE(obj);
+    if (!_PyType_IsReady(tp)) {
+        if (PyType_Ready(tp) < 0) {
+            return 0;
+        }
+    }
+
+    if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
+        *method = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(obj, name));
+        return 0;
+    }
+
+    // Directly set it to that if a GC cycle happens, the descriptor doesn't get
+    // evaporated.
+    // This is why we no longer need a strong reference for this if it's
+    // deferred.
+    _PyType_LookupStackRef(tp, name, method);
+    _PyStackRef descr_st = *method;
+    descrgetfunc f = NULL;
+    if (!PyStackRef_IsNull(descr_st)) {
+        if (_PyType_HasFeature(PyStackRef_TYPE(descr_st), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+            meth_found = 1;
+        } else {
+            f = PyStackRef_TYPE(descr_st)->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(PyStackRef_AsPyObjectBorrow(descr_st))) {
+                *method = PyStackRef_FromPyObjectSteal(f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj)));
+                PyStackRef_CLOSE(descr_st);
+                return 0;
+            }
+        }
+    }
+    PyObject *dict, *attr;
+    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
+        if (attr != NULL) {
+            *method = PyStackRef_FromPyObjectSteal(attr);
+            PyStackRef_XCLOSE(descr_st);
+            return 0;
+        }
+        dict = NULL;
+    }
+    else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        dict = (PyObject *)_PyObject_GetManagedDict(obj);
+    }
+    else {
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr != NULL) {
+            dict = *dictptr;
+        }
+        else {
+            dict = NULL;
+        }
+    }
+    if (dict != NULL) {
+        Py_INCREF(dict);
+        PyObject *item;
+        if (PyDict_GetItemRef(dict, name, &item) != 0) {
+            *method = PyStackRef_FromPyObjectSteal(item);
+            // found or error
+            Py_DECREF(dict);
+            PyStackRef_CLOSE(descr_st);
+            return 0;
+        }
+        // not found
+        Py_DECREF(dict);
+    }
+
+    if (meth_found) {
+        *method = descr_st;
+        return 1;
+    }
+
+    if (f != NULL) {
+        *method = PyStackRef_FromPyObjectSteal(f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj)));
+        PyStackRef_CLOSE(descr_st);
+        return 0;
+    }
+
+    if (!PyStackRef_IsNull(descr_st)) {
+        *method = descr_st;
+        return 0;
+    }
+
+    *method = PyStackRef_NULL;
+    PyErr_Format(PyExc_AttributeError,
+                 "'%.100s' object has no attribute '%U'",
+                 tp->tp_name, name);
+
+    _PyObject_SetAttributeErrorContext(obj, name);
+    return 0;
+}
+
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */
 
 PyObject *

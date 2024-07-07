@@ -1977,19 +1977,17 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr: _PyStackRef *, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-            PyObject *attr_o;
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                attr_o = NULL;
-                int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
-                if (is_meth) {
+                *attr = PyStackRef_NULL;
+                if (_PyObject_GetMethodStackRef(PyStackRef_AsPyObjectBorrow(owner), name, attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(attr_o != NULL);  // No errors on this branch
+                    assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -2000,17 +1998,16 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
-                    ERROR_IF(attr_o == NULL, error);
+                    ERROR_IF(PyStackRef_IsNull(*attr), error);
                     self_or_null = PyStackRef_NULL;
                 }
             }
             else {
                 /* Classic, pushes one value. */
-                attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                *attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name));
                 DECREF_INPUTS();
-                ERROR_IF(attr_o == NULL, error);
+                ERROR_IF(PyStackRef_IsNull(*attr), error);
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
         macro(LOAD_ATTR) =

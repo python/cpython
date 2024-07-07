@@ -2325,6 +2325,27 @@ _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, Py
 }
 
 int
+_PyDict_GetItem_KnownHash_StackRef(PyDictObject *op, PyObject *key, Py_hash_t hash, _PyStackRef *result)
+{
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(op, key, hash, result);
+#else
+    PyObject *value;
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
+    *result = PyStackRef_FromPyObjectSteal(value);
+#endif
+    assert(ix >= 0 || PyStackRef_IsNull(*result));
+    if (ix == DKIX_ERROR) {
+        *result = PyStackRef_NULL;
+        return -1;
+    }
+    if (PyStackRef_IsNull(*result)) {
+        return 0;  // missing key
+    }
+    return 1;  // key is present
+}
+
+int
 PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
 {
     if (!PyDict_Check(op)) {

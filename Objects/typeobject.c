@@ -5356,6 +5356,58 @@ done:
     return res;
 }
 
+
+static void
+find_name_in_mro_stackref(PyTypeObject *type, PyObject *name, int *error, _PyStackRef *result)
+{
+    ASSERT_TYPE_LOCK_HELD();
+
+    Py_hash_t hash = _PyObject_HashFast(name);
+    if (hash == -1) {
+        *error = -1;
+        *result = PyStackRef_NULL;
+        return;
+    }
+
+    /* Look in tp_dict of types in MRO */
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL) {
+        if (!is_readying(type)) {
+            if (PyType_Ready(type) < 0) {
+                *error = -1;
+                *result = PyStackRef_NULL;
+                return;
+            }
+            mro = lookup_tp_mro(type);
+        }
+        if (mro == NULL) {
+            *error = 1;
+            *result = PyStackRef_NULL;
+            return;
+        }
+    }
+
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
+    Py_INCREF(mro);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, i);
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        assert(dict && PyDict_Check(dict));
+        if (_PyDict_GetItem_KnownHash_StackRef((PyDictObject *)dict, name, hash, result) < 0) {
+            *error = -1;
+            goto done;
+        }
+        if (!PyStackRef_IsNull(*result)) {
+            break;
+        }
+    }
+    *error = 0;
+done:
+    Py_DECREF(mro);
+}
+
 /* Check if the "readied" PyUnicode name
    is a double-underscore special name. */
 static int
@@ -5526,6 +5578,95 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
 #endif
     }
     return res;
+}
+
+void
+_PyType_LookupStackRef(PyTypeObject *type, PyObject *name, _PyStackRef *result)
+{
+    int error;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    unsigned int h = MCACHE_HASH_METHOD(type, name);
+    struct type_cache *cache = get_type_cache();
+    struct type_cache_entry *entry = &cache->hashtable[h];
+#ifdef Py_GIL_DISABLED
+    // synchronize-with other writing threads by doing an acquire load on the sequence
+    while (1) {
+        int sequence = _PySeqLock_BeginRead(&entry->sequence);
+        uint32_t entry_version = _Py_atomic_load_uint32_relaxed(&entry->version);
+        uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
+        if (entry_version == type_version &&
+            _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
+            OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
+            OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
+            PyObject *value = _Py_atomic_load_ptr_relaxed(&entry->value);
+            *result = PyStackRef_FromPyObjectNew(value);
+            // If the sequence is still valid then we're done
+            if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
+                return;
+            }
+            *result = PyStackRef_NULL;
+        }
+        else {
+            // cache miss
+            break;
+        }
+    }
+#else
+    if (entry->version == type->tp_version_tag &&
+        entry->name == name) {
+        assert(type->tp_version_tag);
+        OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
+        OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
+        Py_XINCREF(entry->value);
+        return entry->value;
+    }
+#endif
+    OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
+    OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
+
+    /* We may end up clearing live exceptions below, so make sure it's ours. */
+    assert(!PyErr_Occurred());
+
+    // We need to atomically do the lookup and capture the version before
+    // anyone else can modify our mro or mutate the type.
+
+    int has_version = 0;
+    int version = 0;
+    BEGIN_TYPE_LOCK();
+    find_name_in_mro_stackref(type, name, &error, result);
+    if (MCACHE_CACHEABLE_NAME(name)) {
+        has_version = assign_version_tag(interp, type);
+        version = type->tp_version_tag;
+    }
+    END_TYPE_LOCK();
+
+    /* Only put NULL results into cache if there was no error. */
+    if (error) {
+        /* It's not ideal to clear the error condition,
+           but this function is documented as not setting
+           an exception, and I don't want to change that.
+           E.g., when PyType_Ready() can't proceed, it won't
+           set the "ready" flag, so future attempts to ready
+           the same type will call it again -- hopefully
+           in a context that propagates the exception out.
+        */
+        if (error == -1) {
+            PyErr_Clear();
+        }
+        *result = PyStackRef_NULL;
+        return;
+    }
+
+    if (has_version) {
+#if Py_GIL_DISABLED
+        update_cache_gil_disabled(entry, name, version,
+                                  PyStackRef_AsPyObjectBorrow(*result));
+#else
+        PyObject *old_value = update_cache(entry, name, version, PyStackRef_AsPyObjectBorrow(*result));
+        Py_DECREF(old_value);
+#endif
+    }
 }
 
 PyObject *

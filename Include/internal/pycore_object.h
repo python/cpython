@@ -837,6 +837,7 @@ PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *at
 extern int _PyObject_IsAbstract(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 // Pickle support.
@@ -873,6 +874,8 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 PyAPI_DATA(int) _Py_SwappedOp[];
 
 extern void _Py_GetConstant_Init(void);
+
+extern void _PyType_LookupStackRef(PyTypeObject *type, PyObject *name, _PyStackRef *result);
 
 #ifdef __cplusplus
 }

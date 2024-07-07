@@ -2200,22 +2200,20 @@
 
         case _LOAD_ATTR: {
             _PyStackRef owner;
-            _PyStackRef attr;
+            _PyStackRef *attr;
             _PyStackRef self_or_null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-            PyObject *attr_o;
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                attr_o = NULL;
-                int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
-                if (is_meth) {
+                *attr = PyStackRef_NULL;
+                if (_PyObject_GetMethodStackRef(PyStackRef_AsPyObjectBorrow(owner), name, attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(attr_o != NULL);  // No errors on this branch
+                    assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
                     self_or_null = owner;  // Transfer ownership
                 }
                 else {
@@ -2226,18 +2224,17 @@
                        meth | NULL | arg1 | ... | argN
                      */
                     PyStackRef_CLOSE(owner);
-                    if (attr_o == NULL) JUMP_TO_ERROR();
+                    if (PyStackRef_IsNull(*attr)) JUMP_TO_ERROR();
                     self_or_null = PyStackRef_NULL;
                 }
             }
             else {
                 /* Classic, pushes one value. */
-                attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                *attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name));
                 PyStackRef_CLOSE(owner);
-                if (attr_o == NULL) JUMP_TO_ERROR();
+                if (PyStackRef_IsNull(*attr)) JUMP_TO_ERROR();
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            stack_pointer[-1] = attr;
+            stack_pointer[-1].bits = (uintptr_t)attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
