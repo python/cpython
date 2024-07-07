@@ -1,0 +1,2 @@
+Fixed complex() throws malformed string when using a string with whitespace,
+added more tests for this

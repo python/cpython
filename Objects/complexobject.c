@@ -822,12 +822,23 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
         else
             return NULL;
     }
+    while (Py_ISSPACE(*end)) {
+        end++;
+    }
     if (end != s) {
         /* all 4 forms starting with <float> land here */
         s = end;
         if (*s == '+' || *s == '-') {
             /* <float><signed-float>j | <float><sign>j */
             x = z;
+            char sign = *s;
+            s++;
+            while (Py_ISSPACE(*s)) {
+                s++;
+            }
+            if (*s == '+' || *s == '-') {
+                goto parse_error;
+            }
             y = PyOS_string_to_double(s, &end, NULL);
             if (y == -1.0 && PyErr_Occurred()) {
                 if (PyErr_ExceptionMatches(PyExc_ValueError))
@@ -835,13 +846,17 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
                 else
                     return NULL;
             }
-            if (end != s)
+            if (end != s) {
                 /* <float><signed-float>j */
+                /* This extra-step does not decrease performance */
+                if (sign == '-') {
+                    y = -y;
+                }
                 s = end;
+            }
             else {
                 /* <float><sign>j */
-                y = *s == '+' ? 1.0 : -1.0;
-                s++;
+                y = sign == '+' ? 1.0 : -1.0;
             }
             if (!(*s == 'j' || *s == 'J'))
                 goto parse_error;
