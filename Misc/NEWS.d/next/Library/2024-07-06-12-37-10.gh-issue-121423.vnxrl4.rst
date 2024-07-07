@@ -1,1 +1,1 @@
-Speed up socket.errorTab and lazy import selectors
+Improve import time of `mod`:`socket` by writing `socket.errorTab` as a constant and lazy import of `mod`:`selectors`.
