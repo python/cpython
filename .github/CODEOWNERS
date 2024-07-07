@@ -72,6 +72,7 @@ Include/internal/pycore_freelist.h  @ericsnowcurrently
 Include/internal/pycore_global_objects.h  @ericsnowcurrently
 Include/internal/pycore_obmalloc.h  @ericsnowcurrently
 Include/internal/pycore_pymem.h     @ericsnowcurrently
+Include/internal/pycore_stackref.h  @Fidget-Spinner
 Modules/main.c                @ericsnowcurrently
 Programs/_bootstrap_python.c  @ericsnowcurrently
 Programs/python.c             @ericsnowcurrently
