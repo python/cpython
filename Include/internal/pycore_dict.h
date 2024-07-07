@@ -120,6 +120,7 @@ extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash
 extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
 extern int _PyDict_GetItem_KnownHash_StackRef(PyDictObject *op, PyObject *key, Py_hash_t hash, _PyStackRef *result);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
+extern int _PyDict_GetItemStackRef(PyObject *op, PyObject *key, _PyStackRef *result);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,

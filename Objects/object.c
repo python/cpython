@@ -1620,11 +1620,10 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
             }
         }
     }
-    PyObject *dict, *attr;
+    PyObject *dict;
     if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
-        _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
-        if (attr != NULL) {
-            *method = PyStackRef_FromPyObjectSteal(attr);
+        _PyObject_TryGetInstanceAttributeStackRef(obj, name, method)) {
+        if (!PyStackRef_IsNull(*method)) {
             PyStackRef_XCLOSE(descr_st);
             return 0;
         }
@@ -1644,9 +1643,7 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        PyObject *item;
-        if (PyDict_GetItemRef(dict, name, &item) != 0) {
-            *method = PyStackRef_FromPyObjectSteal(item);
+        if (_PyDict_GetItemStackRef(dict, name, method) != 0) {
             // found or error
             Py_DECREF(dict);
             PyStackRef_CLOSE(descr_st);

@@ -2364,6 +2364,24 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
 }
 
 int
+_PyDict_GetItemStackRef(PyObject *op, PyObject *key, _PyStackRef *result)
+{
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        *result = PyStackRef_NULL;
+        return -1;
+    }
+
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        *result = PyStackRef_NULL;
+        return -1;
+    }
+
+    return _PyDict_GetItem_KnownHash_StackRef((PyDictObject *)op, key, hash, result);
+}
+
+int
 _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)
 {
     ASSERT_DICT_LOCKED(op);
@@ -7071,6 +7089,79 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 #else
     PyObject *value = values->values[ix];
     *attr = Py_XNewRef(value);
+    return true;
+#endif
+}
+
+bool
+_PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStackRef *attr)
+{
+    assert(PyUnicode_CheckExact(name));
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
+        return false;
+    }
+
+    PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
+    assert(keys != NULL);
+    Py_ssize_t ix = _PyDictKeys_StringLookup(keys, name);
+    if (ix == DKIX_EMPTY) {
+        *attr = PyStackRef_NULL;
+        return true;
+    }
+
+#ifdef Py_GIL_DISABLED
+    PyObject *value = _Py_atomic_load_ptr_acquire(&values->values[ix]);
+    *attr = PyStackRef_FromPyObjectNew(value);
+    if (value == _Py_atomic_load_ptr_acquire(&values->values[ix])) {
+        return true;
+    }
+
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        // No dict, lock the object to prevent one from being
+        // materialized...
+        bool success = false;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+
+        dict = _PyObject_GetManagedDict(obj);
+        if (dict == NULL) {
+            // Still no dict, we can read from the values
+            assert(values->valid);
+            value = values->values[ix];
+            *attr = PyStackRef_FromPyObjectNew(value);
+            success = true;
+        }
+
+        Py_END_CRITICAL_SECTION();
+
+        if (success) {
+            return true;
+        }
+    }
+
+    // We have a dictionary, we'll need to lock it to prevent
+    // the values from being resized.
+    assert(dict != NULL);
+
+    bool success;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+
+    if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
+        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+        *attr = PyStackRef_FromPyObjectNew(value);
+        success = true;
+    } else {
+        // Caller needs to lookup from the dictionary
+        success = false;
+    }
+
+    Py_END_CRITICAL_SECTION();
+
+    return success;
+#else
+    PyObject *value = values->values[ix];
+    *attr = PyStackRef_FromPyObjectNew(value);
     return true;
 #endif
 }
