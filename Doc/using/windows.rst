@@ -23,8 +23,7 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows 10 and newer. If you require Windows 7
-support, please install Python 3.8.
+Python |version| supports Windows 10 and newer.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
