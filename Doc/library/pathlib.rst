@@ -1828,41 +1828,41 @@ Corresponding tools
 Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
-====================================   ==============================
-:mod:`os` and :mod:`os.path`           :mod:`pathlib`
-====================================   ==============================
-:func:`os.path.dirname`                :attr:`PurePath.parent`
-:func:`os.path.basename`               :attr:`PurePath.name`
-:func:`os.path.splitext`               :attr:`PurePath.stem`, :attr:`PurePath.suffix`
-:func:`os.path.join`                   :meth:`PurePath.joinpath`
-:func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
-:func:`os.path.relpath`                :meth:`PurePath.relative_to` [1]_
-:func:`os.path.expanduser`             :meth:`Path.expanduser` [2]_
-:func:`os.path.realpath`               :meth:`Path.resolve`
-:func:`os.path.abspath`                :meth:`Path.absolute` [3]_
-:func:`os.path.exists`                 :meth:`Path.exists`
-:func:`os.path.isfile`                 :meth:`Path.is_file`
-:func:`os.path.isdir`                  :meth:`Path.is_dir`
-:func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.path.isjunction`             :meth:`Path.is_junction`
-:func:`os.path.ismount`                :meth:`Path.is_mount`
-:func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.getcwd`                      :meth:`Path.cwd`
-:func:`os.stat`                        :meth:`Path.stat`
-:func:`os.lstat`                       :meth:`Path.lstat`
-:func:`os.listdir`                     :meth:`Path.iterdir`
-:func:`os.walk`                        :meth:`Path.walk` [4]_
-:func:`os.mkdir`, :func:`os.makedirs`  :meth:`Path.mkdir`
-:func:`os.link`                        :meth:`Path.hardlink_to`
-:func:`os.symlink`                     :meth:`Path.symlink_to`
-:func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.rename`                      :meth:`Path.rename`
-:func:`os.replace`                     :meth:`Path.replace`
-:func:`os.remove`, :func:`os.unlink`   :meth:`Path.unlink`
-:func:`os.rmdir`                       :meth:`Path.rmdir`
-:func:`os.chmod`                       :meth:`Path.chmod`
-:func:`os.lchmod`                      :meth:`Path.lchmod`
-====================================   ==============================
+=====================================   ==============================================
+:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+=====================================   ==============================================
+:func:`os.path.dirname`                 :attr:`PurePath.parent`
+:func:`os.path.basename`                :attr:`PurePath.name`
+:func:`os.path.splitext`                :attr:`PurePath.stem`, :attr:`PurePath.suffix`
+:func:`os.path.join`                    :meth:`PurePath.joinpath`
+:func:`os.path.isabs`                   :meth:`PurePath.is_absolute`
+:func:`os.path.relpath`                 :meth:`PurePath.relative_to` [1]_
+:func:`os.path.expanduser`              :meth:`Path.expanduser` [2]_
+:func:`os.path.realpath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                 :meth:`Path.absolute` [3]_
+:func:`os.path.exists`                  :meth:`Path.exists`
+:func:`os.path.isfile`                  :meth:`Path.is_file`
+:func:`os.path.isdir`                   :meth:`Path.is_dir`
+:func:`os.path.islink`                  :meth:`Path.is_symlink`
+:func:`os.path.isjunction`              :meth:`Path.is_junction`
+:func:`os.path.ismount`                 :meth:`Path.is_mount`
+:func:`os.path.samefile`                :meth:`Path.samefile`
+:func:`os.getcwd`                       :meth:`Path.cwd`
+:func:`os.stat`                         :meth:`Path.stat`
+:func:`os.lstat`                        :meth:`Path.lstat`
+:func:`os.listdir`                      :meth:`Path.iterdir`
+:func:`os.walk`                         :meth:`Path.walk` [4]_
+:func:`os.mkdir`, :func:`os.makedirs`   :meth:`Path.mkdir`
+:func:`os.link`                         :meth:`Path.hardlink_to`
+:func:`os.symlink`                      :meth:`Path.symlink_to`
+:func:`os.readlink`                     :meth:`Path.readlink`
+:func:`os.rename`                       :meth:`Path.rename`
+:func:`os.replace`                      :meth:`Path.replace`
+:func:`os.remove`, :func:`os.unlink`    :meth:`Path.unlink`
+:func:`os.rmdir`                        :meth:`Path.rmdir`
+:func:`os.chmod`                        :meth:`Path.chmod`
+:func:`os.lchmod`                       :meth:`Path.lchmod`
+=====================================   ==============================================
 
 .. rubric:: Footnotes
 
