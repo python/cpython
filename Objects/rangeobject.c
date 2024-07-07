@@ -655,7 +655,7 @@ range_index(rangeobject *r, PyObject *ob)
     }
 
     /* object is not in the range */
-    PyErr_Format(PyExc_ValueError, "%R is not in range", ob);
+    PyErr_SetString(PyExc_ValueError, "range.index(x): x not in range");
     return NULL;
 }
 

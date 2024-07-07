@@ -98,13 +98,6 @@ typedef struct _Py_DebugOffsets {
         uint64_t owner;
     } interpreter_frame;
 
-    // CFrame offset;
-    struct _cframe {
-        uint64_t size;
-        uint64_t current_frame;
-        uint64_t previous;
-    } cframe;
-
     // Code object offset;
     struct _code_object {
         uint64_t size;

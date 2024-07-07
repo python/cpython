@@ -11,6 +11,7 @@ from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
+from test.support.import_helper import import_module
 from test.support.os_helper import unlink
 
 from .support import (
@@ -902,6 +903,9 @@ class TestMain(TestCase):
         self.assertNotIn("Traceback", output)
 
     def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
         hfile = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(unlink, hfile.name)
         env = os.environ.copy()
@@ -927,8 +931,11 @@ class TestMain(TestCase):
 
     def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
         master_fd, slave_fd = pty.openpty()
+        cmd = [sys.executable, "-i", "-u"]
+        if env is None:
+            cmd.append("-I")
         process = subprocess.Popen(
-            [sys.executable, "-i", "-u"],
+            cmd,
             stdin=slave_fd,
             stdout=slave_fd,
             stderr=slave_fd,
