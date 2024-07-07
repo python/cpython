@@ -361,6 +361,11 @@ if _winapi:
             f.write(ov.getbuffer())
             return f
 
+"""
+The default size of a pipe on Linux systems is 16 times the base page size:
+https://man7.org/linux/man-pages/man7/pipe.7.html
+"""
+PAGES_PER_PIPE = 16
 
 class Connection(_ConnectionBase):
     """
@@ -380,7 +385,7 @@ class Connection(_ConnectionBase):
         _write = os.write
         _read = os.read
         _base_page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
-        _default_pipe_size = _base_page_size * 16
+        _default_pipe_size = _base_page_size * PAGES_PER_PIPE
 
     def _send(self, buf, write=_write):
         remaining = len(buf)
