@@ -379,7 +379,7 @@ class Connection(_ConnectionBase):
             _close(self._handle)
         _write = os.write
         _read = os.read
-        _base_page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE']) 
+        _base_page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
         _default_pipe_size = _base_page_size * 16
 
     def _send(self, buf, write=_write):
