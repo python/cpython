@@ -1864,6 +1864,8 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.lchmod`                      :meth:`Path.lchmod`
 ====================================   ==============================
 
+.. rubric:: Footnotes
+
 .. [1] :func:`os.path.relpath` calls :func:`~os.path.abspath` to make paths
    absolute and remove "``..``" parts, whereas :meth:`PurePath.relative_to`
    is a lexical operation that raises :exc:`ValueError` when its inputs'
