@@ -373,11 +373,14 @@ class Connection(_ConnectionBase):
             _close(self._handle)
         _write = _multiprocessing.send
         _read = _multiprocessing.recv
+        _default_pipe_size = 0
     else:
         def _close(self, _close=os.close):
             _close(self._handle)
         _write = os.write
         _read = os.read
+        _base_page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE']) 
+        _default_pipe_size = _base_page_size * 16
 
     def _send(self, buf, write=_write):
         remaining = len(buf)
@@ -393,13 +396,10 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         is_pipe = False
-        page_size = 0
-        if not _winapi:
-            page_size = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
-            if size > 16 * page_size:
-                mode = os.fstat(handle).st_mode
-                is_pipe = stat.S_ISFIFO(mode)
-        limit = 16 * page_size if is_pipe else remaining
+        if size > self._default_pipe_size > 0:
+            mode = os.fstat(handle).st_mode
+            is_pipe = stat.S_ISFIFO(mode)
+        limit = self._default_pipe_size if is_pipe else remaining
         while remaining > 0:
             to_read = min(limit, remaining)
             chunk = read(handle, to_read)
