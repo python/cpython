@@ -11,14 +11,14 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import errno
 import io
+import itertools
 import os
+import stat
 import sys
 import socket
 import struct
-import time
 import tempfile
-import itertools
-import stat
+import time
 
 
 from . import util
