@@ -284,7 +284,7 @@ Type Objects
    * On error, set *\*result* to ``NULL`` and return ``-1`` with an exception.
    * The ``result`` argument accepts ``NULL`` if you need only the return value.
 
-   The token is a memory layout ID to identify the class.
+   The token is a memory layout ID for the class.
    You can store the preferred one in a heap type through
    :c:func:`PyType_FromMetaclass()`, if you know that:
 
@@ -301,7 +301,7 @@ Type Objects
       }
 
    The slot accepts ``NULL`` **via** the ``Py_TP_USE_SPEC`` identifier,
-   with which a heap type holds the ``spec`` pointer passed to
+   with which a heap type takes in the ``spec`` pointer passed to
    :c:func:`PyType_FromMetaclass()`::
 
       // Be careful when the spec is dynamically created
