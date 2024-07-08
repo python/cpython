@@ -473,6 +473,12 @@ class LongTest(unittest.TestCase):
             self.check_float_conversion(value)
             self.check_float_conversion(-value)
 
+    @support.requires_IEEE_754
+    @support.bigmemtest(2**32, memuse=0.2)
+    def test_float_conversion_huge_integer(self, size):
+        v = 1 << size
+        self.assertRaises(OverflowError, float, v)
+
     def test_float_overflow(self):
         for x in -2.0, -1.0, 0.0, 1.0, 2.0:
             self.assertEqual(float(int(x)), x)
@@ -613,6 +619,56 @@ class LongTest(unittest.TestCase):
                     eq(x <= y, Rcmp <= 0)
                     eq(x > y, Rcmp > 0)
                     eq(x >= y, Rcmp >= 0)
+
+    @support.requires_IEEE_754
+    @support.bigmemtest(2**32, memuse=0.2)
+    def test_mixed_compares_huge_integer(self, size):
+        v = 1 << size
+        f = sys.float_info.max
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, True)
+        self.assertIs(f <= v, True)
+        self.assertIs(f > v, False)
+        self.assertIs(f >= v, False)
+        f = float('inf')
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, False)
+        self.assertIs(f <= v, False)
+        self.assertIs(f > v, True)
+        self.assertIs(f >= v, True)
+        f = float('nan')
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, False)
+        self.assertIs(f <= v, False)
+        self.assertIs(f > v, False)
+        self.assertIs(f >= v, False)
+
+        del v
+        v = (-1) << size
+        f = -sys.float_info.max
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, False)
+        self.assertIs(f <= v, False)
+        self.assertIs(f > v, True)
+        self.assertIs(f >= v, True)
+        f = float('-inf')
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, True)
+        self.assertIs(f <= v, True)
+        self.assertIs(f > v, False)
+        self.assertIs(f >= v, False)
+        f = float('nan')
+        self.assertIs(f == v, False)
+        self.assertIs(f != v, True)
+        self.assertIs(f < v, False)
+        self.assertIs(f <= v, False)
+        self.assertIs(f > v, False)
+        self.assertIs(f >= v, False)
 
     def test__format__(self):
         self.assertEqual(format(123456789, 'd'), '123456789')
