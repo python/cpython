@@ -474,8 +474,8 @@ class LongTest(unittest.TestCase):
             self.check_float_conversion(-value)
 
     @support.requires_IEEE_754
-    @support.bigmemtest(2**29, memuse=1.6, dry_run=False)
-    def test_float_conversion_large(self, size):
+    #@support.bigmemtest(2**29, memuse=1.6, dry_run=False)
+    def test_float_conversion_large(self, size=2**29):
         bits = size * 8
         v = 1 << bits
         self.assertRaises(OverflowError, float, v)
@@ -622,8 +622,8 @@ class LongTest(unittest.TestCase):
                     eq(x >= y, Rcmp >= 0)
 
     @support.requires_IEEE_754
-    @support.bigmemtest(2**29, memuse=3.2, dry_run=False)
-    def test_mixed_compares_large_integer(self, size):
+    #@support.bigmemtest(2**29, memuse=3.2, dry_run=False)
+    def test_mixed_compares_large_integer(self, size=2**29):
         bits = size * 8
         v = 1 << bits
         f = sys.float_info.max
