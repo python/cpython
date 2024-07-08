@@ -2675,8 +2675,11 @@
                 JUMP_TO_JUMP_TARGET();
             }
             if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+                it->it_index = -1;
+                if (1) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
