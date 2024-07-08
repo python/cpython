@@ -405,6 +405,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(entrypoint)
         STRUCT_FOR_ID(env)
         STRUCT_FOR_ID(errors)
+        STRUCT_FOR_ID(escape)
         STRUCT_FOR_ID(event)
         STRUCT_FOR_ID(eventmask)
         STRUCT_FOR_ID(exc_type)

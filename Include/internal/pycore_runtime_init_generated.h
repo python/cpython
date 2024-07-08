@@ -914,6 +914,7 @@ extern "C" {
     INIT_ID(entrypoint), \
     INIT_ID(env), \
     INIT_ID(errors), \
+    INIT_ID(escape), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
     INIT_ID(exc_type), \
