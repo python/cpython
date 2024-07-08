@@ -228,12 +228,12 @@ PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
 PyAPI_FUNC(uint32_t) _PySeqLock_BeginRead(_PySeqLock *seqlock);
 
 // End the read operation and confirm that the sequence number has not changed.
-// Returns 1 if the read was successful or 0 if the read should be re-tried.
-PyAPI_FUNC(uint32_t) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
+// Returns 1 if the read was successful or 0 if the read should be retried.
+PyAPI_FUNC(int) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
 
 // Check if the lock was held during a fork and clear the lock.  Returns 1
-// if the lock was held and any associated datat should be cleared.
-PyAPI_FUNC(uint32_t) _PySeqLock_AfterFork(_PySeqLock *seqlock);
+// if the lock was held and any associated data should be cleared.
+PyAPI_FUNC(int) _PySeqLock_AfterFork(_PySeqLock *seqlock);
 
 #ifdef __cplusplus
 }

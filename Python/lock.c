@@ -514,6 +514,7 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
         }
         else if (_Py_atomic_compare_exchange_uint32(&seqlock->sequence, &prev, prev + 1)) {
             // We've locked the cache
+            _Py_atomic_fence_release();
             break;
         }
         else {
@@ -547,28 +548,31 @@ uint32_t _PySeqLock_BeginRead(_PySeqLock *seqlock)
     return sequence;
 }
 
-uint32_t _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
+int _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
 {
-    // Synchronize again and validate that the entry hasn't been updated
-    // while we were readying the values.
-     if (_Py_atomic_load_uint32_acquire(&seqlock->sequence) == previous) {
-        return 1;
-     }
+    // gh-121368: We need an explicit acquire fence here to ensure that
+    // this load of the sequence number is not reordered before any loads
+    // within the read lock.
+    _Py_atomic_fence_acquire();
 
-     _Py_yield();
-     return 0;
+    if (_Py_atomic_load_uint32_relaxed(&seqlock->sequence) == previous) {
+        return 1;
+    }
+
+    _Py_yield();
+    return 0;
 }
 
-uint32_t _PySeqLock_AfterFork(_PySeqLock *seqlock)
+int _PySeqLock_AfterFork(_PySeqLock *seqlock)
 {
     // Synchronize again and validate that the entry hasn't been updated
     // while we were readying the values.
-     if (SEQLOCK_IS_UPDATING(seqlock->sequence)) {
+    if (SEQLOCK_IS_UPDATING(seqlock->sequence)) {
         seqlock->sequence = 0;
         return 1;
-     }
+    }
 
-     return 0;
+    return 0;
 }
 
 #undef PyMutex_Lock

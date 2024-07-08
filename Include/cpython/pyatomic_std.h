@@ -962,6 +962,13 @@ _Py_atomic_fence_seq_cst(void)
 }
 
  static inline void
+_Py_atomic_fence_acquire(void)
+{
+    _Py_USING_STD;
+    atomic_thread_fence(memory_order_acquire);
+}
+
+ static inline void
 _Py_atomic_fence_release(void)
 {
     _Py_USING_STD;
