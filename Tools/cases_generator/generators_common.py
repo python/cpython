@@ -25,7 +25,7 @@ def root_relative_path(filename: str) -> str:
         return filename
 
 
-def type_and_null(var: StackItem):
+def type_and_null(var: StackItem) -> Tuple[str, str]:
     if var.type:
         return var.type, "NULL"
     elif var.is_array():
