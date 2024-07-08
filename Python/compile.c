@@ -2419,7 +2419,6 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     */
 
     /* 1. compile the class body into a code object */
-
     RETURN_IF_ERROR(
         compiler_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
                              (void *)s, firstlineno, s->v.ClassDef.name));
