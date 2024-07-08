@@ -8,7 +8,7 @@ from analyzer import (
     StackItem,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator
+from typing import Callable, Mapping, TextIO, Iterator, Tuple
 from lexer import Token
 from stack import Stack
 
