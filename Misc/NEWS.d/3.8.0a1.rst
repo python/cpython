@@ -2519,7 +2519,7 @@ non-Windows systems.
 .. nonce: dQS1ng
 .. section: Library
 
-Fix incorrect parsing of :class:`!_io.IncrementalNewlineDecoder`'s
+Fix incorrect parsing of :class:`io.IncrementalNewlineDecoder`'s
 *translate* argument.
 
 ..
