@@ -4925,7 +4925,7 @@ _PyType_FromMetaclass_impl(
             break;
         case Py_tp_token:
             {
-                res->ht_token = slot->pfunc ? slot->pfunc : spec;
+                res->ht_token = slot->pfunc == Py_TP_USE_SPEC ? spec : slot->pfunc;
             }
             break;
         default:
