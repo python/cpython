@@ -555,7 +555,7 @@ Special read-only attributes
      - Meaning
 
    * - .. attribute:: function.__globals__
-     - A reference to the :term:`mapping` that holds the function's
+     - A reference to the :class:`dictionary <dict>` that holds the function's
        :ref:`global variables <naming>` -- the global namespace of the module
        in which the function was defined.
 
