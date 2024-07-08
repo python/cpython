@@ -1467,13 +1467,14 @@ dummy_func(
         inst(STORE_GLOBAL, (v --)) {
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
             int err;
             if (PyDict_Check(globals)) {
-                err = PyDict_SetItem(globals, name, value);
+                err = PyDict_SetItem(globals, name,
+                                     PyStackRef_AsPyObjectBorrow(v));
             }
             else {
-                err = PyObject_SetItem(globals, name, value);
+                err = PyObject_SetItem(globals, name,
+                                       PyStackRef_AsPyObjectBorrow(v));
             }
             DECREF_INPUTS();
             ERROR_IF(err, error);

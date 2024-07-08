@@ -1273,10 +1273,6 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyMapping_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
-        return NULL;
-    }
     int has_builtins;
     if (PyDict_Check(globals)) {
         has_builtins = PyDict_ContainsString(globals, "__builtins__");
@@ -1290,7 +1286,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
             }
         }
     }
-    else {
+    else if (PyMapping_Check(globals)) {
         has_builtins = PyMapping_HasKeyStringWithError(globals, "__builtins__");
         if (has_builtins < 0) {
             return NULL;
@@ -1301,6 +1297,10 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
                 return NULL;
             }
         }
+    }
+    else {
+        PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
+        return NULL;
     }
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);

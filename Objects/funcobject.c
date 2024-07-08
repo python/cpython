@@ -150,7 +150,6 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
-    assert(PyDict_Check(globals) || PyMapping_Check(globals));
     Py_INCREF(globals);
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -187,8 +186,10 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     if (PyDict_Check(globals)) {
         r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
     }
-    else {
+    else if (PyMapping_Check(globals)) {
         r = PyMapping_GetOptionalItem(globals, &_Py_ID(__name__), &module);
+    } else {
+        goto error;
     }
     if (r < 0) {
         goto error;

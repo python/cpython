@@ -1511,13 +1511,14 @@
             v = stack_pointer[-1];
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
             int err;
             if (PyDict_Check(globals)) {
-                err = PyDict_SetItem(globals, name, value);
+                err = PyDict_SetItem(globals, name,
+                                     PyStackRef_AsPyObjectBorrow(v));
             }
             else {
-                err = PyObject_SetItem(globals, name, value);
+                err = PyObject_SetItem(globals, name,
+                                       PyStackRef_AsPyObjectBorrow(v));
             }
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();

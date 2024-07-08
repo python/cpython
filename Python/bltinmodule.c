@@ -960,11 +960,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     const char *str;
 
     if (locals != Py_None && !PyMapping_Check(locals)) {
-        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-        return NULL;
-    }
-    if (globals != Py_None && !PyMapping_Check(globals)) {
-        PyErr_SetString(PyExc_TypeError, "globals must be a mapping");
+        PyErr_Format(PyExc_TypeError,
+            "locals must be a mapping or None, not %.100s",
+            Py_TYPE(locals)->tp_name);
         return NULL;
     }
     if (globals == Py_None) {
@@ -998,11 +996,15 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
             r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
         }
     }
-    else {
+    else if (PyMapping_Check(globals)) {
         r = PyMapping_HasKeyWithError(globals, &_Py_ID(__builtins__));
         if (r == 0) {
             r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
         }
+    } else {
+        PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
+                     Py_TYPE(globals)->tp_name);
+        return NULL;
     }
     if (r < 0) {
         goto error;
