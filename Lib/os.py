@@ -532,15 +532,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if isbytes:
                 name = fsencode(name)
             try:
-                is_dir = entry.is_dir()
+                if entry.is_dir():
+                    dirs.append(name)
+                    if entries is not None:
+                        entries.append(entry)
+                else:
+                    nondirs.append(name)
             except OSError:
-                is_dir = False
-
-            if is_dir:
-                dirs.append(name)
-                if entries is not None:
-                    entries.append(entry)
-            else:
                 nondirs.append(name)
 
         if topdown:
