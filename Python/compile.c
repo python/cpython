@@ -894,7 +894,6 @@ static int
 compiler_addop_name(struct compiler *c, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    struct compiler_unit *u = c->u;
     PyObject *mangled = compiler_maybe_mangle(c, o);
     if (!mangled) {
         return ERROR;
@@ -930,7 +929,7 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
