@@ -3854,6 +3854,30 @@ if test "$ac_cv_c_complex_supported" = "yes"; then
               [Defined if _Complex C type is available.])
 fi
 
+# check for fnmatch(3) support
+#
+# We test for the plain POSIX implementation (case-sensitive match).
+#
+# To ensure that the implementation of fnmatch(3) is compliant
+# we run some tests to make sure that everything works well.
+#
+# Note that MSVC does not support fnmatch(3).
+AC_CACHE_CHECK([for case-sensititve fnmatch(3)], [ac_cv_fnmatch_supported],
+[AC_RUN_IFELSE(
+  [AC_LANG_PROGRAM([@%:@include <fnmatch.h>], [[
+    exit(!(
+        fnmatch("a*", "abc", 0) != FNM_NOMATCH &&
+        fnmatch("a*", "Abc", 0) == FNM_NOMATCH
+    ));
+  ]])], [ac_cv_fnmatch_supported=yes],
+  [ac_cv_fnmatch_supported=no],
+  [ac_cv_fnmatch_supported=no]
+)])
+if test "$ac_cv_fnmatch_supported" = "yes"; then
+  AC_DEFINE([Py_HAVE_FNMATCH], [1],
+            [Defined if case-sensitive fnmatch(3) is supported.])
+fi
+
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[

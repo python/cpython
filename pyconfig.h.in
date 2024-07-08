@@ -1689,6 +1689,9 @@
 /* Defined if _Complex C type is available. */
 #undef Py_HAVE_C_COMPLEX
 
+/* Defined if case-sensitive fnmatch(3) is supported. */
+#undef Py_HAVE_FNMATCH
+
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
 
