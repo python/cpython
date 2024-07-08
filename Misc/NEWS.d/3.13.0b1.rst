@@ -1595,7 +1595,7 @@ Use user-selected color theme for Help => IDLE Doc.
 .. nonce: czQQ9G
 .. section: C API
 
-Fix :c:macro:`!Py_BUILD_ASSERT` and :c:macro:`!Py_BUILD_ASSERT_EXPR` for
+Fix :c:macro:`Py_BUILD_ASSERT` and :c:macro:`Py_BUILD_ASSERT_EXPR` for
 non-constant expressions: use ``static_assert()`` on C11 and newer. Patch by
 Victor Stinner.
 
