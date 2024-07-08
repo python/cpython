@@ -1584,6 +1584,8 @@ Note that if ``name`` is a submodule (contains a dot),
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
+.. note:: ``SourceFileLoader.load_module()`` has been deprecated -- this recipe should be used instead.
+
 To import a Python source file directly, use the following recipe::
 
     import importlib.util
