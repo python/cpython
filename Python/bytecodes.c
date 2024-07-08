@@ -2967,7 +2967,10 @@ dummy_func(
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
             EXIT_IF(seq == NULL);
-            EXIT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
+            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                it->it_index = -1;
+                EXIT_IF(1);
+            }
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
