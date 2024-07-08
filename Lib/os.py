@@ -373,59 +373,43 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         # minor reason when (say) a thousand readable directories are still
         # left to visit.
         try:
-            scandir_it = scandir(top)
+            with scandir(top) as entries:
+                for entry in entries:
+                    try:
+                        if followlinks is _walk_symlinks_as_files:
+                            is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
+                        else:
+                            is_dir = entry.is_dir()
+                    except OSError:
+                        # If is_dir() raises an OSError, consider the entry not to
+                        # be a directory, same behaviour as os.path.isdir().
+                        is_dir = False
+
+                    if is_dir:
+                        dirs.append(entry.name)
+                    else:
+                        nondirs.append(entry.name)
+
+                    if not topdown and is_dir:
+                        # Bottom-up: traverse into sub-directory, but exclude
+                        # symlinks to directories if followlinks is False
+                        if followlinks:
+                            walk_into = True
+                        else:
+                            try:
+                                is_symlink = entry.is_symlink()
+                            except OSError:
+                                # If is_symlink() raises an OSError, consider the
+                                # entry not to be a symbolic link, same behaviour
+                                # as os.path.islink().
+                                is_symlink = False
+                            walk_into = not is_symlink
+
+                        if walk_into:
+                            walk_dirs.append(entry.path)
         except OSError as error:
             if onerror is not None:
                 onerror(error)
-            continue
-
-        cont = False
-        with scandir_it:
-            while True:
-                try:
-                    try:
-                        entry = next(scandir_it)
-                    except StopIteration:
-                        break
-                except OSError as error:
-                    if onerror is not None:
-                        onerror(error)
-                    cont = True
-                    break
-
-                try:
-                    if followlinks is _walk_symlinks_as_files:
-                        is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
-                    else:
-                        is_dir = entry.is_dir()
-                except OSError:
-                    # If is_dir() raises an OSError, consider the entry not to
-                    # be a directory, same behaviour as os.path.isdir().
-                    is_dir = False
-
-                if is_dir:
-                    dirs.append(entry.name)
-                else:
-                    nondirs.append(entry.name)
-
-                if not topdown and is_dir:
-                    # Bottom-up: traverse into sub-directory, but exclude
-                    # symlinks to directories if followlinks is False
-                    if followlinks:
-                        walk_into = True
-                    else:
-                        try:
-                            is_symlink = entry.is_symlink()
-                        except OSError:
-                            # If is_symlink() raises an OSError, consider the
-                            # entry not to be a symbolic link, same behaviour
-                            # as os.path.islink().
-                            is_symlink = False
-                        walk_into = not is_symlink
-
-                    if walk_into:
-                        walk_dirs.append(entry.path)
-        if cont:
             continue
 
         if topdown:
