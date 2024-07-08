@@ -1120,8 +1120,8 @@ class MathTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
-    @support.bigmemtest(2**32, memuse=0.85)
-    def test_isqrt_huge(self, size):
+    #@support.bigmemtest(2**32, memuse=0.85)
+    def test_isqrt_huge(self, size=2**32):
         v = 1 << size
         w = math.isqrt(v)
         self.assertEqual(w.bit_length(), size // 2 + 1)
@@ -1268,8 +1268,8 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
 
-    @support.bigmemtest(2**32, memuse=0.2)
-    def test_log_huge_integer(self, size):
+    #@support.bigmemtest(2**32, memuse=0.2)
+    def test_log_huge_integer(self, size=2**32):
         v = 1 << size
         self.assertAlmostEqual(math.log2(v), size)
         self.assertAlmostEqual(math.log(v), size * 0.6931471805599453)
