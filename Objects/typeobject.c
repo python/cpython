@@ -5263,7 +5263,7 @@ int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
     if (token == NULL) {
-        // We scan only heaptypes that has a token
+        // We scan only the heaptypes that have a token
         goto exit;
     }
     assert(PyType_Check(type));
