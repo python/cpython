@@ -142,8 +142,8 @@ _PyLong_New(Py_ssize_t size)
     assert(size >= 0);
     PyLongObject *result;
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "too many digits in integer");
+        PyErr_SetString(PyExc_SystemError,
+                        "!!!too many digits in integer");
         return NULL;
     }
     /* Fast operations for single digit integers (including zero)
@@ -817,7 +817,7 @@ _PyLong_NumBits(PyObject *vv)
     return result;
 
   Overflow:
-    PyErr_SetString(PyExc_OverflowError, "int has too many bits "
+    PyErr_SetString(PyExc_SystemError, "!!!int has too many bits "
                     "to express in a platform size_t");
     return (size_t)-1;
 }
