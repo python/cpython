@@ -1359,6 +1359,9 @@ Special read-only attributes
      - The mapping used by the frame to look up
        :ref:`global variables <naming>`
 
+       .. versionchanged:: 3.14
+          May now be a mapping passed to :func:`exec` or :func:`eval`.
+
    * - .. attribute:: frame.f_builtins
      - The mapping used by the frame to look up
        :ref:`built-in (intrinsic) names <naming>`
