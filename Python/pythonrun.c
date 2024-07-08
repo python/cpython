@@ -1274,7 +1274,10 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
     /* Set globals['__builtins__'] if it doesn't exist */
     int has_builtins;
-    if (PyDict_Check(globals)) {
+    if (!globals) {
+        goto error;
+    }
+    else if (PyDict_Check(globals)) {
         has_builtins = PyDict_ContainsString(globals, "__builtins__");
         if (has_builtins < 0) {
             return NULL;
@@ -1299,6 +1302,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
         }
     }
     else {
+error:
         PyErr_SetString(PyExc_SystemError, "globals must be a mapping");
         return NULL;
     }
