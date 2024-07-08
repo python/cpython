@@ -1,13 +1,18 @@
 """Test cases for the fnmatch module."""
-
-import unittest
 import os
 import string
+import unittest
 import warnings
 
-import _fnmatch as c_fnmatch
-import fnmatch as py_fnmatch
-from fnmatch import fnmatch, fnmatchcase, translate, filter
+import test.support.import_helper
+
+c_fnmatch = test.support.import_helper.import_fresh_module("_fnmatch", blocked=["fnmatch"])
+py_fnmatch = test.support.import_helper.import_fresh_module("fnmatch", blocked=["_fnmatch"])
+
+fnmatch = py_fnmatch.fnmatch
+fnmatchcase = py_fnmatch.fnmatchcase
+translate  = py_fnmatch.translate
+filter = py_fnmatch.filter
 
 class FnmatchTestCase(unittest.TestCase):
 
