@@ -1,1 +1,1 @@
-Allow a mapping to be used as a global namespace, applicable to frame and function objects, and built-in functions :func:`exec` and :func:`eval`.
+Allow a mapping to be passed as the ``globals`` argument for the built-in functions ``exec`` and ``eval``.

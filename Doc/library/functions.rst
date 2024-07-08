@@ -581,7 +581,7 @@ are always available.  They are listed here in alphabetical order.
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: :class:`dict` | ``None``
+   :type globals: :term:`mapping` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
@@ -592,14 +592,14 @@ are always available.  They are listed here in alphabetical order.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
-   mappings as global and local namespace.  If the *globals* dictionary is
+   mappings as global and local namespace.  If the *globals* mapping is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *expression* is parsed.  That way you can
    control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
+   own ``__builtins__`` mapping into *globals* before passing it to
    :func:`eval`.  If the *locals* mapping is omitted it defaults to the
-   *globals* dictionary.  If both mappings are omitted, the expression is
+   *globals* mapping.  If both mappings are omitted, the expression is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
@@ -619,7 +619,7 @@ are always available.  They are listed here in alphabetical order.
 
    Hints: dynamic execution of statements is supported by the :func:`exec`
    function.  The :func:`globals` and :func:`locals` functions
-   return the current global and local dictionary, respectively, which may be
+   return the current global and local mapping, respectively, which may be
    useful to pass around for use by :func:`eval` or :func:`exec`.
 
    If the given source is a string, then leading and trailing spaces and tabs
@@ -642,6 +642,10 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
+   .. versionchanged:: 3.14
+
+      A mapping can now be passed as the *globals* argument.
+
 .. index:: pair: built-in function; exec
 
 .. function:: exec(source, /, globals=None, locals=None, *, closure=None)
@@ -658,12 +662,12 @@ are always available.  They are listed here in alphabetical order.
    :func:`exec` function. The return value is ``None``.
 
    In all cases, if the optional parts are omitted, the code is executed in the
-   current scope.  If only *globals* is provided, it must be a dictionary
-   (and not a subclass of dictionary), which
+   current scope.  If only *globals* is provided, it must be a mapping, which
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
-   respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary.
+   respectively.  If provided, *globals* and *locals* can be any mapping
+   objects.  Remember that at the module level, globals and locals are the same
+   mapping.
 
    .. note::
 
@@ -673,11 +677,11 @@ are always available.  They are listed here in alphabetical order.
       to access variables assigned at the top level (as the "top level"
       variables are treated as class variables in a class definition).
 
-   If the *globals* dictionary does not contain a value for the key
-   ``__builtins__``, a reference to the dictionary of the built-in module
+   If the *globals* mapping does not contain a value for the key
+   ``__builtins__``, a reference to the mapping of the built-in module
    :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   ``__builtins__`` mapping into *globals* before passing it to :func:`exec`.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing free variables.
@@ -698,7 +702,7 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       The default *locals* act as described for function :func:`locals` below.
-      Pass an explicit *locals* dictionary if you need to see effects of the
+      Pass an explicit *locals* mapping if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
 
    .. versionchanged:: 3.11
@@ -713,6 +717,9 @@ are always available.  They are listed here in alphabetical order.
       The semantics of the default *locals* namespace have been adjusted as
       described for the :func:`locals` builtin.
 
+   .. versionchanged:: 3.14
+
+      A mapping can now be passed as the *globals* argument.
 
 .. function:: filter(function, iterable)
 

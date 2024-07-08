@@ -555,7 +555,7 @@ Special read-only attributes
      - Meaning
 
    * - .. attribute:: function.__globals__
-     - A reference to the :class:`dictionary <dict>` that holds the function's
+     - A reference to the :term:`mapping` that holds the function's
        :ref:`global variables <naming>` -- the global namespace of the module
        in which the function was defined.
 
@@ -1356,11 +1356,11 @@ Special read-only attributes
           Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`global variables <naming>`
 
    * - .. attribute:: frame.f_builtins
-     - The dictionary used by the frame to look up
+     - The mapping used by the frame to look up
        :ref:`built-in (intrinsic) names <naming>`
 
    * - .. attribute:: frame.f_lasti

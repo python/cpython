@@ -150,6 +150,7 @@ PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     assert(globals != NULL);
+    assert(PyDict_Check(globals));
     Py_INCREF(globals);
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -182,23 +183,15 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     // __module__: Use globals['__name__'] if it exists, or NULL.
     PyObject *module;
     PyObject *builtins = NULL;
-    int r;
-    if (PyDict_Check(globals)) {
-        r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
-    }
-    else if (PyMapping_Check(globals)) {
-        r = PyMapping_GetOptionalItem(globals, &_Py_ID(__name__), &module);
-    } else {
-        goto error;
-    }
-    if (r < 0) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
         goto error;
     }
 
-    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
         goto error;
     }
+    Py_INCREF(builtins);
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {
