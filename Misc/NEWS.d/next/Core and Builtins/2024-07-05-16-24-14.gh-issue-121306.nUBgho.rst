@@ -1,1 +1,2 @@
 Allow a mapping to be passed as the *globals* argument for the built-in functions :func:`exec` and :func:`eval`.
+Patch by Ben Hsing
