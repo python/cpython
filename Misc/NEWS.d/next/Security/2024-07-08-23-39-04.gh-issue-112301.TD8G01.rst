@@ -1,0 +1,1 @@
+Enable -D_FORTIFY_SOURCE=3 option for all builds to enhance security
