@@ -359,7 +359,7 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
-  .. note::
+   .. note::
       On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
       Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
       if a pathname begins with exactly two slashes, the first component
