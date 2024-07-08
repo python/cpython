@@ -1853,7 +1853,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 {
     struct triple {
         long input;
-        size_t nbits;
+        uint64_t nbits;
         int sign;
     } testcases[] = {{0, 0, 0},
                      {1L, 1, 1},
@@ -1873,7 +1873,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     size_t i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
+        uint64_t nbits;
         int sign;
         PyObject *plong;
 
