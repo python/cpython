@@ -514,6 +514,7 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
         }
         else if (_Py_atomic_compare_exchange_uint32(&seqlock->sequence, &prev, prev + 1)) {
             // We've locked the cache
+            _Py_atomic_fence_release();
             break;
         }
         else {
