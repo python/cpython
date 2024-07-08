@@ -66,7 +66,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, run, b'a\n', NULL, dict(a=1))
         self.assertRaises(NameError, run, b'a\n', UserDict())
         self.assertRaises(NameError, run, b'a\n', UserDict(), {})
-        run(b'a\n', UserDict(), dict(a=1))
+        self.assertIsNone(run(b'a\n', UserDict(), dict(a=1)))
 
         # CRASHES run(NULL, {})
 
@@ -99,7 +99,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, run, NULL, dict(a=1))
         self.assertRaises(NameError, run, UserDict())
         self.assertRaises(NameError, run, UserDict(), {})
-        run(UserDict(), dict(a=1))
+        self.assertIsNone(run(UserDict(), dict(a=1)))
 
     @unittest.skipUnless(TESTFN_UNDECODABLE, 'only works if there are undecodable paths')
     @unittest.skipIf(os.name == 'nt', 'does not work on Windows')
