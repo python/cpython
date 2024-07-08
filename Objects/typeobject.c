@@ -5205,7 +5205,7 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
 #ifdef Py_GIL_DISABLED
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
-        int sequence = _PySeqLock_BeginRead(&entry->sequence);
+        uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
         uint32_t entry_version = _Py_atomic_load_uint32_relaxed(&entry->version);
         uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
         if (entry_version == type_version &&
