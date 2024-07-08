@@ -5073,7 +5073,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
                 /* Truncated surrogate code in range D800-DFFF */
                 goto End;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 3:
         case 4:
             errmsg = "invalid continuation byte";
@@ -7108,7 +7108,7 @@ unicode_encode_ucs1(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 memset(str, '?', collend - collstart);
                 str += (collend - collstart);
-                /* fall through */
+                _Py_FALLTHROUGH;
             case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
@@ -7147,7 +7147,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     break;
                 collstart = pos;
                 assert(collstart != collend);
-                /* fall through */
+                _Py_FALLTHROUGH;
 
             default:
                 rep = unicode_encode_call_errorhandler(errors, &error_handler_obj,
@@ -8699,7 +8699,7 @@ charmap_encoding_error(
                 return -1;
             }
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
     case _Py_ERROR_IGNORE:
         *inpos = collendpos;
         break;
@@ -9315,19 +9315,24 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
 /* --- Helpers ------------------------------------------------------------ */
 
 /* helper macro to fixup start/end slice values */
-#define ADJUST_INDICES(start, end, len)         \
-    if (end > len)                              \
-        end = len;                              \
-    else if (end < 0) {                         \
-        end += len;                             \
-        if (end < 0)                            \
-            end = 0;                            \
-    }                                           \
-    if (start < 0) {                            \
-        start += len;                           \
-        if (start < 0)                          \
-            start = 0;                          \
-    }
+#define ADJUST_INDICES(start, end, len) \
+    do {                                \
+        if (end > len) {                \
+            end = len;                  \
+        }                               \
+        else if (end < 0) {             \
+            end += len;                 \
+            if (end < 0) {              \
+                end = 0;                \
+            }                           \
+        }                               \
+        if (start < 0) {                \
+            start += len;               \
+            if (start < 0) {            \
+                start = 0;              \
+            }                           \
+        }                               \
+    } while (0)
 
 static Py_ssize_t
 any_find_slice(PyObject* s1, PyObject* s2,
@@ -15673,7 +15678,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #endif
             break;
         case SSTATE_NOT_INTERNED:
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             Py_UNREACHABLE();
         }
