@@ -1111,7 +1111,7 @@ class SourceLoader(_LoaderBasics):
             except OSError:
                 pass
             else:
-                source_mtime = int(st['mtime'])
+                source_mtime = st['mtime_ns']
                 try:
                     data = self.get_data(bytecode_path)
                 except OSError:
@@ -1231,7 +1231,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
     def path_stats(self, path):
         """Return the metadata for the path."""
         st = _path_stat(path)
-        return {'mtime': st.st_mtime, 'size': st.st_size}
+        return {'mtime_ns': st.st_mtime_ns, 'size': st.st_size}
 
     def _cache_bytecode(self, source_path, bytecode_path, data):
         # Adapt between the two APIs
