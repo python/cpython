@@ -2230,6 +2230,9 @@ def shell(cmd, **kwargs):
     Read the Security Considerations section of the documentation before using
     this function.
     """
+    if not kwargs.pop('shell', True):
+        raise ValueError("the 'shell' argument must be True or unspecified")
+
     if not isinstance(cmd, str):
         raise TypeError("cmd type must be str")
 

@@ -1837,7 +1837,7 @@ class RunFuncTestCase(BaseTestCase):
             subprocess.shell(["echo", "Python"])
 
         # Passing shell=False is invalid
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             subprocess.shell("echo Python", shell=False)
 
 
