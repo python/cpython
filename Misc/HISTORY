@@ -3952,7 +3952,7 @@ Library
 - Issue #18626: the inspect module now offers a basic command line
   introspection interface (Initial patch by Claudiu Popa)
 
-- Issue #3015: Fixed tkinter with wantobject=False.  Any Tcl command call
+- Issue #3015: Fixed tkinter with ``wantobjects=False``.  Any Tcl command call
   returned empty string.
 
 - Issue #19037: The mailbox module now makes all changes to maildir files

@@ -2048,7 +2048,7 @@ The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
 threading
 ---------
 
-:mod:`dummy_threading` and :mod:`_dummy_thread` have been deprecated.  It is
+:mod:`!dummy_threading` and :mod:`!_dummy_thread` have been deprecated.  It is
 no longer possible to build Python with threading disabled.
 Use :mod:`threading` instead.
 (Contributed by Antoine Pitrou in :issue:`31370`.)
@@ -2184,7 +2184,7 @@ The following features and APIs have been removed from Python 3.7:
   ``socket.socketpair`` on Python 3.5 and newer.
 
 * :mod:`asyncio` no longer exports the :mod:`selectors` and
-  :mod:`_overlapped` modules as ``asyncio.selectors`` and
+  :mod:`!_overlapped` modules as ``asyncio.selectors`` and
   ``asyncio._overlapped``. Replace ``from asyncio import selectors`` with
   ``import selectors``.
 

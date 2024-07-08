@@ -613,7 +613,7 @@ Rename ``types.Union`` to ``types.UnionType``.
 .. section: Core and Builtins
 
 Expose specialization stats in python via
-:func:`_opcode.get_specialization_stats`.
+:func:`!_opcode.get_specialization_stats`.
 
 ..
 
@@ -1701,7 +1701,7 @@ Remove many old deprecated :mod:`unittest` features:
 .. nonce: y1kEfP
 .. section: Library
 
-Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+Remove the deprecated ``split()`` method of :class:`!_tkinter.TkappType`.
 Patch by Erlend E. Aasland.
 
 ..
@@ -2298,9 +2298,9 @@ Adopt *binacii.a2b_base64*'s strict mode in *base64.b64decode*.
 .. nonce: ThuDMI
 .. section: Library
 
-Fixed a bug in the :mod:`_ssl` module that was throwing :exc:`OverflowError`
-when using :meth:`_ssl._SSLSocket.write` and :meth:`_ssl._SSLSocket.read`
-for a big value of the ``len`` parameter. Patch by Pablo Galindo
+Fixed a bug in the :mod:`!_ssl` module that was throwing :exc:`OverflowError`
+when using :meth:`!_ssl._SSLSocket.write` and :meth:`!_ssl._SSLSocket.read`
+for a big value of the ``len`` parameter. Patch by Pablo Galindo.
 
 ..
 
@@ -2398,7 +2398,7 @@ class in the interactive session. Instead of :exc:`TypeError`, it should be
 .. nonce: R3IcM1
 .. section: Library
 
-Fix memory leak in :func:`_tkinter._flatten` if it is called with a sequence
+Fix memory leak in :func:`!_tkinter._flatten` if it is called with a sequence
 or set, but not list or tuple.
 
 ..
@@ -4187,7 +4187,7 @@ Add calls of :func:`gc.collect` in tests to support PyPy.
 .. nonce: mQZdXU
 .. section: Tests
 
-Made tests relying on the :mod:`_asyncio` C extension module optional to
+Made tests relying on the :mod:`!_asyncio` C extension module optional to
 allow running on alternative Python implementations. Patch by Serhiy
 Storchaka.
 

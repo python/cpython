@@ -1935,8 +1935,8 @@ specifying the namespace in which the code will be running.
 tkinter
 -------
 
-The :mod:`tkinter._fix` module used for setting up the Tcl/Tk environment
-on Windows has been replaced by a private function in the :mod:`_tkinter`
+The :mod:`!tkinter._fix` module used for setting up the Tcl/Tk environment
+on Windows has been replaced by a private function in the :mod:`!_tkinter`
 module which makes no permanent changes to environment variables.
 (Contributed by Zachary Ware in :issue:`20035`.)
 

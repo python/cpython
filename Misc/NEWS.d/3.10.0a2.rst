@@ -362,7 +362,7 @@ plistlib: fix parsing XML plists with hexadecimal integer values
 .. nonce: 85BsRA
 .. section: Library
 
-Fix an incorrectly formatted error from :meth:`_codecs.charmap_decode` when
+Fix an incorrectly formatted error from :meth:`!_codecs.charmap_decode` when
 called with a mapped value outside the range of valid Unicode code points.
 PR by Max Bernstein.
 

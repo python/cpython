@@ -1384,7 +1384,7 @@ Nested subclasses of :class:`typing.NamedTuple` are now pickleable.
 .. nonce: hwrPN7
 .. section: Library
 
-Prevent :exc:`KeyError` thrown by :func:`_encoded_words.decode` when given
+Prevent :exc:`KeyError` thrown by :func:`!_encoded_words.decode` when given
 an encoded-word with invalid content-type encoding from propagating all the
 way to :func:`email.message.get`.
 
@@ -1395,7 +1395,7 @@ way to :func:`email.message.get`.
 .. nonce: S6Klvm
 .. section: Library
 
-Deprecated the ``split()`` method in :class:`_tkinter.TkappType` in favour
+Deprecated the ``split()`` method in :class:`!_tkinter.TkappType` in favour
 of the ``splitlist()`` method which has more consistent and predictable
 behavior.
 
@@ -3013,7 +3013,7 @@ thread was still running.
 .. section: Library
 
 Allow pure Python implementation of :mod:`pickle` to work even when the C
-:mod:`_pickle` module is unavailable.
+:mod:`!_pickle` module is unavailable.
 
 ..
 
@@ -3064,8 +3064,8 @@ internal tasks weak set is changed by another thread during iteration.
 .. nonce: ADqCkq
 .. section: Library
 
-:class:`_pyio.IOBase` destructor now does nothing if getting the ``closed``
-attribute fails to better mimic :class:`_io.IOBase` finalizer.
+:class:`!_pyio.IOBase` destructor now does nothing if getting the ``closed``
+attribute fails to better mimic :class:`!_io.IOBase` finalizer.
 
 ..
 
@@ -4993,7 +4993,7 @@ Make :const:`winreg.REG_MULTI_SZ` support zero-length strings.
 .. section: Windows
 
 Replace use of :c:func:`strcasecmp` for the system function
-:c:func:`_stricmp`. Patch by Minmin Gong.
+:c:func:`!_stricmp`. Patch by Minmin Gong.
 
 ..
 
@@ -5696,8 +5696,8 @@ Add :c:func:`PyConfig_SetWideStringList` function.
 .. section: C API
 
 Add fast functions for calling methods:
-:c:func:`_PyObject_VectorcallMethod`, :c:func:`_PyObject_CallMethodNoArgs`
-and :c:func:`_PyObject_CallMethodOneArg`.
+:c:func:`!_PyObject_VectorcallMethod`, :c:func:`!_PyObject_CallMethodNoArgs`
+and :c:func:`!_PyObject_CallMethodOneArg`.
 
 ..
 

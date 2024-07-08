@@ -550,7 +550,7 @@ or DuplicateOptionError.
 .. nonce: PBiRQB
 .. section: Library
 
-:class:`_io.WindowsConsoleIO` now emit a warning if a boolean value is
+:class:`!_io.WindowsConsoleIO` now emit a warning if a boolean value is
 passed as a filedescriptor argument.
 
 ..
