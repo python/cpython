@@ -6172,7 +6172,7 @@ int_bit_length_impl(PyObject *self)
 {
     uint64_t nbits = _PyLong_NumBits(self);
     if (nbits == (uint64_t)-1) {
-        return -1;
+        return NULL;
     }
     return PyLong_FromUnsignedLongLong(nbits);
 }
