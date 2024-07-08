@@ -552,7 +552,7 @@ int _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
 {
     // gh-121368: We need an explicit acquire fence here to ensure that
     // this load of the sequence number is not reordered before any loads
-    // withing the read lock.
+    // within the read lock.
     _Py_atomic_fence_acquire();
 
     if (_Py_atomic_load_uint32_relaxed(&seqlock->sequence) == previous) {
