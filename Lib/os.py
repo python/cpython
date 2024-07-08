@@ -383,10 +383,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                             is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
                         else:
                             is_dir = entry.is_dir()
-                        if is_dir and not topdown and (followlinks or not entry.is_symlink()):
-                            # Bottom-up: traverse into sub-directory, but exclude
-                            # symlinks to directories if followlinks is False
-                            stack.append(entry.path)
+                        if is_dir and not topdown:
+                            # Exclude symlink if followlinks is False
+                            if followlinks or not entry.is_symlink():
+                                # Traverse into sub-directory
+                                stack.append(entry.path)
                     except OSError:
                         # If is_dir() raises an OSError, consider the entry not to
                         # be a directory, same behaviour as os.path.isdir().
