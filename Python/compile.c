@@ -85,8 +85,6 @@ static int compiler_future_features(struct compiler *c);
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
-struct compiler;
-
 static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
@@ -320,7 +318,6 @@ static int compiler_call_helper(struct compiler *c, location loc,
                                 asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
 static int compiler_try_star_except(struct compiler *, stmt_ty);
-static int compiler_set_qualname(struct compiler *);
 
 static int compiler_sync_comprehension_generator(
                                       struct compiler *c, location loc,
