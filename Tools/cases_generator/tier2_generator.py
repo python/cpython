@@ -20,6 +20,7 @@ from generators_common import (
     emit_tokens,
     emit_to,
     REPLACEMENT_FUNCTIONS,
+    type_and_null,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -35,7 +36,7 @@ def declare_variable(
     if var.name in variables:
         return
     variables.add(var.name)
-    type, null = (var.type, "NULL") if var.type else ("_PyStackRef", "PyStackRef_NULL")
+    type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
     if var.condition:
         out.emit(f"{type}{space}{var.name} = {null};\n")
