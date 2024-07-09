@@ -369,7 +369,8 @@ class AutoFileTests:
 
         It's expected as bits of the I/O implementation change, this will need
         to change. The goal is to catch changes that unintentionally add
-        additional systemcalls (ex. additional fstat calls has been an issue).
+        additional systemcalls (ex. additional calls have been looked at in
+        bpo-21679 and gh-120754).
         """
         self.f.write(b"Hello, World!")
         self.f.close()
