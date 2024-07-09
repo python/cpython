@@ -34,5 +34,8 @@ _operator _operator.c
 _stat _stat.c
 _symtable symtablemodule.c
 
+# miscellaneous accelerators
+_fnmatch _fnmatch/_fnmatchmodule.c _fnmatch/posix.c _fnmatch/regex.c _fnmatch/translate.c
+
 # for systems without $HOME env, used by site._getuserbase()
 @MODULE_PWD_TRUE@pwd pwdmodule.c

@@ -350,6 +350,12 @@ IO_OBJS=	\
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
 
+FNMATCH_H=	Modules/_fnmatch/_fnmatchmodule.h
+
+FNMATCH_OBJS=	\
+		Modules/_fnmatch/_fnmatchmodule.o \
+		Modules/_fnmatch/posix.o \
+		Modules/_fnmatch/regex.o \
 
 ##########################################################################
 # mimalloc
@@ -1739,6 +1745,8 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydt
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
+
+$(FNMATCH_OBJS): $(FNMATCH_H)
 
 $(IO_OBJS): $(IO_H)
 
@@ -3131,6 +3139,7 @@ MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
+MODULE__FNMATCH_DEPS=$(srcdir)/Modules/_fnmatch/_fnmatchmodule.h
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
