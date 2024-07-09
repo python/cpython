@@ -741,9 +741,11 @@ dict_add_o(PyObject *dict, PyObject *o)
     return arg;
 }
 
-// Merge const *o* recursively and return constant key object.
+/* Merge const *o* and return constant key object.
+ * If recursive, insert all elements if o is a tuple or frozen set.
+ */
 static PyObject*
-merge_consts_recursive(PyObject *const_cache, PyObject *o)
+const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
 {
     assert(PyDict_CheckExact(const_cache));
     // None and Ellipsis are immortal objects, and key is the singleton.
@@ -767,6 +769,10 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
     }
     Py_DECREF(t);
 
+    if (!recursive) {
+        return key;
+    }
+
     // We registered o in const_cache.
     // When o is a tuple or frozenset, we want to merge its
     // items too.
@@ -774,7 +780,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
         Py_ssize_t len = PyTuple_GET_SIZE(o);
         for (Py_ssize_t i = 0; i < len; i++) {
             PyObject *item = PyTuple_GET_ITEM(o, i);
-            PyObject *u = merge_consts_recursive(const_cache, item);
+            PyObject *u = const_cache_insert(const_cache, item, recursive);
             if (u == NULL) {
                 Py_DECREF(key);
                 return NULL;
@@ -816,7 +822,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
         PyObject *item;
         Py_hash_t hash;
         while (_PySet_NextEntry(o, &pos, &item, &hash)) {
-            PyObject *k = merge_consts_recursive(const_cache, item);
+            PyObject *k = const_cache_insert(const_cache, item, recursive);
             if (k == NULL) {
                 Py_DECREF(tuple);
                 Py_DECREF(key);
@@ -854,7 +860,7 @@ static Py_ssize_t
 compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
 {
     assert(PyDict_CheckExact(const_cache));
-    PyObject *key = merge_consts_recursive(const_cache, o);
+    PyObject *key = const_cache_insert(const_cache, o, true);
     if (key == NULL) {
         return ERROR;
     }
@@ -7506,37 +7512,22 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
-// Merge *obj* with constant cache.
-// Unlike merge_consts_recursive(), this function doesn't work recursively.
+// Merge *obj* with constant cache, without recursion.
 int
 _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
 {
-    assert(PyDict_CheckExact(const_cache));
-    PyObject *key = _PyCode_ConstantKey(*obj);
+    PyObject *key = const_cache_insert(const_cache, *obj, false);
     if (key == NULL) {
         return ERROR;
     }
-
-    PyObject *t;
-    int res = PyDict_SetDefaultRef(const_cache, key, key, &t);
-    Py_DECREF(key);
-    if (res < 0) {
-        return ERROR;
-    }
-    if (res == 0) {  // inserted: obj is new constant.
-        Py_DECREF(t);
-        return SUCCESS;
-    }
-
-    if (PyTuple_CheckExact(t)) {
-        PyObject *item = PyTuple_GET_ITEM(t, 1);
+    if (PyTuple_CheckExact(key)) {
+        PyObject *item = PyTuple_GET_ITEM(key, 1);
         Py_SETREF(*obj, Py_NewRef(item));
-        Py_DECREF(t);
+        Py_DECREF(key);
     }
     else {
-        Py_SETREF(*obj, t);
+        Py_SETREF(*obj, key);
     }
-
     return SUCCESS;
 }
 
