@@ -1,0 +1,2 @@
+Fix the process crash when load extension when it's compiled with low
+version of the python.
