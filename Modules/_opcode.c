@@ -10,9 +10,7 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_optimizer.h"     // _Py_GetExecutor()
-#define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, OPCODE_HAS_*, etc
-#undef NEED_OPCODE_METADATA
 #include "pycore_opcode_utils.h"
 
 /*[clinic input]
