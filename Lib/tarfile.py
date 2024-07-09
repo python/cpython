@@ -1509,7 +1509,7 @@ class TarInfo(object):
 
         elif "GNU.sparse.size" in pax_headers:
             # GNU extended sparse format version 0.0.
-            self._proc_gnusparse_00(next, pax_headers, buf)
+            self._proc_gnusparse_00(next, raw_headers)
 
         elif pax_headers.get("GNU.sparse.major") == "1" and pax_headers.get("GNU.sparse.minor") == "0":
             # GNU extended sparse format version 1.0.
@@ -1531,29 +1531,24 @@ class TarInfo(object):
 
         return next
 
-    def _proc_gnusparse_00(self, next, pax_headers, buf):
+    def _proc_gnusparse_00(self, next, raw_headers):
         """Process a GNU tar extended sparse header, version 0.0.
         """
-        def finditer_without_backtracking(buf, needle):
-            values = []
-            regex = re.compile(br"^\d+%s(\d{1,20})\n" % (needle,))
-            while True:
-                if (
-                    # Statement is both a contains check (!=-1) and a bounds check (>0)
-                    (needle_offset := buf.find(needle) - 1) > -1
-                    # Check that the character before is a digit (0x30-0x39 is 0-9)
-                    and 0x30 <= buf[needle_offset] <= 0x39
-                ):
-                    match = regex.match(buf[needle_offset:])
-                    if match is not None:
-                        values.append(int(match.group(1)))
-                    buf = buf[needle_offset + len(needle):]  # Skip over to the match.
-                else:
-                    break
-            return values
+        offsets = []
+        numbytes = []
+        for _, keyword, value in raw_headers:
+            if keyword == b"GNU.sparse.offset":
+                try:
+                    offsets.append(int(value.decode()))
+                except ValueError:
+                    raise InvalidHeaderError("invalid header")
 
-        offsets = finditer_without_backtracking(buf, b" GNU.sparse.offset=")
-        numbytes = finditer_without_backtracking(buf, b" GNU.sparse.numbytes=")
+            elif keyword == b"GNU.sparse.numbytes":
+                try:
+                    numbytes.append(int(value.decode()))
+                except ValueError:
+                    raise InvalidHeaderError("invalid header")
+
         next.sparse = list(zip(offsets, numbytes))
 
     def _proc_gnusparse_01(self, next, pax_headers):
