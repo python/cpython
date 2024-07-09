@@ -1,6 +1,7 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -527,7 +528,8 @@ _PyPegen_new_identifier(Parser *p, const char *n)
         }
         id = id2;
     }
-    PyUnicode_InternInPlace(&id);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternImmortal(interp, &id);
     if (_PyArena_AddPyObject(p->arena, id) < 0)
     {
         Py_DECREF(id);

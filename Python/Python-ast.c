@@ -6,7 +6,9 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_lock.h"          // _PyOnceFlag
 #include "pycore_interp.h"        // _PyInterpreterState.ast
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry(), _PySet_Update()
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
 #include <stddef.h>
@@ -5263,17 +5265,22 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *remaining_dict = NULL, *positional_args = NULL;
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     PyObject *result = NULL;
     if (dict) {
-        // Serialize the fields as positional args if possible, because if we
-        // serialize them as a dict, during unpickling they are set only *after*
-        // the object is constructed, which will now trigger a DeprecationWarning
-        // if the AST type has required fields.
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -5281,11 +5288,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             Py_ssize_t numfields = PySequence_Size(fields);
             if (numfields == -1) {
                 Py_DECREF(dict);
-                goto cleanup;
-            }
-            remaining_dict = PyDict_Copy(dict);
-            Py_DECREF(dict);
-            if (!remaining_dict) {
                 goto cleanup;
             }
             positional_args = PyList_New(0);
@@ -5298,7 +5300,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                     goto cleanup;
                 }
                 PyObject *value;
-                int rc = PyDict_Pop(remaining_dict, name, &value);
+                int rc = PyDict_GetItemRef(dict, name, &value);
                 Py_DECREF(name);
                 if (rc < 0) {
                     goto cleanup;
@@ -5306,7 +5308,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!value) {
                     break;
                 }
-                rc = PyList_Append(positional_args, value);
+                rc = PyList_Append(positional_args, Py_None);
                 Py_DECREF(value);
                 if (rc < 0) {
                     goto cleanup;
@@ -5316,8 +5318,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
-                                   remaining_dict);
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -5328,9 +5329,280 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(remaining_fields);
-    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
+    return result;
+}
+
+/*
+ * Perform the following validations:
+ *
+ *   - All keyword arguments are known 'fields' or 'attributes'.
+ *   - No field or attribute would be left unfilled after copy.replace().
+ *
+ * On success, this returns 1. Otherwise, set a TypeError
+ * exception and returns -1 (no exception is set if some
+ * other internal errors occur).
+ *
+ * Parameters
+ *
+ *      self          The AST node instance.
+ *      dict          The AST node instance dictionary (self.__dict__).
+ *      fields        The list of fields (self._fields).
+ *      attributes    The list of attributes (self._attributes).
+ *      kwargs        Keyword arguments passed to ast_type_replace().
+ *
+ * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
+ *
+ * Note: this function can be removed in 3.15 since the verification
+ *       will be done inside the constructor.
+ */
+static inline int
+ast_type_replace_check(PyObject *self,
+                       PyObject *dict,
+                       PyObject *fields,
+                       PyObject *attributes,
+                       PyObject *kwargs)
+{
+    // While it is possible to make some fast paths that would avoid
+    // allocating objects on the stack, this would cost us readability.
+    // For instance, if 'fields' and 'attributes' are both empty, and
+    // 'kwargs' is not empty, we could raise a TypeError immediately.
+    PyObject *expecting = PySet_New(fields);
+    if (expecting == NULL) {
+        return -1;
+    }
+    if (attributes) {
+        if (_PySet_Update(expecting, attributes) < 0) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+    }
+    // Any keyword argument that is neither a field nor attribute is rejected.
+    // We first need to check whether a keyword argument is accepted or not.
+    // If all keyword arguments are accepted, we compute the required fields
+    // and attributes. A field or attribute is not needed if:
+    //
+    //  1) it is given in 'kwargs', or
+    //  2) it already exists on 'self'.
+    if (kwargs) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
+            int rc = PySet_Discard(expecting, key);
+            if (rc < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            if (rc == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "%.400s.__replace__ got an unexpected keyword "
+                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+    }
+    // check that the remaining fields or attributes would be filled
+    if (dict) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(dict, &pos, &key, &value)) {
+            // Mark fields or attributes that are found on the instance
+            // as non-mandatory. If they are not given in 'kwargs', they
+            // will be shallow-coied; otherwise, they would be replaced
+            // (not in this function).
+            if (PySet_Discard(expecting, key) < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+        if (attributes) {
+            // Some attributes may or may not be present at runtime.
+            // In particular, now that we checked whether 'kwargs'
+            // is correct or not, we allow any attribute to be missing.
+            //
+            // Note that fields must still be entirely determined when
+            // calling the constructor later.
+            PyObject *unused = PyObject_CallMethodOneArg(expecting,
+                                                         &_Py_ID(difference_update),
+                                                         attributes);
+            if (unused == NULL) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            Py_DECREF(unused);
+        }
+    }
+    // Now 'expecting' contains the fields or attributes
+    // that would not be filled inside ast_type_replace().
+    Py_ssize_t m = PySet_GET_SIZE(expecting);
+    if (m > 0) {
+        PyObject *names = PyList_New(m);
+        if (names == NULL) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+        Py_ssize_t i = 0, pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
+            PyObject *name = PyObject_Repr(item);
+            if (name == NULL) {
+                Py_DECREF(expecting);
+                Py_DECREF(names);
+                return -1;
+            }
+            // steal the reference 'name'
+            PyList_SET_ITEM(names, i++, name);
+        }
+        Py_DECREF(expecting);
+        if (PyList_Sort(names) < 0) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *sep = PyUnicode_FromString(", ");
+        if (sep == NULL) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *str_names = PyUnicode_Join(sep, names);
+        Py_DECREF(sep);
+        Py_DECREF(names);
+        if (str_names == NULL) {
+            return -1;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
+                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
+        Py_DECREF(str_names);
+        return -1;
+    }
+    else {
+        Py_DECREF(expecting);
+        return 1;
+    }
+}
+
+/*
+ * Python equivalent:
+ *
+ *   for key in keys:
+ *       if hasattr(self, key):
+ *           payload[key] = getattr(self, key)
+ *
+ * The 'keys' argument is a sequence corresponding to
+ * the '_fields' or the '_attributes' of an AST node.
+ *
+ * This returns -1 if an error occurs and 0 otherwise.
+ *
+ * Parameters
+ *
+ *      payload   A dictionary to fill.
+ *      keys      A sequence of keys or NULL for an empty sequence.
+ *      dict      The AST node instance dictionary (must not be NULL).
+ */
+static inline int
+ast_type_replace_update_payload(PyObject *payload,
+                                PyObject *keys,
+                                PyObject *dict)
+{
+    assert(dict != NULL);
+    if (keys == NULL) {
+        return 0;
+    }
+    Py_ssize_t n = PySequence_Size(keys);
+    if (n == -1) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = PySequence_GetItem(keys, i);
+        if (key == NULL) {
+            return -1;
+        }
+        PyObject *value;
+        if (PyDict_GetItemRef(dict, key, &value) < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (value == NULL) {
+            Py_DECREF(key);
+            // If a field or attribute is not present at runtime, it should
+            // be explicitly given in 'kwargs'. If not, the constructor will
+            // issue a warning (which becomes an error in 3.15).
+            continue;
+        }
+        int rc = PyDict_SetItem(payload, key, value);
+        Py_DECREF(key);
+        Py_DECREF(value);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* copy.replace() support (shallow copy) */
+static PyObject *
+ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = NULL;
+    // known AST class fields and attributes
+    PyObject *fields = NULL, *attributes = NULL;
+    // current instance dictionary
+    PyObject *dict = NULL;
+    // constructor positional and keyword arguments
+    PyObject *empty_tuple = NULL, *payload = NULL;
+
+    PyObject *type = (PyObject *)Py_TYPE(self);
+    if (PyObject_GetOptionalAttr(type, state->_fields, &fields) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
+        goto cleanup;
+    }
+    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
+        goto cleanup;
+    }
+    empty_tuple = PyTuple_New(0);
+    if (empty_tuple == NULL) {
+        goto cleanup;
+    }
+    payload = PyDict_New();
+    if (payload == NULL) {
+        goto cleanup;
+    }
+    if (dict) { // in case __dict__ is missing (for some obscure reason)
+        // copy the instance's fields (possibly NULL)
+        if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
+            goto cleanup;
+        }
+        // copy the instance's attributes (possibly NULL)
+        if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
+            goto cleanup;
+        }
+    }
+    if (kwargs && PyDict_Update(payload, kwargs) < 0) {
+        goto cleanup;
+    }
+    result = PyObject_Call(type, empty_tuple, payload);
+cleanup:
+    Py_XDECREF(payload);
+    Py_XDECREF(empty_tuple);
+    Py_XDECREF(dict);
+    Py_XDECREF(attributes);
+    Py_XDECREF(fields);
     return result;
 }
 
@@ -5341,6 +5613,10 @@ static PyMemberDef ast_type_members[] = {
 
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {"__replace__", _PyCFunction_CAST(ast_type_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **fields)\n--\n\n"
+               "Return a copy of the AST node with new values "
+               "for the specified fields.")},
     {NULL}
 };
 
