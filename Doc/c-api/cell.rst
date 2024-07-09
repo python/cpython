@@ -39,7 +39,8 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: PyObject* PyCell_Get(PyObject *cell)
 
-   Return the contents of the cell *cell*.
+   Return the contents of the cell *cell*. If *cell* is not a cell object,
+   returns ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyCell_GET(PyObject *cell)
@@ -52,8 +53,8 @@ Cell objects are not likely to be useful elsewhere.
 
    Set the contents of the cell object *cell* to *value*.  This releases the
    reference to any current content of the cell. *value* may be ``NULL``.  *cell*
-   must be non-``NULL``; if it is not a cell object, ``-1`` will be returned.  On
-   success, ``0`` will be returned.
+   must be non-``NULL``; if it is not a cell object, ``-1`` will be returned
+   with an exception set.  On success, ``0`` will be returned.
 
 
 .. c:function:: void PyCell_SET(PyObject *cell, PyObject *value)
