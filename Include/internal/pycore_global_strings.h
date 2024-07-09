@@ -352,6 +352,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(col_offset)
         STRUCT_FOR_ID(command)
         STRUCT_FOR_ID(comment_factory)
+        STRUCT_FOR_ID(compile)
         STRUCT_FOR_ID(compile_mode)
         STRUCT_FOR_ID(consts)
         STRUCT_FOR_ID(context)

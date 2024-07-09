@@ -863,6 +863,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(col_offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(command));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(comment_factory));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(compile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(compile_mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(consts));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(context));
