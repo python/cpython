@@ -612,6 +612,13 @@ message objects.
       *content_manager* is not specified, use the ``content_manager`` specified
       by the current :mod:`~email.policy`.
 
+      Note that this method will append a newline character to the end of the
+      content, if it wasn't passed already. For example, the following are equivalent ::
+
+         msg = EmailMessage()
+         msg.set_content("hello")
+         msg.set_content("hello\n")
+
 
    .. method:: make_related(boundary=None)
 
