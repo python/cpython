@@ -1001,7 +1001,8 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         if (r == 0) {
             r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
         }
-    } else {
+    }
+    else {
         PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
         return NULL;
@@ -1112,7 +1113,8 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         if (r == 0) {
             r = PyObject_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
         }
-    } else {
+    }
+    else {
         PyErr_Format(PyExc_TypeError, "globals must be a mapping or None, not %.100s",
                      Py_TYPE(globals)->tp_name);
         goto error;
