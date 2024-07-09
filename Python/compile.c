@@ -1631,11 +1631,6 @@ finally:
     return co;
 }
 
-/* The test for LOCAL must come before the test for FREE in order to
-   handle classes where name is both local and free.  The local var is
-   a method and the free var is a free var referenced within a method.
-*/
-
 static int
 compiler_get_ref_type(struct compiler *c, PyObject *name)
 {
