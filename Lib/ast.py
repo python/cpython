@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -325,12 +324,18 @@ def get_docstring(node, clean=True):
     return text
 
 
-_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+_line_pattern = None
 def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
+    global _line_pattern
+    if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
+        import re
+        _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+
     lines = []
     for lineno, match in enumerate(_line_pattern.finditer(source), 1):
         if maxlines is not None and lineno > maxlines:
@@ -417,6 +422,8 @@ def compare(
     might differ in whitespace or similar details.
     """
 
+    sentinel = object()  # handle the possibility of a missing attribute/field
+
     def _compare(a, b):
         # Compare two fields on an AST object, which may themselves be
         # AST objects, lists of AST objects, or primitive ASDL types
@@ -444,8 +451,14 @@ def compare(
         if a._fields != b._fields:
             return False
         for field in a._fields:
-            a_field = getattr(a, field)
-            b_field = getattr(b, field)
+            a_field = getattr(a, field, sentinel)
+            b_field = getattr(b, field, sentinel)
+            if a_field is sentinel and b_field is sentinel:
+                # both nodes are missing a field at runtime
+                continue
+            if a_field is sentinel or b_field is sentinel:
+                # one of the node is missing a field
+                return False
             if not _compare(a_field, b_field):
                 return False
         else:
@@ -456,8 +469,11 @@ def compare(
             return False
         # Attributes are always ints.
         for attr in a._attributes:
-            a_attr = getattr(a, attr)
-            b_attr = getattr(b, attr)
+            a_attr = getattr(a, attr, sentinel)
+            b_attr = getattr(b, attr, sentinel)
+            if a_attr is sentinel and b_attr is sentinel:
+                # both nodes are missing an attribute at runtime
+                continue
             if a_attr != b_attr:
                 return False
         else:

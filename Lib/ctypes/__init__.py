@@ -205,6 +205,16 @@ class c_longdouble(_SimpleCData):
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
+try:
+    class c_double_complex(_SimpleCData):
+        _type_ = "C"
+    class c_float_complex(_SimpleCData):
+        _type_ = "E"
+    class c_longdouble_complex(_SimpleCData):
+        _type_ = "F"
+except AttributeError:
+    pass
+
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
     c_longlong = c_long

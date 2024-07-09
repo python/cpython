@@ -220,13 +220,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     """
     if isinstance(obj, type):
         # class
-        obj_dict = getattr(obj, '__dict__', None)
-        if obj_dict and hasattr(obj_dict, 'get'):
-            ann = obj_dict.get('__annotations__', None)
-            if isinstance(ann, types.GetSetDescriptorType):
-                ann = None
-        else:
-            ann = None
+        ann = obj.__annotations__
 
         obj_globals = None
         module_name = getattr(obj, '__module__', None)
@@ -280,7 +274,13 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     if globals is None:
         globals = obj_globals
     if locals is None:
-        locals = obj_locals
+        locals = obj_locals or {}
+
+    # "Inject" type parameters into the local namespace
+    # (unless they are shadowed by assignments *in* the local namespace),
+    # as a way of emulating annotation scopes when calling `eval()`
+    if type_params := getattr(obj, "__type_params__", ()):
+        locals = {param.__name__: param for param in type_params} | locals
 
     return_value = {key:
         value if not isinstance(value, str) else eval(value, globals, locals)
@@ -307,9 +307,10 @@ def ismethoddescriptor(object):
     But not if ismethod() or isclass() or isfunction() are true.
 
     This is new in Python 2.2, and, for example, is true of int.__add__.
-    An object passing this test has a __get__ attribute but not a __set__
-    attribute, but beyond that the set of attributes varies.  __name__ is
-    usually sensible, and __doc__ often is.
+    An object passing this test has a __get__ attribute, but not a
+    __set__ attribute or a __delete__ attribute. Beyond that, the set
+    of attributes varies; __name__ is usually sensible, and __doc__
+    often is.
 
     Methods implemented via descriptors that also pass one of the other
     tests return false from the ismethoddescriptor() test, simply because
@@ -319,7 +320,9 @@ def ismethoddescriptor(object):
         # mutual exclusion
         return False
     tp = type(object)
-    return hasattr(tp, "__get__") and not hasattr(tp, "__set__")
+    return (hasattr(tp, "__get__")
+            and not hasattr(tp, "__set__")
+            and not hasattr(tp, "__delete__"))
 
 def isdatadescriptor(object):
     """Return true if the object is a data descriptor.
@@ -403,13 +406,13 @@ def isgeneratorfunction(obj):
     return _has_code_flag(obj, CO_GENERATOR)
 
 # A marker for markcoroutinefunction and iscoroutinefunction.
-_is_coroutine_marker = object()
+_is_coroutine_mark = object()
 
 def _has_coroutine_mark(f):
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
-    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark
 
 def markcoroutinefunction(func):
     """
@@ -417,7 +420,7 @@ def markcoroutinefunction(func):
     """
     if hasattr(func, '__func__'):
         func = func.__func__
-    func._is_coroutine_marker = _is_coroutine_marker
+    func._is_coroutine_marker = _is_coroutine_mark
     return func
 
 def iscoroutinefunction(obj):
@@ -2547,6 +2550,10 @@ def _signature_from_callable(obj, *,
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
+    if isinstance(obj, functools.partial):
+        wrapped_sig = _get_signature_of(obj.func)
+        return _signature_get_partial(wrapped_sig, obj)
+
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
@@ -2557,10 +2564,6 @@ def _signature_from_callable(obj, *,
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
-
-    if isinstance(obj, functools.partial):
-        wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
 
     if isinstance(obj, type):
         # obj is a class or a metaclass

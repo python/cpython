@@ -1,9 +1,18 @@
-import itertools
 import io
+import itertools
 import os
+import pathlib
 import rlcompleter
-from unittest import TestCase
+import select
+import subprocess
+import sys
+import tempfile
+from unittest import TestCase, skipUnless
 from unittest.mock import patch
+from test.support import force_not_colorized
+from test.support import SHORT_TIMEOUT
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink
 
 from .support import (
     FakeConsole,
@@ -17,6 +26,10 @@ from _pyrepl.console import Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
+try:
+    import pty
+except ImportError:
+    pty = None
 
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
@@ -312,6 +325,14 @@ class TestCursorPosition(TestCase):
         self.assertEqual(reader.pos, 10)
         self.assertEqual(reader.cxy, (1, 1))
 
+
+class TestPyReplAutoindent(TestCase):
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
     def test_auto_indent_default(self):
         # fmt: off
         input_code = (
@@ -372,7 +393,6 @@ class TestCursorPosition(TestCase):
             ),
         )
 
-
         output_code = (
             "def g():\n"
             "  pass\n"
@@ -384,6 +404,78 @@ class TestCursorPosition(TestCase):
         output1 = multiline_input(reader)
         output2 = multiline_input(reader)
         self.assertEqual(output2, output_code)
+
+    def test_auto_indent_multiline(self):
+        # fmt: off
+        events = itertools.chain(
+            code_to_events(
+                "def f():\n"
+                    "pass"
+            ),
+            [
+                # go to the end of the first line
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # new line should be autoindented
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+            code_to_events(
+                "pass"
+            ),
+            [
+                # go to end of last line
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # double newline to terminate the block
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        output_code = (
+            "def f():\n"
+            "    pass\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_with_comment(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():  # foo\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():  # foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_auto_indent_ignore_comments(self):
+        # fmt: off
+        events = code_to_events(
+            "pass  #:\n"
+        )
+
+        output_code = (
+            "pass  #:"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
 
 
 class TestPyReplOutput(TestCase):
@@ -508,14 +600,15 @@ class TestPyReplCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
+    @patch("rlcompleter._readline_available", False)
     def test_simple_completion(self):
-        events = code_to_events("os.geten\t\n")
+        events = code_to_events("os.getpid\t\n")
 
         namespace = {"os": os}
         reader = self.prepare_reader(events, namespace)
 
         output = multiline_input(reader, namespace)
-        self.assertEqual(output, "os.getenv")
+        self.assertEqual(output, "os.getpid()")
 
     def test_completion_with_many_options(self):
         # Test with something that initially displays many options
@@ -748,3 +841,124 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
+
+
+@skipUnless(pty, "requires pty")
+class TestMain(TestCase):
+    @force_not_colorized
+    def test_exposed_globals_in_repl(self):
+        pre = "['__annotations__', '__builtins__'"
+        post = "'__loader__', '__name__', '__package__', '__spec__']"
+        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+
+        # if `__main__` is not a file (impossible with pyrepl)
+        case1 = f"{pre}, '__doc__', {post}" in output
+
+        # if `__main__` is an uncached .py file (no .pyc)
+        case2 = f"{pre}, '__doc__', '__file__', {post}" in output
+
+        # if `__main__` is a cached .pyc file and the .py source exists
+        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+
+        # if `__main__` is a cached .pyc file but there's no .py source file
+        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+
+        self.assertTrue(case1 or case2 or case3 or case4, output)
+
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can\'t use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    @force_not_colorized
+    def test_python_basic_repl(self):
+        env = os.environ.copy()
+        commands = ("from test.support import initialized_with_pyrepl\n"
+                    "initialized_with_pyrepl()\n"
+                    "exit()\n")
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertEqual(exit_code, 0)
+        self.assertIn("True", output)
+        self.assertNotIn("False", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+    def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
+        hfile = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(unlink, hfile.name)
+        env = os.environ.copy()
+        env["PYTHON_HISTORY"] = hfile.name
+        commands = "123\nspam\nexit()\n"
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+        hfile.file.truncate()
+        hfile.close()
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
+        master_fd, slave_fd = pty.openpty()
+        cmd = [sys.executable, "-i", "-u"]
+        if env is None:
+            cmd.append("-I")
+        process = subprocess.Popen(
+            cmd,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+       )
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], 0.5)[0]:
+            data = os.read(master_fd, 1024).decode("utf-8")
+            if not data:
+                break
+            output.append(data)
+
+        os.close(master_fd)
+        os.close(slave_fd)
+        try:
+            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            exit_code = process.wait()
+        return "\n".join(output), exit_code

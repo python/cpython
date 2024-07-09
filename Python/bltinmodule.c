@@ -870,15 +870,15 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     // gh-118527: Disable immortalization of code constants for explicit
     // compile() calls to get consistent frozen outputs between the default
     // and free-threaded builds.
+    // Subtract two to suppress immortalization (so that 1 -> -1)
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int old_value = interp->gc.immortalize.enable_on_thread_created;
-    interp->gc.immortalize.enable_on_thread_created = 0;
+    _Py_atomic_add_int(&interp->gc.immortalize, -2);
 #endif
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
 
 #ifdef Py_GIL_DISABLED
-    interp->gc.immortalize.enable_on_thread_created = old_value;
+    _Py_atomic_add_int(&interp->gc.immortalize, 2);
 #endif
 
     Py_XDECREF(source_copy);
@@ -1475,7 +1475,7 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(function, /, *iterables)\n\
+"map(function, iterable, /, *iterables)\n\
 --\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
@@ -2516,6 +2516,49 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 
+/* Improved Kahan–Babuška algorithm by Arnold Neumaier
+   Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+   zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+   54: 39-51. https://doi.org/10.1002/zamm.19740540106
+   https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
+ */
+
+typedef struct {
+    double hi;     /* high-order bits for a running sum */
+    double lo;     /* a running compensation for lost low-order bits */
+} CompensatedSum;
+
+static inline CompensatedSum
+cs_from_double(double x)
+{
+    return (CompensatedSum) {x};
+}
+
+static inline CompensatedSum
+cs_add(CompensatedSum total, double x)
+{
+    double t = total.hi + x;
+    if (fabs(total.hi) >= fabs(x)) {
+        total.lo += (total.hi - t) + x;
+    }
+    else {
+        total.lo += (x - t) + total.hi;
+    }
+    return (CompensatedSum) {t, total.lo};
+}
+
+static inline double
+cs_to_double(CompensatedSum total)
+{
+    /* Avoid losing the sign on a negative result,
+       and don't let adding the compensation convert
+       an infinite or overflowed sum to a NaN. */
+    if (total.lo && isfinite(total.lo)) {
+        return total.hi + total.lo;
+    }
+    return total.hi;
+}
+
 /*[clinic input]
 sum as builtin_sum
 
@@ -2628,8 +2671,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (PyFloat_CheckExact(result)) {
-        double f_result = PyFloat_AS_DOUBLE(result);
-        double c = 0.0;
+        CompensatedSum re_sum = cs_from_double(PyFloat_AS_DOUBLE(result));
         Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2637,28 +2679,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                /* Avoid losing the sign on a negative result,
-                   and don't let adding the compensation convert
-                   an infinite or overflowed sum to a NaN. */
-                if (c && Py_IS_FINITE(c)) {
-                    f_result += c;
-                }
-                return PyFloat_FromDouble(f_result);
+                return PyFloat_FromDouble(cs_to_double(re_sum));
             }
             if (PyFloat_CheckExact(item)) {
-                // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
-                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
-                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
-                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
-                double x = PyFloat_AS_DOUBLE(item);
-                double t = f_result + x;
-                if (fabs(f_result) >= fabs(x)) {
-                    c += (f_result - t) + x;
-                } else {
-                    c += (x - t) + f_result;
-                }
-                f_result = t;
+                re_sum = cs_add(re_sum, PyFloat_AS_DOUBLE(item));
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2667,15 +2691,70 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    f_result += (double)value;
+                    re_sum.hi += (double)value;
                     Py_DECREF(item);
                     continue;
                 }
             }
-            if (c && Py_IS_FINITE(c)) {
-                f_result += c;
+            result = PyFloat_FromDouble(cs_to_double(re_sum));
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
             }
-            result = PyFloat_FromDouble(f_result);
+            temp = PyNumber_Add(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+
+    if (PyComplex_CheckExact(result)) {
+        Py_complex z = PyComplex_AsCComplex(result);
+        CompensatedSum re_sum = cs_from_double(z.real);
+        CompensatedSum im_sum = cs_from_double(z.imag);
+        Py_SETREF(result, NULL);
+        while (result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyComplex_FromDoubles(cs_to_double(re_sum),
+                                             cs_to_double(im_sum));
+            }
+            if (PyComplex_CheckExact(item)) {
+                z = PyComplex_AsCComplex(item);
+                re_sum = cs_add(re_sum, z.real);
+                im_sum = cs_add(im_sum, z.imag);
+                Py_DECREF(item);
+                continue;
+            }
+            if (PyLong_Check(item)) {
+                long value;
+                int overflow;
+                value = PyLong_AsLongAndOverflow(item, &overflow);
+                if (!overflow) {
+                    re_sum.hi += (double)value;
+                    im_sum.hi += 0.0;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            if (PyFloat_Check(item)) {
+                double value = PyFloat_AS_DOUBLE(item);
+                re_sum.hi += value;
+                im_sum.hi += 0.0;
+                _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
+                continue;
+            }
+            result = PyComplex_FromDoubles(cs_to_double(re_sum),
+                                           cs_to_double(im_sum));
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);

@@ -1,3 +1,5 @@
+.. _enum-howto:
+
 ==========
 Enum HOWTO
 ==========
@@ -1149,6 +1151,14 @@ the following are true:
 
     >>> (Color.RED | Color.GREEN).name
     'RED|GREEN'
+
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...
+    >>> (Perm.R & Perm.W).name is None  # effectively Perm(0)
+    True
 
 - multi-bit flags, aka aliases, can be returned from operations::
 
