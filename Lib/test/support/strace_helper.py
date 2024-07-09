@@ -153,16 +153,17 @@ def _can_strace():
     res = strace_python("import sys; sys.exit(0)", [], check=False)
     assert res.events(), "Should have parsed multiple calls"
 
-    global _strace_working
-    _strace_working = res.strace_returncode == 0 and res.python_returncode == 0
+    return res.strace_returncode == 0 and res.python_returncode == 0
 
 
 def requires_strace():
+    global _strace_working
+
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
     # Moderately expensive (spawns a subprocess), so share results when possible.
     if _strace_working is None:
-        _can_strace()
+        _strace_working = _can_strace()
 
     assert _strace_working is not None, "Should have been set by _can_strace"
     return unittest.skipUnless(_strace_working, "Requires working strace")
