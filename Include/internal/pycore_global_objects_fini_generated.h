@@ -945,6 +945,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filter));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filters));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(final));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(find));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(find_class));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fix_imports));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
@@ -1229,6 +1230,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict_mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(string));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub_key));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tabsize));

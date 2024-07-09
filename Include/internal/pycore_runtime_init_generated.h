@@ -943,6 +943,7 @@ extern "C" {
     INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
+    INIT_ID(find), \
     INIT_ID(find_class), \
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
@@ -1227,6 +1228,7 @@ extern "C" {
     INIT_ID(strict), \
     INIT_ID(strict_mode), \
     INIT_ID(string), \
+    INIT_ID(sub), \
     INIT_ID(sub_key), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
