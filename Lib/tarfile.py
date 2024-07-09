@@ -845,6 +845,9 @@ _NAMED_FILTERS = {
 # Sentinel for replace() defaults, meaning "don't change the attribute"
 _KEEP = object()
 
+# Header length is digits followed by a space.
+_header_length_prefix_re = re.compile(br"([0-9]{1,20}) ")
+
 class TarInfo(object):
     """Informational class which holds the details about an
        archive member given by a tar header block.
@@ -1432,43 +1435,49 @@ class TarInfo(object):
         else:
             pax_headers = tarfile.pax_headers.copy()
 
-        # Check if the pax header contains a hdrcharset field. This tells us
-        # the encoding of the path, linkpath, uname and gname fields. Normally,
-        # these fields are UTF-8 encoded but since POSIX.1-2008 tar
-        # implementations are allowed to store them as raw binary strings if
-        # the translation to UTF-8 fails.
-        if (
-            # Statement is both a contains check (!=-1) and a bounds check (>0)
-            (hdrcharset_offset := buf.find(b" hdrcharset=") - 1) > -1
-            # Check that the character before is a digit (0x30-0x39 is 0-9)
-            and 0x30 <= buf[hdrcharset_offset] <= 0x39
-        ):
-            match = re.match(br"^\d{1,20} hdrcharset=([^\n]+)\n", buf[hdrcharset_offset:])
-            if match is not None:
-                pax_headers["hdrcharset"] = match.group(1).decode("utf-8")
-
-        # For the time being, we don't care about anything other than "BINARY".
-        # The only other value that is currently allowed by the standard is
-        # "ISO-IR 10646 2000 UTF-8" in other words UTF-8.
-        hdrcharset = pax_headers.get("hdrcharset")
-        if hdrcharset == "BINARY":
-            encoding = tarfile.encoding
-        else:
-            encoding = "utf-8"
-
         # Parse pax header information. A record looks like that:
         # "%d %s=%s\n" % (length, keyword, value). length is the size
         # of the complete record including the length field itself and
-        # the newline. keyword and value are both UTF-8 encoded strings.
-        regex = re.compile(br"^(\d{1,20}) ([^=]+)=")
+        # the newline.
         pos = 0
-        while match := regex.match(buf[pos:]):
-            length, keyword = match.groups()
-            length = int(length)
-            if length == 0:
+        encoding = "utf-8"
+        raw_headers = []
+        while len(buf) > pos and buf[pos] != 0x00:
+            if not (match := _header_length_prefix_re.match(buf, pos)):
                 raise InvalidHeaderError("invalid header")
-            value = buf[match.end(2) + pos + 1:match.start(1) + pos + length - 1]
+            try:
+                length = int(match.group(1))
+            except ValueError:
+                raise InvalidHeaderError("invalid header")
+            # Headers must be at least 3 bytes, one for each of keyword, '=', and '\n'.
+            # Value is allowed to be empty.
+            if length < 3:
+                raise InvalidHeaderError("invalid header")
+            if pos + length > len(buf):
+                raise InvalidHeaderError("invalid header")
 
+            keyword_and_value = buf[match.end(1) + 1:match.start(1) + length - 1]
+            raw_keyword, equals, raw_value = keyword_and_value.partition(b"=")
+
+            # Check the framing of the header. The last character must be '\n' (0x0A)
+            if not raw_keyword or equals != b"=" or buf[match.start(1) + length - 1] != 0x0A:
+                raise InvalidHeaderError("invalid header")
+            raw_headers.append((length, raw_keyword, raw_value))
+
+            # Check if the pax header contains a hdrcharset field. This tells us
+            # the encoding of the path, linkpath, uname and gname fields. Normally,
+            # these fields are UTF-8 encoded but since POSIX.1-2008 tar
+            # implementations are allowed to store them as raw binary strings if
+            # the translation to UTF-8 fails. For the time being, we don't care about
+            # anything other than "BINARY". The only other value that is currently
+            # allowed by the standard is "ISO-IR 10646 2000 UTF-8" in other words UTF-8.
+            if raw_keyword == b"hdrcharset" and raw_value == b"BINARY":
+                encoding = tarfile.encoding
+
+            pos += length
+
+        # After parsing the raw headers we can decode them to text.
+        for length, raw_keyword, raw_value in raw_headers:
             # Normally, we could just use "utf-8" as the encoding and "strict"
             # as the error handler, but we better not take the risk. For
             # example, GNU tar <= 1.23 is known to store filenames it cannot
@@ -1476,17 +1485,16 @@ class TarInfo(object):
             # hdrcharset=BINARY header).
             # We first try the strict standard encoding, and if that fails we
             # fall back on the user's encoding and error handler.
-            keyword = self._decode_pax_field(keyword, "utf-8", "utf-8",
+            keyword = self._decode_pax_field(raw_keyword, "utf-8", "utf-8",
                     tarfile.errors)
             if keyword in PAX_NAME_FIELDS:
-                value = self._decode_pax_field(value, encoding, tarfile.encoding,
+                value = self._decode_pax_field(raw_value, encoding, tarfile.encoding,
                         tarfile.errors)
             else:
-                value = self._decode_pax_field(value, "utf-8", "utf-8",
+                value = self._decode_pax_field(raw_value, "utf-8", "utf-8",
                         tarfile.errors)
 
             pax_headers[keyword] = value
-            pos += length
 
         # Fetch the next header.
         try:
