@@ -28,14 +28,15 @@ def var_size(var: StackItem) -> str:
         if var.condition == "0":
             return "0"
         elif var.condition == "1":
-            return var.size
-        elif var.condition == "oparg & 1" and var.size == "1":
+            return var.get_size()
+        elif var.condition == "oparg & 1" and not var.size:
             return f"({var.condition})"
         else:
-            return f"(({var.condition}) ? {var.size} : 0)"
-    else:
+            return f"(({var.condition}) ? {var.get_size()} : 0)"
+    elif var.size:
         return var.size
-
+    else:
+        return "1"
 
 @dataclass
 class StackOffset:

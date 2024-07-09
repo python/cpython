@@ -106,13 +106,15 @@ class StackItem:
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
-        size = f"[{self.size}]" if self.size != "1" else ""
+        size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
-        return self.type == "_PyStackRef *"
+        return self.size != ""
 
+    def get_size(self) -> str:
+        return self.size if self.size else "1"
 
 @dataclass
 class StackEffect:
@@ -293,7 +295,7 @@ def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -
     if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
         cond = replace_op_arg_1
     return StackItem(
-        item.name, item.type, cond, (item.size or "1")
+        item.name, item.type, cond, item.size
     )
 
 def analyze_stack(op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None) -> StackEffect:
