@@ -52,6 +52,7 @@ jobs:
         path: ${{ env.CROSS_BUILD_PYTHON }}/config.cache
         # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python.
         # Include the hash of `Tools/wasm/wasi.py` as it may change the environment variables.
+        # (Keep in sync w/ other configure cache step below as appropriate.)
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure build Python"
       run: python3 Tools/wasm/wasi.py configure-build-python -- --config-cache --with-pydebug
@@ -61,8 +62,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.CROSS_BUILD_WASI }}/config.cache
-        # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}-${{ inputs.config_hash }}-${{ env.pythonLocation }}
+        # See comments above in other config.cache step for various details.
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-wasi-sdk-${{ env.WASI_SDK_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi.py configure-host -- --config-cache
