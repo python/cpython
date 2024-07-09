@@ -1,0 +1,3 @@
+:mod:`math` functions :func:`~math.isqrt`, `~math.log`, `~math.log2` and
+`~math.log10` support now integers larger than ``2**2**32`` on 32-bit
+platforms.
