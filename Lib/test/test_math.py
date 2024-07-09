@@ -1122,6 +1122,8 @@ class MathTests(unittest.TestCase):
 
     @support.bigmemtest(2**32, memuse=0.85)
     def test_isqrt_huge(self, size):
+        if size & 1:
+            size += 1
         v = 1 << size
         w = math.isqrt(v)
         self.assertEqual(w.bit_length(), size // 2 + 1)
