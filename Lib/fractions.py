@@ -278,8 +278,7 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                raise TypeError("argument should be a string or a number")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
