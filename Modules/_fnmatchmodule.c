@@ -389,7 +389,7 @@ _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
 static PyObject *
 get_unicode_character(Py_UCS4 ch)
 {
-    assert(ch <= MAX_UNICODE);
+    assert(ch <= 0x10ffff);
     if (ch < 256) {
         PyObject *o = _Py_LATIN1_CHR(ch);
         assert(_Py_IsImmortal(o));
@@ -552,9 +552,9 @@ get_translated_group(PyObject *pattern,
     Py_ssize_t c = chunkscount;
     while (--c) {
         PyObject *c1 = PyList_GET_ITEM(chunks, c - 1);
-        assert(c1len > 0);
-        Py_ssize_t c1len = PyUnicode_GET_LENGTH(c1);
         assert(c1 != NULL);
+        Py_ssize_t c1len = PyUnicode_GET_LENGTH(c1);
+        assert(c1len > 0);
 
         PyObject *c2 = PyList_GET_ITEM(chunks, c);
         assert(c2 != NULL);
