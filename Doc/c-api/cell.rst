@@ -54,7 +54,7 @@ Cell objects are not likely to be useful elsewhere.
    Set the contents of the cell object *cell* to *value*.  This releases the
    reference to any current content of the cell. *value* may be ``NULL``.  *cell*
    must be non-``NULL``.
-   
+
    On success, return ``0``.
    If *cell* is not a cell object, set an exception and return ``-1``.
 
