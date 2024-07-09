@@ -1246,6 +1246,9 @@ Executing code in thread or process pools
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+   The default executor can be set by :meth:`loop.set_default_executor`,
+   otherwise, a :class:`concurrent.futures.ThreadPoolExecutor` will be
+   lazy-initialized and used by :func:`run_in_executor` if needed.
 
    Example::
 
