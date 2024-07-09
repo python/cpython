@@ -989,9 +989,12 @@ class LongTest(unittest.TestCase):
         self.assertEqual(0 << (sys.maxsize + 1), 0)
 
     @support.cpython_only
-    @support.bigmemtest(sys.maxsize + 1000, memuse=2/15 * 2, dry_run=False)
+    @support.bigmemtest(2**32, memuse=0.2)
     def test_huge_lshift(self, size):
-        self.assertEqual(1 << (sys.maxsize + 1000), 1 << 1000 << sys.maxsize)
+        v = 5 << size
+        self.assertEqual(v.bit_length(), size + 3)
+        self.assertEqual(v.bit_count(), 2)
+        self.assertEqual(v >> size, 5)
 
     def test_huge_rshift(self):
         huge_shift = 1 << 1000
@@ -1003,11 +1006,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(-2**128 >> huge_shift, -1)
 
     @support.cpython_only
-    @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
+    @support.bigmemtest(2**32, memuse=0.2)
     def test_huge_rshift_of_huge(self, size):
-        huge = ((1 << 500) + 11) << sys.maxsize
-        self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
-        self.assertEqual(huge >> (sys.maxsize + 1000), 0)
+        huge = ((1 << 500) + 11) << size
+        self.assertEqual(huge.bit_length(), size + 501)
+        self.assertEqual(huge.bit_count(), 4)
+        self.assertEqual(huge >> (size + 1), (1 << 499) + 5)
+        self.assertEqual(huge >> (size + 1000), 0)
 
     def test_small_rshift(self):
         self.assertEqual(42 >> 1, 21)
