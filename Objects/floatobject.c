@@ -452,7 +452,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            if (nbits == (uint64_t)-1 && PyErr_Occurred()) {
+            if (nbits64 == (uint64_t)-1 && PyErr_Occurred()) {
                 /* This Python integer is so large that uint64_t isn't
                  * big enough to hold the # of bits. */
                 PyErr_Clear();
