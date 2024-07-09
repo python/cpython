@@ -20,10 +20,6 @@ typedef struct {
     PyObject *os_module; // 'os' module
 
     PyObject *lru_cache; // optional cache for regex patterns, if needed
-
-    PyObject *str_atomic_bgroup;    // (?>.*?
-    PyObject *str_atomic_egroup;    // )
-    PyObject *str_wildcard;         // *
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *
@@ -41,10 +37,6 @@ fnmatchmodule_clear(PyObject *m)
     Py_CLEAR(st->os_module);
     Py_CLEAR(st->re_module);
     Py_CLEAR(st->lru_cache);
-
-    Py_CLEAR(st->str_atomic_bgroup);
-    Py_CLEAR(st->str_atomic_egroup);
-    Py_CLEAR(st->str_wildcard);
     return 0;
 }
 
@@ -55,10 +47,6 @@ fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->os_module);
     Py_VISIT(st->re_module);
     Py_VISIT(st->lru_cache);
-
-    Py_VISIT(st->str_atomic_bgroup);
-    Py_VISIT(st->str_atomic_egroup);
-    Py_VISIT(st->str_wildcard);
     return 0;
 }
 
@@ -100,12 +88,6 @@ fnmatchmodule_exec(PyObject *m)
     }
     // todo: handle LRU cache
 
-    // interned strings
-    INTERN_STRING(str_atomic_bgroup, "(?>.*?");
-    INTERN_STRING(str_atomic_egroup, ")");
-    INTERN_STRING(str_wildcard, "*");
-
-#undef INTERN_STRING
 #undef IMPORT_MODULE
 
     return 0;
@@ -212,12 +194,13 @@ abort:
 static PyObject *
 get_match_function(PyObject *module, PyObject *pattern)
 {
+    // TODO(picnixz): use LRU-cache
     PyObject *expr = _fnmatch_translate_impl(module, pattern);
     if (expr == NULL) {
         return NULL;
     }
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
-    PyObject *compiled = PyObject_CallMethod(st->re_module, "compile", "O", expr);
+    PyObject *compiled = _PyObject_CallMethod(st->re_module, &_Py_ID(compile), "O", expr);
     Py_DECREF(expr);
     if (compiled == NULL) {
         return NULL;
@@ -678,12 +661,15 @@ join_translated_parts(PyObject *module, PyObject *strings, PyObject *indices)
 
     WRITE_SUBSTRING(i, j);  // write stuff before '*' if needed
     i = j + 1;              // jump after the star
+
+    fnmatchmodule_state *state = get_fnmatchmodulestate_state(module);
     for (Py_ssize_t k = 1; k < m; ++k) {
         ind = PyList_GET_ITEM(indices, k);
         j = PyLong_AsSsize_t(ind);
-        assert(j < 0 || i > j);
-        if (j < 0 ||
-            (_PyUnicodeWriter_WriteASCIIString(_writer, "(?>.*?", 6) < 0) ||
+        if (j < 0 || i > j) {
+            goto abort;
+        }
+        if ((_PyUnicodeWriter_WriteASCIIString(_writer, "(?>.*?", 6) < 0) ||
             (_PyUnicodeWriter_WriteSubstring(_writer, strings, i, j) < 0) ||
             (_PyUnicodeWriter_WriteChar(_writer, ')') < 0)) {
             goto abort;
