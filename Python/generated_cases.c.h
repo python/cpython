@@ -2782,7 +2782,8 @@
             int err;
             if (PyDict_Check(globals)) {
                 err = PyDict_Pop(globals, name, NULL);
-            } else {
+            }
+            else {
                 err = PyMapping_DelItem(globals, name);
             }
             // Can't use ERROR_IF here.
