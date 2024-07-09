@@ -853,38 +853,37 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
 }
 
 static Py_ssize_t
-compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
+compiler_add_const(struct compiler *c, PyObject *o)
 {
-    assert(PyDict_CheckExact(const_cache));
-    PyObject *key = merge_consts_recursive(const_cache, o);
+    PyObject *key = merge_consts_recursive(c->c_const_cache, o);
     if (key == NULL) {
         return ERROR;
     }
 
-    Py_ssize_t arg = dict_add_o(u->u_metadata.u_consts, key);
+    Py_ssize_t arg = dict_add_o(c->u->u_metadata.u_consts, key);
     Py_DECREF(key);
     return arg;
 }
 
 static int
-compiler_addop_load_const(PyObject *const_cache, struct compiler_unit *u, location loc, PyObject *o)
+compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
-    Py_ssize_t arg = compiler_add_const(const_cache, u, o);
+    Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(u->u_instr_sequence, LOAD_CONST, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), LOAD_CONST, arg, loc);
 }
 
 static int
-compiler_addop_o(struct compiler_unit *u, location loc,
+compiler_addop_o(struct compiler *c, location loc,
                  int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0) {
         return ERROR;
     }
-    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
 }
 
 #define LOAD_METHOD -1
@@ -974,7 +973,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 #define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), (O)))
+    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
 #define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
@@ -982,7 +981,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     if (__new_const == NULL) { \
         return ERROR; \
     } \
-    if (compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), __new_const) < 0) { \
+    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
         Py_DECREF(__new_const); \
         return ERROR; \
     } \
@@ -991,7 +990,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
     assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
+    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
     } \
@@ -1638,7 +1637,7 @@ finally:
 */
 
 static int
-get_ref_type(struct compiler *c, PyObject *name)
+compiler_get_ref_type(struct compiler *c, PyObject *name)
 {
     int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
@@ -1688,7 +1687,7 @@ compiler_make_closure(struct compiler *c, location loc,
                class.  It should be handled by the closure, as
                well as by the normal name lookup logic.
             */
-            int reftype = get_ref_type(c, name);
+            int reftype = compiler_get_ref_type(c, name);
             if (reftype == -1) {
                 return ERROR;
             }
@@ -2229,7 +2228,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
             docstring = NULL;
         }
     }
-    if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
+    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         Py_XDECREF(docstring);
         compiler_exit_scope(c);
         return ERROR;
@@ -2460,7 +2459,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         // STORE_DEREF in a class namespace, and compiler_nameop() won't do
         // that by default.
         PyObject *cellvars = c->u->u_metadata.u_cellvars;
-        if (compiler_addop_o(c->u, loc, STORE_DEREF, cellvars,
+        if (compiler_addop_o(c, loc, STORE_DEREF, cellvars,
                              &_Py_ID(__classdict__)) < 0) {
             compiler_exit_scope(c);
             return ERROR;
@@ -2657,7 +2656,7 @@ compiler_typealias_body(struct compiler *c, stmt_ty s)
         compiler_enter_scope(c, name, COMPILER_SCOPE_FUNCTION, s, loc.lineno, NULL));
     /* Make None the first constant, so the evaluate function can't have a
         docstring. */
-    RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
+    RETURN_IF_ERROR(compiler_add_const(c, Py_None));
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = optimize_and_assemble(c, 0);
@@ -2695,7 +2694,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(
-            c, compiler_addop_load_const(c->c_const_cache, c->u, loc, name)
+            c, compiler_addop_load_const(c, loc, name)
         );
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
     }
@@ -2962,7 +2961,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
-    RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
+    RETURN_IF_ERROR(compiler_add_const(c, Py_None));
 
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
@@ -4188,7 +4187,7 @@ compiler_nameop(struct compiler *c, location loc,
             else if (c->u->u_ste->ste_can_see_class_scope) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
-                if (compiler_addop_o(c->u, loc, LOAD_DEREF,
+                if (compiler_addop_o(c, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
                     goto error;
                 }
@@ -4215,7 +4214,7 @@ compiler_nameop(struct compiler *c, location loc,
             if (c->u->u_ste->ste_can_see_class_scope && scope == GLOBAL_IMPLICIT) {
                 op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
-                if (compiler_addop_o(c->u, loc, LOAD_DEREF,
+                if (compiler_addop_o(c, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
                     goto error;
                 }
@@ -4786,7 +4785,7 @@ can_optimize_super_call(struct compiler *c, expr_ty attr)
         return 0;
     }
     // __class__ cell should be available
-    if (get_ref_type(c, &_Py_ID(__class__)) == FREE) {
+    if (compiler_get_ref_type(c, &_Py_ID(__class__)) == FREE) {
         return 1;
     }
     return 0;
@@ -4808,7 +4807,7 @@ load_args_for_super(struct compiler *c, expr_ty e) {
 
     // load __class__ cell
     PyObject *name = &_Py_ID(__class__);
-    assert(get_ref_type(c, name) == FREE);
+    assert(compiler_get_ref_type(c, name) == FREE);
     RETURN_IF_ERROR(compiler_nameop(c, loc, name, Load));
 
     // load self (first argument)
