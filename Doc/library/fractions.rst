@@ -31,6 +31,8 @@ another rational number, or from a string.
    of :class:`numbers.Number` and has the :meth:`~as_integer_ratio` method
    (this includes :class:`float` and :class:`decimal.Decimal`).
    It returns a :class:`Fraction` instance with exactly the same value.
+   Assumed, that the :meth:`~as_integer_ratio` method returns a pair
+   of coprime integers and last one is positive.
    Note that due to the
    usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
    argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
