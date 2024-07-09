@@ -590,7 +590,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: get_bytes(key, from_=False)
 
       Note: This method has an extra parameter (*from_*) compared with other classes.
-      The first line of an mbox file entry is the unix 'From ' line.
+      The first line of an mbox file entry is the Unix 'From ' line.
       If *from_* is False, the first line of the file is dropped.
 
    .. method:: get_file(key, from_=False)
@@ -600,13 +600,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       unpredictable results or raise an exception.
 
       Note: This method has an extra parameter (*from_*) compared with other classes.
-      The first line of an mbox file entry is the unix 'From ' line.
+      The first line of an mbox file entry is the Unix 'From ' line.
       If *from_* is False, the first line of the file is dropped.
 
    .. method:: get_string(key, from_=False)
 
       Note: This method has an extra parameter (*from_*) compared with other classes.
-      The first line of an mbox file entry is the unix 'From ' line.
+      The first line of an mbox file entry is the Unix 'From ' line.
       If *from_* is False, the first line of the file is dropped.
 
    .. method:: lock()
