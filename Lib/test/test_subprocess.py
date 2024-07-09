@@ -3461,7 +3461,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 strace_args
             )
             # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
-            self.assertRegex(vfork_result._raw_events, r"(?i)vfork")
+            self.assertRegex(vfork_result.raw_events, rb"(?i)vfork")
             # Do NOT check that fork() or other clones did not happen.
             # If the OS denys the vfork it'll fallback to plain fork().
 
@@ -3487,7 +3487,7 @@ class POSIXProcessTestCase(BaseTestCase):
                     strace_args
                 )
                 # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
-                self.assertNotRegex(non_vfork_result._raw_events, r"(?i)vfork")
+                self.assertNotRegex(non_vfork_result.raw_events, rb"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
