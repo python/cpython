@@ -92,8 +92,8 @@ struct _inittab _PyImport_Inittab[] = {
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
+    {"_fnmatch", PyInit_fnmatch},
     {"faulthandler", PyInit_faulthandler},
-    {"fnmatch", PyInit_fnmatch},
     {"gc", PyInit_gc},
     {"math", PyInit_math},
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
