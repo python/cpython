@@ -1,1 +1,2 @@
-Enable -D_FORTIFY_SOURCE=3 option for all builds to enhance security
+Enable runtime protections for glibc to abort execution when unsafe behavior is encountered,
+for all platforms except Windows.
