@@ -266,8 +266,9 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
-    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj));
-    Py_INCREF(typeobj);
+    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj)){
+        Py_INCREF(typeobj);
+    }
     _Py_NewReference(op);
 }
 
