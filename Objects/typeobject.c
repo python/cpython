@@ -314,6 +314,16 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     }
 }
 
+static PyTypeObject *
+managed_static_type_get_def(PyTypeObject *self, int isbuiltin)
+{
+    size_t index = managed_static_type_index_get(self);
+    size_t full_index = isbuiltin
+        ? index
+        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
+    return &_PyRuntime.types.managed_static.types[full_index].def;
+}
+
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_FiniBuiltin().
 
 /* end static builtin helpers */
@@ -8468,6 +8478,11 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     }
 
     managed_static_type_state_init(interp, self, isbuiltin, initial);
+
+    PyTypeObject *def = managed_static_type_get_def(self, isbuiltin);
+    if (initial) {
+        memcpy(def, self, sizeof(PyTypeObject));
+    }
 
     int res;
     BEGIN_TYPE_LOCK();
