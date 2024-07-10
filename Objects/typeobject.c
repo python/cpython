@@ -8075,17 +8075,6 @@ type_ready_fill_dict(PyTypeObject *type)
     if (type_dict_set_doc(type) < 0) {
         return -1;
     }
-    /* For now, we work around issues with slot wrappers
-       for builtin types in subinterpreters.
-       See https://github.com/python/cpython/issues/117482. */
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (!_Py_IsMainInterpreter(interp)) {
-            if (fix_builtin_slot_wrappers(type, interp) < 0) {
-                return -1;
-            }
-        }
-    }
     return 0;
 }
 
@@ -11154,6 +11143,19 @@ add_operators(PyTypeObject *type)
             Py_DECREF(descr);
         }
     }
+
+    /* For now, we work around issues with slot wrappers
+       for builtin types in subinterpreters.
+       See https://github.com/python/cpython/issues/117482. */
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (!_Py_IsMainInterpreter(interp)) {
+            if (fix_builtin_slot_wrappers(type, interp) < 0) {
+                return -1;
+            }
+        }
+    }
+
     return 0;
 }
 
