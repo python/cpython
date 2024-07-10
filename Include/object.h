@@ -249,11 +249,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
 #else
     static inline PyTypeObject* _Py_TYPE(PyObject *ob)
     {
-    #if defined(Py_GIL_DISABLED)
-        return (PyTypeObject *)_Py_atomic_load_ptr_relaxed(&ob->ob_type);
-    #else
         return ob->ob_type;
-    #endif
     }
     #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
     #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
@@ -284,11 +280,7 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ptr(&ob->ob_type, type);
-#else
     ob->ob_type = type;
-#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
