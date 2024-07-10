@@ -1156,6 +1156,8 @@ ast_repr_max_depth(AST_object *self, int depth);
 static PyObject *
 ast_repr_list(PyObject *list, int depth)
 {
+    assert(PyList_Check(list) || PyTuple_Check(list));
+
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
         return NULL;
@@ -1169,7 +1171,6 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     _PyUnicodeWriter writer;
-    bool is_list = PyList_Check(list);
     PyObject *items[2] = {NULL, NULL};
 
     items[0] = PySequence_GetItem(list, 0);
@@ -1185,7 +1186,7 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     _PyUnicodeWriter_Init(&writer);
-
+    bool is_list = PyList_Check(list);
     if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
         goto error;
     }
