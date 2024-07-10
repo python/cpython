@@ -1,1 +1,1 @@
-Allow ``PyTupleObjects`` with an ``ob_size`` of 20 in the ``free_list`` to be reused
+Allow :c:type:`PyTupleObject` with an :c:member:`~PyTypeObject.ob_size` of 20 in the freelist of tuples to be reused.
