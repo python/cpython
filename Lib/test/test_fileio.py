@@ -375,71 +375,79 @@ class AutoFileTests:
         self.f.write(b"Hello, World!")
         self.f.close()
 
-        # "open, read, close" file with default options.
-        calls = strace_helper.get_syscalls(
+
+        def check_readall(name, code, prelude="", cleanup=""):
+            with self.subTest(name=name):
+                syscalls = strace_helper.get_syscalls(code, _strace_flags,
+                                                      prelude=prelude,
+                                                      cleanup=cleanup)
+
+                # There are a number of related syscalls used to implement
+                # behaviors in a libc (ex. fstat, newfstatat, open, openat).
+                # Allow any that use the same substring.
+                def count_similarname(name):
+                    return len([sc for sc in syscalls if name in sc])
+
+                # Should open and close the file exactly once
+                self.assertEqual(count_similarname('open'), 1)
+                self.assertEqual(count_similarname('close'), 1)
+
+                # Should only have one fstat (bpo-21679, gh-120754)
+                self.assertEqual(count_similarname('fstat'), 1)
+
+
+        # "open, read, close" file using different common patterns.
+        check_readall(
+            "open builtin with default options",
             f"""
             f = open('{TESTFN}')
             f.read()
             f.close()
-            """,
-            _strace_flags
+            """
         )
 
-        # There are a number of related syscalls used to implement `fstat` in
-        # a libc (ex. fstat, newfstatat). Default to fstat, but if we see the
-        # system using a variant, allow that
-        fstat = next((sc for sc in calls if 'fstat' in sc), 'fstat')
+        check_readall(
+            "open in binary mode",
+            f"""
+            f = open('{TESTFN}', 'rb')
+            f.read()
+            f.close()
+            """
+        )
 
-        readall_calls = ['openat', fstat, 'ioctl', 'lseek', 'read',
-                         'read', 'close']
+        check_readall(
+            "open in text mode",
+            f"""
+            f = open('{TESTFN}', 'rt')
+            f.read()
+            f.close()
+            """
+        )
 
-        self.assertEqual(calls, readall_calls)
+        check_readall(
+            "pathlib read_bytes",
+            "p.read_bytes()",
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
 
-        # Focus on just `read()`
+        )
+
+        check_readall(
+            "pathlib read_text",
+            "p.read_text()",
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+
+        # Focus on just `read()`.
         calls = strace_helper.get_syscalls(
             prelude=f"f = open('{TESTFN}')",
             code="f.read()",
             cleanup="f.close()",
             strace_flags=_strace_flags
         )
-        self.assertEqual(calls, ['read', 'read'])
+        # One to read all the bytes
+        # One to read the EOF and get a size 0 return.
+        self.assertEqual(calls.count("read"), 2)
 
-        # Readall in binary mode
-        calls = strace_helper.get_syscalls(
-            f"""
-            f = open('{TESTFN}', 'rb')
-            f.read()
-            f.close()
-            """,
-            _strace_flags
-        )
-        self.assertEqual(calls, readall_calls)
-
-        # Readall in text mode
-        calls = strace_helper.get_syscalls(
-            f"""
-            f = open('{TESTFN}', 'rt')
-            f.read()
-            f.close()
-            """,
-            _strace_flags
-        )
-        self.assertEqual(calls, readall_calls)
-
-        # text and binary mode, but using pathlib
-        calls = strace_helper.get_syscalls(
-            """p.read_bytes()""",
-            _strace_flags,
-            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
-        )
-        self.assertEqual(calls, readall_calls)
-
-        calls = strace_helper.get_syscalls(
-            """p.read_text()""",
-            _strace_flags,
-            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
-        )
-        self.assertEqual(calls, readall_calls)
 
 
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
