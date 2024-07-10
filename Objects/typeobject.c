@@ -279,7 +279,7 @@ lookup_tp_dict(PyTypeObject *self)
     return self->tp_dict;
 }
 
-static inline int
+static int
 cleanup_tp_dict(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
