@@ -624,15 +624,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-#if SIZEOF_INT < SIZEOF_VOID_P
-        int tmp = _PyLong_CompactValue(v);
-        unsigned long res = (unsigned long)tmp;
-        if (res != tmp) {
-            goto overflow;
-        }
-#else
-        return _PyLong_CompactValue(v);
-#endif
+        return (unsigned long)(long)_PyLong_CompactValue(v);
     }
     if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
