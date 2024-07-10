@@ -118,7 +118,7 @@ def strace_python(code, strace_flags, check=True):
 
     return StraceResult(strace_returncode=res.rc,
                         python_returncode=python_returncode,
-                        raw_events=output[0],
+                        event_bytes=output[0],
                         stdout=res.out,
                         stderr=res.err)
 
