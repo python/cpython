@@ -280,44 +280,45 @@ lookup_tp_dict(PyTypeObject *self)
 }
 
 static int
-cleanup_tp_dict(PyTypeObject *self)
+fix_builtin_slot_wrappers(PyTypeObject *self, PyInterpreterState *interp)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        if (!_Py_IsMainInterpreter(interp)) {
-            PyInterpreterState *main_interp = _PyInterpreterState_Main();
-            static_builtin_state *main_state = _PyStaticType_GetState(main_interp, self);
-            assert(main_state != NULL);
+    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    assert(_Py_IsMainInterpreter(interp));
 
-            PyObject* keys_to_remove = PyList_New(0);
-            if (!keys_to_remove) {
-                return -1;
-            }
-            Py_ssize_t i = 0;
-            PyObject *key, *value;
-            while (PyDict_Next(state->tp_dict, &i, &key, &value)) {
-                if (!PyDict_Contains(main_state->tp_dict, key)) {
-                    if (PyList_Append(keys_to_remove, key) < 0) {
-                        Py_DECREF(keys_to_remove);
-                        return -1;
-                    }
-                }
-            }
+    static_builtin_state *state = _PyStaticType_GetState(interp, self);
+    assert(state != NULL);
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    static_builtin_state *main_state = _PyStaticType_GetState(main_interp, self);
+    assert(main_state != NULL);
 
-            Py_ssize_t list_size = PyList_Size(keys_to_remove);
-            for (Py_ssize_t i = 0; i < list_size; i++) {
-                PyObject* key = PyList_GetItem(keys_to_remove, i);
-                if (PyDict_DelItem(state->tp_dict, key) < 0) {
-                    Py_DECREF(keys_to_remove);
-                    return -1;
-                }
+    int res = -1;
+    PyObject* keys_to_remove = PyList_New(0);
+    if (keys_to_remove == NULL) {
+        goto finally;
+    }
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(state->tp_dict, &i, &key, &value)) {
+        if (!PyDict_Contains(main_state->tp_dict, key)) {
+            if (PyList_Append(keys_to_remove, key) < 0) {
+                goto finally;
             }
-            Py_DECREF(keys_to_remove);
         }
     }
-    return 0;
+
+    Py_ssize_t list_size = PyList_Size(keys_to_remove);
+    for (Py_ssize_t i = 0; i < list_size; i++) {
+        PyObject* key = PyList_GetItem(keys_to_remove, i);
+        if (PyDict_DelItem(state->tp_dict, key) < 0) {
+            goto finally;
+        }
+    }
+
+    res = 0;
+    
+finally:
+    Py_XDECREF(keys_to_remove);
+    return res;
 }
 
 PyObject *
