@@ -380,7 +380,7 @@ static int
 fix_builtin_slot_wrappers(PyTypeObject *self, PyInterpreterState *interp)
 {
     assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-    assert(_Py_IsMainInterpreter(interp));
+    assert(!_Py_IsMainInterpreter(interp));
 
     managed_static_type_state *state = _PyStaticType_GetState(interp, self);
     assert(state != NULL);
