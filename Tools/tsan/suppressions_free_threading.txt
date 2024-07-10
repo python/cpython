@@ -23,20 +23,10 @@ race:free_threadstate
 
 # These warnings trigger directly in a CPython function.
 
-race_top:_add_to_weak_set
-race_top:_in_weak_set
 race_top:_PyEval_EvalFrameDefault
 race_top:assign_version_tag
-race_top:insertdict
-race_top:lookup_tp_dict
 race_top:new_reference
-race_top:_PyDict_CheckConsistency
-race_top:_Py_dict_lookup_threadsafe
 race_top:_multiprocessing_SemLock_acquire_impl
-race_top:dictiter_new
-race_top:dictresize
-race_top:insert_to_emptydict
-race_top:insertdict
 race_top:list_get_item_ref
 race_top:make_pending_calls
 race_top:_Py_slot_tp_getattr_hook
