@@ -191,6 +191,13 @@ Currently the email package provides only one concrete content manager,
        (distinguished from strings by having a ``name`` attribute), add the
        headers to *msg*.
 
+       Note that this method will append a newline character to the end of strings,
+       if it wasn't passed already. For example, the following are equivalent ::
+
+         msg = EmailMessage()
+         msg.set_content("hello")
+         msg.set_content("hello\n")
+
 
 .. rubric:: Footnotes
 
