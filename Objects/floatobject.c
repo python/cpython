@@ -1142,6 +1142,12 @@ char_from_hex(int x)
     return Py_hexdigits[x];
 }
 
+/* This table maps characters to their hexadecimal values, only
+ * works with encodings whose lower half is ASCII (like UTF-8).
+ * '0' maps to 0, ..., '9' maps to 9.
+ * 'a' and 'A' map to 10, ..., 'f' and 'F' map to 15.
+ * All other indices map to -1.
+ */
 static const int
 _CHAR_TO_HEX[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -1162,6 +1168,10 @@ _CHAR_TO_HEX[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
 
+/* Convert a character to its hexadecimal value, or -1 if it's not a
+ * valid hexadecimal character, only works with encodings whose lower
+ * half is ASCII (like UTF-8).
+ */
 static int
 hex_from_char(unsigned char c) {
     return _CHAR_TO_HEX[c];
