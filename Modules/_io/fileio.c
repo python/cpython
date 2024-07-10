@@ -74,8 +74,7 @@ typedef struct {
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     char finalizing;
-    unsigned int blksize;
-    Py_off_t estimated_size;
+    struct _Py_stat_struct *stat_atopen;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -199,8 +198,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->writable = 0;
         self->appending = 0;
         self->seekable = -1;
-        self->blksize = 0;
-        self->estimated_size = -1;
+        self->stat_atopen = NULL;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
@@ -256,7 +254,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #elif !defined(MS_WINDOWS)
     int *atomic_flag_works = NULL;
 #endif
-    struct _Py_stat_struct fdfstat;
     int fstat_result;
     int async_err = 0;
 
@@ -454,9 +451,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     }
 
-    self->blksize = DEFAULT_BUFFER_SIZE;
+    self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
+    if (self->stat_atopen == NULL) {
+        PyErr_Format(PyExc_MemoryError, "Unable to allocate space for stat result");
+        goto error;
+    }
     Py_BEGIN_ALLOW_THREADS
-    fstat_result = _Py_fstat_noraise(self->fd, &fdfstat);
+    fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
     Py_END_ALLOW_THREADS
     if (fstat_result < 0) {
         /* Tolerate fstat() errors other than EBADF.  See Issue #25717, where
@@ -471,25 +472,21 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
             goto error;
         }
+
+        PyMem_Free(self->stat_atopen);
+        self->stat_atopen = NULL;
     }
     else {
 #if defined(S_ISDIR) && defined(EISDIR)
         /* On Unix, open will succeed for directories.
            In Python, there should be no file objects referring to
            directories, so we need a check.  */
-        if (S_ISDIR(fdfstat.st_mode)) {
+        if (S_ISDIR(self->stat_atopen->st_mode)) {
             errno = EISDIR;
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
             goto error;
         }
 #endif /* defined(S_ISDIR) */
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-        if (fdfstat.st_blksize > 1)
-            self->blksize = fdfstat.st_blksize;
-#endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
-        if (fdfstat.st_size < PY_SSIZE_T_MAX) {
-            self->estimated_size = (Py_off_t)fdfstat.st_size;
-        }
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -520,6 +517,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         PyObject *exc = PyErr_GetRaisedException();
         internal_close(self);
         _PyErr_ChainExceptions1(exc);
+    }
+    if (self->stat_atopen != NULL) {
+        PyMem_Free(self->stat_atopen);
+        self->stat_atopen = NULL;
     }
 
  done:
@@ -553,6 +554,10 @@ fileio_dealloc(fileio *self)
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
+    if (self->stat_atopen != NULL) {
+        PyMem_Free(self->stat_atopen);
+        self->stat_atopen = NULL;
+    }
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     (void)fileio_clear(self);
@@ -725,7 +730,13 @@ _io_FileIO_readall_impl(fileio *self)
         return err_closed();
     }
 
-    end = self->estimated_size;
+    if (self->stat_atopen != NULL) {
+        end = (Py_off_t)Py_MIN(self->stat_atopen->st_size, PY_SSIZE_T_MAX);
+    }
+    else {
+        end = -1;
+    }
+
     if (end <= 0) {
         /* Use a default size and resize as needed. */
         bufsize = SMALLCHUNK;
@@ -1098,7 +1109,10 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
     estimate, that it is much larger than the actual size can result in a
     significant over allocation and sometimes a MemoryError / running out of
     memory. */
-    self->estimated_size = pos;
+    if (self->stat_atopen != NULL) {
+        PyMem_Free(self->stat_atopen);
+        self->stat_atopen = NULL;
+    }
 
     return posobj;
 }
@@ -1179,6 +1193,11 @@ _io_FileIO_isatty_impl(fileio *self)
 
     if (self->fd < 0)
         return err_closed();
+
+    if (self->stat_atopen != NULL && S_ISREG(self->stat_atopen->st_mode)) {
+        return Py_False;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     res = isatty(self->fd);
@@ -1229,16 +1248,28 @@ get_mode(fileio *self, void *closure)
     return PyUnicode_FromString(mode_string(self));
 }
 
+static PyObject *
+get_blksize(fileio *self, void *closure)
+{
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
+        return PyLong_FromLong(self->stat_atopen->st_blksize);
+    }
+#endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+    return PyLong_FromLong(DEFAULT_BUFFER_SIZE);
+}
+
+
 static PyGetSetDef fileio_getsetlist[] = {
     {"closed", (getter)get_closed, NULL, "True if the file is closed"},
     {"closefd", (getter)get_closefd, NULL,
         "True if the file descriptor will be closed by close()."},
     {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"_blksize", (getter)get_blksize, NULL, "Stat st_blksize if available"},
     {NULL},
 };
 
 static PyMemberDef fileio_members[] = {
-    {"_blksize", Py_T_UINT, offsetof(fileio, blksize), 0},
     {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},

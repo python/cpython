@@ -1,0 +1,2 @@
+Skip the ``isatty`` system call on just-opened regular files. This provides a
+slight performance improvement when reading whole files.
