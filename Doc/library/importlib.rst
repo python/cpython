@@ -1605,7 +1605,7 @@ To import a Python source file directly, use the following recipe::
     file_path = json.__file__
     module_name = json.__name__
 
-    # Similar outcome as ``import json``.
+    # Similar outcome as `import json`.
     json = import_from_path(module_name, file_path)
 
 
