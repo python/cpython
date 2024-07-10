@@ -412,7 +412,7 @@ fix_builtin_slot_wrappers(PyTypeObject *self, PyInterpreterState *interp)
     }
 
     res = 0;
-    
+
 finally:
     Py_XDECREF(keys_to_remove);
     return res;
