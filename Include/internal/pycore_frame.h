@@ -13,7 +13,7 @@ extern "C" {
 #include "pycore_code.h"          // STATS
 #include "pycore_stackref.h"      // _PyStackRef
 
-/* See Objects/frame_layout.md for an explanation of the frame stack
+/* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
  * structs. */
 
