@@ -795,8 +795,6 @@ MODULE__POSIXSUBPROCESS_FALSE
 MODULE__POSIXSUBPROCESS_TRUE
 MODULE__PICKLE_FALSE
 MODULE__PICKLE_TRUE
-MODULE__OPCODE_FALSE
-MODULE__OPCODE_TRUE
 MODULE__LSPROF_FALSE
 MODULE__LSPROF_TRUE
 MODULE__JSON_FALSE
@@ -29234,28 +29232,6 @@ then :
 fi
 
 
-        if test "$py_cv_module__opcode" != "n/a"
-then :
-  py_cv_module__opcode=yes
-fi
-   if test "$py_cv_module__opcode" = yes; then
-  MODULE__OPCODE_TRUE=
-  MODULE__OPCODE_FALSE='#'
-else
-  MODULE__OPCODE_TRUE='#'
-  MODULE__OPCODE_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE__OPCODE_STATE=$py_cv_module__opcode$as_nl"
-  if test "x$py_cv_module__opcode" = xyes
-then :
-
-
-
-
-fi
-
-
         if test "$py_cv_module__pickle" != "n/a"
 then :
   py_cv_module__pickle=yes
@@ -31782,10 +31758,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__LSPROF_TRUE}" && test -z "${MODULE__LSPROF_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__LSPROF\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__OPCODE_TRUE}" && test -z "${MODULE__OPCODE_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__OPCODE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__PICKLE_TRUE}" && test -z "${MODULE__PICKLE_FALSE}"; then
