@@ -116,7 +116,7 @@ class REPLThread(threading.Thread):
                 if err := check():
                     raise RuntimeError(err)
             except Exception as e:
-                console.interact(banner="", exitmsg=exit_message)
+                console.interact(banner="", exitmsg="")
             else:
                 try:
                     run_multiline_interactive_console(console=console)

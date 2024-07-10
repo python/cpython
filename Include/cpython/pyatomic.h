@@ -510,6 +510,9 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 // See https://en.cppreference.com/w/cpp/atomic/atomic_thread_fence
 static inline void _Py_atomic_fence_seq_cst(void);
 
+// Acquire fence
+static inline void _Py_atomic_fence_acquire(void);
+
 // Release fence
 static inline void _Py_atomic_fence_release(void);
 
