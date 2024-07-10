@@ -5857,7 +5857,9 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     /* For now we exclude extension module types. */
     if (final && isbuiltin) {
         /* Restore the static type to it's (mostly) original values. */
+        destructor dealloc = type->tp_dealloc;
         memcpy(type, def, sizeof(PyTypeObject));
+        type->tp_dealloc = dealloc;
     }
 }
 
