@@ -1,13 +1,35 @@
+/*
+* C accelerator for the 'fnmatch' module (POSIX only).
+ *
+ * Most functions expect string or bytes instances, and thus the Python
+ * implementation should first pre-process path-like objects, possibly
+ * applying normalizations depending on the platform if needed.
+ */
+
 #ifndef _FNMATCHMODULE_H
 #define _FNMATCHMODULE_H
 
 #include "Python.h"
 
-typedef struct {
-    PyObject *re_module; // 're' module
-    PyObject *os_module; // 'os' module
+#undef Py_USE_FNMATCH_FALLBACK
+/*
+ * For now, only test the C acceleration of the Python implementation.
+ *
+ * TODO(picnixz): Currently, I don't know how to handle backslashes
+ * TODO(picnixz): in fnmatch(3) so that they are treated correctly
+ * TODO(picnixz): depending on whether the string was a raw string
+ * TODO(picnixz): or not. To see the bug, uncomment the following
+ * TODO(picnixz): macro and run the tests.
+ */
+#define Py_USE_FNMATCH_FALLBACK 1
 
-    PyObject *lru_cache; // optional cache for regex patterns, if needed
+typedef struct {
+    PyObject *py_module;    // 'fnmatch' module
+    PyObject *re_module;    // 're' module
+    PyObject *os_module;    // 'os' module
+
+    PyObject *lru_cache;    // the LRU cache decorator
+    PyObject *translator;   // the translation unit whose calls are cached
 } fnmatchmodule_state;
 
 static inline fnmatchmodule_state *
@@ -18,33 +40,22 @@ get_fnmatchmodulestate_state(PyObject *module)
     return (fnmatchmodule_state *)state;
 }
 
+#if defined(Py_HAVE_FNMATCH) && !defined(Py_USE_FNMATCH_FALLBACK)
 /*
- * The filter() function works differently depending on whether fnmatch(3)
- * is present or not.
- *
- * If fnmatch(3) is present, the match is performed without using regular
- * expressions. The functions being used are
- *
- * If fnmatch(3) is not present, the match is performed using regular
- * expressions.
+ * Construct a list of filtered names using fnmatch(3).
  */
-
-#ifdef Py_HAVE_FNMATCH
-/*
- * Type for a matching function.
- *
- * The function must take as input a pattern and a name,
- * and is used to determine whether the name matches the
- * pattern or not.
- *
- * If the pattern is obtained from str() types, then 'name'
- * must be a string (it is left to the matcher the task for
- * validating this part).
- */
-typedef int (*Matcher)(const char *, PyObject *);
-
 extern PyObject *
-_posix_fnmatch_filter(const char *pattern, PyObject *names, Matcher match);
+_posix_fnmatch_encoded_filter(PyObject *pattern, PyObject *names);
+/* Same as _posix_fnmatch_encoded_filter() but for unicode inputs. */
+extern PyObject *
+_posix_fnmatch_unicode_filter(PyObject *pattern, PyObject *names);
+
+/* cached 'pattern' version of _posix_fnmatch_encoded_filter() */
+extern PyObject *
+_posix_fnmatch_encoded_filter_cached(const char *pattern, PyObject *names);
+/* cached 'pattern' version of _posix_fnmatch_unicode_filter() */
+extern PyObject *
+_posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names);
 
 /*
  * Perform a case-sensitive match using fnmatch(3).
@@ -59,15 +70,53 @@ _posix_fnmatch_filter(const char *pattern, PyObject *names, Matcher match);
  * Returns -1 if (1) 'string' is not a `bytes` object, and
  * sets a TypeError exception, or (2) something went wrong.
  */
-extern int _posix_fnmatch_encoded(const char *pattern, PyObject *string);
+extern int
+_posix_fnmatch_encoded(PyObject *pattern, PyObject *string);
 /* Same as _posix_fnmatch_encoded() but for unicode inputs. */
-extern int _posix_fnmatch_unicode(const char *pattern, PyObject *string);
-#else
-extern int _regex_fnmatch_generic(PyObject *matcher, PyObject *name);
-extern PyObject *
-_regex_fnmatch_filter(PyObject *matcher, PyObject *names);
+extern int
+_posix_fnmatch_unicode(PyObject *pattern, PyObject *string);
+
+/* cached 'pattern' version of _posix_fnmatch_encoded() */
+extern int
+_posix_fnmatch_encoded_cached(const char *pattern, PyObject *names);
+/* cached 'pattern' version of _posix_fnmatch_encoded() */
+extern int
+_posix_fnmatch_unicode_cached(const char *pattern, PyObject *names);
 #endif
 
-extern PyObject *translate(PyObject *module, PyObject *pattern);
+/*
+ * Test whether a name matches a compiled RE pattern.
+ *
+ * Parameters
+ *
+ *      matcher  A reference to the 'match()' method of a compiled pattern.
+ *      string   The string to match (str or bytes object).
+ *
+ * Returns 1 if the 'string' matches the pattern and 0 otherwise.
+ *
+ * Returns -1 if (1) 'string' is not a `str` or a `bytes` object,
+ * and sets a TypeError exception, or (2) something went wrong.
+ */
+extern int
+_regex_fnmatch_generic(PyObject *matcher, PyObject *string);
+
+/*
+ * Perform a case-sensitive match using compiled RE patterns.
+ *
+ * Parameters
+ *
+ *      matcher  A reference to the 'match()' method of a compiled pattern.
+ *      names    An iterable of strings (str or bytes objects) to match.
+ *
+ * Returns a list of matched names, or NULL if an error occurred.
+ */
+extern PyObject *
+_regex_fnmatch_filter(PyObject *matcher, PyObject *names);
+
+/*
+ * C accelerator for translating UNIX shell patterns into RE patterns.
+ */
+extern PyObject *
+_regex_translate(PyObject *module, PyObject *pattern);
 
 #endif // _FNMATCHMODULE_H

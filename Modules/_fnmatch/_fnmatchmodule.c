@@ -1,115 +1,166 @@
-/*
- * C accelerator for the 'fnmatch' module (POSIX only).
- *
- * Most functions expect string or bytes instances, and thus the Python
- * implementation should first pre-process path-like objects, possibly
- * applying normalizations depending on the platform if needed.
- */
-
 #include "Python.h"
 #include "pycore_call.h" // for _PyObject_CallMethod
 
 #include "_fnmatchmodule.h"
 #include "clinic/_fnmatchmodule.c.h"
 
-#define INVALID_PATTERN_TYPE "pattern must be a string or a bytes object"
+#define COMPILED_CACHE_SIZE     32768
+#define INVALID_PATTERN_TYPE    "pattern must be a string or a bytes object"
 
-// module state functions
+// ==== Helper implementations ================================================
+
+/*
+ * Compile a UNIX shell pattern into a RE pattern
+ * and returns the corresponding 'match()' method.
+ *
+ * This function is LRU-cached by the module itself.
+ */
+static PyObject *
+fnmatchmodule_get_matcher_function(PyObject *module, PyObject *pattern)
+{
+    // translate the pattern into a RE pattern
+    assert(module != NULL);
+    PyObject *expr = _fnmatch_translate_impl(module, pattern);
+    if (expr == NULL) {
+        return NULL;
+    }
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    // compile the pattern
+    PyObject *compiled = _PyObject_CallMethod(st->re_module, &_Py_ID(compile), "O", expr);
+    Py_DECREF(expr);
+    if (compiled == NULL) {
+        return NULL;
+    }
+    // get the compiled pattern matcher function
+    PyObject *matcher = PyObject_GetAttr(compiled, &_Py_ID(match));
+    Py_DECREF(compiled);
+    return matcher;
+}
+
+static PyMethodDef get_matcher_function_def = {
+    "get_matcher_function",
+    (PyCFunction)(fnmatchmodule_get_matcher_function),
+    METH_O,
+    NULL
+};
 
 static int
-fnmatchmodule_clear(PyObject *m)
+fnmatchmodule_load_lru_cache(PyObject *module, fnmatchmodule_state *st)
 {
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
-    Py_CLEAR(st->os_module);
-    Py_CLEAR(st->re_module);
-    Py_CLEAR(st->lru_cache);
+    st->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
+    if (st->lru_cache == NULL) {
+        return -1;
+    }
     return 0;
 }
+
+static int
+fnmatchmodule_load_translator(PyObject *module, fnmatchmodule_state *st)
+{
+    assert(st->lru_cache != NULL);
+    PyObject *maxsize = PyLong_FromLong(COMPILED_CACHE_SIZE);
+    if (maxsize == NULL) {
+        return -1;
+    }
+    PyObject *args[] = {NULL, maxsize, Py_True};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *decorator = PyObject_Vectorcall(st->lru_cache, args + 1, nargsf, NULL);
+    Py_DECREF(maxsize);
+    if (decorator == NULL) {
+        return -1;
+    }
+    // TODO(picnixz): should INCREF the refcount of 'module'?
+    assert(module != NULL);
+    PyObject *decorated = PyCFunction_New(&get_matcher_function_def, module);
+    PyObject *translator = PyObject_CallOneArg(decorator, decorated);
+    Py_DECREF(decorated);
+    Py_DECREF(decorator);
+    if (translator == NULL) {
+        return -1;
+    }
+    // reference on 'translator' will be removed upon module cleanup
+    st->translator = translator;
+    return 0;
+}
+
+static inline PyObject *
+get_matcher_function(PyObject *module, PyObject *pattern)
+{
+    assert(module != NULL);
+    assert(pattern != NULL);
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    assert(st->translator != NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return PyObject_Vectorcall(st->translator, &pattern, nargsf, NULL);
+}
+
+// ==== Module state functions ================================================
+
+#define IMPORT_MODULE(state, attribute, name) \
+    do { \
+        state->attribute = NULL; \
+        state->attribute = PyImport_ImportModule((name)); \
+        if (state->attribute == NULL) { \
+            return -1; \
+        } \
+    } while (0)
+
+static int
+fnmatchmodule_exec(PyObject *module)
+{
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    st->py_module = NULL;
+    IMPORT_MODULE(st, py_module, "fnmatch");
+    st->os_module = NULL;
+    IMPORT_MODULE(st, os_module, "os");
+    st->re_module = NULL;
+    IMPORT_MODULE(st, re_module, "re");
+    st->lru_cache = NULL;
+    if (fnmatchmodule_load_lru_cache(module, st) < 0) {
+        return -1;
+    }
+    st->translator = NULL;
+    if (fnmatchmodule_load_translator(module, st) < 0) {
+        return -1;
+    }
+    return 0;
+}
+#undef IMPORT_MODULE
 
 static int
 fnmatchmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
+    Py_VISIT(st->py_module);
     Py_VISIT(st->os_module);
     Py_VISIT(st->re_module);
     Py_VISIT(st->lru_cache);
+    Py_VISIT(st->translator);
+    return 0;
+}
+
+static int
+fnmatchmodule_clear(PyObject *m)
+{
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(m);
+    Py_CLEAR(st->py_module);
+    Py_CLEAR(st->os_module);
+    Py_CLEAR(st->re_module);
+    Py_CLEAR(st->lru_cache);
+    Py_CLEAR(st->translator);
     return 0;
 }
 
 static void
 fnmatchmodule_free(void *m)
 {
-    fnmatchmodule_clear((PyObject *) m);
-}
-
-static int
-fnmatchmodule_exec(PyObject *m)
-{
-#define IMPORT_MODULE(attr, name) \
-    do { \
-        state->attr = PyImport_ImportModule((name)); \
-        if (state->attr == NULL) { \
-            return -1; \
-        } \
-    } while (0)
-
-#define INTERN_STRING(attr, str) \
-    do { \
-        state->attr = PyUnicode_InternFromString((str)); \
-        if (state->attr == NULL) { \
-            return -1; \
-        } \
-    } while (0)
-
-    fnmatchmodule_state *state = get_fnmatchmodulestate_state(m);
-
-    // imports
-    IMPORT_MODULE(os_module, "os");
-    IMPORT_MODULE(re_module, "re");
-
-    // helpers
-    state->lru_cache = _PyImport_GetModuleAttrString("functools", "lru_cache");
-    if (state->lru_cache == NULL) {
-        return -1;
-    }
-    // todo: handle LRU cache
-
-#undef IMPORT_MODULE
-#undef INTERN_STRING
-
-    return 0;
+    (void)fnmatchmodule_clear((PyObject *)m);
 }
 
 /*[clinic input]
 module _fnmatch
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=356e324d57d93f08]*/
-
-static PyObject *
-get_match_function(PyObject *module, PyObject *pattern)
-{
-    // TODO(picnixz): use LRU-cache
-    PyObject *expr = _fnmatch_translate_impl(module, pattern);
-    if (expr == NULL) {
-        return NULL;
-    }
-    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
-    PyObject *compiled = _PyObject_CallMethod(st->re_module, &_Py_ID(compile), "O", expr);
-    Py_DECREF(expr);
-    if (compiled == NULL) {
-        return NULL;
-    }
-    PyObject *matcher = PyObject_GetAttr(compiled, &_Py_ID(match));
-    Py_DECREF(compiled);
-    return matcher;
-}
-
-static PyMethodDef get_match_function_method_def = {
-    "get_match_function",
-    _PyCFunction_CAST(get_match_function),
-    METH_O,
-    NULL
-};
 
 /*[clinic input]
 _fnmatch.filter -> object
@@ -123,28 +174,53 @@ static PyObject *
 _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
 /*[clinic end generated code: output=7f11aa68436d05fc input=1d233174e1c4157a]*/
 {
-#ifndef Py_HAVE_FNMATCH
-    PyObject *matcher = get_match_function(module, pat);
+#if defined(Py_HAVE_FNMATCH) && !defined(Py_USE_FNMATCH_FALLBACK)
+    // Note that the Python implementation of fnmatch.filter() does not
+    // call os.fspath() on the names being matched, whereas it does on NT.
+    if (PyBytes_Check(pat)) {
+        const char *pattern = PyBytes_AS_STRING(pat);
+        return _posix_fnmatch_encoded_filter_cached(pattern, names);
+    }
+    if (PyUnicode_Check(pat)) {
+        const char *pattern = PyUnicode_AsUTF8(pat);
+        return _posix_fnmatch_unicode_filter_cached(pattern, names);
+    }
+    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
+    return NULL;
+#else
+    PyObject *matcher = get_matcher_function(module, pat);
     if (matcher == NULL) {
         return NULL;
     }
     PyObject *result = _regex_fnmatch_filter(matcher, names);
     Py_DECREF(matcher);
     return result;
-#else
-    // Note that the Python implementation of fnmatch.filter() does not
-    // call os.fspath() on the names being matched, whereas it does on NT.
-    if (PyBytes_Check(pat)) {
-        const char *pattern = PyBytes_AS_STRING(pat);
-        return _posix_fnmatch_filter(pattern, names, &_posix_fnmatch_encoded);
-    }
-    if (PyUnicode_Check(pat)) {
-        const char *pattern = PyUnicode_AsUTF8(pat);
-        return _posix_fnmatch_filter(pattern, names, &_posix_fnmatch_unicode);
-    }
-    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
-    return NULL;
 #endif
+}
+
+/*[clinic input]
+_fnmatch.fnmatch -> bool
+
+    name: object
+    pat: object
+
+[clinic start generated code]*/
+
+static int
+_fnmatch_fnmatch_impl(PyObject *module, PyObject *name, PyObject *pat)
+/*[clinic end generated code: output=b4cd0bd911e8bc93 input=c45e0366489540b8]*/
+{
+    fnmatchmodule_state *st = get_fnmatchmodulestate_state(module);
+    PyObject *res = _PyObject_CallMethod(st->py_module, &_Py_ID(fnmatch), "OO", name, pat);
+    if (res == NULL) {
+        return -1;
+    }
+    int matching = PyLong_AsLong(res);
+    if (matching < 0) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return matching;
 }
 
 /*[clinic input]
@@ -164,28 +240,28 @@ static int
 _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
 /*[clinic end generated code: output=4d1283b1b1fc7cb8 input=b02a6a5c8c5a46e2]*/
 {
-#ifndef Py_HAVE_FNMATCH
-    PyObject *matcher = get_match_function(module, pat);
+#if defined(Py_HAVE_FNMATCH) && !defined(Py_USE_FNMATCH_FALLBACK)
+    // This function does not transform path-like objects, nor does it
+    // case-normalize 'name' or 'pattern' (whether it is the Python or
+    // the C implementation).
+    if (PyBytes_Check(pat)) {
+        const char *pattern = PyBytes_AS_STRING(pat);
+        return _posix_fnmatch_encoded_cached(pattern, name);
+    }
+    if (PyUnicode_Check(pat)) {
+        const char *pattern = PyUnicode_AsUTF8(pat);
+        return _posix_fnmatch_unicode_cached(pattern, name);
+    }
+    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
+    return -1;
+#else
+    PyObject *matcher = get_matcher_function(module, pat);
     if (matcher == NULL) {
         return -1;
     }
     int res = _regex_fnmatch_generic(matcher, name);
     Py_DECREF(matcher);
     return res;
-#else
-    // This function does not transform path-like objects, nor does it
-    // case-normalize 'name' or 'pattern' (whether it is the Python or
-    // the C implementation).
-    if (PyBytes_Check(pat)) {
-        const char *pattern = PyBytes_AS_STRING(pat);
-        return _posix_fnmatch_encoded(pattern, name);
-    }
-    if (PyUnicode_Check(pat)) {
-        const char *pattern = PyUnicode_AsUTF8(pat);
-        return _posix_fnmatch_unicode(pattern, name);
-    }
-    PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
-    return -1;
 #endif
 }
 
@@ -208,7 +284,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
             return NULL;
         }
         // translated regular expression as a str object
-        PyObject *str_expr = translate(module, unicode);
+        PyObject *str_expr = _regex_translate(module, unicode);
         Py_DECREF(unicode);
         if (str_expr == NULL) {
             return NULL;
@@ -218,7 +294,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
         return expr;
     }
     else if (PyUnicode_Check(pattern)) {
-        return translate(module, pattern);
+        return _regex_translate(module, pattern);
     }
     else {
         PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
@@ -228,6 +304,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
 
 static PyMethodDef fnmatchmodule_methods[] = {
     _FNMATCH_FILTER_METHODDEF
+    _FNMATCH_FNMATCH_METHODDEF
     _FNMATCH_FNMATCHCASE_METHODDEF
     _FNMATCH_TRANSLATE_METHODDEF
     {NULL, NULL}
@@ -242,8 +319,8 @@ static struct PyModuleDef_Slot fnmatchmodule_slots[] = {
 
 static struct PyModuleDef _fnmatchmodule = {
     PyModuleDef_HEAD_INIT,
-    "_fnmatch",
-    NULL,
+    .m_name = "_fnmatch",
+    .m_doc = NULL,
     .m_size = sizeof(fnmatchmodule_state),
     .m_methods = fnmatchmodule_methods,
     .m_slots = fnmatchmodule_slots,
