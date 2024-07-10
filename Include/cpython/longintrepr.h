@@ -129,7 +129,7 @@ _PyLong_IsCompact(PyLongObject* op) {
 static inline int
 _PyLong_CompactValue(PyLongObject *op)
 {
-    Py_ssize_t sign;
+    int sign;
     assert(PyType_HasFeature(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS));
     assert(PyUnstable_Long_IsCompact(op));
     sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
