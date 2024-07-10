@@ -2448,12 +2448,12 @@ def test_pdb_show_attribute_and_item():
     (Pdb) c
     """
 
-# doctest will override pdb.set_trace during the test, so we need to backup
+# doctest will modify pdb.set_trace during the test, so we need to backup
 # the original function to use it in the test
 original_pdb_settrace = pdb.set_trace
 
 def test_pdb_with_inline_breakpoint():
-    """Inline breakpoint() calls should invoke the same debugger instance
+    """Hard-coded breakpoint() calls should invoke the same debugger instance
 
     >>> def test_function():
     ...     x = 1
