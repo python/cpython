@@ -731,7 +731,7 @@ _io_FileIO_readall_impl(fileio *self)
     }
 
     if (self->stat_atopen != NULL) {
-        end = (Py_off_t)Py_MIN(self->stat_atopen->st_size, PY_SSIZE_T_MAX);
+        end = (Py_off_t)Py_MIN(self->stat_atopen->st_size, _PY_READ_MAX);
     }
     else {
         end = -1;
