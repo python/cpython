@@ -6607,7 +6607,7 @@ differs:
 
 
 static int
-object_set_class_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject **oldto_p)
+object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 {
     PyTypeObject *oldto = Py_TYPE(self);
 
@@ -6682,13 +6682,7 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject
                 }
             }
 
-            // If we raced after materialization and replaced the dict
-            // then the materialized dict should no longer have the
-            // inline values in which case detach is a nop.
-            // Note: we don't need to lock here because the world should be stopped.
-
-            assert(_PyObject_GetManagedDict(self) == dict ||
-                   dict->ma_values != _PyObject_InlineValues(self));
+            assert(_PyObject_GetManagedDict(self) == dict);
 
             if (_PyDict_DetachFromObject(dict, self) < 0) {
                 return -1;
@@ -6700,8 +6694,6 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto, PyTypeObject
         }
 
         Py_SET_TYPE(self, newto);
-
-        *oldto_p = oldto;
 
         return 0;
     }
@@ -6734,12 +6726,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    // The real Py_TYPE(self) (`oldto`) may have changed from
-    // underneath us in another thread, so we stop the world.
     _PyEval_StopTheWorld(interp);
 #endif
-    PyTypeObject *oldto;
-    int res = object_set_class_world_stopped(self, newto, &oldto);
+    PyTypeObject *oldto = Py_TYPE(self);
+    int res = object_set_class_world_stopped(self, newto);
 #ifdef Py_GIL_DISABLED
     _PyEval_StartTheWorld(interp);
 #endif
