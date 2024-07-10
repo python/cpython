@@ -949,6 +949,7 @@ extern "C" {
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
+    INIT_ID(fnmatch), \
     INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \

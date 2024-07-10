@@ -440,6 +440,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(fix_imports)
         STRUCT_FOR_ID(flags)
         STRUCT_FOR_ID(flush)
+        STRUCT_FOR_ID(fnmatch)
         STRUCT_FOR_ID(fold)
         STRUCT_FOR_ID(follow_symlinks)
         STRUCT_FOR_ID(format)
