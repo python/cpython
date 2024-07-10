@@ -57,6 +57,20 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                // In the future we may add a "minSdk" device, but managed
+                // devices have a minimum API level of 27.
+                create("targetSdk") {
+                    device = "Small Phone"
+                    apiLevel = defaultConfig.targetSdk!!
+                    systemImageSource = "aosp-atd"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
