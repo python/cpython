@@ -1,1 +1,1 @@
-AF_RDS support for getsockopt
+Removed buffer size limit for AF_RDS
