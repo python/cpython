@@ -45,17 +45,17 @@ get_fnmatchmodulestate_state(PyObject *module)
  * Construct a list of filtered names using fnmatch(3).
  */
 extern PyObject *
-_posix_fnmatch_encoded_filter(PyObject *pattern, PyObject *names);
-/* Same as _posix_fnmatch_encoded_filter() but for unicode inputs. */
+_Py_posix_fnmatch_encoded_filter(PyObject *pattern, PyObject *names);
+/* Same as _Py_posix_fnmatch_encoded_filter() but for unicode inputs. */
 extern PyObject *
-_posix_fnmatch_unicode_filter(PyObject *pattern, PyObject *names);
+_Py_posix_fnmatch_unicode_filter(PyObject *pattern, PyObject *names);
 
-/* cached 'pattern' version of _posix_fnmatch_encoded_filter() */
+/* cached 'pattern' version of _Py_posix_fnmatch_encoded_filter() */
 extern PyObject *
-_posix_fnmatch_encoded_filter_cached(const char *pattern, PyObject *names);
-/* cached 'pattern' version of _posix_fnmatch_unicode_filter() */
+_Py_posix_fnmatch_encoded_filter_cached(const char *pattern, PyObject *names);
+/* cached 'pattern' version of _Py_posix_fnmatch_unicode_filter() */
 extern PyObject *
-_posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names);
+_Py_posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names);
 
 /*
  * Perform a case-sensitive match using fnmatch(3).
@@ -71,17 +71,17 @@ _posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names);
  * sets a TypeError exception, or (2) something went wrong.
  */
 extern int
-_posix_fnmatch_encoded(PyObject *pattern, PyObject *string);
-/* Same as _posix_fnmatch_encoded() but for unicode inputs. */
+_Py_posix_fnmatch_encoded(PyObject *pattern, PyObject *string);
+/* Same as _Py_posix_fnmatch_encoded() but for unicode inputs. */
 extern int
-_posix_fnmatch_unicode(PyObject *pattern, PyObject *string);
+_Py_posix_fnmatch_unicode(PyObject *pattern, PyObject *string);
 
-/* cached 'pattern' version of _posix_fnmatch_encoded() */
+/* cached 'pattern' version of _Py_posix_fnmatch_encoded() */
 extern int
-_posix_fnmatch_encoded_cached(const char *pattern, PyObject *names);
-/* cached 'pattern' version of _posix_fnmatch_encoded() */
+_Py_posix_fnmatch_encoded_cached(const char *pattern, PyObject *names);
+/* cached 'pattern' version of _Py_posix_fnmatch_encoded() */
 extern int
-_posix_fnmatch_unicode_cached(const char *pattern, PyObject *names);
+_Py_posix_fnmatch_unicode_cached(const char *pattern, PyObject *names);
 #endif
 
 /*
@@ -98,7 +98,7 @@ _posix_fnmatch_unicode_cached(const char *pattern, PyObject *names);
  * and sets a TypeError exception, or (2) something went wrong.
  */
 extern int
-_regex_fnmatch_generic(PyObject *matcher, PyObject *string);
+_Py_regex_fnmatch_generic(PyObject *matcher, PyObject *string);
 
 /*
  * Perform a case-sensitive match using compiled RE patterns.
@@ -111,12 +111,12 @@ _regex_fnmatch_generic(PyObject *matcher, PyObject *string);
  * Returns a list of matched names, or NULL if an error occurred.
  */
 extern PyObject *
-_regex_fnmatch_filter(PyObject *matcher, PyObject *names);
+_Py_regex_fnmatch_filter(PyObject *matcher, PyObject *names);
 
 /*
  * C accelerator for translating UNIX shell patterns into RE patterns.
  */
 extern PyObject *
-_regex_translate(PyObject *module, PyObject *pattern);
+_Py_regex_translate(PyObject *module, PyObject *pattern);
 
 #endif // _FNMATCHMODULE_H

@@ -93,7 +93,7 @@ process_wildcards(PyObject *pattern, PyObject *indices);
 // ==== API implementation ====================================================
 
 PyObject *
-_regex_translate(PyObject *module, PyObject *pattern)
+_Py_regex_translate(PyObject *module, PyObject *pattern)
 {
 #define READ(ind) PyUnicode_READ(kind, data, (ind))
 #define ADVANCE_IF_CHAR(ch, ind, maxind) \

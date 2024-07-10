@@ -5,7 +5,7 @@
 // ==== API implementation ====================================================
 
 inline int
-_regex_fnmatch_generic(PyObject *matcher, PyObject *name)
+_Py_regex_fnmatch_generic(PyObject *matcher, PyObject *name)
 {
     // If 'name' is of incorrect type, it will be detected when calling
     // the matcher function (we emulate 're.compile(...).match(name)').
@@ -20,7 +20,7 @@ _regex_fnmatch_generic(PyObject *matcher, PyObject *name)
 }
 
 PyObject *
-_regex_fnmatch_filter(PyObject *matcher, PyObject *names)
+_Py_regex_fnmatch_filter(PyObject *matcher, PyObject *names)
 {
     assert(PyCallable_Check(matcher));
     PyObject *iter = PyObject_GetIter(names);
@@ -36,7 +36,7 @@ _regex_fnmatch_filter(PyObject *matcher, PyObject *names)
 
     PyObject *name = NULL;
     while ((name = PyIter_Next(iter))) {
-        int rc = _regex_fnmatch_generic(matcher, name);
+        int rc = _Py_regex_fnmatch_generic(matcher, name);
         if (rc < 0) {
             assert(PyErr_Occurred());
             goto abort;

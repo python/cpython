@@ -179,11 +179,11 @@ _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
     // call os.fspath() on the names being matched, whereas it does on NT.
     if (PyBytes_Check(pat)) {
         const char *pattern = PyBytes_AS_STRING(pat);
-        return _posix_fnmatch_encoded_filter_cached(pattern, names);
+        return _Py_posix_fnmatch_encoded_filter_cached(pattern, names);
     }
     if (PyUnicode_Check(pat)) {
         const char *pattern = PyUnicode_AsUTF8(pat);
-        return _posix_fnmatch_unicode_filter_cached(pattern, names);
+        return _Py_posix_fnmatch_unicode_filter_cached(pattern, names);
     }
     PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
     return NULL;
@@ -192,7 +192,7 @@ _fnmatch_filter_impl(PyObject *module, PyObject *names, PyObject *pat)
     if (matcher == NULL) {
         return NULL;
     }
-    PyObject *result = _regex_fnmatch_filter(matcher, names);
+    PyObject *result = _Py_regex_fnmatch_filter(matcher, names);
     Py_DECREF(matcher);
     return result;
 #endif
@@ -246,11 +246,11 @@ _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
     // the C implementation).
     if (PyBytes_Check(pat)) {
         const char *pattern = PyBytes_AS_STRING(pat);
-        return _posix_fnmatch_encoded_cached(pattern, name);
+        return _Py_posix_fnmatch_encoded_cached(pattern, name);
     }
     if (PyUnicode_Check(pat)) {
         const char *pattern = PyUnicode_AsUTF8(pat);
-        return _posix_fnmatch_unicode_cached(pattern, name);
+        return _Py_posix_fnmatch_unicode_cached(pattern, name);
     }
     PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);
     return -1;
@@ -259,7 +259,7 @@ _fnmatch_fnmatchcase_impl(PyObject *module, PyObject *name, PyObject *pat)
     if (matcher == NULL) {
         return -1;
     }
-    int res = _regex_fnmatch_generic(matcher, name);
+    int res = _Py_regex_fnmatch_generic(matcher, name);
     Py_DECREF(matcher);
     return res;
 #endif
@@ -284,7 +284,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
             return NULL;
         }
         // translated regular expression as a str object
-        PyObject *str_expr = _regex_translate(module, unicode);
+        PyObject *str_expr = _Py_regex_translate(module, unicode);
         Py_DECREF(unicode);
         if (str_expr == NULL) {
             return NULL;
@@ -294,7 +294,7 @@ _fnmatch_translate_impl(PyObject *module, PyObject *pattern)
         return expr;
     }
     else if (PyUnicode_Check(pattern)) {
-        return _regex_translate(module, pattern);
+        return _Py_regex_translate(module, pattern);
     }
     else {
         PyErr_SetString(PyExc_TypeError, INVALID_PATTERN_TYPE);

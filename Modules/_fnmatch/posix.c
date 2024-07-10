@@ -42,49 +42,49 @@ _posix_fnmatch_filter_cached(const char *pattern, PyObject *names, Converter con
 // ==== API implementation ====================================================
 
 inline PyObject *
-_posix_fnmatch_encoded_filter(PyObject *pattern, PyObject *names)
+_Py_posix_fnmatch_encoded_filter(PyObject *pattern, PyObject *names)
 {
     return _posix_fnmatch_filter(pattern, names, &from_encoded);
 }
 
 inline PyObject *
-_posix_fnmatch_unicode_filter(PyObject *pattern, PyObject *names)
+_Py_posix_fnmatch_unicode_filter(PyObject *pattern, PyObject *names)
 {
     return _posix_fnmatch_filter(pattern, names, &from_unicode);
 }
 
 inline PyObject *
-_posix_fnmatch_encoded_filter_cached(const char *pattern, PyObject *names)
+_Py_posix_fnmatch_encoded_filter_cached(const char *pattern, PyObject *names)
 {
     assert(pattern != NULL);
     return _posix_fnmatch_filter_cached(pattern, names, &from_encoded);
 }
 
 inline PyObject *
-_posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names)
+_Py_posix_fnmatch_unicode_filter_cached(const char *pattern, PyObject *names)
 {
     assert(pattern != NULL);
     return _posix_fnmatch_filter_cached(pattern, names, &from_unicode);
 }
 
 inline int
-_posix_fnmatch_encoded(PyObject *pattern, PyObject *string)
+_Py_posix_fnmatch_encoded(PyObject *pattern, PyObject *string)
 {
     const char *p = from_encoded(pattern, INVALID_PATTERN_TYPE);
     if (p == NULL) {
         return -1;
     }
-    return _posix_fnmatch_encoded_cached(p, string);
+    return _Py_posix_fnmatch_encoded_cached(p, string);
 }
 
 inline int
-_posix_fnmatch_unicode(PyObject *pattern, PyObject *string)
+_Py_posix_fnmatch_unicode(PyObject *pattern, PyObject *string)
 {
     const char *p = from_unicode(pattern, INVALID_PATTERN_TYPE);
     if (p == NULL) {
         return -1;
     }
-    return _posix_fnmatch_unicode_cached(p, string);
+    return _Py_posix_fnmatch_unicode_cached(p, string);
 }
 
 #define PROCESS_MATCH_RESULT(r) \
@@ -97,7 +97,7 @@ _posix_fnmatch_unicode(PyObject *pattern, PyObject *string)
     } while (0)
 
 inline int
-_posix_fnmatch_encoded_cached(const char *pattern, PyObject *string)
+_Py_posix_fnmatch_encoded_cached(const char *pattern, PyObject *string)
 {
     assert(pattern != NULL);
     const char *s = from_encoded(string, INVALID_NAME_TYPE);
@@ -108,7 +108,7 @@ _posix_fnmatch_encoded_cached(const char *pattern, PyObject *string)
 }
 
 inline int
-_posix_fnmatch_unicode_cached(const char *pattern, PyObject *string)
+_Py_posix_fnmatch_unicode_cached(const char *pattern, PyObject *string)
 {
     assert(pattern != NULL);
     const char *s = from_unicode(string, INVALID_NAME_TYPE);
