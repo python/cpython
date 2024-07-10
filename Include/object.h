@@ -311,9 +311,9 @@ static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
 #if !defined(Py_GIL_DISABLED)
     return ob->ob_refcnt;
 #else
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
-    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
-        return _Py_IMMORTAL_REFCNT;
+    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
+    {
+        return ob->ob_type;
     }
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared);
     return _Py_STATIC_CAST(Py_ssize_t, local) +
@@ -421,11 +421,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ptr(&ob->ob_type, type);
-#else
     ob->ob_type = type;
-#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
