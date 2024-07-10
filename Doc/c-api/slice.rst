@@ -54,7 +54,7 @@ Slice Objects
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
 
-   Returns ``0`` on success and ``-1`` on error with an exception set.
+   Return ``0`` on success and ``-1`` on error with an exception set.
 
    .. note::
       This function is considered not safe for resizable sequences.
