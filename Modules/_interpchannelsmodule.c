@@ -2615,10 +2615,10 @@ _get_current_channelend_type(int end)
     }
     if (cls == NULL) {
         // Force the module to be loaded, to register the type.
-        PyObject *highlevel = PyImport_ImportModule("interpreters.channel");
+        PyObject *highlevel = PyImport_ImportModule("interpreters.channels");
         if (highlevel == NULL) {
             PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.channel");
+            highlevel = PyImport_ImportModule("test.support.interpreters.channels");
             if (highlevel == NULL) {
                 return NULL;
             }

@@ -48,6 +48,7 @@ class TestChannels(TestBase):
         self.assertEqual(after, created)
 
     def test_shareable(self):
+        interp = interpreters.create()
         rch, sch = channels.create()
 
         self.assertTrue(
@@ -60,8 +61,25 @@ class TestChannels(TestBase):
         rch2 = rch.recv()
         sch2 = rch.recv()
 
+        interp.prepare_main(rch=rch, sch=sch)
+        sch.send_nowait(rch)
+        sch.send_nowait(sch)
+        interp.exec(dedent("""
+            rch2 = rch.recv()
+            sch2 = rch.recv()
+            assert rch2 == rch
+            assert sch2 == sch
+
+            sch.send_nowait(rch2)
+            sch.send_nowait(sch2)
+            """))
+        rch3 = rch.recv()
+        sch3 = rch.recv()
+
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
+        self.assertEqual(rch3, rch)
+        self.assertEqual(sch3, sch)
 
     def test_is_closed(self):
         rch, sch = channels.create()
