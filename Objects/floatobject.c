@@ -1142,7 +1142,8 @@ char_from_hex(int x)
     return Py_hexdigits[x];
 }
 
-int _char_to_hex[256] = {
+static const int
+_CHAR_TO_HEX[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -1163,7 +1164,7 @@ int _char_to_hex[256] = {
 
 static int
 hex_from_char(unsigned char c) {
-    return _char_to_hex[c];
+    return _CHAR_TO_HEX[c];
 }
 
 /* convert a float to a hexadecimal string */
