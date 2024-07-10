@@ -3390,8 +3390,6 @@ def bœr():
         with ExitStack() as resources:
             resources.enter_context(patch('sys.stdout', stdout))
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
-            # Make sure pdb.set_trace() is using a patched pdb instance
-            _ = pdb.Pdb()
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
