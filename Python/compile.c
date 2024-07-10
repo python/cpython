@@ -856,11 +856,17 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
     return key;
 }
 
+static PyObject*
+merge_consts_recursive(PyObject *const_cache, PyObject *o)
+{
+    return const_cache_insert(const_cache, o, true);
+}
+
 static Py_ssize_t
 compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
 {
     assert(PyDict_CheckExact(const_cache));
-    PyObject *key = const_cache_insert(const_cache, o, true);
+    PyObject *key = merge_consts_recursive(const_cache, o);
     if (key == NULL) {
         return ERROR;
     }
