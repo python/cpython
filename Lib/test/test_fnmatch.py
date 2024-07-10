@@ -1,4 +1,6 @@
 """Test cases for the fnmatch module."""
+import itertools
+
 import os
 import string
 import unittest
@@ -6,25 +8,22 @@ import warnings
 
 import test.support.import_helper
 
-c_fnmatch = test.support.import_helper.import_fresh_module("_fnmatch", blocked=["fnmatch"])
+c_fnmatch = test.support.import_helper.import_fresh_module("_fnmatch")
 py_fnmatch = test.support.import_helper.import_fresh_module("fnmatch", blocked=["_fnmatch"])
 
-fnmatch = py_fnmatch.fnmatch
-fnmatchcase = py_fnmatch.fnmatchcase
-translate  = py_fnmatch.translate
-filter = py_fnmatch.filter
+class FnmatchTestCaseMixin:
+    fnmatch = None
 
-class FnmatchTestCase(unittest.TestCase):
+    def check_match(self, filename, pattern, should_match=True, func=None):
+        if func is None:
+            func = self.fnmatch.fnmatch
 
-    def check_match(self, filename, pattern, should_match=True, fn=fnmatch):
-        if should_match:
-            self.assertTrue(fn(filename, pattern),
-                         "expected %r to match pattern %r"
-                         % (filename, pattern))
-        else:
-            self.assertFalse(fn(filename, pattern),
-                         "expected %r not to match pattern %r"
-                         % (filename, pattern))
+        with self.subTest(fn=func, name=filename, pattern=pattern):
+            res = func(filename, pattern)
+            if should_match:
+                self.assertTrue(res, f"expected {filename!r} to match pattern {pattern!r}")
+            else:
+                self.assertFalse(res, f"expected {filename!r} not to match pattern {pattern!r}")
 
     def test_fnmatch(self):
         check = self.check_match
@@ -61,13 +60,17 @@ class FnmatchTestCase(unittest.TestCase):
         check('a' * 50 + 'b', '*a*a*a*a*a*a*a*a*a*a', False)
 
     def test_mix_bytes_str(self):
+        fnmatch = self.fnmatch.fnmatch
         self.assertRaises(TypeError, fnmatch, 'test', b'*')
         self.assertRaises(TypeError, fnmatch, b'test', '*')
+
+        fnmatchcase = self.fnmatch.fnmatchcase
         self.assertRaises(TypeError, fnmatchcase, 'test', b'*')
         self.assertRaises(TypeError, fnmatchcase, b'test', '*')
 
     def test_fnmatchcase(self):
         check = self.check_match
+        fnmatchcase = self.fnmatch.fnmatchcase
         check('abc', 'abc', True, fnmatchcase)
         check('AbC', 'abc', False, fnmatchcase)
         check('abc', 'AbC', False, fnmatchcase)
@@ -223,11 +226,18 @@ class FnmatchTestCase(unittest.TestCase):
             check(',', '[a-z+--A-Z]')
             check('.', '[a-z--/A-Z]')
 
+class PurePythonFnmatchTestCase(FnmatchTestCaseMixin, unittest.TestCase):
+    fnmatch = py_fnmatch
 
-class TranslateTestCase(unittest.TestCase):
+class CPythonFnmatchTestCase(FnmatchTestCaseMixin, unittest.TestCase):
+    fnmatch = c_fnmatch
+
+class TranslateTestCaseMixin:
+    fnmatch = None
 
     def test_translate(self):
         import re
+        translate = self.fnmatch.translate
         self.assertEqual(translate('*'), r'(?s:.*)\Z')
         self.assertEqual(translate('?'), r'(?s:.)\Z')
         self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
@@ -257,6 +267,11 @@ class TranslateTestCase(unittest.TestCase):
         self.assertTrue(re.match(fatre, 'cbabcaxc'))
         self.assertFalse(re.match(fatre, 'dabccbad'))
 
+class PurePythonTranslateTestCase(TranslateTestCaseMixin, unittest.TestCase):
+    fnmatch = py_fnmatch
+
+class CPythonTranslateTestCase(TranslateTestCaseMixin, unittest.TestCase):
+    fnmatch = c_fnmatch
 
 class FilterTestCaseMixin:
     fnmatch = None
@@ -268,6 +283,22 @@ class FilterTestCaseMixin:
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
 
+    def test_case(self):
+        ignorecase = os.path.normcase('P') == os.path.normcase('p')
+        filter = self.fnmatch.filter
+        self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),
+                         ['Test.py', 'Test.PL'] if ignorecase else ['Test.py'])
+        self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.P*'),
+                         ['Test.py', 'Test.PL'] if ignorecase else ['Test.PL'])
+
+    def test_sep(self):
+        filter = self.fnmatch.filter
+        normsep = os.path.normcase('\\') == os.path.normcase('/')
+        self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr/*'),
+                         ['usr/bin', 'usr\\lib'] if normsep else ['usr/bin'])
+        self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
+                         ['usr/bin', 'usr\\lib'] if normsep else ['usr\\lib'])
+
     def test_mix_bytes_str(self):
         filter = self.fnmatch.filter
         self.assertRaises(TypeError, filter, ['test'], b'*')
@@ -276,23 +307,48 @@ class FilterTestCaseMixin:
 class PurePythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
     fnmatch = py_fnmatch
 
-    def test_case(self):
-        ignorecase = os.path.normcase('P') == os.path.normcase('p')
-        self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),
-                         ['Test.py', 'Test.PL'] if ignorecase else ['Test.py'])
-        self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.P*'),
-                         ['Test.py', 'Test.PL'] if ignorecase else ['Test.PL'])
-
-    def test_sep(self):
-        normsep = os.path.normcase('\\') == os.path.normcase('/')
-        self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr/*'),
-                         ['usr/bin', 'usr\\lib'] if normsep else ['usr/bin'])
-        self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
-                         ['usr/bin', 'usr\\lib'] if normsep else ['usr\\lib'])
-
 class CPythonFilterTestCase(FilterTestCaseMixin, unittest.TestCase):
     fnmatch = c_fnmatch
 
+    @staticmethod
+    def translate_func(pattern):
+        STAR = object()
+        parts = py_fnmatch._translate(pattern, STAR, '.')
+        return py_fnmatch._join_translated_parts(parts, STAR)
+
+    def test_translate(self):
+        # We want to check that the C implementation is EXACTLY the same
+        # as the Python implementation. For that, we will need to cover
+        # a lot of cases.
+        translate = self.fnmatch.translate
+
+        for choice in itertools.combinations_with_replacement('*?.', 5):
+            for suffix in ['', '!']:
+                pat = suffix + ''.join(choice)
+                with self.subTest(pattern=pat):
+                    self.assertEqual(translate(pat), self.translate_func(pat))
+
+        for pat in [
+            '',
+            '!!a*', '!\\!a*', '!a*', '*', '**', '*******?', '*******c', '*****??', '**/',
+            '*.js', '*/man*/bash.*', '*???', '?', '?*****??', '?*****?c', '?***?****',
+            '?***?****?', '?***?****c', '?*?', '??', '???', '???*', '[!\\]',
+            '[*', '[-abc]', '[[]b', '[[a]b', '[\\\\]', '[\\]', '[]-]', '[][!]',
+            '[]]b', '[]a[]b', '[^a-c]*', '[a-\\z]',
+            '[a-c]b*', '[a-y]*[^c]', '[abc-]', '\\*',
+            '[0-4-3-2]', '[b-ac-z9-1]', '[!b-ac-z9-1]', '[!]b-ac-z9-1]',
+            '[]b-ac-z9-1]', '[]b-ac-z9-1]*', '*[]b-ac-z9-1]',
+            '\\**', '\\*\\*', 'a*', 'a*****?c', 'a****c**?**??*****', 'a***c',
+            'a**?**cd**?**??***k', 'a**?**cd**?**??***k**', 'a**?**cd**?**??k',
+            'a**?**cd**?**??k***', 'a*[^c]',
+            'a*cd**?**??k', 'a/*', 'a/**', 'a/**/b',
+            'a/**/b/**/c', 'a/.*/c', 'a/?', 'a/??', 'a[X-]b', 'a[\\.]c',
+            'a[\\b]c', 'a[bc', 'a\\*?/*', 'a\\*b/*',
+            'ab[!de]', 'ab[cd]', 'ab[cd]ef', 'abc', 'b*/', 'foo*',
+            'man/man1/bash.1'
+        ]:
+            with self.subTest(pattern=pat):
+                self.assertEqual(translate(pat), self.translate_func(pat))
 
 if __name__ == "__main__":
     unittest.main()
