@@ -733,7 +733,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         /* normal character - handle as START_FIELD */
         self->state = START_FIELD;
-        /* fallthru */
+        _Py_FALLTHROUGH;
     case START_FIELD:
         /* expecting field */
         self->unquoted_field = true;
@@ -787,7 +787,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
     case AFTER_ESCAPED_CRNL:
         if (c == EOL)
             break;
-        /*fallthru*/
+        _Py_FALLTHROUGH;
 
     case IN_FIELD:
         /* in unquoted field */

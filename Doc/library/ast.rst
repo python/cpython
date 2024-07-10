@@ -891,9 +891,13 @@ Statements
    An assignment with a type annotation. ``target`` is a single node and can
    be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
-   node. ``value`` is a single optional node. ``simple`` is a boolean integer
-   set to True for a :class:`Name` node in ``target`` that do not appear in
-   between parenthesis and are hence pure names and not expressions.
+   node. ``value`` is a single optional node.
+
+   ``simple`` is always either 0 (indicating a "complex" target) or 1
+   (indicating a "simple" target). A "simple" target consists solely of a
+   :class:`Name` node that does not appear between parentheses; all other
+   targets are considered complex. Only simple targets appear in
+   the :attr:`__annotations__` dictionary of modules and classes.
 
    .. doctest::
 
@@ -2470,6 +2474,20 @@ effects on the compilation of a program:
    (``# type: <type>``, ``# type: ignore <stuff>``).
 
    .. versionadded:: 3.8
+
+
+.. function:: compare(a, b, /, *, compare_attributes=False)
+
+   Recursively compares two ASTs.
+
+   *compare_attributes* affects whether AST attributes are considered
+   in the comparison. If *compare_attributes* is ``False`` (default), then
+   attributes are ignored. Otherwise they must all be equal. This
+   option is useful to check whether the ASTs are structurally equal but
+   differ in whitespace or similar details. Attributes include line numbers
+   and column offsets.
+
+   .. versionadded:: 3.14
 
 
 .. _ast-cli:

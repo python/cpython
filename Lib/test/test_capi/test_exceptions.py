@@ -3,11 +3,12 @@ import os
 import re
 import sys
 import unittest
+import textwrap
 
 from test import support
 from test.support import import_helper
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.testcase import ExceptionIsLikeMixin
 
 from .test_misc import decode_stderr
@@ -67,6 +68,47 @@ class Test_Exceptions(unittest.TestCase):
             self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
         else:
             self.assertTrue(False)
+
+    def test_warn_with_stacklevel(self):
+        code = textwrap.dedent('''\
+            import _testcapi
+
+            def foo():
+                _testcapi.function_set_warning()
+
+            foo()  # line 6
+
+
+            foo()  # line 9
+        ''')
+        proc = assert_python_ok("-c", code)
+        warnings = proc.err.splitlines()
+        self.assertEqual(warnings, [
+            b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
+            b'  foo()  # line 6',
+            b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
+            b'  foo()  # line 9',
+        ])
+
+    def test_warn_during_finalization(self):
+        code = textwrap.dedent('''\
+            import _testcapi
+
+            class Foo:
+                def foo(self):
+                    _testcapi.function_set_warning()
+                def __del__(self):
+                    self.foo()
+
+            ref = Foo()
+        ''')
+        proc = assert_python_ok("-c", code)
+        warnings = proc.err.splitlines()
+        # Due to the finalization of the interpreter, the source will be ommited
+        # because the ``warnings`` module cannot be imported at this time
+        self.assertEqual(warnings, [
+            b'<string>:7: RuntimeWarning: Testing PyErr_WarnEx',
+        ])
 
 
 class Test_FatalError(unittest.TestCase):

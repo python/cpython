@@ -1,0 +1,2 @@
+Accessing the :mod:`tkinter` object's string representation no longer converts
+the underlying Tcl object to a string on Windows.

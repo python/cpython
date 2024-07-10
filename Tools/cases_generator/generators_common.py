@@ -4,14 +4,13 @@ from typing import TextIO
 from analyzer import (
     Instruction,
     Uop,
-    analyze_files,
     Properties,
-    Skip,
+    StackItem,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator
+from typing import Callable, Mapping, TextIO, Iterator, Tuple
 from lexer import Token
-from stack import StackOffset, Stack
+from stack import Stack
 
 
 ROOT = Path(__file__).parent.parent.parent
@@ -24,6 +23,15 @@ def root_relative_path(filename: str) -> str:
     except ValueError:
         # Not relative to root, just return original path.
         return filename
+
+
+def type_and_null(var: StackItem) -> Tuple[str, str]:
+    if var.type:
+        return var.type, "NULL"
+    elif var.is_array():
+        return "_PyStackRef *", "NULL"
+    else:
+        return "_PyStackRef", "PyStackRef_NULL"
 
 
 def write_header(
@@ -128,17 +136,17 @@ def replace_decrefs(
     for var in uop.stack.inputs:
         if var.name == "unused" or var.name == "null" or var.peek:
             continue
-        if var.size != "1":
+        if var.size:
             out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"Py_DECREF({var.name}[_i]);\n")
+            out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
             out.emit("}\n")
         elif var.condition:
             if var.condition == "1":
-                out.emit(f"Py_DECREF({var.name});\n")
+                out.emit(f"PyStackRef_CLOSE({var.name});\n")
             elif var.condition != "0":
-                out.emit(f"Py_XDECREF({var.name});\n")
+                out.emit(f"PyStackRef_XCLOSE({var.name});\n")
         else:
-            out.emit(f"Py_DECREF({var.name});\n")
+            out.emit(f"PyStackRef_CLOSE({var.name});\n")
 
 
 def replace_sync_sp(

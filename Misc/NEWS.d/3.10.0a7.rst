@@ -83,7 +83,7 @@ instruction dispatch a bit.
 .. nonce: PhaT-B
 .. section: Core and Builtins
 
-Fix reference leak in the :mod:`_hashopenssl` extension. Patch by Pablo
+Fix reference leak in the :mod:`!_hashopenssl` extension. Patch by Pablo
 Galindo.
 
 ..

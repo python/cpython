@@ -217,6 +217,7 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
+Modules/_datetimemodule.c	-	capi_types	-
 Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
@@ -387,16 +388,12 @@ Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 Python/optimizer.c	-	_ColdExit_Type	-
-Python/optimizer.c	-	COLD_EXITS	-
 Python/optimizer.c	-	Py_FatalErrorExecutor	-
 Python/optimizer.c	-	EMPTY_FILTER	-
-Python/optimizer.c	-	cold_exits_initialized	-
 
 ##-----------------------
 ## test code
 
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
 Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
 Modules/_ctypes/_ctypes_test.c	-	an_integer	-
 Modules/_ctypes/_ctypes_test.c	-	bottom	-
@@ -404,7 +401,6 @@ Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
 Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
 Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
 Modules/_ctypes/_ctypes_test.c	-	left	-
-Modules/_ctypes/_ctypes_test.c	-	module_methods	-
 Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
 Modules/_ctypes/_ctypes_test.c	-	my_spams	-
 Modules/_ctypes/_ctypes_test.c	-	right	-

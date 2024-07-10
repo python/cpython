@@ -47,17 +47,6 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
-// _PyLong_NumBits.  Return the number of bits needed to represent the
-// absolute value of a long.  For example, this returns 1 for 1 and -1, 2
-// for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
-// v must not be NULL, and must be a normalized long.
-// (size_t)-1 is returned and OverflowError set if the true result doesn't
-// fit in a size_t.
-//
-// Export for 'math' shared extension.
-PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
-
-
 /* runtime lifecycle */
 
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
@@ -251,7 +240,7 @@ static inline int
 _PyLong_CompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
+    assert(_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -259,7 +248,7 @@ static inline int
 _PyLong_NonCompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(!_PyLong_IsCompact(op));
+    assert(!_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 

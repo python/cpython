@@ -351,7 +351,11 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
+#ifdef Py_GIL_DISABLED
+    item = _Py_NewRefWithLock(self->ob_item[idx]);
+#else
     item = Py_NewRef(self->ob_item[idx]);
+#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -448,7 +452,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     p = self->ob_item + i;
     Py_XSETREF(*p, newitem);
     ret = 0;
-end:
+end:;
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -656,14 +660,15 @@ list_item(PyObject *aa, Py_ssize_t i)
         return NULL;
     }
     PyObject *item;
-    Py_BEGIN_CRITICAL_SECTION(a);
 #ifdef Py_GIL_DISABLED
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
-        _PyObject_GC_SET_SHARED(a);
+    item = list_get_item_ref(a, i);
+    if (item == NULL) {
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
     }
-#endif
+#else
     item = Py_NewRef(a->ob_item[i]);
-    Py_END_CRITICAL_SECTION();
+#endif
     return item;
 }
 
@@ -1861,7 +1866,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     /* In general, as things go on we've established that the slice starts
        with a monotone run of n elements, starting at lo. */
 
-    /* We're n elements into the slice, and the most recent neq+1 elments are
+    /* We're n elements into the slice, and the most recent neq+1 elements are
      * all equal. This reverses them in-place, and resets neq for reuse.
      */
 #define REVERSE_LAST_NEQ                        \
@@ -1913,7 +1918,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     Py_ssize_t neq = 0;
     for ( ; n < nremaining; ++n) {
         IF_NEXT_SMALLER {
-            /* This ends the most recent run of equal elments, but still in
+            /* This ends the most recent run of equal elements, but still in
              * the "descending" direction.
              */
             REVERSE_LAST_NEQ
@@ -3239,7 +3244,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    PyErr_SetString(PyExc_ValueError, "list.index(x): x not in list");
     return NULL;
 }
 
@@ -3377,7 +3382,14 @@ list_richcompare_impl(PyObject *v, PyObject *w, int op)
     }
 
     /* Compare the final item again using the proper operator */
-    return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    PyObject *vitem = vl->ob_item[i];
+    PyObject *witem = wl->ob_item[i];
+    Py_INCREF(vitem);
+    Py_INCREF(witem);
+    PyObject *result = PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
+    Py_DECREF(vitem);
+    Py_DECREF(witem);
+    return result;
 }
 
 static PyObject *
@@ -3569,6 +3581,23 @@ list_subscript(PyObject* _self, PyObject* item)
     }
 }
 
+static Py_ssize_t
+adjust_slice_indexes(PyListObject *lst,
+                     Py_ssize_t *start, Py_ssize_t *stop,
+                     Py_ssize_t step)
+{
+    Py_ssize_t slicelength = PySlice_AdjustIndices(Py_SIZE(lst), start, stop,
+                                                   step);
+
+    /* Make sure s[5:2] = [..] inserts at the right place:
+        before 5, not before 2. */
+    if ((step < 0 && *start < *stop) ||
+        (step > 0 && *start > *stop))
+        *stop = *start;
+
+    return slicelength;
+}
+
 static int
 list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
 {
@@ -3582,22 +3611,11 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
         return list_ass_item((PyObject *)self, i, value);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength;
+        Py_ssize_t start, stop, step;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
-                                            step);
-
-        if (step == 1)
-            return list_ass_slice(self, start, stop, value);
-
-        /* Make sure s[5:2] = [..] inserts at the right place:
-           before 5, not before 2. */
-        if ((step < 0 && start < stop) ||
-            (step > 0 && start > stop))
-            stop = start;
 
         if (value == NULL) {
             /* delete slice */
@@ -3605,6 +3623,12 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
             size_t cur;
             Py_ssize_t i;
             int res;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1)
+                return list_ass_slice(self, start, stop, value);
 
             if (slicelength <= 0)
                 return 0;
@@ -3682,6 +3706,15 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
             }
             if (!seq)
                 return -1;
+
+            Py_ssize_t slicelength = adjust_slice_indexes(self, &start, &stop,
+                                                          step);
+
+            if (step == 1) {
+                int res = list_ass_slice(self, start, stop, seq);
+                Py_DECREF(seq);
+                return res;
+            }
 
             if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
                 PyErr_Format(PyExc_ValueError,
