@@ -35,7 +35,7 @@ typedef struct {
     PyTypeObject *dialect_type;
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
-    long field_limit;   /* max parsed field size */
+    Py_ssize_t field_limit;   /* max parsed field size */
     PyObject *str_write;
 } _csvstate;
 
@@ -703,7 +703,7 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-    long field_limit = FT_ATOMIC_LOAD_LONG(module_state->field_limit);
+    Py_ssize_t field_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
     if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
                      "field larger than field limit (%ld)",
@@ -1654,7 +1654,7 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
 /*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    long old_limit = FT_ATOMIC_LOAD_LONG(module_state->field_limit);
+    Py_ssize_t old_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
     if (new_limit != NULL) {
         if (!PyLong_CheckExact(new_limit)) {
             PyErr_Format(PyExc_TypeError,
@@ -1665,7 +1665,7 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
         if (new_limit_value == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        FT_ATOMIC_STORE_LONG(module_state->field_limit, new_limit_value);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(module_state->field_limit, new_limit_value);
     }
     return PyLong_FromLong(old_limit);
 }
