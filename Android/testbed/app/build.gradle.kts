@@ -38,6 +38,8 @@ android {
         externalNativeBuild.cmake.arguments(
             "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
             "-DPYTHON_VERSION=$PYTHON_VERSION")
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     externalNativeBuild.cmake {
@@ -61,6 +63,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 }
 
 
