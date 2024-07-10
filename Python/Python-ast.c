@@ -5370,21 +5370,20 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
     PyObject *items[2] = {NULL, NULL};
 
     items[0] = PySequence_GetItem(list, 0);
     if (!items[0]) {
-        return NULL;
+        goto error;
     }
     if (length > 1) {
         items[1] = PySequence_GetItem(list, length - 1);
         if (!items[1]) {
-            Py_DECREF(items[0]);
-            return NULL;
+            goto error;
         }
     }
 
-    _PyUnicodeWriter_Init(&writer);
     bool is_list = PyList_Check(list);
     if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
         goto error;
