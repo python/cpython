@@ -8490,6 +8490,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     PyTypeObject *def = managed_static_type_get_def(self, isbuiltin);
     if (initial) {
         memcpy(def, self, sizeof(PyTypeObject));
+        /* For now we do not worry about preserving the index
+           at finalization. */
+        managed_static_type_index_clear(def);
     }
 
     int res;
