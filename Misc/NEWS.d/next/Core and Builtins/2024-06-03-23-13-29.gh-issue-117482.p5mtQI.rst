@@ -1,1 +1,2 @@
-Fix builtins behavior on subinterpreters.
+Fix "tp" slot wrappers for builtin types on subinterpreters.
+In particular, this fixes a regression in methods like ``int.__str__()``.
