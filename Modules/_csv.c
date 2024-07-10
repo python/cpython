@@ -706,7 +706,7 @@ parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
     Py_ssize_t field_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
     if (self->field_len >= field_limit) {
         PyErr_Format(module_state->error_obj,
-                     "field larger than field limit (%ld)",
+                     "field larger than field limit (%zd)",
                      field_limit);
         return -1;
     }
@@ -1661,7 +1661,7 @@ _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
                          "limit must be an integer");
             return NULL;
         }
-        long new_limit_value = PyLong_AsLong(new_limit);
+        Py_ssize_t new_limit_value = PyLong_AsSsize_t(new_limit);
         if (new_limit_value == -1 && PyErr_Occurred()) {
             return NULL;
         }
