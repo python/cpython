@@ -1599,9 +1599,7 @@ To import a Python source file directly, use the following recipe::
         spec.loader.exec_module(module)
         return module
 
-    # For illustrative purposes a name and file path of an
-    # existing module is needed -- use the json module
-    # as an example
+    # For illustrative purposes only (use of `json` is arbitrary).
     import json
     file_path = json.__file__
     module_name = json.__name__
