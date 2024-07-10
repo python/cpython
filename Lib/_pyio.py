@@ -1625,9 +1625,10 @@ class FileIO(RawIOBase):
     @property
     def _blksize(self):
         if self._stat_atopen:
-            return getattr(self._stat_atopen, "st_blksize", DEFAULT_BUFFER_SIZE)
+            res = getattr(self._stat_atopen, "st_blksize", 0)
 
-        return DEFAULT_BUFFER_SIZE
+        # WASI sets blksize to 0
+        return res if res > 0 else DEFAULT_BUFFER_SIZE
 
     def _checkReadable(self):
         if not self._readable:
