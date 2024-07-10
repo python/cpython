@@ -3287,7 +3287,10 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
+#ifdef AF_RDS
 get_buf:
+#endif
+
     buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
     if (buf == NULL)
         return NULL;
