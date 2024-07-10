@@ -8503,6 +8503,11 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         _PyStaticType_ClearWeakRefs(interp, self);
         managed_static_type_state_clear(interp, self, isbuiltin, initial);
     }
+
+    if (initial) {
+        Py_SET_TYPE(def, Py_TYPE(self));
+    }
+
     return res;
 }
 
