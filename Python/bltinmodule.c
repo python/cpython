@@ -2634,7 +2634,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromSsize_t(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                Py_ssize_t b;
+                long b;
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
                 if (_PyLong_IsCompact((PyLongObject *)item)) {
@@ -2644,8 +2644,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
-                    (i_result >= 0 ? (b <= LONG_MAX - i_result)
-                                   : (b >= LONG_MIN - i_result)))
+                    (i_result >= 0 ? (1 - i_result) : (1 - i_result)))
                 {
                     i_result += b;
                     Py_DECREF(item);

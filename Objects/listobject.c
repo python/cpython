@@ -2751,7 +2751,6 @@ static int
 unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
     PyLongObject *vl, *wl;
-    intptr_t v0, w0;
     int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
@@ -2763,8 +2762,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
 
-    v0 = _PyLong_CompactValue(vl);
-    w0 = _PyLong_CompactValue(wl);
+    int v0 = _PyLong_CompactValue(vl);
+    int w0 = _PyLong_CompactValue(wl);
 
     res = v0 < w0;
     assert(res == PyObject_RichCompareBool(v, w, Py_LT));

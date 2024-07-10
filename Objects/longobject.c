@@ -483,15 +483,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
-        res = (long)tmp;
-        if (res != tmp) {
-            *overflow = tmp < 0 ? -1 : 1;
-        }
-#else
         res = _PyLong_CompactValue(v);
-#endif
     }
     else {
         res = -1;
@@ -632,8 +624,8 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
+#if SIZEOF_INT < SIZEOF_VOID_P
+        int tmp = _PyLong_CompactValue(v);
         unsigned long res = (unsigned long)tmp;
         if (res != tmp) {
             goto overflow;
@@ -1109,8 +1101,8 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
 {
     PyLongObject *v;
     union {
-        Py_ssize_t v;
-        unsigned char b[sizeof(Py_ssize_t)];
+        int v;
+        unsigned char b[sizeof(int)];
     } cv;
     int do_decref = 0;
     Py_ssize_t res = 0;
@@ -3579,7 +3571,7 @@ long_hash(PyLongObject *v)
     int sign;
 
     if (_PyLong_IsCompact(v)) {
-        x = _PyLong_CompactValue(v);
+        x = (Py_uhash_t)_PyLong_CompactValue(v);
         if (x == (Py_uhash_t)-1) {
             x = (Py_uhash_t)-2;
         }
