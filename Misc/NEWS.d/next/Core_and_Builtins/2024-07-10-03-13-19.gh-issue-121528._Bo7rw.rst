@@ -1,2 +1,2 @@
-Fix the process crash when load extension when it's compiled with low
+Fix crash when loading extension modules that are compiled with an older
 version of the python.
