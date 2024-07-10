@@ -2373,6 +2373,7 @@ class SubinterpreterTests(unittest.TestCase):
 
         interp = interpreters.create()
         interp.exec('from test.support import interpreters')
+        interp.exec('import test.support.interpreters.channels')
         interp.prepare_main(sch=sch)
         interp.exec(script)
         results = rch.recv()
