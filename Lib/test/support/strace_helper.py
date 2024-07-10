@@ -165,7 +165,7 @@ def requires_strace():
     if _strace_working is None:
         _strace_working = _can_strace()
 
-    assert _strace_working is not None, "Should have been set by _can_strace"
+    assert isinstance(_strace_working, bool), "Should have been set by here"
     return unittest.skipUnless(_strace_working, "Requires working strace")
 
 
