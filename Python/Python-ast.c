@@ -5369,7 +5369,7 @@ ast_repr_list(PyObject *list, int depth)
 
     _PyUnicodeWriter writer;
     bool is_list = PyList_Check(list);
-    PyObject *items[2];
+    PyObject *items[2] = {NULL, NULL};
 
     items[0] = PySequence_GetItem(list, 0);
     if (!items[0]) {
@@ -5378,6 +5378,7 @@ ast_repr_list(PyObject *list, int depth)
     if (length > 1) {
         items[1] = PySequence_GetItem(list, length - 1);
         if (!items[1]) {
+            Py_DECREF(items[0]);
             return NULL;
         }
     }
@@ -5422,9 +5423,13 @@ ast_repr_list(PyObject *list, int depth)
         goto error;
     }
 
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
     return _PyUnicodeWriter_Finish(&writer);
 
 error:
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
@@ -5437,7 +5442,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         return NULL;
     }
 
-    if (depth == 0) {
+    if (depth <= 0) {
         return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
     }
 
