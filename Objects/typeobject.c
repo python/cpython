@@ -382,10 +382,10 @@ fix_builtin_slot_wrappers(PyTypeObject *self, PyInterpreterState *interp)
     assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
     assert(_Py_IsMainInterpreter(interp));
 
-    static_builtin_state *state = _PyStaticType_GetState(interp, self);
+    managed_static_type_state *state = _PyStaticType_GetState(interp, self);
     assert(state != NULL);
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    static_builtin_state *main_state = _PyStaticType_GetState(main_interp, self);
+    managed_static_type_state *main_state = _PyStaticType_GetState(main_interp, self);
     assert(main_state != NULL);
 
     int res = -1;
