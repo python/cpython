@@ -2353,7 +2353,7 @@ class SubinterpreterTests(unittest.TestCase):
         try:
             from test.support import interpreters
         except ModuleNotFoundError:
-            raise unittest.Skip('subinterpreters required')
+            raise unittest.skip('subinterpreters required')
         import test.support.interpreters.channels
 
     @cpython_only
