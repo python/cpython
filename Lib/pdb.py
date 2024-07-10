@@ -308,10 +308,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     _last_pdb_instance = None
 
-    def __new__(self, *args, **kwargs):
-        Pdb._last_pdb_instance = super().__new__(self)
-        return Pdb._last_pdb_instance
-
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
@@ -364,6 +360,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
+
+    def set_trace(self, frame=None):
+        Pdb._last_pdb_instance = self
+        if frame is None:
+            frame = sys._getframe().f_back
+        super().set_trace(frame)
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
