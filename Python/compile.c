@@ -74,6 +74,10 @@
 typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
+struct compiler;
+
+static PyObject *compiler_maybe_mangle(struct compiler *c, PyObject *name);
+
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
@@ -887,10 +891,10 @@ compiler_addop_o(struct compiler_unit *u, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-compiler_addop_name(struct compiler_unit *u, location loc,
+compiler_addop_name(struct compiler *c, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    PyObject *mangled = _Py_MaybeMangle(u->u_private, u->u_ste, o);
+    PyObject *mangled = compiler_maybe_mangle(c, o);
     if (!mangled) {
         return ERROR;
     }
@@ -925,7 +929,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 2;
         arg |= 1;
     }
-    return codegen_addop_i(u->u_instr_sequence, opcode, arg, loc);
+    return codegen_addop_i(INSTR_SEQUENCE(c), opcode, arg, loc);
 }
 
 /* Add an opcode with an integer argument */
@@ -993,7 +997,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
+    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
@@ -1052,8 +1056,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 
 static int
-compiler_enter_scope(struct compiler *c, identifier name,
-                     int scope_type, void *key, int lineno)
+compiler_enter_scope(struct compiler *c, identifier name, int scope_type,
+                     void *key, int lineno, PyObject *private)
 {
     location loc = LOCATION(lineno, lineno, 0, 0);
 
@@ -1132,7 +1136,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return ERROR;
     }
 
-    u->u_private = NULL;
     u->u_deferred_annotations = NULL;
     if (scope_type == COMPILER_SCOPE_CLASS) {
         u->u_static_attributes = PySet_New(0);
@@ -1146,6 +1149,10 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_instr_sequence = (instr_sequence*)_PyInstructionSequence_New();
+    if (!u->u_instr_sequence) {
+        compiler_unit_free(u);
+        return ERROR;
+    }
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -1156,8 +1163,13 @@ compiler_enter_scope(struct compiler *c, identifier name,
             return ERROR;
         }
         Py_DECREF(capsule);
-        u->u_private = Py_XNewRef(c->u->u_private);
+        if (private == NULL) {
+            private = c->u->u_private;
+        }
     }
+
+    u->u_private = Py_XNewRef(private);
+
     c->u = u;
 
     c->c_nestlevel++;
@@ -1436,7 +1448,7 @@ compiler_setup_annotations_scope(struct compiler *c, location loc,
                                  void *key, PyObject *name)
 {
     if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
-                             key, loc.lineno) == -1) {
+                             key, loc.lineno, NULL) == -1) {
         return ERROR;
     }
     c->u->u_metadata.u_posonlyargcount = 1;
@@ -1597,7 +1609,7 @@ compiler_enter_anonymous_scope(struct compiler* c, mod_ty mod)
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                             mod, 1));
+                             mod, 1, NULL));
     return SUCCESS;
 }
 
@@ -1770,7 +1782,7 @@ compiler_kwonlydefaults(struct compiler *c, location loc,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, arg->arg);
+            PyObject *mangled = compiler_maybe_mangle(c, arg->arg);
             if (!mangled) {
                 goto error;
             }
@@ -1827,7 +1839,7 @@ compiler_argannotation(struct compiler *c, identifier id,
     if (!annotation) {
         return SUCCESS;
     }
-    PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, id);
+    PyObject *mangled = compiler_maybe_mangle(c, id);
     if (!mangled) {
         return ERROR;
     }
@@ -2052,7 +2064,7 @@ compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
                                      bool allow_starred)
 {
     if (compiler_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
-                             key, e->lineno) == -1) {
+                             key, e->lineno, NULL) == -1) {
         return ERROR;
     }
     if (allow_starred && e->kind == Starred_kind) {
@@ -2197,7 +2209,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     }
 
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno));
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno, NULL));
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
@@ -2324,7 +2336,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno) == -1) {
+                                 (void *)type_params, firstlineno, NULL) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
@@ -2407,12 +2419,10 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 
     /* 1. compile the class body into a code object */
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, s->v.ClassDef.name,
-                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno));
+        compiler_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
+                             (void *)s, firstlineno, s->v.ClassDef.name));
 
     location loc = LOCATION(firstlineno, firstlineno, 0, 0);
-    /* use the class name for name mangling */
-    Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
     /* load (global) __name__ ... */
     if (compiler_nameop(c, loc, &_Py_ID(__name__), Load) < 0) {
         compiler_exit_scope(c);
@@ -2558,12 +2568,11 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, firstlineno) == -1) {
+                                 (void *)type_params, firstlineno, s->v.ClassDef.name) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
         Py_DECREF(type_params_name);
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
@@ -2643,7 +2652,7 @@ compiler_typealias_body(struct compiler *c, stmt_ty s)
     location loc = LOC(s);
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
     RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, COMPILER_SCOPE_FUNCTION, s, loc.lineno));
+        compiler_enter_scope(c, name, COMPILER_SCOPE_FUNCTION, s, loc.lineno, NULL));
     /* Make None the first constant, so the evaluate function can't have a
         docstring. */
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
@@ -2678,7 +2687,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
-                                 (void *)type_params, loc.lineno) == -1) {
+                                 (void *)type_params, loc.lineno, NULL) == -1) {
             Py_DECREF(type_params_name);
             return ERROR;
         }
@@ -2947,7 +2956,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
     RETURN_IF_ERROR(
         compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                             (void *)e, e->lineno));
+                             (void *)e, e->lineno, NULL));
 
     /* Make None the first constant, so the lambda can't have a
        docstring. */
@@ -4115,7 +4124,7 @@ compiler_nameop(struct compiler *c, location loc,
         return ERROR;
     }
 
-    mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
+    mangled = compiler_maybe_mangle(c, name);
     if (!mangled) {
         return ERROR;
     }
@@ -5712,7 +5721,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     else {
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                                (void *)e, e->lineno) < 0)
+                                (void *)e, e->lineno, NULL) < 0)
         {
             goto error;
         }
@@ -6416,7 +6425,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             if (future_annotations) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-                mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
+                mangled = compiler_maybe_mangle(c, targ->v.Name.id);
                 ADDOP_LOAD_CONST_NEW(c, loc, mangled);
                 ADDOP(c, loc, STORE_SUBSCR);
             }
@@ -7456,6 +7465,12 @@ consts_dict_keys_inorder(PyObject *dict)
         PyList_SET_ITEM(consts, i, Py_NewRef(k));
     }
     return consts;
+}
+
+static PyObject *
+compiler_maybe_mangle(struct compiler *c, PyObject *name)
+{
+    return _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
 }
 
 static int
