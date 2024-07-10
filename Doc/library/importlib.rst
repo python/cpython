@@ -1584,7 +1584,7 @@ Note that if ``name`` is a submodule (contains a dot),
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-.. note:: ``SourceFileLoader.load_module()`` has been deprecated -- this recipe should be used instead.
+``SourceFileLoader.load_module()`` has been deprecated -- this recipe should be used instead.
 
 To import a Python source file directly, use the following recipe::
 
@@ -1598,6 +1598,7 @@ To import a Python source file directly, use the following recipe::
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
         return module
+
 
     # For illustrative purposes only (use of `json` is arbitrary).
     import json
