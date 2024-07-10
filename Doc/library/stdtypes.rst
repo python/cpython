@@ -2095,8 +2095,9 @@ expression support in the :mod:`re` module).
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
-   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
-   Splitting an empty string with a specified separator returns ``['']``.
+   as a single delimiter (to split with multiple delimiters, use
+   :func:`re.split`). Splitting an empty string with a specified separator
+   returns ``['']``.
 
    For example::
 
@@ -2106,6 +2107,8 @@ expression support in the :mod:`re` module).
       ['1', '2,3']
       >>> '1,2,,3,'.split(',')
       ['1', '2', '', '3', '']
+      >>> '1<>2<>3<4'.split('<>')
+      ['1', '2', '3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied: runs of consecutive whitespace are regarded as a single separator,
@@ -3149,10 +3152,9 @@ produce new objects.
    If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty subsequences (for example, ``b'1,,2'.split(b',')``
    returns ``[b'1', b'', b'2']``).  The *sep* argument may consist of a
-   multibyte sequence (for example, ``b'1<>2<>3'.split(b'<>')`` returns
-   ``[b'1', b'2', b'3']``). Splitting an empty sequence with a specified
-   separator returns ``[b'']`` or ``[bytearray(b'')]`` depending on the type
-   of object being split.  The *sep* argument may be any
+   multibyte sequence as a single delimiter. Splitting an empty sequence with
+   a specified separator returns ``[b'']`` or ``[bytearray(b'')]`` depending
+   on the type of object being split.  The *sep* argument may be any
    :term:`bytes-like object`.
 
    For example::
@@ -3163,6 +3165,8 @@ produce new objects.
       [b'1', b'2,3']
       >>> b'1,2,,3,'.split(b',')
       [b'1', b'2', b'', b'3', b'']
+      >>> b'1<>2<>3<4'.split(b'<>')
+      [b'1', b'2', b'3<4']
 
    If *sep* is not specified or is ``None``, a different splitting algorithm
    is applied: runs of consecutive ASCII whitespace are regarded as a single
@@ -4565,7 +4569,7 @@ can be used interchangeably to index the same dictionary entry.
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(iterable, value=None)
+   .. classmethod:: fromkeys(iterable, value=None, /)
 
       Create a new dictionary with keys from *iterable* and values set to *value*.
 

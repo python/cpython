@@ -117,6 +117,33 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
 
+        self.assertComplexesAreIdentical(complex(INF, 1)/(0.0+1j),
+                                         complex(NAN, -INF))
+
+        # test recover of infs if numerator has infs and denominator is finite
+        self.assertComplexesAreIdentical(complex(INF, -INF)/(1+0j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(INF, INF)/(0.0+1j),
+                                         complex(INF, -INF))
+        self.assertComplexesAreIdentical(complex(NAN, INF)/complex(2**1000, 2**-1000),
+                                         complex(INF, INF))
+        self.assertComplexesAreIdentical(complex(INF, NAN)/complex(2**1000, 2**-1000),
+                                         complex(INF, -INF))
+
+        # test recover of zeros if denominator is infinite
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(INF, -INF), (0.0+0j))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, INF),
+                                         complex(0.0, -0.0))
+        self.assertComplexesAreIdentical((1+1j)/complex(-INF, -INF),
+                                         complex(-0.0, 0))
+        self.assertComplexesAreIdentical((INF+1j)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(1, INF)/complex(INF, INF),
+                                         complex(NAN, NAN))
+        self.assertComplexesAreIdentical(complex(INF, 1)/complex(1, INF),
+                                         complex(NAN, NAN))
+
     def test_truediv_zero_division(self):
         for a, b in ZERO_DIVISION:
             with self.assertRaises(ZeroDivisionError):

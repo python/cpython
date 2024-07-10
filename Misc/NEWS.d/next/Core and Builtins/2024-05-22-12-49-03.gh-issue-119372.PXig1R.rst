@@ -1,0 +1,2 @@
+Correct invalid corner cases in complex division (resulted in ``(nan+nanj)``
+output), e.g.  ``1/complex('(inf+infj)')``.  Patch by Sergey B Kirpichev.

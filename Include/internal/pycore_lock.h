@@ -128,12 +128,6 @@ _PyRawMutex_Unlock(_PyRawMutex *m)
     _PyRawMutex_UnlockSlow(m);
 }
 
-// A data structure that can be used to run initialization code once in a
-// thread-safe manner. The C++11 equivalent is std::call_once.
-typedef struct {
-    uint8_t v;
-} _PyOnceFlag;
-
 // Type signature for one-time initialization functions. The function should
 // return 0 on success and -1 on failure.
 typedef int _Py_once_fn_t(void *arg);
