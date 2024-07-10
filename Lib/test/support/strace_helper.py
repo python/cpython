@@ -13,7 +13,7 @@ _returncode_regex = re.compile(
     br"\+\+\+ exited with (?P<returncode>\d+) \+\+\+")
 
 # Cached value of whether or not there is a compatible strace binary
-_strace_working: bool | None = None
+_strace_working = None
 
 
 @dataclass
@@ -74,7 +74,7 @@ class StraceResult:
 
 
 @support.requires_subprocess()
-def strace_python(code, strace_flags, check = True):
+def strace_python(code, strace_flags, check=True):
     """Run strace and return the trace.
 
     Sets strace_returncode and python_returncode to `-1` on error."""
@@ -143,7 +143,7 @@ print("MARK __shutdown", flush=True)
     return all_sections['code']
 
 
-def get_syscalls(code, strace_flags, prelude = "", cleanup = ""):
+def get_syscalls(code, strace_flags, prelude="", cleanup=""):
     """Get the syscalls which a given chunk of python code generates"""
     events = _get_events(code, strace_flags, prelude=prelude, cleanup=cleanup)
     return [ev.syscall for ev in events]
@@ -169,4 +169,4 @@ def requires_strace():
     return unittest.skipUnless(_strace_working, "Requires working strace")
 
 
-__all__ = ["requires_strace", "strace_python", "StraceResult", "StraceEvent"]
+__all__ = ["requires_strace", "strace_python", "StraceEvent", "StraceResult"]
