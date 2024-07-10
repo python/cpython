@@ -9,6 +9,7 @@ import textwrap
 import types
 import unittest
 import weakref
+from pathlib import Path
 from textwrap import dedent
 try:
     import _testinternalcapi
@@ -1024,6 +1025,31 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+    def test_repr(self):
+        const_1 = ast.Constant(1)
+        const_2 = ast.Constant(2)
+        self.assertEqual(repr(const_1), "Constant(value=1, kind=None)")
+
+        add = ast.BinOp(op=ast.Add(), left=const_1, right=const_2)
+        self.assertEqual(repr(add),
+                         "BinOp(left=Constant(value=1, kind=None), op=Add(), right=Constant(value=2, kind=None))")
+
+        self.assertEqual(repr(ast.parse("x = 3")),
+                         "Module(body=[Assign(targets=[Name(...)], value=Constant(...), type_comment=None)], "
+                         "type_ignores=[])")
+
+        self.assertEqual(repr(ast.parse("x=7; y=4; c,z=3,4")),
+                         "Module(body=[Assign(targets=[Name(...)], value=Constant(...), type_comment=None), ..., "
+                         "Assign(targets=[Tuple(...)], value=Tuple(...), type_comment=None)], type_ignores=[])")
+
+        self.assertEqual(repr(ast.parse("def foo(): pass")),
+                         "Module(body=[FunctionDef(name='foo', args=arguments(...), body=[Pass(...)], "
+                         "decorator_list=[], returns=None, type_comment=None, type_params=[])], type_ignores=[])")
+
+        this_module = ast.parse(Path(__file__).read_text())
+        self.assertEqual(repr(this_module),
+                         "Module(body=[Import(names=[alias(...)]), ..., Expr(value=Call(...))], type_ignores=[])")
 
 
 class ASTHelpers_Test(unittest.TestCase):
