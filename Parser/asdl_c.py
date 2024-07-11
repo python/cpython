@@ -1166,7 +1166,8 @@ ast_repr_list(PyObject *list, int depth)
     Py_ssize_t length = PySequence_Size(list);
     if (length < 0) {
         return NULL;
-    } else if (length == 0) {
+    }
+    else if (length == 0) {
         return PyObject_Repr(list);
     }
 
@@ -1294,9 +1295,11 @@ ast_repr_max_depth(AST_object *self, int depth)
         PyObject *value_repr;
         if (PyList_Check(value) || PyTuple_Check(value)) {
             value_repr = ast_repr_list(value, depth);
-        } else if (PyType_IsSubtype(Py_TYPE(value), (PyTypeObject *)state->AST_type)) {
+        }
+        else if (PyType_IsSubtype(Py_TYPE(value), (PyTypeObject *)state->AST_type)) {
             value_repr = ast_repr_max_depth((AST_object*)value, depth - 1);
-        } else {
+        }
+        else {
             value_repr = PyObject_Repr(value);
         }
 
