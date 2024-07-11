@@ -669,7 +669,7 @@ PyLong_AsSize_t(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-        return _PyLong_CompactValue(v);
+        return (size_t)(Py_ssize_t)_PyLong_CompactValue(v);
     }
     if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
@@ -706,7 +706,7 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long)_PyLong_CompactValue(v);
+        return (unsigned long)(long)_PyLong_CompactValue(v);
     }
     i = _PyLong_DigitCount(v);
     int sign = _PyLong_NonCompactSign(v);
@@ -1524,7 +1524,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     v = (PyLongObject*)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
         res = 0;
-        bytes = _PyLong_CompactValue(v);
+        bytes = (unsigned long long)(long long)_PyLong_CompactValue(v);
     }
     else {
         res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
@@ -1555,7 +1555,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long long)(signed long long)_PyLong_CompactValue(v);
+        return (unsigned long long)(long long)_PyLong_CompactValue(v);
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
