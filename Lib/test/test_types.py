@@ -10,6 +10,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -2343,6 +2344,41 @@ class FunctionTests(unittest.TestCase):
             types.FunctionType(
                 ex.__code__, {}, "func", None, None, 3,
             )
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+        import test.support.interpreters.channels
+
+    @cpython_only
+    def test_slot_wrappers(self):
+        rch, sch = interpreters.channels.create()
+
+        # For now it's sufficient to check int.__str__.
+        # See https://github.com/python/cpython/issues/117482
+        # and https://github.com/python/cpython/pull/117660.
+        script = textwrap.dedent('''
+            text = repr(int.__str__)
+            sch.send_nowait(text)
+            ''')
+
+        exec(script)
+        expected = rch.recv()
+
+        interp = interpreters.create()
+        interp.exec('from test.support import interpreters')
+        interp.prepare_main(sch=sch)
+        interp.exec(script)
+        results = rch.recv()
+
+        self.assertEqual(results, expected)
 
 
 if __name__ == '__main__':
