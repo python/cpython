@@ -502,90 +502,6 @@ error:
     return NULL;
 }
 
-static PyObject *
-repeat_getbasebytoken(PyObject *self, PyObject *args)
-{
-    PyTypeObject *type;
-    PyObject *py_token, *repeat;
-    if (!PyArg_ParseTuple(args, "OOO", &type, &py_token, &repeat)) {
-        return NULL;
-    }
-    assert(PyType_Check(type));
-    void *token = PyLong_AsVoidPtr(py_token);
-    int n = PyLong_AsLong(repeat);
-    for (int i = 0; i < n; i++) {
-        if (PyType_GetBaseByToken(type, token, NULL) != 1) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getslot(PyObject *self, PyObject *args)
-{
-    PyTypeObject *type;
-    PyObject *py_token, *repeat;
-    if (!PyArg_ParseTuple(args, "OOO", &type, &py_token, &repeat)) {
-        return NULL;
-    }
-    assert(PyType_Check(type));
-    void *token = PyLong_AsVoidPtr(py_token);
-    int n = PyLong_AsLong(repeat);
-    for (int i = 0; i < n; i++) {
-        if (PyType_GetSlot(type, Py_tp_token) != token) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getmodonce(PyObject *self, PyObject *args)
-{
-    PyTypeObject *type, *super;
-    PyObject *repeat;
-    if (!PyArg_ParseTuple(args, "OOO", &type, &super, &repeat)) {
-        return NULL;
-    }
-    // assume the case where a module state is passed around among functions
-    PyObject *module = PyType_GetModuleByDef(type, _testcapimodule);
-    if (module != self || !PyModule_GetState(module)) {
-        return NULL;
-    }
-    assert(PyType_Check(type));
-    int n = PyLong_AsLong(repeat);
-    for (int i = 0; i < n; i++) {
-        if (type != super && !PyType_IsSubtype(type, super)) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-repeat_getmodeach(PyObject *self, PyObject *args)
-{
-    PyTypeObject *type, *super;
-    PyObject *repeat;
-    if (!PyArg_ParseTuple(args, "OOO", &type, &super, &repeat)) {
-        return NULL;
-    }
-    assert(PyType_Check(type));
-    int n = PyLong_AsLong(repeat);
-    for (int i = 0; i < n; i++) {
-        // assume the case where a module state is not passed around
-        PyObject *module = PyType_GetModuleByDef(type, _testcapimodule);
-        if (module != self || !PyModule_GetState(module)) {
-            return NULL;
-        }
-        if (type != super && !PyType_IsSubtype(type, super)) {
-            return NULL;
-        }
-    }
-    Py_RETURN_NONE;
-}
-
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -603,10 +519,6 @@ static PyMethodDef TestMethods[] = {
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
-    {"repeat_getbasebytoken", repeat_getbasebytoken, METH_VARARGS},
-    {"repeat_getslot", repeat_getslot, METH_VARARGS},
-    {"repeat_getmodonce", repeat_getmodonce, METH_VARARGS},
-    {"repeat_getmodeach", repeat_getmodeach, METH_VARARGS},
     {NULL},
 };
 
