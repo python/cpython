@@ -730,8 +730,8 @@ _io_FileIO_readall_impl(fileio *self)
         return err_closed();
     }
 
-    if (self->stat_atopen != NULL) {
-        end = (Py_off_t)Py_MIN(self->stat_atopen->st_size, _PY_READ_MAX);
+    if (self->stat_atopen != NULL && self->stat_atopen->st_size < _PY_READ_MAX) {
+        end = (Py_off_t)self->stat_atopen->st_size;
     }
     else {
         end = -1;
@@ -774,7 +774,6 @@ _io_FileIO_readall_impl(fileio *self)
             }
         }
     }
-
 
     result = PyBytes_FromStringAndSize(NULL, bufsize);
     if (result == NULL)
