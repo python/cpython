@@ -951,6 +951,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !wchar_to_dict(dict, "executable_dir", NULL) ||
         !wchar_to_dict(dict, "py_setpath", _PyPathConfig_GetGlobalModuleSearchPath()) ||
         !funcs_to_dict(dict, config->pathconfig_warnings) ||
+#ifdef Py_GIL_DISABLED
+        !decode_to_dict(dict, "ABI_THREAD", "t") ||
+#else
+        !decode_to_dict(dict, "ABI_THREAD", "") ||
+#endif
 #ifndef MS_WINDOWS
         PyDict_SetItemString(dict, "winreg", Py_None) < 0 ||
 #endif

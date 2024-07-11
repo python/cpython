@@ -157,7 +157,7 @@ class TestSysConfig(unittest.TestCase):
         binpath = 'bin'
         incpath = 'include'
         libpath = os.path.join('lib',
-                               'python%d.%d' % sys.version_info[:2],
+                               f'python{sysconfig._get_python_version_abi()}',
                                'site-packages')
 
         # Resolve the paths in an imaginary venv/ directory
