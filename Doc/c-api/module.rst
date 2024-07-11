@@ -43,6 +43,8 @@ Module Objects
    to ``None``); the caller is responsible for providing a :attr:`__file__`
    attribute.
 
+   Return ``NULL`` with an exception set on error.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.4
@@ -265,6 +267,8 @@ of the following two module creation functions:
    API version *module_api_version*.  If that version does not match the version
    of the running interpreter, a :exc:`RuntimeWarning` is emitted.
 
+   Return ``NULL`` with an exception set on error.
+
    .. note::
 
       Most uses of this function should be using :c:func:`PyModule_Create`
@@ -436,6 +440,8 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
    If that version does not match the version of the running interpreter,
    a :exc:`RuntimeWarning` is emitted.
 
+   Return ``NULL`` with an exception set on error.
+
    .. note::
 
       Most uses of this function should be using :c:func:`PyModule_FromDefAndSpec`
@@ -579,15 +585,16 @@ state:
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
    Add an integer constant to *module* as *name*.  This convenience function can be
-   used from the module's initialization function. Return ``-1`` on error, ``0`` on
-   success.
+   used from the module's initialization function.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   ``NULL``-terminated.  Return ``-1`` on error, ``0`` on success.
+   ``NULL``-terminated.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
 
 .. c:macro:: PyModule_AddIntMacro(module, macro)
@@ -595,7 +602,7 @@ state:
    Add an int constant to *module*. The name and the value are taken from
    *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
    constant *AF_INET* with the value of *AF_INET* to *module*.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
 
 .. c:macro:: PyModule_AddStringMacro(module, macro)
@@ -608,7 +615,7 @@ state:
    The type object is finalized by calling internally :c:func:`PyType_Ready`.
    The name of the type object is taken from the last component of
    :c:member:`~PyTypeObject.tp_name` after dot.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.9
 
@@ -647,14 +654,14 @@ since multiple such modules can be created from a single definition.
 
    The caller must hold the GIL.
 
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    The caller must hold the GIL.
 
