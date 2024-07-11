@@ -9,6 +9,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -2250,6 +2251,40 @@ class CoroutineTests(unittest.TestCase):
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
             'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
             'close', 'throw'}))
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+
+    @cpython_only
+    def test_slot_wrappers(self):
+        rch, sch = interpreters.create_channel()
+
+        # For now it's sufficient to check int.__str__.
+        # See https://github.com/python/cpython/issues/117482
+        # and https://github.com/python/cpython/pull/117660.
+        script = textwrap.dedent(f'''
+            text = repr(int.__str__)
+            sch = interpreters.SendChannel({sch.id})
+            sch.send_nowait(text)
+            ''')
+
+        exec(script)
+        expected = rch.recv()
+
+        interp = interpreters.create()
+        interp.run('from test.support import interpreters')
+        interp.run(script)
+        results = rch.recv()
+
+        self.assertEqual(results, expected)
 
 
 if __name__ == '__main__':

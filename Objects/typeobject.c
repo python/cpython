@@ -116,6 +116,18 @@ static_builtin_index_clear(PyTypeObject *self)
     self->tp_subclasses = NULL;
 }
 
+
+/* In 3.13+ this is stored in _PyRuntimeState. */
+static PyTypeObject static_type_defs[_Py_MAX_STATIC_BUILTIN_TYPES];
+
+static inline PyTypeObject *
+static_builtin_get_def(PyTypeObject *type)
+{
+    size_t index = static_builtin_index_get(type);
+    return &static_type_defs[index];
+}
+
+
 static inline static_builtin_state *
 static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
 {
@@ -6982,7 +6994,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     return 0;
 }
 
-static int add_operators(PyTypeObject *);
+static int add_operators(PyTypeObject *, PyTypeObject *);
 static int add_tp_new_wrapper(PyTypeObject *type);
 
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
@@ -7147,10 +7159,10 @@ type_dict_set_doc(PyTypeObject *type)
 
 
 static int
-type_ready_fill_dict(PyTypeObject *type)
+type_ready_fill_dict(PyTypeObject *type, PyTypeObject *def)
 {
     /* Add type-specific descriptors to tp_dict */
-    if (add_operators(type) < 0) {
+    if (add_operators(type, def) < 0) {
         return -1;
     }
     if (type_add_methods(type) < 0) {
@@ -7462,7 +7474,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, int rerunbuiltin)
+type_ready(PyTypeObject *type, PyTypeObject *def, int rerunbuiltin)
 {
     _PyObject_ASSERT((PyObject *)type, !is_readying(type));
     start_readying(type);
@@ -7499,7 +7511,7 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
     if (type_ready_set_new(type, rerunbuiltin) < 0) {
         goto error;
     }
-    if (type_ready_fill_dict(type) < 0) {
+    if (type_ready_fill_dict(type, def) < 0) {
         goto error;
     }
     if (!rerunbuiltin) {
@@ -7551,7 +7563,7 @@ PyType_Ready(PyTypeObject *type)
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
 
-    return type_ready(type, 0);
+    return type_ready(type, NULL, 0);
 }
 
 int
@@ -7581,10 +7593,16 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
 
     static_builtin_state_init(interp, self);
 
-    int res = type_ready(self, !ismain);
+    PyTypeObject *def = static_builtin_get_def(self);
+    if (ismain) {
+        memcpy(def, self, sizeof(PyTypeObject));
+    }
+
+    int res = type_ready(self, def, !ismain);
     if (res < 0) {
         static_builtin_state_clear(interp, self);
     }
+
     return res;
 }
 
@@ -10108,17 +10126,22 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
    infinite recursion here.) */
 
 static int
-add_operators(PyTypeObject *type)
+add_operators(PyTypeObject *type, PyTypeObject *def)
 {
     PyObject *dict = lookup_tp_dict(type);
     pytype_slotdef *p;
     PyObject *descr;
     void **ptr;
 
+    assert(def == NULL || (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    if (def == NULL) {
+        def = type;
+    }
+
     for (p = slotdefs; p->name; p++) {
         if (p->wrapper == NULL)
             continue;
-        ptr = slotptr(type, p->offset);
+        ptr = slotptr(def, p->offset);
         if (!ptr || !*ptr)
             continue;
         int r = PyDict_Contains(dict, p->name_strobj);
