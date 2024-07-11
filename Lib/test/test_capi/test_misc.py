@@ -1183,7 +1183,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(get_token(B1) == id(self))
 
         tokenA1 = get_token(A1)
-        # match exactly
+        # find A1 from A1
         found = get_base_by_token(A1, tokenA1)
         self.assertIs(found, A1)
 
@@ -1209,7 +1209,7 @@ class CAPITest(unittest.TestCase):
         C1 = create_type('_testcapi.C1', tokenA1)
         self.assertTrue(get_token(C1) == tokenA1)
 
-        # find first C1 by shared token
+        # find C1 first by shared token
         class Z(C1, A2): pass
         found = get_base_by_token(Z, tokenA1)
         self.assertIs(found, C1)
