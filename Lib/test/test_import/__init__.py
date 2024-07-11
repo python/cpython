@@ -1518,6 +1518,31 @@ class PycacheTests(unittest.TestCase):
         m = __import__(TESTFN)
         self.assertEqual(m.x, 5)
 
+    def test_recompute_pyc_same_second_same_size(self):
+        # Even when the source file doesn't change timestamp (truncated
+        # to seconds) and size, the difference between the source and
+        # the bytecode timestamps is enough to trigger recomputation of
+        # the pyc file.
+        prev_mtime = 0
+        for i in range(10, 100):
+            with self.subTest(i):
+                while True:
+                    with open(self.source, 'w', encoding='utf-8') as fp:
+                        print(f"x = {i}", file=fp)
+                    mtime = os.stat(self.source).st_mtime
+                    if mtime > prev_mtime:
+                        break
+                    time.sleep(1e-3)
+                self.assertGreater(mtime, prev_mtime)
+                prev_mtime = mtime
+
+                m = __import__(TESTFN)
+                self.assertEqual(m.x, i)
+                unload(TESTFN)
+                m = __import__(TESTFN)
+                self.assertEqual(m.x, i)
+                unload(TESTFN)
+
 
 class TestSymbolicallyLinkedPackage(unittest.TestCase):
     package_name = 'sample'

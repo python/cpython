@@ -757,7 +757,7 @@ def _validate_timestamp_pyc(self, data, source_mtime, source_size, name,
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
     if time.time() - source_mtime < 2:
         try:
-            bytecode_mtime = self.path_mtime(bytecode_path)
+            bytecode_mtime = self.path_stats(bytecode_path)['mtime']
         except OSError:
             pass
         else:
