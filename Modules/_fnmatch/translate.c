@@ -11,6 +11,8 @@
 
 // ==== Helper declarations ==================================================
 
+typedef fnmatchmodule_state State;
+
 #define _WRITE_OR_FAIL(writeop, onerror) \
     do { \
         if ((writeop) < 0) { \
@@ -18,22 +20,27 @@
         } \
     } while (0)
 
-#define _WRITE_CHAR      _PyUnicodeWriter_WriteChar
-#define _WRITE_CHAR_OR(_writer, ch, onerror) \
-    _WRITE_OR_FAIL(_WRITE_CHAR((_writer), (ch)), onerror)
+#define _WRITE_CHAR(writer, ch) \
+    _PyUnicodeWriter_WriteChar((_PyUnicodeWriter *)(writer), (ch))
+#define _WRITE_CHAR_OR(writer, ch, onerror) \
+    _WRITE_OR_FAIL(_WRITE_CHAR((writer), (ch)), onerror)
 
-#define _WRITE_ASCII     _PyUnicodeWriter_WriteASCIIString
-#define _WRITE_ASCII_OR(_writer, ascii, length, onerror) \
-    _WRITE_OR_FAIL(_WRITE_ASCII((_writer), (ascii), (length)), onerror)
+#define _WRITE_ASCII(writer, ascii, length) \
+    _PyUnicodeWriter_WriteASCIIString((_PyUnicodeWriter *)(writer), (ascii), (length))
+#define _WRITE_ASCII_OR(writer, ascii, length, onerror) \
+    _WRITE_OR_FAIL(_WRITE_ASCII((writer), (ascii), (length)), onerror)
 
-#define _WRITE_STRING    _PyUnicodeWriter_WriteStr
-#define _WRITE_STRING_OR(_writer, string, onerror) \
-    _WRITE_OR_FAIL(_WRITE_STRING((_writer), (string)), onerror)
+#define _WRITE_STRING(writer, string) \
+    _PyUnicodeWriter_WriteStr((_PyUnicodeWriter *)(writer), (string))
+#define _WRITE_STRING_OR(writer, string, onerror) \
+    _WRITE_OR_FAIL(_WRITE_STRING((writer), (string)), onerror)
 
-#define _WRITE_BLOCK    _PyUnicodeWriter_WriteSubstring
-#define _WRITE_BLOCK_OR(_writer, string, i, j, onerror) \
+#define _WRITE_BLOCK(writer, string, i, j) \
+    _PyUnicodeWriter_WriteSubstring((_PyUnicodeWriter *)(writer), (string), (i), (j))
+#define _WRITE_BLOCK_OR(writer, string, i, j, onerror) \
     do { \
-        if ((i) < (j) && _WRITE_BLOCK((_writer), (string), (i), (j)) < 0) { \
+        Py_ssize_t _i = (i), _j = (j); /* to allow in-place operators on i or j */ \
+        if (_i < _j && _WRITE_BLOCK((writer), (string), _i, _j) < 0) { \
             onerror; \
         } \
     } while (0)
@@ -70,9 +77,7 @@ translate_expression(PyObject *pattern, Py_ssize_t start, Py_ssize_t stop);
  * This returns the number of written characters, or -1 if an error occurred.
  */
 static Py_ssize_t
-write_literal(fnmatchmodule_state *state,
-              _PyUnicodeWriter *writer,
-              PyObject *unicode);
+write_literal(State *state, PyUnicodeWriter *writer, PyObject *unicode);
 
 /*
  * Write the translated pattern obtained by translate_expression().
@@ -80,12 +85,12 @@ write_literal(fnmatchmodule_state *state,
  * This returns the number of written characters, or -1 if an error occurred.
  */
 static Py_ssize_t
-write_expression(_PyUnicodeWriter *writer, PyObject *expression);
+write_expression(PyUnicodeWriter *writer, PyObject *expression);
 
 /*
  * Build the final regular expression by processing the wildcards.
  *
- * The position of each wildcard in 'strings' is given by 'indices'.
+ * The position of each wildcard in 'pattern' is given by 'indices'.
  */
 static PyObject *
 process_wildcards(PyObject *pattern, PyObject *indices);
@@ -93,38 +98,52 @@ process_wildcards(PyObject *pattern, PyObject *indices);
 // ==== API implementation ====================================================
 
 PyObject *
-_Py_regex_translate(PyObject *module, PyObject *pattern)
+_Py_fnmatch_translate(PyObject *module, PyObject *pattern)
 {
 #define READ(ind) PyUnicode_READ(kind, data, (ind))
 #define ADVANCE_IF_CHAR(ch, ind, maxind) \
     do { \
+        /* the following forces ind to be a variable name */ \
+        Py_ssize_t *Py_UNUSED(_ind) = &ind; \
         if ((ind) < (maxind) && READ(ind) == (ch)) { \
             ++ind; \
         } \
     } while (0)
 #define _WHILE_READ_CMP(ch, ind, maxind, cmp) \
     do { \
+        /* the following forces ind to be a variable name */ \
+        Py_ssize_t *Py_UNUSED(_ind) = &ind; \
         while ((ind) < (maxind) && READ(ind) cmp (ch)) { \
             ++ind; \
         } \
     } while (0)
-#define ADVANCE_TO_NEXT(ch, from, maxind) _WHILE_READ_CMP(ch, from, maxind, !=)
-#define SKIP_DUPLICATES(ch, from, maxind) _WHILE_READ_CMP(ch, from, maxind, ==)
+#define ADVANCE_TO_NEXT(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), !=)
+#define SKIP_DUPLICATES(ch, from, maxind) _WHILE_READ_CMP((ch), (from), (maxind), ==)
 
-    fnmatchmodule_state *state = get_fnmatchmodulestate_state(module);
+    State *state = get_fnmatchmodulestate_state(module);
     PyObject *re = state->re_module;
     const Py_ssize_t n = PyUnicode_GET_LENGTH(pattern);
-    // We would write less data if there are successive '*', which should
-    // not be the case in general. Otherwise, we write >= n characters
-    // since escaping them would always add more characters so we will
-    // overestimate a bit the number of characters to write.
+    // We would write less data if there are successive '*',
+    // which should not be the case in general. Otherwise,
+    // we write >= n characters since escaping them always
+    // add more characters.
     //
-    // TODO(picnixz): should we limit the estimation or not?
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create((Py_ssize_t)(1.05 * n));
+    // Note that only b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f' need to
+    // be escaped when translated to RE patterns and '*' and '?'
+    // are already handled without being escaped.
+    //
+    // In general, UNIX style patterns are more likely to contain
+    // wildcards than characters to be escaped, with the exception
+    // of '-', '\' and '~' (we usually want to match filenmaes),
+    // and there is a sparse number of them. Therefore, we only
+    // estimate the number of characters to be written to be the
+    // same as the number of characters in the pattern.
+    //
+    // TODO: (picnixz): should we limit the estimation in case of a failure?
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(n);
     if (writer == NULL) {
         return NULL;
     }
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter *)(writer);
     // list containing the indices where '*' has a special meaning
     PyObject *indices = PyList_New(0);
     if (indices == NULL) {
@@ -138,7 +157,7 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
         Py_UCS4 chr = READ(i++);
         switch (chr) {
             case '*': {
-                _WRITE_CHAR_OR(_writer, chr, goto abort);
+                _WRITE_CHAR_OR(writer, chr, goto abort);
                 SKIP_DUPLICATES('*', i, n);
                 PyObject *index = PyLong_FromSsize_t(h++);
                 if (index == NULL) {
@@ -153,7 +172,7 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
             }
             case '?': {
                 // translate optional '?' (fnmatch) into optional '.' (regex)
-                _WRITE_CHAR_OR(_writer, '.', goto abort);
+                _WRITE_CHAR_OR(writer, '.', goto abort);
                 ++h; // increase the expected result's length
                 break;
             }
@@ -163,7 +182,7 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
                 ADVANCE_IF_CHAR(']', j, n); // [!] or []
                 ADVANCE_TO_NEXT(']', j, n); // locate closing ']'
                 if (j >= n) {
-                    _WRITE_ASCII_OR(_writer, "\\[", 2, goto abort);
+                    _WRITE_ASCII_OR(writer, "\\[", 2, goto abort);
                     h += 2; // we just wrote 2 characters
                     break;  // early break for clarity
                 }
@@ -171,21 +190,21 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
                     //              v--- pattern[j] (exclusive)
                     // '[' * ... * ']'
                     //     ^----- pattern[i] (inclusive)
-                    int rc = PyUnicode_FindChar(pattern, '-', i, j, 1);
-                    if (rc == -2) {
+                    int pos = PyUnicode_FindChar(pattern, '-', i, j, 1);
+                    if (pos == -2) {
                         goto abort;
                     }
                     PyObject *s1 = NULL, *s2 = NULL;
-                    if (rc == -1) {
-                        PyObject *group = PyUnicode_Substring(pattern, i, j);
-                        if (group == NULL) {
+                    if (pos == -1) {
+                        PyObject *s0 = PyUnicode_Substring(pattern, i, j);
+                        if (s0 == NULL) {
                             goto abort;
                         }
-                        s1 = _PyObject_CallMethod(group, &_Py_ID(replace), "ss", "\\", "\\\\");
-                        Py_DECREF(group);
+                        s1 = _PyObject_CallMethod(s0, &_Py_ID(replace), "ss", "\\", "\\\\");
+                        Py_DECREF(s0);
                     }
                     else {
-                        assert(rc >= 0);
+                        assert(pos >= 0);
                         assert(READ(j) == ']');
                         s1 = translate_expression(pattern, i, j);
                     }
@@ -197,7 +216,7 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
                     if (s2 == NULL) {
                         goto abort;
                     }
-                    int difflen = write_expression(_writer, s2);
+                    int difflen = write_expression(writer, s2);
                     Py_DECREF(s2);
                     if (difflen < 0) {
                         goto abort;
@@ -212,7 +231,7 @@ _Py_regex_translate(PyObject *module, PyObject *pattern)
                 if (str == NULL) {
                     goto abort;
                 }
-                int difflen = write_literal(state, _writer, str);
+                int difflen = write_literal(state, writer, str);
                 Py_DECREF(str);
                 if (difflen < 0) {
                     goto abort;
@@ -317,8 +336,10 @@ translate_expression(PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
         PyObject *repl = PyUnicode_Concat(chunk, hyphen);
         Py_DECREF(hyphen);
         // PyList_SetItem() does not create a new reference on 'repl'
-        // so we should not decref 'repl' after the call (I think?)
+        // so we should not decref 'repl' after the call, unless there
+        // is an issue while setting the item.
         if (repl == NULL || PyList_SetItem(chunks, chunkscount - 1, repl) < 0) {
+            Py_XDECREF(repl);
             goto abort;
         }
     }
@@ -360,11 +381,11 @@ translate_expression(PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
             PyObject *merged = PyUnicode_Concat(c1sub, c2sub);
             Py_DECREF(c1sub);
             Py_DECREF(c2sub);
-            if (merged == NULL) {
-                goto abort;
-            }
-            int rc = PyList_SetItem(chunks, c - 1, merged);
-            if (rc < 0) {
+            // PyList_SetItem() does not create a new reference on 'merged'
+            // so we should not decref 'merged' after the call, unless there
+            // is an issue while setting the item.
+            if (merged == NULL || PyList_SetItem(chunks, c - 1, merged) < 0) {
+                Py_XDECREF(merged);
                 goto abort;
             }
             if (PySequence_DelItem(chunks, c) < 0) {
@@ -385,10 +406,11 @@ translate_expression(PyObject *pattern, Py_ssize_t i, Py_ssize_t j)
         }
         PyObject *s2 = _PyObject_CallMethod(s1, &_Py_ID(replace), "ss", "-", "\\-");
         Py_DECREF(s1);
-        if (s2 == NULL) {
-            goto abort;
-        }
-        if (PyList_SetItem(chunks, c, s2) < 0) {
+        // PyList_SetItem() does not create a new reference on 's2'
+        // so we should not decref 's2' after the call, unless there
+        // is an issue while setting the item.
+        if (s2 == NULL || PyList_SetItem(chunks, c, s2) < 0) {
+            Py_XDECREF(s2);
             goto abort;
         }
     }
@@ -409,9 +431,7 @@ abort:
 }
 
 static Py_ssize_t
-write_literal(fnmatchmodule_state *state,
-              _PyUnicodeWriter *writer,
-              PyObject *unicode)
+write_literal(State *state, PyUnicodeWriter *writer, PyObject *unicode)
 {
     PyObject *escaped = PyObject_CallMethodOneArg(state->re_module,
                                                   &_Py_ID(escape),
@@ -420,7 +440,8 @@ write_literal(fnmatchmodule_state *state,
         return -1;
     }
     Py_ssize_t written = PyUnicode_GET_LENGTH(escaped);
-    int rc = _PyUnicodeWriter_WriteStr(writer, escaped);
+    assert(written >= 0);
+    int rc = _WRITE_STRING(writer, escaped);
     Py_DECREF(escaped);
     if (rc < 0) {
         return -1;
@@ -430,12 +451,12 @@ write_literal(fnmatchmodule_state *state,
 }
 
 static Py_ssize_t
-write_expression(_PyUnicodeWriter *writer, PyObject *expression)
+write_expression(PyUnicodeWriter *writer, PyObject *expression)
 {
-#define WRITE_CHAR(c)           _WRITE_CHAR_OR(writer, c, return -1)
-#define WRITE_ASCII(s, n)       _WRITE_ASCII_OR(writer, s, n, return -1)
-#define WRITE_BLOCK(s, i, j)    _WRITE_BLOCK_OR(writer, s, i, j, return -1)
-#define WRITE_STRING(s)         _WRITE_STRING_OR(writer, s, return -1)
+#define WRITE_CHAR(c)           _WRITE_CHAR_OR(writer, (c), return -1)
+#define WRITE_ASCII(s, n)       _WRITE_ASCII_OR(writer, (s), (n), return -1)
+#define WRITE_BLOCK(s, i, j)    _WRITE_BLOCK_OR(writer, (s), (i), (j), return -1)
+#define WRITE_STRING(s)         _WRITE_STRING_OR(writer, (s), return -1)
     Py_ssize_t grouplen = PyUnicode_GET_LENGTH(expression);
     if (grouplen == 0) {
         /* empty range: never match */
@@ -452,14 +473,14 @@ write_expression(_PyUnicodeWriter *writer, PyObject *expression)
     WRITE_CHAR('[');
     switch (token) {
         case '!': {
-            WRITE_CHAR('^');
+            WRITE_CHAR('^'); // replace '!' by '^'
             WRITE_BLOCK(expression, 1, grouplen);
             break;
         }
         case '^':
         case '[': {
             WRITE_CHAR('\\');
-            ++extra;
+            ++extra; // because we wrote '\\'
             WRITE_STRING(expression);
             break;
         }
@@ -499,7 +520,7 @@ process_wildcards(PyObject *pattern, PyObject *indices)
      * the STRING by "(?>.*?" and ")", and thus we will write at
      * least 7 + len(STRING) characters.
      *
-     * We write one additional '.*' if indices[-1] + 1 = n.
+     * We write one additional '.*' if indices[-1] + 1 == n.
      *
      * Since the result is surrounded by "(?s:" and ")\Z", we
      * write at least "indices[0] + 7m + n + 6" characters,
@@ -517,12 +538,9 @@ process_wildcards(PyObject *pattern, PyObject *indices)
     if (writer == NULL) {
         return NULL;
     }
-    _PyUnicodeWriter *_writer = (_PyUnicodeWriter *)(writer);
-
-#define WRITE_BLOCK(i, j)       _WRITE_BLOCK_OR(_writer, pattern, i, j, goto abort)
-#define WRITE_ATOMIC_BEGIN()    _WRITE_ASCII_OR(_writer, "(?>.*?", 6, goto abort)
-#define WRITE_ATOMIC_END()      _WRITE_CHAR_OR(_writer, ')', goto abort)
-
+#define WRITE_BLOCK(i, j)       _WRITE_BLOCK_OR(writer, pattern, (i), (j), goto abort)
+#define WRITE_ATOMIC_BEGIN()    _WRITE_ASCII_OR(writer, "(?>.*?", 6, goto abort)
+#define WRITE_ATOMIC_END()      _WRITE_CHAR_OR(writer, ')', goto abort)
     WRITE_BLOCK(i, j);  // write stuff before '*' if needed
     i = j + 1;              // jump after the '*'
     for (Py_ssize_t k = 1; k < m; ++k) {
@@ -533,15 +551,15 @@ process_wildcards(PyObject *pattern, PyObject *indices)
             goto abort;
         }
         assert(i < j);
-        // atomic group begin
+        // write the atomic RE group
         WRITE_ATOMIC_BEGIN();
         WRITE_BLOCK(i, j);
         WRITE_ATOMIC_END();
         i = j + 1;
     }
     // handle the last group
-    _WRITE_ASCII_OR(_writer, ".*", 2, goto abort);
-    WRITE_BLOCK(i, n); // write the remaining substring
+    _WRITE_ASCII_OR(writer, ".*", 2, goto abort);
+    WRITE_BLOCK(i, n); // write the remaining substring (if non-empty)
 #undef WRITE_BLOCK
 #undef WRITE_ATOMIC_END
 #undef WRITE_ATOMIC_BEGIN
