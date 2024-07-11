@@ -196,6 +196,7 @@ managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
     }
 
     /* Preserve specific data before potentially wiping it. */
+    PyTypeObject *metaclass = Py_TYPE(type);
     destructor dealloc = type->tp_dealloc;
 
     /* Restore the static type to it's (mostly) original values.
@@ -216,6 +217,7 @@ managed_static_type_fini_def(PyTypeObject *def, PyTypeObject *type,
        yet.  Thankfully, those exceptional cases only require a small
        subset of the type, all of which is static data.  Thus, in the
        meantime, we preserve those parts. */
+    Py_SET_TYPE(type, metaclass);
     type->tp_dealloc = dealloc;
 }
 
@@ -8563,10 +8565,6 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
         managed_static_type_state_clear(interp, self, isbuiltin, initial);
-    }
-
-    if (initial) {
-        Py_SET_TYPE(def, Py_TYPE(self));
     }
 
     return res;
