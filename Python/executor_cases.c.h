@@ -1512,14 +1512,8 @@
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_SetItem(globals, name,
-                                     PyStackRef_AsPyObjectBorrow(v));
-            }
-            else {
-                err = PyObject_SetItem(globals, name,
-                                       PyStackRef_AsPyObjectBorrow(v));
-            }
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             PyStackRef_CLOSE(v);
             if (err) JUMP_TO_ERROR();
             stack_pointer += -1;
@@ -1532,12 +1526,7 @@
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_Pop(globals, name, NULL);
-            }
-            else {
-                err = PyMapping_DelItem(globals, name);
-            }
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
                 if (_PyErr_Occurred(tstate) &&

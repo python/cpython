@@ -151,7 +151,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__len__)
         STRUCT_FOR_ID(__length_hint__)
         STRUCT_FOR_ID(__lltrace__)
-        STRUCT_FOR_ID(__loader__)
         STRUCT_FOR_ID(__lshift__)
         STRUCT_FOR_ID(__lt__)
         STRUCT_FOR_ID(__main__)

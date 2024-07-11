@@ -2780,12 +2780,7 @@
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_Pop(globals, name, NULL);
-            }
-            else {
-                err = PyMapping_DelItem(globals, name);
-            }
+            _Py_DICT_OR_MAPPING_DELITEM(globals, name, err)
             // Can't use ERROR_IF here.
             if (err < 0) {
                 if (_PyErr_Occurred(tstate) &&
@@ -4993,12 +4988,9 @@
                 goto error;
             }
             if (v_o == NULL) {
-                if (PyDict_Check(globals)) {
-                    if (PyDict_GetItemRef(globals, name, &v_o) < 0) {
-                        goto error;
-                    }
-                }
-                else if (PyMapping_GetOptionalItem(globals, name, &v_o) < 0) {
+                int r;
+                _Py_DICT_OR_MAPPING_GETITEMREF(globals, name, &v_o, r)
+                if (r < 0) {
                     goto error;
                 }
                 if (v_o == NULL) {
@@ -6198,14 +6190,8 @@
             PyObject *globals = GLOBALS();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            if (PyDict_Check(globals)) {
-                err = PyDict_SetItem(globals, name,
-                                     PyStackRef_AsPyObjectBorrow(v));
-            }
-            else {
-                err = PyObject_SetItem(globals, name,
-                                       PyStackRef_AsPyObjectBorrow(v));
-            }
+            _Py_DICT_OR_MAPPING_SETITEM(globals, name,
+                                        PyStackRef_AsPyObjectBorrow(v), err)
             PyStackRef_CLOSE(v);
             if (err) goto pop_1_error;
             stack_pointer += -1;
